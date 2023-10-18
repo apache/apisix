@@ -1,7 +1,8 @@
 ---
 title: wolf-rbac
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - wolf RBAC
   - wolf-rbac
@@ -268,7 +269,7 @@ HTTP/1.1 200 OK
 {"message":"success to change password"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `wolf-rbac` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

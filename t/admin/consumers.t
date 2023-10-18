@@ -335,26 +335,6 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-passed
-
-
-
-=== TEST 11: delete test consumer(pony)
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.3)
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/pony',
-                 ngx.HTTP_DELETE
-            )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/

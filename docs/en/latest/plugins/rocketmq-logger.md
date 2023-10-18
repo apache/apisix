@@ -1,7 +1,7 @@
 ---
 title: rocketmq-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - RocketMQ Logger
@@ -40,7 +40,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | topic                  | string  | True     |                   |                       | Target topic to push the data to.                                                                                                                                                                                         |
 | key                    | string  | False    |                   |                       | Key of the messages.                                                                                                                                                                                                      |
 | tag                    | string  | False    |                   |                       | Tag of the messages.                                                                                                                                                                                                      |
-| log_format | object | False    |         |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | timeout                | integer | False    | 3                 | [1,...]               | Timeout for the upstream to send data.                                                                                                                                                                                    |
 | use_tls                | boolean | False    | false             |                       | When set to `true`, uses TLS.                                                                                                                                                                                             |
 | access_key             | string  | False    | ""                |                       | Access key for ACL. Setting to an empty string will disable the ACL.                                                                                                                                                      |
@@ -154,7 +154,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `rocketmq-logger` Plugin on a specific Route:
 
@@ -196,9 +196,9 @@ Now, if you make a request to APISIX, it will be logged in your RocketMQ server:
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `rocketmq-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `rocketmq-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

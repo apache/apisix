@@ -1,7 +1,8 @@
 ---
 title: grpc-web
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - gRPC Web
   - grpc-web
@@ -31,7 +32,7 @@ description: This document contains information about the Apache APISIX grpc-web
 
 The `grpc-web` Plugin is a proxy Plugin that can process [gRPC Web](https://github.com/grpc/grpc-web) requests from JavaScript clients to a gRPC service.
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `grpc-web` Plugin on a specific Route as shown below:
 
@@ -54,7 +55,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 :::info IMPORTANT
 
-While using the `grpc-web` Plugin, always using a prefix matching pattern (`/*`, `/grpc/example/*`) for matching Routes. This is because the gRPC Web client passes the package name, the service interface name, the method name and other information in the proto in the URI. For example, `/path/a6.RouteService/Insert`.
+While using the `grpc-web` Plugin, always use a prefix matching pattern (`/*`, `/grpc/example/*`) for matching Routes. This is because the gRPC Web client passes the package name, the service interface name, the method name and other information in the proto in the URI. For example, `/path/a6.RouteService/Insert`.
 
 So, when absolute matching is used, the Plugin would not be hit and the information from the proto would not be extracted.
 
@@ -74,9 +75,9 @@ The supported `Content-Type` includes `application/grpc-web`, `application/grpc-
 
 :::
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `grpc-web` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `grpc-web` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

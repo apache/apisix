@@ -91,12 +91,6 @@ if [ $count_test_access_log -eq 1 ]; then
     exit 1
 fi
 
-count_access_log_off=`grep -c "access_log off;" conf/nginx.conf || true`
-if [ $count_access_log_off -ne 5 ]; then
-    echo "failed: nginx.conf file doesn't find access_log off; when disable access log"
-    exit 1
-fi
-
 make run
 sleep 0.1
 curl http://127.0.0.1:9080/hi
@@ -230,6 +224,7 @@ echo "passed: should find upstream scheme"
 # check stream logs
 echo '
 apisix:
+    proxy_mode: stream
     stream_proxy:                  # UDP proxy
      udp:
        - "127.0.0.1:9200"

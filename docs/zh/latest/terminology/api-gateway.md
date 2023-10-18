@@ -1,7 +1,7 @@
 ---
 title: API Gateway
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 网关
 description: 本文主要介绍了 API 网关的作用以及为什么需要 API 网关。

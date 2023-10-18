@@ -1,7 +1,7 @@
 ---
 title: request-validation
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Request Validation
 description: This document describes the information about the Apache APISIX request-validation Plugin, you can use it to validate the requests before forwarding them to an Upstream service.
@@ -45,7 +45,7 @@ At least one of `header_schema` or `body_schema` should be filled in.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the Plugin on a specific Route as shown below:
 
@@ -192,6 +192,23 @@ The examples below shows how you can configure this Plugin for different validat
 }
 ```
 
+### Header validation
+
+```json
+{
+    "header_schema": {
+        "type": "object",
+        "required": ["Content-Type"],
+        "properties": {
+            "Content-Type": {
+                "type": "string",
+                "pattern": "^application\/json$"
+            }
+        }
+    }
+}
+```
+
 ### Combined validation
 
 ```json
@@ -265,9 +282,9 @@ curl --header "Content-Type: application/json" \
   http://127.0.0.1:9080/get
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `request-validation` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `request-validation` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \

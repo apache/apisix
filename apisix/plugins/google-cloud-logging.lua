@@ -35,6 +35,7 @@ local schema = {
         auth_config = {
             type = "object",
             properties = {
+                client_email = { type = "string" },
                 private_key = { type = "string" },
                 project_id = { type = "string" },
                 token_uri = {
@@ -62,7 +63,7 @@ local schema = {
                     default = "https://logging.googleapis.com/v2/entries:write"
                 },
             },
-            required = { "private_key", "project_id", "token_uri" }
+            required = { "client_email", "private_key", "project_id", "token_uri" }
         },
         ssl_verify = {
             type = "boolean",

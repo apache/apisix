@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{VAULT_TOKEN} = "root";
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(2);
@@ -355,7 +359,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "localhost:1636",
+                            "ldap_uri": "test.com:1636",
                             "uid": "cn",
                             "use_tls": true
                         }
@@ -404,7 +408,7 @@ find consumer user01
                     "plugins": {
                         "ldap-auth": {
                             "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "localhost:1636",
+                            "ldap_uri": "test.com:1636",
                             "uid": "cn",
                             "use_tls": true,
                             "tls_verify": true
@@ -523,6 +527,85 @@ Success! Data written to: kv/apisix/user01
 
 
 === TEST 23: verify
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 24: set ldap-auth conf with the token in an env var: user_dn uses secret ref
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "$ENV://VAULT_TOKEN"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            -- change consumer with secrets ref: vault
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "user01",
+                    "plugins": {
+                        "ldap-auth": {
+                            "user_dn": "$secret://vault/test1/user01/user_dn"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            -- set route
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth": {
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_uri": "127.0.0.1:1389",
+                            "uid": "cn"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: verify
 --- request
 GET /hello
 --- more_headers

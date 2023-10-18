@@ -54,7 +54,7 @@ APISIX 中提供了很多具有丰富功能的可观测性插件。你可以通�
 - [error-logger](../plugins/error-log-logger.md)
 - [google-cloud-logging](../plugins/google-cloud-logging.md)
 
-你可以在 APISIX [插件中心](../plugins/http-logger.md) 查看 APISIX 支持的所有日志插件。接下来我们将使用 `http-logger` 插件为你演示如何将 APISIX 的日志数据发送到 HTPP/HTTPS 服务器中。
+你可以在 APISIX [插件中心](../plugins/http-logger.md) 查看 APISIX 支持的所有日志插件。接下来我们将使用 `http-logger` 插件为你演示如何将 APISIX 的日志数据发送到 HTTP/HTTPS 服务器中。
 
 :::note 注意
 
@@ -172,7 +172,7 @@ apisix_etcd_modify_indexes{key="routes"} 20028
 
 **链路追踪**就是将一次请求还原成调用链路，并将该请求的调用情况使用拓扑的方式展现，比如展示各个微服务节点上的耗时，请求具体经过了哪些服务器以及每个服务节点的请求状态等内容。
 
-[Zipkin](https://zipkin.io/) 一个开源的分布式追踪系统。 APISIX 的 [zipkin 插件](../plugins/zipkin.md) 支持根据 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html) 收集链路信息并报告给 Zipkin Collector。
+[Zipkin](https://zipkin.io/) 一个开源的分布式追踪系统。APISIX 的[zipkin 插件](../plugins/zipkin.md) 支持根据 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html) 收集链路信息并报告给 Zipkin Collector。
 
 :::tip 提示
 
@@ -219,7 +219,7 @@ curl -i http://127.0.0.1:9080/get
 "X-B3-Traceid": "e18985df47dab632d62083fd96626692",
 ```
 
-你可以通过访问 `http://127.0.0.1:9411/zipkin`，在 Zinkin 的 Web UI 上看到请求链路。
+你可以通过访问 `http://127.0.0.1:9411/zipkin`，在 Zipkin 的 Web UI 上看到请求链路。
 
 ![Zipkin plugin output 1](https://static.apiseven.com/2022/09/14/6321dc27f3d33.png)
 

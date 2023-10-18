@@ -130,6 +130,32 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = false
+        },
+        proxy_opts = {
+            description = "HTTP proxy server be used to access identity server.",
+            type = "object",
+            properties = {
+                http_proxy = {
+                    type = "string",
+                    description = "HTTP proxy like: http://proxy-server:80.",
+                },
+                https_proxy = {
+                    type = "string",
+                    description = "HTTPS proxy like: http://proxy-server:80.",
+                },
+                http_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password].",
+                },
+                https_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password].",
+                },
+                no_proxy = {
+                    type = "string",
+                    description = "Comma separated list of hosts that should not be proxied.",
+                }
+            },
         }
     },
     encrypt_fields = {"client_secret"},

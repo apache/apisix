@@ -1,7 +1,8 @@
 ---
 title: server-info
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Server info
   - server-info
@@ -101,7 +102,7 @@ curl http://127.0.0.1:9090/v1/server_info -s | jq .
 
 :::
 
-## 禁用插件
+## 删除插件
 
 如果你想禁用插件，可以将 `server-info` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
 

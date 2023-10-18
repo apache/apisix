@@ -41,6 +41,22 @@ local schema = {
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
         log_format = {type = "object"},
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        }
     },
     oneOf = {
         {required = {"endpoint_addr", "user", "password", "database", "logtable"}},
@@ -143,6 +159,11 @@ local function send_http_data(conf, log_message)
     end
 
     return res, err_msg
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

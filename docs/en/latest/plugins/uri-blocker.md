@@ -1,7 +1,7 @@
 ---
 title: uri-blocker
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - URI Blocker
 description: This document contains information about the Apache APISIX uri-blocker Plugin.
@@ -39,7 +39,7 @@ The `uri-blocker` Plugin intercepts user requests with a set of `block_rules`.
 | rejected_msg     | string        | False    |         | non-empty    | HTTP response body returned when the request URI hits any of the `block_rules`.                                                                                                                       |
 | case_insensitive | boolean       | False    | false   |              | When set to `true`, ignores the case when matching request URI.                                                                                                                                       |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `uri-blocker` Plugin on a specific Route:
 
@@ -93,9 +93,9 @@ Server: APISIX web server
 {"error_msg":"access is not allowed"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `uri-blocker` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `uri-blocker` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

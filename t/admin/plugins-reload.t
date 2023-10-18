@@ -418,3 +418,12 @@ location /t {
 GET /t
 --- response_body
 hello world
+
+
+
+=== TEST 9: wrong method to reload plugins
+--- request
+GET /apisix/admin/plugins/reload
+--- error_code: 405
+--- response_body
+{"error_msg":"please use PUT method to reload the plugins, GET method is not allowed."}

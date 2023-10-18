@@ -1,9 +1,16 @@
 {
-  "version": "3.1.0",
+  "version": "3.6.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
     },
     {
       "type": "doc",
@@ -19,12 +26,20 @@
       "items": [
         "tutorials/expose-api",
         "tutorials/protect-api",
-        "tutorials/observe-your-api",
+        {
+          "type": "category",
+          "label": "Observability",
+          "items": [
+            "tutorials/observe-your-api",
+            "tutorials/health-check",
+            "tutorials/monitor-api-health-check"
+          ]
+        },
         "tutorials/manage-api-consumers",
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
-        "tutorials/health-check",
-        "tutorials/client-to-apisix-mtls"
+        "tutorials/client-to-apisix-mtls",
+        "tutorials/websocket-authentication"
       ]
     },
     {
@@ -62,7 +77,8 @@
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
-            "plugins/inspect"
+            "plugins/inspect",
+            "plugins/workflow"
           ]
         },
         {
@@ -75,6 +91,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/degraphql",
             "plugins/body-transformer"
           ]
         },
@@ -109,7 +126,8 @@
             "plugins/consumer-restriction",
             "plugins/csrf",
             "plugins/public-api",
-            "plugins/gm"
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -171,7 +189,8 @@
                 "plugins/file-logger",
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
-                "plugins/tencent-cloud-cls"
+                "plugins/tencent-cloud-cls",
+                "plugins/loki-logger"
               ]
             }
           ]
@@ -184,7 +203,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
@@ -258,6 +276,10 @@
     },
     {
       "type": "doc",
+      "id": "deployment-modes"
+    },
+    {
+      "type": "doc",
       "id": "FAQ"
     },
     {
@@ -296,15 +318,7 @@
         },
         {
           "type": "doc",
-          "id": "deployment-modes"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",
@@ -353,6 +367,10 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },

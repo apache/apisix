@@ -1,10 +1,10 @@
 ---
 title: serverless
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Serverless
-  - serverless
 description: This document contains information about the Apache APISIX serverless Plugin.
 ---
 
@@ -79,7 +79,7 @@ Prior to v2.12.0, the phase `before_proxy` was called `balancer`. This was updat
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 
@@ -116,9 +116,9 @@ curl -i http://127.0.0.1:9080/index.html
 
 You will find a message "serverless pre-function" and "match uri /index.html" in the error.log.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `serverless` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `serverless` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

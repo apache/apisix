@@ -98,7 +98,7 @@ local schema = {
             type = "array",
             description =
                 "you can use regex to allow specific origins when no credentials," ..
-                "for example use [.*\\.test.com] to allow a.test.com and b.test.com",
+                "for example use [.*\\.test.com$] to allow a.test.com and b.test.com",
             items = {
                 type = "string",
                 minLength = 1,
@@ -190,10 +190,6 @@ local function set_cors_headers(conf, ctx)
     end
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
-    if ctx.cors_allow_origins ~= "*" then
-        core.response.add_header("Vary", "Origin")
-    end
-
     core.response.set_header("Access-Control-Allow-Methods", allow_methods)
     core.response.set_header("Access-Control-Max-Age", conf.max_age)
     core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
@@ -241,10 +237,6 @@ local function process_with_allow_origins(allow_origins, ctx, req_origin,
 end
 
 local function process_with_allow_origins_by_regex(conf, ctx, req_origin)
-    if conf.allow_origins_by_regex == nil then
-        return
-    end
-
     if not conf.allow_origins_by_regex_rules_concat then
         local allow_origins_by_regex_rules = {}
         for i, re_rule in ipairs(conf.allow_origins_by_regex) do
@@ -297,16 +289,20 @@ end
 
 function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
-    -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
+    -- If allow_origins_by_regex is not nil, should be matched to it only
     local allow_origins
-    allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
-    if not match_origins(req_origin, allow_origins) then
+    if conf.allow_origins_by_regex == nil then
+        allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
+    else
         allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
     end
-    if not allow_origins then
+    if not match_origins(req_origin, allow_origins) then
         allow_origins = process_with_allow_origins_by_metadata(
                 conf.allow_origins_by_metadata, ctx, req_origin
         )
+    end
+    if conf.allow_origins ~= "*" then
+        core.response.add_header("Vary", "Origin")
     end
     if allow_origins then
         ctx.cors_allow_origins = allow_origins

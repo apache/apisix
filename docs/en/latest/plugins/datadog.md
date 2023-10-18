@@ -1,7 +1,7 @@
 ---
 title: datadog
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Datadog
@@ -113,7 +113,7 @@ If there are no suitable values for any particular tag, the tag will be omitted.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 Once you have your Datadog agent running, you can enable the Plugin as shown below:
 
@@ -135,9 +135,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 Now, requests to the endpoint `/hello` will generate metrics and push it to the DogStatsD server.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `datadog` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `datadog` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

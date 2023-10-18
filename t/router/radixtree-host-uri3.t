@@ -26,10 +26,12 @@ _EOC_
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    $block->set_value("yaml_config", $yaml_config);
-
     if (!$block->request) {
         $block->set_value("request", "GET /t");
+    }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
     }
 
     if (!$block->error_log && !$block->no_error_log &&

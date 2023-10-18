@@ -486,7 +486,7 @@ GET /grpc_plus?a=1&b=2
 --- response_body eval
 qr/\{"result":3\}/
 --- error_log eval
-qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003"/
+qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003"/
 
 
 

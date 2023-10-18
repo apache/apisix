@@ -1,7 +1,7 @@
 ---
 title: Plugin Config
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Plugin Config
 description: Plugin Config in Apache APISIX.
@@ -30,7 +30,7 @@ description: Plugin Config in Apache APISIX.
 
 Plugin Configs are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Route](./route.md).
 
-While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Consumer Group` > `Route` > `Plugin Config` > `Service`.
+While configuring the same plugin, only one copy of the configuration is valid. Please read the [plugin execution order](../terminology/plugin.md#plugins-execution-order) and [plugin merging order](../terminology/plugin.md#plugins-merging-precedence).
 
 ## Example
 

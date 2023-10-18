@@ -1,7 +1,8 @@
 ---
 title: key-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Key Auth
   - key-auth
@@ -49,7 +50,7 @@ Router 端：
 | ----------------- | ------ | ----- | ------ |----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。                                                                                                                                   |
 | query             | string | 否    | apikey | 设置我们从哪个 query string 获取 key，优先级低于 `header`。                                                                                                              |
-| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。 如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
+| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
 
 ## 启用插件
 
@@ -150,7 +151,7 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid API key in request"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `key-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
