@@ -35,4 +35,5 @@ jobs:
         # Issues with these labels will never be considered stale.
         only-labels: 'wait for update'
         stale-issue-label: 'no response'
+        exempt-issue-labels: "don't close"
         ascending: true
