@@ -217,6 +217,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - HONOR
 - Horizon Robotics
 - iQIYI
+- Lenovo
 - NASA JPL
 - Nayuki
 - OPPO
@@ -226,6 +227,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Travelsky
 - vivo
 - Sina Weibo
+- WeCity
 - WPS
 - XPENG
 - Zoom
