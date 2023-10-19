@@ -54,8 +54,10 @@ end
 
 local plugin_name = "prometheus"
 local default_export_uri = "/apisix/prometheus/metrics"
--- Default set of latency buckets, 1ms to 60s:
-local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+-- Default set of latency buckets, 1ms to 50min:
+local DEFAULT_BUCKETS = { 1, 3, 5, 10, 25, 50, 100, 250, 500, 1000, 1100, 1200, 1300, 1400, 1500,
+    1600, 1700, 1800, 1900, 2000, 2100, 2200, 2300, 2400, 2500, 3000, 3500,
+    4000, 4500, 5000, 10000, 60000, 120000, 300000, 3000000 }
 
 local metrics = {}
 
@@ -172,7 +174,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- no consumer in request.
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
-            {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
+            {"code", "method", "route", "matched_uri", "matched_host", "service", "consumer", "node",
             unpack(extra_labels("http_status"))})
 
     local buckets = DEFAULT_BUCKETS
@@ -182,7 +184,7 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
+        {"type", "method", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
         buckets)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
@@ -225,6 +227,7 @@ function _M.http_log(conf, ctx)
     local route_id = ""
     local balancer_ip = ctx.balancer_ip or ""
     local service_id = ""
+    local method_id = vars.request_method
     local consumer_name = ctx.consumer_name or ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
@@ -248,7 +251,7 @@ function _M.http_log(conf, ctx)
     end
 
     metrics.status:inc(1,
-        gen_arr(vars.status, route_id, matched_uri, matched_host,
+        gen_arr(vars.status, method_id, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip,
                 unpack(extra_labels("http_status", ctx))))
 
@@ -256,17 +259,17 @@ function _M.http_log(conf, ctx)
     local latency_extra_label_values = extra_labels("http_latency", ctx)
 
     metrics.latency:observe(latency,
-        gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
+        gen_arr("request", method_id, route_id, service_id, consumer_name, balancer_ip,
         unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
-            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
+            gen_arr("upstream", vars.status, method_id, route_id, service_id, consumer_name, balancer_ip,
             unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
-        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
+        gen_arr("apisix", vars.status, method_id, route_id, service_id, consumer_name, balancer_ip,
         unpack(latency_extra_label_values)))
 
     local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
