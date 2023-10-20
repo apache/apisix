@@ -217,7 +217,7 @@ function _M.rewrite(plugin_conf, ctx)
 
     if plugin_info.set_ngx_var then
         local span_context = request_span:context()
-        ngx_var.zipkin_context_traceparent = string_format("00-%s-%s-%02x", 
+        ngx_var.zipkin_context_traceparent = string_format("00-%s-%s-%02x",
                                              to_hex(span_context.trace_id),
                                              to_hex(span_context.span_id),
                                              span_context:get_baggage_item("x-b3-sampled"))
@@ -238,7 +238,7 @@ function _M.rewrite(plugin_conf, ctx)
     else
         ctx.opentracing.proxy_span = request_span:start_child_span("apisix.proxy",
                                                                    start_timestamp)
-    end   
+    end
 end
 
 function _M.access(conf, ctx)

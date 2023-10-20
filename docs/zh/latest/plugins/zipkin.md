@@ -259,8 +259,8 @@ plugin_attr:
     set_ngx_var: true
 ```
 
-你也可以在打印日志的时候带上trace_id
+你也可以在打印日志的时候带上 `trace_id`
 
 ```print error log
-log.error(ngx_var.zipkin_trace_id,"error message")
+log.error(ngx.ERR,ngx_var.zipkin_trace_id,"error message")
 ```

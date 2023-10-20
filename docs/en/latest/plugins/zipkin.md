@@ -262,5 +262,5 @@ plugin_attr:
 You can also include a trace_id when printing logs
 
 ```print error log
-log.error(ngx_var.zipkin_trace_id,"error message")
+log.error(ngx.ERR,ngx_var.zipkin_trace_id,"error message")
 ```
