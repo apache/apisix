@@ -42,5 +42,4 @@ if ! grep "set \$zipkin_span_id                      '';" conf/nginx.conf > /dev
     exit 1
 fi
 
-
 echo "passed: zipkin_set_ngx_var configuration is validated"

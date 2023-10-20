@@ -236,7 +236,6 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-
 ## Variables
 
 The following nginx variables are set by zipkin:
@@ -261,6 +260,7 @@ plugin_attr:
 ```
 
 You can also include a trace_id when printing logs
-```
+
+```print error log
 log.error(ngx_var.zipkin_trace_id,"error message")
 ```

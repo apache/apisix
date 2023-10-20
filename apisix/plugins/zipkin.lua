@@ -55,12 +55,7 @@ local schema = {
         span_version = {
             enum = {ZIPKIN_SPAN_VER_1, ZIPKIN_SPAN_VER_2},
             default = ZIPKIN_SPAN_VER_2,
-        },       
-        set_ngx_var = {
-            type = "boolean",
-            description = "set nginx variables",
-            default = false,
-          },
+        },
     },
     required = {"endpoint", "sample_ratio"}
 }
@@ -79,9 +74,6 @@ function _M.check_schema(conf)
 end
 
 local plugin_info  = plugin.plugin_attr(plugin_name) or {}
-
-
-
 
 
 local function create_tracer(conf,ctx)
@@ -219,17 +211,18 @@ function _M.rewrite(plugin_conf, ctx)
     ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
     if not ctx.opentracing_sample then
         request_span:set_baggage_item("x-b3-sampled","0")
-    else      
+    else
        request_span:set_baggage_item("x-b3-sampled","1")
     end
 
     if plugin_info.set_ngx_var then
         local span_context = request_span:context()
-        ngx_var.zipkin_context_traceparent = string_format("00-%s-%s-%02x", to_hex(span_context.trace_id),to_hex(span_context.span_id),
-            span_context:get_baggage_item("x-b3-sampled"))
+        ngx_var.zipkin_context_traceparent = string_format("00-%s-%s-%02x", 
+                                             to_hex(span_context.trace_id),
+                                             to_hex(span_context.span_id),
+                                             span_context:get_baggage_item("x-b3-sampled"))
         ngx_var.zipkin_trace_id = span_context.trace_id
         ngx_var.zipkin_span_id = span_context.span_id
-
     end
 
     if not ctx.opentracing_sample then
@@ -245,8 +238,7 @@ function _M.rewrite(plugin_conf, ctx)
     else
         ctx.opentracing.proxy_span = request_span:start_child_span("apisix.proxy",
                                                                    start_timestamp)
-    end
-    
+    end   
 end
 
 function _M.access(conf, ctx)

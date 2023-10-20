@@ -236,7 +236,6 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-
 ## 如何使用变量
 
 以下`nginx`变量是由`zipkin` 设置的。
@@ -259,5 +258,9 @@ plugin_attr:
   zipkin:
     set_ngx_var: true
 ```
-你也可以在打印日志的时候带上trace_id 
+
+你也可以在打印日志的时候带上trace_id
+
+```print error log
 log.error(ngx_var.zipkin_trace_id,"error message")
+```
