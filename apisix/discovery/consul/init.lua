@@ -32,6 +32,7 @@ local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local json_delay_encode  = core.json.delay_encode
 local ngx_worker_id      = ngx.worker.id
+local exiting            = ngx.worker.exiting
 local thread_spawn       = ngx.thread.spawn
 local thread_wait        = ngx.thread.wait
 local thread_kill        = ngx.thread.kill
@@ -276,7 +277,7 @@ end
 
 
 local function check_keepalive(consul_server, retry_delay)
-    if consul_server.keepalive then
+    if consul_server.keepalive and not exiting() then
         local ok, err = ngx_timer_at(0, _M.connect, consul_server, retry_delay)
         if not ok then
             log.error("create ngx_timer_at got error: ", err)
