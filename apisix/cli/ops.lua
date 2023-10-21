@@ -551,7 +551,7 @@ Please modify "admin_key" in conf/config.yaml .
     if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
         zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
     end
-    
+
     -- Using template.render
     local sys_conf = {
         lua_path = env.pkg_path_org,
