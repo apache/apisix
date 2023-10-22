@@ -147,6 +147,7 @@ success
 
             if code >= 300 then
                 ngx.status = code
+                return
             end
 
             local json_decode = require("toolkit.json").decode
@@ -210,6 +211,7 @@ success
 
             if code >= 300 then
                 ngx.status = code
+                return
             end
 
             local json_decode = require("toolkit.json").decode
