@@ -38,32 +38,32 @@ OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
-    export openssl_prefix=/usr/local/openresty/openssl111
+    export openssl_prefix=/usr/local/openssl
     export zlib_prefix=/usr/local/openresty/zlib
     export pcre_prefix=/usr/local/openresty/pcre
 
     export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
     export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
 
+    apt install -y build-essential
+    git clone https://github.com/openssl/openssl
+    cd openssl
+    ./Configure --prefix=$OPENSSL3_PREFIX/openssl-3.0 enable-fips
+    make install
+    bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
+    ldconfig
     if [ "$COMPILE_OPENSSL3" == "yes" ]; then
-        apt install -y build-essential
-        git clone https://github.com/openssl/openssl
-        cd openssl
-        ./Configure --prefix=$OPENSSL3_PREFIX/openssl-3.0 enable-fips
-        make install
-        bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
-        ldconfig
         $OPENSSL3_PREFIX/openssl-3.0/bin/openssl fipsinstall -out $OPENSSL3_PREFIX/openssl-3.0/ssl/fipsmodule.cnf -module $OPENSSL3_PREFIX/openssl-3.0/lib64/ossl-modules/fips.so
         sed -i 's@# .include fipsmodule.cnf@.include '"$OPENSSL3_PREFIX"'/openssl-3.0/ssl/fipsmodule.cnf@g; s/# \(fips = fips_sect\)/\1\nbase = base_sect\n\n[base_sect]\nactivate=1\n/g' $OPENSSL3_PREFIX/openssl-3.0/ssl/openssl.cnf
-        cd ..
     fi
+    cd ..
 
-    if [ "$USE_OPENSSL3" == "yes" ]; then
-        bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
-        ldconfig
-        export cc_opt="-I$OPENSSL3_PREFIX/openssl-3.0/include"
-        export ld_opt="-L$OPENSSL3_PREFIX/openssl-3.0/lib64 -Wl,-rpath,$OPENSSL3_PREFIX/openssl-3.0/lib64"
-    fi
+
+    bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
+    ldconfig
+    export cc_opt="-I$OPENSSL3_PREFIX/openssl-3.0/include"
+    export ld_opt="-L$OPENSSL3_PREFIX/openssl-3.0/lib64 -Wl,-rpath,$OPENSSL3_PREFIX/openssl-3.0/lib64"
+
 
     if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
         export openssl_prefix=/usr/local/tongsuo

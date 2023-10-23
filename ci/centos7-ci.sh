@@ -18,6 +18,18 @@
 
 . ./ci/common.sh
 
+install_openssl_3(){
+    # required for openssl 3.x config
+    cpanm IPC/Cmd.pm
+    git clone https://github.com/openssl/openssl
+    cd openssl
+    ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl
+    make -j $(nproc)
+    make install
+    ldconfig
+    cd ..
+}
+
 install_dependencies() {
     export_or_prefix
 
@@ -33,8 +45,8 @@ install_dependencies() {
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty-1.21.4.2 openresty-debug-1.21.4.2 openresty-openssl111-debug-devel pcre pcre-devel
-
+    yum install -y openresty-1.21.4.2 openresty-debug-1.21.4.2 pcre pcre-devel
+    install_openssl_3
     # install luarocks
     ./utils/linux-install-luarocks.sh
 

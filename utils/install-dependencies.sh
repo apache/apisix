@@ -46,7 +46,7 @@ function install_dependencies_with_aur() {
 function install_dependencies_with_yum() {
     sudo yum install -y yum-utils
 
-    local common_dep="curl wget git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
+    local common_dep="curl wget git gcc unzip pcre pcre-devel openldap-devel"
     if [ "${1}" == "centos" ]; then
         # add APISIX source
         local apisix_pkg=apache-apisix-repo-1.0-1.noarch
@@ -84,7 +84,7 @@ function install_dependencies_with_apt() {
     sudo apt-get update
 
     # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
+    sudo apt-get install -y git openresty curl make gcc libpcre3 libpcre3-dev libldap2-dev unzip
 }
 
 # Install dependencies on mac osx

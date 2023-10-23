@@ -21,7 +21,7 @@ export_or_prefix() {
     export OPENRESTY_PREFIX="/usr/local/openresty-debug"
     export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
-    export OPENSSL111_BIN=$OPENRESTY_PREFIX/openssl111/bin/openssl
+    export OPENSSL_BIN=/usr/bin/openssl
 }
 
 create_lua_deps() {
