@@ -128,7 +128,7 @@ passed
 
 === TEST 3: Successfully, access test.com with TLSv1.3
 --- exec
-echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_3 2>&1 | cat
+echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com 2>&1 | cat
 --- response_body eval
 qr/Server certificate/
 
@@ -219,7 +219,7 @@ GET /t
 
 === TEST 8: Successfully, access test.com with TLSv1.3
 --- exec
-echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_3 2>&1 | cat
+echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com 2>&1 | cat
 --- response_body eval
 qr/Server certificate/
 
@@ -235,7 +235,7 @@ qr/TLSv1\.2 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 === TEST 10: Successfully, access test2.com with TLSv1.3
 --- exec
-echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test2.com -tls1_3 2>&1 | cat
+echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test2.com 2>&1 | cat
 --- response_body eval
 qr/Server certificate/
 
@@ -293,6 +293,6 @@ qr/Server certificate/
 
 === TEST 14: Failed, access test.com with TLSv1.3
 --- exec
-echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_3 2>&1 | cat
+echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com 2>&1 | cat
 --- response_body eval
 qr/tlsv1 alert/
