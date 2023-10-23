@@ -117,7 +117,8 @@ function _M.access(conf, ctx)
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout)
-
+    local client_body_reader, err = httpc:get_client_body_reader()
+    params.body=client_body_reader
     local res, err = httpc:request_uri(conf.uri, params)
     if not res and conf.allow_degradation then
         return
