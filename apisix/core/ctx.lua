@@ -260,7 +260,9 @@ do
 
             elseif core_str.has_prefix(key, "post_arg_") then
                 -- only match default post form
-                if request.header(nil, "Content-Type") == "application/x-www-form-urlencoded" then
+                local content_type = request.header(nil, "Content-Type")
+                if content_type ~= nil and core_str.has_prefix(content_type,
+                        "application/x-www-form-urlencoded") then
                     local arg_key = sub_str(key, 10)
                     local args = request.get_post_args()[arg_key]
                     if args then
