@@ -460,3 +460,78 @@ GET /server_port?name=jack
 --- error_log eval
 qr/event timer add: \d+: 12345000:\d+/
 --- error_code: 502
+
+
+
+=== TEST 9: set upstream for post_arg_id test case
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/hello",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                match = { {
+                                    vars = { { "post_arg_id", "==", "1" } }
+                                } },
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            name = "upstream_A",
+                                            type = "roundrobin",
+                                            nodes = {
+                                                ["127.0.0.1:1970"] = 1
+                                            }
+                                        },
+                                        weight = 1
+                                    }
+                               }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1974"] = 1
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: post_arg_id = 1 without content-type charset
+--- request
+POST /hello
+id=1
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- response_body
+1970
+
+
+
+=== TEST 11: post_arg_id = 1 with content-type charset
+--- request
+POST /hello
+id=1
+--- more_headers
+Content-Type: application/x-www-form-urlencoded;charset=UTF-8
+--- response_body
+1970
