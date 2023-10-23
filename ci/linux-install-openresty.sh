@@ -47,6 +47,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
 
     apt install -y build-essential
     wget https://www.openssl.org/source/openssl-3.1.3.tar.gz
+    tar xvf openssl-*.tar.gz
     cd openssl-*/
     ./Configure --prefix=$OPENSSL3_PREFIX/openssl-3.0 enable-fips
     make install
