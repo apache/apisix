@@ -57,13 +57,13 @@ ifdef ENV_LUAROCKS_SERVER
 endif
 
 # Execute only in the presence of ENV_NGINX_EXEC to avoid unexpected error output
-ifneq ($(ENV_NGINX_EXEC), )
-	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
-	# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
-	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl111) && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl111)
-	endif
-endif
+# ifneq ($(ENV_NGINX_EXEC), )
+# 	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
+# 	# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
+# 	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl111) && echo -n yes), yes)
+# 		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl111)
+# 	endif
+# endif
 
 # ENV patch for darwin
 ifeq ($(ENV_OS_NAME), darwin)
