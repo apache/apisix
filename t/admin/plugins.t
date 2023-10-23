@@ -75,6 +75,7 @@ csrf
 uri-blocker
 request-validation
 chaitin-waf
+multi-auth
 openid-connect
 cas-auth
 authz-casbin
