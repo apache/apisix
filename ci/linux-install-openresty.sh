@@ -46,8 +46,8 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
 
     apt install -y build-essential
-    git clone https://github.com/openssl/openssl
-    cd openssl
+    wget https://www.openssl.org/source/openssl-3.1.3.tar.gz
+    cd openssl-*/
     ./Configure --prefix=$OPENSSL3_PREFIX/openssl-3.0 enable-fips
     make install
     bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
