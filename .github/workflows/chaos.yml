@@ -2,7 +2,7 @@ name: Chaos Test
 
 on:
   pull_request:
-    branches: [master, 'release/**']
+    branches: [master, 'release/**', "openssl3"]
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
