@@ -72,7 +72,7 @@ local etcd_schema = {
             description = "etcd connection timeout in seconds",
         },
     },
-    required = { "prefix", "host" }
+    required = { "host" }
 }
 
 local admin_schema = {
