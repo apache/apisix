@@ -73,7 +73,7 @@ script() {
     set_coredns
 
     ./t/grpc_server_example/grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
+        -grpc-address :10051 -grpcs-address :10052 -grpcs-mtls-address :10053 -grpc-http-address :10054 \
         -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
         &
 
@@ -83,7 +83,7 @@ script() {
             echo "failed to start grpc_server_example in time"
             exit 1
         fi
-        nc -zv 127.0.0.1 50051 && break
+        nc -zv 127.0.0.1 10051 && break
         sleep 1
     done
 

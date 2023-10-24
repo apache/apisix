@@ -53,8 +53,8 @@ import (
 )
 
 var (
-	grpcAddr      = ":50051"
-	grpcsAddr     = ":50052"
+	grpcAddr      = ":10051"
+	grpcsAddr     = ":10052"
 	grpcsMtlsAddr string
 	grpcHTTPAddr  string
 
