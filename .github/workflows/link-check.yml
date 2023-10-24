@@ -11,13 +11,11 @@ on:
     paths:
       - '**/*.md'
       - '**/link-check.yml'
-      - '.github/workflows/link-check.yml'
   pull_request:
     branches: [master, "release/**"]
     paths:
       - '**/*.md'
       - '**/link-check.yml'
-      - '.github/workflows/link-check.yml'
 
 permissions:
   contents: read
