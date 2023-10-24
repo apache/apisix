@@ -60,8 +60,7 @@ local etcd_schema = {
         host = {
             type = "array",
             items = {
-                type = "string",
-                pattern = [[^https?://]]
+                type = "string"
             },
             minItems = 1,
         },
