@@ -144,7 +144,7 @@ qr/TLSv1\.2 \(IN\), TLS handshake, Server hello(?s).*hello world/
 
 === TEST 5: Successfully, access test.com with TLSv1.1
 --- exec
-echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_1 2>&1 | cat
+echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com 2>&1 | cat
 --- response_body eval
 qr/Server certificate/
 
@@ -285,7 +285,7 @@ passed
 
 === TEST 13: Successfully, access test.com with TLSv1.1
 --- exec
-echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com -tls1_1 2>&1 | cat
+echo -n "Q"  | $OPENSSL_BIN s_client -connect 127.0.0.1:1994 -servername test.com 2>&1 | cat
 --- response_body eval
 qr/Server certificate/
 
