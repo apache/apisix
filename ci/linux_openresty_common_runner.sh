@@ -72,20 +72,7 @@ script() {
 
     set_coredns
 
-    ./t/grpc_server_example/grpc_server_example \
-        -grpc-address :10051 -grpcs-address :10052 -grpcs-mtls-address :10053 -grpc-http-address :10054 \
-        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
-        &
-
-    # ensure grpc server example is already started
-    for (( i = 0; i <= 100; i++ )); do
-        if [[ "$i" -eq 100 ]]; then
-            echo "failed to start grpc_server_example in time"
-            exit 1
-        fi
-        nc -zv 127.0.0.1 10051 && break
-        sleep 1
-    done
+    start_grpc_server_example
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
