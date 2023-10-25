@@ -5,11 +5,13 @@ on:
     paths:
       - "docs/**"
       - "**/*.md"
+      - ".github/workflows/doc-lint.yml"
   pull_request:
     branches: [master, "release/**"]
     paths:
       - "docs/**"
       - "**/*.md"
+      - ".github/workflows/doc-lint.yml"
 
 permissions:
   contents: read
