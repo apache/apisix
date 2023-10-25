@@ -751,7 +751,7 @@ $/
                     scheme = "",
                     type = "roundrobin",
                     nodes = {
-                        ["127.0.0.1:50054"] = 1,
+                        ["127.0.0.1:10054"] = 1,
                     },
                     keepalive_pool = {
                         size = 4

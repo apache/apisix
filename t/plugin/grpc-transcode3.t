@@ -92,7 +92,7 @@ __DATA__
                         "scheme": "grpc",
                             "type": "roundrobin",
                             "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -172,7 +172,7 @@ Content-Type: application/json
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -243,7 +243,7 @@ qr/error/
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -316,7 +316,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -389,7 +389,7 @@ grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -473,7 +473,7 @@ transform response error: failed to call pb.decode to decode details in grpc-sta
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
