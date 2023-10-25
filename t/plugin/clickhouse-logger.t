@@ -248,7 +248,10 @@ GET /opentracing
 --- error_log
 sending a batch logs to http://127.0.0.1:1980/clickhouse_logger_server
 sending a batch logs to http://127.0.0.1:10420/clickhouse-logger/test1
-=== TEST 7: get log
+
+
+
+=== TEST 8: get log
 --- exec
 echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary @-
@@ -257,7 +260,7 @@ echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary 
 
 
 
-=== TEST 8: use single clickhouse server
+=== TEST 9: use single clickhouse server
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +298,7 @@ passed
 
 
 
-=== TEST 9: hit route
+=== TEST 10: hit route
 --- request
 GET /opentracing
 --- error_code: 200
@@ -303,7 +306,7 @@ GET /opentracing
 
 
 
-=== TEST 10: get log
+=== TEST 11: get log
 --- exec
 echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 --- response_body_like
