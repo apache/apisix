@@ -1,7 +1,8 @@
 ---
 title: key-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Key Auth
   - key-auth
@@ -51,7 +52,7 @@ For Route:
 | query  | string | optional    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
 | hide_credentials   | bool | optional    | false        |       | Apache APISIX will pass the request header or query string that contains the authentication information to the Upstream if `hide_credentials` is `false`. Otherwise the authentication information will be removed before proxying.|
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to create a Consumer object with an authentication key and configure your Route to authenticate requests.
 
@@ -144,9 +145,9 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid API key in request"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `key-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `key-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

@@ -57,4 +57,4 @@ We should keep security in mind, and validate the input from the client before u
 
 As the maintainer:
 We should keep security in mind, and review the code line by line.
-We are open to the discussion from the security researchers.
+We are open to discussion from the security researchers.

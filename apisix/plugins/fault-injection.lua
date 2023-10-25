@@ -20,6 +20,9 @@ local expr = require("resty.expr.v1")
 local sleep = core.sleep
 local random = math.random
 local ipairs = ipairs
+local ngx = ngx
+local pairs = pairs
+local type = type
 
 local plugin_name   = "fault-injection"
 
@@ -32,6 +35,18 @@ local schema = {
             properties = {
                 http_status = {type = "integer", minimum = 200},
                 body = {type = "string", minLength = 0},
+                headers = {
+                    type = "object",
+                    minProperties = 1,
+                    patternProperties = {
+                        ["^[^:]+$"] = {
+                            oneOf = {
+                                { type = "string" },
+                                { type = "number" }
+                            }
+                        }
+                    }
+                },
                 percentage = {type = "integer", minimum = 0, maximum = 100},
                 vars = {
                     type = "array",
@@ -144,6 +159,14 @@ function _M.rewrite(conf, ctx)
     end
 
     if conf.abort and sample_hit(conf.abort.percentage) and abort_vars then
+        if conf.abort.headers then
+            for header_name, header_value in pairs(conf.abort.headers) do
+                if type(header_value) == "string" then
+                    header_value = core.utils.resolve_var(header_value, ctx.var)
+                end
+                ngx.header[header_name] = header_value
+            end
+        end
         return conf.abort.http_status, core.utils.resolve_var(conf.abort.body, ctx.var)
     end
 end

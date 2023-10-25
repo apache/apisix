@@ -1,7 +1,8 @@
 ---
 title: jwt-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - JWT Auth
   - jwt-auth
@@ -59,7 +60,7 @@ For Route:
 | cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
 | hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
 
-You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://www.vaultproject.io/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
+You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
 ## API
 
@@ -71,7 +72,7 @@ You may need to use the [public-api](public-api.md) plugin to expose this endpoi
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to create a Consumer object with the JWT token and configure your Route to use JWT authentication.
 
@@ -248,9 +249,9 @@ Accept-Ranges: bytes
 ...
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `jwt-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `jwt-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

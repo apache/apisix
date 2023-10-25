@@ -1,7 +1,7 @@
 ---
 title: aws-lambda
 keywords:
-  - APISIX
+  - Apache APISIX
   - Plugin
   - AWS Lambda
   - aws-lambda
@@ -31,7 +31,7 @@ description: This document contains information about the Apache APISIX aws-lamb
 
 The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) as a dynamic upstream to proxy all requests for a particular URI to the AWS Cloud.
 
-When enabled, the Plugin terminates the ongoing request to the configured URI and initiates a new request to the AWS Lambda Gateway URI on behalf of the client with configured authorization details, request headers, body and parameters (all three passed from the original request). It returns back the response with headers, status code and the body to the client that initiated the request with APISIX.
+When enabled, the Plugin terminates the ongoing request to the configured URI and initiates a new request to the AWS Lambda Gateway URI on behalf of the client with configured authorization details, request headers, body and parameters (all three passed from the original request). It returns the response with headers, status code and the body to the client that initiated the request with APISIX.
 
 This Plugin supports authorization via AWS API key and AWS IAM secrets.
 
@@ -58,7 +58,7 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets.
 | aws_region | string | False    | "us-east-1"   | AWS region where the request is being sent.                                         |
 | service    | string | False    | "execute-api" | The service that is receiving the request. For HTTP trigger, it is `"execute-api"`. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can configure the Plugin on a specific Route:
 
@@ -119,7 +119,7 @@ server: APISIX/2.10.2
 "Hello, APISIX!"
 ```
 
-Similarly the function can be triggered via AWS API Gateway by using AWS IAM permissions for authorization. The Plugin includes authentication signatures in HTTP calls via AWS v4 request signing. The example below shows this method:
+Similarly, the function can be triggered via AWS API Gateway by using AWS IAM permissions for authorization. The Plugin includes authentication signatures in HTTP calls via AWS v4 request signing. The example below shows this method:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -148,7 +148,7 @@ This approach assumes that you have already an IAM user with programmatic access
 
 ### Configuring path forwarding
 
-The `aws-lambda` Plugins also supports URL path forwarding while proxying requests to the AWS upstream. Extensions to the base request path gets appended to the `function_uri` specified in the Plugin configuration.
+The `aws-lambda` Plugin also supports URL path forwarding while proxying requests to the AWS upstream. Extensions to the base request path gets appended to the `function_uri` specified in the Plugin configuration.
 
 :::info IMPORTANT
 
@@ -194,9 +194,9 @@ Server: APISIX/2.11.0
 "Hello, APISIX!"
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `aws-lambda` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `aws-lambda` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

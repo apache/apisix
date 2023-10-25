@@ -1,7 +1,7 @@
 ---
 title: Architecture
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - APISIX architecture
 description: Architecture of Apache APISIX—the Cloud Native API Gateway.

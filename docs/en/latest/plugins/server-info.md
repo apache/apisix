@@ -1,7 +1,8 @@
 ---
 title: server-info
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Server info
   - server-info
@@ -49,7 +50,7 @@ None.
 
 This Plugin exposes the endpoint `/v1/server_info` to the [Control API](../control-api.md)
 
-## Enabling the Plugin
+## Enable Plugin
 
 Add `server-info` to the Plugin list in your configuration file (`conf/config.yaml`):
 
@@ -101,9 +102,9 @@ You can also view the server info report through the [APISIX Dashboard](/docs/da
 
 :::
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the Plugin, you can remove `server-info` from the list of Plugins in your configuration file:
+To remove the Plugin, you can remove `server-info` from the list of Plugins in your configuration file:
 
 ```yaml title="conf/config.yaml"
 plugins:

@@ -1,7 +1,8 @@
 ---
 title: ext-plugin-pre-req
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - ext-plugin-pre-req
 description: This document contains information about the Apache APISIX ext-plugin-pre-req Plugin.
@@ -45,7 +46,7 @@ Execution of External Plugins will affect the behavior of the current request.
 | conf              | array   | False    |         | [{"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}] | List of Plugins and their configurations to be executed on the Plugin Runner.                                          |
 | allow_degradation | boolean | False    | false   |                                                                 | Sets Plugin degradation when the Plugin Runner is not available. When set to `true`, requests are allowed to continue. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `ext-plugin-pre-req` Plugin on a specific Route:
 
@@ -79,9 +80,9 @@ curl -i http://127.0.0.1:9080/index.html
 
 This will reach the configured Plugin Runner and the `ext-plugin-A` will be executed.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `ext-plugin-pre-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `ext-plugin-pre-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

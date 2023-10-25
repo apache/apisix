@@ -27,7 +27,7 @@ jobs:
 
     steps:
     - name: Check out code
-      uses: actions/checkout@v3.2.0
+      uses: actions/checkout@v4
       with:
         submodules: recursive
 
@@ -69,6 +69,7 @@ jobs:
 
     - name: run tests
       run: |
+        export APISIX_FUZZING_PWD=$PWD
         python $PWD/t/fuzzing/simpleroute_test.py
         python $PWD/t/fuzzing/serverless_route_test.py
         python $PWD/t/fuzzing/vars_route_test.py

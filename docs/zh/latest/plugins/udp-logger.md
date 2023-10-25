@@ -40,6 +40,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 | host             | string  | 是     |              |         | UDP 服务的 IP 地址或主机名。                       |
 | port             | integer | 是     |              | [0,...] | 目标端口。                                         |
 | timeout          | integer | 否     | 1000         | [1,...] | 发送数据超时间。                                   |
+| log_format       | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | name             | string  | 否     | "udp logger" |         | 用于识别批处理器。                                 |
 | include_req_body | boolean | 否     |              |         | 当设置为 `true` 时，日志中将包含请求体。           |
 
@@ -117,9 +118,9 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

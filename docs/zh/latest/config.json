@@ -1,9 +1,16 @@
 {
-  "version": "3.1.0",
+  "version": "3.6.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
     },
     {
       "type": "doc",
@@ -56,9 +63,10 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp",
+            "plugins/workflow"
           ]
         },
         {
@@ -103,7 +111,8 @@
             "plugins/consumer-restriction",
             "plugins/csrf",
             "plugins/public-api",
-            "plugins/gm"
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -165,7 +174,8 @@
                 "plugins/file-logger",
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
-                "plugins/tencent-cloud-cls"
+                "plugins/tencent-cloud-cls",
+                "plugins/loki-logger"
               ]
             }
           ]
@@ -178,7 +188,6 @@
             "plugins/azure-functions",
             "plugins/openwhisk",
             "plugins/aws-lambda",
-            "plugins/workflow",
             "plugins/openfunction"
           ]
         },
@@ -213,6 +222,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "support-fips-in-apisix"
         },
         {
           "type": "doc",
@@ -258,10 +271,6 @@
         },
         {
           "type": "doc",
-          "id": "stand-alone"
-        },
-        {
-          "type": "doc",
           "id": "stream-proxy"
         },
         {
@@ -303,6 +312,10 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },

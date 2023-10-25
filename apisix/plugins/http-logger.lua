@@ -33,6 +33,7 @@ local schema = {
         uri = core.schema.uri_def,
         auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
@@ -121,7 +122,7 @@ local function send_http_data(conf, log_message)
 
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
-        path = url_decoded.path,
+        path = #url_decoded.path ~= 0 and url_decoded.path or "/",
         query = url_decoded.query,
         body = log_message,
         headers = {

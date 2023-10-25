@@ -183,13 +183,11 @@ passed
                         "plugins": {
                             "clickhouse-logger": {
                                 "user": "default",
-                                "password": "a",
+                                "password": "",
                                 "database": "default",
-                                "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:1980/clickhouse_logger_server",
-                                                  "http://127.0.0.1:10420/clickhouse-logger/test1"],
-                                "batch_max_size":1,
-                                "inactive_timeout":1
+                                "logtable": "test",
+                                "endpoint_addrs": ["http://127.0.0.1:8123",
+                                                  "http://127.0.0.1:8124"]
                             }
                         },
                         "upstream": {
@@ -214,16 +212,10 @@ passed
 
 
 
-=== TEST 6: access local server
+=== TEST 6: hit route
 --- request
 GET /opentracing
---- response_body
-opentracing
---- error_log
-clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:a
-clickhouse headers: x-clickhouse-user:default
-clickhouse headers: x-clickhouse-database:default
+--- error_code: 200
 --- wait: 5
 
 
@@ -256,3 +248,63 @@ clickhouse headers: x-clickhouse-database:default
 --- error_log
 sending a batch logs to http://127.0.0.1:1980/clickhouse_logger_server
 sending a batch logs to http://127.0.0.1:10420/clickhouse-logger/test1
+=== TEST 7: get log
+--- exec
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
+echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary @-
+--- response_body_like
+.*127.0.0.1.*1.*
+
+
+
+=== TEST 8: use single clickhouse server
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "clickhouse-logger": {
+                                "user": "default",
+                                "password": "",
+                                "database": "default",
+                                "logtable": "test",
+                                "endpoint_addr": "http://127.0.0.1:8123"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: hit route
+--- request
+GET /opentracing
+--- error_code: 200
+--- wait: 5
+
+
+
+=== TEST 10: get log
+--- exec
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
+--- response_body_like
+.*127.0.0.1.*1.*

@@ -205,7 +205,7 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "httpbin.org:8080": 1,
+                        "apisix.com:8080": 1,
                         "test.com:8080": 1
                     },
                     "type": "roundrobin",
@@ -489,26 +489,13 @@ passed
             ngx.say(body)
         }
     }
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/
 
 
 
-=== TEST 15: delete test upstream
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/up_create_update_time', ngx.HTTP_DELETE)
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 16: patch upstream with sub_path, the data is number
+=== TEST 15: patch upstream with sub_path, the data is number
 --- config
     location /t {
         content_by_lua_block {
@@ -551,7 +538,7 @@ passed
 
 
 
-=== TEST 17: set upstream(id: 1)
+=== TEST 16: set upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -575,7 +562,7 @@ passed
 
 
 
-=== TEST 18: set service(id: 1)
+=== TEST 17: set service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -598,7 +585,7 @@ passed
 
 
 
-=== TEST 19: set route(id: 1)
+=== TEST 18: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -622,7 +609,7 @@ passed
 
 
 
-=== TEST 20: delete upstream(id: 1)
+=== TEST 19: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -637,7 +624,7 @@ passed
 
 
 
-=== TEST 21: delete route(id: 1)
+=== TEST 20: delete route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -652,7 +639,7 @@ passed
 
 
 
-=== TEST 22: delete service(id: 1)
+=== TEST 21: delete service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -667,7 +654,7 @@ passed
 
 
 
-=== TEST 23: delete upstream(id: 1)
+=== TEST 22: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {

@@ -37,13 +37,13 @@ description: 本文介绍了如何通过 Apache APISIX 发布服务和路由。
 
 [Upstream](../terminology/upstream.md) 也称为上游，上游是对虚拟主机的抽象，即应用层服务或节点的抽象。
 
-上游的作用是按照配置规则对服务节点进行负载均衡，它的地址信息可以直接配置到路由或服务上。当多个路由或服务引用同一个上游时，可以通过创建上游对象，在路由或服务中使用上游的 ID 方式引用上游，减轻维护压力。
+上游的作用是按照配置规则对服务节点进行负载均衡，它的地址信息可以直接配置到路由或服务上。当多个路由或服务引用同一个上游时，可以通过创建上游对象，在路由或服务中使用上游 ID 的方式引用上游，减轻维护压力。
 
 ### 路由
 
 [Route](../terminology/route.md) 也称为路由，是 APISIX 中最基础和最核心的资源对象。
 
-APISIX 可以通过路由定义规则来匹配客户端请求，根据匹配结果加载并执行相应的[插件](./terminology/plugin.md)，最后把请求转发给到指定的上游服务。路由中主要包含三部分内容：匹配规则、插件配置和上游信息。
+APISIX 可以通过路由定义规则来匹配客户端请求，根据匹配结果加载并执行相应的[插件](../terminology/plugin.md)，最后把请求转发给到指定的上游服务。路由中主要包含三部分内容：匹配规则、插件配置和上游信息。
 
 ### 服务
 
@@ -114,13 +114,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
 在创建完成路由后，你可以通过以下命令测试路由是否正常：
 
 ```
-curl -i -X GET "http://127.0.0.1:9080/get?foo1=bar1&foo2=bar2" -H "Host: example.com"
+curl -i -X GET "http://127.0.0.1:9080/anything/get?foo1=bar1&foo2=bar2" -H "Host: example.com"
 ```
 
-该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/foo?arg=10`。
+该请求将被 APISIX 转发到 `http://httpbin.org:80/anything/get?foo1=bar1&foo2=bar2`。
 
 ## 更多教程
 
 你可以查看[保护 API](./protect-api.md) 来保护你的 API。
 
-接下来，你可以通过 APISIX 的一些[插件](./plugins/batch-requests.md)，实现更多功能。
+接下来，你可以通过 APISIX 的一些[插件](../plugins/batch-requests.md)，实现更多功能。

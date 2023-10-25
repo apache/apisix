@@ -1,7 +1,8 @@
 ---
 title: opa
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Open Policy Agent
   - opa
@@ -298,7 +299,7 @@ curl -X GET 127.0.0.1:9080/get
 }
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `opa` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

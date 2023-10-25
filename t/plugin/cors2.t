@@ -89,3 +89,88 @@ __DATA__
     }
 --- response_body
 done
+
+
+
+=== TEST 2: set route ( regex specified and allow_origins is default value )
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "*",
+                            "allow_methods": "GET,POST",
+                            "allow_headers": "request-h",
+                            "expose_headers": "expose-h",
+                            "max_age": 10,
+                            "allow_origins_by_regex":[".*\\.domain.com$"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 3: regex specified not match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://sub.test.com
+resp-vary: Via
+--- response_headers
+Access-Control-Allow-Origin:
+Access-Control-Allow-Methods:
+Access-Control-Allow-Headers:
+Access-Control-Expose-Headers:
+Access-Control-Max-Age:
+Access-Control-Allow-Credentials:
+
+
+
+=== TEST 4: regex no origin specified
+--- request
+GET /hello HTTP/1.1
+--- response_headers
+Access-Control-Allow-Origin:
+Access-Control-Allow-Methods:
+Access-Control-Allow-Headers:
+Access-Control-Expose-Headers:
+Access-Control-Max-Age:
+Access-Control-Allow-Credentials:
+
+
+
+=== TEST 5: regex specified match
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://sub.domain.com
+resp-vary: Via
+--- response_headers
+Access-Control-Allow-Origin: http://sub.domain.com
+Vary: Via
+Access-Control-Allow-Methods: GET,POST
+Access-Control-Allow-Headers: request-h
+Access-Control-Expose-Headers: expose-h
+Access-Control-Max-Age: 10

@@ -223,7 +223,7 @@ failed to connect to UDP server: host[312.0.0.1] port[2000]
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 2001,
+                                "port": 2002,
                                 "tls": false,
                                 "batch_max_size": 1
                             }
@@ -267,7 +267,7 @@ passedopentracing
 qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:2000
-sending a batch logs to 127.0.0.1:2001
+sending a batch logs to 127.0.0.1:2002
 
 
 
@@ -298,7 +298,7 @@ GET /t
 
 
 
-=== TEST 9: add plugin
+=== TEST 9: configure plugin and access route /hello
 --- config
     location /t {
         content_by_lua_block {
@@ -309,7 +309,7 @@ GET /t
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 8125,
+                                "port": 8127,
                                 "tls": false,
                                 "batch_max_size": 1,
                                 "inactive_timeout": 1
@@ -336,17 +336,26 @@ GET /t
                  [[{
                         "log_format": {
                             "host": "$host",
+                            "case name": "plugin_metadata",
                             "@timestamp": "$time_iso8601",
                             "client_ip": "$remote_addr"
                         }
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
                 return
             end
+
             ngx.say(body)
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
         }
     }
 --- request
@@ -356,40 +365,83 @@ passed
 
 
 
-=== TEST 10: access
---- stream_conf_enable
---- extra_stream_config
-    server {
-        listen 8125 udp;
+=== TEST 10: check if log exists to confirm if logging server was hit
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*plugin_metadata.*/
+
+
+
+=== TEST 11: configure plugin and access route /hello
+--- config
+    location /t {
         content_by_lua_block {
-            local decode = require("toolkit.json").decode
-            ngx.log(ngx.WARN, "the mock backend is hit")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8127,
+                                "tls": false,
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
 
-            local sock, err = ngx.req.socket(true)
-            if not sock then
-                ngx.log(ngx.ERR, "failed to get the request socket: ", err)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
                 return
             end
 
-            local data, err = sock:receive()
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "case name": "logger format in plugin",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
 
-            if not data then
-                if err and err ~= "no more data" then
-                    ngx.log(ngx.ERR, "socket error, returning: ", err)
-                end
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
                 return
             end
 
-            data = decode(data)
-            assert(data.client_ip == "127.0.0.1")
+            ngx.say(body)
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
         }
     }
 --- request
-GET /hello
+GET /t
 --- response_body
-hello world
---- wait: 2
---- error_log
-the mock backend is hit
---- no_error_log
-[error]
+passed
+
+
+
+=== TEST 12: check log format from logging server
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*logger format in plugin.*/

@@ -1,7 +1,8 @@
 ---
 title: hmac-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - HMAC Authentication
   - hmac-auth
@@ -49,7 +50,7 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
-## Enabling the Plugin
+## Enable Plugin
 
 First we enable the Plugin on a Consumer object as shown below:
 
@@ -356,9 +357,9 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `hmac-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `hmac-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

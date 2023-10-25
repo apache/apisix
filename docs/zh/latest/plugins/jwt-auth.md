@@ -1,7 +1,8 @@
 ---
 title: jwt-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - JWT Auth
   - jwt-auth
@@ -59,7 +60,7 @@ Route 端：
 | cookie | string | 否     | jwt           | 设置我们从哪个 cookie 获取 token，优先级低于 query。        |
 | hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将含有认证信息的 header\query\cookie 传递给 Upstream。|
 
-您可以使用 [HashiCorp Vault](https://www.vaultproject.io/) 实施 `jwt-auth`，以从其[加密的 KV 引擎](https://www.vaultproject.io/docs/secrets/kv) 使用 [APISIX Secret](../terminology/secret.md) 资源。
+您可以使用 [HashiCorp Vault](https://www.vaultproject.io/) 实施 `jwt-auth`，以从其[加密的 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv) 使用 [APISIX Secret](../terminology/secret.md) 资源。
 
 ## 接口
 
@@ -251,7 +252,7 @@ Accept-Ranges: bytes
 ...
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `jwt-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

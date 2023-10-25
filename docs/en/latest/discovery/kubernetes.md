@@ -32,17 +32,11 @@ description: This article introduce how to perform service discovery based on Ku
 
 The [_Kubernetes_](https://kubernetes.io/) service discovery [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts/) real-time changes of [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service/) resources, then store theirs value into `ngx.shared.DICT`.
 
-Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
-
-:::note
-
-use kubernetes discovery in L4 require OpenResty version >= 1.19.9.1
-
-:::
+Discovery also provides a node query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
 ## How To Use
 
-Kubernetes service discovery both support single-cluster and multi-cluster mode, applicable to the case where the service is distributed in a single or multiple Kubernetes clusters.
+Kubernetes service discovery both support single-cluster and multi-cluster modes, applicable to the case where the service is distributed in single or multiple Kubernetes clusters.
 
 ### Single-Cluster Mode Configuration
 
@@ -122,7 +116,7 @@ discovery:
 
 ### Single-Cluster Mode Query Interface
 
-The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
+The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
 **function:**
  nodes(service_name)
@@ -135,7 +129,7 @@ The Kubernetes service discovery provides a query interface in accordance with t
 
   + name: The name of the Kubernetes endpoints
 
-  + portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
+  + portName: The `ports.name` value in the Kubernetes endpoints, if there is no `ports.name`, use `targetPort`, `port` instead. If `ports.name` exists, then port number cannot be used.
 
 **return value:**
   if the Kubernetes endpoints value is as follows:
@@ -232,7 +226,7 @@ Multi-Kubernetes service discovery does not fill default values for service and 
 
 ### Multi-Cluster Mode Query Interface
 
-The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](https://github.com/apache/apisix/blob/master/docs/en/latest/discovery.md).
+The Kubernetes service discovery provides a query interface in accordance with the [_APISIX Discovery Specification_](../discovery.md).
 
 **function:**
 nodes(service_name)
@@ -247,7 +241,7 @@ service_name should match pattern: _[id]/[namespace]/[name]:[portName]_
 
 + name: The name of the Kubernetes endpoints
 
-+ portName: The ports.name value in the Kubernetes endpoints, if there is no ports.name, use targetPort, port instead
++ portName: The `ports.name` value in the Kubernetes endpoints, if there is no `ports.name`, use `targetPort`, `port` instead. If `ports.name` exists, then port number cannot be used.
 
 **return value:**
 if the Kubernetes endpoints value is as follows:

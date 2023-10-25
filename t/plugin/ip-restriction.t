@@ -625,7 +625,7 @@ GET /hello
 
 === TEST 29: set whitelist and user-defined message
 --- config
-    location /t {
+location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
