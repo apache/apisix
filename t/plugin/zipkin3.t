@@ -73,7 +73,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: add plugin metadata
 --- config
     location /t {
@@ -128,5 +127,3 @@ plugin_attr:
 GET /echo
 --- error_log
 ngx_var.zipkin_context_traceparent is empty
-
-
