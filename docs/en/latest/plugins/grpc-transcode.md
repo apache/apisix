@@ -238,7 +238,7 @@ If the gRPC service returns an error, there may be a `grpc-status-details-bin` f
 Upload the proto file：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -260,7 +260,7 @@ curl http://127.0.0.1:9080/apisix/admin/protos/1 \
 Enable the `grpc-transcode` plugin，and set the option `show_status_in_body` to `true`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -308,7 +308,7 @@ Server: APISIX web server
 Note that there is an undecoded field in the return body. If you need to decode the field, you need to add the `message type` of the field in the uploaded proto file.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -335,7 +335,7 @@ curl http://127.0.0.1:9080/apisix/admin/protos/1 \
 Also configure the option `status_detail_type` to `helloworld.ErrorDetail`.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
