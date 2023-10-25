@@ -239,7 +239,7 @@ Trailer: grpc-message
 上传 proto 文件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -261,7 +261,7 @@ curl http://127.0.0.1:9080/apisix/admin/protos/1 \
 启用 `grpc-transcode` 插件，并设置选项 `show_status_in_body` 为 `true`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -309,7 +309,7 @@ Server: APISIX web server
 注意返回体中还存在未解码的字段，如果需要解码该字段，需要在上传的 proto 文件中加上该字段对应的 `message type`。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -336,7 +336,7 @@ curl http://127.0.0.1:9080/apisix/admin/protos/1 \
 同时配置选项 `status_detail_type` 为 `helloworld.ErrorDetail`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
