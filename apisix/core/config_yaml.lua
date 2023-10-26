@@ -115,6 +115,7 @@ local function read_apisix_yaml(premature, pre_mtime)
 
     apisix_yaml = apisix_yaml_new
     apisix_yaml_ctime = last_change_time
+    log.warn("config file ", apisix_yaml_path, " reloaded.")
 end
 
 
