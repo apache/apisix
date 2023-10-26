@@ -78,7 +78,7 @@ title: Changelog
 
 ### Bugfixes
 
-- fix: keep healthcheck target state when upstream changes: 
+- fix: keep healthcheck target state when upstream changes:
     - [#10307](https://github.com/apache/apisix/pull/10307)
     - [#10312](https://github.com/apache/apisix/pull/10312)
 
