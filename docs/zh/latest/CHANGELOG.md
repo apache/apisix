@@ -78,7 +78,7 @@ title: CHANGELOG
 
 ### Bugfix
 
-- 修复：当上游发生变化时保持健康检查目标状态:
+- 修复：当上游发生变化时保持健康检查目标状态：
     - [#10312](https://github.com/apache/apisix/pull/10312)
     - [#10307](https://github.com/apache/apisix/pull/10307)
 
