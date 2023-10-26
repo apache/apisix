@@ -76,13 +76,11 @@ title: CHANGELOG
 
 ## 3.6.1
 
-### Core
-
-- :sunrise: 特征：升级 lua-resty-healthcheck 至 3.2.0: [#10307](https://github.com/apache/apisix/pull/10307)
-
 ### Bugfix
 
-- 修复：当上游发生变化时保持健康检查目标状态： [#10312](https://github.com/apache/apisix/pull/10312)
+- 修复：当上游发生变化时保持健康检查目标状态:
+    - [#10312](https://github.com/apache/apisix/pull/10312)
+    - [#10307](https://github.com/apache/apisix/pull/10307)
 
 ## 3.6.0
 
