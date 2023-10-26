@@ -105,10 +105,6 @@ passed
         local attributes = {}
         local span = spans[1]
         for _, attribute in ipairs(span.attributes) do
-            if attribute.key == "hostname" then
-                -- remove any randomness
-                goto skip
-            end
             table.insert(attributes_names, attribute.key)
             attributes[attribute.key] = attribute.value.string_value or ""
             ::skip::
@@ -167,9 +163,9 @@ GET /t
 --- no_error_log
 type 'opentelemetry.proto.trace.v1.TracesData' does not exists
 --- grep_error_log eval
-qr/attribute .+?:.[^,]*/
+qr/attribute (apisix|x-my).+?:.[^,]*/
 --- grep_error_log_out
-attribute route: "route_name"
-attribute service: ""
+attribute apisix.route_id: "1"
+attribute apisix.route_name: "route_name"
 attribute x-my-header-name: "william"
 attribute x-my-header-nick: "bill"
