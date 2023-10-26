@@ -76,13 +76,11 @@ title: Changelog
 
 ## 3.6.1
 
-### Core
-
-- :sunrise: feat: upgrade lua-resty-healthcheck to 3.2.0：[#10307](https://github.com/apache/apisix/pull/10307)
-
 ### Bugfixes
 
-- fix: keep healthcheck target state when upstream changes: [#10312](https://github.com/apache/apisix/pull/10312)
+- fix: keep healthcheck target state when upstream changes: 
+    - [#10307](https://github.com/apache/apisix/pull/10307)
+    - [#10312](https://github.com/apache/apisix/pull/10312)
 
 ## 3.6.0
 
