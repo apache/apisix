@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.6.1](#361)
 - [3.6.0](#360)
 - [3.5.0](#350)
 - [3.4.0](#340)
@@ -72,6 +73,14 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.6.1
+
+### Bugfix
+
+- 修复：当上游发生变化时保持健康检查目标状态：
+    - [#10312](https://github.com/apache/apisix/pull/10312)
+    - [#10307](https://github.com/apache/apisix/pull/10307)
 
 ## 3.6.0
 
