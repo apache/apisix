@@ -27,16 +27,16 @@ install_dependencies() {
         git sudo openldap-devel which ca-certificates openssl-devel \
         epel-release
 
+    # install newer curl
+    yum makecache
+    yum install -y libnghttp2-devel
+    install_curl
+
     yum -y install centos-release-scl
     yum -y install devtoolset-9 patch wget git make sudo
     set +eu
     source scl_source enable devtoolset-9
     set -eu
-
-    # install newer curl
-    yum makecache
-    yum install -y libnghttp2-devel
-    install_curl
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
