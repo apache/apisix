@@ -128,7 +128,7 @@ passed
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]

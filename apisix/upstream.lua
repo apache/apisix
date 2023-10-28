@@ -83,7 +83,7 @@ _M.set = set_directly
 local function release_checker(healthcheck_parent)
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
-    checker:clear()
+    checker:delayed_clear(3)
     checker:stop()
 end
 
@@ -175,7 +175,7 @@ local function set_upstream_scheme(ctx, upstream)
 
     ctx.var["upstream_scheme"] = ctx.upstream_scheme
 end
-
+_M.set_scheme = set_upstream_scheme
 
 local scheme_to_port = {
     http = 80,

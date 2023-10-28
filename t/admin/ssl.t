@@ -268,45 +268,7 @@ passed
 
 
 
-=== TEST 9: store exptime
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-
-            local ssl_cert = t.read_file("t/certs/apisix.crt")
-            local ssl_key =  t.read_file("t/certs/apisix.key")
-            local data = {
-                cert = ssl_cert, key = ssl_key,
-                sni = "bar.com",
-                exptime = 1588262400 + 60 * 60 * 24 * 365,
-            }
-
-            local code, body = t.test('/apisix/admin/ssls/1',
-                ngx.HTTP_PUT,
-                core.json.encode(data),
-                [[{
-                    "value": {
-                        "sni": "bar.com",
-                        "exptime": 1619798400
-                    },
-                    "key": "/apisix/ssls/1"
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 10: string id
+=== TEST 9: string id
 --- config
     location /t {
         content_by_lua_block {
@@ -334,7 +296,7 @@ passed
 
 
 
-=== TEST 11: string id(delete)
+=== TEST 10: string id(delete)
 --- config
     location /t {
         content_by_lua_block {
@@ -361,7 +323,7 @@ passed
 
 
 
-=== TEST 12: invalid id
+=== TEST 11: invalid id
 --- config
     location /t {
         content_by_lua_block {
@@ -388,7 +350,7 @@ GET /t
 
 
 
-=== TEST 13: set ssl with multicerts(id: 1)
+=== TEST 12: set ssl with multicerts(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -429,7 +391,7 @@ passed
 
 
 
-=== TEST 14: mismatched certs and keys
+=== TEST 13: mismatched certs and keys
 --- config
     location /t {
         content_by_lua_block {
@@ -467,7 +429,7 @@ GET /t
 
 
 
-=== TEST 15: set ssl(with labels)
+=== TEST 14: set ssl(with labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -505,7 +467,7 @@ passed
 
 
 
-=== TEST 16: invalid format of label value: set ssl
+=== TEST 15: invalid format of label value: set ssl
 --- config
     location /t {
         content_by_lua_block {
@@ -542,7 +504,7 @@ GET /t
 
 
 
-=== TEST 17: create ssl with manage fields(id: 1)
+=== TEST 16: create ssl with manage fields(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -554,11 +516,7 @@ GET /t
             local data = {
                 cert = ssl_cert,
                 key = ssl_key,
-                sni = "test.com",
-                create_time = 1602883670,
-                update_time = 1602893670,
-                validity_start = 1602873670,
-                validity_end = 1603893670
+                sni = "test.com"
             }
 
             local code, body = t.test('/apisix/admin/ssls/1',
@@ -566,11 +524,7 @@ GET /t
                 core.json.encode(data),
                 [[{
                     "value": {
-                        "sni": "test.com",
-                        "create_time": 1602883670,
-                        "update_time": 1602893670,
-                        "validity_start": 1602873670,
-                        "validity_end": 1603893670
+                        "sni": "test.com"
                     },
                     "key": "/apisix/ssls/1"
                 }]]
@@ -587,7 +541,7 @@ passed
 
 
 
-=== TEST 18: delete test ssl(id: 1)
+=== TEST 17: delete test ssl(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -603,7 +557,7 @@ GET /t
 
 
 
-=== TEST 19: create/patch ssl
+=== TEST 18: create/patch ssl
 --- config
     location /t {
         content_by_lua_block {
@@ -668,7 +622,7 @@ passed
 
 
 
-=== TEST 20: missing sni information
+=== TEST 19: missing sni information
 --- config
     location /t {
         content_by_lua_block {
@@ -699,7 +653,7 @@ GET /t
 
 
 
-=== TEST 21: type client, missing sni information
+=== TEST 20: type client, missing sni information
 --- config
     location /t {
         content_by_lua_block {

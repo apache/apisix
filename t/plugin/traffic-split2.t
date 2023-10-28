@@ -799,3 +799,66 @@ GET /t
 --- error_code: 500
 --- error_log
 failed to find upstream by id: invalid-id
+
+
+
+=== TEST 21: use upstream with https scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local data = {
+                uri = "/hello",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                match = { {
+                                    vars = { { "arg_scheme", "==", "https" } }
+                                } },
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            type = "roundrobin",
+                                            pass_host = "node",
+                                            nodes = {
+                                                ["127.0.0.1:1983"] = 1,
+                                            },
+                                            scheme = "https"
+                                        },
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: hit route
+--- request
+GET /hello?scheme=https
+--- error_code: 200

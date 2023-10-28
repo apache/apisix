@@ -170,7 +170,7 @@ end
 
 
 function _M.http_exit_worker()
-    -- TODO: we can support stream plugin later - currently there is not `destory` method
+    -- TODO: we can support stream plugin later - currently there is not `destroy` method
     -- in stream plugins
     plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
@@ -1021,6 +1021,7 @@ function _M.stream_init_worker()
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
+    require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
 
     local we = require("resty.worker.events")
@@ -1078,6 +1079,34 @@ function _M.stream_preread_phase()
 
         api_ctx.matched_upstream = upstream
 
+    elseif matched_route.value.service_id then
+        local service = service_fetch(matched_route.value.service_id)
+        if not service then
+            core.log.error("failed to fetch service configuration by ",
+                    "id: ", matched_route.value.service_id)
+            return core.response.exit(404)
+        end
+
+        matched_route = plugin.merge_service_stream_route(service, matched_route)
+        api_ctx.matched_route = matched_route
+        api_ctx.conf_type = "stream_route&service"
+        api_ctx.conf_version = matched_route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = matched_route.value.id .. "&" .. service.value.id
+        api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
+        api_ctx.matched_upstream = matched_route.value.upstream
+        if matched_route.value.upstream_id and not matched_route.value.upstream then
+            local upstream = apisix_upstream.get_by_id(matched_route.value.upstream_id)
+            if not upstream then
+                if is_http then
+                    return core.response.exit(502)
+                end
+
+                return ngx_exit(1)
+            end
+
+            api_ctx.matched_upstream = upstream
+        end
     else
         if matched_route.has_domain then
             local err

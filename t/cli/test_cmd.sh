@@ -87,7 +87,7 @@ deployment:
 # check if .customized_config_path has been created
 if [ ! -e conf/.customized_config_path ]; then
     rm conf/customized_config.yaml
-    echo ".config_path file should exits"
+    echo ".customized_config_path should exits"
     exit 1
 fi
 
@@ -102,9 +102,9 @@ fi
 make stop
 
 # check if .customized_config_path has been removed
-if [ -e conf/.config_path ]; then
+if [ -e conf/.customized_config_path ]; then
     rm conf/customized_config_path.yaml
-    echo ".config_path file should be removed"
+    echo ".customized_config_path should be removed"
     exit 1
 fi
 
