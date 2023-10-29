@@ -49,12 +49,7 @@ install_openssl_3(){
     OPENSSL_PREFIX=$(pwd)
     export LD_LIBRARY_PATH=$OPENSSL_PREFIX${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
     echo "$LD_LIBRARY_PATH"
-    # echo "LD_LIBRARY PATH"
-    # ls ${OPENSSL3_PREFIX}
-    # export openssl_prefix=${OPENSSL3_PREFIX}/openssl
-    # echo "Contents in openssl dir"
-    # ls $openssl_prefix
-    # cd ..
+    cd ..
 }
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
@@ -65,7 +60,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     install_openssl_3
     export openssl_prefix=/usr/local/openssl
     export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
+    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
     # wget https://www.openssl.org/source/openssl-3.1.3.tar.gz
     # tar xvf openssl-*.tar.gz
     # cd openssl-*/
@@ -77,7 +72,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
         $OPENSSL3_PREFIX/openssl-3.0/bin/openssl fipsinstall -out $OPENSSL3_PREFIX/openssl-3.0/ssl/fipsmodule.cnf -module $OPENSSL3_PREFIX/openssl-3.0/lib64/ossl-modules/fips.so
         sed -i 's@# .include fipsmodule.cnf@.include '"$OPENSSL3_PREFIX"'/openssl-3.0/ssl/fipsmodule.cnf@g; s/# \(fips = fips_sect\)/\1\nbase = base_sect\n\n[base_sect]\nactivate=1\n/g' $OPENSSL3_PREFIX/openssl-3.0/ssl/openssl.cnf
     fi
-    ldconfig
+    ldconfig    
 
 
     if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
