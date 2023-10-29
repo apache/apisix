@@ -43,10 +43,12 @@ install_openssl_3(){
     wget --no-check-certificate  https://www.openssl.org/source/openssl-3.1.3.tar.gz
     tar xvf openssl-*.tar.gz
     cd openssl-*/
-    ./config --prefix=$OPENSSL3_PREFIX/openssl --openssldir=$OPENSSL3_PREFIX/openssl enable-fips
+    ./config --prefix=/usr/local/openssl --openssldir=/usr/local/openssl
     make -j $(nproc)
     make install
-    ldconfig
+    OPENSSL_PREFIX=$(pwd)
+    export LD_LIBRARY_PATH=$OPENSSL_PREFIX${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+    echo "$LD_LIBRARY_PATH"
     cd ..
 }
 
