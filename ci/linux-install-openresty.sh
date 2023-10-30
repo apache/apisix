@@ -34,7 +34,7 @@ abt_branch=${abt_branch:="master"}
 
 COMPILE_OPENSSL3=${COMPILE_OPENSSL3-no}
 USE_OPENSSL3=${USE_OPENSSL3-no}
-OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
+OPENSSL3_PREFIX=${OPENSSL3_PREFIX:-`pwd`}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 
 install_openssl_3(){
