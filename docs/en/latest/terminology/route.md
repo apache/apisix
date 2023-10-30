@@ -36,6 +36,12 @@ A Route mainly consists of three parts:
 2. Plugin configuration (current-limit, rate-limit)
 3. Upstream information
 
+:::note
+
+APISIX also supports GraphQL based route filtering, [see here](../../latest/router-radixtree.md#how-to-filter-route-by-graphql-attributes).
+
+:::
+
 The image below shows some example Route rules. Note that the values are of the same color if they are identical.
 
 ![routes-example](../../../assets/images/routes-example.png)
