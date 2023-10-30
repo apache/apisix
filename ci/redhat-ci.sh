@@ -37,8 +37,8 @@ install_dependencies() {
     yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
     yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 
-    wget "https://raw.githubusercontent.com/Sn0rt/apisix-build-tools/guohao/apisix-runtime-debug/build-apisix-runtime-debug-centos7.sh"
-    wget "https://raw.githubusercontent.com/Sn0rt/apisix-build-tools/guohao/apisix-runtime-debug/build-apisix-runtime.sh"
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     chmod +x build-apisix-runtime-debug-centos7.sh
     ./build-apisix-runtime-debug-centos7.sh

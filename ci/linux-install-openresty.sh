@@ -80,6 +80,6 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     fi
 fi
 
-wget "https://raw.githubusercontent.com/Sn0rt/apisix-build-tools/guohao/apisix-runtime-debug/build-apisix-runtime.sh"
+wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
 chmod +x build-apisix-runtime.sh
 ./build-apisix-runtime.sh latest
