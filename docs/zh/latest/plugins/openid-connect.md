@@ -67,6 +67,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | proxy_opts.http_proxy_authorization  | string  | 否    |                       | Basic [base64 username:password] | `http_proxy` 默认的 `Proxy-Authorization` 请求头参数值。                                                                 |
 | proxy_opts.https_proxy_authorization | string  | 否    |                       | Basic [base64 username:password] | 与`http_proxy_authorization`相同，但与`https_proxy`一起使用（因为使用 HTTPS 时，授权是在连接时完成的，因此不能通过传递 Proxy-Authorization 请求头来覆盖此授权）。 |
 | proxy_opts.no_proxy                  | string  | 否    |                       |                                  | 不应被代理的主机的逗号分隔列表。                                                                                               |
+| authorization_params                 | object  | false    |                       |                                  | 在请求中发送到授权端点的附加参数                   |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 

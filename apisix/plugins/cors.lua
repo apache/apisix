@@ -98,7 +98,7 @@ local schema = {
             type = "array",
             description =
                 "you can use regex to allow specific origins when no credentials," ..
-                "for example use [.*\\.test.com] to allow a.test.com and b.test.com",
+                "for example use [.*\\.test.com$] to allow a.test.com and b.test.com",
             items = {
                 type = "string",
                 minLength = 1,

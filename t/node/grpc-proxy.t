@@ -207,7 +207,7 @@ routes:
     upstream:
       scheme: grpc
       nodes:
-        "127.0.0.1:50051": 1
+        "127.0.0.1:10051": 1
       type: roundrobin
 #END
 --- exec
@@ -239,7 +239,7 @@ routes:
       scheme: grpc
       pass_host: node
       nodes:
-        "127.0.0.1:50051": 1
+        "127.0.0.1:10051": 1
       type: roundrobin
 #END
 --- exec
@@ -251,7 +251,7 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 --- grep_error_log eval
 qr/grpc header: "(:authority|host): [^"]+"/
 --- grep_error_log_out eval
-qr/grpc header: "(:authority|host): 127.0.0.1:50051"/
+qr/grpc header: "(:authority|host): 127.0.0.1:10051"/
 
 
 
@@ -272,7 +272,7 @@ routes:
       pass_host: rewrite
       upstream_host: hello.world
       nodes:
-        "127.0.0.1:50051": 1
+        "127.0.0.1:10051": 1
       type: roundrobin
 #END
 --- exec

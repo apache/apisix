@@ -42,6 +42,23 @@ local function check_conf(id, conf, need_id, schema)
         end
     end
 
+    local service_id = conf.service_id
+    if service_id then
+        local key = "/services/" .. service_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch service info by "
+                    .. "service id [" .. service_id .. "]: "
+                    .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch service info by "
+                    .. "service id [" .. service_id .. "], "
+                    .. "response code: " .. res.status}
+        end
+    end
+
     local ok, err = stream_route_checker(conf, true)
     if not ok then
         return nil, {error_msg = err}

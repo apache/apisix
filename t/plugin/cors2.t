@@ -107,7 +107,7 @@ done
                             "allow_headers": "request-h",
                             "expose_headers": "expose-h",
                             "max_age": 10,
-                            "allow_origins_by_regex":[".*\\.domain.com"]
+                            "allow_origins_by_regex":[".*\\.domain.com$"]
                         }
                     },
                     "upstream": {

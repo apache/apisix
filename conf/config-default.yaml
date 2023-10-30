@@ -76,7 +76,6 @@ apisix:
   # http is the default proxy mode. proxy_mode can be one of `http`, `stream`, or `http&stream`
   proxy_mode: http
   # stream_proxy:                 # TCP/UDP L4 proxy
-  #   only: true                  # Enable L4 proxy only without L7 proxy.
   #   tcp:
   #     - addr: 9100              # Set the TCP proxy listening ports.
   #       tls: true
@@ -616,6 +615,8 @@ plugin_attr:          # Plugin attributes
     hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"  # Set the path to the Lua file that defines
                                                               # hooks. Only administrators should have
                                                               # write access to this file for security.
+  zipkin:                             # Plugin: zipkin
+    set_ngx_var: false                # export zipkin variables to nginx variables
 
 deployment:                    # Deployment configurations
   role: traditional            # Set deployment mode: traditional, control_plane, or data_plane.

@@ -32,6 +32,7 @@ local ngx_timer_every    = ngx.timer.every
 local log                = core.log
 local json_delay_encode  = core.json.delay_encode
 local ngx_worker_id      = ngx.worker.id
+local exiting            = ngx.worker.exiting
 local thread_spawn       = ngx.thread.spawn
 local thread_wait        = ngx.thread.wait
 local thread_kill        = ngx.thread.kill
@@ -197,21 +198,20 @@ local function get_opts(consul_server, is_catalog)
         port = consul_server.port,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
+        default_args = {
+            token = consul_server.token,
+        }
     }
     if not consul_server.keepalive then
         return opts
     end
 
+    opts.default_args.wait = consul_server.wait_timeout --blocked wait!=0; unblocked by wait=0
+
     if is_catalog then
-        opts.default_args = {
-            wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
-            index = consul_server.catalog_index,
-        }
+        opts.default_args.index = consul_server.catalog_index
     else
-        opts.default_args = {
-            wait = consul_server.wait_timeout, --blocked wait!=0; unblocked by wait=0
-            index = consul_server.health_index,
-        }
+        opts.default_args.index = consul_server.health_index
     end
 
     return opts
@@ -277,7 +277,7 @@ end
 
 
 local function check_keepalive(consul_server, retry_delay)
-    if consul_server.keepalive then
+    if consul_server.keepalive and not exiting() then
         local ok, err = ngx_timer_at(0, _M.connect, consul_server, retry_delay)
         if not ok then
             log.error("create ngx_timer_at got error: ", err)
@@ -396,6 +396,9 @@ function _M.connect(premature, consul_server, retry_delay)
         port = consul_server.port,
         connect_timeout = consul_server.connect_timeout,
         read_timeout = consul_server.read_timeout,
+        default_args = {
+            token = consul_server.token
+        }
     })
     local catalog_success, catalog_res, catalog_err = pcall(function()
         return consul_client:get(consul_server.consul_watch_catalog_url)
@@ -545,6 +548,7 @@ local function format_consul_params(consul_conf)
         core.table.insert(consul_server_list, {
             host = host,
             port = port,
+            token = consul_conf.token,
             connect_timeout = consul_conf.timeout.connect,
             read_timeout = consul_conf.timeout.read,
             wait_timeout = consul_conf.timeout.wait,

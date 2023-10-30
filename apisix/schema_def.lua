@@ -402,16 +402,10 @@ local upstream_schema = {
                 },
             },
             dependencies = {
-                client_cert = {
-                    required = {"client_key"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
-                client_key = {
-                    required = {"client_cert"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
+                client_cert = {required = {"client_key"}},
+                client_key = {required = {"client_cert"}},
                 client_cert_id = {
-                    ["not"] = {required = {"client_client", "client_key"}}
+                    ["not"] = {required = {"client_cert", "client_key"}}
                 }
             }
         },
@@ -784,10 +778,6 @@ _M.ssl = {
             },
             required = {"ca"},
         },
-        exptime = {
-            type = "integer",
-            minimum = 1588262400,  -- 2020/5/1 0:0:0
-        },
         labels = labels_def,
         status = {
             description = "ssl status, 1 to enable, 0 to disable",
@@ -804,8 +794,6 @@ _M.ssl = {
                 enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
             },
         },
-        validity_end = timestamp_def,
-        validity_start = timestamp_def,
         create_time = timestamp_def,
         update_time = timestamp_def
     },
@@ -920,6 +908,7 @@ _M.stream_route = {
         },
         upstream = upstream_schema,
         upstream_id = id_schema,
+        service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
     },
@@ -949,6 +938,9 @@ _M.plugins = {
 _M.plugin_config = {
     type = "object",
     properties = {
+        name = {
+            type = "string",
+        },
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,

@@ -58,14 +58,10 @@ install_dependencies() {
     pushd t/grpc_server_example
 
     CGO_ENABLED=0 go build
-    ./grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
-        -crt ../certs/apisix.crt -key ../certs/apisix.key -ca ../certs/mtls_ca.crt \
-        > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
-
     popd
-    # wait for grpc_server_example to fully start
-    sleep 3
+
+    yum install -y iproute procps
+    start_grpc_server_example
 
     # installing grpcurl
     install_grpcurl

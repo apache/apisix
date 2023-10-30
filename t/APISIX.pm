@@ -524,7 +524,7 @@ _EOC_
     }
     apisix.http_init(args)
 
-    -- set apisix_lua_home into constans module
+    -- set apisix_lua_home into constants module
     -- it may be used by plugins to determine the work path of apisix
     local constants = require("apisix.constants")
     constants.apisix_lua_home = "$apisix_home"

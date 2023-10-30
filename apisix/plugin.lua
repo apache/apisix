@@ -43,6 +43,9 @@ local stream_local_plugins_hash = core.table.new(0, 32)
 local merged_route = core.lrucache.new({
     ttl = 300, count = 512
 })
+local merged_stream_route = core.lrucache.new({
+    ttl = 300, count = 512
+})
 local expr_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
@@ -634,6 +637,49 @@ function _M.merge_service_route(service_conf, route_conf)
     return merged_route(route_service_key, service_conf,
                         merge_service_route,
                         service_conf, route_conf)
+end
+
+
+local function merge_service_stream_route(service_conf, route_conf)
+    -- because many fields in Service are not supported by stream route,
+    -- so we copy the stream route as base object
+    local new_conf = core.table.deepcopy(route_conf)
+    if service_conf.value.plugins then
+        for name, conf in pairs(service_conf.value.plugins) do
+            if not new_conf.value.plugins then
+                new_conf.value.plugins = {}
+            end
+
+            if not new_conf.value.plugins[name] then
+                new_conf.value.plugins[name] = conf
+            end
+        end
+    end
+
+    new_conf.value.service_id = nil
+
+    if not new_conf.value.upstream and service_conf.value.upstream then
+        new_conf.value.upstream = service_conf.value.upstream
+    end
+
+    if not new_conf.value.upstream_id and service_conf.value.upstream_id then
+        new_conf.value.upstream_id = service_conf.value.upstream_id
+    end
+
+    return new_conf
+end
+
+
+function _M.merge_service_stream_route(service_conf, route_conf)
+    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
+    core.log.info("  stream route conf: ", core.json.delay_encode(route_conf, true))
+
+    local version = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
+    local route_service_key = route_conf.value.id .. "#"
+            .. version
+    return merged_stream_route(route_service_key, version,
+            merge_service_stream_route,
+            service_conf, route_conf)
 end
 
 

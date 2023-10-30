@@ -40,6 +40,7 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
+    token: "..."                  # if your consul cluster has enabled acl access control, you need to specify the token
     prefix: "upstreams"
     skip_keys:                    # if you need to skip special keys
       - "upstreams/unused_api/"
