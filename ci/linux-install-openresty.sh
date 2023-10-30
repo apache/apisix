@@ -58,9 +58,9 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
 
     apt install -y build-essential
     install_openssl_3
-    export openssl_prefix=/usr/local/openssl
+    export openssl_prefix=$OPENSSL3_PREFIX/openssl-3.1.3
     export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
+    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
     # wget https://www.openssl.org/source/openssl-3.1.3.tar.gz
     # tar xvf openssl-*.tar.gz
     # cd openssl-*/
