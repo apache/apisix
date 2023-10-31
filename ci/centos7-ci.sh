@@ -30,6 +30,7 @@ install_openssl_3(){
     OPENSSL_PREFIX=$(pwd)
     export LD_LIBRARY_PATH=$OPENSSL_PREFIX${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
     echo "$LD_LIBRARY_PATH"
+    export ENV_OPENSSL_PREFIX=$OPENSSL3_PREFIX/openssl-3.1.3
     export openssl_prefix=$OPENSSL3_PREFIX/openssl-3.1.3
     cd ..
 }
