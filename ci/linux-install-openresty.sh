@@ -49,28 +49,21 @@ install_openssl_3(){
     OPENSSL_PREFIX=$(pwd)
     export LD_LIBRARY_PATH=$OPENSSL_PREFIX${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
     echo "$LD_LIBRARY_PATH"
+    export openssl_prefix=$OPENSSL3_PREFIX/openssl-3.1.3
     cd ..
 }
+
+install_openssl_3
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
     export zlib_prefix=/usr/local/openresty/zlib
     export pcre_prefix=/usr/local/openresty/pcre
-
     apt install -y build-essential
-    install_openssl_3
-    export openssl_prefix=$OPENSSL3_PREFIX/openssl-3.1.3
     export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
-    # wget https://www.openssl.org/source/openssl-3.1.3.tar.gz
-    # tar xvf openssl-*.tar.gz
-    # cd openssl-*/
-    # ./Configure --prefix=$OPENSSL3_PREFIX/openssl-3.0 enable-fips
-    # make install
-    # bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
-    # ldconfig
+    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
     if [ "$COMPILE_OPENSSL3" == "yes" ]; then
-        $OPENSSL3_PREFIX/openssl-3.0/bin/openssl fipsinstall -out $OPENSSL3_PREFIX/openssl-3.0/ssl/fipsmodule.cnf -module $OPENSSL3_PREFIX/openssl-3.0/lib64/ossl-modules/fips.so
-        sed -i 's@# .include fipsmodule.cnf@.include '"$OPENSSL3_PREFIX"'/openssl-3.0/ssl/fipsmodule.cnf@g; s/# \(fips = fips_sect\)/\1\nbase = base_sect\n\n[base_sect]\nactivate=1\n/g' $OPENSSL3_PREFIX/openssl-3.0/ssl/openssl.cnf
+        $openssl_prefix/bin/openssl fipsinstall -out $openssl_prefix/ssl/fipsmodule.cnf -module $openssl_prefix/lib/ossl-modules/fips.so
+        sed -i 's@# .include fipsmodule.cnf@.include $openssl_prefix/ssl/fipsmodule.cnf@g; s/# \(fips = fips_sect\)/\1\nbase = base_sect\n\n[base_sect]\nactivate=1\n/g' $openssl_prefix/ssl/openssl.cnf
     fi
     ldconfig
 
@@ -81,7 +74,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
         export pcre_prefix=$OPENRESTY_PREFIX/pcre
 
         export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-        export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
+        export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
     fi
     wget -q https://raw.githubusercontent.com/revolyssup/apisix-build-tools/revolyssup/upgrade-apisix-base-openssl3/build-apisix-base.sh
     chmod +x build-apisix-base.sh
@@ -91,6 +84,9 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
 
     exit 0
 fi
+
+export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${openssl_prefix}/include"
+export ld_opt="-L${openssl_prefix}/lib -Wl,-rpath,${openssl_prefix}/lib"
 
 if [ "$OPENRESTY_VERSION" == "default" ]; then
     openresty='openresty-debug'
