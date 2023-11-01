@@ -271,17 +271,19 @@ local function rotate()
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
+    local timeout = 10000 -- default timeout 10 seconds
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
         max_size = attr.max_size or max_size
+        timeout = attr.timeout or timeout
         enable_compression = attr.enable_compression or enable_compression
     end
-    local timeout = interval * 1000 -- Timeout for compression is interval in milliseconds
 
     core.log.info("rotate interval:", interval)
     core.log.info("rotate max keep:", max_kept)
     core.log.info("rotate max size:", max_size)
+    core.log.info("rotate timeout:", timeout)
 
     if not default_logs then
         -- first init default log filepath and filename
