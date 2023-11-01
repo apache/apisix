@@ -17,9 +17,13 @@
 
 set -ex
 
+export_version_info() {
+    source ./.requirements
+}
+
 export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
-    export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
+    export OPENRESTY_PREFIX="/usr/local/openresty"
+    export APISIX_MAIN="https://raw.githubusercontent.com/apache/apisix/master/rockspec/apisix-master-0.rockspec"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
     export OPENSSL111_BIN=$OPENRESTY_PREFIX/openssl111/bin/openssl
 }
@@ -59,8 +63,8 @@ rerun_flaky_tests() {
 
 install_curl () {
     CURL_VERSION="7.88.0"
-    wget https://curl.se/download/curl-${CURL_VERSION}.tar.gz
-    tar -xzvf curl-${CURL_VERSION}.tar.gz
+    wget -q https://curl.se/download/curl-${CURL_VERSION}.tar.gz
+    tar -xzf curl-${CURL_VERSION}.tar.gz
     cd curl-${CURL_VERSION}
     ./configure --prefix=/usr/local --with-openssl --with-nghttp2
     make
@@ -90,7 +94,7 @@ install_nodejs () {
     NODEJS_PREFIX="/usr/local/node"
     NODEJS_VERSION="16.13.1"
     wget -q https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    tar -xf node-v${NODEJS_VERSION}-linux-x64.tar.xz
     rm -f /usr/local/bin/node
     rm -f /usr/local/bin/npm
     mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
