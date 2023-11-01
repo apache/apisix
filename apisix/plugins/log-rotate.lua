@@ -277,7 +277,7 @@ local function rotate()
         max_size = attr.max_size or max_size
         enable_compression = attr.enable_compression or enable_compression
     end
-    local timeout = interval * 100 -- Timeout for compression is interval in milliseconds
+    local timeout = interval * 1000 -- Timeout for compression is interval in milliseconds
 
     core.log.info("rotate interval:", interval)
     core.log.info("rotate max keep:", max_kept)
