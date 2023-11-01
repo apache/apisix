@@ -31,7 +31,7 @@ jobs:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library
+          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/xds-library
 
     steps:
     - name: Check out code
@@ -93,6 +93,14 @@ jobs:
         make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=centos image_tag=7 local_code_path=./apisix
         cd ..
         rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
+
+    - name: Start Dubbo Backend
+      run: |
+        sudo apt install -y maven
+        cd t/lib/dubbo-backend
+        mvn package
+        cd dubbo-backend-provider/target
+        java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
 
     - name: Build xDS library
       if: steps.test_env.outputs.type == 'last'
