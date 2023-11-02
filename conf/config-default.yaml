@@ -525,6 +525,7 @@ stream_plugins: # sorted by priority
 plugin_attr:
   log-rotate:
     interval: 3600    # rotate interval (unit: second)
+    timeout: 10000    # maximum wait time for a log rotation(unit: millisecond)
     max_kept: 168     # max number of log files will be kept
     max_size: -1      # max size bytes of log files to be rotated, size check would be skipped with a value less than 0
     enable_compression: false    # enable log file compression(gzip) or not, default false
