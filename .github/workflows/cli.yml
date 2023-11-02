@@ -31,14 +31,14 @@ jobs:
           - linux_apisix_current_luarocks_in_customed_nginx
 
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 15
+    timeout-minutes: 30
     env:
       SERVER_NAME: ${{ matrix.job_name }}
       OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 

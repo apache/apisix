@@ -223,7 +223,7 @@ failed to connect to UDP server: host[312.0.0.1] port[2000]
                         "plugins": {
                             "udp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 2001,
+                                "port": 2002,
                                 "tls": false,
                                 "batch_max_size": 1
                             }
@@ -267,4 +267,181 @@ passedopentracing
 qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:2000
-sending a batch logs to 127.0.0.1:2001
+sending a batch logs to 127.0.0.1:2002
+
+
+
+=== TEST 8: bad custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": "'$host' '$time_iso8601'"
+                 }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"log_format\" validation failed: wrong type: expected object, got string"}
+
+
+
+=== TEST 9: configure plugin and access route /hello
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8127,
+                                "tls": false,
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "case name": "plugin_metadata",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: check if log exists to confirm if logging server was hit
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*plugin_metadata.*/
+
+
+
+=== TEST 11: configure plugin and access route /hello
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8127,
+                                "tls": false,
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugin_metadata/udp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "case name": "logger format in plugin",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr"
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: check log format from logging server
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*logger format in plugin.*/

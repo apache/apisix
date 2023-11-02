@@ -248,7 +248,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 目前，APISIX 可以处理 HTTP GET 和 POST 方法。请求体正文可以是 GraphQL 查询字符串，也可以是 JSON 格式的内容。
 
-APISIX 支持通过 GraphQL 的一些属性过滤路由。 目前我们支持：
+APISIX 支持通过 GraphQL 的一些属性过滤路由。目前我们支持：
 
 * graphql_operation
 * graphql_name
@@ -323,11 +323,11 @@ $ curl -H 'content-type: application/graphql' -X GET \
 ```
 
 为了防止花费太多时间读取无效的 `GraphQL` 请求正文，我们只读取前 `1 MiB`
-来自请求体的数据。 此限制是通过以下方式配置的：
+来自请求体的数据。此限制是通过以下方式配置的：
 
 ```yaml
 graphql:
   max_size: 1048576
 ```
 
-如果你需要传递一个大于限制的 GraphQL 查询语句 ，你可以增加 `conf/config.yaml` 中的值。
+如果你需要传递一个大于限制的 GraphQL 查询语句，你可以增加 `conf/config.yaml` 中的值。

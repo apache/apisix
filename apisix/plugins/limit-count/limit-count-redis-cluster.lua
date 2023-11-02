@@ -30,11 +30,13 @@ local mt = {
 
 
 local script = core.string.compress_script([=[
-    if redis.call('ttl', KEYS[1]) < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
-        return ARGV[1] - 1
+    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
+    local ttl = redis.call('ttl', KEYS[1])
+    if ttl < 0 then
+        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
+        return {ARGV[1] - ARGV[3], ARGV[2]}
     end
-    return redis.call('incrby', KEYS[1], -1)
+    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
 ]=])
 
 
@@ -89,22 +91,26 @@ function _M.new(plugin_name, limit, window, conf)
 end
 
 
-function _M.incoming(self, key)
+function _M.incoming(self, key, cost)
     local red = self.red_cli
     local limit = self.limit
     local window = self.window
     key = self.plugin_name .. tostring(key)
 
-    local remaining, err = red:eval(script, 1, key, limit, window)
+    local ttl = 0
+    local res, err = red:eval(script, 1, key, limit, window, cost or 1)
 
     if err then
-        return nil, err
+        return nil, err, ttl
     end
 
+    local remaining = res[1]
+    ttl = res[2]
+
     if remaining < 0 then
-        return nil, "rejected"
+        return nil, "rejected", ttl
     end
-    return 0, remaining
+    return 0, remaining, ttl
 end
 
 

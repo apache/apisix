@@ -1,7 +1,7 @@
 ---
 title: sls-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - SLS Logger
@@ -40,6 +40,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | host              | True     | IP address or the hostname of the TCP server. See [Alibaba Cloud log service documentation](https://www.alibabacloud.com/help/en/log-service/latest/endpoints) for details. Use IP address instead of domain. |
 | port              | True     | Target upstream port. Defaults to `10009`.                                                                                                                                                                                                      |
 | timeout           | False    | Timeout for the upstream to send data.                                                                                                                                                                                                          |
+| log_format       | False    | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | project           | True     | Project name in Alibaba Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                     |
 | logstore          | True     | logstore name in Ali Cloud log service. Create SLS before using this Plugin.                                                                                                                                                                    |
 | access_key_id     | True     | AccessKey ID in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                     |
@@ -85,7 +86,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can configure the Plugin on a specific Route:
 
@@ -125,9 +126,9 @@ Now if you check your Ali Cloud log server, you will be able to see the logs:
 
 ![sls logger view](../../../assets/images/plugin/sls-logger-1.png "sls logger view")
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `sls-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `sls-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

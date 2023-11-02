@@ -532,7 +532,7 @@ function _M.google_logging_entries()
         return
     end
 
-    token = string.sub(token, string.len(args_token_type) + 2)
+    token = string.sub(token, #args_token_type + 2)
     local verify = jwt:verify(rsa_public_key, token)
     if not verify.verified then
         ngx.status = 401
@@ -570,6 +570,7 @@ function _M.go()
     local action = string.sub(ngx.var.uri, 2)
     action = string.gsub(action, "[/\\.-]", "_")
     if not action or not _M[action] then
+        ngx.log(ngx.WARN, "undefined path in test server, uri: ", ngx.var.request_uri)
         return ngx.exit(404)
     end
 

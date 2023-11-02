@@ -22,6 +22,7 @@ local tonumber = tonumber
 local local_conf = require("apisix.core.config_local").local_conf()
 local core = require("apisix.core")
 local mysql = require("resty.mysql")
+local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 
 local endpoint_dict
@@ -331,9 +332,18 @@ function _M.nodes(servant)
     return get_endpoint(servant)
 end
 
+local function get_endpoint_dict()
+    local shm = "tars"
+
+    if not is_http then
+        shm = shm .. "-stream"
+    end
+
+    return ngx.shared[shm]
+end
 
 function _M.init_worker()
-    endpoint_dict = ngx.shared.tars
+    endpoint_dict = get_endpoint_dict()
     if not endpoint_dict then
         error("failed to get lua_shared_dict: tars, please check your APISIX version")
     end

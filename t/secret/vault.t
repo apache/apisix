@@ -14,6 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{VAULT_TOKEN} = "root";
+    $ENV{WRONG_VAULT_TOKEN} = "squareroot"
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(1);
@@ -156,3 +161,78 @@ Success! Data written to: kv/apisix/apisix-key/jack
 GET /t
 --- response_body
 value
+
+
+
+=== TEST 7: get value from vault using token in an env var
+--- config
+    location /t {
+        content_by_lua_block {
+            local vault = require("apisix.secret.vault")
+            local conf = {
+                prefix = "kv/apisix",
+                token = "$ENV://VAULT_TOKEN",
+                uri = "http://127.0.0.1:8200"
+            }
+            local value, err = vault.get(conf, "/apisix-key/jack/key")
+            if err then
+                return ngx.say(err)
+            end
+
+            ngx.say("value")
+        }
+    }
+--- request
+GET /t
+--- response_body
+value
+
+
+
+=== TEST 8: get value from vault: token env var wrong/missing
+--- config
+    location /t {
+        content_by_lua_block {
+            local vault = require("apisix.secret.vault")
+            local conf = {
+                prefix = "kv/apisix",
+                token = "$ENV://VALT_TOKEN",
+                uri = "http://127.0.0.1:8200"
+            }
+            local value, err = vault.get(conf, "/apisix-key/jack/key")
+            if err then
+                return ngx.say(err)
+            end
+
+            ngx.print("value")
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
+
+
+
+=== TEST 9: get value from vault: token env var contains wrong token
+--- config
+    location /t {
+        content_by_lua_block {
+            local vault = require("apisix.secret.vault")
+            local conf = {
+                prefix = "kv/apisix",
+                token = "$ENV://WRONG_VAULT_TOKEN",
+                uri = "http://127.0.0.1:8200"
+            }
+            local value, err = vault.get(conf, "/apisix-key/jack/key")
+            if err then
+                return ngx.say(err)
+            end
+
+            ngx.print("value")
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n

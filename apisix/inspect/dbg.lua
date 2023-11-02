@@ -44,6 +44,7 @@ local function hook(_, arg)
     local key = finfo.source .. "#" .. arg
 
     local hooks2 = {}
+    local removed_hooks = {}
     for _, hook in ipairs(hooks) do
         if key:sub(-#hook.key) == hook.key then
             local filter_func = hook.filter_func
@@ -74,9 +75,12 @@ local function hook(_, arg)
             local r1, r2_or_err = pcall(filter_func, info)
             if not r1 then
                 core.log.error("inspect: pcall filter_func:", r2_or_err)
+                table_insert(removed_hooks, hook)
             elseif r2_or_err == false then
                 -- if filter_func returns false, keep the hook
                 table_insert(hooks2, hook)
+            else
+                table_insert(removed_hooks, hook)
             end
         else
             -- key not match, keep the hook
@@ -84,11 +88,19 @@ local function hook(_, arg)
         end
     end
 
+    for _, hook in ipairs(removed_hooks) do
+        core.log.warn("inspect: remove hook: ", hook.key)
+    end
+
     -- disable debug mode if all hooks done
     if #hooks2 ~= #hooks then
         hooks = hooks2
         if #hooks == 0 then
+            core.log.warn("inspect: all hooks removed")
             debug.sethook()
+            if jit then
+                jit.on()
+            end
         end
     end
 end

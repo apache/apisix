@@ -1,7 +1,7 @@
 ---
 title: openid-connect
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - OpenID Connect
   - OIDC
@@ -60,6 +60,14 @@ description: OpenID Connect allows the client to obtain user information from th
 | set_refresh_token_header             | boolean | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.               |
 | session                              | object  | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration. |
 | session.secret                       | string  | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation. |
+| unauth_action                        | string  | False    | "auth"                |              | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication. |
+| proxy_opts                           | object  | False    |                       |                                  | HTTP proxy server be used to access identity server.                                                                                                                                                          |
+| proxy_opts.proxy_opts.http_proxy     | string  | False    |                       | http://proxy-server:port         | HTTP proxy server address.                                                                                                                                                                                    |
+| proxy_opts.proxy_opts.https_proxy    | string  | False    |                       | http://proxy-server:port         | HTTPS proxy server address.                                                                                                                                                                                   |
+| proxy_opts.http_proxy_authorization  | string  | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `http_proxy`.                                                                                                                                      |
+| proxy_opts.https_proxy_authorization | string  | False    |                       | Basic [base64 username:password] | As `http_proxy_authorization` but for use with `https_proxy` (since with HTTPS the authorisation is done when connecting, this one cannot be overridden by passing the `Proxy-Authorization` request header). |
+| proxy_opts.no_proxy                  | string  | False    |                       |                                  | Comma separated list of hosts that should not be proxied.                                                                                                                                                     |
+| authorization_params                 | object  | False    |                       |                                  | Additional parameters to send in the in the request to the authorization endpoint.                   |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -87,7 +95,7 @@ The image below shows an example token introspection flow via a Gateway:
 
 ![token introspection](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/oauth-1.png)
 
-The example below shows how you can enable the Plugin on Route. The Rouet below will protect the Upstream by introspecting the token provided in the request header:
+The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

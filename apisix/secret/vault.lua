@@ -25,7 +25,7 @@ local norm_path = require("pl.path").normpath
 
 local sub        = core.string.sub
 local rfind_char = core.string.rfind_char
-
+local env        = core.env
 
 local schema = {
     type = "object",
@@ -45,12 +45,6 @@ local _M = {
     schema = schema
 }
 
--- This code is copied from apisix/core/vault.lua.
--- The functions in apisix/core/vault.lua are currently only used in the jwt-auth plugin,
--- and it is not suitable to be placed in the core module of APISIX.
---
--- When KMS is fully functional, we will remove apisix/core/vault.lua.
---
 local function make_request_to_vault(conf, method, key, data)
     local httpc = http.new()
     -- config timeout or default to 5000 ms
@@ -59,10 +53,15 @@ local function make_request_to_vault(conf, method, key, data)
     local req_addr = conf.uri .. norm_path("/v1/"
                 .. conf.prefix .. "/" .. key)
 
+    local token, _ = env.fetch_by_uri(conf.token)
+    if not token then
+        token = conf.token
+    end
+
     local res, err = httpc:request_uri(req_addr, {
         method = method,
         headers = {
-            ["X-Vault-Token"] = conf.token
+            ["X-Vault-Token"] = token
         },
         body = core.json.encode(data or {}, true)
     })

@@ -20,9 +20,7 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
-local plugin          = require("apisix.plugin")
 
-local ngx      = ngx
 local tostring = tostring
 local ipairs   = ipairs
 
@@ -35,6 +33,7 @@ local schema = {
         uri = core.schema.uri_def,
         auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
@@ -123,7 +122,7 @@ local function send_http_data(conf, log_message)
 
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
-        path = url_decoded.path,
+        path = #url_decoded.path ~= 0 and url_decoded.path or "/",
         query = url_decoded.query,
         body = log_message,
         headers = {
@@ -156,18 +155,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
-
-    local entry
-
-    if metadata and metadata.value.log_format
-       and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
 
     if not entry.route_id then
         entry.route_id = "no-matched"

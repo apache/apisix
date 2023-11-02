@@ -18,14 +18,12 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local plugin = require("apisix.plugin")
 
 local math     = math
 local pairs    = pairs
 local type     = type
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
-local ngx = ngx
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -39,6 +37,7 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
+        log_format = {type = "object"},
         -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
@@ -124,6 +123,7 @@ local schema = {
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
+        meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
@@ -220,17 +220,7 @@ function _M.log(conf, ctx)
         -- core.log.info("origin entry: ", entry)
 
     else
-        local metadata = plugin.plugin_metadata(plugin_name)
-        core.log.info("metadata: ", core.json.delay_encode(metadata))
-        if metadata and metadata.value.log_format
-          and core.table.nkeys(metadata.value.log_format) > 0
-        then
-            entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-            core.log.info("custom log format entry: ", core.json.delay_encode(entry))
-        else
-            entry = log_util.get_full_log(ngx, conf)
-            core.log.info("full log entry: ", core.json.delay_encode(entry))
-        end
+        entry = log_util.get_log_entry(plugin_name, conf, ctx)
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
@@ -258,6 +248,7 @@ function _M.log(conf, ctx)
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
+    broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)

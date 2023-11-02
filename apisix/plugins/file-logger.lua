@@ -16,7 +16,7 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
-local plugin       =   require("apisix.plugin")
+local expr         =   require("resty.expr.v1")
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
@@ -31,6 +31,7 @@ local schema = {
         path = {
             type = "string"
         },
+        log_format = {type = "object"},
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
@@ -38,6 +39,13 @@ local schema = {
             items = {
                 type = "array"
             }
+        },
+        match = {
+            type = "array",
+            maxItems = 20,
+            items = {
+                type = "array",
+            },
         }
     },
     required = {"path"}
@@ -64,6 +72,12 @@ local _M = {
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
+    end
+    if conf.match then
+        local ok, err = expr.new(conf.match)
+        if not ok then
+            return nil, "failed to validate the 'match' expression: " .. err
+        end
     end
     return core.schema.check(schema, conf)
 end
@@ -149,17 +163,10 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local entry
-
-    if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if entry == nil then
+        return
     end
-
     write_file_data(conf, entry)
 end
 

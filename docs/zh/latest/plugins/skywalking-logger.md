@@ -1,7 +1,7 @@
 ---
 title: skywalking-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - Plugin
   - SkyWalking
@@ -42,6 +42,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 | endpoint_addr          | string  | 是     |                      |               | SkyWalking OAP 服务器的 URI。                                      |
 | service_name           | string  | 否     |"APISIX"              |               | SkyWalking 服务名称。                                              |
 | service_instance_name  | string  | 否     |"APISIX Instance Name"|               | SkyWalking 服务的实例名称。当设置为 `$hostname`会直接获取本地主机名。 |
+| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | timeout                | integer | 否     | 3                    | [1,...]       | 发送请求后保持连接活动的时间。                                       |
 | name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
 | include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |
@@ -116,9 +117,9 @@ curl -i http://127.0.0.1:9080/hello
 
 完成上述步骤后，你可以在 SkyWalking UI 查看到相关日志。
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

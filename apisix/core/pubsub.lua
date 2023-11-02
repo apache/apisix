@@ -26,7 +26,6 @@ local pb           = require("pb")
 local ngx          = ngx
 local setmetatable = setmetatable
 local pcall        = pcall
-local pairs        = pairs
 
 
 local _M = { version = 0.1 }
@@ -57,15 +56,10 @@ end
 
 -- parse command name and parameters from client message
 local function get_cmd(data)
-    for key, value in pairs(data) do
-        -- There are sequence and command properties in the data,
-        -- select the handler according to the command value.
-        if key ~= "sequence" and key ~= "req" then
-            -- new version of lua-protobuf will add a new field 'oneof_name = oneof_type'
-            -- so we also need to filter it out (in this case, the 'req' key)
-            return key, value
-        end
-    end
+    -- There are sequence and command properties in the data,
+    -- select the handler according to the command value.
+    local key = data.req
+    return key, data[key]
 end
 
 
@@ -191,9 +185,10 @@ function _M.wait(self)
         end
 
         -- recovery of stored pb_store
-        pb.state(pb_state)
+        local pb_old_state = pb.state(pb_state)
 
         local data, err = pb.decode("PubSubReq", raw_data)
+        pb.state(pb_old_state)
         if not data then
             log.error("pubsub server receives undecodable data, err: ", err)
             send_error(ws, 0, "wrong command")

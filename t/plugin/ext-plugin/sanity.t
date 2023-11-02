@@ -14,7 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-use t::APISIX 'no_plan';
+use t::APISIX;
+
+my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
+my $version = eval { `$nginx_binary -V 2>&1` };
+
+if ($version !~ m/\/apisix-nginx-module/) {
+    plan(skip_all => "apisix-nginx-module not installed");
+} else {
+    plan('no_plan');
+}
 
 repeat_each(1);
 no_long_string();
@@ -225,7 +234,7 @@ EXPIRE 3600
     }
 --- error_log
 runner exited with reason: exit, status: 111
-respawn runner 3 seconds later with cmd: ["t\/plugin\/ext-plugin\/runner.sh","0.1"]
+respawn runner 3 seconds later with cmd: ["t/plugin/ext-plugin/runner.sh","0.1"]
 
 
 

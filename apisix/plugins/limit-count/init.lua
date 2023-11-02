@@ -14,18 +14,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_local_new = require("resty.limit.count").new
 local core = require("apisix.core")
 local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
 
-
-local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new
+local limit_local_new
 do
+    local local_src = "apisix.plugins.limit-count.limit-count-local"
+    limit_local_new = require(local_src).new
+
     local redis_src = "apisix.plugins.limit-count.limit-count-redis"
     limit_redis_new = require(redis_src).new
 
@@ -39,7 +40,6 @@ local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
 
-
 local policy_to_additional_properties = {
     redis = {
         properties = {
@@ -49,6 +49,9 @@ local policy_to_additional_properties = {
             redis_port = {
                 type = "integer", minimum = 1, default = 6379,
             },
+            redis_username = {
+                type = "string", minLength = 1,
+            },
             redis_password = {
                 type = "string", minLength = 0,
             },
@@ -57,6 +60,12 @@ local policy_to_additional_properties = {
             },
             redis_timeout = {
                 type = "integer", minimum = 1, default = 1000,
+            },
+            redis_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_ssl_verify = {
+                type = "boolean", default = false,
             },
         },
         required = {"redis_host"},
@@ -190,8 +199,8 @@ function _M.check_schema(conf)
 end
 
 
-local function create_limit_obj(conf)
-    core.log.info("create new limit-count plugin instance")
+local function create_limit_obj(conf, plugin_name)
+    core.log.info("create new " .. plugin_name .. " plugin instance")
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, conf.count,
@@ -233,9 +242,9 @@ local function gen_limit_key(conf, ctx, key)
 end
 
 
-local function gen_limit_obj(conf, ctx)
+local function gen_limit_obj(conf, ctx, plugin_name)
     if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf)
+        return lrucache(conf.group, "", create_limit_obj, conf, plugin_name)
     end
 
     local extra_key
@@ -245,14 +254,13 @@ local function gen_limit_obj(conf, ctx)
         extra_key = conf.policy
     end
 
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
+    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
 end
 
-
-function _M.rate_limit(conf, ctx)
+function _M.rate_limit(conf, ctx, name, cost)
     core.log.info("ver: ", ctx.conf_version)
 
-    local lim, err = gen_limit_obj(conf, ctx)
+    local lim, err = gen_limit_obj(conf, ctx, name)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -289,10 +297,23 @@ function _M.rate_limit(conf, ctx)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining = lim:incoming(key, true)
+    local delay, remaining, reset
+    if not conf.policy or conf.policy == "local" then
+        delay, remaining, reset = lim:incoming(key, true, conf, cost)
+    else
+        delay, remaining, reset = lim:incoming(key, cost)
+    end
+
     if not delay then
         local err = remaining
         if err == "rejected" then
+            -- show count limit header when rejected
+            if conf.show_limit_quota_header then
+                core.response.set_header("X-RateLimit-Limit", conf.count,
+                    "X-RateLimit-Remaining", 0,
+                    "X-RateLimit-Reset", reset)
+            end
+
             if conf.rejected_msg then
                 return conf.rejected_code, { error_msg = conf.rejected_msg }
             end
@@ -308,7 +329,8 @@ function _M.rate_limit(conf, ctx)
 
     if conf.show_limit_quota_header then
         core.response.set_header("X-RateLimit-Limit", conf.count,
-            "X-RateLimit-Remaining", remaining)
+            "X-RateLimit-Remaining", remaining,
+            "X-RateLimit-Reset", reset)
     end
 end
 

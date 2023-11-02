@@ -21,6 +21,9 @@ local ngx_now         = ngx.now
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
+local table_insert    = core.table.insert
+local table_concat    = core.table.concat
+local ipairs          = ipairs
 
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
@@ -56,32 +59,47 @@ local schema = {
             type = "boolean",
             default = true
         },
+        log_format = {type = "object"},
     },
     required = { "endpoint" },
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
 
 local _M = {
     version = 0.1,
     priority = 409,
     name = plugin_name,
+    metadata_schema = metadata_schema,
     schema = batch_processor_manager:wrap_schema(schema),
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     return core.schema.check(schema, conf)
 end
 
 
-local function get_logger_entry(conf)
-    local entry = log_util.get_full_log(ngx, conf)
-    return {
+local function get_logger_entry(conf, ctx)
+    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local splunk_entry = {
         time = ngx_now(),
-        host = entry.server.hostname,
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,
         sourcetype = DEFAULT_SPLUNK_HEC_ENTRY_TYPE,
-        event = {
+    }
+
+    if not customized then
+        splunk_entry.host = entry.server.hostname
+        splunk_entry.event = {
             request_url = entry.request.url,
             request_method = entry.request.method,
             request_headers = entry.request.headers,
@@ -93,7 +111,12 @@ local function get_logger_entry(conf)
             latency = entry.latency,
             upstream = entry.upstream,
         }
-    }
+    else
+        splunk_entry.host = core.utils.gethostname()
+        splunk_entry.event = entry
+    end
+
+    return splunk_entry
 end
 
 
@@ -107,10 +130,15 @@ local function send_to_splunk(conf, entries)
 
     local http_new = http.new()
     http_new:set_timeout(conf.endpoint.timeout * 1000)
+    local t = {}
+    for _, e in ipairs(entries) do
+        table_insert(t, core.json.encode(e))
+    end
+
     local res, err = http_new:request_uri(conf.endpoint.uri, {
         ssl_verify = conf.ssl_verify,
         method = "POST",
-        body = core.json.encode(entries),
+        body = table_concat(t),
         headers = request_headers,
     })
 
@@ -132,7 +160,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local entry = get_logger_entry(conf)
+    local entry = get_logger_entry(conf, ctx)
 
     if batch_processor_manager:add_entry(conf, entry) then
         return

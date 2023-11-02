@@ -23,9 +23,9 @@ do_install() {
 
     export_or_prefix
 
-    ./utils/linux-install-openresty.sh
+    ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
-    ./utils/linux-install-etcd-client.sh
+    ./ci/linux-install-etcd-client.sh
 }
 
 script() {
@@ -39,7 +39,7 @@ script() {
     cp -r ../utils ./
 
     # install APISIX by luarocks
-    sudo luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
+    luarocks install $APISIX_MAIN > build.log 2>&1 || (cat build.log && exit 1)
     cp ../bin/apisix /usr/local/bin/apisix
 
     # show install files
@@ -49,6 +49,13 @@ script() {
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix quit
+    for i in {1..10}
+    do
+        if [ ! -f /usr/local/apisix/logs/nginx.pid ];then
+            break
+        fi
+        sleep 0.3
+    done
     sudo PATH=$PATH apisix start
     sudo PATH=$PATH apisix stop
 

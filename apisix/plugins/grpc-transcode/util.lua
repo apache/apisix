@@ -22,6 +22,7 @@ local ngx               = ngx
 local string            = string
 local table             = table
 local ipairs            = ipairs
+local pairs             = pairs
 local tonumber          = tonumber
 local type              = type
 
@@ -47,8 +48,6 @@ function _M.find_method(proto, service, method)
         return nil
     end
 
-    -- restore pb state
-    pb.state(proto.pb_state)
     return res
 end
 
@@ -131,7 +130,7 @@ local function get_from_request(request_table, name, kind)
 end
 
 
-function _M.map_message(field, default_values, request_table)
+function _M.map_message(field, default_values, request_table, real_key)
     if not pb.type(field) then
         return nil, "Field " .. field .. " is not defined"
     end
@@ -164,15 +163,34 @@ function _M.map_message(field, default_values, request_table)
                 end
                 sub = sub_array
             else
-                sub, err = _M.map_message(field_type, default_values and default_values[name],
-                                          request_table[name])
-                if err then
-                    return nil, err
+                if ty == "map" then
+                    for k, v in pairs(request_table[name]) do
+                        local tbl, err = _M.map_message(field_type,
+                            default_values and default_values[name],
+                            request_table[name], k)
+                        if err then
+                            return nil, err
+                        end
+                        if not sub then
+                            sub = {}
+                        end
+                        sub[k] = tbl[k]
+                    end
+                else
+                    sub, err = _M.map_message(field_type,
+                        default_values and default_values[name],
+                        request_table[name])
+                    if err then
+                        return nil, err
+                    end
                 end
             end
 
             request[name] = sub
         else
+            if real_key then
+                name = real_key
+            end
             request[name] = get_from_request(request_table, name, field_type)
                                 or (default_values and default_values[name])
         end
