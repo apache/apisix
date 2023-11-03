@@ -543,6 +543,7 @@ stream_plugins:                    # stream plugin list (sorted by priority)
 #     - name: pingpong
 plugin_attr:          # Plugin attributes
   log-rotate:         # Plugin: log-rotate
+    timeout: 10000    # maximum wait time for a log rotation(unit: millisecond)
     interval: 3600    # Set the log rotate interval in seconds.
     max_kept: 168     # Set the maximum number of log files to keep. If exceeded, historic logs are deleted.
     max_size: -1      # Set the maximum size of log files in bytes before a rotation.
