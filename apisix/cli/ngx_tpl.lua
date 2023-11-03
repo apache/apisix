@@ -469,7 +469,7 @@ http {
         }
         apisix.http_init(args)
 
-        -- set apisix_lua_home into constans module
+        -- set apisix_lua_home into constants module
         -- it may be used by plugins to determine the work path of apisix
         local constants = require("apisix.constants")
         constants.apisix_lua_home = "{*apisix_lua_home*}"
@@ -642,6 +642,14 @@ http {
         set $opentelemetry_span_id                      '';
         {% end %}
         # opentelemetry_set_ngx_var ends
+
+        # zipkin_set_ngx_var starts
+        {% if zipkin_set_ngx_var then %}
+        set $zipkin_context_traceparent          '';
+        set $zipkin_trace_id                     '';
+        set $zipkin_span_id                      '';
+        {% end %}
+        # zipkin_set_ngx_var ends
 
         # http server configuration snippet starts
         {% if http_server_configuration_snippet then %}

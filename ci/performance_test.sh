@@ -78,7 +78,7 @@ run_performance_test() {
     pip3 install -r t/perf/requirements.txt --user
 
     #openresty-debug
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export OPENRESTY_PREFIX="/usr/local/openresty"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
 
     mkdir output

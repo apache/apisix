@@ -18,6 +18,7 @@
 
 . ./ci/common.sh
 install_dependencies() {
+    export_version_info
     export_or_prefix
 
     # install build & runtime deps
@@ -30,9 +31,17 @@ install_dependencies() {
     yum install -y libnghttp2-devel
     install_curl
 
-    # install openresty to make apisix's rpm test work
+    # install apisix-runtime to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty-1.21.4.2 openresty-debug-1.21.4.2 openresty-openssl111-debug-devel pcre pcre-devel xz
+    rpm --import https://repos.apiseven.com/KEYS
+    yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
+    yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    chmod +x build-apisix-runtime.sh
+    chmod +x build-apisix-runtime-debug-centos7.sh
+    ./build-apisix-runtime-debug-centos7.sh
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
@@ -58,14 +67,10 @@ install_dependencies() {
     pushd t/grpc_server_example
 
     CGO_ENABLED=0 go build
-    ./grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
-        -crt ../certs/apisix.crt -key ../certs/apisix.key -ca ../certs/mtls_ca.crt \
-        > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
-
     popd
-    # wait for grpc_server_example to fully start
-    sleep 3
+
+    yum install -y iproute procps
+    start_grpc_server_example
 
     # installing grpcurl
     install_grpcurl

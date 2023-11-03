@@ -61,7 +61,7 @@ function _M.init_worker()
         filter = filter,
     })
     if not services then
-        error("failed to create etcd instance for fetching upstream: " .. err)
+        error("failed to create etcd instance for fetching /services: " .. err)
         return
     end
 end

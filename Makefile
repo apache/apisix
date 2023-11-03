@@ -69,6 +69,8 @@ endif
 ifeq ($(ENV_OS_NAME), darwin)
 	ifeq ($(ENV_OS_ARCH), arm64)
 		ENV_HOMEBREW_PREFIX := /opt/homebrew
+		ENV_INST_BINDIR := $(ENV_INST_PREFIX)/local/bin
+		ENV_INST_LUADIR := $(shell which lua | xargs realpath | sed 's/bin\/lua//g')
 	endif
 
 	# OSX archive `._` cache file

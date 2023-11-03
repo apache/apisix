@@ -97,7 +97,7 @@ Now we can use RESTful API to query the same data that is proxy by APISIX.
 First, we need to create a route in APISIX, and enable the degreaph plugin on the route, we need to define the GraphQL query in the plugin's config.
 
 ```bash
-curl --location --request PUT 'http://localhost:9080/apisix/admin/routes/1' \
+curl --location --request PUT 'http://localhost:9180/apisix/admin/routes/1' \
 --header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
 --header 'Content-Type: application/json' \
 --data-raw '{
@@ -210,7 +210,7 @@ we can execute it on `http://localhost:8080/playground`, and get the data as bel
 We convert the GraphQL query to JSON string like `"query($name: String!, $githubAccount: String!) {\n  persons(filter: { name: $name, githubAccount: $githubAccount }) {\n    id\n    name\n    blog\n    githubAccount\n    talks {\n      id\n      title\n    }\n  }\n}"`, so we create a route like this:
 
 ```bash
-curl --location --request PUT 'http://localhost:9080/apisix/admin/routes/1' \
+curl --location --request PUT 'http://localhost:9180/apisix/admin/routes/1' \
 --header 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
 --header 'Content-Type: application/json' \
 --data-raw '{

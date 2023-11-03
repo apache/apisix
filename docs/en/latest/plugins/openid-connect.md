@@ -67,6 +67,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | proxy_opts.http_proxy_authorization  | string  | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `http_proxy`.                                                                                                                                      |
 | proxy_opts.https_proxy_authorization | string  | False    |                       | Basic [base64 username:password] | As `http_proxy_authorization` but for use with `https_proxy` (since with HTTPS the authorisation is done when connecting, this one cannot be overridden by passing the `Proxy-Authorization` request header). |
 | proxy_opts.no_proxy                  | string  | False    |                       |                                  | Comma separated list of hosts that should not be proxied.                                                                                                                                                     |
+| authorization_params                 | object  | False    |                       |                                  | Additional parameters to send in the in the request to the authorization endpoint.                   |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
