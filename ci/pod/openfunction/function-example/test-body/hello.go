@@ -21,8 +21,9 @@ package hello
 
 import (
 	"fmt"
+	"io"
 	"net/http"
-	"io/ioutil"
+
 	"github.com/OpenFunction/functions-framework-go/functions"
 )
 
@@ -31,6 +32,6 @@ func init() {
 }
 
 func HelloWorld(w http.ResponseWriter, r *http.Request) {
-	body,_ := ioutil.ReadAll(r.Body)
+	body, _ := io.ReadAll(r.Body)
 	fmt.Fprintf(w, "Hello, %s!\n", string(body))
 }
