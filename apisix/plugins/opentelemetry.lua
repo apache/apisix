@@ -308,18 +308,35 @@ end
 
 
 function _M.rewrite(conf, api_ctx)
+    local vars = api_ctx.var
+
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
         return
     end
 
-    -- extract trace context from the headers of downstream HTTP request
-    local upstream_context = trace_context_propagator:extract(context, ngx.req)
+    local span_name = vars.method
+
     local attributes = {
-        attr.string("service", api_ctx.service_name),
-        attr.string("route", api_ctx.route_name),
+        attr.string("net.host.name", vars.host),
+        attr.string("http.method", vars.method),
+        attr.string("http.scheme", vars.scheme),
+        attr.string("http.target", vars.request_uri),
+        attr.string("http.user_agent", vars.http_user_agent),
     }
+
+    if api_ctx.curr_req_matched then
+        table.insert(attributes, attr.string("apisix.route_id", api_ctx.route_id))
+        table.insert(attributes, attr.string("apisix.route_name", api_ctx.route_name))
+        table.insert(attributes, attr.string("http.route", api_ctx.curr_req_matched._path))
+        span_name = span_name .. " " .. api_ctx.curr_req_matched._path
+    end
+
+    if api_ctx.service_id then
+        table.insert(attributes, attr.string("apisix.service_id", api_ctx.service_id))
+        table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
+    end
 
     if conf.additional_attributes then
         inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
@@ -334,7 +351,10 @@ function _M.rewrite(conf, api_ctx)
         )
     end
 
-    local ctx = tracer:start(upstream_context, api_ctx.var.request_uri, {
+    -- extract trace context from the headers of downstream HTTP request
+    local upstream_context = trace_context_propagator:extract(context, ngx.req)
+
+    local ctx = tracer:start(upstream_context, span_name, {
         kind = span_kind.server,
         attributes = attributes,
     })
@@ -369,6 +389,8 @@ function _M.delayed_body_filter(conf, api_ctx)
             span:set_status(span_status.ERROR,
                             "upstream response status: " .. upstream_status)
         end
+
+        span:set_attributes(attr.int("http.status_code", upstream_status))
 
         span:finish()
     end
