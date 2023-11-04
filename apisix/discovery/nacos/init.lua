@@ -18,6 +18,7 @@
 local require            = require
 local local_conf         = require('apisix.core.config_local').local_conf()
 local http               = require('resty.http')
+local hmac               = require("resty.hmac")
 local core               = require('apisix.core')
 local ipairs             = ipairs
 local type               = type
@@ -39,6 +40,8 @@ local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
 local default_group_name = "DEFAULT_GROUP"
+local access_key
+local secret_key
 
 local events
 local events_list
@@ -140,6 +143,20 @@ local function get_group_name_param(group_name)
     local param = ''
     if group_name then
         local args = {groupName = group_name}
+        param = '&' .. ngx.encode_args(args)
+    end
+    return param
+end
+
+local function get_signed_param(group_name, service_name)
+    local param = ''
+    if access_key ~= '' and secret_key ~= '' then
+        local str_to_sign = ngx.now() * 1000 .. '@@' .. group_name .. '@@' .. service_name
+        local args = {
+            ak = access_key,
+            data = str_to_sign,
+            signature = ngx.encode_base64(ngx.hmac_sha1(secret_key, str_to_sign))
+        }
         param = '&' .. ngx.encode_args(args)
     end
     return param
@@ -286,8 +303,11 @@ local function fetch_full_registry(premature)
         local scheme = service_info.scheme or ''
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
+        log.info(service_info.group_name, service_info.service_name)
+        local signature_param = get_signed_param(service_info.group_name, service_info.service_name)
         local query_path = instance_list_path .. service_info.service_name
                            .. token_param .. namespace_param .. group_name_param
+                           .. signature_param
         data, err = get_url(base_uri, query_path)
         if err then
             log.error('get_url:', query_path, ' err:', err)
@@ -385,6 +405,8 @@ function _M.init_worker()
     log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info('fetch_interval:', fetch_interval)
+    access_key = local_conf.discovery.nacos.access_key
+    secret_key = local_conf.discovery.nacos.secret_key
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
