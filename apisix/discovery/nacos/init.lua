@@ -303,7 +303,6 @@ local function fetch_full_registry(premature)
         local scheme = service_info.scheme or ''
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
-        log.info(service_info.group_name, service_info.service_name)
         local signature_param = get_signed_param(service_info.group_name, service_info.service_name)
         local query_path = instance_list_path .. service_info.service_name
                            .. token_param .. namespace_param .. group_name_param
