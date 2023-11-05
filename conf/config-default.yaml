@@ -308,6 +308,8 @@ nginx_config:                     # Config for render the template to generate n
 #      connect: 2000       # Default 2000ms
 #      send: 2000          # Default 2000ms
 #      read: 5000          # Default 5000ms
+#    access_key: ""
+#    secret_key: ""
 #  consul_kv:              # Consul KV
 #    servers:              # Consul KV address(es)
 #      - "http://127.0.0.1:8500"
