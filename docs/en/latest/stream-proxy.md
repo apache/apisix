@@ -115,7 +115,7 @@ Here is an example with MySQL:
 2. Now run a mysql docker container and expose port 3306 to the host
 
    ```shell
-   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql
+   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql mysqld --default-authentication-plugin=mysql_native_password
    # check it using a mysql client that it works
    $ mysql --host=127.0.0.1 --port=3306 -u root -p
    Enter password:
