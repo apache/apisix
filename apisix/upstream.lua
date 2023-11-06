@@ -114,6 +114,7 @@ local function create_checker(upstream)
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
+        events_module = "resty.events",
     })
 
     if not checker then

@@ -453,7 +453,7 @@ function _M.init_worker()
     end
 
     router = route.new(uri_route)
-    events = require("resty.worker.events")
+    events = require("resty.events.compat")
 
     events.register(reload_plugins, reload_event, "PUT")
 

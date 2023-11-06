@@ -39,7 +39,6 @@ dependencies = {
     "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-worker-events = 1.0.0",
     "lua-resty-healthcheck-api7 = 3.2.0",
     "api7-lua-resty-jwt = 0.2.5",
     "lua-resty-hmac-ffi = 0.06-1",

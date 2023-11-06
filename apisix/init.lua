@@ -123,7 +123,7 @@ function _M.http_init_worker()
         core.grpc = nil
     end
 
-    local we = require("resty.worker.events")
+    local we = require("resty.events.compat")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
     if not ok then
         error("failed to init worker event: " .. err)
@@ -1024,7 +1024,7 @@ function _M.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
 
-    local we = require("resty.worker.events")
+    local we = require("resty.events.compat")
     local ok, err = we.configure({shm = "worker-events-stream", interval = 0.1})
     if not ok then
         error("failed to init worker event: " .. err)

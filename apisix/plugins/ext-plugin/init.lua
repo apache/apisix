@@ -42,7 +42,7 @@ local process, ngx_pipe, events
 if is_http then
     process = require("ngx.process")
     ngx_pipe = require("ngx.pipe")
-    events = require("resty.worker.events")
+    events = require("resty.events.compat")
 end
 local resty_lock = require("resty.lock")
 local resty_signal = require "resty.signal"

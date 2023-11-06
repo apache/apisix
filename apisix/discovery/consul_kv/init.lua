@@ -369,7 +369,7 @@ function _M.init_worker()
       end
     end
 
-    events = require("resty.worker.events")
+    events = require("resty.events.compat")
     events_list = events.event_list(
         "discovery_consul_update_application",
         "updating"
