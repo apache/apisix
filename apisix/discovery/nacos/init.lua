@@ -18,7 +18,6 @@
 local require            = require
 local local_conf         = require('apisix.core.config_local').local_conf()
 local http               = require('resty.http')
-local hmac               = require("resty.hmac")
 local core               = require('apisix.core')
 local ipairs             = ipairs
 local type               = type
