@@ -55,6 +55,7 @@ local function discovery_nacos_callback(data, event, source, pid)
                ", application: ", core.json.encode(applications, true))
 end
 
+
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
     log.info('request url:', url)
@@ -129,6 +130,7 @@ local function get_token_param(base_uri, username, password)
     return '&accessToken=' .. data.accessToken
 end
 
+
 local function get_namespace_param(namespace_id)
     local param = ''
     if namespace_id then
@@ -138,6 +140,7 @@ local function get_namespace_param(namespace_id)
     return param
 end
 
+
 local function get_group_name_param(group_name)
     local param = ''
     if group_name then
@@ -146,6 +149,7 @@ local function get_group_name_param(group_name)
     end
     return param
 end
+
 
 local function get_signed_param(group_name, service_name)
     local param = ''
@@ -160,6 +164,7 @@ local function get_signed_param(group_name, service_name)
     end
     return param
 end
+
 
 local function get_base_uri()
     local host = local_conf.discovery.nacos.host
@@ -272,6 +277,7 @@ local function is_grpc(scheme)
 
     return false
 end
+
 
 local function fetch_full_registry(premature)
     if premature then

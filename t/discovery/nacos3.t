@@ -53,7 +53,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: error service_name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -71,6 +70,7 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
+
 
 
 === TEST 2: error namespace_id
@@ -93,6 +93,7 @@ GET /hello
 no valid upstream node
 
 
+
 === TEST 3: error group_name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -111,6 +112,7 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
+
 
 
 === TEST 4: error namespace_id and error group_name
@@ -134,6 +136,7 @@ GET /hello
 no valid upstream node
 
 
+
 === TEST 5: error group_name and correct namespace_id
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -155,6 +158,7 @@ GET /hello
 no valid upstream node
 
 
+
 === TEST 6: error namespace_id and correct group_name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -174,6 +178,7 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
+
 
 
 === TEST 7: get APISIX-NACOS info from NACOS - configured in services
@@ -201,6 +206,7 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+
 
 
 === TEST 8: get APISIX-NACOS info from NACOS - configured in services with group_name
@@ -232,6 +238,7 @@ services:
 ]
 
 
+
 === TEST 9: get APISIX-NACOS info from NACOS - configured in services with namespace_id
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -259,6 +266,7 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+
 
 
 === TEST 10: get APISIX-NACOS info from NACOS - configured in services with group_name and namespace_id
@@ -289,6 +297,7 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+
 
 
 === TEST 11: get APISIX-NACOS info from NACOS - configured in upstreams
@@ -342,6 +351,7 @@ routes:
 ]
 
 
+
 === TEST 13: get APISIX-NACOS info from NACOS - configured in upstreams with group_name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
@@ -365,6 +375,7 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+
 
 
 === TEST 14: get APISIX-NACOS info from NACOS - configured in upstreams with namespace_id and group_name
@@ -391,6 +402,7 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+
 
 
 === TEST 15: get APISIX-NACOS info from NACOS - configured in upstreams + etcd
