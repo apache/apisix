@@ -308,8 +308,8 @@ nginx_config:                     # Config for render the template to generate n
 #      connect: 2000       # Default 2000ms
 #      send: 2000          # Default 2000ms
 #      read: 5000          # Default 5000ms
-#    access_key: ""        # Nacos AccessKey ID in Alibaba Cloud
-#    secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud
+#    access_key: ""        # Nacos AccessKey ID in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
+#    secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
 #  consul_kv:              # Consul KV
 #    servers:              # Consul KV address(es)
 #      - "http://127.0.0.1:8500"
