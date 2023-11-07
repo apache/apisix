@@ -30,10 +30,7 @@ import (
 	"crypto/x509"
 	"flag"
 	"fmt"
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
 	"net/http"
@@ -42,6 +39,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -112,7 +112,6 @@ func (s *server) GetErrResp(ctx context.Context, in *pb.HelloRequest) (*pb.Hello
 		Message: "The server is out of service",
 		Type:    "service",
 	})
-
 	if err != nil {
 		panic(fmt.Sprintf("Unexpected error attaching metadata: %v", err))
 	}
@@ -121,7 +120,6 @@ func (s *server) GetErrResp(ctx context.Context, in *pb.HelloRequest) (*pb.Hello
 }
 
 func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-
 	select {
 	case <-time.After(1 * time.Second):
 		fmt.Println("overslept")
@@ -318,7 +316,7 @@ func main() {
 			}
 
 			certPool := x509.NewCertPool()
-			ca, err := ioutil.ReadFile(caFilePath)
+			ca, err := os.ReadFile(caFilePath)
 			if err != nil {
 				log.Fatalf("could not read ca certificate: %s", err)
 			}
