@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-# access_key and secret_key won't work and affect the open source nacos
+# we can't use mse nacos to test, access_key and secret_key won't affect the open source nacos
 use t::APISIX 'no_plan';
 
 workers(4);
