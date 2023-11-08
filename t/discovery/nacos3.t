@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+# access_key and secret_key won't work and affect the open source nacos
 use t::APISIX 'no_plan';
 
 workers(4);
