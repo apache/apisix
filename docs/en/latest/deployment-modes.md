@@ -151,9 +151,9 @@ routes:
 
 *WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
-### How to configure Router
+### How to configure Route
 
-Single Router：
+Single Route：
 
 ```yaml
 routes:
@@ -166,7 +166,7 @@ routes:
 #END
 ```
 
-Multiple Router：
+Multiple Routes：
 
 ```yaml
 routes:
@@ -185,7 +185,7 @@ routes:
 #END
 ```
 
-### How to configure Router + Service
+### How to configure Route + Service
 
 ```yml
 routes:
@@ -202,7 +202,7 @@ services:
 #END
 ```
 
-### How to configure Router + Upstream
+### How to configure Route + Upstream
 
 ```yml
 routes:
@@ -218,7 +218,7 @@ upstreams:
 #END
 ```
 
-### How to configure Router + Service + Upstream
+### How to configure Route + Service + Upstream
 
 ```yml
 routes:
