@@ -95,7 +95,7 @@ local schema = {
         required_acks = {
             type = "integer",
             default = 1,
-            enum = { 0, 1, -1 },
+            enum = { 1, -1 },
         },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
