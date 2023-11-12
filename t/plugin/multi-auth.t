@@ -154,7 +154,7 @@ GET /hello
 Authorization: Basic YmFyOmJhcgo=
 --- error_code: 401
 --- response_body
-{"message":"Authorization Failed."}
+{"message":"Authorization Failed"}
 
 
 
@@ -165,7 +165,7 @@ GET /hello
 apikey: auth-two
 --- error_code: 401
 --- response_body
-{"message":"Authorization Failed."}
+{"message":"Authorization Failed"}
 
 
 
@@ -200,7 +200,7 @@ apikey: auth-two
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin multi-auth err: property \"auth_plugins\" is required"}
+{"error_msg":"failed to check the configuration of plugin multi-auth err: property \"auth_plugins\" is required"}
 
 
 
@@ -241,4 +241,4 @@ GET /t
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin multi-auth err: property \"auth_plugins\" validation failed: expect array to have at least 2 items"}
+{"error_msg":"failed to check the configuration of plugin multi-auth err: property \"auth_plugins\" validation failed: expect array to have at least 2 items"}

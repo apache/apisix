@@ -69,7 +69,7 @@ function _M.rewrite(conf, ctx)
     for k, auth_plugin in pairs(auth_plugins) do
         for key, value in pairs(auth_plugin) do
             local auth = require("apisix.plugins." .. key)
-            local auth_code, b = auth.rewrite(value, ctx)
+            local auth_code = auth.rewrite(value, ctx)
             status_code = auth_code
             if auth_code == nil then
                 core.log.debug("Authentication is successful" .. key .. " plugin")
