@@ -15,16 +15,14 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local require = require
+local pairs = pairs
 
 local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {
-        auth_plugins = { type = "array", minItems = 2 },
-        hide_credentials = {
-            type = "boolean",
-            default = false,
-        }
+        auth_plugins = { type = "array", minItems = 2 }
     },
     required = { "auth_plugins" },
 }

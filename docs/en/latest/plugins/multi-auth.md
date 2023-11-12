@@ -36,9 +36,9 @@ The `multi-auth` Plugin is used to add multiple authentication methods to a Rout
 
 For Route:
 
-| Name        | Type  | Required | Default | Description                                                                             |
-|-------------|-------|----------|---------|-----------------------------------------------------------------------------------------|
-| auth_plugin | array | True     | -       | Add supporting auth plugin configuration. |
+| Name         | Type  | Required | Default | Description                                |
+|--------------|-------|----------|---------|--------------------------------------------|
+| auth_plugins | array | True     | -       | Add supporting auth plugins configuration. |
 
 ## Enable Plugin
 

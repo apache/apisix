@@ -199,8 +199,8 @@ apikey: auth-two
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin multi-auth err: property \"auth_plugins\" is required"}
+--- response_body_like eval
+qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: property \\"auth_plugins\\" is required"\}/
 
 
 
@@ -240,5 +240,5 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- response_body
-{"error_msg":"failed to check the configuration of plugin multi-auth err: property \"auth_plugins\" validation failed: expect array to have at least 2 items"}
+--- response_body_like eval
+qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: property \\"auth_plugins\\" validation failed: expect array to have at least 2 items"\}/
