@@ -292,7 +292,7 @@ local resolve_var
 do
     local _ctx
     local n_resolved
-    local pat = [[(?<!\\)\$\{?(\w+)\}?]]
+    local pat = [[(?<!\\)\$(\{(\w+)\}|(\w+))]]
     local _escaper
 
     local function resolve(m)
