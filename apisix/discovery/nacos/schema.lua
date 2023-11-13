@@ -52,6 +52,8 @@ return {
                 read = 5000,
             }
         },
+        access_key = {type = 'string', default = ''},
+        secret_key = {type = 'string', default = ''},
     },
     required = {'host'}
 }
