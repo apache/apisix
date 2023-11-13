@@ -38,7 +38,7 @@ A Router can have the following configurations:
 
 - `apisix.router.http`: The HTTP request route. It can take the following values:
 
-  - `radixtree_uri`: Only use the `uri` as the primary index. To learn more about the support for full and deep prefix matching, check [How to use router-radixtree](../router-radixtree.md).
+  - `radixtree_uri`: Only use the `uri` as the primary index. To learn more about the support for full and deep prefix matching, check [How to use router-radixtree](./route.md#route-matching-conditions).
     - `Absolute match`: Match completely with the given `uri` (`/foo/bar`, `/foo/glo`).
     - `Prefix match`: Match with the given prefix. Use `*` to represent the given `uri` for prefix matching. For example, `/foo*` can match with `/foo/`, `/foo/a` and `/foo/b`.
     - `match priority`: First try an absolute match, if it didn't match, try prefix matching.

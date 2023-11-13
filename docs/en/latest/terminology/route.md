@@ -382,7 +382,6 @@ graphql:
 
 If you need to pass a GraphQL body which is larger than the limitation, you can increase the value in `conf/config.yaml`.
 
-
 ## Configuration
 
 For specific options of Route, please refer to the [Admin API](../admin-api.md#route).
