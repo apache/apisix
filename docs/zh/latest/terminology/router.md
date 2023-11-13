@@ -38,7 +38,7 @@ Router 具有以下配置：
 
 - `apisix.router.http`: HTTP 请求路由。
 
-  - `radixtree_uri`：只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多信息请参考[如何使用 router-radixtree](../../../en/latest/router-radixtree.md)。
+  - `radixtree_uri`：只使用 `uri` 作为主索引。基于 `radixtree` 引擎，支持全量和深前缀匹配，更多信息请参考[如何使用 router-radixtree](../../../en/latest/terminology/route.md#route-matching-conditions)。
     - `绝对匹配`：完整匹配给定的 `uri` ，比如 `/foo/bar`，`/foo/glo`。
     - `前缀匹配`：末尾使用 `*` 代表给定的 `uri` 是前缀匹配。比如 `/foo*`，则允许匹配 `/foo/`、`/foo/a`和`/foo/b`等。
     - `匹配优先级`：优先尝试绝对匹配，若无法命中绝对匹配，再尝试前缀匹配。

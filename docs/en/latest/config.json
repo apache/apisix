@@ -318,10 +318,6 @@
         },
         {
           "type": "doc",
-          "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
           "id": "stream-proxy"
         },
         {
