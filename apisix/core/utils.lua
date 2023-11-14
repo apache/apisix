@@ -296,7 +296,11 @@ do
     local _escaper
 
     local function resolve(m)
-        local v = _ctx[m[1]]
+        local i = 1
+        if m[1]:byte(1) == 123 then
+            i = 2
+        end
+        local v = _ctx[m[i]]
         if v == nil then
             return ""
         end
