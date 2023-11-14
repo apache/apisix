@@ -143,7 +143,7 @@ h3: /hello
 
 
 
-=== TEST 4: closing curly brace not should not be a part of variable
+=== TEST 6: closing curly brace not should not be a part of variable
 --- config
  location /t {
            content_by_lua_block {
@@ -179,7 +179,7 @@ passed
 
 
 
-=== TEST 5: inject header
+=== TEST 7: test route
 --- request
 GET /hello?count=2
 --- response_body chomp
