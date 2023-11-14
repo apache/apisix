@@ -125,7 +125,7 @@ GET /hello
 
 
 
-=== TEST 4: verify basic
+=== TEST 4: verify basic-auth
 --- request
 GET /hello
 --- more_headers
@@ -137,7 +137,7 @@ find consumer foo
 
 
 
-=== TEST 5: verify key
+=== TEST 5: verify key-auth
 --- request
 GET /hello
 --- more_headers
@@ -169,7 +169,7 @@ apikey: auth-two
 
 
 
-=== TEST 8: enable multi auth plugin using admin api
+=== TEST 8: enable multi auth plugin using admin api, without any auth_plugins configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -204,7 +204,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 9: enable multi auth plugin using admin api
+=== TEST 9: enable multi auth plugin using admin api, with auth_plugins configuration but with one authorization plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -242,3 +242,177 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: property \\"auth_plugins\\" validation failed: expect array to have at least 2 items"\}/
+
+
+
+=== TEST 10: create public API route (jwt-auth sign)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwt/sign"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: add consumer with username and jwt-auth plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 12: sign / verify jwt-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+
+
+
+=== TEST 13: verify multi-auth with plugin config will cause the conf_version change
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, err = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "desc": "Multiple Authentication",
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "basic-auth": {}
+                                },
+                                {
+                                    "key-auth": {
+                                        "query": "apikey",
+                                        "hide_credentials": true,
+                                        "header": "apikey"
+                                    }
+                                },
+                                {
+                                    "jwt-auth": {
+                                        "cookie": "jwt",
+                                        "query": "jwt",
+                                        "hide_credentials": true,
+                                        "header": "authorization"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                  }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+
+            local code, err = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugin_config_id": 1
+                }]]
+            )
+            if code > 300 then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.sleep(0.1)
+
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world

@@ -1,5 +1,5 @@
 ---
-title: basic-auth
+title: multi-auth
 keywords:
   - Apache APISIX
   - API Gateway
@@ -30,15 +30,15 @@ description: This document contains information about the Apache APISIX multi-au
 
 ## Description
 
-The `multi-auth` Plugin is used to add multiple authentication methods to a Route or a Service. Plugins with type 'auth' are supported.
+The `multi-auth` Plugin is used to add multiple authentication methods to a Route or a Service. It supports plugins of type 'auth'. You can combine different authentication methods using "or" relationship with `multi-auth` plugin. If you want to use multiple methods in an "and" relationship, apply specific authentication plugins directly to the route or service.
 
 ## Attributes
 
 For Route:
 
-| Name         | Type  | Required | Default | Description                                |
-|--------------|-------|----------|---------|--------------------------------------------|
-| auth_plugins | array | True     | -       | Add supporting auth plugins configuration. |
+| Name         | Type  | Required | Default | Description                                                           |
+|--------------|-------|----------|---------|-----------------------------------------------------------------------|
+| auth_plugins | array | True     | -       | Add supporting auth plugins configuration. expects at least 2 plugins |
 
 ## Enable Plugin
 
@@ -98,9 +98,13 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 After you have configured the Plugin as mentioned above, you can make a request to the Route as shown below:
 
+request with basic-auth
+
 ```shell
 curl -i -ufoo:bar http://127.0.0.1:9080/hello
 ```
+
+request with key-auth
 
 ```shell
 curl http://127.0.0.2:9080/hello -H 'apikey: auth-one' -i

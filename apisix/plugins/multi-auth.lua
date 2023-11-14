@@ -46,13 +46,13 @@ function _M.check_schema(conf)
 
     local auth_plugins = conf.auth_plugins
     for k, auth_plugin in pairs(auth_plugins) do
-        for key, value in pairs(auth_plugin) do
-            local auth = require("apisix.plugins." .. key)
+        for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
+            local auth = require("apisix.plugins." .. auth_plugin_name)
             if auth == nil then
-                return false, key .. " plugin did not found"
+                return false, auth_plugin_name .. " plugin did not found"
                 else
                 if auth.type ~= 'auth' then
-                    return false, key .. " plugin is not supported"
+                    return false, auth_plugin_name .. " plugin is not supported"
                 end
             end
         end
@@ -65,15 +65,17 @@ function _M.rewrite(conf, ctx)
     local auth_plugins = conf.auth_plugins
     local status_code
     for k, auth_plugin in pairs(auth_plugins) do
-        for key, value in pairs(auth_plugin) do
-            local auth = require("apisix.plugins." .. key)
-            local auth_code = auth.rewrite(value, ctx)
+        for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
+            local auth = require("apisix.plugins." .. auth_plugin_name)
+            -- returns 401 HTTP status code if authentication failed, otherwise nothing returns.
+            local auth_code = auth.rewrite(auth_plugin_conf, ctx)
             status_code = auth_code
             if auth_code == nil then
-                core.log.debug("Authentication is successful" .. key .. " plugin")
+                core.log.debug("Authentication is successful" .. auth_plugin_name .. " plugin")
                 goto authenticated
             else
-                core.log.warn("Authentication is failed" .. key .. " plugin, code: " .. auth_code)
+                core.log.warn("Authentication is failed" .. auth_plugin_name .. " plugin, code: "
+                        .. auth_code)
             end
         end
     end
