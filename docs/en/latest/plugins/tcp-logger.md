@@ -95,8 +95,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
                  "host": "127.0.0.1",
                  "port": 5044,
                  "tls": false,
-                 "batch_max_size": 1,
-                 "name": "tcp logger"
+                 "batch_max_size": 1
             }
        },
       "upstream": {

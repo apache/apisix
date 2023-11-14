@@ -69,7 +69,6 @@ __DATA__
                                                  logtable = "t",
                                                  endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server",
                                                  max_retry_count = 1,
-                                                 name = "clickhouse logger",
                                                  ssl_verify = false
                                                  })
 

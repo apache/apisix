@@ -354,7 +354,6 @@ GET /apisix/prometheus/metrics
                                 "batch_max_size": 1000,
                                 "buffer_duration": 60,
                                 "port": 1000,
-                                "name": "sys-logger",
                                 "flush_limit": 4096,
                                 "sock_type": "tcp",
                                 "timeout": 3,
@@ -468,7 +467,6 @@ qr/apisix_batch_process_entries\{name="zipkin_report",route_id="9",server_addr="
                                 "inactive_timeout": 5,
                                 "include_req_body": false,
                                 "timeout": 3,
-                                "name": "http-logger",
                                 "retry_delay": 1,
                                 "buffer_duration": 60,
                                 "uri": "http://127.0.0.1:19080/report",
@@ -529,7 +527,6 @@ qr/apisix_batch_process_entries\{name="http-logger",route_id="9",server_addr="12
                                 "host": "127.0.0.1",
                                 "include_req_body": false,
                                 "timeout": 1000,
-                                "name": "tcp-logger",
                                 "retry_delay": 1,
                                 "buffer_duration": 60,
                                 "port": 1000,
@@ -593,7 +590,6 @@ qr/apisix_batch_process_entries\{name="tcp-logger",route_id="10",server_addr="12
                                 "include_req_body": false,
                                 "timeout": 3,
                                 "batch_max_size": 1000,
-                                "name": "udp-logger",
                                 "inactive_timeout": 5,
                                 "buffer_duration": 60
                             }
@@ -649,7 +645,6 @@ qr/apisix_batch_process_entries\{name="udp-logger",route_id="10",server_addr="12
                             "sls-logger": {
                                 "host": "127.0.0.1",
                                 "batch_max_size": 1000,
-                                "name": "sls-logger",
                                 "inactive_timeout": 5,
                                 "logstore": "your_logstore",
                                 "buffer_duration": 60,

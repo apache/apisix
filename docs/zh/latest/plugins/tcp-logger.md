@@ -92,8 +92,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
                  "host": "127.0.0.1",
                  "port": 5044,
                  "tls": false,
-                 "batch_max_size": 1,
-                 "name": "tcp logger"
+                 "batch_max_size": 1
             }
        },
       "upstream": {
