@@ -297,6 +297,7 @@ do
 
     local function resolve(m)
         local i = 1
+        -- if first capture's first char is "{" evaluate the second capture
         if m[1]:byte(1) == 123 then
             i = 2
         end
