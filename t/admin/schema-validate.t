@@ -398,3 +398,71 @@ location /t {
 --- error_code: 400
 --- response
 {"error_msg":"allOf 1 failed: value should match only one schema, but matches none"}
+
+=== TEST 14: Check node_schema optional port
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local json = require("toolkit.json")
+
+            local uri = "http://127.0.0.1:" .. "9180" .. "/apisix/admin/routes/1"
+            local httpc = http.new()
+            local body = {
+                uri = "/ip",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        { host = "httpbin.org", weight = 1,}
+                    }
+                }
+            }
+            body = json.encode(body)
+            headers = {}
+            headers["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
+
+            local res, err = httpc:request_uri(uri, {method = "PUT", body=body, headers=headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            if res.status > 300 then
+                ngx.say(res.body)
+                return
+            end
+            ngx.say("passed")
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+=== TEST 2: Test route upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. "9080" .. "/ip"
+            local httpc = http.new()
+
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            if res.status > 300 then
+                ngx.say(res.body)
+                return
+            end
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
