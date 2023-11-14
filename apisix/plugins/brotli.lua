@@ -21,7 +21,7 @@ local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
 local type = type
-local brotlidec = require("brotli.encoder")
+local brotlienc = require("brotli.encoder")
 
 
 local schema = {
@@ -79,6 +79,11 @@ local _M = {
 }
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
@@ -90,7 +95,7 @@ local function create_brotli_encoder(lgwin, comp_level)
         lgwin = lgwin,
         quality = comp_level,
     }
-    return brotlidec.new(options)
+    return brotlienc.new(options)
 end
 
 
@@ -100,6 +105,7 @@ local function brotli_compress(conf, ctx, body)
     end
     encoder.
 end
+
 
 function _M.header_filter(conf, ctx)
     local types = conf.types
@@ -147,6 +153,9 @@ function _M.header_filter(conf, ctx)
     end
 
     ctx.matched_brotli = matched
+    core.response.clear_header_as_body_modified()
+    core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                        create_brotli_encoder, conf)
 end
 
 
@@ -159,7 +168,7 @@ function _M.body_filter(_, ctx)
 
         local compressed = brotli_compress(body)
         if not compressed then
-            core.log.error("failed to compress response: ", body)
+            core.log.error("failed to compress response body")
             return
         end
 
