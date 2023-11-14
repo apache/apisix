@@ -106,7 +106,9 @@ done
                     "plugins": {
                         "jwe-decrypt": {
                             "key": "user-key",
-                            "secret": "12345678901234567890123456789012"
+                            "secret": "12345678901234567890123456789012",
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
                         }
                     }
                 }]]
@@ -132,7 +134,10 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "jwe-decrypt": {}
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        }
                     },
                     "upstream": {
                         "nodes": {
@@ -371,7 +376,10 @@ passed
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "jwe-decrypt": {}
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        }
                     },
                     "upstream": {
                         "nodes": {
