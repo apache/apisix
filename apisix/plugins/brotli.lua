@@ -91,7 +91,7 @@ end
 
 local function create_brotli_encoder(lgwin, comp_level)
     core.log.info("create new brotli encoder")
-    options = {
+    local options = {
         lgwin = lgwin,
         quality = comp_level,
     }
@@ -106,10 +106,12 @@ local function brotli_compress(conf, ctx, body)
         core.log.error("failed to create brotli encoder: ", err)
         return
     end
-    compressed = encoder:compressStream(body)
-    if encoder.isFinished() then
-        return compressed
+    local compressed, status = encoder:compressStream(body)
+    if not compressed then
+        core.log.error("failed in brotli compressStream: ", status)
+        return nil
     end
+    return compressed
 end
 
 
@@ -157,10 +159,10 @@ function _M.header_filter(conf, ctx)
     if conf.vary then
         core.response.add_header("Vary", "Accept-Encoding")
     end
-    core.log.error("need to brr: ", matched)
+
     core.response.clear_header_as_body_modified()
     core.response.add_header("Content-Encoding", "br")
-    ctx.brotli_matched = matched
+    ctx.brotli_matched = true
 end
 
 
