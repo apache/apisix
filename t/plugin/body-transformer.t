@@ -944,12 +944,12 @@ location /demo {
             local core = require("apisix.core")
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
-	        local data = {name = "hello", age = 20}
-	        local body = ngx.encode_args(data)
+            local data = {name = "hello", age = 20}
+            local body = ngx.encode_args(data)
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/x-www-form-urlencoded"}}
             local httpc = http.new()
             local res = httpc:request_uri(uri, opt)
-	        assert(res.status == 200)
+            assert(res.status == 200)
         }
     }
 
@@ -1006,7 +1006,7 @@ location /demo {
             local opt = {method = "GET"}
             local httpc = http.new()
             local res = httpc:request_uri(uri, opt)
-			assert(res.status == 200)
+            assert(res.status == 200)
         }
     }
 
@@ -1061,11 +1061,11 @@ location /demo {
             local core = require("apisix.core")
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
-	        local data = {name = "hello", age = 20}
-	        local body = ngx.encode_args(data)
+            local data = {name = "hello", age = 20}
+            local body = ngx.encode_args(data)
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/x-www-form-urlencoded"}}
             local httpc = http.new()
             local res = httpc:request_uri(uri, opt)
-	    assert(res.status == 200)
+        assert(res.status == 200)
         }
     }

@@ -144,7 +144,6 @@ local function transform(conf, body, typ, ctx, request_method)
     end
 
     local text = conf[typ].template
-    -- The encoded and args formats do not support automatic decoding using base64 because the equals symbol interferes
     if (conf[typ].template_is_base64 or (format and format ~= "encoded" and format ~= "args")) then
         text = decode_base64(text) or text
     end
