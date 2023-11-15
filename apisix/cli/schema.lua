@@ -488,15 +488,7 @@ function _M.validate(yaml_conf)
         end
     end
 
-    local role = yaml_conf.deployment.role
-    local validator = jsonschema.generate_validator(deployment_schema[role])
-    local ok, err = validator(yaml_conf.deployment)
-    if not ok then
-        return false, "invalid deployment " .. role .. " configuration: " .. err
-    end
-
     return true
 end
-
 
 return _M
