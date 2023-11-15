@@ -25,6 +25,12 @@ local _M = {}
 local etcd_schema = {
     type = "object",
     properties = {
+        health_check_timeout = {
+            type = "integer"
+        },
+        startup_retry = {
+            type = "integer"
+        },
         resync_delay = {
             type = "integer",
         },
@@ -43,6 +49,9 @@ local etcd_schema = {
                 key = {
                     type = "string",
                 },
+                verify = {
+                    type = "boolean"
+                }
             },
         },
         prefix = {
@@ -51,8 +60,7 @@ local etcd_schema = {
         host = {
             type = "array",
             items = {
-                type = "string",
-                pattern = [[^https?://]]
+                type = "string"
             },
             minItems = 1,
         },
@@ -63,7 +71,7 @@ local etcd_schema = {
             description = "etcd connection timeout in seconds",
         },
     },
-    required = {"prefix", "host"}
+    required = { "host" }
 }
 
 local config_schema = {
