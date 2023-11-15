@@ -21,7 +21,11 @@ local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
 local type = type
-local brotlienc = require("brotli.encoder")
+
+
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
 
 
 local schema = {
@@ -79,11 +83,6 @@ local _M = {
 }
 
 
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
-
-
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
@@ -91,6 +90,7 @@ end
 
 local function create_brotli_encoder(lgwin, comp_level)
     core.log.info("create new brotli encoder")
+    local brotlienc = require("brotli.encoder")
     options = {
         lgwin = lgwin,
         quality = comp_level,
@@ -100,10 +100,16 @@ end
 
 
 local function brotli_compress(conf, ctx, body)
+    local encoder, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                                  create_brotli_encoder, conf.comp_level, conf.lgwin)
     if not encoder then
-        create_brotli_encoder(conf.comp_level, conf.lgwin)
+        core.log.error("failed to create brotli encoder: ", err)
+        return
     end
-    encoder.
+    compressed = encoder.compressStream(body)
+    if encoder.isFinished() then
+        return compressed
+    end
 end
 
 
@@ -152,21 +158,19 @@ function _M.header_filter(conf, ctx)
         core.response.add_header("Vary", "Accept-Encoding")
     end
 
-    ctx.matched_brotli = matched
     core.response.clear_header_as_body_modified()
-    core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                        create_brotli_encoder, conf)
+    ctx.brotli_matched = matched
 end
 
 
-function _M.body_filter(_, ctx)
-    if ctx.matched_brotli then
+function _M.body_filter(conf, ctx)
+    if ctx.brotli_matched then
         local body = core.response.hold_body_chunk(ctx)
         if ngx.arg[2] == false and not body then
             return
         end
 
-        local compressed = brotli_compress(body)
+        local compressed = brotli_compress(conf, ctx, body)
         if not compressed then
             core.log.error("failed to compress response body")
             return
