@@ -21,6 +21,7 @@ local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
 local type = type
+local brotlienc = require("brotli.encoder")
 
 
 local lrucache = core.lrucache.new({
@@ -90,7 +91,6 @@ end
 
 local function create_brotli_encoder(lgwin, comp_level)
     core.log.info("create new brotli encoder")
-    local brotlienc = require("brotli.encoder")
     options = {
         lgwin = lgwin,
         quality = comp_level,

@@ -92,6 +92,7 @@ Vary:
                 {},
                 {comp_level = 5},
                 {lgwin = 12, comp_level = 5},
+                {lgwin = 12, comp_level = 5, vary = true},
             }) do
                 local ok, err = plugin.check_schema(conf)
                 if not ok then
@@ -103,10 +104,10 @@ Vary:
         }
     }
 --- response_body
-{"lgwin":24, "comp_level": 1, "http_version":1.1, "types":"text/html", "min_length":20, "vary":false}
-{"lgwin":24, "comp_level": 5, "http_version":1.1, "types":"text/html", "min_length":20, "vary":false}
-{"lgwin":12, "comp_level": 5, "http_version":1.1, "types":"text/html", "min_length":20, "vary":false}
-
+{"comp_level":1,"http_version":1.1,"lgwin":24,"min_length":20,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgwin":24,"min_length":20,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgwin":12,"min_length":20,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgwin":12,"min_length":20,"types":["text/html"],"vary":true}
 
 === TEST 4: compress level
 --- config
