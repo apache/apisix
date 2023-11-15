@@ -67,14 +67,14 @@ function _M.rewrite(conf, ctx)
     for k, auth_plugin in pairs(auth_plugins) do
         for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
             local auth = require("apisix.plugins." .. auth_plugin_name)
-            -- returns 401 HTTP status code if authentication failed, otherwise nothing returns.
+            -- returns 401 HTTP status code if authentication failed, otherwise returns nothing.
             local auth_code = auth.rewrite(auth_plugin_conf, ctx)
             status_code = auth_code
             if auth_code == nil then
-                core.log.debug("Authentication is successful" .. auth_plugin_name .. " plugin")
+                core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
                 goto authenticated
             else
-                core.log.warn("Authentication is failed" .. auth_plugin_name .. " plugin, code: "
+                core.log.debug(auth_plugin_name .. " failed to authenticate the request, code: "
                         .. auth_code)
             end
         end
