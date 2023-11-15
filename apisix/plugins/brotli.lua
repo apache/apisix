@@ -106,7 +106,7 @@ local function brotli_compress(conf, ctx, body)
         core.log.error("failed to create brotli encoder: ", err)
         return
     end
-    compressed = encoder.compressStream(body)
+    compressed = encoder:compressStream(body)
     if encoder.isFinished() then
         return compressed
     end
@@ -157,7 +157,7 @@ function _M.header_filter(conf, ctx)
     if conf.vary then
         core.response.add_header("Vary", "Accept-Encoding")
     end
-
+    core.log.error("need to brr: ", matched)
     core.response.clear_header_as_body_modified()
     core.response.add_header("Content-Encoding", "br")
     ctx.brotli_matched = matched
