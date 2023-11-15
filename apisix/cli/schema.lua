@@ -25,12 +25,6 @@ local _M = {}
 local etcd_schema = {
     type = "object",
     properties = {
-        health_check_timeout = {
-            type = "integer"
-        },
-        startup_retry = {
-            type = "integer"
-        },
         resync_delay = {
             type = "integer",
         },
@@ -49,9 +43,6 @@ local etcd_schema = {
                 key = {
                     type = "string",
                 },
-                verify = {
-                    type = "boolean"
-                }
             },
         },
         prefix = {
@@ -60,7 +51,8 @@ local etcd_schema = {
         host = {
             type = "array",
             items = {
-                type = "string"
+                type = "string",
+                pattern = [[^https?://]]
             },
             minItems = 1,
         },
@@ -71,7 +63,7 @@ local etcd_schema = {
             description = "etcd connection timeout in seconds",
         },
     },
-    required = { "host" }
+    required = {"prefix", "host"}
 }
 
 local config_schema = {
@@ -376,9 +368,9 @@ local admin_schema = {
             properties = {
                 items = {
                     properties = {
-                        name = {type = "string"},
-                        key = {type = "string"},
-                        role = {type = "string"},
+                        name = { type = "string" },
+                        key = { type = "string" },
+                        role = { type = "string" },
                     }
                 }
             }
@@ -399,6 +391,32 @@ local admin_schema = {
         admin_key_required = {
             type = "boolean",
         },
+        enable_admin_cors = {
+            type = "boolean"
+        },
+        allow_admin = {
+            type = "array",
+            items = {
+                type = "string"
+            }
+        },
+        admin_api_mtls = {
+            type = "object",
+            properties = {
+                admin_ssl_cert = {
+                    type = "string"
+                },
+                admin_ssl_cert_key = {
+                    type = "string"
+                },
+                admin_ssl_ca_cert = {
+                    type = "string"
+                }
+            }
+        },
+        admin_api_version = {
+            type = "string"
+        }
     }
 }
 
