@@ -20,7 +20,6 @@ local pairs = pairs
 local pcall = pcall
 local require = require
 
--- test comment
 
 local _M = {}
 local etcd_schema = {
@@ -72,6 +71,42 @@ local config_schema = {
     properties = {
         apisix = {
             properties = {
+                node_listen = {
+                    anyOf = {
+                        {
+                            type = "integer",
+                            minimum = 1,
+                            maximum = 65535
+                        },
+                        {
+                            type = "array",
+                            items = {
+                                type = "integer",
+                                minimum = 1,
+                                maximum = 65535
+                            }
+                        },
+                        {
+                            type = "array",
+                            items = {
+                                type = "object",
+                                properties = {
+                                    port = {
+                                        type = "integer",
+                                        minimum = 1,
+                                        maximum = 65535
+                                    },
+                                    ip = {
+                                        type = "string",
+                                    },
+                                    enable_http2 = {
+                                        type = "boolean",
+                                    },
+                                }
+                            },
+                        }
+                    },
+                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },
