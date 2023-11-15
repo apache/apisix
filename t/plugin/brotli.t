@@ -90,25 +90,22 @@ Vary:
 
             for _, conf in ipairs({
                 {},
-                {buffers = {}},
-                {buffers = {number = 1}},
-                {buffers = {size = 1}},
+                {comp_level = 5},
+                {lgwin = 12, comp_level = 5},
             }) do
                 local ok, err = plugin.check_schema(conf)
                 if not ok then
                     ngx.say(err)
                     return
                 end
-                ngx.say(json.encode(conf.buffers))
+                ngx.say(json.encode(conf))
             end
         }
     }
 --- response_body
-{"number":32,"size":4096}
-{"number":32,"size":4096}
-{"number":1,"size":4096}
-{"number":32,"size":1}
-
+{"lgwin":24, "comp_level": 1, "http_version":1.1, "types":"text/html", "min_length":20, "vary":false}
+{"lgwin":24, "comp_level": 5, "http_version":1.1, "types":"text/html", "min_length":20, "vary":false}
+{"lgwin":12, "comp_level": 5, "http_version":1.1, "types":"text/html", "min_length":20, "vary":false}
 
 
 === TEST 4: compress level
@@ -153,7 +150,7 @@ Vary:
                 },
                 "plugins": {
                     "brotli": {
-                        "comp_level": 9
+                        "comp_level": 11
                     }
                 }
             }]=]
@@ -491,20 +488,13 @@ Vary: upstream, Accept-Encoding
                     min_length = 0
                 }},
                 {input = {
-                    comp_level = 10
+                    comp_level = 12
                 }},
                 {input = {
                     http_version = 2
                 }},
                 {input = {
-                    buffers = {
-                        number = 0,
-                    }
-                }},
-                {input = {
-                    buffers = {
-                        size = 0,
-                    }
+                    lgwin = 100
                 }},
                 {input = {
                     vary = 0
@@ -526,8 +516,7 @@ Vary: upstream, Accept-Encoding
 --- response_body
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"types\" validation failed: object matches none of the required"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"min_length\" validation failed: expected 0 to be at least 1"}
-{"error_msg":"failed to check the configuration of plugin brotli err: property \"comp_level\" validation failed: expected 10 to be at most 9"}
+{"error_msg":"failed to check the configuration of plugin brotli err: property \"comp_level\" validation failed: expected 12 to be at most 11"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"http_version\" validation failed: matches none of the enum values"}
-{"error_msg":"failed to check the configuration of plugin brotli err: property \"buffers\" validation failed: property \"number\" validation failed: expected 0 to be at least 1"}
-{"error_msg":"failed to check the configuration of plugin brotli err: property \"buffers\" validation failed: property \"size\" validation failed: expected 0 to be at least 1"}
+{"error_msg":"failed to check the configuration of plugin brotli err: property \"lgwin\" validation failed: property \"number\" validation failed: expected 0 to be at least 10"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
