@@ -20,6 +20,7 @@ local pairs = pairs
 local pcall = pcall
 local require = require
 
+-- test comment
 
 local _M = {}
 local etcd_schema = {
@@ -66,81 +67,11 @@ local etcd_schema = {
     required = {"prefix", "host"}
 }
 
-local admin_schema = {
-    type = "object",
-    properties = {
-        admin_key = {
-            type = "array",
-            properties = {
-                items = {
-                    properties = {
-                        name = {type = "string"},
-                        key = {type = "string"},
-                        role = {type = "string"},
-                    }
-                }
-            }
-        },
-        admin_listen = {
-            properties = {
-                listen = { type = "string" },
-                port = { type = "integer" },
-            },
-            default = {
-                listen = "0.0.0.0",
-                port = 9180,
-            }
-        },
-        https_admin = {
-            type = "boolean",
-        },
-        admin_key_required = {
-            type = "boolean",
-        },
-    }
-}
-
 local config_schema = {
     type = "object",
     properties = {
         apisix = {
             properties = {
-                node_listen = {
-                    anyOf = {
-                        {
-                            type = "integer",
-                            minimum = 1,
-                            maximum = 65535
-                        },
-                        {
-                            type = "array",
-                            items = {
-                                type = "integer",
-                                minimum = 1,
-                                maximum = 65535
-                            }
-                        },
-                        {
-                            type = "array",
-                            items = {
-                                type = "object",
-                                properties = {
-                                    port = {
-                                        type = "integer",
-                                        minimum = 1,
-                                        maximum = 65535
-                                    },
-                                    ip = {
-                                        type = "string",
-                                    },
-                                    enable_http2 = {
-                                        type = "boolean",
-                                    },
-                                }
-                            },
-                        }
-                    },
-                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },
@@ -387,115 +318,93 @@ local config_schema = {
                 role = {
                     enum = {"traditional", "control_plane", "data_plane", "standalone"},
                     default = "traditional"
-                },
-            },
-            dependencies = {
-                role = {
-                    oneOf = {
-                        {
-                            properties = {
-                                role = { const = "traditional" },
-                                etcd = etcd_schema,
-                                admin = admin_schema,
-                                role_traditional = {
-                                    type = "object",
-                                    properties = {
-                                        config_provider = {
-                                            enum = { "etcd" }
-                                        },
-                                    },
-                                    required = { "config_provider" }
-                                },
-                            },
-                            required = { "role_traditional" },
-                        },
-                        {
-                            properties = {
-                                role = { const = "control_plane" },
-                                etcd = etcd_schema,
-                                admin = admin_schema,
-                                role_control_plane = {
-                                    type = "object",
-                                    properties = {
-                                        config_provider = {
-                                            enum = { "etcd" }
-                                        },
-                                    },
-                                    required = { "config_provider" }
-                                },
-                            },
-                            required = { "role_control_plane" },
-                        },
-                        {
-                            properties = {
-                                role = { const = "data_plane" },
-                                etcd = etcd_schema,
-                                role_data_plane = {
-                                    type = "object",
-                                    properties = {
-                                        config_provider = {
-                                            enum = { "etcd", "yaml", "xds" }
-                                        },
-                                    },
-                                    required = { "config_provider" }
-                                },
-                            },
-                            required = { "role_data_plane" },
-                        },
-                    }
                 }
-            }
+            },
         },
     },
     required = {"apisix", "deployment"},
 }
 
--- local deployment_schema = {
---     traditional = {
---         properties = {
---             etcd = etcd_schema,
---             admin = admin_schema,
---             role_traditional = {
---                 properties = {
---                     config_provider = {
---                         enum = {"etcd"}
---                     },
---                 },
---                 required = {"config_provider"}
---             }
---         },
---         required = {"etcd"}
---     },
---     control_plane = {
---         properties = {
---             etcd = etcd_schema,
---             admin = admin_schema,
---             role_control_plane = {
---                 properties = {
---                     config_provider = {
---                         enum = {"etcd"}
---                     },
---                 },
---                 required = {"config_provider"}
---             },
---         },
---         required = {"etcd", "role_control_plane"}
---     },
---     data_plane = {
---         properties = {
---             etcd = etcd_schema,
---             role_data_plane = {
---                 properties = {
---                     config_provider = {
---                         enum = {"etcd", "yaml", "xds"}
---                     },
---                 },
---                 required = {"config_provider"}
---             },
---         },
---         required = {"role_data_plane"}
---     }
--- }
+local admin_schema = {
+    type = "object",
+    properties = {
+        admin_key = {
+            type = "array",
+            properties = {
+                items = {
+                    properties = {
+                        name = {type = "string"},
+                        key = {type = "string"},
+                        role = {type = "string"},
+                    }
+                }
+            }
+        },
+        admin_listen = {
+            properties = {
+                listen = { type = "string" },
+                port = { type = "integer" },
+            },
+            default = {
+                listen = "0.0.0.0",
+                port = 9180,
+            }
+        },
+        https_admin = {
+            type = "boolean",
+        },
+        admin_key_required = {
+            type = "boolean",
+        },
+    }
+}
+
+local deployment_schema = {
+    traditional = {
+        properties = {
+            etcd = etcd_schema,
+            admin = admin_schema,
+            role_traditional = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                },
+                required = {"config_provider"}
+            }
+        },
+        required = {"etcd"}
+    },
+    control_plane = {
+        properties = {
+            etcd = etcd_schema,
+            admin = admin_schema,
+            role_control_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+        },
+        required = {"etcd", "role_control_plane"}
+    },
+    data_plane = {
+        properties = {
+            etcd = etcd_schema,
+            role_data_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd", "yaml", "xds"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+        },
+        required = {"role_data_plane"}
+    }
+}
 
 
 function _M.validate(yaml_conf)
@@ -518,12 +427,12 @@ function _M.validate(yaml_conf)
         end
     end
 
-    -- local role = yaml_conf.deployment.role
-    -- local validator = jsonschema.generate_validator(deployment_schema[role])
-    -- local ok, err = validator(yaml_conf.deployment)
-    -- if not ok then
-    --     return false, "invalid deployment " .. role .. " configuration: " .. err
-    -- end
+    local role = yaml_conf.deployment.role
+    local validator = jsonschema.generate_validator(deployment_schema[role])
+    local ok, err = validator(yaml_conf.deployment)
+    if not ok then
+        return false, "invalid deployment " .. role .. " configuration: " .. err
+    end
 
     return true
 end
