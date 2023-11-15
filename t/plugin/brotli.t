@@ -519,5 +519,5 @@ Vary: upstream, Accept-Encoding
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"min_length\" validation failed: expected 0 to be at least 1"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"comp_level\" validation failed: expected 12 to be at most 11"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"http_version\" validation failed: matches none of the enum values"}
-{"error_msg":"failed to check the configuration of plugin brotli err: property \"lgwin\" validation failed: property \"number\" validation failed: expected 0 to be at least 10"}
+{"error_msg":"failed to check the configuration of plugin brotli err: property \"lgwin\" validation failed: expected 100 to be at most 24"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"vary\" validation failed: wrong type: expected boolean, got number"}

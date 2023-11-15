@@ -159,6 +159,7 @@ function _M.header_filter(conf, ctx)
     end
 
     core.response.clear_header_as_body_modified()
+    core.response.add_header("Content-Encoding", "br")
     ctx.brotli_matched = matched
 end
 
