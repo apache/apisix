@@ -167,6 +167,30 @@ local config_schema = {
                         }
                     },
                 },
+                enable_admin = {
+                    type = "boolean",
+                },
+                enable_dev_mode = {
+                    type = "boolean",
+                },
+                enable_reuseport = {
+                    type = "boolean",
+                },
+                show_upstream_status_in_response_header = {
+                    type = "boolean",
+                },
+                enable_ipv6 = {
+                    type = "boolean",
+                },
+                enable_server_tokens = {
+                    type = "boolean",
+                },
+                extra_lua_path = {
+                    type = "string"
+                },
+                extra_lua_cpath = {
+                    type = "string"
+                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },
