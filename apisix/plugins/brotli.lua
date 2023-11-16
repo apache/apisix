@@ -21,7 +21,7 @@ local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
 local type = type
-local brotlienc = require("brotli.encoder")
+local brotli = require("brotli")
 
 
 local lrucache = core.lrucache.new({
@@ -53,17 +53,34 @@ local schema = {
             minimum = 1,
             default = 20,
         },
+        mode = {
+            type = "integer",
+            -- 0: MODE_GENERIC (default),
+            -- 1: MODE_TEXT (for UTF-8 format text input)
+            -- 2: MODE_FONT (for WOFF 2.0)
+            minimum = 0,
+            maximum = 2,
+            default = 0,
+        },
         comp_level = {
             type = "integer",
             minimum = 1,
             maximum = 11,
-            default = 1,
+            default = 11,
         },
         lgwin = {
             type = "integer",
             minimum = 10,
             maximum = 24,
-            default = 24,
+            default = 22,
+        },
+        lgblock = {
+            type = "integer",
+            minimum = 16,
+            maximum = 24,
+            default = 0,
+            -- allow 0, 16-24
+            enum = { 0 },
         },
         http_version = {
             enum = {1.1, 1.0},
@@ -89,34 +106,43 @@ function _M.check_schema(conf)
 end
 
 
-local function create_brotli_encoder(lgwin, comp_level)
-    core.log.info("create new brotli encoder")
+local function create_brotli_compressor(mode, comp_level, lgwin, lgblock)
+    core.log.info("create new brotli compressor")
     local options = {
-        lgwin = lgwin,
+        mode = mode,
         quality = comp_level,
+        lgwin = lgwin,
+        lgblock = lgblock,
     }
-    return brotlienc.new(options)
+    return brotli.compressor:new(options)
 end
 
 
 local function brotli_compress(conf, ctx, body)
-    local encoder, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                                                  create_brotli_encoder, conf.comp_level, conf.lgwin)
-    if not encoder then
-        core.log.error("failed to create brotli encoder: ", err)
+    local compressor, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                                     create_brotli_compressor,
+                                                     conf.mode, conf.comp_level,
+                                                     conf.lgwin, conf.lgblock)
+    if err then
+        core.log.error("failed to fetch cached brotli compressor: ", err)
         return
     end
-    local compressed, status = encoder:compressStream(body)
-    if not compressed then
-        core.log.error("failed in brotli compressStream: ", status)
-        return nil
-    end
-    return compressed
+    local chunk = compressor:compress(body)
+    return chunk
 end
 
 
 function _M.header_filter(conf, ctx)
     local types = conf.types
+
+    local accept_encoding = ngx_header["Accept-Encoding"]
+    local allowed_br = core.string.find(accept_encoding, "br")
+
+    if not allowed_br then
+        -- No support accept brotli encoding
+        return
+    end
+
     local content_type = ngx_header["Content-Type"]
     if not content_type then
         -- Like Nginx, don't compress if Content-Type is missing
@@ -160,9 +186,9 @@ function _M.header_filter(conf, ctx)
         core.response.add_header("Vary", "Accept-Encoding")
     end
 
-    core.response.clear_header_as_body_modified()
-    core.response.add_header("Content-Encoding", "br")
     ctx.brotli_matched = true
+    core.response.add_header("Content-Encoding", "br")
+    core.response.clear_header_as_body_modified()
 end
 
 
