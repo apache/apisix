@@ -63,7 +63,7 @@ local etcd_schema = {
             description = "etcd connection timeout in seconds",
         },
     },
-    required = {"prefix", "host"}
+    required = { "prefix", "host" }
 }
 
 local admin_schema = {
@@ -214,12 +214,12 @@ local config_schema = {
                                 },
                                 oneOf = {
                                     {
-                                        required = {"name", "memory_size"},
+                                        required = { "name", "memory_size" },
                                         maxProperties = 2,
                                     },
                                     {
-                                        required = {"name", "memory_size", "disk_size",
-                                            "disk_path", "cache_levels"},
+                                        required = { "name", "memory_size", "disk_size",
+                                            "disk_path", "cache_levels" },
                                     }
                                 },
                             },
@@ -229,7 +229,7 @@ local config_schema = {
                 },
                 proxy_mode = {
                     type = "string",
-                    enum = {"http", "stream", "http&stream"},
+                    enum = { "http", "stream", "http&stream" },
                 },
                 stream_proxy = {
                     type = "object",
@@ -262,7 +262,7 @@ local config_schema = {
                                                 type = "boolean",
                                             }
                                         },
-                                        required = {"addr"}
+                                        required = { "addr" }
                                     },
                                 },
                             },
@@ -398,11 +398,11 @@ local config_schema = {
                                 type = "integer"
                             },
                             http_request_phase = {
-                                enum = {"access", "rewrite"},
+                                enum = { "access", "rewrite" },
                                 default = "access",
                             },
                         },
-                        required = {"name", "file", "priority"}
+                        required = { "name", "file", "priority" }
                     }
                 }
             }
@@ -464,7 +464,7 @@ local config_schema = {
             }
         },
     },
-    required = {"apisix", "deployment"},
+    required = { "apisix", "deployment" },
 }
 
 function _M.validate(yaml_conf)
