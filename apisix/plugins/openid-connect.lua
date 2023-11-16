@@ -323,7 +323,7 @@ local function add_access_token_header(ctx, conf, token)
 end
 
 -- Function to split the scope string into a table
-function split_scopes_by_space(scope_string)
+local function split_scopes_by_space(scope_string)
     local scopes = {}
     for scope in string.gmatch(scope_string, "%S+") do
         scopes[scope] = true
@@ -332,7 +332,7 @@ function split_scopes_by_space(scope_string)
 end
 
 -- Function to check if all required scopes are present
-function required_scopes_present(required_scopes, http_scopes)
+local function required_scopes_present(required_scopes, http_scopes)
     for _, scope in ipairs(required_scopes) do
         if not http_scopes[scope] then
             return false
@@ -382,7 +382,8 @@ function _M.rewrite(plugin_conf, ctx)
                 if not is_authorized then
                     core.log.error("OIDC introspection failed: ", "required scopes not present")
                     local error_response = {
-                        error = "required scopes " .. table.concat(conf.required_scopes, ", ") .. " not present"
+                        error = "required scopes " .. table.concat(conf.required_scopes, ", ") ..
+                        " not present"
                     }
                     return 403, core.json.encode(error_response)
                 end
