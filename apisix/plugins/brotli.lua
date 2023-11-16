@@ -24,11 +24,6 @@ local type = type
 local brotli = require("brotli")
 
 
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
-
-
 local schema = {
     type = "object",
     properties = {
@@ -55,12 +50,12 @@ local schema = {
         },
         mode = {
             type = "integer",
-            -- 0: MODE_GENERIC (default),
-            -- 1: MODE_TEXT (for UTF-8 format text input)
-            -- 2: MODE_FONT (for WOFF 2.0)
             minimum = 0,
             maximum = 2,
             default = 0,
+            -- 0: MODE_GENERIC (default),
+            -- 1: MODE_TEXT (for UTF-8 format text input)
+            -- 2: MODE_FONT (for WOFF 2.0)
         },
         comp_level = {
             type = "integer",
@@ -76,11 +71,8 @@ local schema = {
         },
         lgblock = {
             type = "integer",
-            minimum = 16,
-            maximum = 24,
             default = 0,
-            -- allow 0, 16-24
-            enum = { 0 },
+            enum = {0,16,17,18,19,20,21,22,23,24},
         },
         http_version = {
             enum = {1.1, 1.0},
@@ -107,7 +99,6 @@ end
 
 
 local function create_brotli_compressor(mode, comp_level, lgwin, lgblock)
-    core.log.info("create new brotli compressor")
     local options = {
         mode = mode,
         quality = comp_level,
@@ -119,30 +110,21 @@ end
 
 
 local function brotli_compress(conf, ctx, body)
-    local compressor, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
-                                                     create_brotli_compressor,
-                                                     conf.mode, conf.comp_level,
-                                                     conf.lgwin, conf.lgblock)
-    if err then
-        core.log.error("failed to fetch cached brotli compressor: ", err)
+    local compressor = create_brotli_compressor(conf.mode, conf.comp_level,
+                                                conf.lgwin, conf.lgblock)
+    if not compressor then
+        core.log.error("failed to create brotli compressor")
         return
     end
+
     local chunk = compressor:compress(body)
-    return chunk
+    local chunk_fin = compressor:finish()
+    return chunk .. chunk_fin
 end
 
 
 function _M.header_filter(conf, ctx)
     local types = conf.types
-
-    local accept_encoding = ngx_header["Accept-Encoding"]
-    local allowed_br = core.string.find(accept_encoding, "br")
-
-    if not allowed_br then
-        -- No support accept brotli encoding
-        return
-    end
-
     local content_type = ngx_header["Content-Type"]
     if not content_type then
         -- Like Nginx, don't compress if Content-Type is missing
@@ -187,8 +169,8 @@ function _M.header_filter(conf, ctx)
     end
 
     ctx.brotli_matched = true
-    core.response.add_header("Content-Encoding", "br")
     core.response.clear_header_as_body_modified()
+    core.response.add_header("Content-Encoding", "br")
 end
 
 
@@ -201,7 +183,7 @@ function _M.body_filter(conf, ctx)
 
         local compressed = brotli_compress(conf, ctx, body)
         if not compressed then
-            core.log.error("failed to compress response body")
+            core.log.error("failed to compress response body with brotli")
             return
         end
 
