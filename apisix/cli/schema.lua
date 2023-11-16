@@ -66,6 +66,66 @@ local etcd_schema = {
     required = {"prefix", "host"}
 }
 
+local admin_schema = {
+    type = "object",
+    properties = {
+        admin_key = {
+            type = "array",
+            properties = {
+                items = {
+                    properties = {
+                        name = { type = "string" },
+                        key = { type = "string" },
+                        role = { type = "string" },
+                    }
+                }
+            }
+        },
+        admin_listen = {
+            properties = {
+                listen = { type = "string" },
+                port = { type = "integer" },
+            },
+            default = {
+                listen = "0.0.0.0",
+                port = 9180,
+            }
+        },
+        https_admin = {
+            type = "boolean",
+        },
+        admin_key_required = {
+            type = "boolean",
+        },
+        enable_admin_cors = {
+            type = "boolean"
+        },
+        allow_admin = {
+            type = "array",
+            items = {
+                type = "string"
+            }
+        },
+        admin_api_mtls = {
+            type = "object",
+            properties = {
+                admin_ssl_cert = {
+                    type = "string"
+                },
+                admin_ssl_cert_key = {
+                    type = "string"
+                },
+                admin_ssl_ca_cert = {
+                    type = "string"
+                }
+            }
+        },
+        admin_api_version = {
+            type = "string"
+        }
+    }
+}
+
 local config_schema = {
     type = "object",
     properties = {
@@ -347,77 +407,64 @@ local config_schema = {
                 }
             }
         },
-        deployment = {
-            type = "object",
-            properties = {
-                role = {
-                    enum = {"traditional", "control_plane", "data_plane", "standalone"},
-                    default = "traditional"
+        dependencies = {
+            role = {
+                oneOf = {
+                    {
+                        properties = {
+                            role = { const = "traditional" },
+                            etcd = etcd_schema,
+                            admin = admin_schema,
+                            role_traditional = {
+                                type = "object",
+                                properties = {
+                                    config_provider = {
+                                        enum = { "etcd" }
+                                    },
+                                },
+                                required = { "config_provider" }
+                            },
+                        },
+                        required = { "role_traditional" },
+                    },
+                    {
+                        properties = {
+                            role = { const = "control_plane" },
+                            etcd = etcd_schema,
+                            admin = admin_schema,
+                            role_control_plane = {
+                                type = "object",
+                                properties = {
+                                    config_provider = {
+                                        enum = { "etcd" }
+                                    },
+                                },
+                                required = { "config_provider" }
+                            },
+                        },
+                        required = { "role_control_plane" },
+                    },
+                    {
+                        properties = {
+                            role = { const = "data_plane" },
+                            etcd = etcd_schema,
+                            role_data_plane = {
+                                type = "object",
+                                properties = {
+                                    config_provider = {
+                                        enum = { "etcd", "yaml", "xds" }
+                                    },
+                                },
+                                required = { "config_provider" }
+                            },
+                        },
+                        required = { "role_data_plane" },
+                    },
                 }
-            },
+            }
         },
     },
     required = {"apisix", "deployment"},
-}
-
-local admin_schema = {
-    type = "object",
-    properties = {
-        admin_key = {
-            type = "array",
-            properties = {
-                items = {
-                    properties = {
-                        name = { type = "string" },
-                        key = { type = "string" },
-                        role = { type = "string" },
-                    }
-                }
-            }
-        },
-        admin_listen = {
-            properties = {
-                listen = { type = "string" },
-                port = { type = "integer" },
-            },
-            default = {
-                listen = "0.0.0.0",
-                port = 9180,
-            }
-        },
-        https_admin = {
-            type = "boolean",
-        },
-        admin_key_required = {
-            type = "boolean",
-        },
-        enable_admin_cors = {
-            type = "boolean"
-        },
-        allow_admin = {
-            type = "array",
-            items = {
-                type = "string"
-            }
-        },
-        admin_api_mtls = {
-            type = "object",
-            properties = {
-                admin_ssl_cert = {
-                    type = "string"
-                },
-                admin_ssl_cert_key = {
-                    type = "string"
-                },
-                admin_ssl_ca_cert = {
-                    type = "string"
-                }
-            }
-        },
-        admin_api_version = {
-            type = "string"
-        }
-    }
 }
 
 local deployment_schema = {
