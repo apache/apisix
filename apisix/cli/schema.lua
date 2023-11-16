@@ -467,54 +467,6 @@ local config_schema = {
     required = {"apisix", "deployment"},
 }
 
-local deployment_schema = {
-    traditional = {
-        properties = {
-            etcd = etcd_schema,
-            admin = admin_schema,
-            role_traditional = {
-                properties = {
-                    config_provider = {
-                        enum = {"etcd"}
-                    },
-                },
-                required = {"config_provider"}
-            }
-        },
-        required = {"etcd"}
-    },
-    control_plane = {
-        properties = {
-            etcd = etcd_schema,
-            admin = admin_schema,
-            role_control_plane = {
-                properties = {
-                    config_provider = {
-                        enum = {"etcd"}
-                    },
-                },
-                required = {"config_provider"}
-            },
-        },
-        required = {"etcd", "role_control_plane"}
-    },
-    data_plane = {
-        properties = {
-            etcd = etcd_schema,
-            role_data_plane = {
-                properties = {
-                    config_provider = {
-                        enum = {"etcd", "yaml", "xds"}
-                    },
-                },
-                required = {"config_provider"}
-            },
-        },
-        required = {"role_data_plane"}
-    }
-}
-
-
 function _M.validate(yaml_conf)
     local validator = jsonschema.generate_validator(config_schema)
     local ok, err = validator(yaml_conf)
