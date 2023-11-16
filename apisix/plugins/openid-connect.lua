@@ -21,6 +21,8 @@ local openidc = require("resty.openidc")
 local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
+local ipairs = ipairs
+local concat = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -382,7 +384,7 @@ function _M.rewrite(plugin_conf, ctx)
                 if not is_authorized then
                     core.log.error("OIDC introspection failed: ", "required scopes not present")
                     local error_response = {
-                        error = "required scopes " .. table.concat(conf.required_scopes, ", ") ..
+                        error = "required scopes " .. concat(conf.required_scopes, ", ") ..
                         " not present"
                     }
                     return 403, core.json.encode(error_response)
