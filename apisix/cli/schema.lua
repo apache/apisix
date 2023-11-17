@@ -431,59 +431,68 @@ local config_schema = {
                 }
             }
         },
-        dependencies = {
-            role = {
-                oneOf = {
-                    {
-                        properties = {
-                            role = { const = "traditional" },
-                            etcd = etcd_schema,
-                            admin = admin_schema,
-                            role_traditional = {
-                                type = "object",
-                                properties = {
-                                    config_provider = {
-                                        enum = { "etcd" }
+        deployment = {
+            type = "object",
+            properties = {
+                role = {
+                    enum = { "traditional", "control_plane", "data_plane", "standalone" },
+                    default = "traditional"
+                },
+            },
+            dependencies = {
+                role = {
+                    oneOf = {
+                        {
+                            properties = {
+                                role = { const = "traditional" },
+                                etcd = etcd_schema,
+                                admin = admin_schema,
+                                role_traditional = {
+                                    type = "object",
+                                    properties = {
+                                        config_provider = {
+                                            enum = { "etcd" }
+                                        },
                                     },
+                                    required = { "config_provider" }
                                 },
-                                required = { "config_provider" }
                             },
+                            required = { "role_traditional" },
                         },
-                        required = { "role_traditional" },
-                    },
-                    {
-                        properties = {
-                            role = { const = "control_plane" },
-                            etcd = etcd_schema,
-                            admin = admin_schema,
-                            role_control_plane = {
-                                type = "object",
-                                properties = {
-                                    config_provider = {
-                                        enum = { "etcd" }
+                        {
+                            properties = {
+                                role = { const = "control_plane" },
+                                etcd = etcd_schema,
+                                admin = admin_schema,
+                                role_control_plane = {
+                                    type = "object",
+                                    properties = {
+                                        config_provider = {
+                                            enum = { "etcd" }
+                                        },
                                     },
+                                    required = { "config_provider" }
                                 },
-                                required = { "config_provider" }
                             },
+                            required = { "role_control_plane" },
                         },
-                        required = { "role_control_plane" },
-                    },
-                    {
-                        properties = {
-                            role = { const = "data_plane" },
-                            etcd = etcd_schema,
-                            role_data_plane = {
-                                type = "object",
-                                properties = {
-                                    config_provider = {
-                                        enum = { "etcd", "yaml", "xds" }
+                        {
+                            properties = {
+                                role = { const = "data_plane" },
+                                etcd = etcd_schema,
+                                role_data_plane = {
+                                    type = "object",
+                                    properties = {
+                                        config_provider = {
+                                            enum = { "etcd", "yaml", "xds" }
+                                        },
                                     },
+                                    required = { "config_provider" }
                                 },
-                                required = { "config_provider" }
                             },
+                            required = { "role_data_plane" },
                         },
-                        required = { "role_data_plane" },
-                    },
+                    }
                 }
             }
         },
