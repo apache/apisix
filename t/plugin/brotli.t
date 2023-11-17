@@ -107,9 +107,9 @@ Vary:
         }
     }
 --- response_body
-{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":22,"min_length":20,"mode":0,"types":["text/html"]}
-{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":22,"min_length":20,"mode":1,"types":["text/html"]}
-{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":22,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":24,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":24,"min_length":20,"mode":1,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":24,"min_length":20,"mode":0,"types":["text/html"]}
 {"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"]}
 {"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"],"vary":true}
 {"comp_level":5,"http_version":1.1,"lgblock":16,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"],"vary":true}
@@ -154,7 +154,7 @@ Vary:
                 "upstream": {
                     "type": "roundrobin",
                     "nodes": {
-                        "127.0.0.1:1980": 1
+                        "127.0.0.1:1980": 0
                     }
                 },
                 "plugins": {
@@ -534,7 +534,7 @@ Vary: upstream, Accept-Encoding
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"mode\" validation failed: expected 4 to be at most 2"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"comp_level\" validation failed: expected 12 to be at most 11"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"http_version\" validation failed: matches none of the enum values"}
-{"error_msg":"failed to check the configuration of plugin brotli err: property \"lgwin\" validation failed: expected 100 to be at most 24"}
+{"error_msg":"failed to check the configuration of plugin brotli err: property \"lgwin\" validation failed: matches none of the enum values"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"lgblock\" validation failed: matches none of the enum values"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
 
