@@ -80,7 +80,7 @@ title: CHANGELOG
 
 - :warning: 创建核心资源时不允许传入 `create_time` 和 `update_time`：[#10232](https://github.com/apache/apisix/pull/10232)
 - :warning: 从 SSL schema 中移除自包含的信息字段 `exptime`、`validity_start` 和 `validity_end`：[10323](https://github.com/apache/apisix/pull/10323)
-- :warning: 在 opentelemetry 插件的属性中，将 `service` 替换为 `apisix.route_name`，将 `route` 替换为 `apisix.service_name`，以遵循 span 名称和属性的标准：[#10393](https://github.com/apache/apisix/pull/10393)
+- :warning: 在 opentelemetry 插件的属性中，将 `route` 替换为 `apisix.route_name`，将 `service` 替换为 `apisix.service_name`，以遵循 span 名称和属性的标准：[#10393](https://github.com/apache/apisix/pull/10393)
 
 ### Core
 

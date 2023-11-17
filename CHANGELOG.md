@@ -80,7 +80,7 @@ title: Changelog
 
 - :warning: Creating core resources does not allow passing in `create_time` and `update_time`: [#10232](https://github.com/apache/apisix/pull/10232)
 - :warning: Remove self-contained info fields `exptime` and `validity_start` and `validity_end` from ssl schema: [10323](https://github.com/apache/apisix/pull/10323)
-- :warning: Replace `service` with `apisix.route_name`, `route` with `apisix.service_name` in the attributes of opentelemetry plugin to follow the standards for span name and attributes: [#10393](https://github.com/apache/apisix/pull/10393)
+- :warning: Replace `route` with `apisix.route_name`, `service` with `apisix.service_name` in the attributes of opentelemetry plugin to follow the standards for span name and attributes: [#10393](https://github.com/apache/apisix/pull/10393)
 
 ### Core
 
