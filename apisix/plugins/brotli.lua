@@ -60,15 +60,14 @@ local schema = {
         },
         comp_level = {
             type = "integer",
-            minimum = 1,
+            minimum = 0,
             maximum = 11,
             default = 11,
         },
         lgwin = {
             type = "integer",
-            minimum = 10,
-            maximum = 24,
-            default = 22,
+            default = 24,
+            enum = {0,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24},
         },
         lgblock = {
             type = "integer",
