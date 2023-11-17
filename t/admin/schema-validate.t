@@ -405,35 +405,27 @@ location /t {
 --- config
     location /t {
         content_by_lua_block {
-            local http = require "resty.http"
-            local json = require("toolkit.json")
-            local uri = "http://127.0.0.1:" .. "9180"
-                        .. "/apisix/admin/routes/1"
-
-            local httpc = http.new()
-            local body = {
-                uri = "/ip",
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {
-                        { host = "httpbin.org", weight = 1,}
-                    }
-                }
-            }
+            local t = require("lib.test_admin").test
             headers = {}
             headers["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
-            body = json.encode(body)
-            local res, err = httpc:request_uri(uri, {method = "PUT", body=body, headers=headers})
-            if not res then
-                ngx.say(err)
-                return
-            end
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                {
+                    uri = "/ip",
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {
+                            { host = "httpbin.org", weight = 1,}
+                        }
+                    },
+                    methods = {"GET"},
+                }, nil, headers
+            )
 
-            if res.status > 300 then
-                ngx.say(res_body)
-                return
+            if code >= 300 then
+                ngx.status = code
             end
-            ngx.say("passed")
+            ngx.say(body)
 
         }
     }
@@ -445,29 +437,5 @@ passed
 
 
 === TEST 14: Test route upstream
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. "9080"
-                        .. "/ip"
-
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {method = "GET"})
-            if not res then
-                ngx.say(err)
-                return
-            end
-
-            if res.status > 300 then
-                ngx.say(res_body)
-                return
-            end
-            ngx.say("passed")
-
-        }
-    }
 --- request
-GET /t
---- response_body
-passed
+GET /ip
