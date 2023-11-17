@@ -88,7 +88,7 @@ title: Changelog
 - :sunrise: Support configuring `service_id` in stream_route to reference service resources: [#10298](https://github.com/apache/apisix/pull/10298)
 - :sunrise: Using `apisix-runtime` as the apisix runtime:
   - [#10415](https://github.com/apache/apisix/pull/10415)
-  - [#10427](ub.com/apache/apisix/pull/10427)
+  - [#10427](https://github.com/apache/apisix/pull/10427)
 
 ### Plugins
 
@@ -106,7 +106,7 @@ title: Changelog
   - [#10307](https://github.com/apache/apisix/pull/10307)
 - Fix: Add name field in plugin_config schema for consistency: [#10315](https://github.com/apache/apisix/pull/10315)
 - Fix: Optimize tls in upstream_schema and wrong variable: [#10269](https://github.com/apache/apisix/pull/10269)
-- Fix(consul discovery): Failed to exit normally: [#10342](https://github.com/apache/apisix/pull/10342)
+- Fix(consul): Failed to exit normally: [#10342](https://github.com/apache/apisix/pull/10342)
 - Fix: The request header with `Content-Type: application/x-www-form-urlencoded;charset=utf-8` will cause vars condition `post_arg_xxx` matching to failed: [#10372](https://github.com/apache/apisix/pull/10372)
 - Fix: Make install failed on mac: [#10403](https://github.com/apache/apisix/pull/10403)
 - Fix(log-rotate): Log compression timeout caused data loss: [#8620](https://github.com/apache/apisix/pull/8620)

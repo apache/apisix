@@ -84,22 +84,22 @@ GitHub Copilot: ### 变更
 - :warning: 从 SSL schema 中移除自包含的信息字段 `exptime`、`validity_start` 和 `validity_end`：[10323](https://github.com/apache/apisix/pull/10323)
 - :warning: 在 opentelemetry 插件的属性中，将 `service` 替换为 `apisix.route_name`，将 `route` 替换为 `apisix.service_nam`，以遵循 span 名称和属性的标准：[#10393](https://github.com/apache/apisix/pull/10393)
 
-### 核心
+### Core
 
 - :sunrise: 添加令牌以支持 Consul 的访问控制：[#10278](https://github.com/apache/apisix/pull/10278)
 - :sunrise: 支持在 stream_route 中配置 `service_id` 引用 service 资源：[#10298](https://github.com/apache/apisix/pull/10298)
 - :sunrise: 使用 `apisix-runtime` 作为 apisix 运行时：
   - [#10415](https://github.com/apache/apisix/pull/10415)
-  - [#10427](ub.com/apache/apisix/pull/10427)
+  - [#10427](https://github.com/apache/apisix/pull/10427)
 
-### 插件
+### Plugins
 
 - :sunrise: 为 authz-keycloak 添加测试，使用 apisix secrets：[#10353](https://github.com/apache/apisix/pull/10353)
 - :sunrise: 向 openid-connect 插件添加授权参数：[#10058](https://github.com/apache/apisix/pull/10058)
 - :sunrise: 支持在 zipkin 插件中设置变量：[#10361](https://github.com/apache/apisix/pull/10361)
 - :sunrise: 支持 Nacos ak/sk 认证：[#10445](https://github.com/apache/apisix/pull/10445)
 
-### Bug修复
+### Bugfixes
 
 - 修复：获取健康检查目标状态失败时使用警告日志：
   - [#10156](https://github.com/apache/apisix/pull/10156)
@@ -107,12 +107,12 @@ GitHub Copilot: ### 变更
   - [#10312](https://github.com/apache/apisix/pull/10312)
   - [#10307](https://github.com/apache/apisix/pull/10307)
 - 修复：在插件配置模式中添加 name 字段以保持一致性：[#10315](https://github.com/apache/apisix/pull/10315)
-- 修复：优化 upstream_schema 中的 tls 和错误的变量：[#10269](https://github.com/apache/apisix/pull/10269)
-- 修复(consul 发现)：无法正常退出：[#10342](https://github.com/apache/apisix/pull/10342)
+- 修复：优化 upstream_schema 中的 tls 定义和错误的变量：[#10269](https://github.com/apache/apisix/pull/10269)
+- 修复（consul）：无法正常退出：[#10342](https://github.com/apache/apisix/pull/10342)
 - 修复：请求头 `Content-Type: application/x-www-form-urlencoded;charset=utf-8` 会导致 var 条件 `post_arg_xxx` 匹配失败：[#10372](https://github.com/apache/apisix/pull/10372)
 - 修复：在 Mac 上安装失败：[#10403](https://github.com/apache/apisix/pull/10403)
-- 修复(log-rotate)：日志压缩超时导致数据丢失：[#8620](https://github.com/apache/apisix/pull/8620)
-- 修复(kafka-logger)：从 required_acks 枚举值中移除 0 ：[#10469](https://github.com/apache/apisix/pull/10469)
+- 修复（log-rotate）：日志压缩超时导致数据丢失：[#8620](https://github.com/apache/apisix/pull/8620)
+- 修复（kafka-logger）：从 required_acks 枚举值中移除 0：[#10469](https://github.com/apache/apisix/pull/10469)
 
 ## 3.6.0
 
