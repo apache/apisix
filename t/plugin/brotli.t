@@ -574,7 +574,7 @@ passed
 
 
 
-=== TEST 21: hit
+=== TEST 21: hit - compressed requset body same as respone body
 --- config
     location /t {
         content_by_lua_block {
@@ -582,7 +582,7 @@ passed
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/echo"
             local httpc = http.new()
-            local req_body = ("0123"):rep(1024)
+            local req_body = ("012345"):rep(1024)
             local res, err = httpc:request_uri(uri,
                 {method = "POST", body = req_body})
             if not res then
@@ -590,10 +590,12 @@ passed
                 return
             end
 
-            local brotli = require("brotli")
-            local compressed = brotli:compress(req_body)
- 
-            if res.body == compressed then
+            local brotli = require "brotli"
+            local compressor = brotli.compressor:new()
+            local chunk = compressor:compress(req_body)
+            local chunk_fin = compressor:finish()
+            local chunks = chunk .. chunk_fin
+            if #chunks == #res.body then
                 ngx.say("ok")
             end
         }
@@ -603,7 +605,7 @@ ok
 
 
 
-=== TEST 22: mutli times hit
+=== TEST 22: hit - decompressed respone body same as requset body
 --- config
     location /t {
         content_by_lua_block {
@@ -619,41 +621,15 @@ ok
                 return
             end
 
-            local brotli = require("brotli")
-            local compressed = brotli:compress(req_body)
- 
-            if res.body == compressed then
+            local brotli = require "brotli"
+            local decompressor = brotli.decompressor:new()
+            local chunk = decompressor:decompress(res.body)
+            local chunk_fin = decompressor:finish()
+            local chunks = chunk .. chunk_fin
+            if #chunks == #req_body then
                 ngx.say("ok")
             end
         }
     }
---- pipelined_requests eval
-[
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-    "GET /t",
-]
---- response_body_like eval
-[
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-    qr/ok/,
-]
+--- response_body
+ok
