@@ -135,7 +135,7 @@ Vary:
                     },
                     "plugins": {
                         "brotli": {
-                            "comp_level": 1
+                            "comp_level": 0
                         }
                     }
                 }]=]
@@ -154,7 +154,7 @@ Vary:
                 "upstream": {
                     "type": "roundrobin",
                     "nodes": {
-                        "127.0.0.1:1980": 0
+                        "127.0.0.1:1980": 1
                     }
                 },
                 "plugins": {
