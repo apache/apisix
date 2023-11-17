@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ngx = ngx
 local ngx_header = ngx.header
 local req_http_version = ngx.req.http_version
 local str_sub = string.sub
@@ -183,7 +184,7 @@ function _M.body_filter(conf, ctx)
 
         local compressed = brotli_compress(conf, ctx, body)
         if not compressed then
-            core.log.error("failed to compress response body with brotli")
+            core.log.error("failed to compress response body with brotli encoding")
             return
         end
 

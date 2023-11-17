@@ -90,9 +90,12 @@ Vary:
 
             for _, conf in ipairs({
                 {},
+                {mode = 1},
                 {comp_level = 5},
-                {lgwin = 12, comp_level = 5},
-                {lgwin = 12, comp_level = 5, vary = true},
+                {comp_level = 5, lgwin = 12},
+                {comp_level = 5, lgwin = 12, vary = true},
+                {comp_level = 5, lgwin = 12, lgblock = 16, vary = true},
+                {mode = 2, comp_level = 5, lgwin = 12, lgblock = 16, vary = true},
             }) do
                 local ok, err = plugin.check_schema(conf)
                 if not ok then
@@ -104,10 +107,15 @@ Vary:
         }
     }
 --- response_body
-{"comp_level":1,"http_version":1.1,"lgwin":24,"min_length":20,"types":["text/html"]}
-{"comp_level":5,"http_version":1.1,"lgwin":24,"min_length":20,"types":["text/html"]}
-{"comp_level":5,"http_version":1.1,"lgwin":12,"min_length":20,"types":["text/html"]}
-{"comp_level":5,"http_version":1.1,"lgwin":12,"min_length":20,"types":["text/html"],"vary":true}
+{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":22,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":22,"min_length":20,"mode":1,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":22,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"],"vary":true}
+{"comp_level":5,"http_version":1.1,"lgblock":16,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"],"vary":true}
+{"comp_level":5,"http_version":1.1,"lgblock":16,"lgwin":12,"min_length":20,"mode":2,"types":["text/html"],"vary":true}
+
+
 
 === TEST 4: compress level
 --- config
@@ -489,6 +497,9 @@ Vary: upstream, Accept-Encoding
                     min_length = 0
                 }},
                 {input = {
+                    mode = 4
+                }},
+                {input = {
                     comp_level = 12
                 }},
                 {input = {
@@ -496,6 +507,9 @@ Vary: upstream, Accept-Encoding
                 }},
                 {input = {
                     lgwin = 100
+                }},
+                {input = {
+                    lgblock = 8
                 }},
                 {input = {
                     vary = 0
@@ -517,7 +531,129 @@ Vary: upstream, Accept-Encoding
 --- response_body
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"types\" validation failed: object matches none of the required"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"min_length\" validation failed: expected 0 to be at least 1"}
+{"error_msg":"failed to check the configuration of plugin brotli err: property \"mode\" validation failed: expected 4 to be at most 2"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"comp_level\" validation failed: expected 12 to be at most 11"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"http_version\" validation failed: matches none of the enum values"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"lgwin\" validation failed: expected 100 to be at most 24"}
+{"error_msg":"failed to check the configuration of plugin brotli err: property \"lgblock\" validation failed: matches none of the enum values"}
 {"error_msg":"failed to check the configuration of plugin brotli err: property \"vary\" validation failed: wrong type: expected boolean, got number"}
+
+
+
+=== TEST 20: body checksum
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "brotli": {
+                            "types": "*"
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 21: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/echo"
+            local httpc = http.new()
+            local req_body = ("0123"):rep(1024)
+            local res, err = httpc:request_uri(uri,
+                {method = "POST", body = req_body})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            local brotli = require("brotli")
+            local compressed = brotli:compress(req_body)
+ 
+            if res.body == compressed then
+                ngx.say("ok")
+            end
+        }
+    }
+--- response_body
+ok
+
+
+
+=== TEST 22: mutli times hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/echo"
+            local httpc = http.new()
+            local req_body = ("abcdf01234"):rep(1024)
+            local res, err = httpc:request_uri(uri,
+                {method = "POST", body = req_body})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            local brotli = require("brotli")
+            local compressed = brotli:compress(req_body)
+ 
+            if res.body == compressed then
+                ngx.say("ok")
+            end
+        }
+    }
+--- pipelined_requests eval
+[
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+    "GET /t",
+]
+--- response_body_like eval
+[
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+    qr/ok/,
+]
