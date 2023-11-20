@@ -56,6 +56,10 @@ local schema = {
             type = "string",
             default = "client_secret_basic"
         },
+        token_endpoint_auth_method = {
+            type = "string",
+            default = "client_secret_basic"
+        },
         bearer_only = {
             type = "boolean",
             default = false,
