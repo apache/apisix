@@ -457,6 +457,7 @@ plugins:                           # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - chaitin-waf                    # priority: 2700
+  - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
