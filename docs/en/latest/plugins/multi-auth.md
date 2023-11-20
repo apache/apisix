@@ -32,7 +32,7 @@ description: This document contains information about the Apache APISIX multi-au
 
 The `multi-auth` Plugin is used to add multiple authentication methods to a Route or a Service. It supports plugins of type 'auth'. You can combine different authentication methods using `multi-auth` plugin.
 
-This plugin will go through the list of auth plugins configured in `auth_plugins` field until the request is sucesfully authenticated. That means route can be shared between different consumers using different auth methods. If a consumer is using basic, he would be able to authenticate using basic, if another user uses jwt, he would be able to authenticate using jwt.
+This plugin provides a flexible authentication mechanism by iterating through the list of authentication plugins specified in the `auth_plugins` attribute. It allows multiple consumers to share the same route while using different authentication methods. For example, one consumer can authenticate using basic authentication, while another consumer can authenticate using JWT.
 
 ## Attributes
 
