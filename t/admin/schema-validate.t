@@ -406,16 +406,14 @@ location /t {
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            headers = {}
-            headers["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
+            local code, body = t('/apisix/admin/routes',
+                ngx.HTTP_POST,
                 {
                     uri = "/ip",
                     upstream = {
                         type = "roundrobin",
                         nodes = {
-                            { host = "httpbin.org", weight = 1,}
+                            { host = "nghttp2.org", weight = 1,}
                         }
                     },
                     methods = {"GET"},
