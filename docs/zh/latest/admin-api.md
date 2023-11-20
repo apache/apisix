@@ -935,7 +935,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 - 设为 `cookie` 时，`key` 为必传参数，其值为自定义的 cookie name，即 "cookie\_`key`"。请注意 cookie name 是**区分大小写字母**的。例如：`cookie_x_foo` 与 `cookie_X_Foo` 表示不同的 `cookie`。
 - 设为 `consumer` 时，`key` 不需要设置。此时哈希算法采用的 `key` 为认证通过的 `consumer_name`。
 
-以下特性需要 APISIX 运行于 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)：
+以下特性需要 APISIX 运行于 [APISIX-Runtime](./FAQ.md#如何构建-APISIX-Runtime-环境？)：
 
 - `scheme` 可以设置成 `tls`，表示 `TLS over TCP`。
 - `tls.client_cert/key` 可以用来跟上游进行 mTLS 通信。他们的格式和 SSL 对象的 `cert` 和 `key` 一样。

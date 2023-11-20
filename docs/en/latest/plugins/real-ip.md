@@ -35,7 +35,7 @@ This is more flexible but functions similarly to Nginx's [ngx_http_realip_module
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment).
+This Plugin requires APISIX to run on [APISIX-Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
 :::
 

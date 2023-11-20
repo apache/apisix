@@ -36,7 +36,7 @@ if ok then
     set_upstream_tls_client_param = apisix_ngx_upstream.set_cert_and_key
 else
     set_upstream_tls_client_param = function ()
-        return nil, "need to build APISIX-Base to support upstream mTLS"
+        return nil, "need to build APISIX-Runtime to support upstream mTLS"
     end
 end
 
@@ -47,7 +47,7 @@ if not is_http then
         set_stream_upstream_tls = apisix_ngx_stream_upstream.set_tls
     else
         set_stream_upstream_tls = function ()
-            return nil, "need to build APISIX-Base to support TLS over TCP upstream"
+            return nil, "need to build APISIX-Runtime to support TLS over TCP upstream"
         end
     end
 end

@@ -33,7 +33,7 @@ The `gzip` Plugin dynamically sets the behavior of [gzip in Nginx](https://docs.
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment).
+This Plugin requires APISIX to run on [APISIX-Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
 :::
 
