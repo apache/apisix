@@ -417,7 +417,7 @@ location /t {
                         }
                     },
                     methods = {"GET"},
-                }, nil, headers
+                }
             )
 
             if code >= 300 then
