@@ -47,6 +47,7 @@ For Route:
 To enable the Plugin, you have to create two or more Consumer objects with different authentication configurations:
 
 First create a Consumer using basic authentication:
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
@@ -59,7 +60,9 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
+
 Then create a Consumer using key authentication:
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
