@@ -143,19 +143,19 @@ local schema = {
             properties = {
                 http_proxy = {
                     type = "string",
-                    description = "HTTP proxy like: http://proxy-server:80.",
+                    description = "HTTP proxy like: http://proxy-server:port.",
                 },
                 https_proxy = {
                     type = "string",
-                    description = "HTTPS proxy like: http://proxy-server:80.",
+                    description = "HTTPS proxy like: http://proxy-server:port.",
                 },
                 http_proxy_authorization = {
                     type = "string",
-                    description = "Basic [base64 username:password].",
+                    description = "Default Proxy-Authorization header value used with http_proxy, such as Basic [base64 username:password].",
                 },
                 https_proxy_authorization = {
                     type = "string",
-                    description = "Basic [base64 username:password].",
+                    description = "Default Proxy-Authorization header value used with https_proxy, such as Basic [base64 username:password].",
                 },
                 no_proxy = {
                     type = "string",
