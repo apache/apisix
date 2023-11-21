@@ -54,7 +54,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 Save the APISIX version to an environment variable to be used next:
 
 ```shell
-APISIX_VERSION='3.6.0'
+APISIX_VERSION='3.7.0'
 ```
 
 Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
