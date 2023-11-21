@@ -104,6 +104,16 @@ install_nodejs () {
     npm config set registry https://registry.npmjs.org/
 }
 
+install_brotli () {
+    BORTLI_VERSION="1.1.0"
+    wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip
+    unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build
+    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
+    sudo cmake --build . --config Release --target install
+    sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"
+    sudo ldconfig
+}
+
 set_coredns() {
     # test a domain name is configured as upstream
     echo "127.0.0.1 test.com" | sudo tee -a /etc/hosts
