@@ -30,7 +30,9 @@ description: This document contains information about the Apache APISIX multi-au
 
 ## Description
 
-The `multi-auth` Plugin is used to add multiple authentication methods to a Route or a Service. It supports plugins of type 'auth'. You can combine different authentication methods using "or" relationship with `multi-auth` plugin. If you want to use multiple methods in an "and" relationship, apply specific authentication plugins directly to the route or service.
+The `multi-auth` Plugin is used to add multiple authentication methods to a Route or a Service. It supports plugins of type 'auth'. You can combine different authentication methods using `multi-auth` plugin.
+
+This plugin provides a flexible authentication mechanism by iterating through the list of authentication plugins specified in the `auth_plugins` attribute. It allows multiple consumers to share the same route while using different authentication methods. For example, one consumer can authenticate using basic authentication, while another consumer can authenticate using JWT.
 
 ## Attributes
 
@@ -42,17 +44,30 @@ For Route:
 
 ## Enable Plugin
 
-To enable the Plugin, you have to create a Consumer object with multiple authentication configurations:
+To enable the Plugin, you have to create two or more Consumer objects with different authentication configurations:
+
+First create a Consumer using basic authentication:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "username": "foo",
+    "username": "foo1",
     "plugins": {
         "basic-auth": {
-            "username": "foo",
-            "password": "bar"
-        },
+            "username": "foo1",
+            "password": "bar1"
+        }
+    }
+}'
+```
+
+Then create a Consumer using key authentication:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "username": "foo2",
+    "plugins": {
         "key-auth": {
             "key": "auth-one"
         }
@@ -62,7 +77,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 
 You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
 
-Once you have created a Consumer object, you can then configure a Route or a Service to authenticate requests:
+Once you have created Consumer objects, you can then configure a Route or a Service to authenticate requests:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -101,7 +116,7 @@ After you have configured the Plugin as mentioned above, you can make a request 
 request with basic-auth
 
 ```shell
-curl -i -ufoo:bar http://127.0.0.1:9080/hello
+curl -i -ufoo1:bar1 http://127.0.0.1:9080/hello
 ```
 
 request with key-auth
