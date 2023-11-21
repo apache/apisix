@@ -296,12 +296,9 @@ do
     local _escaper
 
     local function resolve(m)
-        local i = 1
-        -- if first capture's first char is "{" evaluate the second capture
-        if m[1]:byte(1) == 123 then
-            i = 2
-        end
-        local v = _ctx[m[i]]
+        local variable = m[2] or m[3]
+        local v = _ctx[variable]
+
         if v == nil then
             return ""
         end
