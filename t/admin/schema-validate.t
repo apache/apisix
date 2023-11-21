@@ -413,7 +413,7 @@ location /t {
                     upstream = {
                         type = "roundrobin",
                         nodes = {
-                            { host = "nghttp2.org", weight = 1,}
+                            { host = "127.0.0.1:1980", weight = 1,}
                         }
                     },
                     methods = {"GET"},
