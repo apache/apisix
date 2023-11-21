@@ -21,6 +21,8 @@ local openidc = require("resty.openidc")
 local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
+local ipairs = ipairs
+local concat = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -164,6 +166,13 @@ local schema = {
         authorization_params = {
             description = "Extra authorization params to the authorize endpoint",
             type = "object"
+        },
+        required_scopes = {
+            description = "List of scopes that are required to be granted to the access token",
+            type = "array",
+            items = {
+                type = "string"
+            }
         }
     },
     encrypt_fields = {"client_secret"},
@@ -319,6 +328,24 @@ local function add_access_token_header(ctx, conf, token)
     end
 end
 
+-- Function to split the scope string into a table
+local function split_scopes_by_space(scope_string)
+    local scopes = {}
+    for scope in string.gmatch(scope_string, "%S+") do
+        scopes[scope] = true
+    end
+    return scopes
+end
+
+-- Function to check if all required scopes are present
+local function required_scopes_present(required_scopes, http_scopes)
+    for _, scope in ipairs(required_scopes) do
+        if not http_scopes[scope] then
+            return false
+        end
+    end
+    return true
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -355,6 +382,18 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            if conf.required_scopes then
+                local http_scopes = response.scope and split_scopes_by_space(response.scope) or {}
+                local is_authorized = required_scopes_present(conf.required_scopes, http_scopes)
+                if not is_authorized then
+                    core.log.error("OIDC introspection failed: ", "required scopes not present")
+                    local error_response = {
+                        error = "required scopes " .. concat(conf.required_scopes, ", ") ..
+                        " not present"
+                    }
+                    return 403, core.json.encode(error_response)
+                end
+            end
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
