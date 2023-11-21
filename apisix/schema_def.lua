@@ -892,6 +892,7 @@ _M.stream_route = {
         create_time = timestamp_def,
         update_time = timestamp_def,
         remote_addr = remote_addr_def,
+        labels = labels_def,
         server_addr = {
             description = "server IP",
             type = "string",
