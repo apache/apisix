@@ -325,7 +325,7 @@ local nodes_schema = {
                         type = "object",
                     }
                 },
-                required = {"host", "port", "weight"},
+                required = {"host", "weight"},
             },
         }
     }
