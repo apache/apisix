@@ -409,7 +409,7 @@ location /t {
             local code, body = t('/apisix/admin/routes',
                 ngx.HTTP_POST,
                 {
-                    uri = "/ip",
+                    uri = "/hello",
                     upstream = {
                         type = "roundrobin",
                         nodes = {
@@ -436,4 +436,6 @@ passed
 
 === TEST 14: Test route upstream
 --- request
-GET /ip
+GET /hello
+--- response_body
+hello world
