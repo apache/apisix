@@ -101,7 +101,7 @@ local schema = {
                 "pass to allow the request regardless."
         },
         public_key = {type = "string"},
-        token_signing_alg_values_expected = { type = "string" },
+        token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
             description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
             type = "boolean",
@@ -143,19 +143,19 @@ local schema = {
             properties = {
                 http_proxy = {
                     type = "string",
-                    description = "HTTP proxy like: http://proxy-server:port.",
+                    description = "HTTP proxy like: http://proxy-server:80.",
                 },
                 https_proxy = {
                     type = "string",
-                    description = "HTTPS proxy like: http://proxy-server:port.",
+                    description = "HTTPS proxy like: http://proxy-server:80.",
                 },
                 http_proxy_authorization = {
                     type = "string",
-                    description = "Default Proxy-Authorization header value used with http_proxy.",
+                    description = "Basic [base64 username:password].",
                 },
                 https_proxy_authorization = {
                     type = "string",
-                    description = "Default Proxy-Authorization header value used with https_proxy.",
+                    description = "Basic [base64 username:password].",
                 },
                 no_proxy = {
                     type = "string",
@@ -175,8 +175,8 @@ local schema = {
             }
         }
     },
-    encrypt_fields = { "client_secret" },
-    required = { "client_id", "client_secret", "discovery" }
+    encrypt_fields = {"client_secret"},
+    required = {"client_id", "client_secret", "discovery"}
 }
 
 
@@ -196,7 +196,7 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         core.log.warn("when bearer_only = false, " ..
-            "you'd better complete the session configuration manually")
+                       "you'd better complete the session configuration manually")
         conf.session = {
             -- generate a secret when bearer_only = false and no secret is configured
             secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
@@ -210,6 +210,7 @@ function _M.check_schema(conf)
 
     return true
 end
+
 
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
@@ -388,7 +389,7 @@ function _M.rewrite(plugin_conf, ctx)
                     core.log.error("OIDC introspection failed: ", "required scopes not present")
                     local error_response = {
                         error = "required scopes " .. concat(conf.required_scopes, ", ") ..
-                            " not present"
+                        " not present"
                     }
                     return 403, core.json.encode(error_response)
                 end
@@ -419,7 +420,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
             if err == "unauthorized request" then
@@ -460,5 +461,6 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 end
+
 
 return _M
