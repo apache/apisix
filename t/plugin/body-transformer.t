@@ -1012,7 +1012,7 @@ location /demo {
 
 
 
-=== TEST 15:  The template uses x-www-form-urlencoded format
+=== TEST 15: test input is in base64-encoded urlencoded format
 --- config
     location /demo {
       content_by_lua_block {
@@ -1066,6 +1066,6 @@ location /demo {
             local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/x-www-form-urlencoded"}}
             local httpc = http.new()
             local res = httpc:request_uri(uri, opt)
-        assert(res.status == 200)
+            assert(res.status == 200)
         }
     }

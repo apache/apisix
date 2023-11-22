@@ -24,7 +24,7 @@ local req_set_body_data = ngx.req.set_body_data
 local req_get_uri_args  = ngx.req.get_uri_args
 local str_format        = string.format
 local decode_args       = ngx.decode_args
-local str_find          = string.find
+local str_find          = core.string.find
 local type              = type
 local pcall             = pcall
 local pairs             = pairs
@@ -113,10 +113,10 @@ local decoders = {
         return core.json.decode(data)
     end,
     encoded = function(data)
-        return  decode_args(data)
+        return decode_args(data)
     end,
     args = function()
-        return  req_get_uri_args()
+        return req_get_uri_args()
     end,
 }
 
