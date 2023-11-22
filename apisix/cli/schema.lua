@@ -444,8 +444,7 @@ local config_schema = {
                     oneOf = {
                         {
                             properties = {
-                                role = { const = "traditional" },
-                                etcd = etcd_schema,
+                                role = { enum = { "traditional" } },
                                 admin = admin_schema,
                                 role_traditional = {
                                     type = "object",
@@ -461,8 +460,7 @@ local config_schema = {
                         },
                         {
                             properties = {
-                                role = { const = "control_plane" },
-                                etcd = etcd_schema,
+                                role = { enum = { "control_plane" } },
                                 admin = admin_schema,
                                 role_control_plane = {
                                     type = "object",
@@ -478,8 +476,7 @@ local config_schema = {
                         },
                         {
                             properties = {
-                                role = { const = "data_plane" },
-                                etcd = etcd_schema,
+                                role = { enum = { "data_plane" } },
                                 role_data_plane = {
                                     type = "object",
                                     properties = {
