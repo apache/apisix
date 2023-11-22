@@ -112,6 +112,8 @@ install_brotli () {
     sudo cmake --build . --config Release --target install
     sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"
     sudo ldconfig
+    cd ../..
+    rm -rf brotli-${BORTLI_VERSION}
 }
 
 set_coredns() {

@@ -20,9 +20,9 @@
 
 do_install() {
     linux_get_dependencies
+    install_brotli
 
     export_or_prefix
-    install_brotli
 
     ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh

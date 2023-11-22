@@ -20,7 +20,6 @@
 
 run_case() {
     export_or_prefix
-    install_brotli
     export PERL5LIB=.:$PERL5LIB
     prove -Itest-nginx/lib -I./ -r t/tars | tee test-result
     rerun_flaky_tests test-result

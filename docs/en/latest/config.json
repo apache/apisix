@@ -72,6 +72,7 @@
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
+            "plugins/brotli",
             "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
