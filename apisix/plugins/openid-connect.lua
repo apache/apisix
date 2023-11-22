@@ -15,26 +15,26 @@
 -- limitations under the License.
 --
 
-local core    = require("apisix.core")
-local ngx_re  = require("ngx.re")
-local openidc = require("resty.openidc")
-local random  = require("resty.random")
-local string  = string
-local ngx     = ngx
-local ipairs = ipairs
-local concat = table.concat
+local core              = require("apisix.core")
+local ngx_re            = require("ngx.re")
+local openidc           = require("resty.openidc")
+local random            = require("resty.random")
+local string            = string
+local ngx               = ngx
+local ipairs            = ipairs
+local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
-local plugin_name = "openid-connect"
+local plugin_name       = "openid-connect"
 
 
 local schema = {
     type = "object",
     properties = {
-        client_id = {type = "string"},
-        client_secret = {type = "string"},
-        discovery = {type = "string"},
+        client_id = { type = "string" },
+        client_secret = { type = "string" },
+        discovery = { type = "string" },
         scope = {
             type = "string",
             default = "openid",
@@ -73,7 +73,7 @@ local schema = {
                     minLength = 16,
                 },
             },
-            required = {"secret"},
+            required = { "secret" },
             additionalProperties = false,
         },
         realm = {
@@ -95,13 +95,13 @@ local schema = {
         unauth_action = {
             type = "string",
             default = "auth",
-            enum = {"auth", "deny", "pass"},
+            enum = { "auth", "deny", "pass" },
             description = "The action performed when client is not authorized. Use auth to " ..
                 "redirect user to identity provider, deny to respond with 401 Unauthorized, and " ..
                 "pass to allow the request regardless."
         },
-        public_key = {type = "string"},
-        token_signing_alg_values_expected = {type = "string"},
+        public_key = { type = "string" },
+        token_signing_alg_values_expected = { type = "string" },
         use_pkce = {
             description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
             type = "boolean",
@@ -151,11 +151,11 @@ local schema = {
                 },
                 http_proxy_authorization = {
                     type = "string",
-                    description = "Default Proxy-Authorization header value used with http_proxy, such as Basic [base64 username:password].",
+                    description = "Default Proxy-Authorization header value used with http_proxy.",
                 },
                 https_proxy_authorization = {
                     type = "string",
-                    description = "Default Proxy-Authorization header value used with https_proxy, such as Basic [base64 username:password].",
+                    description = "Default Proxy-Authorization header value used with https_proxy.",
                 },
                 no_proxy = {
                     type = "string",
@@ -175,8 +175,8 @@ local schema = {
             }
         }
     },
-    encrypt_fields = {"client_secret"},
-    required = {"client_id", "client_secret", "discovery"}
+    encrypt_fields = { "client_secret" },
+    required = { "client_id", "client_secret", "discovery" }
 }
 
 
@@ -196,7 +196,7 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         core.log.warn("when bearer_only = false, " ..
-                       "you'd better complete the session configuration manually")
+            "you'd better complete the session configuration manually")
         conf.session = {
             -- generate a secret when bearer_only = false and no secret is configured
             secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
@@ -210,7 +210,6 @@ function _M.check_schema(conf)
 
     return true
 end
-
 
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
@@ -389,7 +388,7 @@ function _M.rewrite(plugin_conf, ctx)
                     core.log.error("OIDC introspection failed: ", "required scopes not present")
                     local error_response = {
                         error = "required scopes " .. concat(conf.required_scopes, ", ") ..
-                        " not present"
+                            " not present"
                     }
                     return 403, core.json.encode(error_response)
                 end
@@ -420,7 +419,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
             if err == "unauthorized request" then
@@ -461,6 +460,5 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 end
-
 
 return _M
