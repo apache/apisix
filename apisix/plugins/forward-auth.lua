@@ -106,8 +106,13 @@ function _M.access(conf, ctx)
         method = conf.request_method
     }
 
+    local httpc = http.new()
     if params.method == "POST" then
         params.body = core.request.get_body()
+        local client_body_reader, err = httpc:get_client_body_reader()
+        if not err then
+            params.body = client_body_reader
+        end
     end
 
     if conf.keepalive then
@@ -115,10 +120,8 @@ function _M.access(conf, ctx)
         params.keepalive_pool = conf.keepalive_pool
     end
 
-    local httpc = http.new()
     httpc:set_timeout(conf.timeout)
-    local client_body_reader, err = httpc:get_client_body_reader()
-    params.body=client_body_reader
+
     local res, err = httpc:request_uri(conf.uri, params)
     if not res and conf.allow_degradation then
         return
