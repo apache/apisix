@@ -15,26 +15,26 @@
 -- limitations under the License.
 --
 
-local core              = require("apisix.core")
-local ngx_re            = require("ngx.re")
-local openidc           = require("resty.openidc")
-local random            = require("resty.random")
-local string            = string
-local ngx               = ngx
-local ipairs            = ipairs
-local concat            = table.concat
+local core    = require("apisix.core")
+local ngx_re  = require("ngx.re")
+local openidc = require("resty.openidc")
+local random  = require("resty.random")
+local string  = string
+local ngx     = ngx
+local ipairs = ipairs
+local concat = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
-local plugin_name       = "openid-connect"
+local plugin_name = "openid-connect"
 
 
 local schema = {
     type = "object",
     properties = {
-        client_id = { type = "string" },
-        client_secret = { type = "string" },
-        discovery = { type = "string" },
+        client_id = {type = "string"},
+        client_secret = {type = "string"},
+        discovery = {type = "string"},
         scope = {
             type = "string",
             default = "openid",
@@ -73,7 +73,7 @@ local schema = {
                     minLength = 16,
                 },
             },
-            required = { "secret" },
+            required = {"secret"},
             additionalProperties = false,
         },
         realm = {
@@ -95,12 +95,12 @@ local schema = {
         unauth_action = {
             type = "string",
             default = "auth",
-            enum = { "auth", "deny", "pass" },
+            enum = {"auth", "deny", "pass"},
             description = "The action performed when client is not authorized. Use auth to " ..
                 "redirect user to identity provider, deny to respond with 401 Unauthorized, and " ..
                 "pass to allow the request regardless."
         },
-        public_key = { type = "string" },
+        public_key = {type = "string"},
         token_signing_alg_values_expected = { type = "string" },
         use_pkce = {
             description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
