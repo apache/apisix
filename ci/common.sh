@@ -108,8 +108,14 @@ install_brotli () {
     BORTLI_VERSION="1.1.0"
     wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip
     unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build
-    cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
-    sudo cmake --build . --config Release --target install
+    command -v cmake3 > /dev/null 2>&1
+    if [ $? -eq 0 ]; then
+        CMAKE=cmake3
+    else
+        CMAKE=cmake
+    fi
+    ${CMAKE} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
+    sudo ${CMAKE} --build . --config Release --target install
     sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"
     sudo ldconfig
     cd ../..
