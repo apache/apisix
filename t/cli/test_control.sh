@@ -34,8 +34,16 @@ fi
 
 make run
 
-sleep 1
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9090/v1/schema)
+sleep 0.1
+
+times=1
+code=000
+while [ $code -eq 000 ] && [ $times -lt 10 ]
+do
+  code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9090/v1/schema)
+  sleep 0.2
+  times=$(($times+1))
+done
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
@@ -67,8 +75,16 @@ fi
 
 make run
 
-sleep 1
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9090/v1/schema)
+sleep 0.1
+
+times=1
+code=000
+while [ $code -eq 000 ] && [ $times -lt 10 ]
+do
+  code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9090/v1/schema)
+  sleep 0.2
+  times=$(($times+1))
+done
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
@@ -93,8 +109,16 @@ fi
 
 make run
 
-sleep 1
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/v1/schema)
+sleep 0.1
+
+times=1
+code=000
+while [ $code -eq 000 ] && [ $times -lt 10 ]
+do
+  code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/v1/schema)
+  sleep 0.2
+  times=$(($times+1))
+done
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
