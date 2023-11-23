@@ -28,6 +28,7 @@ APISIX has a flexible plugin extension system and a number of existing plugins f
 - [LDAP](https://apisix.apache.org/docs/apisix/plugins/ldap-auth/)
 - [Open Policy Agent (OPA)](https://apisix.apache.org/docs/apisix/plugins/opa/)
 - [Forward Authentication](https://apisix.apache.org/docs/apisix/plugins/forward-auth/)
+- [Multiple Authentications](https://apisix.apache.org/docs/apisix/plugins/multi-auth/)
 
 In this tutorial, you will create a _consumer_ with _key authentication_, and learn how to enable and disable key authentication.
 
