@@ -53,7 +53,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 然后，创建一个目录并设置环境变量 `APISIX_VERSION`：
 
 ```shell
-APISIX_VERSION='3.6.0'
+APISIX_VERSION='3.7.0'
 mkdir apisix-${APISIX_VERSION}
 ```
 
