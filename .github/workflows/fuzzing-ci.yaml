@@ -64,7 +64,7 @@ jobs:
         sudo apt-get install -y git curl openresty-openssl111-dev unzip make gcc libldap2-dev
         ./utils/linux-install-luarocks.sh
 
-        make deps
+        sudo make deps
         make init
         make run
 
