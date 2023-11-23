@@ -63,67 +63,7 @@ local etcd_schema = {
             description = "etcd connection timeout in seconds",
         },
     },
-    required = { "prefix", "host" }
-}
-
-local admin_schema = {
-    type = "object",
-    properties = {
-        admin_key = {
-            type = "array",
-            properties = {
-                items = {
-                    properties = {
-                        name = { type = "string" },
-                        key = { type = "string" },
-                        role = { type = "string" },
-                    }
-                }
-            }
-        },
-        admin_listen = {
-            properties = {
-                listen = { type = "string" },
-                port = { type = "integer" },
-            },
-            default = {
-                listen = "0.0.0.0",
-                port = 9180,
-            }
-        },
-        https_admin = {
-            type = "boolean",
-        },
-        admin_key_required = {
-            type = "boolean",
-        },
-        enable_admin_cors = {
-            type = "boolean"
-        },
-        allow_admin = {
-            type = "array",
-            items = {
-                type = "string"
-            }
-        },
-        admin_api_mtls = {
-            type = "object",
-            properties = {
-                admin_ssl_cert = {
-                    type = "string"
-                },
-                admin_ssl_cert_key = {
-                    type = "string"
-                },
-                admin_ssl_ca_cert = {
-                    type = "string"
-                }
-            }
-        },
-        admin_api_version = {
-            type = "string"
-        }
-    }
+    required = {"prefix", "host"}
 }
 
 local config_schema = {
@@ -131,66 +71,6 @@ local config_schema = {
     properties = {
         apisix = {
             properties = {
-                node_listen = {
-                    anyOf = {
-                        {
-                            type = "integer",
-                            minimum = 1,
-                            maximum = 65535
-                        },
-                        {
-                            type = "array",
-                            items = {
-                                type = "integer",
-                                minimum = 1,
-                                maximum = 65535
-                            }
-                        },
-                        {
-                            type = "array",
-                            items = {
-                                type = "object",
-                                properties = {
-                                    port = {
-                                        type = "integer",
-                                        minimum = 1,
-                                        maximum = 65535
-                                    },
-                                    ip = {
-                                        type = "string",
-                                    },
-                                    enable_http2 = {
-                                        type = "boolean",
-                                    },
-                                }
-                            },
-                        }
-                    },
-                },
-                enable_admin = {
-                    type = "boolean",
-                },
-                enable_dev_mode = {
-                    type = "boolean",
-                },
-                enable_reuseport = {
-                    type = "boolean",
-                },
-                show_upstream_status_in_response_header = {
-                    type = "boolean",
-                },
-                enable_ipv6 = {
-                    type = "boolean",
-                },
-                enable_server_tokens = {
-                    type = "boolean",
-                },
-                extra_lua_path = {
-                    type = "string"
-                },
-                extra_lua_cpath = {
-                    type = "string"
-                },
                 lua_module_hook = {
                     pattern = "^[a-zA-Z._-]+$",
                 },
@@ -238,12 +118,12 @@ local config_schema = {
                                 },
                                 oneOf = {
                                     {
-                                        required = { "name", "memory_size" },
+                                        required = {"name", "memory_size"},
                                         maxProperties = 2,
                                     },
                                     {
-                                        required = { "name", "memory_size", "disk_size",
-                                            "disk_path", "cache_levels" },
+                                        required = {"name", "memory_size", "disk_size",
+                                            "disk_path", "cache_levels"},
                                     }
                                 },
                             },
@@ -253,7 +133,7 @@ local config_schema = {
                 },
                 proxy_mode = {
                     type = "string",
-                    enum = { "http", "stream", "http&stream" },
+                    enum = {"http", "stream", "http&stream"},
                 },
                 stream_proxy = {
                     type = "object",
@@ -286,7 +166,7 @@ local config_schema = {
                                                 type = "boolean",
                                             }
                                         },
-                                        required = { "addr" }
+                                        required = {"addr"}
                                     },
                                 },
                             },
@@ -422,11 +302,11 @@ local config_schema = {
                                 type = "integer"
                             },
                             http_request_phase = {
-                                enum = { "access", "rewrite" },
+                                enum = {"access", "rewrite"},
                                 default = "access",
                             },
                         },
-                        required = { "name", "file", "priority" }
+                        required = {"name", "file", "priority"}
                     }
                 }
             }
@@ -435,67 +315,96 @@ local config_schema = {
             type = "object",
             properties = {
                 role = {
-                    enum = { "traditional", "control_plane", "data_plane", "standalone" },
+                    enum = {"traditional", "control_plane", "data_plane", "standalone"},
                     default = "traditional"
-                },
+                }
             },
-            dependencies = {
-                role = {
-                    oneOf = {
-                        {
-                            properties = {
-                                role = { enum = { "traditional" } },
-                                admin = admin_schema,
-                                role_traditional = {
-                                    type = "object",
-                                    properties = {
-                                        config_provider = {
-                                            enum = { "etcd" }
-                                        },
-                                    },
-                                    required = { "config_provider" }
-                                },
-                            },
-                            required = { "role_traditional" },
-                        },
-                        {
-                            properties = {
-                                role = { enum = { "control_plane" } },
-                                admin = admin_schema,
-                                role_control_plane = {
-                                    type = "object",
-                                    properties = {
-                                        config_provider = {
-                                            enum = { "etcd" }
-                                        },
-                                    },
-                                    required = { "config_provider" }
-                                },
-                            },
-                            required = { "role_control_plane" },
-                        },
-                        {
-                            properties = {
-                                role = { enum = { "data_plane" } },
-                                role_data_plane = {
-                                    type = "object",
-                                    properties = {
-                                        config_provider = {
-                                            enum = { "etcd", "yaml", "xds" }
-                                        },
-                                    },
-                                    required = { "config_provider" }
-                                },
-                            },
-                            required = { "role_data_plane" },
-                        },
+        },
+    },
+    required = {"apisix", "deployment"},
+}
+
+local admin_schema = {
+    type = "object",
+    properties = {
+        admin_key = {
+            type = "array",
+            properties = {
+                items = {
+                    properties = {
+                        name = {type = "string"},
+                        key = {type = "string"},
+                        role = {type = "string"},
                     }
                 }
             }
         },
-    },
-    required = { "apisix", "deployment" },
+        admin_listen = {
+            properties = {
+                listen = { type = "string" },
+                port = { type = "integer" },
+            },
+            default = {
+                listen = "0.0.0.0",
+                port = 9180,
+            }
+        },
+        https_admin = {
+            type = "boolean",
+        },
+        admin_key_required = {
+            type = "boolean",
+        },
+    }
 }
+
+local deployment_schema = {
+    traditional = {
+        properties = {
+            etcd = etcd_schema,
+            admin = admin_schema,
+            role_traditional = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                },
+                required = {"config_provider"}
+            }
+        },
+        required = {"etcd"}
+    },
+    control_plane = {
+        properties = {
+            etcd = etcd_schema,
+            admin = admin_schema,
+            role_control_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+        },
+        required = {"etcd", "role_control_plane"}
+    },
+    data_plane = {
+        properties = {
+            etcd = etcd_schema,
+            role_data_plane = {
+                properties = {
+                    config_provider = {
+                        enum = {"etcd", "yaml", "xds"}
+                    },
+                },
+                required = {"config_provider"}
+            },
+        },
+        required = {"role_data_plane"}
+    }
+}
+
 
 function _M.validate(yaml_conf)
     local validator = jsonschema.generate_validator(config_schema)
@@ -517,7 +426,15 @@ function _M.validate(yaml_conf)
         end
     end
 
+    local role = yaml_conf.deployment.role
+    local validator = jsonschema.generate_validator(deployment_schema[role])
+    local ok, err = validator(yaml_conf.deployment)
+    if not ok then
+        return false, "invalid deployment " .. role .. " configuration: " .. err
+    end
+
     return true
 end
+
 
 return _M
