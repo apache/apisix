@@ -34,7 +34,7 @@ fi
 
 make run
 
-sleep 0.1
+sleep 1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9090/v1/schema)
 
 if [ ! $code -eq 200 ]; then
@@ -67,7 +67,7 @@ fi
 
 make run
 
-sleep 0.1
+sleep 1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9090/v1/schema)
 
 if [ ! $code -eq 200 ]; then
@@ -93,7 +93,7 @@ fi
 
 make run
 
-sleep 0.1
+sleep 1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/v1/schema)
 
 if [ ! $code -eq 200 ]; then

@@ -22,7 +22,7 @@
 set -ex
 
 check_failure() {
-    cat logs/error.log
+    cat logs/error.log || echo "error.log not found"
 }
 
 clean_up() {
