@@ -1303,3 +1303,182 @@ passed
     }
 --- response_body_like
 x-userinfo: ey.*
+
+
+
+=== TEST 34: set auth_accept_token_as and auth_accept_token_as_header_name to validate custom authorization header name
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "bearer_only": true,
+                                "access_token_in_authorization_header": true,
+                                "set_userinfo_header": true,
+                                "use_jwks": true,
+                                "redirect_uri": "http://localhost:3000",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
+                                "auth_accept_token_as": "header",
+                                "auth_accept_token_as_header_name": "cf-Access-Jwt-Assertion"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: Access route to validate passing token in the custom authorization header works
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token in the correct header. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["cf-Access-Jwt-Assertion"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if not res then
+                    -- No response, must be an error.
+                    ngx.status = 500
+                    ngx.say(err)
+                    return
+                elseif res.status ~= 200 then
+                    -- Not a valid response.
+                    -- Use 500 to indicate error.
+                    ngx.status = 500
+                    ngx.say("Invoking the original URI didn't return the expected result.")
+                    return
+                end
+
+                ngx.status = res.status
+                ngx.say(res.body)
+
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- response_body_like
+x-userinfo: ey.*
+
+
+
+=== TEST 36: Access route to validate passing token in the default header does not work
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token in the default header. Should not work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if not res then
+                    -- No response, must be an error.
+                    ngx.status = 500
+                    ngx.say(err)
+                    return
+                elseif res.status ~= 200 then
+                    -- Not a valid response.
+                    -- Use 500 to indicate error.
+                    ngx.status = 500
+                    ngx.say("Invoking the original URI didn't return the expected result.")
+                    return
+                end
+
+                ngx.status = res.status
+                ngx.say(res.body)
+
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- error_code: 401
+--- error_log
+no Authorization header found
