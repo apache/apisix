@@ -223,9 +223,10 @@ curl -i http://127.0.0.1:9090/v1/healthcheck
 ### counter 信息
 
 若健康检查失败，`counter` 中的 `success` 计数将被置零。若健康检查成功，则会将 `tcp_failure`、`http_failure`、`timeout_failure` 数据置零。
-| 名称            | 描述                    | 作用                                                                    |
-|----------------|------------------------|------------------------------------------------------------------------|
-|success         | 健康检查成功的次数        |当 success 大于 healthy.successes 配置值时，节点会变为 healthy 状态             |
-|tcp_failure     | TCP 类型健康检查失败次数   |当 tcp_failure 大于 unhealthy.tcp_failures 配置值时，节点会变为 unhealthy 状态  |
-|http_failure    | HTTP 类型的健康检查失败次数|当 http_failure 大于 unhealthy.http_failures 配置值时，节点会变为 unhealthy 状态|
-|timeout_failure | 节点健康检查超时次数      |当 timeout_failure 大于 unhealthy.timeouts 配置值时，节点会变为 unhealthy 状态  |
+
+| 名称            | 描述                    | 作用                                                                       |
+|----------------|------------------------|----------------------------------------------------------------------------|
+|success         | 健康检查成功的次数         |当 success 大于 healthy.successes 配置值时，节点会变为 healthy 状态               |
+|tcp_failure     | TCP 类型健康检查失败次数   |当 tcp_failure 大于 unhealthy.tcp_failures 配置值时，节点会变为 unhealthy 状态    |
+|http_failure    | HTTP 类型的健康检查失败次数 |当 http_failure 大于 unhealthy.http_failures 配置值时，节点会变为 unhealthy 状态 |
+|timeout_failure | 节点健康检查超时次数       |当 timeout_failure 大于 unhealthy.timeouts 配置值时，节点会变为 unhealthy 状态    |
