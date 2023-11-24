@@ -738,6 +738,12 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
     local new_conf = merged_route(flag, api_ctx.conf_version,
                         merge_consumer_route, route_conf, consumer_conf, consumer_group_conf)
 
+    -- some plugins like limit-count don't care if consumer changes
+    -- all consumers should share the same counter
+    api_ctx.conf_type_without_consumer = api_ctx.conf_type
+    api_ctx.conf_version_without_consumer = api_ctx.conf_version
+    api_ctx.conf_id_without_consumer = api_ctx.conf_id
+
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
     api_ctx.conf_version = api_ctx.conf_version .. "&" ..
                            api_ctx.consumer_ver
