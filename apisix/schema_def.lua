@@ -325,7 +325,7 @@ local nodes_schema = {
                         type = "object",
                     }
                 },
-                required = {"host", "port", "weight"},
+                required = {"host", "weight"},
             },
         }
     }
@@ -892,6 +892,7 @@ _M.stream_route = {
         create_time = timestamp_def,
         update_time = timestamp_def,
         remote_addr = remote_addr_def,
+        labels = labels_def, -- The ingress project need this field
         server_addr = {
             description = "server IP",
             type = "string",
