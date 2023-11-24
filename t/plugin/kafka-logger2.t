@@ -57,7 +57,7 @@ done
 
 
 
-=== TEST 2: report log to kafka, with required_acks(1, 0, -1)
+=== TEST 2: report log to kafka, with required_acks(1, -1)
 --- config
 location /t {
     content_by_lua_block {
@@ -98,30 +98,6 @@ location /t {
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = -1,
-                            meta_format = "origin",
-                        }
-                    },
-                    upstream = {
-                        nodes = {
-                            ["127.0.0.1:1980"] = 1
-                        },
-                        type = "roundrobin"
-                    },
-                    uri = "/hello",
-                },
-            },
-            {
-                input = {
-                    plugins = {
-                        ["kafka-logger"] = {
-                            broker_list = {
-                                ["127.0.0.1"] = 9092
-                            },
-                            kafka_topic = "test2",
-                            producer_type = "sync",
-                            timeout = 1,
-                            batch_max_size = 1,
-                            required_acks = 0,
                             meta_format = "origin",
                         }
                     },

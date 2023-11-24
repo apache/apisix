@@ -18,6 +18,7 @@
 
 . ./ci/common.sh
 install_dependencies() {
+    export_version_info
     export_or_prefix
 
     # install build & runtime deps
@@ -30,9 +31,17 @@ install_dependencies() {
     yum install -y libnghttp2-devel
     install_curl
 
-    # install openresty to make apisix's rpm test work
+    # install apisix-runtime to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty-1.21.4.2 openresty-debug-1.21.4.2 openresty-openssl111-debug-devel pcre pcre-devel xz
+    rpm --import https://repos.apiseven.com/KEYS
+    yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
+    yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    chmod +x build-apisix-runtime.sh
+    chmod +x build-apisix-runtime-debug-centos7.sh
+    ./build-apisix-runtime-debug-centos7.sh
 
     # install luarocks
     ./utils/linux-install-luarocks.sh

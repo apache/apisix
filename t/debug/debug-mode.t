@@ -53,6 +53,7 @@ loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2990 name: referer-restriction
 loaded plugin and sort by priority: 2900 name: uri-blocker
 loaded plugin and sort by priority: 2800 name: request-validation
+loaded plugin and sort by priority: 2600 name: multi-auth
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac
 loaded plugin and sort by priority: 2530 name: hmac-auth

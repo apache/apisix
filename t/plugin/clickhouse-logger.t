@@ -187,7 +187,9 @@ passed
                                 "database": "default",
                                 "logtable": "test",
                                 "endpoint_addrs": ["http://127.0.0.1:8123",
-                                                  "http://127.0.0.1:8124"]
+                                                  "http://127.0.0.1:8124"],
+                                "batch_max_size":1,
+                                "inactive_timeout":1
                             }
                         },
                         "upstream": {
@@ -229,7 +231,38 @@ echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary 
 
 
 
-=== TEST 8: use single clickhouse server
+=== TEST 8: to show that different endpoints will be chosen randomly
+--- config
+    location /t {
+        content_by_lua_block {
+            local code_count = {}
+            local t = require("lib.test_admin").test
+            for i = 1, 12 do
+                local code, body = t('/opentracing', ngx.HTTP_GET)
+                if code ~= 200 then
+                    ngx.say("code: ", code, " body: ", body)
+                end
+                code_count[code] = (code_count[code] or 0) + 1
+            end
+
+            local code_arr = {}
+            for code, count in pairs(code_count) do
+                table.insert(code_arr, {code = code, count = count})
+            end
+
+            ngx.say(require("toolkit.json").encode(code_arr))
+            ngx.exit(200)
+        }
+    }
+--- response_body
+[{"code":200,"count":12}]
+--- error_log
+sending a batch logs to http://127.0.0.1:8123
+sending a batch logs to http://127.0.0.1:8124
+
+
+
+=== TEST 9: use single clickhouse server
 --- config
     location /t {
         content_by_lua_block {
@@ -267,7 +300,7 @@ passed
 
 
 
-=== TEST 9: hit route
+=== TEST 10: hit route
 --- request
 GET /opentracing
 --- error_code: 200
@@ -275,7 +308,7 @@ GET /opentracing
 
 
 
-=== TEST 10: get log
+=== TEST 11: get log
 --- exec
 echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
 --- response_body_like

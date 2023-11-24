@@ -156,7 +156,7 @@ local function rename_file(log, date_str)
 end
 
 
-local function compression_file(new_file)
+local function compression_file(new_file, timeout)
     if not new_file or type(new_file) ~= "string" then
         core.log.info("compression file: ", new_file, " invalid")
         return
@@ -170,7 +170,7 @@ local function compression_file(new_file)
             com_filename, new_filename)
     core.log.info("log file compress command: " .. cmd)
 
-    local ok, stdout, stderr, reason, status = shell.run(cmd)
+    local ok, stdout, stderr, reason, status = shell.run(cmd, nil, timeout, nil)
     if not ok then
         core.log.error("compress log file from ", new_filename, " to ", com_filename,
                        " fail, stdout: ", stdout, " stderr: ", stderr, " reason: ", reason,
@@ -205,7 +205,7 @@ local function file_size(file)
 end
 
 
-local function rotate_file(files, now_time, max_kept)
+local function rotate_file(files, now_time, max_kept, timeout)
     if core.table.isempty(files) then
         return
     end
@@ -236,7 +236,7 @@ local function rotate_file(files, now_time, max_kept)
         ngx_sleep(0.5)
 
         for _, new_file in ipairs(new_files) do
-            compression_file(new_file)
+            compression_file(new_file, timeout)
         end
     end
 
@@ -259,16 +259,19 @@ local function rotate()
     local max_kept = MAX_KEPT
     local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
+    local timeout = 10000 -- default timeout 10 seconds
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
         max_size = attr.max_size or max_size
+        timeout = attr.timeout or timeout
         enable_compression = attr.enable_compression or enable_compression
     end
 
     core.log.info("rotate interval:", interval)
     core.log.info("rotate max keep:", max_kept)
     core.log.info("rotate max size:", max_size)
+    core.log.info("rotate timeout:", timeout)
 
     if not default_logs then
         -- first init default log filepath and filename
@@ -288,7 +291,7 @@ local function rotate()
 
     if now_time >= rotate_time then
         local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
-        rotate_file(files, now_time, max_kept)
+        rotate_file(files, now_time, max_kept, timeout)
 
         -- reset rotate time
         rotate_time = rotate_time + interval
@@ -306,7 +309,7 @@ local function rotate()
             core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
 
-        rotate_file(files, now_time, max_kept)
+        rotate_file(files, now_time, max_kept, timeout)
     end
 end
 

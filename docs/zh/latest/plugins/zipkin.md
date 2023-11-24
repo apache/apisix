@@ -235,3 +235,32 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     }
 }'
 ```
+
+## 如何使用变量
+
+以下`nginx`变量是由`zipkin` 设置的。
+
+- `zipkin_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), 例如：`00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
+- `zipkin_trace_id` - 当前 span 的 trace_id
+- `zipkin_span_id` - 当前 span 的 span_id
+
+如何使用？你需要在配置文件（`./conf/config.yaml`）设置如下：
+
+```yaml title="./conf/config.yaml"
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","zipkin_context_traceparent": "$zipkin_context_traceparent","zipkin_trace_id": "$zipkin_trace_id","zipkin_span_id": "$zipkin_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - zipkin
+plugin_attr:
+  zipkin:
+    set_ngx_var: true
+```
+
+你也可以在打印日志的时候带上 `trace_id`
+
+```print error log
+log.error(ngx.ERR,ngx_var.zipkin_trace_id,"error message")
+```

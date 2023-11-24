@@ -28,6 +28,7 @@ APISIX 拥有灵活的插件扩展系统，目前有很多可用于用户身份�
 - [LDAP](https://apisix.apache.org/zh/docs/apisix/plugins/ldap-auth/)
 - [Open Policy Agent (OPA)](https://apisix.apache.org/zh/docs/apisix/plugins/opa/)
 - [Forward Authentication](https://apisix.apache.org/zh/docs/apisix/plugins/forward-auth/)
+- [Multiple Authentications](https://apisix.apache.org/docs/apisix/plugins/multi-auth/)
 
 本教程中，你将创建一个带有 _密钥验证_ 插件的 _消费者_，并学习如何启用和停用身份验证插件。
 

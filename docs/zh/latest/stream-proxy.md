@@ -101,7 +101,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 2. 现在运行一个 mysql docker 容器并将端口 3306 暴露给主机
 
    ```shell
-   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql
+   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql mysqld --default-authentication-plugin=mysql_native_password
    # check it using a mysql client that it works
    $ mysql --host=127.0.0.1 --port=3306 -u root -p
    Enter password:

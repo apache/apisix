@@ -643,6 +643,14 @@ http {
         {% end %}
         # opentelemetry_set_ngx_var ends
 
+        # zipkin_set_ngx_var starts
+        {% if zipkin_set_ngx_var then %}
+        set $zipkin_context_traceparent          '';
+        set $zipkin_trace_id                     '';
+        set $zipkin_span_id                      '';
+        {% end %}
+        # zipkin_set_ngx_var ends
+
         # http server configuration snippet starts
         {% if http_server_configuration_snippet then %}
         {* http_server_configuration_snippet *}
