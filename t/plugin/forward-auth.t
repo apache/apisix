@@ -130,6 +130,18 @@ property "request_method" validation failed: matches none of the enum values
                                                end
                                            end
                                         end
+                                    end]],
+                                    [[
+                                        -- test large body
+                                        return function(conf, ctx)
+                                        local core = require("apisix.core")
+                                        if core.request.get_method() == "POST" and core.request.header(ctx, "Authorization") == "large-body" then
+                                           local req_body, err = core.request.get_body()
+                                           if err then
+                                               core.response.exit(400)
+                                           end
+                                           core.response.exit(200)
+                                        end
                                     end]]
                                 }
                             }
@@ -254,6 +266,23 @@ property "request_method" validation failed: matches none of the enum values
                             "type": "roundrobin"
                         }
                     }]],
+                },
+                {
+                    url = "/apisix/admin/routes/7",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"],
+                                "request_method": "POST"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/large-body"
+                    }]],
                 }
             }
 
@@ -374,3 +403,36 @@ GET /hello
 --- more_headers
 Authorization: 111
 --- error_code: 200
+
+
+
+=== TEST 13: test large body
+--- ONLY
+--- config
+    location /t {
+        content_by_lua_block {
+            local t    = require("lib.test_admin")
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local large_body = t.read_file("t/plugin/forward-auth/fw-auth-large-file.bin")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+            .. "/large-body"
+            local res, err = httpc:request_uri(uri,
+                {
+                    method = ngx.HTTP_POST,
+                    body = large_body,
+                    headers = {
+                        Authorization = "large-body"
+                    }
+                }
+            )
+
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+        }
+    }
+--- error_code: 200
+
