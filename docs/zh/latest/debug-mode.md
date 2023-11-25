@@ -28,6 +28,7 @@ title: Debug Mode
 ```
 basic:
   enable: true
+#END
 ```
 
 注意：在 APISIX 2.10 之前，开启基本调试模式曾经是设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`。
