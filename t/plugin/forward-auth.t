@@ -407,7 +407,6 @@ Authorization: 111
 
 
 === TEST 13: test large body
---- ONLY
 --- config
     location /t {
         content_by_lua_block {
@@ -435,4 +434,3 @@ Authorization: 111
         }
     }
 --- error_code: 200
-
