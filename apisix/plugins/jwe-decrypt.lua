@@ -17,12 +17,13 @@
 local core            = require("apisix.core")
 local consumer_mod    = require("apisix.consumer")
 local base64          = require("ngx.base64")
-local plugin_name     = "jwe-decrypt"
 local ngx             = ngx
 local sub_str         = string.sub
 local cipher          = require("resty.openssl.cipher").new("aes-256-gcm")
 
-local schema          = {
+local plugin_name     = "jwe-decrypt"
+
+local schema = {
     type = "object",
     properties = {
         header = {
