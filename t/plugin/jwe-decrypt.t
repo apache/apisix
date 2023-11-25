@@ -350,7 +350,7 @@ code: true body: passed
                         "jwe-decrypt": {
                             "key": "user-key",
                             "secret": "fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=",
-                            "base64_secret": true
+                            " is_base64_encoded": true
                         }
                     }
                 }]]

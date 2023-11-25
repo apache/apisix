@@ -42,7 +42,7 @@ For Consumer:
 |---------------|---------|-------------------------------------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                                                                  |
 | secret        | string  | True                                                 |         |                             | The decrypt key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
-| base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
+|  is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 
 For Route:
 
