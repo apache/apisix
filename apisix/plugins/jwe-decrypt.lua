@@ -70,6 +70,7 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
+
 local function get_secret(conf)
     local secret = conf.secret
 
@@ -171,6 +172,7 @@ function _M.rewrite(conf, ctx)
     end
     core.request.set_header(ctx, conf.forward_header, plaintext)
 end
+
 
 local function gen_token()
     local args = core.request.get_uri_args()
