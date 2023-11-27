@@ -163,7 +163,7 @@ curl http://127.0.0.1:9090/v1/healthcheck/upstreams/healthycheck -s | jq .
 
 ## 健康检查信息
 
-APISIX 提供了丰富的健康检查信息，其中  `status` 以及 `counter` 的返回对于健康检查是至关重要的。在 APISIX 中，节点有四个状态：`healthy`、`unhealthy`、`mostly_unhealthy`、`mostly_healthy`。节点的状态转换取决于本次健康检查的成功或失败，以及 `counter` 中记录的 `tcp_failure`、`http_failure`、`success`、`timeout_failure` 四个数据。
+APISIX 提供了丰富的健康检查信息，其中  `status` 以及 `counter` 的返回对于健康检查是至关重要的。在 APISIX 中，节点有四个状态：`healthy`、`unhealthy`、`mostly_unhealthy`、`mostly_healthy`。`mostly_healthy` 状态表示当前节点状态是健康的，但在健康检查期间，node节点健康检测并不是一直是成功的。`mostly_unhealthy` 状态表示当前节点状态是不健康的，但在健康检查期间，node节点健康检测并不是一直是失败的。节点的状态转换取决于本次健康检查的成功或失败，以及 `counter` 中记录的 `tcp_failure`、`http_failure`、`success`、`timeout_failure` 四个数据。
 
 获取健康检查信息，通过以下 curl 命令可以获取健康检查信息：
 
@@ -213,11 +213,11 @@ curl -i http://127.0.0.1:9090/v1/healthcheck
 ]
 ```
 
-### 状态图
+### 状态转换图
 
 ![image](../../../assets/images/health_check_node_state_diagram.png)
 
-所有节点的初始状态为 `healthy`。需要注意的是，当节点的状态为 `healthy` 时，若健康检查成功或者节点的状态为 `unhealthy` 时健康检查失败，`counter` 中的数据并不会被更新。只有在其他情况下才会更新 `counter`。
+请注意，所有节点在没有初始探测的情况下都以`healthy`状态启动，计数器仅在状态更改时重置和更新。因此，当节点处于`healthy`状态且所有后续检查都成功时，`success`计数器不会更新，保持为零。
 
 ### counter 信息
 

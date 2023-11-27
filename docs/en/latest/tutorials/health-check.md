@@ -162,14 +162,14 @@ curl http://127.0.0.1:9090/v1/healthcheck/upstreams/healthycheck -s | jq .
 
 ```
 
-## Health Check Information
+## Health Check Status
 
-APISIX provides comprehensive health check information, with particular emphasis on the `status` and `counter` parameters for effective health monitoring. In the APISIX context, nodes exhibit four states: `healthy`, `unhealthy`, `mostly_unhealthy`, and `mostly_healthy`. The transition of a node's state depends on the success or failure of the current health check, along with the recording of four key metrics in the `counter`: `tcp_failure`, `http_failure`, `success`, and `timeout_failure`.
+APISIX provides comprehensive health check information, with particular emphasis on the `status` and `counter` parameters for effective health monitoring. In the APISIX context, nodes exhibit four states: `healthy`, `unhealthy`, `mostly_unhealthy`, and `mostly_healthy`. The `mostly_healthy` status indicates that the current node is considered healthy, but during health checks, the node's health status is not consistently successful. The `mostly_unhealthy` status indicates that the current node is considered unhealthy, but during health checks, the node's health detection is not consistently unsuccessful. The transition of a node's state depends on the success or failure of the current health check, along with the recording of four key metrics in the `counter`: `tcp_failure`, `http_failure`, `success`, and `timeout_failure`.
 
 To retrieve health check information, you can use the following curl command:
 
 ```shell
-curl -X GET http://your_apisix_server/your_health_check_endpoint
+ curl -i http://127.0.0.1:9090/v1/healthcheck
 ```
 
 Response Example:
@@ -214,11 +214,11 @@ Response Example:
 ]
 ```
 
-### State Diagram
+### State Transition Diagram
 
 ![image](../../../assets/images/health_check_node_state_diagram.png)
 
-All nodes start with an initial status of `healthy`. It's important to note that when a node is in the `healthy` state and the health check succeeds, or if the node is in the `unhealthy` state and the health check fails, the data in the counter will not be updated. The counter is only refreshed under different circumstances.
+Note that all nodes start with the `healthy` status without any initial probes, and the counter only resets and updates with a state change. Hence, when nodes are `healthy` and all subsequent checks are successful, the `success` counter is not updated and remains zero.
 
 ### Counter Information
 
