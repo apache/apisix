@@ -182,8 +182,11 @@ services:
     restart: unless-stopped
     ports:
       - 8181:8181
-    command: run -s /example.rego /echo.rego /data.json
+    command: run -s /example.rego /echo.rego /data.json /allow_get.rego
     volumes:
+      - type: bind
+        source: ./ci/pod/opa/allow_get.rego
+        target: /allow_get.rego
       - type: bind
         source: ./ci/pod/opa/example.rego
         target: /example.rego
