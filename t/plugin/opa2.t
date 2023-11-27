@@ -224,3 +224,46 @@ GET /hello?user=elisa
 --- error_code: 403
 --- response_body chomp
 {"info":[]}
+
+
+
+=== TEST 9: create route for testing with `with_route: true` and opa validation is successful
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "opa": {
+                            "host": "http://127.0.0.1:8181",
+                            "policy": "allow_get",
+                            "with_route": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: hit route
+--- request
+GET /hello
+--- error_code: 200
