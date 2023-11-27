@@ -90,10 +90,19 @@ local function init_iv_tbl(ivs)
 end
 
 
+local _aes_128_cbc_with_iv_tbl_ssl
+local function get_aes_128_cbc_with_iv_ssl(local_conf)
+    if _aes_128_cbc_with_iv_tbl_ssl == nil then
+        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
+        _aes_128_cbc_with_iv_tbl_ssl = init_iv_tbl(ivs)
+    end
+
+    return _aes_128_cbc_with_iv_tbl_ssl
+end
 
 
 local _aes_128_cbc_with_iv_tbl_gde
-local function get_aes_128_cbc_with_iv(local_conf)
+local function get_aes_128_cbc_with_iv_gde(local_conf)
     if _aes_128_cbc_with_iv_tbl_gde == nil then
         local ivs = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "keyring")
         _aes_128_cbc_with_iv_tbl_gde = init_iv_tbl(ivs)
@@ -114,24 +123,44 @@ local function encrypt(aes_128_cbc_with_iv, origin)
     return ngx_encode_base64(encrypted)
 end
 
-function _M.aes_encrypt_pkey(origin)
+function _M.aes_encrypt_pkey(origin, field)
     local local_conf = core.config.local_conf()
 
-    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv(local_conf)
-    local aes_128_cbc_with_iv = aes_128_cbc_with_iv_tbl[1]
-    if aes_128_cbc_with_iv ~= nil then
-        return encrypt(aes_128_cbc_with_iv, origin)
+    if not field then
+        -- default used by ssl
+        local aes_128_cbc_with_iv_tbl_ssl = get_aes_128_cbc_with_iv_ssl(local_conf)
+        local aes_128_cbc_with_iv_ssl = aes_128_cbc_with_iv_tbl_ssl[1]
+        if aes_128_cbc_with_iv_ssl ~= nil and core.string.has_prefix(origin, "---") then
+            return encrypt(aes_128_cbc_with_iv_ssl, origin)
+        end
+    else
+        if field == "data_encrypt" then
+            local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
+            local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
+            if aes_128_cbc_with_iv_gde ~= nil then
+                return encrypt(aes_128_cbc_with_iv_gde, origin)
+            end
+        end
     end
-
 
     return origin
 end
 
 
-local function aes_decrypt_pkey(origin)
+local function aes_decrypt_pkey(origin, field)
     local local_conf = core.config.local_conf()
-    local aes_128_cbc_with_iv_tbl= get_aes_128_cbc_with_iv(local_conf)
+    local aes_128_cbc_with_iv_tbl
 
+    if not field then
+        if core.string.has_prefix(origin, "---") then
+            return origin
+        end
+        aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_ssl(local_conf)
+    else
+        if field == "data_encrypt" then
+            aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
+        end
+    end
 
     if #aes_128_cbc_with_iv_tbl == 0 then
         return origin
@@ -139,7 +168,7 @@ local function aes_decrypt_pkey(origin)
 
     local decoded_key = ngx_decode_base64(origin)
     if not decoded_key then
-        core.log.error("base64 decode key failed. key[", origin, "] ")
+        core.log.error("base64 decode ssl key failed. key[", origin, "] ")
         return nil
     end
 
@@ -150,7 +179,7 @@ local function aes_decrypt_pkey(origin)
         end
     end
 
-    return nil, "decrypt key failed"
+    return nil, "decrypt ssl key failed"
 end
 _M.aes_decrypt_pkey = aes_decrypt_pkey
 
