@@ -163,7 +163,7 @@ curl http://127.0.0.1:9090/v1/healthcheck/upstreams/healthycheck -s | jq .
 
 ## 健康检查信息
 
-APISIX 提供了丰富的健康检查信息，其中  `status` 以及 `counter` 的返回对于健康检查是至关重要的。在 APISIX 中，节点有四个状态：`healthy`、`unhealthy`、`mostly_unhealthy`、`mostly_healthy`。`mostly_healthy` 状态表示当前节点状态是健康的，但在健康检查期间，node节点健康检测并不是一直是成功的。`mostly_unhealthy` 状态表示当前节点状态是不健康的，但在健康检查期间，node节点健康检测并不是一直是失败的。节点的状态转换取决于本次健康检查的成功或失败，以及 `counter` 中记录的 `tcp_failure`、`http_failure`、`success`、`timeout_failure` 四个数据。
+APISIX 提供了丰富的健康检查信息，其中  `status` 以及 `counter` 的返回对于健康检查是至关重要的。在 APISIX 中，节点有四个状态：`healthy`、`unhealthy`、`mostly_unhealthy`、`mostly_healthy`。`mostly_healthy` 状态表示当前节点状态是健康的，但在健康检查期间，节点健康检测并不是一直是成功的。`mostly_unhealthy` 状态表示当前节点状态是不健康的，但在健康检查期间，节点健康检测并不是一直是失败的。节点的状态转换取决于本次健康检查的成功或失败，以及 `counter` 中记录的 `tcp_failure`、`http_failure`、`success`、`timeout_failure` 四个数据。
 
 获取健康检查信息，通过以下 curl 命令可以获取健康检查信息：
 
