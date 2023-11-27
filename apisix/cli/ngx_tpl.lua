@@ -715,7 +715,7 @@ http {
             proxy_set_header   Host              $upstream_host;
             proxy_set_header   Upgrade           $upstream_upgrade;
             proxy_set_header   Connection        $upstream_connection;
-            proxy_set_header   X-Real-IP         $proxy_protocol_addr;
+            proxy_set_header   X-Real-IP         {% if proxy_protocol then %} $proxy_protocol_addr {% else %} $remote_addr {% end %};
             proxy_pass_header  Date;
 
             ### the following x-forwarded-* headers is to send to upstream server
