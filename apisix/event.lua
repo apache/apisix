@@ -15,6 +15,10 @@
 -- limitations under the License.
 --
 
+local require = require
+local error   = error
+local ngx     = ngx
+
 local _M = {}
 
 _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS = 'lua-resty-worker-events'
