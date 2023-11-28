@@ -35,6 +35,14 @@ end
 
 
 function _M.init_worker()
+    if _M.inited then
+        -- Prevent duplicate initializations in the same worker to
+        -- avoid potentially unanticipated behavior
+        return
+    end
+
+    _M.inited = true
+
     -- use lua-resty-worker-events default now
     _M.worker_events = init_worker_events()
 end
