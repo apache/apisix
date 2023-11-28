@@ -111,7 +111,8 @@ function _M.match_uri(uri_router, api_ctx)
     match_opts.vars = api_ctx.var
     match_opts.matched = core.tablepool.fetch("matched_route_record", 0, 4)
 
-    local ok = uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    local encoded_uri = core.utils.uri_safe_encode(api_ctx.var.uri)
+    local ok = uri_router:dispatch(encoded_uri, match_opts, api_ctx, match_opts)
     core.tablepool.release("route_match_opts", match_opts)
     return ok
 end
