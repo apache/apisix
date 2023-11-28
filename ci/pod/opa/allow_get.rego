@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-package allow_get
+package with_route
 default allow = false
 allow { input.request.method == "GET"}
 status_code = 201 {not allow}

@@ -238,7 +238,7 @@ GET /hello?user=elisa
                     "plugins": {
                         "opa": {
                             "host": "http://127.0.0.1:8181",
-                            "policy": "allow_get",
+                            "policy": "with_route",
                             "with_route": true
                         }
                     },
