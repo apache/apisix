@@ -515,7 +515,7 @@ function _M.connect(premature, consul_server, retry_delay)
         update_all_services(consul_server.consul_server_url, up_services)
 
         --update events
-        local post_ok, post_err = events.post(events_list._source,
+        local post_ok, post_err = events:post(events_list._source,
                 events_list.updating, all_services)
         if not post_ok then
             log.error("post_event failure with ", events_list._source,
@@ -579,14 +579,14 @@ function _M.init_worker()
         end
     end
 
-    events = require("resty.worker.events")
-    events_list = events.event_list(
+    events = require("apisix.event")
+    events_list = events:event_list(
             "discovery_consul_update_all_services",
             "updating"
     )
 
     if 0 ~= ngx_worker_id() then
-        events.register(discovery_consul_callback, events_list._source, events_list.updating)
+        events:register(discovery_consul_callback, events_list._source, events_list.updating)
         return
     end
 

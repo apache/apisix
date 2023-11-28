@@ -357,7 +357,7 @@ local function fetch_full_registry(premature)
         return
     end
     applications = up_apps
-    local ok, err = events.post(events_list._source, events_list.updating,
+    local ok, err = events:post(events_list._source, events_list.updating,
                                 applications)
     if not ok then
         log.error("post_event failure with ", events_list._source,
@@ -395,12 +395,12 @@ end
 
 
 function _M.init_worker()
-    events = require("resty.worker.events")
-    events_list = events.event_list("discovery_nacos_update_application",
+    events = require("apisix.event")
+    events_list = events:event_list("discovery_nacos_update_application",
                                     "updating")
 
     if 0 ~= ngx.worker.id() then
-        events.register(discovery_nacos_callback, events_list._source,
+        events:register(discovery_nacos_callback, events_list._source,
                         events_list.updating)
         return
     end
