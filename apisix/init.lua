@@ -49,7 +49,6 @@ local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
 local math            = math
-local error           = error
 local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var

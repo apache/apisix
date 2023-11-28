@@ -281,7 +281,7 @@ end
 local function post_reload_plugins()
     set_ctx_and_check_token()
 
-    local success, err = events.post(reload_event, get_method(), ngx_time())
+    local success, err = events:post(reload_event, get_method(), ngx_time())
     if not success then
         core.response.exit(503, err)
     end
@@ -455,7 +455,8 @@ function _M.init_worker()
     router = route.new(uri_route)
 
     -- register reload plugin handler
-    require("apisix.events"):register(reload_plugins, reload_event, "PUT")
+    events = require("apisix.event")
+    events:register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
         -- check if admin_key is required
