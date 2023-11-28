@@ -43,20 +43,18 @@ __DATA__
                     "desc": "new upstream"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": [{
-                                 "host": "127.0.0.1",
-                                 "port": 8080,
-                                 "weight": 1
-                            }],
-                            "type": "roundrobin",
-                            "desc": "new upstream"
-                        },
-                        "key": "/apisix/upstreams/1"
-                    }
+                    "value": {
+                        "nodes": [{
+                                "host": "127.0.0.1",
+                                "port": 8080,
+                                "weight": 1
+                        }],
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -66,8 +64,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -80,20 +76,18 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": [{
-                                 "host": "127.0.0.1",
-                                 "port": 8080,
-                                 "weight": 1
-                            }],
-                            "type": "roundrobin",
-                            "desc": "new upstream"
-                        },
-                        "key": "/apisix/upstreams/1"
-                    }
+                    "value": {
+                        "nodes": [{
+                                "host": "127.0.0.1",
+                                "port": 8080,
+                                "weight": 1
+                        }],
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -103,8 +97,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -113,9 +105,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -123,8 +113,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -133,9 +121,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/upstreams/not_found',
-                 ngx.HTTP_DELETE
-            )
+            local code = t('/apisix/admin/upstreams/not_found', ngx.HTTP_DELETE)
 
             ngx.say("[delete] code: ", code)
         }
@@ -144,8 +130,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -165,18 +149,16 @@ GET /t
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": [{
-                                "host": "127.0.0.1",
-                                "port": 8080,
-                                "weight": 1
-                            }],
-                            "type": "roundrobin"
-                        }
+                    "value": {
+                        "nodes": [{
+                            "host": "127.0.0.1",
+                            "port": 8080,
+                            "weight": 1
+                        }],
+                        "type": "roundrobin"
                     }
                 }]]
-                )
+            )
 
             if code ~= 200 then
                 ngx.status = code
@@ -186,10 +168,8 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/upstreams/" + 1)
-            code, message = t('/apisix/admin/upstreams/' .. id,
-                 ngx.HTTP_DELETE
-            )
+            local id = string.sub(res.key, #"/apisix/upstreams/" + 1)
+            code, message = t('/apisix/admin/upstreams/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -198,8 +178,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -215,7 +193,7 @@ GET /t
                     "nodes": [],
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -230,8 +208,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -248,7 +224,7 @@ passed
                     "upstream_id": "1",
                     "uri": "/index.html"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -263,8 +239,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -277,7 +251,7 @@ no valid upstream node
 
 
 
-=== TEST 9: additional properties is valid
+=== TEST 9: additional properties is invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +269,7 @@ no valid upstream node
                     "_service_name": "xyz",
                     "_discovery_type": "nacos"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -303,10 +277,9 @@ no valid upstream node
     }
 --- request
 GET /t
---- response_body
-passed
---- no_error_log
-[error]
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: additional properties forbidden, found .*"\}/
 
 
 
@@ -326,7 +299,7 @@ passed
                     }],
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -337,8 +310,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -358,7 +329,7 @@ GET /t
                     }],
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -369,8 +340,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -390,7 +359,7 @@ GET /t
                     }],
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -401,8 +370,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -422,7 +389,7 @@ GET /t
                     }],
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -433,8 +400,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -458,7 +423,7 @@ GET /t
                     },
                     "uri": "/index.html"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -468,5 +433,3 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

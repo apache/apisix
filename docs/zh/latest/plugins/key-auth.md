@@ -1,7 +1,8 @@
 ---
 title: key-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Key Auth
   - key-auth
@@ -39,7 +40,9 @@ Consumer 端：
 
 | 名称 | 类型   | 必选项  | 描述                                                                                                          |
 | ---- | ------ | ------ | ------------------------------------------------------------------------------------------------------------- |
-| key  | string | 是     | 不同的 Consumer 应有不同的 `key`，它应当是唯一的。如果多个 Consumer 使用了相同的 `key`，将会出现请求匹配异常。 |
+| key  | string | 是     | 不同的 Consumer 应有不同的 `key`，它应当是唯一的。如果多个 Consumer 使用了相同的 `key`，将会出现请求匹配异常。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |
+
+注意：schema 中还定义了 `encrypt_fields = {"key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 Router 端：
 
@@ -47,7 +50,7 @@ Router 端：
 | ----------------- | ------ | ----- | ------ |----------------------------------------------------------------------------------------------------------------------------------------------------------|
 | header            | string | 否    | apikey | 设置我们从哪个 header 获取 key。                                                                                                                                   |
 | query             | string | 否    | apikey | 设置我们从哪个 query string 获取 key，优先级低于 `header`。                                                                                                              |
-| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。 如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
+| hide_credentials  | bool   | 否    | false  | 当设置为 `false` 时将含有认证信息的 header 或 query string 传递给 Upstream。如果为 `true` 时将删除对应的 header 或 query string，具体删除哪一个取决于是从 header 获取 key 还是从 query string  获取 key。 |
 
 ## 启用插件
 
@@ -56,7 +59,7 @@ Router 端：
 首先，你可以通过 Admin API 创建一个具有唯一 key 的 Consumer：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
@@ -85,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 创建 Consumer 对象后，你可以创建 Route 进行验证：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -148,12 +151,12 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid API key in request"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `key-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

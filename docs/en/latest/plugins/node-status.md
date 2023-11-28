@@ -1,7 +1,7 @@
 ---
 title: node-status
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Node status
@@ -40,7 +40,7 @@ This Plugin will add the endpoint `/apisix/status` to expose the status of APISI
 
 You may need to use the [public-api](public-api.md) Plugin to expose the endpoint.
 
-## Enabling the Plugin
+## Enable Plugin
 
 To configure the `node-status` Plugin, you have to first enable it in your configuration file (`conf/config.yaml`):
 
@@ -57,7 +57,7 @@ plugins:
 You have to the setup the Route for the status API and expose it using the [public-api](public-api.md) Plugin.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/status",
     "plugins": {
@@ -99,7 +99,7 @@ The parameters in the response are described below:
 | reading   | Number of connections where APISIX is reading the request header.                                                      |
 | id        | UID of APISIX instance saved in `apisix/conf/apisix.uid`.                                                              |
 
-## Disable Plugin
+## Delete Plugin
 
 To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
@@ -115,5 +115,5 @@ plugins:
 You can also remove the Route on `/apisix/status`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```

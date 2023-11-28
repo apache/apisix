@@ -31,8 +31,11 @@ add_block_preprocessor(sub {
         my $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:                        # service discovery center
     dns:
         servers:
@@ -63,10 +66,6 @@ _EOC_
 
     if (!$block->request) {
         $block->set_value("request", "GET /hello");
-    }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
     }
 });
 
@@ -124,6 +123,7 @@ GET /t
 --- grep_error_log eval
 qr/connect to 127.0.0.1:1053/
 --- grep_error_log_out
+connect to 127.0.0.1:1053
 connect to 127.0.0.1:1053
 connect to 127.0.0.1:1053
 connect to 127.0.0.1:1053

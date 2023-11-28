@@ -1,7 +1,8 @@
 ---
 title: gzip
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - gzip
 description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及使用方法。
@@ -53,7 +54,7 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 以下示例展示了如何在指定路由中启用 `gzip` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -95,12 +96,12 @@ Warning: curl to output it to your terminal anyway, or consider "--output
 Warning: <FILE>" to save to a file.
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `gzip` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",

@@ -15,40 +15,12 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local utils = require("apisix.admin.utils")
+local resource = require("apisix.admin.resource")
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
-local v3_adapter = require("apisix.admin.v3_adapter")
-local tostring = tostring
 
 
-local _M = {
-    version = 0.1,
-}
-
-
-local function check_conf(id, conf, need_id)
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
-    id = id or conf.id
-    if need_id and not id then
-        return nil, {error_msg = "missing stream route id"}
-    end
-
-    if not need_id and id then
-        return nil, {error_msg = "wrong stream route id, do not need it"}
-    end
-
-    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong stream route id"}
-    end
-
-    conf.id = id
-
-    core.log.info("schema: ", core.json.delay_encode(core.schema.stream_route))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.stream_route, conf)
+local function check_conf(id, conf, need_id, schema)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -70,89 +42,36 @@ local function check_conf(id, conf, need_id)
         end
     end
 
+    local service_id = conf.service_id
+    if service_id then
+        local key = "/services/" .. service_id
+        local res, err = core.etcd.get(key)
+        if not res then
+            return nil, {error_msg = "failed to fetch service info by "
+                    .. "service id [" .. service_id .. "]: "
+                    .. err}
+        end
+
+        if res.status ~= 200 then
+            return nil, {error_msg = "failed to fetch service info by "
+                    .. "service id [" .. service_id .. "], "
+                    .. "response code: " .. res.status}
+        end
+    end
+
     local ok, err = stream_route_checker(conf, true)
     if not ok then
         return nil, {error_msg = err}
     end
 
-    return need_id and id or true
+    return true
 end
 
 
-function _M.put(id, conf)
-    local id, err = check_conf(id, conf, true)
-    if not id then
-        return 400, err
-    end
-
-    local key = "/stream_routes/" .. id
-
-    local ok, err = utils.inject_conf_with_prev_conf("stream_routes", key, conf)
-    if not ok then
-        return 503, {error_msg = err}
-    end
-
-    local res, err = core.etcd.set(key, conf)
-    if not res then
-        core.log.error("failed to put stream route[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.get(id)
-    local key = "/stream_routes"
-    if id then
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get stream route[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
-    return res.status, res.body
-end
-
-
-function _M.post(id, conf)
-    local id, err = check_conf(id, conf, false)
-    if not id then
-        return 400, err
-    end
-
-    local key = "/stream_routes"
-    utils.inject_timestamp(conf)
-    local res, err = core.etcd.push(key, conf)
-    if not res then
-        core.log.error("failed to post stream route[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.delete(id)
-    if not id then
-        return 400, {error_msg = "missing stream route id"}
-    end
-
-    local key = "/stream_routes/" .. id
-    -- core.log.info("key: ", key)
-    local res, err = core.etcd.delete(key)
-    if not res then
-        core.log.error("failed to delete stream route[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-return _M
+return resource.new({
+    name = "stream_routes",
+    kind = "stream route",
+    schema = core.schema.stream_route,
+    checker = check_conf,
+    unsupported_methods = {"patch"}
+})

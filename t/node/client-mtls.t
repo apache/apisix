@@ -32,10 +32,6 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -304,3 +300,321 @@ Host: localhost
 --- error_code: 502
 --- error_log
 certificate verify failed
+
+
+
+=== TEST 9: set verification
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    },
+                },
+                uri = "/hello"
+            }
+            assert(t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            ))
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "localhost",
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 10: hit with different host which doesn't require mTLS
+--- exec
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:1994/hello -H "Host: x.com"
+--- response_body
+hello world
+
+
+
+=== TEST 11: set verification (2 ssl objects)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    },
+                },
+                uri = "/hello"
+            }
+            assert(t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            ))
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com",
+                client = {
+                    ca = ssl_ca_cert,
+                    depth = 2,
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "localhost",
+            }
+            local code, body = t.test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 12: hit without mTLS verify, with Host requires mTLS verification
+--- exec
+curl -k https://localhost:1994/hello -H "Host: test.com"
+--- response_body eval
+qr/400 Bad Request/
+--- error_log
+client certificate verified with SNI localhost, but the host is test.com
+
+
+
+=== TEST 13: set verification (2 ssl objects, both have mTLS)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
+            local ssl_ca_cert2 = t.read_file("t/certs/apisix.crt")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    },
+                },
+                uri = "/hello"
+            }
+            assert(t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            ))
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "localhost",
+                client = {
+                    ca = ssl_ca_cert,
+                    depth = 2,
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com",
+                client = {
+                    ca = ssl_ca_cert2,
+                    depth = 2,
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 14: hit with mTLS verify, with Host requires different mTLS verification
+--- exec
+curl --cert t/certs/mtls_client.crt --key t/certs/mtls_client.key -k https://localhost:1994/hello -H "Host: test.com"
+--- response_body eval
+qr/400 Bad Request/
+--- error_log
+client certificate verified with SNI localhost, but the host is test.com
+
+
+
+=== TEST 15: set verification (2 ssl objects, both have mTLS)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
+            local ssl_ca_cert2 = t.read_file("t/certs/apisix.crt")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1,
+                    },
+                },
+                uri = "/*"
+            }
+            assert(t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            ))
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "localhost",
+                client = {
+                    ca = ssl_ca_cert,
+                    depth = 2,
+                    skip_mtls_uri_regex = {
+                        "/hello[0-9]+",
+                    }
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com",
+                client = {
+                    ca = ssl_ca_cert2,
+                    depth = 2,
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 16: skip the mtls, although no client cert provided
+--- exec
+curl -k https://localhost:1994/hello1
+--- response_body eval
+qr/hello1 world/
+
+
+
+=== TEST 17: skip the mtls, although with wrong client cert
+--- exec
+curl -k --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/hello1
+--- response_body eval
+qr/hello1 world/
+
+
+
+=== TEST 18: mtls failed, returns 400
+--- exec
+curl -k https://localhost:1994/hello
+--- response_body eval
+qr/400 Bad Request/
+--- error_log
+client certificate was not present
+
+
+
+=== TEST 19: mtls failed, wrong client cert
+--- exec
+curl --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/hello
+--- response_body eval
+qr/400 Bad Request/
+--- error_log
+client certificate verification is not passed: FAILED
+
+
+
+=== TEST 20: mtls failed, at handshake phase
+--- exec
+curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
+--- error_log
+peer did not return a certificate

@@ -32,6 +32,30 @@ no_root_location();
 no_shuffle();
 worker_connections(256);
 
+# the healthcheck stop test requires exiting worker to keep watching etcd for a while,
+# which is not the case when using gRPC.
+my $yaml_config = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    prefix: "/apisix"
+    host:
+      - "http://127.0.0.1:2379"
+    use_grpc: false
+  admin:
+    admin_key: null
+_EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
+
 run_tests();
 
 __DATA__
@@ -41,8 +65,6 @@ __DATA__
 PUT /apisix/admin/routes/1
 {"uri":"/server_port","upstream":{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","host":"foo.com","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}}
 --- error_code_like: ^20\d$
---- no_error_log
-[error]
 
 
 
@@ -95,8 +117,6 @@ try to release checker: table: 0x
 PUT /apisix/admin/routes/1
 {"uri":"/server_port","upstream":{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","host":"foo.com","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}}
 --- error_code: 201
---- no_error_log
-[error]
 
 
 
@@ -156,7 +176,6 @@ create new checker: table: 0x
                 return
             end
 
-            -- release the clean handler of previous test
             local code, _, body = t('/apisix/admin/routes/1',
                 "PUT",
                 [[{"uri":"/server_port","upstream_id":"stopchecker"}]]
@@ -228,7 +247,6 @@ ok
 --- grep_error_log eval
 qr/create new checker: table: 0x|try to release checker: table: 0x/
 --- grep_error_log_out
-try to release checker: table: 0x
 create new checker: table: 0x
 try to release checker: table: 0x
 create new checker: table: 0x

@@ -18,8 +18,10 @@ local get_request      = require("resty.core.base").get_request
 local router_new       = require("apisix.utils.router").new
 local core             = require("apisix.core")
 local apisix_ssl       = require("apisix.ssl")
+local secret           = require("apisix.secret")
 local ngx_ssl          = require("ngx.ssl")
 local config_util      = require("apisix.core.config_util")
+local ngx              = ngx
 local ipairs           = ipairs
 local type             = type
 local error            = error
@@ -118,7 +120,31 @@ local function set_pem_ssl_key(sni, cert, pkey)
 end
 
 
-function _M.match_and_set(api_ctx, match_only)
+-- export the set cert/key process so we can hook it in the other plugins
+function _M.set_cert_and_key(sni, value)
+    local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
+    if not ok then
+        return false, err
+    end
+
+    -- multiple certificates support.
+    if value.certs then
+        for i = 1, #value.certs do
+            local cert = value.certs[i]
+            local key = value.keys[i]
+
+            ok, err = set_pem_ssl_key(sni, cert, key)
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
+    return true
+end
+
+
+function _M.match_and_set(api_ctx, match_only, alt_sni)
     local err
     if not radixtree_router or
        radixtree_router_ver ~= ssl_certificates.conf_version then
@@ -129,13 +155,15 @@ function _M.match_and_set(api_ctx, match_only)
         radixtree_router_ver = ssl_certificates.conf_version
     end
 
-    local sni
-    sni, err = apisix_ssl.server_name()
-    if type(sni) ~= "string" then
-        local advise = "please check if the client requests via IP or uses an outdated protocol" ..
-                       ". If you need to report an issue, " ..
-                       "provide a packet capture file of the TLS handshake."
-        return false, "failed to find SNI: " .. (err or advise)
+    local sni = alt_sni
+    if not sni then
+        sni, err = apisix_ssl.server_name()
+        if type(sni) ~= "string" then
+            local advise = "please check if the client requests via IP or uses an outdated " ..
+                           "protocol. If you need to report an issue, " ..
+                           "provide a packet capture file of the TLS handshake."
+            return false, "failed to find SNI: " .. (err or advise)
+        end
     end
 
     core.log.debug("sni: ", sni)
@@ -143,7 +171,11 @@ function _M.match_and_set(api_ctx, match_only)
     local sni_rev = sni:reverse()
     local ok = radixtree_router:dispatch(sni_rev, nil, api_ctx)
     if not ok then
-        core.log.error("failed to find any SSL certificate by SNI: ", sni)
+        if not alt_sni then
+            -- it is expected that alternative SNI doesn't have a SSL certificate associated
+            -- with it sometimes
+            core.log.error("failed to find any SSL certificate by SNI: ", sni)
+        end
         return false
     end
 
@@ -153,6 +185,7 @@ function _M.match_and_set(api_ctx, match_only)
         for _, msni in ipairs(api_ctx.matched_sni) do
             if sni_rev == msni or not str_find(sni_rev, ".", #msni) then
                 matched = true
+                break
             end
         end
         if not matched then
@@ -173,32 +206,42 @@ function _M.match_and_set(api_ctx, match_only)
         end
     end
 
-    local matched_ssl = api_ctx.matched_ssl
-    core.log.info("debug - matched: ", core.json.delay_encode(matched_ssl, true))
+    core.log.info("debug - matched: ", core.json.delay_encode(api_ctx.matched_ssl, true))
 
     if match_only then
         return true
     end
 
-    ngx_ssl.clear_certs()
-
-    ok, err = set_pem_ssl_key(sni, matched_ssl.value.cert,
-                              matched_ssl.value.key)
+    ok, err = _M.set(api_ctx.matched_ssl, sni)
     if not ok then
         return false, err
     end
 
-    -- multiple certificates support.
-    if matched_ssl.value.certs then
-        for i = 1, #matched_ssl.value.certs do
-            local cert = matched_ssl.value.certs[i]
-            local key = matched_ssl.value.keys[i]
+    return true
+end
 
-            ok, err = set_pem_ssl_key(sni, cert, key)
-            if not ok then
-                return false, err
-            end
+
+function _M.set(matched_ssl, sni)
+    if not matched_ssl then
+        return false, "failed to match ssl certificate"
+    end
+    local ok, err
+    if not sni then
+        sni, err = apisix_ssl.server_name()
+        if type(sni) ~= "string" then
+            local advise = "please check if the client requests via IP or uses an outdated " ..
+                           "protocol. If you need to report an issue, " ..
+                           "provide a packet capture file of the TLS handshake."
+            return false, "failed to find SNI: " .. (err or advise)
         end
+    end
+    ngx_ssl.clear_certs()
+
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value) or matched_ssl.value
+
+    ok, err = _M.set_cert_and_key(sni, new_ssl_value)
+    if not ok then
+        return false, err
     end
 
     if matched_ssl.value.client then
@@ -210,7 +253,11 @@ function _M.match_and_set(api_ctx, match_only)
                 return false, "failed to parse client cert: " .. err
             end
 
-            local ok, err = ngx_ssl.verify_client(parsed_cert, depth)
+            local reject_in_handshake =
+                (ngx.config.subsystem == "stream") or
+                (matched_ssl.value.client.skip_mtls_uri_regex == nil)
+            local ok, err = ngx_ssl.verify_client(parsed_cert, depth,
+                reject_in_handshake)
             if not ok then
                 return false, err
             end

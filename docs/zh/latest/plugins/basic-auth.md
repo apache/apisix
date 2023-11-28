@@ -1,7 +1,8 @@
 ---
 title: basic-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Basic Auth
   - basic-auth
@@ -40,20 +41,22 @@ Consumer 端：
 | 名称     | 类型   | 必选项 | 描述                                                                                           |
 | -------- | ------ | -----| ----------------------------------------------------------------------------------------------- |
 | username | string | 是   | Consumer 的用户名并且该用户名是唯一，如果多个 Consumer 使用了相同的 `username`，将会出现请求匹配异常。|
-| password | string | 是   | 用户的密码。                                                                                      |
+| password | string | 是   | 用户的密码。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。        |
+
+注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 Route 端：
 
 | 名称             | 类型     | 必选项 | 默认值  | 描述                                                            |
 | ---------------- | ------- | ------ | ------ | --------------------------------------------------------------- |
-| hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则会将 Authorization 请求头传递给 Upstream。|
+| hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将 Authorization 请求头传递给 Upstream。|
 
 ## 启用插件
 
 如果需要启用插件，就必须创建一个具有身份验证配置的 Consumer：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers \
+curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "foo",
@@ -77,7 +80,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers \
 创建 Consumer 后，就可以通过配置 Route 或 Service 来验证插件，以下是配置 Route 的命令：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -126,12 +129,12 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid user authorization"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `basic-auth` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

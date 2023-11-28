@@ -33,7 +33,7 @@ services:
     restart: unless-stopped
     ports:
       - "8500:8500"
-    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data" ]
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
     networks:
       consul_net:
 
@@ -42,7 +42,16 @@ services:
     restart: unless-stopped
     ports:
       - "8600:8500"
-    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data" ]
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    networks:
+      consul_net:
+
+  consul_3:
+    image: hashicorp/consul:1.16.2
+    restart: unless-stopped
+    ports:
+      - "8502:8500"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks", "-ui", "-hcl", "acl = {\nenabled = true\ndefault_policy = \"deny\"\nenable_token_persistence = true\ntokens = {\nagent = \"2b778dd9-f5f1-6f29-b4b4-9a5fa948757a\"\n}}" ]
     networks:
       consul_net:
 

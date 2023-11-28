@@ -25,14 +25,14 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - ubuntu-18.04
+          - ubuntu-20.04
         os_name:
           - linux_openresty
-          - linux_openresty_1_19
         test_dir:
-          - t/plugin
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc
+          - t/plugin/[a-k]*
+          - t/plugin/[l-z]*
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -42,12 +42,12 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v4
         with:
           go-version: "1.17"
 
@@ -64,8 +64,8 @@ jobs:
         id: branch_env
         shell: bash
         run: |
-          echo "##[set-output name=version;]$(echo ${GITHUB_REF##*/})"
-          echo "##[set-output name=fullname;]$(echo apache-apisix-${GITHUB_REF##*/}-src.tgz)"
+          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
+          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
 
       - name: Extract test type
         shell: bash
@@ -73,18 +73,23 @@ jobs:
         run: |
           test_dir="${{ matrix.test_dir }}"
           if [[ $test_dir =~ 't/plugin' ]]; then
-            echo "##[set-output name=type;]$(echo 'plugin')"
+            echo "type=plugin" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ 't/admin ' ]]; then
-            echo "##[set-output name=type;]$(echo 'first')"
+            echo "type=first" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ ' t/xrpc' ]]; then
-            echo "##[set-output name=type;]$(echo 'last')"
+            echo "type=last" >>$GITHUB_OUTPUT
           fi
+
+      - name: Free disk space
+        run: |
+          bash ./ci/free_disk_space.sh
 
       - name: Linux launch common services
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
 
       - name: Create tarball
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -97,28 +102,41 @@ jobs:
           rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
-      - name: Start CI env (FIRST_TEST)
-        if: steps.test_env.outputs.type == 'first'
-        run: |
-          # launch deps env
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+      - name: Cache images
+        id: cache-images
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-apisix-docker-images
+        with:
+          path: docker-images-backup
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
 
-      - name: Start CI env (PLUGIN_TEST)
-        if: steps.test_env.outputs.type == 'plugin'
+      - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
+        name: Load saved docker images
         run: |
-          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
+          if [[ -f docker-images-backup/apisix-images.tar ]]; then
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+            docker load --input docker-images-backup/apisix-images.tar
+            echo "loaded docker images"
 
-      - name: Start CI env (LAST_TEST)
-        if: steps.test_env.outputs.type == 'last'
+            # preserve storage space
+            rm docker-images-backup/apisix-images.tar
+
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            if [[ ${{ steps.test_env.outputs.type }} != first ]]; then
+              sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+            fi
+          fi
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Linux launch services
         run: |
-          # generating SSL certificates for Kafka
-          sudo keytool -genkeypair -keyalg RSA -dname "CN=127.0.0.1" -alias 127.0.0.1 -keystore ./ci/pod/kafka/kafka-server/selfsigned.jks -validity 365 -keysize 2048 -storepass changeit
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
           make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
-          sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh
-
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+          echo "Linux launch services, done."
       - name: Start Dubbo Backend
-        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'plugin'
+        if: matrix.os_name == 'linux_openresty' && (steps.test_env.outputs.type == 'plugin' || steps.test_env.outputs.type == 'last')
         run: |
           sudo apt install -y maven
           cd t/lib/dubbo-backend
@@ -152,3 +170,10 @@ jobs:
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Save docker images
+        run: |
+          echo "start backing up, $(date)"
+          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+          echo "backup done, $(date)"

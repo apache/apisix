@@ -24,12 +24,14 @@
 git checkout conf/config.yaml
 
 echo "
-apisix:
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    port_admin: 9180
-    https_admin: true
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
 " > conf/config.yaml
 
 make init
@@ -55,9 +57,11 @@ echo "passed: admin https enabled"
 echo '
 apisix:
   enable_admin: true
-  admin_listen:
-    ip: 127.0.0.2
-    port: 9181
+deployment:
+  admin:
+    admin_listen:
+      ip: 127.0.0.2
+      port: 9181
 ' > conf/config.yaml
 
 make init
@@ -99,9 +103,10 @@ echo "passed: rollback to the default admin config"
 # set allow_admin in conf/config.yaml
 
 echo "
-apisix:
-    allow_admin:
-        - 127.0.0.9
+deployment:
+    admin:
+        allow_admin:
+            - 127.0.0.9
 " > conf/config.yaml
 
 make init
@@ -113,8 +118,9 @@ if [ $count -eq 0 ]; then
 fi
 
 echo "
-apisix:
-    allow_admin: ~
+deployment:
+    admin:
+        allow_admin: ~
 " > conf/config.yaml
 
 make init
@@ -132,9 +138,10 @@ echo "passed: empty allow_admin in conf/config.yaml"
 git checkout conf/config.yaml
 
 echo '
-apisix:
-  allow_admin: ~
-  admin_key: ~
+deployment:
+  admin:
+    admin_key: ~
+    allow_admin: ~
 ' > conf/config.yaml
 
 make init > output.log 2>&1 | true
@@ -147,16 +154,108 @@ fi
 
 echo "pass: missing admin key and show ERROR message"
 
+# missing admin key, only allow 127.0.0.0/24 to access admin api
+
+echo '
+deployment:
+  admin:
+    admin_key: ~
+    allow_admin:
+      - 127.0.0.0/24
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should not show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key: ~
+    allow_admin:
+      - 0.0.0.0/0
+      - 127.0.0.0/24
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo "pass: missing admin key and only allow 127.0.0.0/24 to access admin api"
+
+# allow any IP to access admin api with empty admin_key, when admin_key_required=true
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key_required: true
+    admin_key: ~
+    allow_admin:
+      - 0.0.0.0/0
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key_required: false
+    admin_key: ~
+    allow_admin:
+      - 0.0.0.0/0
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should not show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+if ! grep -E "Warning! Admin key is bypassed" output.log > /dev/null; then
+    echo "failed: should show 'Warning! Admin key is bypassed'"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key_required: invalid-value
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if grep -E "path[deployment->admin->admin_key_required] expect: boolean, but got: string" output.log > /dev/null; then
+    echo "check admin_key_required value failed: should show 'expect: boolean, but got: string'"
+    exit 1
+fi
+
+echo "pass: allow empty admin_key, when admin_key_required=false"
+
 # admin api, allow any IP but use default key
 
 echo '
-apisix:
-  allow_admin: ~
-  admin_key:
-    -
-      name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
+deployment:
+  admin:
+    allow_admin: ~
+    admin_key:
+        -
+        name: "admin"
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
 ' > conf/config.yaml
 
 make init > output.log 2>&1 | true
@@ -169,10 +268,12 @@ fi
 
 echo "pass: show WARNING message if the user used default token and allow any IP to access"
 
-# port_admin set
+# admin_listen set
 echo '
-apisix:
-  port_admin: 9180
+deployment:
+  admin:
+    admin_listen:
+      port: 9180
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -192,22 +293,26 @@ if grep -E 'using uninitialized ".+" variable while logging request' logs/error.
     exit 1
 fi
 
-echo "pass: uninitialized variable not found during writing access log (port_admin set)"
+echo "pass: uninitialized variable not found during writing access log (admin_listen set)"
 
-# Admin API can only be used with etcd config_center
+# Admin API can only be used with etcd config_provider
+## if role is data_plane, and config_provider is yaml, then enable_admin is set to false
 echo '
 apisix:
     enable_admin: true
-    config_center: yaml
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep "Admin API can only be used with etcd config_center"; then
-    echo "failed: Admin API can only be used with etcd config_center"
+if echo "$out" | grep "Admin API can only be used with etcd config_provider"; then
+    echo "failed: Admin API can only be used with etcd config_provider"
     exit 1
 fi
 
-echo "passed: Admin API can only be used with etcd config_center"
+echo "passed: Admin API can only be used with etcd config_provider"
 
 # disable Admin API and init plugins syncer
 echo '
@@ -248,7 +353,7 @@ make init
 make run
 
 # initialize node-status public API routes #1
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/node-status \
     -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
     -d "{
         \"uri\": \"/apisix/status\",
@@ -256,7 +361,7 @@ code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0
             \"public-api\": {}
         }
     }")
-if [ ! $code -eq 201 ]; then
+if [ ! $code -lt 300 ]; then
     echo "failed: initialize node status public API failed #1"
     exit 1
 fi
@@ -275,7 +380,7 @@ make init
 sleep 1
 
 # initialize node-status public API routes #2
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9080/apisix/admin/routes/node-status \
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/node-status \
     -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
     -d "{
         \"uri\": \"/apisix/status\",
@@ -333,7 +438,7 @@ if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.lo
 fi
 
 # check stream plugins(no plugins under stream, it will be added below)
-if ! grep -E 'failed to read stream plugin list from local file' logs/error.log; then
+if grep -E 'failed to read stream plugin list from local file' logs/error.log; then
     echo "failed: first time load stream plugins list failed"
     exit 1
 fi

@@ -20,13 +20,17 @@ local zipkin_codec = require("apisix.plugins.zipkin.codec")
 local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
 local ngx = ngx
+local ngx_var = ngx.var
 local ngx_re = require("ngx.re")
 local pairs = pairs
 local tonumber = tonumber
+local to_hex = require "resty.string".to_hex
 
 local plugin_name = "zipkin"
 local ZIPKIN_SPAN_VER_1 = 1
 local ZIPKIN_SPAN_VER_2 = 2
+local plugin = require("apisix.plugin")
+local string_format = string.format
 
 
 local lrucache = core.lrucache.new({
@@ -69,6 +73,8 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+local plugin_info  = plugin.plugin_attr(plugin_name) or {}
+
 
 local function create_tracer(conf,ctx)
     conf.route_id = ctx.route_id
@@ -100,6 +106,21 @@ local function parse_b3(b3)
     return nil, pieces[1], pieces[2], pieces[3], pieces[4]
 end
 
+local function inject_header(ctx)
+    local opentracing = ctx.opentracing
+    local tracer = opentracing.tracer
+    local outgoing_headers = {}
+
+    local span = opentracing.request_span
+    if ctx.opentracing_sample then
+        span = opentracing.proxy_span
+    end
+    tracer:inject(span, "http_headers", outgoing_headers)
+
+    for k, v in pairs(outgoing_headers) do
+        core.request.set_header(ctx, k, v)
+    end
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -127,6 +148,8 @@ function _M.rewrite(plugin_conf, ctx)
     local b3 = headers["b3"]
     if b3 then
         -- don't pass b3 header by default
+        -- TODO: add an option like 'single_b3_header' so we can adapt to the upstream
+        -- which doesn't support b3 header without always breaking down the header
         core.request.set_header(ctx, "b3", nil)
 
         local err
@@ -147,18 +170,6 @@ function _M.rewrite(plugin_conf, ctx)
         trace_id = headers["x-b3-traceid"]
         parent_span_id = headers["x-b3-parentspanid"]
         request_span_id = headers["x-b3-spanid"]
-    end
-
-    if sampled == "1" or sampled == "true" then
-        per_req_sample_ratio = 1
-    elseif sampled == "0" or sampled == "false" then
-        per_req_sample_ratio = 0
-    end
-
-    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
-    if not ctx.opentracing_sample then
-        core.request.set_header(ctx, "x-b3-sampled", "0")
-        return
     end
 
     local zipkin_ctx = core.tablepool.fetch("zipkin_ctx", 0, 3)
@@ -190,11 +201,38 @@ function _M.rewrite(plugin_conf, ctx)
         request_span = request_span,
     }
 
+    -- Process sampled
+    if sampled == "1" or sampled == "true" then
+        per_req_sample_ratio = 1
+    elseif sampled == "0" or sampled == "false" then
+        per_req_sample_ratio = 0
+    end
+
+    ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
+    if not ctx.opentracing_sample then
+        request_span:set_baggage_item("x-b3-sampled","0")
+    else
+       request_span:set_baggage_item("x-b3-sampled","1")
+    end
+
+    if plugin_info.set_ngx_var then
+        local span_context = request_span:context()
+        ngx_var.zipkin_context_traceparent = string_format("00-%s-%s-%02x",
+                                             to_hex(span_context.trace_id),
+                                             to_hex(span_context.span_id),
+                                             span_context:get_baggage_item("x-b3-sampled"))
+        ngx_var.zipkin_trace_id = span_context.trace_id
+        ngx_var.zipkin_span_id = span_context.span_id
+    end
+
+    if not ctx.opentracing_sample then
+        return
+    end
+
     local request_span = ctx.opentracing.request_span
     if conf.span_version == ZIPKIN_SPAN_VER_1 then
         ctx.opentracing.rewrite_span = request_span:start_child_span("apisix.rewrite",
                                                                      start_timestamp)
-
         ctx.REWRITE_END_TIME = tracer:time()
         ctx.opentracing.rewrite_span:finish(ctx.REWRITE_END_TIME)
     else
@@ -204,10 +242,6 @@ function _M.rewrite(plugin_conf, ctx)
 end
 
 function _M.access(conf, ctx)
-    if not ctx.opentracing_sample then
-        return
-    end
-
     local opentracing = ctx.opentracing
     local tracer = opentracing.tracer
 
@@ -223,11 +257,7 @@ function _M.access(conf, ctx)
     end
 
     -- send headers to upstream
-    local outgoing_headers = {}
-    tracer:inject(opentracing.proxy_span, "http_headers", outgoing_headers)
-    for k, v in pairs(outgoing_headers) do
-        core.request.set_header(ctx, k, v)
-    end
+    inject_header(ctx)
 end
 
 
@@ -253,10 +283,6 @@ end
 
 
 function _M.log(conf, ctx)
-    if not ctx.opentracing_sample then
-        return
-    end
-
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
@@ -268,8 +294,7 @@ function _M.log(conf, ctx)
         if opentracing.proxy_span then
             opentracing.proxy_span:finish(log_end_time)
         end
-
-    else
+    elseif opentracing.response_span then
         opentracing.response_span:finish(log_end_time)
     end
 

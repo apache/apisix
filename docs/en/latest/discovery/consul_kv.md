@@ -40,6 +40,7 @@ discovery:
     servers:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
+    token: "..."                  # if your consul cluster has enabled acl access control, you need to specify the token
     prefix: "upstreams"
     skip_keys:                    # if you need to skip special keys
       - "upstreams/unused_api/"
@@ -131,10 +132,12 @@ To avoid confusion, use the full consul key url path as service name in practice
 
 ### Upstream setting
 
+#### L7
+
 Here is an example of routing a request with a URL of "/*" to a service which named "http://127.0.0.1:8500/v1/kv/upstreams/webpages/" and use consul_kv discovery client in the registry :
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/*",
     "upstream": {
@@ -171,6 +174,25 @@ The format response as below:
 ```
 
 You could find more usage in the `apisix/t/discovery/consul_kv.t` file.
+
+#### L4
+
+Consul_kv service discovery also supports use in L4, the configuration method is similar to L7.
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+      "scheme": "tcp",
+      "service_name": "http://127.0.0.1:8500/v1/kv/upstreams/webpages/",
+      "type": "roundrobin",
+      "discovery_type": "consul_kv"
+    }
+}'
+```
+
+You could find more usage in the `apisix/t/discovery/stream/consul_kv.t` file.
 
 ## Debugging API
 

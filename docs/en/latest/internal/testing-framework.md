@@ -116,7 +116,7 @@ no valid upstream node
 To test the code, we need to provide a mock upstream.
 
 For HTTP request, the upstream code is put in `t/lib/server.lua`. HTTP request with
-a given `path` will trigger the method in same name. For example, a call to `/server_port`
+a given `path` will trigger the method in the same name. For example, a call to `/server_port`
 will call the `_M.server_port`.
 
 For TCP request, a dummy upstream is used:
@@ -285,13 +285,13 @@ hash_on: header
 chash_key: "custom-one"
 ```
 
-The default log level is `info`, but you can get the debug level log with `-- log_level: debug`.
+The default log level is `info`, but you can get the debug level log with `--- log_level: debug`.
 
 ## Upstream
 
 The test framework listens to multiple ports when it is started.
 
-* 1980/1981/1982/5044: HTTP upstream port
+* 1980/1981/1982/5044: HTTP upstream port. We provide a mock upstream server for testing. See below for more information.
 * 1983: HTTPS upstream port
 * 1984: APISIX HTTP port. Can be used to verify HTTP related gateway logic, such as concurrent access to an API.
 * 1985: APISIX TCP port. Can be used to verify TCP related gateway logic, such as concurrent access to an API.
@@ -309,7 +309,7 @@ Note that before adding new methods to `t/lib/server.lua`, make sure that you ca
 
 Assume your current work directory is the root of the apisix source code.
 
-1. Install our fork of [test-nginx](https://github.com/openresty/test-nginx) to `../test-nginx`.
+1. Git clone the latest [test-nginx](https://github.com/openresty/test-nginx) to `../test-nginx`.
 2. Run the test: `prove -I. -I../test-nginx/inc -I../test-nginx/lib -r t/path/to/file.t`.
 
 ## Tips

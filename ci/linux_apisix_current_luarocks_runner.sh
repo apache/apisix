@@ -23,9 +23,9 @@ do_install() {
 
     export_or_prefix
 
-    ./utils/linux-install-openresty.sh
+    ./ci/linux-install-openresty.sh
     ./utils/linux-install-luarocks.sh
-    ./utils/linux-install-etcd-client.sh
+    ./ci/linux-install-etcd-client.sh
 }
 
 script() {
@@ -35,8 +35,8 @@ script() {
     sudo rm -rf /usr/local/share/lua/5.1/apisix
 
     # install APISIX with local version
-    sudo luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
-    sudo luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+    luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
+    luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
     # ensure all files under apisix is installed
     diff -rq apisix /usr/local/share/lua/5.1/apisix
 

@@ -1,7 +1,8 @@
 ---
 title: batch-requests
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Batch Requests
 description: This document contains information about the Apache APISIX batch-request Plugin.
@@ -28,15 +29,17 @@ description: This document contains information about the Apache APISIX batch-re
 
 ## Description
 
-The `batch-requests` plugin accepts multiple requests, sends them from APISIX via [HTTP pipelining](https://en.wikipedia.org/wiki/HTTP_pipelining), and returns an aggregated response to the client.
+After enabling the batch-requests plugin, users can assemble multiple requests into one request and send them to the gateway. The gateway will parse the corresponding requests from the request body and then individually encapsulate them into separate requests. Instead of the user initiating multiple HTTP requests to the gateway, the gateway will use the HTTP pipeline method, go through several stages such as route matching, forwarding to the corresponding upstream, and then return the combined results to the client after merging.
 
-This improves the performance significantly in cases where the client needs to access multiple APIs.
+![batch-request](https://static.apiseven.com/uploads/2023/06/27/ATzEuOn4_batch-request.png)
+
+In cases where the client needs to access multiple APIs, this will significantly improve performance.
 
 :::note
 
-The HTTP headers for the outer batch request (except for `Content-` headers like `Content-Type`) apply to every request in the batch.
+The request headers in the user’s original request (except for headers starting with “Content-”, such as “Content-Type”) will be assigned to each request in the HTTP pipeline. Therefore, to the gateway, these HTTP pipeline requests sent to itself are no different from external requests initiated directly by users. They can only access pre-configured routes and will undergo a complete authentication process, so there are no security issues.
 
-If the same HTTP header is specified in both the outer request and on an individual call, the header of the individual call takes precedence.
+If the request headers of the original request conflict with those configured in the plugin, the request headers configured in the plugin will take precedence (except for the real_ip_header specified in the configuration file).
 
 :::
 
@@ -54,7 +57,7 @@ You may need to use the [public-api](public-api.md) plugin to expose this endpoi
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the `batch-requests` Plugin by adding it to your configuration file (`conf/config.yaml`):
 
@@ -69,7 +72,7 @@ plugins:
 By default, the maximum body size that can be sent to `/apisix/batch-requests` can't be larger than 1 MiB. You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/batch-requests`:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "max_body_size": 4194304
 }'
@@ -126,7 +129,7 @@ You can specify a custom URI with the [public-api](public-api.md) Plugin.
 You can set the URI you want when creating the Route and change the configuration of the public-api Plugin:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/batch-requests",
     "plugins": {
@@ -142,7 +145,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f1
 First, you need to setup a Route to the batch request API. We will use the [public-api](public-api.md) Plugin for this:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/batch-requests",
     "plugins": {
@@ -208,6 +211,6 @@ This will give a response:
 ]
 ```
 
-## Disable Plugin
+## Delete Plugin
 
 You can remove `batch-requests` from your list of Plugins in your configuration file (`conf/config.yaml`).

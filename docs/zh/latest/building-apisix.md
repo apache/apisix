@@ -53,25 +53,21 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 然后，创建一个目录并设置环境变量 `APISIX_VERSION`：
 
 ```shell
-APISIX_VERSION='2.15.0'
+APISIX_VERSION='3.7.0'
 mkdir apisix-${APISIX_VERSION}
 ```
 
-现在，你可以运行以下命令来下载 APISIX 源码包：
+现在，你可以运行以下命令，从 Github 克隆 APISIX 源码：
 
 ```shell
-wget https://downloads.apache.org/apisix/${APISIX_VERSION}/apache-apisix-${APISIX_VERSION}-src.tgz
+git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
 ```
 
-你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。你也可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
+你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包缺少测试用例，可能会对你后续操作产生困扰。
 
-下载源码包后，你可以将文件解压到之前创建的文件夹中：
+另外，你也可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
 
-```shell
-tar zxvf apache-apisix-${APISIX_VERSION}-src.tgz -C apisix-${APISIX_VERSION}
-```
-
-然后切换到解压的目录，创建依赖项并安装 APISIX，如下所示：
+然后切换到 APISIX 源码的目录，创建依赖项并安装 APISIX，命令如下所示：
 
 ```shell
 cd apisix-${APISIX_VERSION}
@@ -277,4 +273,4 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 prove -Itest-nginx/lib -r t/plugin/openid-connect.t
 ```
 
-如果你想要了解更多信息，请参考 [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)。
+如果你想要了解更多信息，请参考 [testing framework](../../en/latest/internal/testing-framework.md)。

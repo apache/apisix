@@ -23,10 +23,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -133,12 +129,15 @@ done
                             "endpoint_addr":"]] .. fake_uri .. [[",
                             "client_id":"7ceb9b7fda4a9061ec1c",
                             "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
                         }
                     },
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "httpbin.org:80": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
@@ -442,3 +441,74 @@ invalid state
 done
 --- error_log
 failed when accessing token: invalid access_token
+
+
+
+=== TEST 10: data encryption for client_secret
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local callback_url = "http://127.0.0.1:" .. ngx.var.server_port ..
+                                 "/anything/callback"
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "uri": "/anything/*",
+                    "plugins": {
+                        "authz-casdoor": {
+                            "callback_url":"]] .. callback_url .. [[",
+                            "endpoint_addr": "http://127.0.0.1:10420",
+                            "client_id":"7ceb9b7fda4a9061ec1c",
+                            "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "test.com:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["authz-casdoor"].client_secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["authz-casdoor"].client_secret)
+        }
+    }
+--- response_body
+3416238e1edf915eac08b8fe345b2b95cdba7e04
+YUfqAO0kPXjZIoAbPSuryCkUDksEmwSq08UDTIUWolN6KQwEUrh72TazePueo4/S

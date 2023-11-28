@@ -23,9 +23,9 @@ local log          = require("apisix.core.log")
 local ws_server    = require("resty.websocket.server")
 local protoc       = require("protoc")
 local pb           = require("pb")
+local ngx          = ngx
 local setmetatable = setmetatable
 local pcall        = pcall
-local pairs        = pairs
 
 
 local _M = { version = 0.1 }
@@ -34,7 +34,7 @@ local mt = { __index = _M }
 local pb_state
 local function init_pb_state()
     -- clear current pb state
-    pb.state(nil)
+    local old_pb_state = pb.state(nil)
 
     -- set int64 rule for pubsub module
     pb.option("int64_as_string")
@@ -42,31 +42,24 @@ local function init_pb_state()
     -- initialize protoc compiler
     protoc.reload()
     local pubsub_protoc = protoc.new()
-
-    -- compile the protobuf file on initial load module
-    -- ensure that each worker is loaded once
-    if not pubsub_protoc.loaded["pubsub.proto"] then
-        pubsub_protoc:addpath("apisix/include/apisix/model")
-        local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
-        if not ok then
-            pubsub_protoc:reset()
-            return "failed to load pubsub protocol: " .. err
-        end
+    pubsub_protoc:addpath(ngx.config.prefix() .. "apisix/include/apisix/model")
+    local ok, err = pcall(pubsub_protoc.loadfile, pubsub_protoc, "pubsub.proto")
+    if not ok then
+        pubsub_protoc:reset()
+        pb.state(old_pb_state)
+        return "failed to load pubsub protocol: " .. err
     end
 
-    pb_state = pb.state(nil)
+    pb_state = pb.state(old_pb_state)
 end
 
 
 -- parse command name and parameters from client message
 local function get_cmd(data)
-    for key, value in pairs(data) do
-        -- There are sequence and command properties in the data,
-        -- select the handler according to the command value.
-        if key ~= "sequence" then
-            return key, value
-        end
-    end
+    -- There are sequence and command properties in the data,
+    -- select the handler according to the command value.
+    local key = data.req
+    return key, data[key]
 end
 
 
@@ -192,9 +185,10 @@ function _M.wait(self)
         end
 
         -- recovery of stored pb_store
-        pb.state(pb_state)
+        local pb_old_state = pb.state(pb_state)
 
         local data, err = pb.decode("PubSubReq", raw_data)
+        pb.state(pb_old_state)
         if not data then
             log.error("pubsub server receives undecodable data, err: ", err)
             send_error(ws, 0, "wrong command")

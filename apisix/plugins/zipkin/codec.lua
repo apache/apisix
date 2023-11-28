@@ -97,11 +97,13 @@ local function new_injector()
         headers["x-b3-parentspanid"] = span_context.parent_id
                                     and to_hex(span_context.parent_id) or nil
         headers["x-b3-spanid"] = to_hex(span_context.span_id)
-        -- when we call this function, we already start to sample
-        headers["x-b3-sampled"] = "1"
+        headers["x-b3-sampled"] = span_context:get_baggage_item("x-b3-sampled")
         for key, value in span_context:each_baggage_item() do
-            -- XXX: https://github.com/opentracing/specification/issues/117
-            headers["uberctx-"..key] = ngx.escape_uri(value)
+            -- skip x-b3-sampled baggage
+            if key ~= "x-b3-sampled" then
+                -- XXX: https://github.com/opentracing/specification/issues/117
+                headers["uberctx-"..key] = ngx.escape_uri(value)
+            end
         end
     end
 end

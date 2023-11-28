@@ -1,7 +1,8 @@
 ---
 title: ldap-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - LDAP Authentication
   - ldap-auth
@@ -41,7 +42,7 @@ For Consumer:
 
 | Name    | Type   | Required | Description                                                                      |
 | ------- | ------ | -------- | -------------------------------------------------------------------------------- |
-| user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. |
+| user_dn | string | True     | User dn of the LDAP client. For example, `cn=user01,ou=users,dc=example,dc=org`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource. |
 
 For Route:
 
@@ -53,12 +54,12 @@ For Route:
 | tls_verify| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
-## Enabling the plugin
+## Enable plugin
 
 First, you have to create a Consumer and enable the `ldap-auth` Plugin on it:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "foo",
     "plugins": {
@@ -72,7 +73,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Now you can enable the Plugin on a specific Route or a Service as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -138,12 +139,12 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid user authorization"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `ldap-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `ldap-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:2379/apisix/admin/routes/1 -X PUT -d value='
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

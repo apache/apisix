@@ -22,7 +22,7 @@ local schema = {
     properties = {
         type = {
             type = "string",
-            enum = {"consumer_name", "service_id", "route_id"},
+            enum = {"consumer_name", "service_id", "route_id", "consumer_group_id"},
             default = "consumer_name"
         },
         blacklist = {
@@ -79,6 +79,9 @@ local fetch_val_funcs = {
     end,
     ["consumer_name"] = function(ctx)
         return ctx.consumer_name
+    end,
+    ["consumer_group_id"] = function (ctx)
+        return ctx.consumer_group_id
     end
 }
 
@@ -125,7 +128,9 @@ function _M.access(conf, ctx)
     local method = ngx.req.get_method()
 
     if not value then
-        return 401, { message = "Missing authentication or identity verification."}
+        local err_msg = "The request is rejected, please check the "
+                        .. conf.type .. " for this request"
+        return 401, { message = err_msg}
     end
     core.log.info("value: ", value)
 

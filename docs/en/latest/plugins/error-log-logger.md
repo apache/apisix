@@ -1,7 +1,7 @@
 ---
 title: error-log-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Error log logger
@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX error-lo
 
 ## Description
 
-The `error-log-logger` Plugin is used to push APISIX's error logs (`error.log`) to TCP, [Apache SkyWalking](https://skywalking.apache.org/), or ClickHouse servers. You can also set the error log level to send the logs to server.
+The `error-log-logger` Plugin is used to push APISIX's error logs (`error.log`) to TCP, [Apache SkyWalking](https://skywalking.apache.org/), Apache Kafka or ClickHouse servers. You can also set the error log level to send the logs to server.
 
 It might take some time to receive the log data. It will be automatically sent after the timer function in the [batch processor](../batch-processor.md) expires.
 
@@ -48,17 +48,28 @@ It might take some time to receive the log data. It will be automatically sent a
 | clickhouse.password              | String  | False    |                                |                                                                                         | ClickHouse password.                                                                                         |
 | clickhouse.database              | String  | False    |                                |                                                                                         | Name of the database to store the logs.                                                                      |
 | clickhouse.logtable              | String  | False    |                                |                                                                                         | Table name to store the logs.                                                                                |
-| host                             | string  | False    |                                |                                                                                         | Deprecated. Use `tcp.host` attribute instead. IP address or the hostname of the TCP server.                  |
-| port                             | integer | False    |                                | [0,...]                                                                                 | Deprecated. Use `tcp.port` instead. Target Upstream port.                                                    |
-| tls                              | boolean | False    | false                          |                                                                                         | Deprecated. Use `tcp.tls` instead. When set to `true` performs SSL verification.                             |
-| tls_server_name                  | string  | False    |                                |                                                                                         | Deprecated. Use `tcp.tls_server_name` instead. Server name for the new TLS extension SNI.                    |
+| kafka.brokers                    | array   | True     |                |                       | List of Kafka brokers (nodes).                                                                                                                                                                                                                                                                                                                   |
+| kafka.brokers.host                     | string  | True     |                |                       | The host of Kafka broker, e.g, `192.168.1.1`.                                                                                                                                                                                                                                                                                                                   |
+| kafka.brokers.port                     | integer | True     |                |   [0, 65535]                  |  The port of Kafka broker                                                                                                                                                                                                                                                                                                                  |
+| kafka.brokers.sasl_config              | object  | False    |                |                               |  The sasl config of Kafka broker                                                                                                                                                                                                                                                                                                                 |
+| kafka.brokers.sasl_config.mechanism    | string  | False    | "PLAIN"          | ["PLAIN"]           |     The mechaism of sasl config                                                                                                                                                                                                                                                                                                             |
+| kafka.brokers.sasl_config.user         | string  | True     |                  |                     |  The user of sasl_config. If sasl_config exists, it's required.                                                                                                                                                                                                                                                                                             |
+| kafka.brokers.sasl_config.password     | string  | True     |                  |                     | The password of sasl_config. If sasl_config exists, it's required.                                                                                                                                                                                                                                                                                                 |
+| kafka.kafka_topic                      | string  | True     |                |                       | Target topic to push the logs for organisation.                                                                                                                                                                                                                                                                                                  |
+| kafka.producer_type                    | string  | False    | async          | ["async", "sync"]     | Message sending mode of the producer.                                                                                                                                                                                                                                                                                                            |
+| kafka.required_acks                    | integer | False    | 1              | [0, 1, -1]            | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
+| kafka.key                              | string  | False    |                |                       | Key used for allocating partitions for messages.                                                                                                                                                                                                                                                                                                 |
+| kafka.cluster_name           | integer | False    | 1              | [0,...]               | Name of the cluster. Used when there are two or more Kafka clusters. Only works if the `producer_type` attribute is set to `async`.                                                                                                                                                                                                              |
+| kafka.meta_refresh_interval | integer | False    | 30              | [1,...]               | `refresh_interval` parameter in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) specifies the time to auto refresh the metadata, in seconds.|
 | timeout                          | integer | False    | 3                              | [1,...]                                                                                 | Timeout (in seconds) for the upstream to connect and send data.                                              |
 | keepalive                        | integer | False    | 30                             | [1,...]                                                                                 | Time in seconds to keep the connection alive after sending data.                                             |
 | level                            | string  | False    | WARN                           | ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"] | Log level to filter the error logs. `ERR` is same as `ERROR`.                                                |
 
+NOTE: `encrypt_fields = {"clickhouse.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you can add it in your configuration file (`conf/config.yaml`):
 
@@ -77,7 +88,7 @@ Once you have enabled the Plugin, you can configure it through the Plugin metada
 You can set the TCP server address by configuring the Plugin metadata as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "tcp": {
     "host": "127.0.0.1",
@@ -92,7 +103,7 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 You can configure the SkyWalking OAP server address as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "skywalking": {
     "endpoint_addr":"http://127.0.0.1:12800/v3/logs"
@@ -108,7 +119,7 @@ The Plugin sends the error log as a string to the `data` field of a table in you
 You can configure it as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "clickhouse": {
       "user": "default",
@@ -120,9 +131,31 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 }'
 ```
 
-## Disable Plugin
+### Configuring Kafka server
 
-To disable the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
+The Plugin sends the error log to Kafka, you can configure it as shown below:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+   "kafka":{
+      "brokers":[
+         {
+            "host":"127.0.0.1",
+            "port":9092
+         }
+      ],
+      "kafka_topic":"test2"
+   },
+   "level":"ERROR",
+   "inactive_timeout":1
+}'
+```
+
+## Delete Plugin
+
+To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugins:

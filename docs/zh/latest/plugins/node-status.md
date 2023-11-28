@@ -55,7 +55,7 @@ plugins:
 你需要为 `/apisix/status` API 配置路由，并使用 [public-api](public-api.md) 插件暴露它。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/status",
     "plugins": {
@@ -97,7 +97,7 @@ Server: APISIX web server
 | reading      | 当前正在读取请求头的连接数。                                              |
 | id           | APISIX UID 信息，保存在 `./conf/apisix.uid` 文件中。                |
 
-## 禁用插件
+## 删除插件
 
 如果你不再需要该插件，可以从配置文件 (`./conf/config.yaml`) 中删除它：
 
@@ -111,5 +111,5 @@ Server: APISIX web server
 你也可以移除暴露 `/apisix/status` 接口的路由。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```

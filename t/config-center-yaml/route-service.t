@@ -24,8 +24,10 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -52,8 +54,6 @@ services:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -108,8 +108,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -143,8 +141,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -179,8 +175,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -215,8 +209,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -250,8 +242,6 @@ services:
 GET /hello
 --- response_body
 hello
---- no_error_log
-[error]
 
 
 

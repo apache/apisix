@@ -1,7 +1,8 @@
 ---
 title: authz-casdoor
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Authz Casdoor
   - authz-casdoor
@@ -40,9 +41,11 @@ description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信
 | client_secret | string | 是     | Casdoor 的客户端密钥。                 |
 | callback_url  | string | 是     | 用于接收 code 与 state 的回调地址。 |
 
+注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 :::info IMPORTANT
 
-指定 `endpoint_addr` 和 `callback_url` 属性时不要以 “/” 来结尾。
+指定 `endpoint_addr` 和 `callback_url` 属性时不要以“/”来结尾。
 
 `callback_url` 必须是路由的 URI。具体细节可查看下方示例内容，了解相关配置。
 
@@ -53,7 +56,7 @@ description: 本篇文档介绍了 Apache APISIX auth-casdoor 插件的相关信
 以下示例展示了如何在指定路由上启用 `auth-casdoor` 插件：
 
 ```shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "uri": "/anything/*",
@@ -82,12 +85,12 @@ curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f
 
 上述操作完成后，用户就会被重定向到目标 URL。
 
-## 禁用插件
+## 删除插件
 
 当需要禁用 `authz-casdoor` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything/*",

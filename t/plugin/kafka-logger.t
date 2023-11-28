@@ -26,10 +26,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests;
@@ -72,7 +68,7 @@ done
         }
     }
 --- response_body
-property "broker_list" is required
+value should match only one schema, but matches none
 done
 
 
@@ -148,6 +144,7 @@ GET /hello
 --- response_body
 hello world
 --- wait: 2
+--- ignore_error_log
 
 
 
@@ -592,3 +589,174 @@ qr/partition_id: 2/]
 [qr/partition_id: 1/,
 qr/partition_id: 0/,
 qr/partition_id: 2/]
+
+
+
+=== TEST 20: set route with incorrect sasl_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins":{
+                        "kafka-logger":{
+                            "brokers":[
+                            {
+                                "host":"127.0.0.1",
+                                "port":19094,
+                                "sasl_config":{
+                                    "mechanism":"PLAIN",
+                                    "user":"admin",
+                                    "password":"admin-secret2233"
+                            }
+                        }],
+                            "kafka_topic":"test2",
+                            "key":"key1",
+                            "timeout":1,
+                            "batch_max_size":1
+                        }
+                    },
+                    "upstream":{
+                        "nodes":{
+                            "127.0.0.1:1980":1
+                        },
+                        "type":"roundrobin"
+                    },
+                    "uri":"/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: hit route, failed to send data to kafka
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+failed to do PLAIN auth with 127.0.0.1:19094: Authentication failed: Invalid username or password
+--- wait: 2
+
+
+
+=== TEST 22: set route with correct sasl_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins":{
+                        "kafka-logger":{
+                            "brokers":[
+                            {
+                                "host":"127.0.0.1",
+                                "port":19094,
+                                "sasl_config":{
+                                    "mechanism":"PLAIN",
+                                    "user":"admin",
+                                    "password":"admin-secret"
+                            }
+                        }],
+                            "kafka_topic":"test4",
+                            "producer_type":"sync",
+                            "key":"key1",
+                            "timeout":1,
+                            "batch_max_size":1,
+                            "include_req_body": true
+                        }
+                    },
+                    "upstream":{
+                        "nodes":{
+                            "127.0.0.1:1980":1
+                        },
+                        "type":"roundrobin"
+                    },
+                    "uri":"/hello"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: hit route, send data to kafka successfully
+--- request
+POST /hello?name=qwerty
+abcdef
+--- response_body
+hello world
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- no_error_log
+[error]
+--- wait: 2
+
+
+
+=== TEST 24: set route(batch_max_size = 2), check if prometheus is initialized properly
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 25: access
+--- extra_yaml_config
+plugins:
+  - kafka-logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2

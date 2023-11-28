@@ -35,8 +35,10 @@ title: TLS 双向认证
 
 2. 修改 `conf/config.yaml` 中的配置项：
 
-```yaml
-  port_admin: 9180
+```yaml title="conf/config.yaml"
+  admin_listen:
+    ip: 127.0.0.1
+    port: 9180
   https_admin: true
 
   admin_api_mtls:
@@ -68,16 +70,20 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 你需要构建 [APISIX-Base](./FAQ.md#如何构建-APISIX-Base-环境？)，并且需要在配置文件中设定 `etcd.tls` 来使 ETCD 的双向认证功能正常工作。
 
-```yaml
-etcd:
-  tls:
-    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
-    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+```yaml title="conf/config.yaml"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    tls:
+      cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
+      key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
 如果 APISIX 不信任 etcd server 使用的 CA 证书，我们需要设置 CA 证书。
 
-```yaml
+```yaml title="conf/config.yaml"
 apisix:
   ssl:
     ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd server
@@ -89,16 +95,19 @@ apisix:
 
 双向认证是一种密码学安全的验证客户端身份的手段。当你需要加密并保护流量的双向安全时很有用。
 
+* 注意：双向认证只发生在 HTTPS 中。如果你的路由也可以通过 HTTP 访问，你应该在 HTTP 中添加额外的保护，或者禁止通过 HTTP 访问。*
+
 ### 如何配置
+
+我们提供了一个[演示教程](./tutorials/client-to-apisix-mtls.md)，详细地讲解了如何配置客户端和 APISIX 之间的 mTLS。
 
 在配置 `ssl` 资源时，同时需要配置 `client.ca` 和 `client.depth` 参数，分别代表为客户端证书签名的 CA 列表，和证书链的最大深度。可参考：[SSL API 文档](./admin-api.md#ssl)。
 
 下面是一个可用于生成带双向认证配置的 SSL 资源的 Python 脚本示例。如果需要，可修改 API 地址、API Key 和 SSL 资源的 ID。
 
-```py
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# 保存该文件为 ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -126,7 +135,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -136,7 +145,7 @@ print(resp.text)
 使用上述 Python 脚本创建 SSL 资源：
 
 ```bash
-./ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
+./create-ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
 
 # 测试
 curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX_URL>:<APISIX_HTTPS_PORT>/hello" -k --cert ./client.pem --key ./client.key
@@ -158,10 +167,9 @@ curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX
 
 下面是一个与配置 SSL 时相似的 Python 脚本，可为一个已存在的 upstream 资源配置双向认证。如果需要，可修改 API 地址和 API Key。
 
-```python
+```python title="patch_upstream_mtls.py"
 #!/usr/bin/env python
 # coding: utf-8
-# 保存该文件为 patch_upstream_mtls.py
 import sys
 # sudo pip install requests
 import requests
@@ -183,7 +191,7 @@ reqParam = {
     },
 }
 
-resp = requests.patch("http://127.0.0.1:9080/apisix/admin/upstreams/"+id, json=reqParam, headers={
+resp = requests.patch("http://127.0.0.1:9180/apisix/admin/upstreams/"+id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)

@@ -24,10 +24,6 @@ log_level("info");
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     $block;
 });
 
@@ -35,54 +31,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add route to HTTPS upstream (old way)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "methods": ["GET"],
-                    "plugins": {
-                        "proxy-rewrite": {
-                            "scheme": "https"
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1983": 1
-                        }
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 2: hit the upstream (old way)
---- request
-GET /hello
---- more_headers
-host: www.sni.com
---- error_log
-Receive SNI: www.sni.com
-
-
-
-=== TEST 3: add route to HTTPS upstream
+=== TEST 1: add route to HTTPS upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -115,7 +64,7 @@ passed
 
 
 
-=== TEST 4: hit the upstream
+=== TEST 2: hit the upstream
 --- request
 GET /hello
 --- more_headers
@@ -125,55 +74,7 @@ Receive SNI: www.sni.com
 
 
 
-=== TEST 5: add route to HTTPS upstream (mix)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "methods": ["GET"],
-                    "plugins": {
-                        "proxy-rewrite": {
-                            "scheme": "https"
-                        }
-                    },
-                    "upstream": {
-                        "scheme": "https",
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1983": 1
-                        }
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 6: hit the upstream
---- request
-GET /hello
---- more_headers
-host: www.sni.com
---- error_log
-Receive SNI: www.sni.com
-
-
-
-=== TEST 7: use 443 as the default port
+=== TEST 3: use 443 as the default port
 --- apisix_yaml
 routes:
   -
@@ -192,7 +93,7 @@ upstream: "https://127.0.0.1:443/hello"
 
 
 
-=== TEST 8: use 80 as the http's default port
+=== TEST 4: use 80 as the http's default port
 --- apisix_yaml
 routes:
   -
@@ -210,7 +111,7 @@ upstream: "http://127.0.0.1:80/hello"
 
 
 
-=== TEST 9: rewrite SNI
+=== TEST 5: rewrite SNI
 --- log_level: debug
 --- apisix_yaml
 routes:
@@ -237,7 +138,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 10: node's SNI
+=== TEST 6: node's SNI
 --- log_level: debug
 --- apisix_yaml
 routes:

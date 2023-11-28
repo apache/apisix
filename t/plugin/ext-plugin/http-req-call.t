@@ -514,8 +514,8 @@ GET /hello
             ext.go({rewrite_bad_path = true})
         }
     }
---- access_log
-GET /plugin_proxy_rewrite_args%3Fa=2
+--- error_log
+undefined path in test server, uri: /plugin_proxy_rewrite_args%3Fa=2
 --- error_code: 404
 
 
@@ -750,3 +750,60 @@ cat
 X-Resp: foo
 X-Req: bar
 X-Same: one, two
+
+
+
+=== TEST 27: add route
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local code, message, res = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "ext-plugin-pre-req": {
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(message)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 28: test rewrite request body
+--- request
+GET /echo
+--- response_body chomp
+cat
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
+        content_by_lua_block {
+            local ext = require("lib.ext-plugin")
+            ext.go({rewrite_request_body = true})
+        }
+    }
+--- response_body
+abc

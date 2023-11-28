@@ -1,7 +1,7 @@
 ---
 title: public-api
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Public API
 description: The public-api is used for exposing an API endpoint through a general HTTP API router.
@@ -53,7 +53,7 @@ The example below uses the [jwt-auth](./jwt-auth.md) Plugin and the [key-auth](.
 You can enable the Plugin on a specific Route as shown below:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -75,7 +75,7 @@ curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
 You can also use a custom URI for exposing the API as shown below:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -99,7 +99,7 @@ curl 'http://127.0.0.1:9080/gen_token?key=user-key'
 You can use the `key-auth` Plugin to add authentication and secure the Route:
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -134,12 +134,12 @@ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
 HTTP/1.1 401 Unauthorized
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `public-api` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `public-api` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
   "upstream": {

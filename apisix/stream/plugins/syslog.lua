@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
-local plugin = require("apisix.plugin")
 local plugin_name = "syslog"
 
 local batch_processor_manager = bp_manager_mod.new("stream sys logger")
@@ -31,6 +30,7 @@ local schema = {
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3000},
+        log_format = {type = "object"},
         sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false}
@@ -66,15 +66,11 @@ end
 
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    if not metadata or not metadata.value.log_format
-          or core.table.nkeys(metadata.value.log_format) <= 0
-    then
-        core.log.error("syslog's log_format is not set")
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if not entry then
         return
     end
 
-    local entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
     syslog.push_entry(conf, ctx, entry)
 end
 

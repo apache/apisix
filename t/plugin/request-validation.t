@@ -41,8 +41,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -63,8 +61,6 @@ done
 GET /t
 --- response_body_like eval
 qr/object matches none of the required/
---- no_error_log
-[error]
 
 
 
@@ -127,8 +123,6 @@ qr/object matches none of the required/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -255,8 +249,6 @@ hello1 world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -318,8 +310,6 @@ property "required_payload" is required
 GET /t
 --- response_body
 hello1 world
---- no_error_log
-[error]
 
 
 
@@ -374,8 +364,6 @@ hello1 world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -412,8 +400,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -450,8 +436,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -488,8 +472,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -526,8 +508,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -564,8 +544,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -602,8 +580,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -640,8 +616,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -680,8 +654,6 @@ GET /t
 qr/invalid JSON type: test/
 --- error_code chomp
 400
---- no_error_log
-[error]
 
 
 
@@ -726,8 +698,6 @@ GET /t
 qr/table expected, got string/
 --- error_code chomp
 400
---- no_error_log
-[error]
 
 
 
@@ -770,8 +740,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -817,8 +785,6 @@ GET /t
 qr/table expected, got string/
 --- error_code chomp
 400
---- no_error_log
-[error]
 
 
 
@@ -862,8 +828,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -918,8 +882,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -956,8 +918,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -994,8 +954,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1032,8 +990,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1070,8 +1026,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1108,8 +1062,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1146,8 +1098,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1184,8 +1134,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1224,8 +1172,6 @@ GET /t
 qr/invalid JSON type: test/
 --- error_code chomp
 400
---- no_error_log
-[error]
 
 
 
@@ -1270,8 +1216,6 @@ GET /t
 qr/table expected, got string/
 --- error_code chomp
 400
---- no_error_log
-[error]
 
 
 
@@ -1314,8 +1258,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1361,8 +1303,6 @@ GET /t
 qr/table expected, got string/
 --- error_code chomp
 400
---- no_error_log
-[error]
 
 
 
@@ -1406,8 +1346,6 @@ qr/table expected, got string/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1452,8 +1390,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1489,8 +1425,6 @@ test: a
 --- error_code: 200
 --- response_body eval
 qr/opentracing/
---- no_error_log
-[error]
 
 
 
@@ -1535,8 +1469,6 @@ qr/opentracing/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1546,8 +1478,6 @@ GET /opentracing
 --- error_code: 400
 --- response_body chomp
 customize reject message for body_schema.required
---- no_error_log
-[error]
 
 
 
@@ -1570,8 +1500,6 @@ POST /opentracing
 --- error_code: 200
 --- response_body eval
 qr/opentracing/
---- no_error_log
-[error]
 
 
 
@@ -1617,8 +1545,6 @@ GET /t
 --- response_body_like eval
 qr/string too long/
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -1654,8 +1580,6 @@ GET /t
 --- response_body_like eval
 qr/object matches none of the required/
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -1700,8 +1624,6 @@ qr/object matches none of the required/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1709,8 +1631,6 @@ passed
 --- request
 GET /opentracing
 --- error_code: 505
---- no_error_log
-[error]
 
 
 
@@ -1731,8 +1651,6 @@ POST /opentracing
 --- error_code: 200
 --- response_body eval
 qr/opentracing/
---- no_error_log
-[error]
 
 
 
@@ -1778,8 +1696,6 @@ GET /t
 --- response_body_like eval
 qr/expected 10000 to be at most 599/
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -1815,8 +1731,6 @@ GET /t
 --- response_body_like eval
 qr/object matches none of the required/
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -1858,8 +1772,6 @@ qr/object matches none of the required/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1871,5 +1783,3 @@ Content-Type: application/x-www-form-urlencoded
 " . "a=b&" x 101 . "required_payload=101-hello"
 --- response_body eval
 qr/101-hello/
---- no_error_log
-[error]

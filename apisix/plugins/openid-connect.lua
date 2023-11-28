@@ -14,11 +14,16 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local string = string
-local core = require("apisix.core")
-local ngx_re = require("ngx.re")
+
+local core    = require("apisix.core")
+local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
-local ngx = ngx
+local random  = require("resty.random")
+local string  = string
+local ngx     = ngx
+local ipairs = ipairs
+local concat = table.concat
+
 local ngx_encode_base64 = ngx.encode_base64
 
 local plugin_name = "openid-connect"
@@ -51,9 +56,25 @@ local schema = {
             type = "string",
             default = "client_secret_basic"
         },
+        token_endpoint_auth_method = {
+            type = "string",
+            default = "client_secret_basic"
+        },
         bearer_only = {
             type = "boolean",
             default = false,
+        },
+        session = {
+            type = "object",
+            properties = {
+                secret = {
+                    type = "string",
+                    description = "the key used for the encrypt and HMAC calculation",
+                    minLength = 16,
+                },
+            },
+            required = {"secret"},
+            additionalProperties = false,
         },
         realm = {
             type = "string",
@@ -70,6 +91,14 @@ local schema = {
         post_logout_redirect_uri = {
             type = "string",
             description = "the URI will be redirect when request logout_path",
+        },
+        unauth_action = {
+            type = "string",
+            default = "auth",
+            enum = {"auth", "deny", "pass"},
+            description = "The action performed when client is not authorized. Use auth to " ..
+                "redirect user to identity provider, deny to respond with 401 Unauthorized, and " ..
+                "pass to allow the request regardless."
         },
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
@@ -107,14 +136,52 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = false
+        },
+        proxy_opts = {
+            description = "HTTP proxy server be used to access identity server.",
+            type = "object",
+            properties = {
+                http_proxy = {
+                    type = "string",
+                    description = "HTTP proxy like: http://proxy-server:80.",
+                },
+                https_proxy = {
+                    type = "string",
+                    description = "HTTPS proxy like: http://proxy-server:80.",
+                },
+                http_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password].",
+                },
+                https_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password].",
+                },
+                no_proxy = {
+                    type = "string",
+                    description = "Comma separated list of hosts that should not be proxied.",
+                }
+            },
+        },
+        authorization_params = {
+            description = "Extra authorization params to the authorize endpoint",
+            type = "object"
+        },
+        required_scopes = {
+            description = "List of scopes that are required to be granted to the access token",
+            type = "array",
+            items = {
+                type = "string"
+            }
         }
     },
+    encrypt_fields = {"client_secret"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
 
 local _M = {
-    version = 0.1,
+    version = 0.2,
     priority = 2599,
     name = plugin_name,
     schema = schema,
@@ -125,6 +192,15 @@ function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
         conf.ssl_verify = false
+    end
+
+    if not conf.bearer_only and not conf.session then
+        core.log.warn("when bearer_only = false, " ..
+                       "you'd better complete the session configuration manually")
+        conf.session = {
+            -- generate a secret when bearer_only = false and no secret is configured
+            secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
+        }
     end
 
     local ok, err = core.schema.check(schema, conf)
@@ -213,7 +289,7 @@ local function introspect(ctx, conf)
         -- Token successfully validated.
         local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
         core.log.debug("token validate successfully by ", method)
-        return res, err, token, nil
+        return res, err, token, res
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
@@ -252,6 +328,24 @@ local function add_access_token_header(ctx, conf, token)
     end
 end
 
+-- Function to split the scope string into a table
+local function split_scopes_by_space(scope_string)
+    local scopes = {}
+    for scope in string.gmatch(scope_string, "%S+") do
+        scopes[scope] = true
+    end
+    return scopes
+end
+
+-- Function to check if all required scopes are present
+local function required_scopes_present(required_scopes, http_scopes)
+    for _, scope in ipairs(required_scopes) do
+        if not http_scopes[scope] then
+            return false
+        end
+    end
+    return true
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -303,6 +397,18 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            if conf.required_scopes then
+                local http_scopes = response.scope and split_scopes_by_space(response.scope) or {}
+                local is_authorized = required_scopes_present(conf.required_scopes, http_scopes)
+                if not is_authorized then
+                    core.log.error("OIDC introspection failed: ", "required scopes not present")
+                    local error_response = {
+                        error = "required scopes " .. concat(conf.required_scopes, ", ") ..
+                        " not present"
+                    }
+                    return 403, core.json.encode(error_response)
+                end
+            end
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -318,15 +424,26 @@ function _M.rewrite(plugin_conf, ctx)
         -- Either token validation via introspection endpoint or public key is
         -- not configured, and/or token could not be extracted from the request.
 
+        local unauth_action = conf.unauth_action
+        if unauth_action ~= "auth" then
+            unauth_action = "deny"
+        end
+
         -- Authenticate the request. This will validate the access token if it
         -- is stored in a session cookie, and also renew the token if required.
         -- If no token can be extracted, the response will redirect to the ID
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
+            if err == "unauthorized request" then
+                if conf.unauth_action == "pass" then
+                    return nil
+                end
+                return 401
+            end
             core.log.error("OIDC authentication failed: ", err)
             return 500
         end

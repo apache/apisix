@@ -30,7 +30,7 @@ with open(sys.argv[2]) as f:
     key = f.read()
 sni = sys.argv[3]
 api_key = "edd1c9f034335f136f87ad84b625c8f1"
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json={
     "cert": cert,
     "key": key,
     "snis": [sni],

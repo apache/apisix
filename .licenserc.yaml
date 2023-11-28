@@ -23,6 +23,8 @@ header:
 
   paths-ignore:
     - '.gitignore'
+    - '.gitattributes'
+    - '.gitmodules'
     - 'LICENSE'
     - 'NOTICE'
     - '**/*.json'
@@ -46,6 +48,11 @@ header:
     # Exclude plugin-specific configuration files
     - 't/plugin/authz-casbin'
     - 't/coredns'
+    - 't/fuzzing/requirements.txt'
+    - 't/perf/requirements.txt'
     - 'autodocs/'
+    - 'docs/**/*.md'
+    - '.ignore_words'
+    - '.luacheckrc'
 
   comment: on-failure

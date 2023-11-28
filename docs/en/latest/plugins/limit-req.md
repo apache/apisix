@@ -1,7 +1,7 @@
 ---
 title: limit-req
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Limit Request
   - limit-req
@@ -44,12 +44,12 @@ The `limit-req` Plugin limits the number of requests to your service using the [
 | nodelay           | boolean | False    | false   |                            | If set to `true`, requests within the burst threshold would not be delayed.                                                                                                                                                                                                                                                                                                                           |
 | allow_degradation | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -100,7 +100,7 @@ You can also configure the Plugin on specific consumers to limit their requests.
 First, you can create a Consumer and enable the `limit-req` Plugin on it:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "consumer_jack",
     "plugins": {
@@ -122,7 +122,7 @@ In this example, the [key-auth](./key-auth.md) Plugin is used to authenticate th
 Next, create a Route and enable the `key-auth` Plugin:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -186,12 +186,12 @@ Server: APISIX web server
 {"error_msg":"Requests are too frequent, please try again later."}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `limit-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `limit-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -210,7 +210,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Similarly for removing the Plugin from a Consumer:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "consumer_jack",
     "plugins": {

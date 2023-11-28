@@ -36,10 +36,6 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -738,3 +734,74 @@ qr/lua balancer: keepalive create pool, .*/
 qr/^lua balancer: keepalive create pool, crc32: \S+, size: 4
 lua balancer: keepalive create pool, crc32: \S+, size: 8
 $/
+
+
+
+=== TEST 16: backend serve http and grpc with the same port
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local test = require("lib.test_admin").test
+            local json = require("toolkit.json")
+
+            local data = {
+                uri = "",
+                upstream = {
+                    scheme = "",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:10054"] = 1,
+                    },
+                    keepalive_pool = {
+                        size = 4
+                    }
+                }
+            }
+
+            data.uri = "/helloworld.Greeter/SayHello"
+            data.upstream.scheme = "grpc"
+            local code, body = test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+            data.uri = "/hello"
+            data.upstream.scheme = "http"
+            local code, body = test('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+
+        }
+    }
+--- response_body
+
+
+
+=== TEST 17: hit http
+--- request
+GET /hello
+--- response_body chomp
+hello http
+
+
+
+=== TEST 18: hit grpc
+--- http2
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHello
+--- response_body
+{
+  "message": "Hello apisix"
+}

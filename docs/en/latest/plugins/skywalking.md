@@ -1,7 +1,8 @@
 ---
 title: skywalking
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - SkyWalking
 description: This document will introduce how the API gateway Apache APISIX reports metrics to Apache SkyWalking (an open-source APM) with the skywalking plugin.
@@ -93,7 +94,7 @@ nohup java -javaagent:/root/skywalking/app/agent/skywalking-agent.jar \
 2>&1 > /root/skywalking/app/logs/nohup.log &
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you have to add it to your configuration file (`conf/config.yaml`):
 
@@ -108,7 +109,7 @@ Once you do this, a background timer will be created to report data to the SkyWa
 Now, you can enable the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
@@ -196,12 +197,12 @@ You should also be able to see traces from all services:
 
 ![ ](../../../assets/images/plugin/skywalking-5.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `skywalking` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `skywalking` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [

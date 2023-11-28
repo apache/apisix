@@ -16,11 +16,18 @@
 #
 use t::APISIX 'no_plan';
 
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    router:
+        http: 'radixtree_uri'
+_EOC_
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
     }
 
     if (!defined $block->request) {

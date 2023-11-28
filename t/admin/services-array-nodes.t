@@ -32,8 +32,8 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "upstream": {
                         "nodes": [{
                             "host": "127.0.0.1",
@@ -45,22 +45,20 @@ __DATA__
                     "desc": "new service"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": [{
-                                    "host": "127.0.0.1",
-                                    "port": 8080,
-                                    "weight": 1
-                                }],
-                                "type": "roundrobin"
-                            },
-                            "desc": "new service"
+                    "value": {
+                        "upstream": {
+                            "nodes": [{
+                                "host": "127.0.0.1",
+                                "port": 8080,
+                                "weight": 1
+                            }],
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
-                    }
+                        "desc": "new service"
+                    },
+                    "key": "/apisix/services/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -70,8 +68,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -84,22 +80,20 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "upstream": {
-                                "nodes": [{
-                                    "host": "127.0.0.1",
-                                    "port": 8080,
-                                    "weight": 1
-                                }],
-                                "type": "roundrobin"
-                            },
-                            "desc": "new service"
+                    "value": {
+                        "upstream": {
+                            "nodes": [{
+                                "host": "127.0.0.1",
+                                "port": 8080,
+                                "weight": 1
+                            }],
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/services/1"
-                    }
+                        "desc": "new service"
+                    },
+                    "key": "/apisix/services/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -109,5 +103,3 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

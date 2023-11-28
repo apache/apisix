@@ -53,16 +53,14 @@ __DATA__
                     "name": "test upstream name"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "name": "test upstream name"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "name": "test upstream name"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -105,9 +103,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/upstreams/a-b-c-ABC_0123',
-                ngx.HTTP_DELETE
-            )
+            local code, body = t('/apisix/admin/upstreams/a-b-c-ABC_0123', ngx.HTTP_DELETE)
             if code >= 300 then
                 ngx.status = code
             end
@@ -206,17 +202,17 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
-                        "httpbin.org:8080": 1,
+                        "apisix.com:8080": 1,
                         "test.com:8080": 1
                     },
                     "type": "roundrobin",
                     "pass_host": "rewrite",
                     "upstream_host": ""
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -245,22 +241,20 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "labels": {
-                                "build":"16",
-                                "env":"production",
-                                "version":"v2"
-                            }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "labels": {
+                            "build":"16",
+                            "env":"production",
+                            "version":"v2"
+                        }
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -277,23 +271,21 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_GET,
-                 nil,
+                ngx.HTTP_GET,
+                nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "labels": {
-                                "version":"v2",
-                                "build":"16",
-                                "env":"production"
-                            }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "labels": {
+                            "version":"v2",
+                            "build":"16",
+                            "env":"production"
+                        }
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
                 )
 
@@ -319,22 +311,20 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "labels": {
-                                "version":"v2",
-                                "build":"17",
-                                "env":"production"
-                            }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "labels": {
+                            "version":"v2",
+                            "build":"17",
+                            "env":"production"
+                        }
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -361,7 +351,7 @@ passed
                         "env": ["production", "release"]
                     }
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -391,17 +381,15 @@ passed
                     "create_time": 1705252779
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream",
-                            "create_time": 1705252779
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new upstream",
+                        "create_time": 1705252779
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -440,17 +428,15 @@ passed
                     "update_time": 1705252779
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream",
-                            "create_time": 1705252779
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new upstream",
+                        "create_time": 1705252779
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -487,46 +473,29 @@ passed
                     "update_time": 1602893670
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/up_create_update_time"
-                    }
+                        "type": "roundrobin",
+                        "create_time": 1602883670,
+                        "update_time": 1602893670
+                    },
+                    "key": "/apisix/upstreams/up_create_update_time"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
         }
     }
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/
 
 
 
-=== TEST 15: delete test upstream
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/up_create_update_time',
-                 ngx.HTTP_DELETE
-            )
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
-
-
-
-=== TEST 16: patch upstream with sub_path, the data is number
+=== TEST 15: patch upstream with sub_path, the data is number
 --- config
     location /t {
         content_by_lua_block {
@@ -552,8 +521,8 @@ passed
             ngx.sleep(1)
 
             local code, message = t('/apisix/admin/upstreams/1/retries',
-                 ngx.HTTP_PATCH,
-                 json.encode(1)
+                ngx.HTTP_PATCH,
+                json.encode(1)
             )
             if code >= 300 then
                 ngx.status = code
@@ -569,20 +538,20 @@ passed
 
 
 
-=== TEST 17: set upstream(id: 1)
+=== TEST 16: set upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -593,17 +562,17 @@ passed
 
 
 
-=== TEST 18: set service(id: 1)
+=== TEST 17: set service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/services/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "upstream_id": 1
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -616,18 +585,18 @@ passed
 
 
 
-=== TEST 19: set route(id: 1)
+=== TEST 18: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "upstream_id": 1,
                     "uri": "/index.html"
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -640,15 +609,13 @@ passed
 
 
 
-=== TEST 20: delete upstream(id: 1)
+=== TEST 19: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
             ngx.print("[delete] code: ", code, " message: ", message)
         }
     }
@@ -657,15 +624,13 @@ passed
 
 
 
-=== TEST 21: delete route(id: 1)
+=== TEST 20: delete route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -674,15 +639,13 @@ passed
 
 
 
-=== TEST 22: delete service(id: 1)
+=== TEST 21: delete service(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/services/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/services/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -691,15 +654,13 @@ passed
 
 
 
-=== TEST 23: delete upstream(id: 1)
+=== TEST 22: delete upstream(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             ngx.sleep(0.3)
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/upstreams/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }

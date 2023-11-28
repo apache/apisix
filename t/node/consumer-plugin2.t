@@ -303,3 +303,166 @@ apikey: auth-jack
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
+
+
+
+=== TEST 9: use the latest consumer modifiedIndex as lrucache key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "bar"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ip-restriction": {
+                            "whitelist": ["1.1.1.1"]
+                        },
+                        "basic-auth": {}
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugin_config_id": "1",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uris": ["/hello"]
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local headers = {
+                ["Authorization"] = "Basic Zm9vOmJhcg=="
+            }
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            ngx.print(res.body)
+
+            local code, body = t('/apisix/admin/plugin_configs/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ip-restriction": {
+                            "whitelist": ["1.1.1.1", "127.0.0.1"]
+                        },
+                        "basic-auth": {}
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "bala"
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.5)
+
+            local headers = {
+                ["Authorization"] = "Basic Zm9vOmJhbGE="
+            }
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+{"message":"Your IP address is not allowed"}
+hello world
+hello world
+
+
+
+=== TEST 10: consumer should work if the etcd connection failed during starting
+--- extra_init_by_lua
+local etcd_apisix  = require("apisix.core.etcd")
+etcd_apisix.get_etcd_syncer = function ()
+    return nil, "", "ouch"
+end
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/hello"
+            local headers = {
+                ["Authorization"] = "Basic Zm9vOmJhbGE="
+            }
+            local res, err = httpc:request_uri(uri, {headers = headers})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+hello world
+--- error_log
+failed to fetch data from etcd

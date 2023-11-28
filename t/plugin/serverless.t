@@ -41,8 +41,6 @@ __DATA__
 GET /t
 --- response_body
 access
---- no_error_log
-[error]
 
 
 
@@ -63,8 +61,6 @@ access
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -85,8 +81,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -108,8 +102,6 @@ GET /t
 --- response_body
 property "phase" validation failed: matches none of the enum values
 done
---- no_error_log
-[error]
 
 
 
@@ -131,8 +123,6 @@ GET /t
 --- response_body
 only accept Lua function, the input code type is nil
 done
---- no_error_log
-[error]
 
 
 
@@ -154,8 +144,6 @@ GET /t
 --- response_body
 failed to loadstring: [string "a"]:1: '=' expected near '<eof>'
 done
---- no_error_log
-[error]
 
 
 
@@ -192,8 +180,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -239,8 +225,6 @@ serverless post function
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -289,8 +273,6 @@ serverless pre function
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -338,8 +320,6 @@ serverless post function
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -385,8 +365,6 @@ serverless pre function
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -433,8 +411,6 @@ two
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -475,8 +451,6 @@ GET /t
 Host: foo.com
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -526,8 +500,6 @@ Location: https://foo.com/hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -578,8 +550,6 @@ match uri /hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -588,8 +558,6 @@ passed
 GET /echo?args=%40%23%24%25%5E%26
 --- response_body chomp
 args=@#$%^&
---- no_error_log
-[error]
 
 
 
@@ -627,8 +595,6 @@ args=@#$%^&
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -638,5 +604,3 @@ GET /hello
 --- error_code: 403
 --- response_body chomp
 forbidden
---- no_error_log
-[error]

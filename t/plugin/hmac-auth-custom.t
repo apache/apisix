@@ -28,10 +28,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     my $extra_yaml_config = <<_EOC_;
 plugin_attr:
   hmac-auth:

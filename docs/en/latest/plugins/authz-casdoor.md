@@ -1,7 +1,8 @@
 ---
 title: authz-casdoor
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Authz Casdoor
   - authz-casdoor
@@ -40,6 +41,8 @@ The `authz-casdoor` Plugin can be used to add centralized authentication with [C
 | client_secret | string | True     | Client secret in Casdoor.                    |
 | callback_url  | string | True     | Callback URL used to receive state and code. |
 
+NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 :::info IMPORTANT
 
 `endpoint_addr` and `callback_url` should not end with '/'.
@@ -52,12 +55,12 @@ The `callback_url` must belong to the URI of your Route. See the code snippet be
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 
 ```shell
-curl "http://127.0.0.1:9080/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" -X PUT -d '
 {
   "methods": ["GET"],
   "uri": "/anything/*",
@@ -86,12 +89,12 @@ After successfully logging in, Casdoor will redirect this user to the `callback_
 
 Once this is done, the user is redirected to the original URL they wanted to visit.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `authz-casdoor` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `authz-casdoor` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything/*",

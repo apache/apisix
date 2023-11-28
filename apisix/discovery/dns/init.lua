@@ -15,10 +15,11 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-local config_local = require("apisix.core.config_local")
-local ipairs = ipairs
-local error = error
+local core          = require("apisix.core")
+local config_local  = require("apisix.core.config_local")
+local is_http       = ngx.config.subsystem == "http"
+local ipairs        = ipairs
+local error         = error
 
 
 local dns_client
@@ -35,7 +36,8 @@ function _M.nodes(service_name)
     end
 
     local nodes = core.table.new(#records, 0)
-    for i, r in ipairs(records) do
+    local index = 1
+    for _, r in ipairs(records) do
         if r.address then
             local node_port = port
             if not node_port and r.port ~= 0 then
@@ -43,10 +45,14 @@ function _M.nodes(service_name)
                 node_port = r.port
             end
 
-            nodes[i] = {host = r.address, weight = r.weight or 1, port = node_port}
-            if r.priority then
-                -- for SRV record, nodes with lower priority are chosen first
-                nodes[i].priority = -r.priority
+            -- ignore zero port when subsystem is stream
+            if node_port or is_http then
+                nodes[index] = {host = r.address, weight = r.weight or 1, port = node_port}
+                if r.priority then
+                    -- for SRV record, nodes with lower priority are chosen first
+                    nodes[index].priority = -r.priority
+                end
+                index = index + 1
             end
         end
     end
@@ -58,12 +64,16 @@ end
 function _M.init_worker()
     local local_conf = config_local.local_conf()
     local servers = local_conf.discovery.dns.servers
+    local resolv_conf = local_conf.discovery.dns.resolv_conf
+    local default_order = {"last", "SRV", "A", "AAAA", "CNAME"}
+    local order = core.table.try_read_attr(local_conf, "discovery", "dns", "order")
+    order = order or default_order
 
     local opts = {
         hosts = {},
-        resolvConf = {},
+        resolvConf = resolv_conf,
         nameservers = servers,
-        order = {"last", "SRV", "A", "AAAA", "CNAME"},
+        order = order,
     }
 
     local client, err = core.dns_client.new(opts)

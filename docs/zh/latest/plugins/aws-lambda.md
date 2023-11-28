@@ -1,7 +1,7 @@
 ---
 title: aws-lambda
 keywords:
-  - APISIX
+  - Apache APISIX
   - Plugin
   - AWS Lambda
   - aws-lambda
@@ -37,17 +37,17 @@ description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信�
 
 ## 属性
 
-| 名称                   | 类型     | 必选项 | 默认值  | 有效值       | 描述                                                 |
-| ------------------- | ------- | ------ | ------- | ------------ | ------------------------------------------------------------ |
+| 名称                 | 类型     | 必选项   | 默认值  | 有效值       | 描述                                                 |
+| ------------------ - | ------- | -------- | ------- | ------------ | ------------------------------------------------------------ |
 | function_uri         | string  | 是       |         |              | 触发 lambda serverless 函数的 AWS API Gateway 端点。        |
 | authorization        | object  | 否       |         |              | 访问云函数的授权凭证。                                       |
 | authorization.apikey | string  | 否       |         |              | 生成的 API 密钥，用于授权对 AWS Gateway 端点的请求。         |
-| authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。 请参考 [IAM 授权方案](#IAM-授权方案)。 |
+| authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。请参考 [IAM 授权方案](#iam-授权方案)。 |
 | timeout              | integer | 否       | 3000    | [100,...]    | 代理请求超时（以毫秒为单位）。                                 |
 | ssl_verify           | boolean | 否       | true    | true/false   | 当设置为 `true` 时执行 SSL 验证。                          |
 | keepalive            | boolean | 否       | true    | true/false   | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_pool       | integer | 否       | 5       | [1,...]      | 在关闭该连接之前，可以在该连接上发送的最大请求数。           |
-| keepalive_timeout    | integer | 否       | 60000   | [1000,...]   | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。           |
+| keepalive_timeout    | integer | 否       | 60000   | [1000,...]   | 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。           |
 
 ### IAM 授权方案
 
@@ -60,10 +60,11 @@ description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信�
 
 ## 启用插件
 
-以下示例展示了如何在指定路由上启用 `aws-lambda` 插件：
+你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "aws-lambda": {
@@ -101,8 +102,6 @@ Content-Type: application/json
 
 ```yaml
 apisix:
-  admin_key:
-...
   node_listen:                      # 支持监听多个端口
     - 9080
     - port: 9081
@@ -129,7 +128,8 @@ content-type: application/json
 以下示例展示了如何通过配置文件实现授权：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "aws-lambda": {
@@ -147,7 +147,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-:::note
+:::note 注意
 
 使用该方法时已经假设你有一个启用了程序化访问的 IAM 用户，并具有访问端点的必要权限（AmazonAPIGatewayInvokeFullAccess）。
 
@@ -157,7 +157,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 `aws-lambda` 插件在代理请求到 AWS 上游时也支持 URL 路径转发。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 字段上。
 
-:::info IMPORTANT
+:::info 重要
 
 因为 APISIX 路由是严格匹配的，所以为了使 `aws-lambda` 插件正常工作，在路由上配置的 `uri` 字段必须以 `*` 结尾，`*` 意味着这个 URI 的任何子路径都会被匹配到同一个路由。
 
@@ -166,7 +166,8 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 以下示例展示了如何通过配置文件实现路径转发：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "aws-lambda": {
@@ -198,12 +199,13 @@ Content-Type: application/json
 "Hello, APISIX!"
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用 `aws-lambda` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/aws",
     "plugins": {},

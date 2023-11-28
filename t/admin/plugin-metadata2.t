@@ -45,9 +45,7 @@ __DATA__
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
 
-            local code, message, res = t('/apisix/admin/plugin_metadata',
-                ngx.HTTP_GET
-            )
+            local code, message, res = t('/apisix/admin/plugin_metadata', ngx.HTTP_GET)
 
             if code >= 300 then
                 ngx.status = code
@@ -60,4 +58,4 @@ __DATA__
         }
     }
 --- response_body
-{"count":0,"list":[]}
+{"list":[],"total":0}

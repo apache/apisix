@@ -26,23 +26,88 @@ discovery:
         host: ${HOST_ENV}
       client:
         token: ${TOKEN_ENV}
-' > conf/config.yaml
+' >conf/config.yaml
 
 make init
 
 if ! grep "env HOST_ENV" conf/nginx.conf; then
-    echo "kubernetes discovery env inject failed"
-    exit 1
+  echo "kubernetes discovery env inject failed"
+  exit 1
 fi
 
 if ! grep "env KUBERNETES_SERVICE_PORT" conf/nginx.conf; then
-    echo "kubernetes discovery env inject failed"
-    exit 1
+  echo "kubernetes discovery env inject failed"
+  exit 1
 fi
 
 if ! grep "env TOKEN_ENV" conf/nginx.conf; then
-    echo "kubernetes discovery env inject failed"
-    exit 1
+  echo "kubernetes discovery env inject failed"
+  exit 1
 fi
 
-echo "kubernetes discovery env inject success"
+if ! grep "lua_shared_dict kubernetes 1m;" conf/nginx.conf; then
+  echo "kubernetes discovery lua_shared_dict inject failed"
+  exit 1
+fi
+
+echo '
+discovery:
+    kubernetes:
+      - id: dev
+        service:
+          host: ${DEV_HOST}
+          port: ${DEV_PORT}
+        client:
+          token: ${DEV_TOKEN}
+      - id: pro
+        service:
+          host: ${PRO_HOST}
+          port: ${PRO_PORT}
+        client:
+          token: ${PRO_TOKEN}
+        shared_size: 2m
+' >conf/config.yaml
+
+make init
+
+if ! grep "env DEV_HOST" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "env DEV_PORT" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "env DEV_TOKEN" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "env PRO_HOST" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "env PRO_PORT" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "env PRO_TOKEN" conf/nginx.conf; then
+  echo "kubernetes discovery env inject failed"
+  exit 1
+fi
+
+if ! grep "lua_shared_dict kubernetes-dev 1m;" conf/nginx.conf; then
+  echo "kubernetes discovery lua_shared_dict inject failed"
+  exit 1
+fi
+
+if ! grep "lua_shared_dict kubernetes-pro 2m;" conf/nginx.conf; then
+  echo "kubernetes discovery lua_shared_dict inject failed"
+  exit 1
+fi
+
+echo "kubernetes discovery inject success"

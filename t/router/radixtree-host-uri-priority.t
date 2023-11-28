@@ -25,19 +25,28 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
     router:
         http: 'radixtree_host_uri'
     admin_key: null
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
 
 run_tests();
 
 __DATA__
 
 === TEST 1: hit routes(priority: 1 + priority: 2)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -65,14 +74,11 @@ Host: test.com
 --- response_body eval
 qr/1980/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
 === TEST 2: hit routes(priority: 2 + priority: 1)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -100,14 +106,11 @@ Host: test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
 === TEST 3: hit routes(priority: default_value + priority: 1)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -134,14 +137,11 @@ Host: test.com
 --- response_body eval
 qr/1980/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
 === TEST 4: hit routes(priority: 1 + priority: default_value)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -168,6 +168,4 @@ Host: test.com
 --- response_body eval
 qr/1981/
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml

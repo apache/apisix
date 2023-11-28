@@ -1,10 +1,10 @@
 ---
 title: openwhisk
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - OpenWhisk
-  - openwhisk
 description: 本文介绍了关于 Apache APISIX openwhisk 插件的基本信息及使用方法。
 ---
 
@@ -48,7 +48,7 @@ description: 本文介绍了关于 Apache APISIX openwhisk 插件的基本信息
 | keepalive_timeout | integer | 否     | 60000ms | [1000,...]ms | 当连接空闲时，保持该连接处于活动状态的时间（以毫秒为单位）。               |
 | keepalive_pool    | integer | 否     | 5       | [1,...]      | 连接断开之前，可接收的最大请求数。                           |
 
-:::note
+:::note 注意
 
 `timeout` 字段规定了 OpenWhisk action 的最大执行时间，以及 APISIX 中 HTTP 客户端的请求超时时间。
 
@@ -62,7 +62,7 @@ description: 本文介绍了关于 Apache APISIX openwhisk 插件的基本信息
 
 ### 搭建 Apache OpenWhisk 测试环境
 
-1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk stand-alone 模式。请确保当前环境中已经安装 Docker 软件。
+1. 在使用 `openwhisk` 插件之前，你需要通过以下命令运行 OpenWhisk standalone 模式。请确保当前环境中已经安装 Docker 软件。
 
 ```shell
 docker run --rm -d \
@@ -86,10 +86,11 @@ wsk action update test <(echo 'function main(){return {"ready":true}}') --kind n
 
 ### 创建路由
 
-通过以下命令创建一个路由，并在配置文件中添加 `openwhisk` 插件：
+你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -117,12 +118,13 @@ curl -i http://127.0.0.1:9080/hello
 { "ready": true }
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用 `openwhisk` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

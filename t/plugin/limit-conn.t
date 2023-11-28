@@ -87,8 +87,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -110,8 +108,6 @@ GET /t
 --- response_body
 property "burst" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -152,8 +148,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -172,8 +166,6 @@ GET /test_concurrency
 200
 200
 200
---- no_error_log
-[error]
 
 
 
@@ -214,8 +206,6 @@ GET /test_concurrency
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -234,8 +224,6 @@ GET /test_concurrency
 503
 503
 503
---- no_error_log
-[error]
 
 
 
@@ -276,8 +264,6 @@ GET /test_concurrency
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -296,8 +282,6 @@ GET /test_concurrency
 503
 503
 503
---- no_error_log
-[error]
 
 
 
@@ -338,8 +322,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -381,8 +363,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
---- no_error_log
-[error]
 
 
 
@@ -422,8 +402,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -464,8 +442,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"conn\" validation failed: expected -1 to be greater than 0"}
---- no_error_log
-[error]
 
 
 
@@ -499,8 +475,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -519,8 +493,6 @@ GET /test_concurrency
 200
 200
 200
---- no_error_log
-[error]
 
 
 
@@ -561,8 +533,6 @@ GET /test_concurrency
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -603,8 +573,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -696,8 +664,6 @@ limit key: 10.10.10.1route
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -788,8 +754,6 @@ limit key: 10.10.10.2route
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -822,8 +786,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -842,8 +804,6 @@ GET /test_concurrency
 503
 503
 503
---- no_error_log
-[error]
 
 
 
@@ -866,8 +826,6 @@ GET /test_concurrency
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -886,8 +844,6 @@ GET /test_concurrency
 200
 200
 200
---- no_error_log
-[error]
 
 
 
@@ -915,8 +871,6 @@ GET /t
 property "conn" validation failed: expected 0 to be greater than 0
 property "default_conn_delay" validation failed: expected 0 to be greater than 0
 done
---- no_error_log
-[error]
 
 
 
@@ -946,8 +900,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -989,8 +941,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1080,8 +1030,6 @@ qr/limit key: consumer_jackroute&consumer\d+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1155,8 +1103,6 @@ GET /t
 --- response_body
 property "burst" is required
 done
---- no_error_log
-[error]
 
 
 
@@ -1197,8 +1143,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1214,8 +1158,6 @@ passed
     200, 200, 200,
     200, 200, 200
 ]
---- no_error_log
-[error]
 
 
 
@@ -1258,5 +1200,3 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin limit-conn err: property \"allow_degradation\" validation failed: wrong type: expected boolean, got string"}
---- no_error_log
-[error]

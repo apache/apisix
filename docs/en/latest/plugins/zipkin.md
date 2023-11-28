@@ -1,10 +1,10 @@
 ---
 title: zipkin
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Zipkin
-  - zipkin
 description: This document contains information about the Apache zipkin Plugin.
 ---
 
@@ -106,12 +106,12 @@ func main(){
 }
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -178,7 +178,7 @@ docker run -d --name jaeger \
 Similar to configuring for Zipkin, create a Route and enable the Plugin:
 
 ```
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -216,12 +216,12 @@ You can access the Jaeger UI to view the traces in endpoint [http://127.0.0.1:16
 
 ![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `zipkin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `zipkin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -234,4 +234,33 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
+
+## Variables
+
+The following nginx variables are set by zipkin:
+
+- `zipkin_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), e.g.: `00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
+- `zipkin_trace_id` - Trace Id of the current span
+- `zipkin_span_id` -  Span Id of the current span
+
+How to use variables? you have to add it to your configuration file (`conf/config.yaml`):
+
+```yaml title="./conf/config.yaml"
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","zipkin_context_traceparent": "$zipkin_context_traceparent","zipkin_trace_id": "$zipkin_trace_id","zipkin_span_id": "$zipkin_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - zipkin
+plugin_attr:
+  zipkin:
+    set_ngx_var: true
+```
+
+You can also include a trace_id when printing logs
+
+```print error log
+log.error(ngx.ERR,ngx_var.zipkin_trace_id,"error message")
 ```

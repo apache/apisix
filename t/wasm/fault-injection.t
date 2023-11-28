@@ -28,10 +28,6 @@ if ($version !~ m/\/apisix-nginx-module/) {
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -184,3 +180,101 @@ GET /hello
 --- error_code: 401
 --- response_body_like eval
 qr/<title>401 Authorization Required<\/title>/
+
+
+
+=== TEST 7: fault injection
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_fault_injection": {
+                            "conf": {
+                                "http_status": 401,
+                                "body": "HIT\n"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: hit
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+HIT
+
+
+
+=== TEST 9: fault injection, with 0 percentage
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "wasm_fault_injection": {
+                            "conf": {
+                                "http_status": 401,
+                                "percentage": 0
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- ret_code: 401
+--- response_body
+passed
+
+
+
+=== TEST 10: hit
+--- request
+GET /hello
+--- response_body
+hello world

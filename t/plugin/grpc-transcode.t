@@ -76,8 +76,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -113,8 +111,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -137,8 +133,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -163,7 +157,7 @@ passed
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -179,8 +173,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -189,8 +181,6 @@ passed
 GET /grpctest?name=world
 --- response_body eval
 qr/\{"message":"Hello world"\}/
---- no_error_log
-[error]
 
 
 
@@ -200,8 +190,6 @@ POST /grpctest
 name=world
 --- response_body eval
 qr/\{"message":"Hello world"\}/
---- no_error_log
-[error]
 
 
 
@@ -213,8 +201,6 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/\{"message":"Hello world"\}/
---- no_error_log
-[error]
 
 
 
@@ -239,7 +225,7 @@ qr/\{"message":"Hello world"\}/
                         "scheme": "asf",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -254,8 +240,6 @@ qr/\{"message":"Hello world"\}/
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -296,8 +280,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -354,8 +336,6 @@ Connection refused) while connecting to upstream
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -381,7 +361,7 @@ passed
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -397,8 +377,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -407,8 +385,6 @@ passed
 GET /grpc_plus?a=1&b=2
 --- response_body eval
 qr/\{"result":3\}/
---- no_error_log
-[error]
 
 
 
@@ -417,8 +393,6 @@ qr/\{"result":3\}/
 GET /grpc_plus?a=1&b=2251799813685260
 --- response_body eval
 qr/\{"result":"#2251799813685261"\}/
---- no_error_log
-[error]
 
 
 
@@ -444,7 +418,7 @@ qr/\{"result":"#2251799813685261"\}/
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -459,8 +433,6 @@ qr/\{"result":"#2251799813685261"\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -469,8 +441,6 @@ passed
 GET /grpc_deadline?name=apisix
 --- response_body eval
 qr/\{"message":"Hello apisix"\}/
---- no_error_log
-[error]
 
 
 
@@ -496,7 +466,7 @@ qr/\{"message":"Hello apisix"\}/
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -511,8 +481,6 @@ qr/\{"message":"Hello apisix"\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -552,8 +520,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin grpc-transcode err: property \"method\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -591,8 +557,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -606,7 +570,6 @@ passed
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -618,7 +581,7 @@ passed
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -634,8 +597,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -659,8 +620,6 @@ passed
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -705,8 +664,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -718,8 +675,6 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"gender":"GENDER_UNKNOWN"/
---- no_error_log
-[error]
 
 
 
@@ -731,8 +686,6 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"gender":"GENDER_FEMALE"/
---- no_error_log
-[error]
 
 
 
@@ -744,8 +697,6 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"gender":"GENDER_MALE"/
---- no_error_log
-[error]
 
 
 
@@ -771,7 +722,6 @@ failed to encode request data to protobuf
                 [[{
                     "methods": ["GET", "POST"],
                     "uri": "/grpctest",
-                    "service_protocol": "grpc",
                     "plugins": {
                         "grpc-transcode": {
                             "proto_id": "1",
@@ -784,7 +734,7 @@ failed to encode request data to protobuf
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -800,8 +750,6 @@ failed to encode request data to protobuf
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -813,5 +761,3 @@ POST /grpctest
 Content-Type: application/json
 --- response_body eval
 qr/"gender":2/
---- no_error_log
-[error]

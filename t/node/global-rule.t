@@ -65,8 +65,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -84,8 +82,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -95,8 +91,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -106,8 +100,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -115,8 +107,6 @@ GET /hello
 --- request
 GET /hello
 --- error_code: 503
---- no_error_log
-[error]
 
 
 
@@ -128,8 +118,6 @@ plugins:
 --- request
 GET /apisix/status
 --- error_code: 503
---- no_error_log
-[error]
 
 
 
@@ -164,8 +152,6 @@ GET /apisix/status
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -197,8 +183,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -209,8 +193,6 @@ GET /hello?name=;union%20select%20
 --- response_headers
 X-VERSION: 1.0
 X-TEST: test
---- no_error_log
-[error]
 
 
 
@@ -226,8 +208,6 @@ GET /apisix/status?name=;union%20select%20
 --- response_headers
 X-VERSION: 1.0
 X-TEST: test
---- no_error_log
-[error]
 
 
 
@@ -261,8 +241,6 @@ GET /t
 passed
 404
 404
---- no_error_log
-[error]
 
 
 
@@ -314,8 +292,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -324,8 +300,6 @@ passed
 GET /hello
 --- response_body
 changed
---- no_error_log
-[error]
 
 
 
@@ -443,5 +417,3 @@ changed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

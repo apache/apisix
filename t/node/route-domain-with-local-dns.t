@@ -63,8 +63,6 @@ GET /t
 passed
 --- error_log eval
 qr/.*init_resolver\(\): dns resolver \[.+\]/
---- no_error_log
-[error]
 
 
 
@@ -76,8 +74,6 @@ GET /not_found
 {"error_msg":"404 Route Not Found"}
 --- error_log eval
 qr/.*init_resolver\(\): dns resolver \[.+\]/
---- no_error_log
-[error]
 
 
 
@@ -86,7 +82,5 @@ qr/.*init_resolver\(\): dns resolver \[.+\]/
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log eval
 qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/

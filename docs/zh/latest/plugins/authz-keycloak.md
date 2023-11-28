@@ -1,7 +1,8 @@
 ---
 title: authz-keycloak
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Authz Keycloak
   - authz-keycloak
@@ -43,11 +44,10 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 
 | 名称                                         | 类型          | 必选项 | 默认值                                         | 有效值                                                       | 描述                                                                                                                                                                                                                                           |
 |----------------------------------------------|---------------|-------|-----------------------------------------------|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| discovery                                    | string        | 否    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | Keycloak 授权服务的 [discovery document](https://www.keycloak.org/docs/14.0/authorization_services/#_service_authorization_api) 的 URL。                                                                                                |
+| discovery                                    | string        | 否    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | Keycloak 授权服务的 [discovery document](https://www.keycloak.org/docs/latest/authorization_services/index.html) 的 URL。                                                                                                |
 | token_endpoint                               | string        | 否    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | 接受 OAuth2 兼容 token 的接口，需要支持 `urn:ietf:params:oauth:grant-type:uma-ticket` 授权类型。                                                                                       |
 | resource_registration_endpoint               | string        | 否    |                                               | https://host.domain/auth/realms/foo/authz/protection/resource_set  | 符合 UMA 的资源注册端点。如果提供，则覆盖发现中的值。                                                                                                                 |
-| client_id                                    | string        | 否    |                                               |                                                                    | 客户端正在寻求访问的资源服务器的标识符。需要 `client_id` 或 `audience`。                                                                                                                            |
-| audience                                     | string        | 否    |                                               |                                                                    | 遗留参数。现在被 `client_id` 替换，以保持向后兼容性。需要 `client_id` 或 `audience`。                                                                                                                          |
+| client_id                                    | string        | 是    |                                               |                                                                    | 客户端正在寻求访问的资源服务器的标识符。                                                                                                                                          |
 | client_secret                                | string        | 否    |                                               |                                                                    | 客户端密码（如果需要）。                                                                                                                                                                                                                       |
 | grant_type                                   | string        | 否    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                                                                                                                       |
 | policy_enforcement_mode                      | string        | 否    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                                                                                                                       |
@@ -55,7 +55,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 | lazy_load_paths                              | boolean       | 否    | false                                         | [true, false]                                                      | 当设置为 true 时，使用资源注册端点而不是静态权限将请求 URI 动态解析为资源。                                                                                                      |
 | http_method_as_scope                         | boolean       | 否    | false                                         | [true, false]                                                      | 设置为 true 时，将 HTTP 请求类型映射到同名范围并添加到所有请求的权限。                                                                                                                                         |
 | timeout                                      | integer       | 否    | 3000                                          | [1000, ...]                                                        | 与 Identity Server 的 HTTP 连接超时（毫秒）。                                                                                                                                                                                       |
-| access_token_expires_in                      | integer       | 否    | 300                                           | [1, ...]                                                           | 访问令牌的有效期。 token.                                                                                                                                                                                                               |
+| access_token_expires_in                      | integer       | 否    | 300                                           | [1, ...]                                                           | 访问令牌的有效期。token.                                                                                                                                                                                                               |
 | access_token_expires_leeway                  | integer       | 否    | 0                                             | [0, ...]                                                           | access_token 更新的到期余地。设置后，令牌将在到期前几秒更新 access_token_expires_leeway。这避免了 access_token 在到达 OAuth 资源服务器时刚刚过期的情况。 |
 | refresh_token_expires_in                     | integer       | 否    | 3600                                          | [1, ...]                                                           | 刷新令牌的失效时间。                                                                                                                                                                                                          |
 | refresh_token_expires_leeway                 | integer       | 否    | 0                                             | [0, ...]                                                           | refresh_token 更新的到期余地。设置后，令牌将在到期前几秒刷新 refresh_token_expires_leeway。这样可以避免在到达 OAuth 资源服务器时 refresh_token 刚刚过期的错误。 |
@@ -67,13 +67,15 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 | access_denied_redirect_uri                   | string        | 否    |                                               | [1, 2048]                                                          | 需要将用户重定向到的 URI，而不是返回类似 `"error_description":"not_authorized"` 这样的错误消息。                                                                                                                                        |
 | password_grant_token_generation_incoming_uri | string        | 否    |                                               | /api/token                                                         | 将此设置为使用密码授予类型生成令牌。该插件会将传入的请求 URI 与此值进行比较。                                                                                                                |
 
+注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 除上述释义外，还有以下需要注意的点：
 
 - Discovery and endpoints
     - 使用 `discovery` 属性后，`authz-keycloak` 插件就可以从其 URL 中发现 Keycloak API 的端点。该 URL 指向 Keyloak 针对相应领域授权服务的发现文档。
     - 如果发现文档可用，则插件将根据该文档确定令牌端点 URL。如果 URL 存在，则 `token_endpoint` 和 `resource_registration_endpoint` 的值将被其覆盖。
 - Client ID and secret
-    - 该插件需配置 `client_id` 或 `audience`（用于向后兼容）属性来标识自身，如果两者都已经配置，则 `client_id` 优先级更高。
+    - 该插件需配置 `client_id` 属性来标识自身。
     - 如果 `lazy_load_paths` 属性被设置为 `true`，那么该插件还需要从 Keycloak 中获得一个自身访问令牌。在这种情况下，如果客户端对 Keycloak 的访问是加密的，就需要配置 `client_secret` 属性。
 - Policy enforcement mode
     - `policy_enforcement_mode` 属性指定了在处理发送到服务器的授权请求时，该插件如何执行策略。
@@ -130,7 +132,7 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
 以下示例为你展示了如何在指定 Route 中启用 `authz-keycloak` 插件，其中 `${realm}` 是 Keycloak 中的 `realm` 名称：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
@@ -138,7 +140,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
         "authz-keycloak": {
             "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
-            "audience": "Client ID"
+            "client_id": "Client ID"
         }
     },
     "upstream": {
@@ -171,12 +173,12 @@ curl http://127.0.0.1:9080/get \
 -H 'Authorization: Bearer {JWT Token}'
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `authz-keycloak` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",

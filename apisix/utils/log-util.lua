@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local expr = require("resty.expr.v1")
 local ngx  = ngx
 local pairs = pairs
@@ -24,6 +25,7 @@ local str_byte = string.byte
 local math_floor = math.floor
 local ngx_update_time = ngx.update_time
 local req_get_body_data = ngx.req.get_body_data
+local is_http = ngx.config.subsystem == "http"
 
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
@@ -71,7 +73,15 @@ local function get_custom_format_log(ctx, format)
     end
     return entry
 end
+-- export the log getter so we can mock in tests
 _M.get_custom_format_log = get_custom_format_log
+
+
+-- for test
+function _M.inject_get_custom_format_log(f)
+    get_custom_format_log = f
+    _M.get_custom_format_log = f
+end
 
 
 local function latency_details_in_ms(ctx)
@@ -191,6 +201,59 @@ local function get_full_log(ngx, conf)
     return log
 end
 _M.get_full_log = get_full_log
+
+
+-- for test
+function _M.inject_get_full_log(f)
+    get_full_log = f
+    _M.get_full_log = f
+end
+
+
+local function is_match(match, ctx)
+    local match_result
+    for _, m in pairs(match) do
+        local expr, _ = expr.new(m)
+        match_result = expr:eval(ctx.var)
+        if match_result then
+            break
+        end
+    end
+
+    return match_result
+end
+
+
+function _M.get_log_entry(plugin_name, conf, ctx)
+    -- If the "match" configuration is set and the matching conditions are not met,
+    -- then do not log the message.
+    if conf.match and not is_match(conf.match, ctx) then
+        return
+    end
+
+    local metadata = plugin.plugin_metadata(plugin_name)
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+
+    local entry
+    local customized = false
+
+    local has_meta_log_format = metadata and metadata.value.log_format
+        and core.table.nkeys(metadata.value.log_format) > 0
+
+    if conf.log_format or has_meta_log_format then
+        customized = true
+        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
+    else
+        if is_http then
+            entry = get_full_log(ngx, conf)
+        else
+            -- get_full_log doesn't work in stream
+            core.log.error(plugin_name, "'s log_format is not set")
+        end
+    end
+
+    return entry, customized
+end
 
 
 function _M.get_req_original(ctx, conf)

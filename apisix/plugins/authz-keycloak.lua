@@ -20,6 +20,7 @@ local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
 local plugin_name = "authz-keycloak"
+local fetch_secrets    = require("apisix.secret").fetch_secrets
 
 local log = core.log
 local pairs = pairs
@@ -31,8 +32,6 @@ local schema = {
         token_endpoint = {type = "string", minLength = 1, maxLength = 4096},
         resource_registration_endpoint = {type = "string", minLength = 1, maxLength = 4096},
         client_id = {type = "string", minLength = 1, maxLength = 100},
-        audience = {type = "string", minLength = 1, maxLength = 100,
-                    description = "Deprecated, use `client_id` instead."},
         client_secret = {type = "string", minLength = 1, maxLength = 100},
         grant_type = {
             type = "string",
@@ -73,19 +72,14 @@ local schema = {
             maxLength = 4096
         },
     },
+    encrypt_fields = {"client_secret"},
+    required = {"client_id"},
     allOf = {
         -- Require discovery or token endpoint.
         {
             anyOf = {
                 {required = {"discovery"}},
                 {required = {"token_endpoint"}}
-            }
-        },
-        -- Require client_id or audience.
-        {
-            anyOf = {
-                {required = {"client_id"}},
-                {required = {"audience"}}
             }
         },
         -- If lazy_load_paths is true, require discovery or resource registration endpoint.
@@ -120,25 +114,7 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    -- Check for deprecated audience attribute and emit warnings if used.
-    if conf.audience then
-        log.warn("Plugin attribute `audience` is deprecated, use `client_id` instead.")
-        if conf.client_id then
-            log.warn("Ignoring `audience` attribute in favor of `client_id`.")
-        end
-    end
     return core.schema.check(schema, conf)
-end
-
-
--- Return the configured client ID parameter.
-local function authz_keycloak_get_client_id(conf)
-    if conf.client_id then
-        -- Prefer client_id, if given.
-        return conf.client_id
-    end
-
-    return conf.audience
 end
 
 
@@ -339,7 +315,7 @@ end
 
 -- Ensure a valid service account access token is available for the configured client.
 local function authz_keycloak_ensure_sa_access_token(conf)
-    local client_id = authz_keycloak_get_client_id(conf)
+    local client_id = conf.client_id
     local ttl = conf.cache_ttl_seconds
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
 
@@ -648,7 +624,7 @@ local function evaluate_permissions(conf, ctx, token)
         method = "POST",
         body = ngx.encode_args({
             grant_type = conf.grant_type,
-            audience = authz_keycloak_get_client_id(conf),
+            audience = conf.client_id,
             response_mode = "decision",
             permission = permission
         }),
@@ -732,7 +708,7 @@ local function generate_token_using_password_grant(conf,ctx)
         return 422, {message = err}
     end
 
-    local client_id = authz_keycloak_get_client_id(conf)
+    local client_id = conf.client_id
 
     local token_endpoint = authz_keycloak_get_token_endpoint(conf)
 
@@ -782,6 +758,8 @@ local function generate_token_using_password_grant(conf,ctx)
 end
 
 function _M.access(conf, ctx)
+    -- resolve secrets
+    conf = fetch_secrets(conf)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and

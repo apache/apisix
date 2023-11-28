@@ -1,11 +1,12 @@
 ---
 title: azure-functions
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Azure Functions
   - azure-functions
-description: 本文介绍了关于 Apache APISIX azure-functions 插件的基本信息及使用方法。
+description: 本文介绍了关于 API 网关 Apache APISIX azure-functions 插件的基本信息及使用方法。
 ---
 <!--
 #
@@ -55,7 +56,7 @@ description: 本文介绍了关于 Apache APISIX azure-functions 插件的基本
 
 `azure-functions` 插件的元数据提供了授权回退的功能。它定义了 `master_apikey` 和 `master_clientid` 字段，用户可以为关键任务的应用部署声明 API 密钥或客户端 ID。因此，如果在 `azure-functions` 插件属性中没有找到相关授权凭证，此时元数据中的授权凭证就会发挥作用。
 
-:::note
+:::note 注意
 
 授权方式优先级排序如下：
 
@@ -68,7 +69,8 @@ description: 本文介绍了关于 Apache APISIX azure-functions 插件的基本
 如果你想添加一个新的 API 密钥，请向 `/apisix/admin/plugin_metadata` 端点发出请求，并附上所需的元数据。示例如下：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/azure-functions \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "master_apikey" : "<Your Azure master access key>"
 }'
@@ -76,10 +78,11 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-AP
 
 ## 启用插件
 
-以下示例展示了如何在指定路由上启用 `azure-functions` 插件。请确保你的 Azure Functions 已提前部署好，并正常提供服务。
+你可以通过以下命令在指定路由中启用该插件，请确保你的 Azure Functions 已提前部署好，并正常提供服务。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -116,8 +119,6 @@ Hello, APISIX
 
 ```yaml
 apisix:
-  admin_key:
-...
   node_listen:                      # 支持监听多个端口
     - 9080
     - port: 9081
@@ -143,7 +144,7 @@ Hello, APISIX
 
 `azure-functions` 插件在代理请求到 Azure Functions 上游时也支持 URL 路径转发。基本请求路径的扩展被附加到插件配置中指定的 `function_uri` 字段上。
 
-:::info 注意
+:::info 重要
 
 因为 APISIX 路由是严格匹配的，所以为了使 `azure-functions` 插件正常工作，在路由上配置的 `uri` 字段必须以 `*` 结尾，`*` 意味着这个 URI 的任何子路径都会被匹配到同一个路由。
 
@@ -152,7 +153,8 @@ Hello, APISIX
 以下示例展示了如何通过配置文件实现路径转发：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -183,12 +185,13 @@ Content-Type: text/plain; charset=utf-8
 Hello, APISIX
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用 `azure-functions` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/azure",
     "plugins": {},

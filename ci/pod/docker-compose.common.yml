@@ -87,3 +87,18 @@ services:
       - "5004:6382"
       - "5005:6383"
       - "5006:6384"
+
+
+  ## HashiCorp Vault
+  vault:
+    image: vault:1.9.0
+    container_name: vault
+    restart: unless-stopped
+    ports:
+      - "8200:8200"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: root
+      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
+    command: [ "vault", "server", "-dev" ]

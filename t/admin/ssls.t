@@ -54,12 +54,10 @@ __DATA__
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com"
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -71,7 +69,6 @@ __DATA__
             assert(prev_create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
-
         }
     }
 --- response_body

@@ -25,11 +25,7 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    my $user_yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  admin_key: null
-
+    my $extra_yaml_config = <<_EOC_;
 plugins:                          # plugin list
   - log-rotate
 
@@ -39,12 +35,8 @@ plugin_attr:
     max_kept: 3
 _EOC_
 
-    $block->set_value("yaml_config", $user_yaml_config);
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
 
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");

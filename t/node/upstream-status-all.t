@@ -109,8 +109,6 @@ X-APISIX-Upstream-Status: 200
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -125,6 +123,8 @@ GET /mysleep?seconds=1
 qr/504 Gateway Time-out/
 --- response_headers
 X-APISIX-Upstream-Status: 504
+--- error_log
+Connection timed out
 
 
 
@@ -169,6 +169,8 @@ GET /hello
 qr/502 Bad Gateway/
 --- response_headers
 X-APISIX-Upstream-Status: 502
+--- error_log
+Connection refused
 
 
 
@@ -209,10 +211,12 @@ apisix:
 --- request
 GET /server_error
 --- error_code: 500
---- response_body_like
-.*apisix.apache.org.*
+--- response_body eval
+qr/500 Internal Server Error/
 --- response_headers
 X-APISIX-Upstream-Status: 500
+--- error_log
+500 Internal Server Error
 
 
 
@@ -321,6 +325,8 @@ GET /hello
 --- error_code: 502
 --- response_headers_raw_like eval
 qr/X-APISIX-Upstream-Status: 502, 502, 502/
+--- error_log
+Connection refused
 
 
 

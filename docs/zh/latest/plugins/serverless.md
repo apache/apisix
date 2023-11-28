@@ -1,5 +1,11 @@
 ---
 title: serverless
+keywords:
+  - Apache APISIX
+  - API 网关
+  - Plugin
+  - Serverless
+description: 本文介绍了关于 API 网关 Apache APISIX serverless-pre-function 和 serverless-post-function 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -23,19 +29,22 @@ title: serverless
 
 ## 描述
 
-serverless 的插件有两个，分别是 `serverless-pre-function` 和 `serverless-post-function`，
-前者会在指定阶段的最开始运行，后者是在指定阶段的最后运行。
+APISIX 有两个 `serverless` 插件：`serverless-pre-function` 和 `serverless-post-function`。
 
-这两个插件接收的参数都是一样的。
+`serverless-pre-function` 插件会在指定阶段开始时运行，`serverless-post-function` 插件会在指定阶段结束时运行。这两个插件使用相同的属性。
 
 ## 属性
 
-| 名称      | 类型          | 必选项   | 默认值     | 有效值                                                                   | 描述                                                                                       |
-| --------- | ------------- | -------- | ---------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| phase     | string        | 可选 | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] |                                                                                            |
-| functions | array[string] | 必须 |            |                                                                          | 指定运行的函数列表，是数组类型，里面可以包含一个函数，也可以是多个函数，按照先后顺序执行。 |
+| 名称      | 类型          | 必选项   | 默认值     | 有效值                                                                       | 描述                                                                            |
+| --------- | ------------- | ------- | ---------- | ---------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| phase     | string        | 否      | ["access"] | ["rewrite", "access", "header_filter", "body_filter", "log", "before_proxy"] | 执行 serverless 函数的阶段。                                                     |
+| functions | array[string] | 是      |            |                                                                              | 指定运行的函数列表。该属性可以包含一个函数，也可以是多个函数，按照先后顺序执行。    |
 
-需要注意的是，这里只接受函数，而不接受其他类型的 Lua 代码。比如匿名函数是合法的：
+:::info 重要
+
+此处仅接受函数，不接受其他类型的 Lua 代码。
+
+比如匿名函数是合法的：
 
 ```lua
 return function()
@@ -60,18 +69,23 @@ local count = 1
 ngx.say(count)
 ```
 
-从 `v2.6` 版本开始，我们会把 `conf` 和 `ctx` 作为头两个参数传递给 serverless 函数，就跟一般的插件一样。
+:::
 
-`v2.12.0` 版本之前，`before_proxy` 这个 phase 曾被称作 `balancer`。考虑到这一方法事实上运行在 `access` 之后，代理到上游之前，跟 `balancer` 没有关系，新的命名会更加贴切。
+:::note 注意
 
-## 示例
+从 `v2.6` 版本开始，`conf` 和 `ctx` 作为前两个参数传递给 `serverless` 函数。
 
-### 启动插件
+在 `v2.12.0` 版本之前，`before_proxy` 阶段曾被称作 `balancer`。考虑到这一方法是在 `access` 阶段之后、请求到上游之前运行，并且与 `balancer` 没有关联，因此已经更新为 `before_proxy`。
 
-下面是一个示例，在指定的 route 上开启了 serverless 插件：
+:::
+
+## 启用插件
+
+你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -93,23 +107,23 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-### 测试插件
+## 测试插件
 
-使用 curl 访问：
+你可以通过以下命令向 APISIX 发出请求：
 
 ```shell
 curl -i http://127.0.0.1:9080/index.html
 ```
 
-然后你在 error.log 日志中就会发现 `serverless pre function` 和 `match uri /index.html` 两个 error 级别的日志，
-表示指定的函数已经生效。
+如果你在 `./logs/error.log` 中发现 `serverless pre function` 和 `match uri /index.html` 两个 error 级别的日志，表示指定的函数已经生效。
 
-### 移除插件
+## 删除插件
 
-当你想去掉插件的时候，很简单，在插件的配置中把对应的 json 配置删除即可，无须重启服务，即刻生效：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -121,5 +135,3 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 ```
-
-现在就已经移除了 serverless 插件了。其他插件的开启和移除也是同样的方法。

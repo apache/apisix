@@ -56,8 +56,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -98,8 +96,6 @@ passed
 GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
---- no_error_log
-[error]
 
 
 
@@ -134,8 +130,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -176,8 +170,6 @@ passed
 GET /t
 --- response_body
 [{"count":12,"port":"1982"}]
---- no_error_log
-[error]
 
 
 
@@ -212,8 +204,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -254,8 +244,6 @@ passed
 GET /t
 --- response_body
 [{"count":12,"port":"1980"}]
---- no_error_log
-[error]
 
 
 
@@ -290,8 +278,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -343,8 +329,6 @@ GET /t
 --- wait: 5
 --- response_body
 ok
---- no_error_log
-[error]
 
 
 
@@ -379,8 +363,6 @@ ok
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -432,8 +414,6 @@ GET /t
 --- wait: 5
 --- response_body
 ok
---- no_error_log
-[error]
 
 
 
@@ -467,8 +447,6 @@ ok
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -529,8 +507,6 @@ failed to find valid upstream server, no valid upstream node
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -556,6 +532,8 @@ passed
 GET /t
 --- response_body
 200
+--- error_log
+Connection refused
 
 
 
@@ -590,8 +568,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -652,8 +628,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

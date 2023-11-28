@@ -81,14 +81,46 @@ _EOC_
 our $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
       - "http://127.0.0.1:8500"
       - "http://127.0.0.1:8600"
+    prefix: "upstreams"
+    skip_keys:
+      - "upstreams/unused_api/"
+    timeout:
+      connect: 1000
+      read: 1000
+      wait: 60
+    weight: 1
+    fetch_interval: 1
+    keepalive: true
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+      metadata:
+        fail_timeout: 1
+        weight: 1
+        max_fails: 1
+_EOC_
+
+our $yaml_config_with_acl = <<_EOC_;
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul_kv:
+    servers:
+      - "http://127.0.0.1:8502"
+    token: "2b778dd9-f5f1-6f29-b4b4-9a5fa948757a"
     prefix: "upstreams"
     skip_keys:
       - "upstreams/unused_api/"
@@ -194,9 +226,10 @@ routes:
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -216,6 +249,7 @@ routes:
 GET /hello
 --- response_body_like eval
 qr/server [1-2]/
+--- ignore_error_log
 
 
 
@@ -242,6 +276,7 @@ routes:
     "missing consul_kv services\n",
     "missing consul_kv services\n"
 ]
+--- ignore_error_log
 
 
 
@@ -250,9 +285,10 @@ skip some keys, return default nodes, get response: missing consul_kv services
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -281,6 +317,7 @@ routes:
 GET /hello
 --- response_body eval
 "missing consul_kv services\n"
+--- ignore_error_log
 
 
 
@@ -357,6 +394,7 @@ location /sleep {
     qr/server [1-2]\n/,
     qr/server [1-2]\n/
 ]
+--- ignore_error_log
 
 
 
@@ -418,25 +456,34 @@ upstreams:
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
             res = json.decode(res)
-            table.sort(res[1].nodes, function(a, b)
-                return a.host < b.host
+            local nodes = res[1].nodes
+            table.sort(nodes, function(a, b)
+                return a.ip < b.ip
             end)
-            ngx.say(json.encode(res))
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
+            ngx.say(json.encode(nodes))
 
             local code, body, res = t.test('/v1/healthcheck/upstreams/1',
                 ngx.HTTP_GET)
             res = json.decode(res)
-            table.sort(res.nodes, function(a, b)
-                return a.host < b.host
+            local nodes = res.nodes
+            table.sort(nodes, function(a, b)
+                return a.ip < b.ip
             end)
-            ngx.say(json.encode(res))
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
+            ngx.say(json.encode(nodes))
         }
     }
 --- request
 GET /thc
 --- response_body
-[{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}]
-{"healthy_nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1}],"name":"upstream#/upstreams/1","nodes":[{"host":"127.0.0.1","port":30511,"priority":0,"weight":1},{"host":"127.0.0.2","port":1988,"priority":0,"weight":1}],"src_id":"1","src_type":"upstreams"}
+[{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30511,"status":"healthy"},{"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30511,"status":"healthy"},{"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+--- ignore_error_log
 
 
 
@@ -460,9 +507,10 @@ location /v1/kv {
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -509,6 +557,7 @@ location /sleep {
     qr/ok\n/,
     qr/server 1\n/
 ]
+--- ignore_error_log
 
 
 
@@ -516,9 +565,10 @@ location /sleep {
 --- yaml_config
 apisix:
   node_listen: 1984
-  config_center: yaml
-  enable_admin: false
-
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 discovery:
   consul_kv:
     servers:
@@ -557,3 +607,92 @@ qr/retry connecting consul after \d seconds/
 --- grep_error_log_out
 retry connecting consul after 1 seconds
 retry connecting consul after 4 seconds
+
+
+
+=== TEST 13: bootstrap acl
+--- config
+location /v1/acl {
+    proxy_pass http://127.0.0.1:8502;
+}
+--- request eval
+"PUT /v1/acl/bootstrap\n" . "{\"BootstrapSecret\": \"2b778dd9-f5f1-6f29-b4b4-9a5fa948757a\"}"
+--- error_code_like: ^(?:200|403)$
+
+
+
+=== TEST 14: test register and unregister nodes
+--- yaml_config eval: $::yaml_config_with_acl
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: http://127.0.0.1:8502/v1/kv/upstreams/webpages/
+      discovery_type: consul_kv
+      type: roundrobin
+#END
+--- config
+location /v1/kv {
+    proxy_pass http://127.0.0.1:8502;
+    proxy_set_header X-Consul-Token "2b778dd9-f5f1-6f29-b4b4-9a5fa948757a";
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30511",
+    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30512",
+    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30513\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30514\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "GET /sleep",
+
+    "GET /hello?random1",
+    "GET /hello?random2",
+    "GET /hello?random3",
+    "GET /hello?random4",
+
+    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30513",
+    "DELETE /v1/kv/upstreams/webpages/127.0.0.1:30514",
+    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30511\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "PUT /v1/kv/upstreams/webpages/127.0.0.1:30512\n" . "{\"weight\": 1, \"max_fails\": 2, \"fail_timeout\": 1}",
+    "GET /sleep?sec=5",
+
+    "GET /hello?random1",
+    "GET /hello?random2",
+    "GET /hello?random3",
+    "GET /hello?random4",
+
+]
+--- response_body_like eval
+[
+    qr/true/,
+    qr/true/,
+    qr/true/,
+    qr/true/,
+    qr/ok\n/,
+
+    qr/server [3-4]\n/,
+    qr/server [3-4]\n/,
+    qr/server [3-4]\n/,
+    qr/server [3-4]\n/,
+
+    qr/true/,
+    qr/true/,
+    qr/true/,
+    qr/true/,
+    qr/ok\n/,
+
+    qr/server [1-2]\n/,
+    qr/server [1-2]\n/,
+    qr/server [1-2]\n/,
+    qr/server [1-2]\n/
+]
+--- ignore_error_log

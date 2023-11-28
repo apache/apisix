@@ -21,6 +21,7 @@ local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local signal = require("resty.signal")
 local shell = require("resty.shell")
+local ipairs = ipairs
 local ngx = ngx
 local ngx_time = ngx.time
 local ngx_update_time = ngx.update_time
@@ -31,24 +32,24 @@ local os_date = os.date
 local os_remove = os.remove
 local os_rename = os.rename
 local str_sub = string.sub
-local str_find = string.find
 local str_format = string.format
-local str_reverse = string.reverse
-local tab_insert = table.insert
-local tab_sort = table.sort
-
+local str_byte = string.byte
+local ngx_sleep = require("apisix.core.utils").sleep
+local string_rfind = require("pl.stringx").rfind
 local local_conf
 
 
 local plugin_name = "log-rotate"
 local INTERVAL = 60 * 60    -- rotate interval (unit: second)
 local MAX_KEPT = 24 * 7     -- max number of log files will be kept
+local MAX_SIZE = -1         -- max size of file will be rotated
 local COMPRESSION_FILE_SUFFIX = ".tar.gz" -- compression file suffix
 local rotate_time
 local default_logs
 local enable_compression = false
 local DEFAULT_ACCESS_LOG_FILENAME = "access.log"
 local DEFAULT_ERROR_LOG_FILENAME = "error.log"
+local SLASH_BYTE = str_byte("/")
 
 local schema = {
     type = "object",
@@ -74,18 +75,6 @@ local function file_exists(path)
 end
 
 
-local function get_last_index(str, key)
-    local rev = str_reverse(str)
-    local _, idx = str_find(rev, key)
-    local n
-    if idx then
-        n = #rev - idx + 1
-    end
-
-    return n
-end
-
-
 local function get_log_path_info(file_type)
     local_conf = core.config.local_conf()
     local conf_path
@@ -101,12 +90,11 @@ local function get_log_path_info(file_type)
     local prefix = ngx.config.prefix()
 
     if conf_path then
-        local root = str_sub(conf_path, 1, 1)
         -- relative path
-        if root ~= "/" then
+        if str_byte(conf_path) ~= SLASH_BYTE then
             conf_path = prefix .. conf_path
         end
-        local n = get_last_index(conf_path, "/")
+        local n = string_rfind(conf_path, "/")
         if n ~= nil and n ~= #conf_path then
             local dir = str_sub(conf_path, 1, n)
             local name = str_sub(conf_path, n + 1)
@@ -123,34 +111,23 @@ local function tab_sort_comp(a, b)
 end
 
 
-local function scan_log_folder()
-    local t = {
-        access = {},
-        error = {},
-    }
+local function scan_log_folder(log_file_name)
+    local t = {}
 
-    local log_dir, access_name = get_log_path_info("access.log")
-    local _, error_name = get_log_path_info("error.log")
+    local log_dir, log_name = get_log_path_info(log_file_name)
 
-    if enable_compression then
-        access_name = access_name .. COMPRESSION_FILE_SUFFIX
-        error_name = error_name .. COMPRESSION_FILE_SUFFIX
-    end
-
+    local compression_log_type = log_name .. COMPRESSION_FILE_SUFFIX
     for file in lfs.dir(log_dir) do
-        local n = get_last_index(file, "__")
+        local n = string_rfind(file, "__")
         if n ~= nil then
             local log_type = file:sub(n + 2)
-            if log_type == access_name then
-                tab_insert(t.access, file)
-            elseif log_type == error_name then
-                tab_insert(t.error, file)
+            if log_type == log_name or log_type == compression_log_type then
+                core.table.insert(t, file)
             end
         end
     end
 
-    tab_sort(t.access, tab_sort_comp)
-    tab_sort(t.error, tab_sort_comp)
+    core.table.sort(t, tab_sort_comp)
     return t, log_dir
 end
 
@@ -179,13 +156,13 @@ local function rename_file(log, date_str)
 end
 
 
-local function compression_file(new_file)
+local function compression_file(new_file, timeout)
     if not new_file or type(new_file) ~= "string" then
         core.log.info("compression file: ", new_file, " invalid")
         return
     end
 
-    local n = get_last_index(new_file, "/")
+    local n = string_rfind(new_file, "/")
     local new_filepath = str_sub(new_file, 1, n)
     local new_filename = str_sub(new_file, n + 1)
     local com_filename = new_filename .. COMPRESSION_FILE_SUFFIX
@@ -193,7 +170,7 @@ local function compression_file(new_file)
             com_filename, new_filename)
     core.log.info("log file compress command: " .. cmd)
 
-    local ok, stdout, stderr, reason, status = shell.run(cmd)
+    local ok, stdout, stderr, reason, status = shell.run(cmd, nil, timeout, nil)
     if not ok then
         core.log.error("compress log file from ", new_filename, " to ", com_filename,
                        " fail, stdout: ", stdout, " stderr: ", stderr, " reason: ", reason,
@@ -219,18 +196,82 @@ local function init_default_logs(logs_info, log_type)
 end
 
 
+local function file_size(file)
+    local attr = lfs.attributes(file)
+    if attr then
+        return attr.size
+    end
+    return 0
+end
+
+
+local function rotate_file(files, now_time, max_kept, timeout)
+    if core.table.isempty(files) then
+        return
+    end
+
+    local new_files = core.table.new(2, 0)
+    -- rename the log files
+    for _, file in ipairs(files) do
+        local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
+        local new_file = rename_file(default_logs[file], now_date)
+        if not new_file then
+            return
+        end
+
+        core.table.insert(new_files, new_file)
+    end
+
+    -- send signal to reopen log files
+    local pid = process.get_master_pid()
+    core.log.warn("send USR1 signal to master process [", pid, "] for reopening log file")
+    local ok, err = signal.kill(pid, signal.signum("USR1"))
+    if not ok then
+        core.log.error("failed to send USR1 signal for reopening log file: ", err)
+    end
+
+    if enable_compression then
+        -- Waiting for nginx reopen files
+        -- to avoid losing logs during compression
+        ngx_sleep(0.5)
+
+        for _, new_file in ipairs(new_files) do
+            compression_file(new_file, timeout)
+        end
+    end
+
+    for _, file in ipairs(files) do
+        -- clean the oldest file
+        local log_list, log_dir = scan_log_folder(file)
+        for i = max_kept + 1, #log_list do
+            local path = log_dir .. log_list[i]
+            local ok, err = os_remove(path)
+            if err then
+               core.log.error("remove old log file: ", path, " err: ", err, "  res:", ok)
+            end
+        end
+    end
+end
+
+
 local function rotate()
     local interval = INTERVAL
     local max_kept = MAX_KEPT
+    local max_size = MAX_SIZE
     local attr = plugin.plugin_attr(plugin_name)
+    local timeout = 10000 -- default timeout 10 seconds
     if attr then
         interval = attr.interval or interval
         max_kept = attr.max_kept or max_kept
+        max_size = attr.max_size or max_size
+        timeout = attr.timeout or timeout
         enable_compression = attr.enable_compression or enable_compression
     end
 
     core.log.info("rotate interval:", interval)
     core.log.info("rotate max keep:", max_kept)
+    core.log.info("rotate max size:", max_size)
+    core.log.info("rotate timeout:", timeout)
 
     if not default_logs then
         -- first init default log filepath and filename
@@ -248,53 +289,28 @@ local function rotate()
         return
     end
 
-    if now_time < rotate_time then
-        -- did not reach the rotate time
-        core.log.info("rotate time: ", rotate_time, " now time: ", now_time)
-        return
-    end
+    if now_time >= rotate_time then
+        local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
+        rotate_file(files, now_time, max_kept, timeout)
 
-    local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
-    local access_new_file = rename_file(default_logs[DEFAULT_ACCESS_LOG_FILENAME], now_date)
-    local error_new_file = rename_file(default_logs[DEFAULT_ERROR_LOG_FILENAME], now_date)
-    if not access_new_file and not error_new_file then
         -- reset rotate time
         rotate_time = rotate_time + interval
-        return
-    end
 
-    core.log.warn("send USR1 signal to master process [",
-                  process.get_master_pid(), "] for reopening log file")
-    local ok, err = signal.kill(process.get_master_pid(), signal.signum("USR1"))
-    if not ok then
-        core.log.error("failed to send USR1 signal for reopening log file: ", err)
-    end
+    elseif max_size > 0 then
+        local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
+        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
+        local files = core.table.new(2, 0)
 
-    if enable_compression then
-        compression_file(access_new_file)
-        compression_file(error_new_file)
-    end
-
-    -- clean the oldest file
-    local log_list, log_dir = scan_log_folder()
-    for i = max_kept + 1, #log_list.error do
-        local path = log_dir .. log_list.error[i]
-        ok, err = os_remove(path)
-        if err then
-           core.log.error("remove old error file: ", path, " err: ", err, "  res:", ok)
+        if access_log_file_size >= max_size then
+            core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
-    end
 
-    for i = max_kept + 1, #log_list.access do
-        local path = log_dir .. log_list.access[i]
-        ok, err = os_remove(path)
-        if err then
-           core.log.error("remove old error file: ", path, " err: ", err, "  res:", ok)
+        if error_log_file_size >= max_size then
+            core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
-    end
 
-    -- reset rotate time
-    rotate_time = rotate_time + interval
+        rotate_file(files, now_time, max_kept, timeout)
+    end
 end
 
 

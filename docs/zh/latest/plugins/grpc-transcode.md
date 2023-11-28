@@ -1,7 +1,8 @@
 ---
 title: grpc-transcode
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - gRPC Web
   - grpc-web
@@ -44,6 +45,8 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 | method    | string                                             | 是    |        | gRPC 服务中要调用的方法名。        |
 | deadline  | number                                             | 否    | 0      | gRPC 服务的 deadline，单位为：ms。 |
 | pb_option | array[string([pb_option_def](#pb_option-的选项))]    | 否    |        | proto 编码过程中的转换选项。       |
+| show_status_in_body  | boolean                                 | 否    | false    | 是否在返回体中展示解析过的 `grpc-status-details-bin` |
+| status_detail_type | string                                    | 否    |        | `grpc-status-details-bin` 中 [details](https://github.com/googleapis/googleapis/blob/b7cb84f5d42e6dba0fdcc2d8689313f6a8c9d7b9/google/rpc/status.proto#L46) 部分对应的 message type，如果不指定，此部分不进行解码  |
 
 ### pb_option 的选项
 
@@ -61,7 +64,7 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 可以使用 `/admin/protos/id` 接口将文件的内容添加到 `content` 字段：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -100,34 +103,14 @@ protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
 
 然后将 `proto.pb` 的内容作为 proto 的 `content` 字段提交。
 
-由于 proto 的内容是二进制的，我们需要使用以下 Python 脚本将其转换成 `base64`：
+由于 proto 的内容是二进制的，我们需要使用以下 shell 命令将其转换成 `base64`：
 
-```python
-#!/usr/bin/env python
-# coding: utf-8
-
-import base64
-import sys
-
-# sudo pip install requests
-import requests
-
-if len(sys.argv) <= 1:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1], 'rb') as f:
-    content = base64.b64encode(f.read())
-id = sys.argv[2]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # use your API key
-
-reqParam = {
-    "content": content,
-}
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/protos/" + id, json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
+```shell
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "'"$(base64 -w0 /path/to/proto.pb)"'"
+}'
 ```
 
 该脚本将使用 `.pb` 文件和要创建的 `id`，将 proto 的内容转换成 `base64`，并使用转换后的内容调用 Admin API。
@@ -149,7 +132,7 @@ chmod +x ./upload_pb.py
 现在我们可以在指定路由中启用 `grpc-transcode` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -206,7 +189,7 @@ Proxy-Connection: keep-alive
 你也可以配置 `pb_option`，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
@@ -249,12 +232,156 @@ Trailer: grpc-message
 {"workflowKey":"#2251799813685260","workflowInstanceKey":"#2251799813688013","bpmnProcessId":"order-process","version":1}
 ```
 
-## 禁用插件
+## 在返回体中展示 `grpc-status-details-bin`
+
+如果 gRPC 服务返回了错误，返回头中可能存在 `grpc-status-details-bin` 字段对错误进行描述，你可以解码该字段，并展示在返回体中。
+
+上传 proto 文件：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "syntax = \"proto3\";
+    package helloworld;
+    service Greeter {
+        rpc GetErrResp (HelloRequest) returns (HelloReply) {}
+    }
+    message HelloRequest {
+        string name = 1;
+        repeated string items = 2;
+    }
+    message HelloReply {
+        string message = 1;
+        repeated string items = 2;
+    }"
+}'
+```
+
+启用 `grpc-transcode` 插件，并设置选项 `show_status_in_body` 为 `true`：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/grpctest",
+    "plugins": {
+        "grpc-transcode": {
+         "proto_id": "1",
+         "service": "helloworld.Greeter",
+         "method": "GetErrResp",
+         "show_status_in_body": true
+        }
+    },
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+```
+
+访问上面配置的 route：
+
+```shell
+curl -i http://127.0.0.1:9080/grpctest?name=world
+```
+
+返回结果
+
+```Shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Date: Wed, 10 Aug 2022 08:59:46 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+grpc-status: 14
+grpc-message: Out of service
+grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
+Server: APISIX web server
+
+{"error":{"details":[{"type_url":"type.googleapis.com\/helloworld.ErrorDetail","value":"\b\u0001\u0012\u001cThe server is out of service\u001a\u0007service"}],"message":"Out of service","code":14}}
+```
+
+注意返回体中还存在未解码的字段，如果需要解码该字段，需要在上传的 proto 文件中加上该字段对应的 `message type`。
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "syntax = \"proto3\";
+    package helloworld;
+    service Greeter {
+        rpc GetErrResp (HelloRequest) returns (HelloReply) {}
+    }
+    message HelloRequest {
+        string name = 1;
+        repeated string items = 2;
+    }
+    message HelloReply {
+        string message = 1;
+        repeated string items = 2;
+    }
+    message ErrorDetail {
+        int64 code = 1;
+        string message = 2;
+        string type = 3;
+    }"
+}'
+```
+
+同时配置选项 `status_detail_type` 为 `helloworld.ErrorDetail`：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/grpctest",
+    "plugins": {
+        "grpc-transcode": {
+         "proto_id": "1",
+         "service": "helloworld.Greeter",
+         "method": "GetErrResp",
+         "show_status_in_body": true,
+         "status_detail_type": "helloworld.ErrorDetail"
+        }
+    },
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+```
+
+此时就能返回完全解码后的结果
+
+```Shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Date: Wed, 10 Aug 2022 09:02:46 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+grpc-status: 14
+grpc-message: Out of service
+grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
+Server: APISIX web server
+
+{"error":{"details":[{"type":"service","message":"The server is out of service","code":1}],"message":"Out of service","code":14}}
+```
+
+## 删除插件
 
 当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/grpctest",
     "plugins": {},

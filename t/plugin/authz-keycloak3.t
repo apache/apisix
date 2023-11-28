@@ -42,7 +42,7 @@ __DATA__
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token",
                                 "access_denied_redirect_uri": "http://127.0.0.1/test",
                                 "permissions": ["course_resource#delete"],
                                 "client_id": "course_management",
@@ -78,7 +78,7 @@ passed
             local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
                     body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=student@gmail.com&password=123456",
@@ -106,3 +106,73 @@ passed
 --- error_code: 307
 --- response_headers
 Location: http://127.0.0.1/test
+
+
+
+=== TEST 3: data encryption for client_secret
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource#view"],
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "ssl_verify": false,
+                                "password_grant_token_generation_incoming_uri": "/api/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/api/token"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["authz-keycloak"].client_secret)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["authz-keycloak"].client_secret)
+        }
+    }
+--- response_body
+d1ec69e9-55d2-4109-a3ea-befa071579d5
+Fz1juZEEvh9PPXOmWFdMMJkREt3ZSzEVWcUZPxNP6achk3fosEvn37oN0qH4YgKB

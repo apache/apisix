@@ -1,10 +1,10 @@
 ---
 title: zipkin
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Zipkin
-  - zipkin
 description: 本文介绍了关于 Apache APISIX zipkin 插件的基本信息及使用方法。
 ---
 
@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX zipkin 插件的基本信息及
 
 [Zipkin](https://github.com/openzipkin/zipkin) 是一个开源的分布调用链追踪系统。`zipkin` 插件基于 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html)，支持收集跟踪信息并上报给 Zipkin Collector。
 
-该插件也支持 [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver) 和 [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin)，因为它们都支持了 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) 和 [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) API。当然 `zipkin` 插件也可以与其他支持了 Zipkin v1 和 v2 API 格式的调用链追踪系统集成。
+该插件也支持 [Apache SkyWalking](https://skywalking.apache.org/docs/main/next/en/setup/backend/zipkin-trace/#zipkin-receiver) 和 [Jaeger](https://www.jaegertracing.io/docs/1.31/getting-started/#migrating-from-zipkin)，因为它们都支持了 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) 和 [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) API。当然 `zipkin` 插件也可以与其他支持了 Zipkin v1 和 v2 API 格式的调用链追踪系统集成。
 
 ## 属性
 
@@ -111,7 +111,7 @@ func main(){
 以下示例展示了如何在指定路由中启用 `zipkin` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -178,7 +178,7 @@ docker run -d --name jaeger \
 通过以下命令创建路由并启用插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -216,12 +216,12 @@ HTTP/1.1 200 OK
 
 ![jaeger web-ui trace](../../../assets/images/plugin/jaeger-2.png)
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `zipkin` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -234,4 +234,33 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
+
+## 如何使用变量
+
+以下`nginx`变量是由`zipkin` 设置的。
+
+- `zipkin_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), 例如：`00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
+- `zipkin_trace_id` - 当前 span 的 trace_id
+- `zipkin_span_id` - 当前 span 的 span_id
+
+如何使用？你需要在配置文件（`./conf/config.yaml`）设置如下：
+
+```yaml title="./conf/config.yaml"
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","zipkin_context_traceparent": "$zipkin_context_traceparent","zipkin_trace_id": "$zipkin_trace_id","zipkin_span_id": "$zipkin_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - zipkin
+plugin_attr:
+  zipkin:
+    set_ngx_var: true
+```
+
+你也可以在打印日志的时候带上 `trace_id`
+
+```print error log
+log.error(ngx.ERR,ngx_var.zipkin_trace_id,"error message")
 ```

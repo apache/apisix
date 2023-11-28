@@ -25,10 +25,9 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - ubuntu-18.04
+          - ubuntu-20.04
         os_name:
           - linux_openresty
-          - linux_openresty_1_19
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 15
@@ -38,28 +37,23 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup kubernetes cluster
         run: |
-          KIND_VERSION="v0.11.1"
-          KUBECTL_VERSION="v1.22.0"
-          curl -Lo ./kind "https://kind.sigs.k8s.io/dl/${KIND_VERSION}/kind-$(uname)-amd64"
-          curl -Lo ./kubectl "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl"
-          chmod +x ./kind
-          chmod +x ./kubectl
+          KUBERNETES_VERSION="v1.22.7"
 
-          ./kind create cluster --name apisix-test --config ./t/kubernetes/configs/kind.yaml
+          kind create cluster --name apisix-test --config ./t/kubernetes/configs/kind.yaml --image kindest/node:${KUBERNETES_VERSION}
 
-          ./kubectl wait --for=condition=Ready nodes --all --timeout=180s
+          kubectl wait --for=condition=Ready nodes --all --timeout=180s
 
-          ./kubectl apply -f ./t/kubernetes/configs/account.yaml
+          kubectl apply -f ./t/kubernetes/configs/account.yaml
 
-          ./kubectl apply -f ./t/kubernetes/configs/endpoint.yaml
+          kubectl apply -f ./t/kubernetes/configs/endpoint.yaml
 
-          KUBERNETES_CLIENT_TOKEN_CONTENT=$(./kubectl get secrets | grep apisix-test | awk '{system("./kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
+          KUBERNETES_CLIENT_TOKEN_CONTENT=$(kubectl get secrets | grep apisix-test | awk '{system("kubectl get secret -o jsonpath={.data.token} "$1" | base64 --decode")}')
 
           KUBERNETES_CLIENT_TOKEN_DIR="/tmp/var/run/secrets/kubernetes.io/serviceaccount"
 
@@ -73,7 +67,7 @@ jobs:
           echo 'KUBERNETES_CLIENT_TOKEN='"${KUBERNETES_CLIENT_TOKEN_CONTENT}"
           echo 'KUBERNETES_CLIENT_TOKEN_FILE='${KUBERNETES_CLIENT_TOKEN_FILE}
 
-          ./kubectl proxy -p 6445 &
+          kubectl proxy -p 6445 &
 
       - name: Linux Install
         run: |

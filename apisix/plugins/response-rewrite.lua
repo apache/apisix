@@ -19,6 +19,7 @@ local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
 local plugin_name = "response-rewrite"
 local ngx         = ngx
+local re_match    = ngx.re.match
 local re_sub      = ngx.re.sub
 local re_gsub     = ngx.re.gsub
 local pairs       = pairs
@@ -27,13 +28,63 @@ local type        = type
 local pcall       = pcall
 
 
+local lrucache = core.lrucache.new({
+    type = "plugin",
+})
+
 local schema = {
     type = "object",
     properties = {
         headers = {
             description = "new headers for response",
-            type = "object",
-            minProperties = 1,
+            anyOf = {
+                {
+                    type = "object",
+                    minProperties = 1,
+                    patternProperties = {
+                        ["^[^:]+$"] = {
+                            oneOf = {
+                                {type = "string"},
+                                {type = "number"},
+                            }
+                        }
+                    },
+                },
+                {
+                    properties = {
+                        add = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                type = "string",
+                                -- "Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<number>"
+                                pattern = "^[^:]+:[^:]*[^/]$"
+                            }
+                        },
+                        set = {
+                            type = "object",
+                            minProperties = 1,
+                            patternProperties = {
+                                ["^[^:]+$"] = {
+                                    oneOf = {
+                                        {type = "string"},
+                                        {type = "number"},
+                                    }
+                                }
+                            },
+                        },
+                        remove = {
+                            type = "array",
+                            minItems = 1,
+                            items = {
+                                type = "string",
+                                -- "Set-Cookie"
+                                pattern = "^[^:]+$"
+                            }
+                        },
+                    },
+                }
+            }
         },
         body = {
             description = "new body for response",
@@ -121,6 +172,33 @@ local function vars_matched(conf, ctx)
 end
 
 
+local function is_new_headers_conf(headers)
+    return
+        (headers.add and type(headers.add) == "table") or
+        (headers.set and type(headers.set) == "table") or
+        (headers.remove and type(headers.remove) == "table")
+end
+
+
+local function check_set_headers(headers)
+    for field, value in pairs(headers) do
+        if type(field) ~= 'string' then
+            return false, 'invalid type as header field'
+        end
+
+        if type(value) ~= 'string' and type(value) ~= 'number' then
+            return false, 'invalid type as header value'
+        end
+
+        if #field == 0 then
+            return false, 'invalid field length in header'
+        end
+    end
+
+    return true
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -128,17 +206,10 @@ function _M.check_schema(conf)
     end
 
     if conf.headers then
-        for field, value in pairs(conf.headers) do
-            if type(field) ~= 'string' then
-                return false, 'invalid type as header field'
-            end
-
-            if type(value) ~= 'string' and type(value) ~= 'number' then
-                return false, 'invalid type as header value'
-            end
-
-            if #field == 0 then
-                return false, 'invalid field length in header'
+        if not is_new_headers_conf(conf.headers) then
+            ok, err = check_set_headers(conf.headers)
+            if not ok then
+                return false, err
             end
         end
     end
@@ -205,16 +276,50 @@ function _M.body_filter(conf, ctx)
     end
 
     if conf.body then
-
+        ngx.arg[2] = true
         if conf.body_base64 then
             ngx.arg[1] = ngx.decode_base64(conf.body)
         else
             ngx.arg[1] = conf.body
         end
-
-        ngx.arg[2] = true
     end
 end
+
+
+local function create_header_operation(hdr_conf)
+    local set = {}
+    local add = {}
+    if is_new_headers_conf(hdr_conf) then
+        if hdr_conf.add then
+            for _, value in ipairs(hdr_conf.add) do
+                local m, err = re_match(value, [[^([^:\s]+)\s*:\s*([^:]+)$]], "jo")
+                if not m then
+                    return nil, err
+                end
+                core.table.insert_tail(add, m[1], m[2])
+            end
+        end
+
+        if hdr_conf.set then
+            for field, value in pairs(hdr_conf.set) do
+                --reform header from object into array, so can avoid use pairs, which is NYI
+                core.table.insert_tail(set, field, value)
+            end
+        end
+
+    else
+        for field, value in pairs(hdr_conf) do
+            core.table.insert_tail(set, field, value)
+        end
+    end
+
+    return {
+        add = add,
+        set = set,
+        remove = hdr_conf.remove or {},
+    }
+end
+
 
 function _M.header_filter(conf, ctx)
     ctx.response_rewrite_matched = vars_matched(conf, ctx)
@@ -235,19 +340,28 @@ function _M.header_filter(conf, ctx)
         return
     end
 
-    --reform header from object into array, so can avoid use pairs, which is NYI
-    if not conf.headers_arr then
-        conf.headers_arr = {}
-
-        for field, value in pairs(conf.headers) do
-            core.table.insert_tail(conf.headers_arr, field, value)
-        end
+    local hdr_op, err = core.lrucache.plugin_ctx(lrucache, ctx, nil,
+                                                 create_header_operation, conf.headers)
+    if not hdr_op then
+        core.log.error("failed to create header operation: ", err)
+        return
     end
 
-    local field_cnt = #conf.headers_arr
+    local field_cnt = #hdr_op.add
     for i = 1, field_cnt, 2 do
-        local val = core.utils.resolve_var(conf.headers_arr[i+1], ctx.var)
-        ngx.header[conf.headers_arr[i]] = val
+        local val = core.utils.resolve_var(hdr_op.add[i+1], ctx.var)
+        core.response.add_header(hdr_op.add[i], val)
+    end
+
+    local field_cnt = #hdr_op.set
+    for i = 1, field_cnt, 2 do
+        local val = core.utils.resolve_var(hdr_op.set[i+1], ctx.var)
+        core.response.set_header(hdr_op.set[i], val)
+    end
+
+    local field_cnt = #hdr_op.remove
+    for i = 1, field_cnt do
+        core.response.set_header(hdr_op.remove[i], nil)
     end
 end
 

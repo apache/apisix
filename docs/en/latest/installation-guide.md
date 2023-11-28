@@ -30,7 +30,7 @@ import TabItem from '@theme/TabItem';
 
 This guide walks you through how you can install and run Apache APISIX in your environment.
 
-Refer to the [Getting Started](./getting-started.md) guide for a quick walk-through on running Apache APISIX.
+Refer to the [Getting Started](./getting-started/README.md) guide for a quick walk-through on running Apache APISIX.
 
 ## Installing APISIX
 
@@ -43,6 +43,7 @@ APISIX can be installed by the different methods listed below:
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'DEB', value: 'deb'},
     {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
@@ -169,6 +170,55 @@ Run `apisix help` to get a list of all available operations.
 
 </TabItem>
 
+<TabItem value="deb">
+
+### Installation via DEB repository
+
+Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) and supports both amd64 and arm64 architectures.
+
+```shell
+# amd64
+echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+
+# arm64
+echo "deb http://openresty.org/package/arm64/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
+wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+```
+
+Then, to install APISIX, run:
+
+```shell
+sudo apt update
+sudo apt install -y apisix=3.0.0-0
+```
+
+### Managing APISIX server
+
+Once APISIX is installed, you can initialize the configuration file and etcd by running:
+
+```shell
+sudo apisix init
+```
+
+To start APISIX server, run:
+
+```shell
+sudo apisix start
+```
+
+:::tip
+
+Run `apisix help` to get a list of all available operations.
+
+:::
+
+</TabItem>
+
 <TabItem value="source code">
 
 If you want to build APISIX from source, please refer to [Building APISIX from source](./building-apisix.md).
@@ -240,8 +290,13 @@ Now, if you decide you want to change the etcd address to `http://foo:2379`, you
 apisix:
   node_listen: 8000
 
-etcd:
-  host: "http://foo:2379"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://foo:2379"
 ```
 
 :::warning
@@ -256,6 +311,10 @@ The `conf/nginx.conf` file is automatically generated and should not be modified
 
 :::
 
+### APISIX deployment modes
+
+APISIX has three different deployment modes for different use cases. To learn more and configure deployment modes, see the [documentation](./deployment-modes.md).
+
 ### Updating Admin API key
 
 It is recommended to modify the Admin API key to ensure security.
@@ -263,18 +322,19 @@ It is recommended to modify the Admin API key to ensure security.
 You can update your configuration file as shown below:
 
 ```yaml title="conf/config.yaml"
-apisix:
-  admin_key
-    -
-      name: "admin"
-      key: newsupersecurekey
-      role: admin
+deployment:
+  admin:
+    admin_key
+      -
+        name: "admin"
+        key: newsupersecurekey
+        role: admin
 ```
 
 Now, to access the Admin API, you can use the new key:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes?api_key=newsupersecurekey -i
+curl http://127.0.0.1:9180/apisix/admin/routes?api_key=newsupersecurekey -i
 ```
 
 ### Adding APISIX systemd unit file
@@ -288,4 +348,4 @@ systemctl stop apisix
 
 If you installed APISIX through other methods, you can create `/usr/lib/systemd/system/apisix.service` and add the [configuration from the template](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service).
 
-See the [Getting Started](./getting-started.md) guide for a quick walk-through of using APISIX.
+See the [Getting Started](./getting-started/README.md) guide for a quick walk-through of using APISIX.

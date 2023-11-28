@@ -36,6 +36,7 @@ local extra_info_req = require("A6.ExtraInfo.Req")
 local extra_info_var = require("A6.ExtraInfo.Var")
 local extra_info_resp = require("A6.ExtraInfo.Resp")
 local extra_info_reqbody = require("A6.ExtraInfo.ReqBody")
+local extra_info_respbody = require("A6.ExtraInfo.RespBody")
 
 local _M = {}
 local builder = flatbuffers.Builder(0)
@@ -52,6 +53,101 @@ local function build_action(action, ty)
     http_req_call_resp.Start(builder)
     http_req_call_resp.AddActionType(builder, ty)
     http_req_call_resp.AddAction(builder, action)
+end
+
+
+local function ask_extra_info(sock, case_extra_info)
+    local data
+    for _, action in ipairs(case_extra_info) do
+        if action.type == "closed" then
+            ngx.exit(-1)
+            return
+        end
+
+        if action.type == "var" then
+            local name = builder:CreateString(action.name)
+            extra_info_var.Start(builder)
+            extra_info_var.AddName(builder, name)
+            local var_req = extra_info_var.End(builder)
+            build_extra_info(var_req, extra_info.Var)
+            local req = extra_info_req.End(builder)
+            builder:Finish(req)
+            data = builder:Output()
+            local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
+            if not ok then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.log(ngx.WARN, "send extra info req successfully")
+
+            local ty, data = ext.receive(sock)
+            if not ty then
+                ngx.log(ngx.ERR, data)
+                return
+            end
+
+            assert(ty == constants.RPC_EXTRA_INFO, ty)
+            local buf = flatbuffers.binaryArray.New(data)
+            local resp = extra_info_resp.GetRootAsResp(buf, 0)
+            local res = resp:ResultAsString()
+            assert(res == action.result, res)
+        end
+
+        if action.type == "reqbody" then
+            extra_info_reqbody.Start(builder)
+            local reqbody_req = extra_info_reqbody.End(builder)
+            build_extra_info(reqbody_req, extra_info.ReqBody)
+            local req = extra_info_req.End(builder)
+            builder:Finish(req)
+            data = builder:Output()
+            local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
+            if not ok then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.log(ngx.WARN, "send extra info req successfully")
+
+            local ty, data = ext.receive(sock)
+            if not ty then
+                ngx.log(ngx.ERR, data)
+                return
+            end
+
+            assert(ty == constants.RPC_EXTRA_INFO, ty)
+            local buf = flatbuffers.binaryArray.New(data)
+            local resp = extra_info_resp.GetRootAsResp(buf, 0)
+            local res = resp:ResultAsString()
+            assert(res == action.result, res)
+        end
+
+        if action.type == "respbody" then
+            extra_info_respbody.Start(builder)
+            local respbody_req = extra_info_respbody.End(builder)
+            build_extra_info(respbody_req, extra_info.RespBody)
+            local req = extra_info_req.End(builder)
+            builder:Finish(req)
+            data = builder:Output()
+            local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
+            if not ok then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.log(ngx.WARN, "send extra info req successfully")
+
+            local ty, data = ext.receive(sock)
+            if not ty then
+                ngx.log(ngx.ERR, data)
+                return
+            end
+
+            assert(ty == constants.RPC_EXTRA_INFO, ty)
+            local buf = flatbuffers.binaryArray.New(data)
+            local resp = extra_info_resp.GetRootAsResp(buf, 0)
+            local res = resp:ResultAsString()
+            assert(res == action.result, res)
+        end
+    end
+
 end
 
 
@@ -178,68 +274,7 @@ function _M.go(case)
         end
 
         if case.extra_info then
-            for _, action in ipairs(case.extra_info) do
-                if action.type == "closed" then
-                    ngx.exit(-1)
-                    return
-                end
-
-                if action.type == "var" then
-                    local name = builder:CreateString(action.name)
-                    extra_info_var.Start(builder)
-                    extra_info_var.AddName(builder, name)
-                    local var_req = extra_info_var.End(builder)
-                    build_extra_info(var_req, extra_info.Var)
-                    local req = extra_info_req.End(builder)
-                    builder:Finish(req)
-                    data = builder:Output()
-                    local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
-                    if not ok then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                    ngx.log(ngx.WARN, "send extra info req successfully")
-
-                    local ty, data = ext.receive(sock)
-                    if not ty then
-                        ngx.log(ngx.ERR, data)
-                        return
-                    end
-
-                    assert(ty == constants.RPC_EXTRA_INFO, ty)
-                    local buf = flatbuffers.binaryArray.New(data)
-                    local resp = extra_info_resp.GetRootAsResp(buf, 0)
-                    local res = resp:ResultAsString()
-                    assert(res == action.result, res)
-                end
-
-                if action.type == "reqbody" then
-                    extra_info_reqbody.Start(builder)
-                    local reqbody_req = extra_info_reqbody.End(builder)
-                    build_extra_info(reqbody_req, extra_info.ReqBody)
-                    local req = extra_info_req.End(builder)
-                    builder:Finish(req)
-                    data = builder:Output()
-                    local ok, err = ext.send(sock, constants.RPC_EXTRA_INFO, data)
-                    if not ok then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                    ngx.log(ngx.WARN, "send extra info req successfully")
-
-                    local ty, data = ext.receive(sock)
-                    if not ty then
-                        ngx.log(ngx.ERR, data)
-                        return
-                    end
-
-                    assert(ty == constants.RPC_EXTRA_INFO, ty)
-                    local buf = flatbuffers.binaryArray.New(data)
-                    local resp = extra_info_resp.GetRootAsResp(buf, 0)
-                    local res = resp:ResultAsString()
-                    assert(res == action.result, res)
-                end
-            end
+            ask_extra_info(sock, case.extra_info)
         end
 
         if case.stop == true then
@@ -435,6 +470,19 @@ function _M.go(case)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
+        elseif case.rewrite_request_body == true then
+            local len = 4
+            http_req_call_rewrite.StartBodyVector(builder, len)
+            builder:PrependByte(string.byte("\n"))
+            builder:PrependByte(string.byte("c"))
+            builder:PrependByte(string.byte("b"))
+            builder:PrependByte(string.byte("a"))
+            local b = builder:EndVector(len)
+            http_req_call_rewrite.Start(builder)
+            http_req_call_rewrite.AddBody(builder, b)
+            local action = http_req_call_rewrite.End(builder)
+            build_action(action, http_req_call_action.Rewrite)
+
         else
             http_req_call_resp.Start(builder)
         end
@@ -499,6 +547,8 @@ function _M.go(case)
                 if runner and runner == "Go-runner" then
                     headers["x-runner"] = "Test-Runner"
                 end
+
+                headers["Content-Type"] = "application/json"
             end
 
             local i = 1
@@ -544,6 +594,9 @@ function _M.go(case)
             http_resp_call_resp.Start(builder)
             http_resp_call_resp.AddStatus(builder, status)
 
+        elseif case.extra_info then
+            ask_extra_info(sock, case.extra_info)
+            http_resp_call_resp.Start(builder)
         else
             http_resp_call_resp.Start(builder)
         end

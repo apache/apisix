@@ -41,6 +41,7 @@ local _M = {
     sort    = table.sort,
     clone   = require("table.clone"),
     isarray = require("table.isarray"),
+    isempty = require("table.isempty"),
 }
 
 

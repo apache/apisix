@@ -41,8 +41,7 @@ __DATA__
             local plugin = require("apisix.plugins.proxy-rewrite")
             local ok, err = plugin.check_schema({
                 uri = '/apisix/home',
-                host = 'apisix.iresty.com',
-                scheme = 'http'
+                host = 'apisix.iresty.com'
             })
             if not ok then
                 ngx.say(err)
@@ -55,39 +54,10 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 2: wrong value of key
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-rewrite")
-            local ok, err = plugin.check_schema({
-                uri = '/apisix/home',
-                host = 'apisix.iresty.com',
-                scheme = 'tcp'
-            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-property "scheme" validation failed: matches none of the enum values
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 3: add plugin
+=== TEST 2: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -98,7 +68,6 @@ done
                     "plugins": {
                         "proxy-rewrite": {
                             "uri": "/test/add",
-                            "scheme": "https",
                             "host": "apisix.iresty.com"
                         }
                     },
@@ -122,12 +91,10 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 4: update plugin
+=== TEST 3: update plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +105,6 @@ passed
                     "plugins": {
                         "proxy-rewrite": {
                             "uri": "/test/update",
-                            "scheme": "http",
                             "host": "apisix.iresty.com"
                         }
                     },
@@ -162,12 +128,10 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 5: disable plugin
+=== TEST 4: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -197,12 +161,10 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 6: set route(rewrite host)
+=== TEST 5: set route(rewrite host)
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +176,6 @@ passed
                         "plugins": {
                             "proxy-rewrite": {
                                 "uri": "/plugin_proxy_rewrite",
-                                "scheme": "http",
                                 "host": "apisix.iresty.com"
                             }
                         },
@@ -238,24 +199,20 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 7: rewrite host
+=== TEST 6: rewrite host
 --- request
 GET /hello HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite
 host: apisix.iresty.com
 scheme: http
---- no_error_log
-[error]
 
 
 
-=== TEST 8: set route(rewrite host + scheme)
+=== TEST 7: set route(rewrite host + upstream scheme is https)
 --- config
     location /t {
         content_by_lua_block {
@@ -267,11 +224,11 @@ scheme: http
                         "plugins": {
                             "proxy-rewrite": {
                                 "uri": "/plugin_proxy_rewrite",
-                                "scheme": "https",
                                 "host": "test.com"
                             }
                         },
                         "upstream": {
+                            "scheme": "https",
                             "nodes": {
                                 "127.0.0.1:1983": 1
                             },
@@ -291,24 +248,20 @@ scheme: http
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 9: rewrite host + scheme
+=== TEST 8: rewrite host + upstream scheme is https
 --- request
 GET /hello HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite
 host: test.com
 scheme: https
---- no_error_log
-[error]
 
 
 
-=== TEST 10: set route(rewrite headers)
+=== TEST 9: set route(rewrite headers)
 --- config
     location /t {
         content_by_lua_block {
@@ -344,12 +297,10 @@ scheme: https
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 11: rewrite headers
+=== TEST 10: rewrite headers
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -359,12 +310,10 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-version: v2
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
-=== TEST 12: set route(add headers)
+=== TEST 11: set route(add headers)
 --- config
     location /t {
         content_by_lua_block {
@@ -400,12 +349,10 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 13: add headers
+=== TEST 12: add headers
 --- request
 GET /hello HTTP/1.1
 --- response_body
@@ -413,12 +360,10 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-engine: apisix
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
-=== TEST 14: set route(rewrite empty headers)
+=== TEST 13: set route(rewrite empty headers)
 --- config
     location /t {
         content_by_lua_block {
@@ -454,12 +399,10 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 15: rewrite empty headers
+=== TEST 14: rewrite empty headers
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -469,12 +412,10 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-test: hello
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
-=== TEST 16: set route(rewrite uri args)
+=== TEST 15: set route(rewrite uri args)
 --- config
     location /t {
         content_by_lua_block {
@@ -507,24 +448,20 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 17: rewrite uri args
+=== TEST 16: rewrite uri args
 --- request
 GET /hello?q=apisix&a=iresty HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite_args
 a: iresty
 q: apisix
---- no_error_log
-[error]
 
 
 
-=== TEST 18: set route(rewrite uri empty args)
+=== TEST 17: set route(rewrite uri empty args)
 --- config
     location /t {
         content_by_lua_block {
@@ -557,22 +494,18 @@ q: apisix
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 19: rewrite uri empty args
+=== TEST 18: rewrite uri empty args
 --- request
 GET /hello HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite_args
---- no_error_log
-[error]
 
 
 
-=== TEST 20: remove header
+=== TEST 19: remove header
 --- config
     location /t {
         content_by_lua_block {
@@ -609,12 +542,10 @@ uri: /plugin_proxy_rewrite_args
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 21: remove header
+=== TEST 20: remove header
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -625,12 +556,10 @@ uri: /uri/plugin_proxy_rewrite
 host: localhost
 x-api-engine: APISIX
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
-=== TEST 22: set route(only using regex_uri)
+=== TEST 21: set route(only using regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -663,33 +592,27 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 23: hit route(rewrite uri using regex_uri)
+=== TEST 22: hit route(rewrite uri using regex_uri)
 --- request
 GET /test/plugin/proxy/rewrite HTTP/1.1
 --- response_body
 uri: /plugin_proxy_rewrite
 host: localhost
 scheme: http
---- no_error_log
-[error]
 
 
 
-=== TEST 24: hit route(404 not found)
+=== TEST 23: hit route(404 not found)
 --- request
 GET /test/not/found HTTP/1.1
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
-=== TEST 25: set route(Using both uri and regex_uri)
+=== TEST 24: set route(Using both uri and regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -723,22 +646,18 @@ GET /test/not/found HTTP/1.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 26: hit route(rewrite uri using uri & regex_uri property)
+=== TEST 25: hit route(rewrite uri using uri & regex_uri property)
 --- request
 GET /test/hello HTTP/1.1
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
-=== TEST 27: set route(invalid regex_uri)
+=== TEST 26: set route(invalid regex_uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -771,12 +690,10 @@ hello world
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
-=== TEST 28: set route(invalid regex syntax for the first element)
+=== TEST 27: set route(invalid regex syntax for the first element)
 --- config
     location /t {
         content_by_lua_block {
@@ -811,12 +728,10 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/invalid regex_uri/
---- no_error_log
-[error]
 
 
 
-=== TEST 29: set route(invalid regex syntax for the second element)
+=== TEST 28: set route(invalid regex syntax for the second element)
 --- config
     location /t {
         content_by_lua_block {
@@ -854,7 +769,7 @@ invalid capturing variable name found
 
 
 
-=== TEST 30: set route(invalid uri)
+=== TEST 29: set route(invalid uri)
 --- config
     location /t {
         content_by_lua_block {
@@ -888,12 +803,10 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to match pattern/
---- no_error_log
-[error]
 
 
 
-=== TEST 31: wrong value of uri
+=== TEST 30: wrong value of uri
 --- config
     location /t {
         content_by_lua_block {
@@ -913,12 +826,10 @@ qr/failed to match pattern/
 GET /t
 --- response_body
 property "uri" validation failed: failed to match pattern "^\\/.*" with "home"
---- no_error_log
-[error]
 
 
 
-=== TEST 32: set route(invalid header field)
+=== TEST 31: set route(invalid header field)
 --- config
     location /t {
         content_by_lua_block {
@@ -955,14 +866,12 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/invalid field character/
---- no_error_log
-[error]
 --- error_log
 header field: X-Api:Version
 
 
 
-=== TEST 33: set route(invalid header value)
+=== TEST 32: set route(invalid header value)
 --- config
     location /t {
         content_by_lua_block {
@@ -999,12 +908,10 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/invalid value character/
---- no_error_log
-[error]
 
 
 
-=== TEST 34: set route(rewrite uri with args)
+=== TEST 33: set route(rewrite uri with args)
 --- config
     location /t {
         content_by_lua_block {
@@ -1037,12 +944,10 @@ qr/invalid value character/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 35: rewrite uri with args
+=== TEST 34: rewrite uri with args
 --- request
 GET /hello?a=iresty
 --- response_body_like eval
@@ -1052,12 +957,10 @@ a: iresty|
 a: iresty
 q: apisix)
 /
---- no_error_log
-[error]
 
 
 
-=== TEST 36: print the plugin `conf` in etcd, no dirty data
+=== TEST 35: print the plugin `conf` in etcd, no dirty data
 --- config
     location /t {
         content_by_lua_block {
@@ -1091,19 +994,17 @@ q: apisix)
             end
 
             local resp_data = core.json.decode(body)
-            ngx.say(encode_with_keys_sorted(resp_data.node.value.plugins))
+            ngx.say(encode_with_keys_sorted(resp_data.value.plugins))
         }
     }
 --- request
 GET /t
 --- response_body
 {"proxy-rewrite":{"headers":{"X-Api":"v2"},"uri":"/uri/plugin_proxy_rewrite","use_real_request_uri_unsafe":false}}
---- no_error_log
-[error]
 
 
 
-=== TEST 37: set route(header contains nginx variables)
+=== TEST 36: set route(header contains nginx variables)
 --- config
     location /t {
         content_by_lua_block {
@@ -1141,12 +1042,10 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 38: hit route(header supports nginx variables)
+=== TEST 37: hit route(header supports nginx variables)
 --- request
 GET /hello?name=Bill HTTP/1.1
 --- more_headers
@@ -1159,12 +1058,10 @@ name: Bill
 x-api: 127.0.0.1
 x-key: X-APISIX
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
-=== TEST 39: set route(nginx variable does not exist)
+=== TEST 38: set route(nginx variable does not exist)
 --- config
     location /t {
         content_by_lua_block {
@@ -1203,12 +1100,10 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 40: hit route(get nginx variable is nil)
+=== TEST 39: hit route(get nginx variable is nil)
 --- request
 GET /hello HTTP/1.1
 --- response_body
@@ -1216,12 +1111,10 @@ uri: /uri
 host: localhost
 version: nginx_var_does_not_exist
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]
 
 
 
-=== TEST 41: set route(rewrite uri based on ctx.var)
+=== TEST 40: set route(rewrite uri based on ctx.var)
 --- config
     location /t {
         content_by_lua_block {
@@ -1254,22 +1147,18 @@ x-real-ip: 127.0.0.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 42: hit route(upstream uri: should be /hello)
+=== TEST 41: hit route(upstream uri: should be /hello)
 --- request
 GET /test?new_uri=hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
-=== TEST 43: host with port
+=== TEST 42: host with port
 --- config
     location /t {
         content_by_lua_block {
@@ -1288,12 +1177,10 @@ hello world
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 44: set route(rewrite host with port)
+=== TEST 43: set route(rewrite host with port), ensure ngx.var.uri matched the rewritten version
 --- config
     location /t {
         content_by_lua_block {
@@ -1306,6 +1193,12 @@ done
                             "proxy-rewrite": {
                                 "uri": "/uri",
                                 "host": "test.com:6443"
+                            },
+                            "serverless-post-function": {
+                                "phase": "access",
+                                "functions" : ["return function(conf, ctx)
+                                    assert(ngx.var.uri == \"/uri\", \"proxy-rewrite do not call ngx.req.set_uri\")
+                                end"]
                             }
                         },
                         "upstream": {
@@ -1328,17 +1221,13 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 45: rewrite host with port
+=== TEST 44: rewrite host with port
 --- request
 GET /hello
 --- response_body
 uri: /uri
 host: test.com:6443
 x-real-ip: 127.0.0.1
---- no_error_log
-[error]

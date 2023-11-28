@@ -1,7 +1,8 @@
 ---
 title: echo
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Echo
 description: This document contains information about the Apache APISIX echo Plugin.
@@ -49,12 +50,12 @@ The `echo` Plugin is built as an example. It has missing cases and should **not*
 
 At least one of `before_body`, `body`, and `after_body` must be specified.
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `echo` Plugin for a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "echo": {
@@ -85,12 +86,12 @@ HTTP/1.1 200 OK
 before the body modification hello world
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `echo` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `echo` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

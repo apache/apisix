@@ -24,7 +24,7 @@ limitations under the License.
     <description>A dubbo backend for test based on dubbo-samples-tengine</description>
     <properties>
         <skip_maven_deploy>true</skip_maven_deploy>
-        <dubbo.version>2.7.15</dubbo.version>
+        <dubbo.version>2.7.21</dubbo.version>
     </properties>
     <modules>
         <module>dubbo-backend-interface</module>

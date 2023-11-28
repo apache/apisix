@@ -27,14 +27,14 @@ echo '
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: control_plane
-        control_plane:
-            host:
-                - https://127.0.0.1:12379
-            prefix: "/apisix"
-            timeout: 30
-            tls:
-                verify: false
+        config_provider: etcd
+    etcd:
+        host:
+            - https://127.0.0.1:12379
+        prefix: "/apisix"
+        timeout: 30
+        tls:
+            verify: false
 ' > conf/config.yaml
 
 make run
@@ -64,12 +64,12 @@ echo '
 deployment:
     role: data_plane
     role_data_plane:
-        config_provider: control_plane
-        control_plane:
-            host:
-                - https://127.0.0.1:12379
-            prefix: "/apisix"
-            timeout: 30
+        config_provider: etcd
+    etcd:
+        host:
+            - https://127.0.0.1:12379
+        prefix: "/apisix"
+        timeout: 30
 ' > conf/config.yaml
 
 out=$(make run 2>&1 || true)

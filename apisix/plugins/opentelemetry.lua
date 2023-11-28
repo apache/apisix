@@ -36,10 +36,9 @@ local span_status = require("opentelemetry.trace.span_status")
 local resource_new = require("opentelemetry.resource").new
 local attr = require("opentelemetry.attribute")
 
-local context_storage = require("opentelemetry.context_storage")
-local context = require("opentelemetry.context").new(context_storage)
-local carrier_new = require("opentelemetry.trace.propagation.carrier").new
-local trace_context = require("opentelemetry.trace.propagation.trace_context")
+local context = require("opentelemetry.context").new()
+local trace_context_propagator =
+                require("opentelemetry.trace.propagation.text_map.trace_context_propagator").new()
 
 local ngx     = ngx
 local ngx_var = ngx.var
@@ -48,11 +47,13 @@ local type    = type
 local pairs   = pairs
 local ipairs  = ipairs
 local unpack  = unpack
+local string_format = string.format
 
 local lrucache = core.lrucache.new({
     type = 'plugin', count = 128, ttl = 24 * 60 * 60,
 })
 
+local asterisk = string.byte("*", 1)
 
 local attr_schema = {
     type = "object",
@@ -112,6 +113,11 @@ local attr_schema = {
             },
             default = {},
         },
+        set_ngx_var = {
+          type = "boolean",
+          description = "set nginx variables",
+          default = false,
+        },
     },
 }
 
@@ -164,6 +170,13 @@ local schema = {
             default = {name = "always_off", options = {fraction = 0, root = {name = "always_off"}}}
         },
         additional_attributes = {
+            type = "array",
+            items = {
+                type = "string",
+                minLength = 1,
+            }
+        },
+        additional_header_prefix_attributes = {
             type = "array",
             items = {
                 type = "string",
@@ -273,55 +286,111 @@ local function create_tracer_obj(conf)
 end
 
 
+local function inject_attributes(attributes, wanted_attributes, source, with_prefix)
+    for _, key in ipairs(wanted_attributes) do
+        local is_key_a_match = #key >= 2 and key:byte(-1) == asterisk and with_prefix
+
+        if is_key_a_match then
+            local prefix = key:sub(0, -2)
+            for possible_key, value in pairs(source) do
+                if core.string.has_prefix(possible_key, prefix) then
+                    core.table.insert(attributes, attr.string(possible_key, value))
+                end
+            end
+        else
+            local val = source[key]
+            if val then
+                core.table.insert(attributes, attr.string(key, val))
+            end
+        end
+    end
+end
+
+
 function _M.rewrite(conf, api_ctx)
+    local vars = api_ctx.var
+
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
         return
     end
 
-    -- extract trace context from the headers of downstream HTTP request
-    local upstream_context = trace_context.extract(context, carrier_new())
+    local span_name = vars.method
+
     local attributes = {
-        attr.string("service", api_ctx.service_name),
-        attr.string("route", api_ctx.route_name),
+        attr.string("net.host.name", vars.host),
+        attr.string("http.method", vars.method),
+        attr.string("http.scheme", vars.scheme),
+        attr.string("http.target", vars.request_uri),
+        attr.string("http.user_agent", vars.http_user_agent),
     }
-    if conf.additional_attributes then
-        for _, key in ipairs(conf.additional_attributes) do
-            local val = api_ctx.var[key]
-            if val then
-                core.table.insert(attributes, attr.string(key, val))
-            end
-        end
+
+    if api_ctx.curr_req_matched then
+        table.insert(attributes, attr.string("apisix.route_id", api_ctx.route_id))
+        table.insert(attributes, attr.string("apisix.route_name", api_ctx.route_name))
+        table.insert(attributes, attr.string("http.route", api_ctx.curr_req_matched._path))
+        span_name = span_name .. " " .. api_ctx.curr_req_matched._path
     end
 
-    local ctx = tracer:start(upstream_context, api_ctx.var.request_uri, {
-        kind = span_kind.client,
+    if api_ctx.service_id then
+        table.insert(attributes, attr.string("apisix.service_id", api_ctx.service_id))
+        table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
+    end
+
+    if conf.additional_attributes then
+        inject_attributes(attributes, conf.additional_attributes, api_ctx.var, false)
+    end
+
+    if conf.additional_header_prefix_attributes then
+        inject_attributes(
+            attributes,
+            conf.additional_header_prefix_attributes,
+            core.request.headers(api_ctx),
+            true
+        )
+    end
+
+    -- extract trace context from the headers of downstream HTTP request
+    local upstream_context = trace_context_propagator:extract(context, ngx.req)
+
+    local ctx = tracer:start(upstream_context, span_name, {
+        kind = span_kind.server,
         attributes = attributes,
     })
-    ctx:attach()
+
+    if plugin_info.set_ngx_var then
+      local span_context = ctx:span():context()
+      ngx_var.opentelemetry_context_traceparent = string_format("00-%s-%s-%02x",
+                                                                 span_context.trace_id,
+                                                                 span_context.span_id,
+                                                                 span_context.trace_flags)
+      ngx_var.opentelemetry_trace_id = span_context.trace_id
+      ngx_var.opentelemetry_span_id = span_context.span_id
+    end
+
+    api_ctx.otel_context_token = ctx:attach()
 
     -- inject trace context into the headers of upstream HTTP request
-    trace_context.inject(ctx, carrier_new())
+    trace_context_propagator:inject(ctx, ngx.req)
 end
 
 
 function _M.delayed_body_filter(conf, api_ctx)
-    if ngx.arg[2] then
+    if api_ctx.otel_context_token and ngx.arg[2] then
         local ctx = context:current()
-        if not ctx then
-            return
-        end
-
-        local upstream_status = core.response.get_upstream_status(api_ctx)
-        ctx:detach()
+        ctx:detach(api_ctx.otel_context_token)
+        api_ctx.otel_context_token = nil
 
         -- get span from current context
         local span = ctx:span()
+        local upstream_status = core.response.get_upstream_status(api_ctx)
         if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.error,
+            span:set_status(span_status.ERROR,
                             "upstream response status: " .. upstream_status)
         end
+
+        span:set_attributes(attr.int("http.status_code", upstream_status))
 
         span:finish()
     end
@@ -331,15 +400,14 @@ end
 -- body_filter maybe not called because of empty http body response
 -- so we need to check if the span has finished in log phase
 function _M.log(conf, api_ctx)
-    local ctx = context:current()
-    if ctx then
+    if api_ctx.otel_context_token then
         -- ctx:detach() is not necessary, because of ctx is stored in ngx.ctx
         local upstream_status = core.response.get_upstream_status(api_ctx)
 
         -- get span from current context
-        local span = ctx:span()
+        local span = context:current():span()
         if upstream_status and upstream_status >= 500 then
-            span:set_status(span_status.error,
+            span:set_status(span_status.ERROR,
                     "upstream response status: " .. upstream_status)
         end
 

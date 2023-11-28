@@ -98,6 +98,7 @@ passed
 b3: 80f198ee56343ba864fe8b2a57d3eff7-e457b5a2e4d86bd1-1-05e3ac9a4f6e3b90
 --- response_headers
 x-b3-sampled: 1
+x-b3-traceid: 80f198ee56343ba864fe8b2a57d3eff7
 --- raw_response_headers_unlike
 b3:
 --- error_log
@@ -122,16 +123,21 @@ invalid b3 header
 === TEST 4: disable via b3
 --- more_headers
 b3: 80f198ee56343ba864fe8b2a57d3eff7-e457b5a2e4d86bd1-0-05e3ac9a4f6e3b90
---- response_headers
+--- response_headers_like
 x-b3-sampled: 0
+x-b3-traceid: 80f198ee56343ba864fe8b2a57d3eff7
+x-b3-parentspanid: e457b5a2e4d86bd1
+x-b3-spanid: \w+
 
 
 
 === TEST 5: disable via b3 (abbr)
 --- more_headers
 b3: 0
---- response_headers
+--- response_headers_like
 x-b3-sampled: 0
+x-b3-spanid: \w+
+x-b3-traceid: \w+
 
 
 
@@ -199,8 +205,6 @@ new span context: trace id: 80f198ee56343ba864fe8b2a57d3eff7, span id: e457b5a2e
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -254,5 +258,3 @@ qr/zipkin start_child_span apisix.response_span time: nil/
 ["GET /t", "GET /opentracing", "GET /opentracing", "GET /opentracing"]
 --- error_code eval
 [200, 200, 200, 403]
---- no_error_log
-[error]

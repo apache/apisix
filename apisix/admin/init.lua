@@ -16,15 +16,18 @@
 --
 local require = require
 local core = require("apisix.core")
+local get_uri_args = ngx.req.get_uri_args
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
 local v3_adapter = require("apisix.admin.v3_adapter")
+local utils = require("apisix.admin.utils")
 local ngx = ngx
 local get_method = ngx.req.get_method
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
 local ngx_worker_id = ngx.worker.id
 local tonumber = tonumber
+local tostring = tostring
 local str_lower = string.lower
 local reload_event = "/apisix/admin/plugins/reload"
 local ipairs = ipairs
@@ -54,6 +57,8 @@ local resources = {
     stream_routes   = require("apisix.admin.stream_routes"),
     plugin_metadata = require("apisix.admin.plugin_metadata"),
     plugin_configs  = require("apisix.admin.plugin_config"),
+    consumer_groups = require("apisix.admin.consumer_group"),
+    secrets         = require("apisix.admin.secrets"),
 }
 
 
@@ -63,8 +68,14 @@ local router
 
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
-    if not local_conf or not local_conf.apisix
-       or not local_conf.apisix.admin_key then
+
+    -- check if admin_key is required
+    if local_conf.deployment.admin.admin_key_required == false then
+        return true
+    end
+
+    local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
+    if not admin_key then
         return true
     end
 
@@ -75,7 +86,7 @@ local function check_token(ctx)
     end
 
     local admin
-    for i, row in ipairs(local_conf.apisix.admin_key) do
+    for i, row in ipairs(admin_key) do
         if req_token == row.key then
             admin = row
             break
@@ -94,6 +105,22 @@ local function check_token(ctx)
     return true
 end
 
+-- Set the `apictx` variable and check admin api token, if the check fails, the current
+-- request will be interrupted and an error response will be returned.
+--
+-- NOTE: This is a higher wrapper for `check_token` function.
+local function set_ctx_and_check_token()
+    local api_ctx = {}
+    core.ctx.set_vars_meta(api_ctx)
+    ngx.ctx.api_ctx = api_ctx
+
+    local ok, err = check_token(api_ctx)
+    if not ok then
+        core.log.warn("failed to check token: ", err)
+        core.response.exit(401, { error_msg = "failed to check token" })
+    end
+end
+
 
 local function strip_etcd_resp(data)
     if type(data) == "table"
@@ -110,22 +137,29 @@ local function strip_etcd_resp(data)
             data.node.createdIndex = nil
             data.node.modifiedIndex = nil
         end
+
+        data.count = nil
+        data.more = nil
+        data.prev_kvs = nil
+
+        if data.deleted then
+            -- We used to treat the type incorrectly. But for compatibility we follow
+            -- the existing type.
+            data.deleted = tostring(data.deleted)
+        end
     end
 
     return data
 end
 
 
-local function run()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
+local function head()
+    core.response.exit(200)
+end
 
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
-    end
+
+local function run()
+    set_ctx_and_check_token()
 
     local uri_segs = core.utils.split_uri(ngx.var.uri)
     core.log.info("uri: ", core.json.delay_encode(uri_segs))
@@ -141,7 +175,8 @@ local function run()
 
     if seg_res == "stream_routes" then
         local local_conf = core.config.local_conf()
-        if not local_conf.apisix.stream_proxy then
+        if local_conf.apisix.proxy_mode ~= "stream" and
+           local_conf.apisix.proxy_mode ~= "http&stream" then
             core.log.warn("stream mode is disabled, can not add any stream ",
                           "routes")
             core.response.exit(400, {error_msg = "stream mode is disabled, " ..
@@ -151,7 +186,7 @@ local function run()
 
     local resource = resources[seg_res]
     if not resource then
-        core.response.exit(404, {error_msg = "not found"})
+        core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
     end
 
     local method = str_lower(get_method())
@@ -184,46 +219,67 @@ local function run()
         end
     end
 
-    local code, data = resource[method](seg_id, req_body, seg_sub_path,
-                                        uri_args)
+    local code, data
+    if seg_res == "schema" or seg_res == "plugins" then
+        code, data = resource[method](seg_id, req_body, seg_sub_path, uri_args)
+    else
+        code, data = resource[method](resource, seg_id, req_body, seg_sub_path, uri_args)
+    end
+
     if code then
+        if method == "get" and plugin.enable_data_encryption then
+            if seg_res == "consumers" then
+                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
+            elseif seg_res == "plugin_metadata" then
+                utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
+            else
+                utils.decrypt_params(plugin.decrypt_conf, data)
+            end
+        end
+
         if v3_adapter.enable_v3() then
             core.response.set_header("X-API-VERSION", "v3")
         else
             core.response.set_header("X-API-VERSION", "v2")
         end
+        if resource.need_v3_filter then
+            data = v3_adapter.filter(data)
+        end
+
         data = strip_etcd_resp(data)
+
         core.response.exit(code, data)
     end
 end
 
 
 local function get_plugins_list()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
+    set_ctx_and_check_token()
+    local args = get_uri_args()
+    local subsystem = args["subsystem"]
+    -- If subsystem is passed then it should be either http or stream.
+    -- If it is not passed/nil then http will be default.
+    subsystem = subsystem or "http"
+    if subsystem == "http" or subsystem == "stream" then
+        local plugins = resources.plugins.get_plugins_list(subsystem)
+        core.response.exit(200, plugins)
     end
+    core.response.exit(400,"invalid subsystem passed")
+end
 
-    local plugins = resources.plugins.get_plugins_list()
-    core.response.exit(200, plugins)
+-- Handle unsupported request methods for the virtual "reload" plugin
+local function unsupported_methods_reload_plugin()
+    set_ctx_and_check_token()
+
+    core.response.exit(405, {
+        error_msg = "please use PUT method to reload the plugins, "
+                    .. get_method() .. " method is not allowed."
+    })
 end
 
 
 local function post_reload_plugins()
-    local api_ctx = {}
-    core.ctx.set_vars_meta(api_ctx)
-    ngx.ctx.api_ctx = api_ctx
-
-    local ok, err = check_token(api_ctx)
-    if not ok then
-        core.log.warn("failed to check token: ", err)
-        core.response.exit(401, {error_msg = "failed to check token"})
-    end
+    set_ctx_and_check_token()
 
     local success, err = events.post(reload_event, get_method(), ngx_time())
     if not success then
@@ -320,7 +376,47 @@ local function reload_plugins(data, event, source, pid)
 end
 
 
+local function schema_validate()
+    local uri_segs = core.utils.split_uri(ngx.var.uri)
+    core.log.info("uri: ", core.json.delay_encode(uri_segs))
+
+    local seg_res = uri_segs[6]
+    local resource = resources[seg_res]
+    if not resource then
+        core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
+    end
+
+    local req_body, err = core.request.get_body(MAX_REQ_BODY)
+    if err then
+        core.log.error("failed to read request body: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    if req_body then
+        local data, err = core.json.decode(req_body)
+        if err then
+            core.log.error("invalid request body: ", req_body, " err: ", err)
+            core.response.exit(400, {error_msg = "invalid request body: " .. err,
+                                     req_body = req_body})
+        end
+
+        req_body = data
+    end
+
+    local ok, err = core.schema.check(resource.schema, req_body)
+    if ok then
+        core.response.exit(200)
+    end
+    core.response.exit(400, {error_msg = err})
+end
+
+
 local uri_route = {
+    {
+        paths = [[/apisix/admin]],
+        methods = {"HEAD"},
+        handler = head,
+    },
     {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
@@ -332,9 +428,20 @@ local uri_route = {
         handler = get_plugins_list,
     },
     {
+        paths = [[/apisix/admin/schema/validate/*]],
+        methods = {"POST"},
+        handler = schema_validate,
+    },
+    {
         paths = reload_event,
         methods = {"PUT"},
         handler = post_reload_plugins,
+    },
+    -- Handle methods other than "PUT" on "/plugin/reload" to inform user
+    {
+        paths = reload_event,
+        methods = { "GET", "POST", "DELETE", "PATCH" },
+        handler = unsupported_methods_reload_plugin,
     },
 }
 
@@ -351,6 +458,13 @@ function _M.init_worker()
     events.register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
+        -- check if admin_key is required
+        if local_conf.deployment.admin.admin_key_required == false then
+            core.log.warn("Admin key is bypassed! ",
+                "If you are deploying APISIX in a production environment, ",
+                "please disable `admin_key_required` and set a secure admin key!")
+        end
+
         local ok, err = ngx_timer_at(0, function(premature)
             if premature then
                 return

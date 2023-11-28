@@ -1,5 +1,11 @@
 ---
-title: Global rule
+title: Global rules
+keywords:
+  - API 网关
+  - Apache APISIX
+  - Global Rules
+  - 全局规则
+description: 本文介绍了全局规则的概念以及如何启用全局规则。
 ---
 
 <!--
@@ -21,12 +27,20 @@ title: Global rule
 #
 -->
 
-[Plugin](plugin.md) 配置可直接绑定在 [Route](route.md) 上，也可以被绑定在 [Service](service.md) 或 [Consumer](consumer.md) 上，如果我们需要一个能作用于所有请求的 [Plugin](plugin.md) 该怎么办呢？
-这时候我们可以使用 `GlobalRule` 来注册一个全局的 [Plugin](plugin.md):
+## 描述
+
+[Plugin](plugin.md) 配置可直接绑定在 [Route](route.md) 上，也可以被绑定在 [Service](service.md) 或 [Consumer](consumer.md) 上。
+
+如果你需要一个能作用于所有请求的 Plugin，可以通过 Global Rules 启用一个全局的插件配置。
+
+全局规则相对于 Route、Service、Plugin Config、Consumer 中的插件配置，Global Rules 中的插件总是优先执行。
+
+## 使用示例
+
+以下示例展示了如何为所有请求启用 `limit-count` 插件：
 
 ```shell
-curl -X PUT \
-  https://{apisix_listen_address}/apisix/admin/global_rules/1 \
+curl http://127.0.0.1:9180/apisix/admin/global_rules/1 -X PUT \
   -H 'Content-Type: application/json' \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
@@ -42,10 +56,8 @@ curl -X PUT \
     }'
 ```
 
-如上所注册的 `limit-count` 插件将会作用于所有的请求。
-
-我们可以通过以下接口查看所有的 `GlobalRule`:
+你也可以通过以下命令查看所有的全局规则：
 
 ```shell
-curl https://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl http://127.0.0.1:9180/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```

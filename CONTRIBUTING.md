@@ -19,17 +19,14 @@
 
 # Contributing to APISIX
 
-Firstly, thanks for your interest in contributing! I hope that this will be a
-pleasant first experience for you, and that you will return to continue
+Firstly, thanks for your interest in contributing! I hope that this will be a pleasant first experience for you, and that you will return to continue
 contributing.
 
 ## How to contribute?
 
-Most of the contributions that we receive are code contributions, but you can
-also contribute to the documentation or simply report solid bugs
-for us to fix.
+Most of the contributions that we receive are code contributions, but you can also contribute to the documentation or simply report solid bugs for us to fix. Nor is code the only way to contribute to the project. We strongly value documentation, integration with other project, and gladly accept improvements for these aspects.
 
- For new contributors, please take a look at issues with a tag called [Good first issue](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or [Help wanted](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
+For new contributors, please take a look at issues with a tag called [Good first issue](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22) or [Help wanted](https://github.com/apache/apisix/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22).
 
 ## How to report a bug?
 
@@ -47,7 +44,7 @@ Once we've discussed your changes and you've got your code ready, make sure that
 * Includes tests for new functionality.
 * References the original issue in the description, e.g. "Resolves #123".
 * Has a [good commit message](http://tbaggery.com/2008/04/19/a-note-about-git-commit-messages.html).
-* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/semantic.yml).
+* Ensure your pull request's title starts from one of the word in the `types` section of [semantic.yml](https://github.com/apache/apisix/blob/master/.github/workflows/semantic.yml).
 * Follow the [PR manners](https://raw.githubusercontent.com/apache/apisix/master/.github/PULL_REQUEST_TEMPLATE.md)
 
 ## Contribution Guidelines for Documentation
@@ -141,11 +138,13 @@ Once we've discussed your changes and you've got your code ready, make sure that
       Please take a look at `t/plugin/limit-conn.t` and `t/plugin/limit-conn2.t`.
     * For more details, see the [testing framework](https://github.com/apache/apisix/blob/master/docs/en/latest/internal/testing-framework.md)
 
-## Contributor T-shirt
+## Contributor gifts
 
-If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the very special Contributor T-shirt! It's always been the community effort that has made Apache APISIX be understood and used by more developers. Go ahead and fill out the [Contributors Submissions form](https://docs.google.com/forms/d/e/1FAIpQLSdXEpCs60UK49UlOGdBCQSXr7DYz3enyT4GJPKrYQmYfVLPKQ/viewform).
+If you have contributed to Apache APISIX, no matter it is a code contribution to fix a bug or a feature request, or a documentation change, Congratulations! You are eligible to receive the APISIX special gifts with a digital certificate! It's always been the community effort that has made Apache APISIX be understood and used by more developers.
 
-![Contributor T-shirt](https://static.apiseven.com/202108/1642392020136-19a7c07b-27de-4c29-9168-099532d2638f.jpg)
+![Contributor gifts](https://static.apiseven.com/2022/12/29/63acfb2f208e1.png)
+
+Contributors can request gifts by filling out this [Google form](https://forms.gle/DhPL96LnJwuaHjHU7) or [QQ Form](https://wj.qq.com/s2/11438041/7b07/). After filling in the form, please wait patiently. The community needs some time to review submissions.
 
 ## Do you have questions about the source code?
 

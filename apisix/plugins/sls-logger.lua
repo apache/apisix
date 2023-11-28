@@ -17,12 +17,11 @@
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local plugin = require("apisix.plugin")
 
 
 local plugin_name = "sls-logger"
 local ngx = ngx
-local rf5424 = require("apisix.plugins.slslog.rfc5424")
+local rf5424 = require("apisix.utils.rfc5424")
 local tcp = ngx.socket.tcp
 local tostring = tostring
 local ipairs = ipairs
@@ -35,6 +34,7 @@ local schema = {
     properties = {
         include_req_body = {type = "boolean", default = false},
         timeout = {type = "integer", minimum = 1, default= 5000},
+        log_format = {type = "object"},
         host = {type = "string"},
         port = {type = "integer"},
         project = {type = "string"},
@@ -42,6 +42,7 @@ local schema = {
         access_key_id = {type = "string"},
         access_key_secret = {type ="string"}
     },
+    encrypt_fields = {"access_key_secret"},
     required = {"host", "port", "project", "logstore", "access_key_id", "access_key_secret"}
 }
 
@@ -130,26 +131,21 @@ end
 
 -- log phase in APISIX
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local entry
-
-    if metadata and metadata.value.log_format
-       and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
-    end
-
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     local json_str, err = core.json.encode(entry)
     if not json_str then
         core.log.error('error occurred while encoding the data: ', err)
         return
     end
 
-    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host,"apisix",
-                                      ctx.var.pid, conf.project, conf.logstore,
-                                      conf.access_key_id, conf.access_key_secret, json_str)
+    local structured_data = {
+        {name = "project", value = conf.project},
+        {name = "logstore", value = conf.logstore},
+        {name = "access-key-id", value = conf.access_key_id},
+        {name = "access-key-secret", value = conf.access_key_secret},
+    }
+    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
+                                      ctx.var.pid, json_str, structured_data)
 
     local process_context = {
         data = rf5424_data,

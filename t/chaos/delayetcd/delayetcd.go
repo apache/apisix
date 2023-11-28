@@ -100,6 +100,8 @@ func deleteChaosAndCheck(eSilent *httpexpect.Expect, cliSet *utils.ClientSet, ch
 var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 	ctx := context.Background()
 	e := httpexpect.New(ginkgo.GinkgoT(), utils.Host)
+	eDataPanel := httpexpect.New(ginkgo.GinkgoT(), utils.DataPanelHost)
+	ePrometheus := httpexpect.New(ginkgo.GinkgoT(), utils.PrometheusHost)
 	eSilent := utils.GetSilentHttpexpectClient()
 
 	var cliSet *utils.ClientSet
@@ -123,8 +125,8 @@ var _ = ginkgo.Describe("Test APISIX Delay When Add ETCD Delay", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
 
-		utils.WaitUntilMethodSucceed(e, http.MethodGet, 1)
-		utils.TestPrometheusEtcdMetric(e, 1)
+		utils.WaitUntilMethodSucceed(eDataPanel, http.MethodGet, 1)
+		utils.TestPrometheusEtcdMetric(ePrometheus, 1)
 	})
 
 	// get default

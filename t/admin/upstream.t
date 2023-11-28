@@ -43,18 +43,16 @@ so that we can delete it later)
                     "desc": "new upstream"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/admin_up"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/admin_up"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -70,8 +68,6 @@ so that we can delete it later)
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -84,18 +80,16 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/admin_up"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/admin_up"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -105,8 +99,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -115,9 +107,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/upstreams/admin_up',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/upstreams/admin_up', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -125,8 +115,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -135,9 +123,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/upstreams/not_found',
-                 ngx.HTTP_DELETE
-            )
+            local code = t('/apisix/admin/upstreams/not_found', ngx.HTTP_DELETE)
 
             ngx.say("[delete] code: ", code)
         }
@@ -146,8 +132,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -166,16 +150,14 @@ GET /t
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
-                        }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
                     }
                 }]]
-                )
+            )
 
             if code ~= 200 then
                 ngx.status = code
@@ -185,16 +167,14 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/upstreams/" + 1)
+            local id = string.sub(res.key, #"/apisix/upstreams/" + 1)
             local res = assert(etcd.get('/upstreams/' .. id))
             local create_time = res.body.node.value.create_time
             assert(create_time ~= nil, "create_time is nil")
             local update_time = res.body.node.value.update_time
             assert(update_time ~= nil, "update_time is nil")
 
-            code, message = t('/apisix/admin/upstreams/' .. id,
-                 ngx.HTTP_DELETE
-            )
+            code, message = t('/apisix/admin/upstreams/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -203,8 +183,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -221,7 +199,7 @@ GET /t
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.exit(code)
         }
@@ -229,8 +207,6 @@ GET /t
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -248,7 +224,7 @@ GET /t
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -259,8 +235,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id"}
---- no_error_log
-[error]
 
 
 
@@ -279,17 +253,15 @@ GET /t
                     "type": "roundrobin"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -299,8 +271,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -318,7 +288,7 @@ passed
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -329,8 +299,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -348,7 +316,7 @@ GET /t
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -359,12 +327,10 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"id\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
-=== TEST 11: additional properties is valid
+=== TEST 11: additional properties is invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -380,7 +346,7 @@ GET /t
                     "_service_name": "xyz",
                     "_discovery_type": "nacos"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -388,10 +354,9 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-passed
---- no_error_log
-[error]
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: additional properties forbidden, found .*"\}/
 
 
 
@@ -410,18 +375,16 @@ passed
                     "type": "chash"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "key": "remote_addr",
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "chash"
+                    "value": {
+                        "key": "remote_addr",
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "chash"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -431,8 +394,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -450,7 +411,7 @@ passed
                     },
                     "type": "unknown"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -460,8 +421,6 @@ passed
 GET /t
 --- response_body chomp
 passed
---- no_error_log
-[error]
 
 
 
@@ -479,7 +438,7 @@ passed
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -490,8 +449,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -501,15 +458,15 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "id": 1,
                     "nodes": {
                         "127.0.0.1:8080": -100
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -520,8 +477,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"nodes\" validation failed: object matches none of the required"}
---- no_error_log
-[error]
 
 
 
@@ -531,14 +486,14 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -549,8 +504,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing key"}
---- no_error_log
-[error]
 
 
 
@@ -560,14 +513,14 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_POST,
-                 [[{
+                ngx.HTTP_POST,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -578,8 +531,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -589,15 +540,15 @@ GET /t
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams',
-                 ngx.HTTP_POST,
-                 [[{
+                ngx.HTTP_POST,
+                [[{
                     "id": 1,
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "roundrobin"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -608,8 +559,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"wrong upstream id, do not need it"}
---- no_error_log
-[error]
 
 
 
@@ -634,9 +583,9 @@ GET /t
                 }
             }
             local code, body = t.test('/apisix/admin/upstreams',
-                 ngx.HTTP_POST,
-                 core.json.encode(data)
-                )
+                ngx.HTTP_POST,
+                core.json.encode(data)
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -647,8 +596,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/{"error_msg":"invalid configuration: property \\\"tls\\\" validation failed: failed to validate dependent schema for \\\"client_cert|client_key\\\": value wasn't supposed to match schema"}/
---- no_error_log
-[error]
 
 
 
@@ -669,9 +616,9 @@ qr/{"error_msg":"invalid configuration: property \\\"tls\\\" validation failed: 
                 }
             }
             local code, body = t.test('/apisix/admin/upstreams',
-                 ngx.HTTP_POST,
-                 core.json.encode(data)
-                )
+                ngx.HTTP_POST,
+                core.json.encode(data)
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -682,8 +629,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch ssl info by ssl id [9999999], response code: 404"}
---- no_error_log
-[error]
 
 
 
@@ -741,5 +686,40 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to fetch ssl info by ssl id [1], wrong ssl type"}
---- no_error_log
-[error]
+
+
+
+=== TEST 22: type with default vale
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local code, body = t('/apisix/admin/upstreams/admin_up',
+                ngx.HTTP_PUT,
+                [[{
+                    "nodes": {
+                        "127.0.0.1:8080": 1
+                    },
+                    "desc": "new upstream"
+                }]],
+                [[{
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/admin_up"
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

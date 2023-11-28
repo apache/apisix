@@ -60,18 +60,23 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.key = nil
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            res.node.value.cert = ""
-            res.node.value.key = ""
-            assert(res.node.value.id ~= nil)
-            res.node.value.id = nil
+            assert(res.key ~= nil)
+            res.key = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
+            assert(res.value.cert ~= nil)
+            res.value.cert = ""
+            assert(res.value.key ~= nil)
+            res.value.key = ""
+            assert(res.value.id ~= nil)
+            res.value.id = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"value":{"cert":"","key":"","sni":"not-unwanted-post.com","status":1,"type":"server"}}}
+{"value":{"cert":"","key":"","sni":"not-unwanted-post.com","status":1,"type":"server"}}
 
 
 
@@ -96,15 +101,19 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            res.node.value.cert = ""
-            res.node.value.key = ""
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
+            assert(res.value.cert ~= nil)
+            res.value.cert = ""
+            assert(res.value.key ~= nil)
+            res.value.key = ""
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1,"type":"server"}}}
+{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1,"type":"server"}}
 
 
 
@@ -129,15 +138,19 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
-            res.node.value.cert = ""
-            res.node.value.key = ""
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
+            assert(res.value.cert ~= nil)
+            res.value.cert = ""
+            assert(res.value.key ~= nil)
+            res.value.key = ""
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1,"type":"server"}}}
+{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1,"type":"server"}}
 
 
 
@@ -158,21 +171,22 @@ __DATA__
             end
 
             res = json.decode(res)
-            local value = res.node.value
-            assert(value.create_time ~= nil)
-            value.create_time = nil
-            assert(value.update_time ~= nil)
-            value.update_time = nil
-            assert(value.cert ~= nil)
-            value.cert = ""
-            assert(value.key == nil)
-            assert(res.count ~= nil)
-            res.count = nil
+            assert(res.createdIndex ~= nil)
+            res.createdIndex = nil
+            assert(res.modifiedIndex ~= nil)
+            res.modifiedIndex = nil
+            assert(res.value.create_time ~= nil)
+            res.value.create_time = nil
+            assert(res.value.update_time ~= nil)
+            res.value.update_time = nil
+            assert(res.value.cert ~= nil)
+            res.value.cert = ""
+            assert(res.value.key == nil)
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","sni":"t.com","status":1,"type":"server"}}}
+{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","sni":"t.com","status":1,"type":"server"}}
 
 
 
@@ -200,7 +214,7 @@ __DATA__
         }
     }
 --- response_body
-{"deleted":"1","key":"/apisix/ssls/1","node":{}}
+{"deleted":"1","key":"/apisix/ssls/1"}
 
 
 
@@ -417,7 +431,6 @@ qr/"snis":\["update1.com","update2.com"\]/
 --- yaml_config
 apisix:
     node_listen: 1984
-    admin_key: null
     ssl:
         key_encrypt_salt: "edd1c9f0985e76a2"
 --- config
@@ -441,8 +454,8 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.key == ssl_key)
-            ngx.say(res.node.value.keys[1] == ssl_key)
+            ngx.say(res.value.key == ssl_key)
+            ngx.say(res.value.keys[1] == ssl_key)
         }
     }
 --- response_body
@@ -455,7 +468,6 @@ false
 --- yaml_config
 apisix:
     node_listen: 1984
-    admin_key: null
     ssl:
         key_encrypt_salt: "edd1c9f0985e76a2"
 --- config
@@ -477,7 +489,7 @@ apisix:
             end
 
             res = json.decode(res)
-            ngx.say(res.node.value.keys[1] == ssl_key)
+            ngx.say(res.value.keys[1] == ssl_key)
         }
     }
 --- response_body

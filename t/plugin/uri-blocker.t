@@ -52,8 +52,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing ) in \".+(\""}
---- no_error_log
-[error]
 
 
 
@@ -84,8 +82,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -117,8 +113,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing ) in \"^b(\""}
---- no_error_log
-[error]
 
 
 
@@ -155,8 +149,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -164,8 +156,6 @@ passed
 --- request
 GET /hello?aa=1
 --- error_code: 403
---- no_error_log
-[error]
 --- error_log
 concat block_rules: aa
 
@@ -174,8 +164,6 @@ concat block_rules: aa
 === TEST 6: miss block rule
 --- request
 GET /hello?bb=2
---- no_error_log
-[error]
 --- error_log
 concat block_rules: aa
 
@@ -214,8 +202,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -223,8 +209,6 @@ passed
 --- request
 GET /hello?x=bb
 --- error_code: 403
---- no_error_log
-[error]
 --- error_log
 concat block_rules: aa|bb|c\d+,
 
@@ -234,8 +218,6 @@ concat block_rules: aa|bb|c\d+,
 --- request
 GET /hello?bb=2
 --- error_code: 403
---- no_error_log
-[error]
 --- error_log
 concat block_rules: aa|bb|c\d+,
 
@@ -245,16 +227,12 @@ concat block_rules: aa|bb|c\d+,
 --- request
 GET /hello?c1=2
 --- error_code: 403
---- no_error_log
-[error]
 
 
 
 === TEST 11: not hit block rule
 --- request
 GET /hello?cc=2
---- no_error_log
-[error]
 
 
 
@@ -291,8 +269,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -300,8 +276,6 @@ passed
 --- request
 GET /hello?name=;select%20from%20sys
 --- error_code: 403
---- no_error_log
-[error]
 --- error_log
 concat block_rules: select.+(from|limit)|(?:(union(.*?)select)),
 
@@ -311,16 +285,12 @@ concat block_rules: select.+(from|limit)|(?:(union(.*?)select)),
 --- request
 GET /hello?name=;union%20select%20
 --- error_code: 403
---- no_error_log
-[error]
 
 
 
 === TEST 15: not hit block rule
 --- request
 GET /hello?cc=2
---- no_error_log
-[error]
 
 
 
@@ -375,8 +345,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -412,8 +380,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -423,8 +389,6 @@ GET /hello?aa=1
 --- error_code: 403
 --- response_body
 {"error_msg":"access is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -461,8 +425,6 @@ location /t {
 }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -472,8 +434,6 @@ GET /hello?aa=1
 --- error_code: 403
 --- response_body
 {"error_msg":"access is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -508,5 +468,3 @@ GET /t
 --- request
 GET /./internal/x?aa=1
 --- error_code: 403
---- no_error_log
-[error]

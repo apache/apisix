@@ -320,18 +320,14 @@ end
 
 local function format_consul_params(consul_conf)
     local consul_server_list = core.table.new(0, #consul_conf.servers)
-    local args
+    local args = {
+        token = consul_conf.token,
+        recurse = true
+    }
 
-    if consul_conf.keepalive == false then
-        args = {
-            recurse = true,
-        }
-    elseif consul_conf.keepalive then
-        args = {
-            recurse = true,
-            wait = consul_conf.timeout.wait, --blocked wait!=0; unblocked by wait=0
-            index = 0,
-        }
+    if consul_conf.keepalive then
+        args.wait = consul_conf.timeout.wait --blocked wait!=0; unblocked by wait=0
+        args.index = 0
     end
 
     for _, v in pairs(consul_conf.servers) do

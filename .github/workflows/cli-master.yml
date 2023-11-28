@@ -26,14 +26,14 @@ jobs:
       matrix:
         job_name:
           - linux_apisix_master_luarocks
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     timeout-minutes: 15
     env:
       OPENRESTY_VERSION: default
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 

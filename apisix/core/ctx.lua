@@ -190,6 +190,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
 
+        upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
 
         upstream_cache_zone        = true,
@@ -198,15 +199,21 @@ do
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
 
-        var_x_forwarded_proto = true,
-        var_x_forwarded_port  = true,
+        var_x_forwarded_proto      = true,
+        var_x_forwarded_port       = true,
+        var_x_forwarded_host       = true,
     }
 
     -- sort in alphabetical
     local apisix_var_names = {
         balancer_ip = true,
         balancer_port = true,
+        consumer_group_id = true,
         consumer_name = true,
+        resp_body = function(ctx)
+            -- only for logger and requires the logger to have a special configuration
+            return ctx.resp_body or ''
+        end,
         route_id = true,
         route_name = true,
         service_id = true,
@@ -253,7 +260,9 @@ do
 
             elseif core_str.has_prefix(key, "post_arg_") then
                 -- only match default post form
-                if request.header(nil, "Content-Type") == "application/x-www-form-urlencoded" then
+                local content_type = request.header(nil, "Content-Type")
+                if content_type ~= nil and core_str.has_prefix(content_type,
+                        "application/x-www-form-urlencoded") then
                     local arg_key = sub_str(key, 10)
                     local args = request.get_post_args()[arg_key]
                     if args then
@@ -317,6 +326,7 @@ do
 -- @function core.ctx.register_var
 -- @tparam string name custom variable name
 -- @tparam function getter The fetch function for custom variables.
+-- @tparam table opts An optional options table which controls the behavior about the variable
 -- @usage
 -- local core = require "apisix.core"
 --
@@ -327,12 +337,21 @@ do
 --     end
 --     return nil
 -- end)
-function _M.register_var(name, getter)
+--
+-- We support the options below in the `opts`:
+-- * no_cacheable: if the result of getter is cacheable or not. Default to `false`.
+function _M.register_var(name, getter, opts)
     if type(getter) ~= "function" then
         error("the getter of registered var should be a function")
     end
 
     apisix_var_names[name] = getter
+
+    if opts then
+        if opts.no_cacheable then
+            no_cacheable_var_names[name] = true
+        end
+    end
 end
 
 function _M.set_vars_meta(ctx)

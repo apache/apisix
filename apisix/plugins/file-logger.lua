@@ -16,7 +16,7 @@
 --
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
-local plugin       =   require("apisix.plugin")
+local expr         =   require("resty.expr.v1")
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
@@ -31,6 +31,22 @@ local schema = {
         path = {
             type = "string"
         },
+        log_format = {type = "object"},
+        include_resp_body = {type = "boolean", default = false},
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        match = {
+            type = "array",
+            maxItems = 20,
+            items = {
+                type = "array",
+            },
+        }
     },
     required = {"path"}
 }
@@ -57,6 +73,12 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+    if conf.match then
+        local ok, err = expr.new(conf.match)
+        if not ok then
+            return nil, "failed to validate the 'match' expression: " .. err
+        end
+    end
     return core.schema.check(schema, conf)
 end
 
@@ -74,6 +96,9 @@ if is_apisix_or then
         if not file then
             return nil, err
         end
+
+        -- it will case output problem with buffer when log is larger than buffer
+        file:setvbuf("no")
 
         handler.file = file
         handler.open_time = ngx.now() * 1000
@@ -116,11 +141,14 @@ local function write_file_data(conf, log_message)
     if not file then
         core.log.error("failed to open file: ", conf.path, ", error info: ", err)
     else
-        local ok, err = file:write(msg, '\n')
+        -- file:write(msg, "\n") will call fwrite several times
+        -- which will cause problem with the log output
+        -- it should be atomic
+        msg = msg .. "\n"
+        -- write to file directly, no need flush
+        local ok, err = file:write(msg)
         if not ok then
             core.log.error("failed to write file: ", conf.path, ", error info: ", err)
-        else
-            file:flush()
         end
 
         -- file will be closed by gc, if open_file_cache exists
@@ -130,19 +158,15 @@ local function write_file_data(conf, log_message)
     end
 end
 
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
+end
 
 function _M.log(conf, ctx)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local entry
-
-    if metadata and metadata.value.log_format
-        and core.table.nkeys(metadata.value.log_format) > 0
-    then
-        entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-    else
-        entry = log_util.get_full_log(ngx, conf)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    if entry == nil then
+        return
     end
-
     write_file_data(conf, entry)
 end
 

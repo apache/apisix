@@ -24,8 +24,10 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -51,8 +53,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -102,8 +102,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -133,8 +131,6 @@ upstreams:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -144,20 +140,18 @@ hello world
 routes:
     -
         id: 1
-        uri: /get
+        uri: /hello
         upstream_id: 1
 upstreams:
     -
         id: 1
         nodes:
-            "httpbin.org:80": 1
+            "test.com:1980": 1
         type: roundrobin
 #END
 --- request
-GET /get
+GET /hello
 --- error_code: 200
---- no_error_log
-[error]
 
 
 
@@ -167,19 +161,19 @@ GET /get
 routes:
     -
         id: 1
-        uri: /get
+        uri: /hello
         upstream_id: 1
 upstreams:
     -
         id: 1
         nodes:
-            "httpbin.org:80": 1
+            "test.com:1980": 1
         type: chash
         hash_on: header
         key: "$aaa"
 #END
 --- request
-GET /get
+GET /hello
 --- error_code: 502
 --- error_log
 invalid configuration: failed to match pattern
@@ -210,5 +204,3 @@ GET /hello
 test: one
 --- error_log
 proxy request to 127.0.0.1:1980
---- no_error_log
-[error]

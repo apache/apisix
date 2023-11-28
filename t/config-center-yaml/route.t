@@ -24,8 +24,10 @@ no_shuffle();
 our $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
 run_tests();
@@ -49,9 +51,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -72,9 +72,7 @@ routes:
 GET /hello
 --- error_code: 404
 --- error_log
-use config_center: yaml
---- no_error_log
-[error]
+use config_provider: yaml
 
 
 
@@ -97,8 +95,6 @@ host: foo.com
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -144,19 +140,15 @@ routes:
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
 === TEST 6: route with bad plugin, radixtree_host_uri
 --- yaml_config
-apisix:
-    node_listen: 1984
-    config_center: yaml
-    enable_admin: false
-    router:
-        http: "radixtree_host_uri"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -180,12 +172,10 @@ property "uri" validation failed
 
 === TEST 7: fix route with default value
 --- yaml_config
-apisix:
-    node_listen: 1984
-    config_center: yaml
-    enable_admin: false
-    router:
-        http: "radixtree_host_uri"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -208,12 +198,10 @@ GET /hello
 
 === TEST 8: invalid route, bad vars operator
 --- yaml_config
-apisix:
-    node_listen: 1984
-    config_center: yaml
-    enable_admin: false
-    router:
-        http: "radixtree_host_uri"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -231,6 +219,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 404
+--- error_log
+failed to validate the 'vars' expression
 
 
 
@@ -238,8 +228,10 @@ GET /hello
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 --- apisix_yaml
 routes:
   -
@@ -255,6 +247,8 @@ routes:
 --- request
 GET /hello
 --- error_code: 200
+--- error_log
+missing loaded script object
 
 
 
@@ -279,8 +273,6 @@ host: v1_test-api.com
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 

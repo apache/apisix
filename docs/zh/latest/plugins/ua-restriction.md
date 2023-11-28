@@ -1,8 +1,8 @@
 ---
 title: ua-restriction
 keywords:
-  - APISIX
-  - API Gateway
+  - Apache APISIX
+  - API 网关
   - UA restriction
 description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法，通过该插件可以将指定的 User-Agent 列入白名单或黑名单来限制对服务或路由的访问。
 ---
@@ -43,7 +43,7 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 
 :::note
 
-`allowlist` 和 `denylist` 可以同时启用。同时启用时，插件会根据 `User-Agent` 先检查 `allowlist`，再检查 `denylist`。
+`allowlist` 和 `denylist` 不可以同时启用。
 
 :::
 
@@ -52,7 +52,7 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 以下示例展示了如何在指定路由上启用并配置 `ua-restriction` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -120,12 +120,12 @@ HTTP/1.1 403 Forbidden
 {"message":"Not allowed"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `ua-restriction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

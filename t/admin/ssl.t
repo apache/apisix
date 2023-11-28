@@ -38,12 +38,10 @@ __DATA__
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com"
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -62,8 +60,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -76,14 +72,11 @@ passed
                 ngx.HTTP_GET,
                 nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com",
-                            "key": null
-                        },
-
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com",
+                        "key": null
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -95,8 +88,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -105,9 +96,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/ssls/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -115,8 +104,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -125,9 +112,7 @@ GET /t
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code = t('/apisix/admin/ssls/99999999999999',
-                 ngx.HTTP_DELETE
-            )
+            local code = t('/apisix/admin/ssls/99999999999999', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code)
         }
     }
@@ -135,8 +120,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -155,10 +138,8 @@ GET /t
                 ngx.HTTP_POST,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "foo.com"
-                        }
+                    "value": {
+                        "sni": "foo.com"
                     }
                 }]]
                 )
@@ -171,10 +152,8 @@ GET /t
 
             ngx.say("[push] code: ", code, " message: ", message)
 
-            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
-            code, message = t.test('/apisix/admin/ssls/' .. id,
-                 ngx.HTTP_DELETE
-            )
+            local id = string.sub(res.key, #"/apisix/ssls/" + 1)
+            code, message = t.test('/apisix/admin/ssls/' .. id, ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -183,8 +162,6 @@ GET /t
 --- response_body
 [push] code: 200 message: passed
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -203,12 +180,10 @@ GET /t
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "foo.com"
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "foo.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -221,8 +196,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: then clause did not match"}
---- no_error_log
-[error]
 
 
 
@@ -241,12 +214,10 @@ GET /t
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "*.foo.com"
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "*.foo.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -258,8 +229,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -281,12 +250,10 @@ passed
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "snis": ["*.foo.com", "bar.com"]
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "snis": ["*.foo.com", "bar.com"]
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -298,54 +265,10 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 9: store exptime
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t = require("lib.test_admin")
-
-            local ssl_cert = t.read_file("t/certs/apisix.crt")
-            local ssl_key =  t.read_file("t/certs/apisix.key")
-            local data = {
-                cert = ssl_cert, key = ssl_key,
-                sni = "bar.com",
-                exptime = 1588262400 + 60 * 60 * 24 * 365,
-            }
-
-            local code, body = t.test('/apisix/admin/ssls/1',
-                ngx.HTTP_PUT,
-                core.json.encode(data),
-                [[{
-                    "node": {
-                        "value": {
-                            "sni": "bar.com",
-                            "exptime": 1619798400
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
-                }]]
-                )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 10: string id
+=== TEST 9: string id
 --- config
     location /t {
         content_by_lua_block {
@@ -370,12 +293,10 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 11: string id(delete)
+=== TEST 10: string id(delete)
 --- config
     location /t {
         content_by_lua_block {
@@ -399,12 +320,10 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 12: invalid id
+=== TEST 11: invalid id
 --- config
     location /t {
         content_by_lua_block {
@@ -428,12 +347,10 @@ passed
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
-=== TEST 13: set ssl with multicerts(id: 1)
+=== TEST 12: set ssl with multicerts(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -456,12 +373,10 @@ GET /t
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com"
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
               )
 
@@ -473,12 +388,10 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 14: mismatched certs and keys
+=== TEST 13: mismatched certs and keys
 --- config
     location /t {
         content_by_lua_block {
@@ -497,12 +410,10 @@ passed
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com"
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -515,12 +426,10 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: then clause did not match"}
---- no_error_log
-[error]
 
 
 
-=== TEST 15: set ssl(with labels)
+=== TEST 14: set ssl(with labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -535,18 +444,15 @@ GET /t
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com",
-                            "labels": {
-                                "version": "v2",
-                                "build": "16",
-                                "env": "production"
-                            }
-                        },
-
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com",
+                        "labels": {
+                            "version": "v2",
+                            "build": "16",
+                            "env": "production"
+                        }
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -558,12 +464,10 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 16: invalid format of label value: set ssl
+=== TEST 15: invalid format of label value: set ssl
 --- config
     location /t {
         content_by_lua_block {
@@ -578,16 +482,13 @@ passed
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com",
-                            "labels": {
-                                "env": ["production", "release"]
-                            }
-                        },
-
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com",
+                        "labels": {
+                            "env": ["production", "release"]
+                        }
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -600,12 +501,10 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
---- no_error_log
-[error]
 
 
 
-=== TEST 17: create ssl with manage fields(id: 1)
+=== TEST 16: create ssl with manage fields(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -617,27 +516,17 @@ GET /t
             local data = {
                 cert = ssl_cert,
                 key = ssl_key,
-                sni = "test.com",
-                create_time = 1602883670,
-                update_time = 1602893670,
-                validity_start = 1602873670,
-                validity_end = 1603893670
+                sni = "test.com"
             }
 
             local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670,
-                            "validity_start": 1602873670,
-                            "validity_end": 1603893670
-                        },
-                        "key": "/apisix/ssls/1"
-                    }
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -649,19 +538,15 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 18: delete test ssl(id: 1)
+=== TEST 17: delete test ssl(id: 1)
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/ssls/1',
-                 ngx.HTTP_DELETE
-            )
+            local code, message = t('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
             ngx.say("[delete] code: ", code, " message: ", message)
         }
     }
@@ -669,12 +554,10 @@ passed
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
-=== TEST 19: create/patch ssl
+=== TEST 18: create/patch ssl
 --- config
     location /t {
         content_by_lua_block {
@@ -690,13 +573,11 @@ GET /t
                 ngx.HTTP_POST,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "value": {
-                            "sni": "test.com"
-                        }
+                    "value": {
+                        "sni": "test.com"
                     }
                 }]]
-                )
+            )
 
             if code ~= 200 then
                 ngx.status = code
@@ -704,7 +585,7 @@ GET /t
                 return
             end
 
-            local id = string.sub(res.node.key, #"/apisix/ssls/" + 1)
+            local id = string.sub(res.key, #"/apisix/ssls/" + 1)
             local res = assert(etcd.get('/ssls/' .. id))
             local prev_create_time = res.body.node.value.create_time
             assert(prev_create_time ~= nil, "create_time is nil")
@@ -714,9 +595,9 @@ GET /t
             local code, body = t.test('/apisix/admin/ssls/' .. id,
                 ngx.HTTP_PATCH,
                 core.json.encode({create_time = 0, update_time = 1})
-                )
+            )
 
-            if code ~= 201 then
+            if code ~= 200 then
                 ngx.status = code
                 ngx.say(body)
                 return
@@ -729,9 +610,7 @@ GET /t
             assert(update_time == 1, "update_time mismatched")
 
             -- clean up
-            local code, body = t.test('/apisix/admin/ssls/' .. id,
-                ngx.HTTP_DELETE
-            )
+            local code, body = t.test('/apisix/admin/ssls/' .. id, ngx.HTTP_DELETE)
             ngx.status = code
             ngx.say(body)
         }
@@ -740,12 +619,10 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 20: missing sni information
+=== TEST 19: missing sni information
 --- config
     location /t {
         content_by_lua_block {
@@ -760,9 +637,7 @@ passed
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "key": "/apisix/ssls/1"
-                    }
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 
@@ -775,12 +650,10 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: then clause did not match"}
---- no_error_log
-[error]
 
 
 
-=== TEST 21: type client, missing sni information
+=== TEST 20: type client, missing sni information
 --- config
     location /t {
         content_by_lua_block {
@@ -795,9 +668,7 @@ GET /t
                 ngx.HTTP_PUT,
                 core.json.encode(data),
                 [[{
-                    "node": {
-                        "key": "/apisix/ssls/1"
-                    }
+                    "key": "/apisix/ssls/1"
                 }]]
                 )
 

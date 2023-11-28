@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 
-FROM java
+FROM eclipse-temurin:8
 
 ENV SUFFIX_NUM=${SUFFIX_NUM:-1}
 ENV NACOS_ADDR=${NACOS_ADDR:-127.0.0.1:8848}

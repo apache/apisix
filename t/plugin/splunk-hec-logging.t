@@ -24,10 +24,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -149,7 +145,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Invalid token
+Batch Processor[splunk-hec-logging] failed to process entries: failed to send splunk, Invalid authorization
 Batch Processor[splunk-hec-logging] exceeded the max_retry_count
 
 
@@ -196,3 +192,237 @@ GET /hello
 --- wait: 2
 --- response_body
 hello world
+
+
+
+=== TEST 6: bad custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": "'$host' '$time_iso8601'"
+                 }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.print(body)
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"log_format\" validation failed: wrong type: expected object, got string"}
+
+
+
+=== TEST 7: set route to test custom log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "client_ip": "$remote_addr",
+                            "message_1":"test custom log format in plugin"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1982"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:18088/services/collector",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        batch_max_size = 3,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- wait: 5
+
+
+
+=== TEST 8: check splunk log
+--- exec
+tail -n 1 ci/pod/vector/splunk.log
+--- response_body eval
+qr/.*test custom log format in plugin.*/
+
+
+
+=== TEST 9: set route to test custom log format in route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "vip": "$remote_addr",
+                            "message_2":"logger format in plugin"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1982"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:18088/services/collector",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        batch_max_size = 3,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- wait: 5
+
+
+
+=== TEST 10: check splunk log
+--- exec
+tail -n 1 ci/pod/vector/splunk.log
+--- response_body eval
+qr/.*logger format in plugin.*/
+
+
+
+=== TEST 11: set route test batched data
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/splunk-hec-logging',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {
+                            "host": "$host",
+                            "@timestamp": "$time_iso8601",
+                            "vip": "$remote_addr",
+                            "message_3":"test batched data"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1982"] = 1
+                    }
+                },
+                plugins = {
+                    ["splunk-hec-logging"] = {
+                        endpoint = {
+                            uri = "http://127.0.0.1:18088/services/collector",
+                            token = "BD274822-96AA-4DA6-90EC-18940FB2414C"
+                        },
+                        batch_max_size = 3,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- wait: 5
+
+
+
+=== TEST 12: check splunk log
+--- exec
+tail -n 1 ci/pod/vector/splunk.log
+--- response_body eval
+qr/.*test batched data.*/

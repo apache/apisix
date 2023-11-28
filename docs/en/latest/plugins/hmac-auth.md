@@ -1,7 +1,8 @@
 ---
 title: hmac-auth
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - HMAC Authentication
   - hmac-auth
@@ -38,7 +39,7 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 | Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
 |-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | access_key            | string        | True     |               |                                             | Unique key of a Consumer. If different Consumers have the same key, a request matching exception will occur.                                                                                              |
-| secret_key            | string        | True     |               |                                             | Used in pair with `access_key`.                                                                                                                                                                           |
+| secret_key            | string        | True     |               |                                             | Used in pair with `access_key`. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                             |
 | algorithm             | string        | False    | "hmac-sha256" | ["hmac-sha1", "hmac-sha256", "hmac-sha512"] | Encryption algorithm used.                                                                                                                                                                                |
 | clock_skew            | integer       | False    | 0             |                                             | Clock skew allowed by the signature in seconds. Setting it to `0` will skip checking the date.                                                                                                            |
 | signed_headers        | array[string] | False    |               |                                             | List of headers to be used in the encryption algorithm. If specified, the client request can only contain the specified headers. When unspecified, all the headers are used in the encryption algorithm.  |
@@ -47,12 +48,14 @@ This Plugin works with a [Consumer](../terminology/consumer.md) object and a con
 | validate_request_body | boolean       | False    | false         | [ true, false ]                             | When set to `true`, validates the request body.                                                                                                                                                           |
 | max_req_body          | integer       | False    | 512 * 1024    |                                             | Max size of the request body to allow.                                                                                                                                                                    |
 
-## Enabling the Plugin
+NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
+## Enable Plugin
 
 First we enable the Plugin on a Consumer object as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -77,7 +80,7 @@ You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete 
 Next, you can configure the Plugin to a Route or a Service:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -98,7 +101,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 The formula for calculating the signature is `signature = HMAC-SHAx-HEX(secret_key, signing_string)`.
 
-In order to generate the signature, two parameters, `secret_key` and `signing_string` are required. The `secret_key` is configured by a Consumer and the `signing_string` is calculated as `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`. If any of the terms are missing, they are replaced by an empty string. The different terms in this calculation are explained below:
+In order to generate the signature, two parameters, `secret_key` and `signing_string` are required. The `secret_key` is configured by a Consumer and the `signing_string` is calculated as `signing_string = HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n + signed_headers_string`. The different terms in this calculation are explained below:
 
 - **HTTP Method** : HTTP request method in uppercase. For example, GET, PUT, POST etc.
 - **HTTP URI** : HTTP URI. Should start with "/" and "/" denotes an empty path.
@@ -106,7 +109,13 @@ In order to generate the signature, two parameters, `secret_key` and `signing_st
 - **canonical_query_string** : The result of encoding the query string in the URL (the string "key1 = value1 & key2 = value2" after the "?" in the URL).
 - **signed_headers_string** : Concatenation of the specified request headers.
 
-The algorithm for generating `canonical_query_string` is described below:
+:::tip
+
+If any of the terms are missing, they are replaced by an empty string.
+
+:::
+
+**The algorithm for generating `canonical_query_string` is described below:**
 
 1. Extract the query terms from the URL.
 2. Split the query terms into key-value pairs by using `&` as the separator.
@@ -140,7 +149,52 @@ curl -i http://127.0.0.1:9080/index.html?name=james&age=36 \
 -H "User-Agent: curl/7.29.0"
 ```
 
-The `signing_string` generated according to the algorithm above is:
+### Explanation of signature generation formula process
+
+1. The default HTTP Method for the above request is GET, which gives `signing_string` as
+
+```plain
+"GET"
+```
+
+2. The requested URI is `/index.html`, and the `signing_string` is obtained from the HTTP Method + \n + HTTP URI as
+
+```plain
+"GET
+/index.html"
+```
+
+3. The query item in the URL is `name=james&age=36`, assuming that `encode_uri_params` is false.
+According to the algorithm of `canonical_query_string`, the focus is on dictionary sorting of `key` to get `age=36&name=james`.
+
+```plain
+"GET
+/index.html
+age=36&name=james"
+```
+
+4. The `access_key` is `user-key`, and the `signing_string` is obtained from HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key as
+
+```plain
+"GET
+/index.html
+age=36&name=james
+user-key"
+```
+
+5. Date is in GMT format, as in `Tue, 19 Jan 2021 11:33:20 GMT`, and the `signing_string` is obtained from the  HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date as
+
+```plain
+"GET
+/index.html
+age=36&name=james
+user-key
+Tue, 19 Jan 2021 11:33:20 GMT"
+```
+
+6. `signed_headers_string` is used to specify the headers involved in the signature, which in the above example includes `User-Agent: curl/7.29.0` and `x-custom-a: test`.
+
+And the `signing_string` is obtained from the HTTP Method + \n + HTTP URI + \n + canonical_query_string + \n + access_key + \n + Date + \n as
 
 ```plain
 "GET
@@ -152,8 +206,6 @@ User-Agent:curl/7.29.0
 x-custom-a:test
 "
 ```
-
-The last request header also needs + `\n`.
 
 The Python code below shows how to generate the signature:
 
@@ -305,12 +357,12 @@ Accept-Ranges: bytes
 <html lang="cn">
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `hmac-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `hmac-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

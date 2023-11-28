@@ -1,7 +1,8 @@
 ---
 title: opa
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Open Policy Agent
   - opa
@@ -140,7 +141,7 @@ allow {
 然后在指定路由上配置 `opa` 插件：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -256,7 +257,7 @@ reason = input'
 现在就可以在路由上配置插件来发送 APISIX 数据：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -298,12 +299,12 @@ curl -X GET 127.0.0.1:9080/get
 }
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `opa` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:2379/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

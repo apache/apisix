@@ -1,7 +1,8 @@
 ---
 title: response-rewrite
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Response Rewrite
   - response-rewrite
@@ -44,18 +45,21 @@ You can also use the [redirect](./redirect.md) Plugin to setup redirects.
 
 ## Attributes
 
-| Name        | Type    | Required | Default | Valid values                                                                                                  | Description                                                                                                                                                                                                                                                                                                     |
-|-------------|---------|----------|---------|---------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| status_code | integer | False    |         | [200, 598]                                                                                                    | New HTTP status code in the response. If unset, falls back to the original status code.                                                                                                                                                                                                                         |
-| body        | string  | False    |         |                                                                                                               | New body of the response. The content-length would also be reset.                                                                                                                                                                                                                                               |
-| body_base64 | boolean | False    | false   |                                                                                                               | When set, the body of the request will be decoded before writing to the client.                                                                                                                                                                                                                                 |
-| headers     | object  | False    |         |                                                                                                               | New headers for the response. Headers are overwritten if they are present in the Upstream response otherwise, they are added to the Upstream headers. To remove a header, set the header value to an empty string. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. |
-| vars        | array[] | False    |         | See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available operators. | Nginx variable expressions to conditionally execute the rewrite. The Plugin will be executed unconditionally if this value is empty.                                                                                                                                                                            |
-| filters         | array[] | False    |         |                 | List of filters that modify the response body by replacing one specified string with another.                                                                                                                                                                                                                             |
-| filters.regex   | string  | True    |         |                 | Regex pattern to match on the response body.                                                                                                                                                                                                                                                                                         |
-| filters.scope   | string  | False    | "once"  | "once","global" | Range to substitute. `once` substitutes the first match of `filters.regex` and `global` does global substitution.                                                                                                                                                                                          |
-| filters.replace | string  | True    |         |                 | Content to substitute with.                                                                                                                                                                                                                                                                                                   |
-| filters.options | string  | False    | "jo"    |                 | Regex options. See [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch).                                                                                                                                                                                                                            |
+| Name            | Type    | Required | Default | Valid values                                                                                                  | Description                                                                                                                                                                                                                                                                         |
+|-----------------|---------|----------|---------|---------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| status_code     | integer | False    |         | [200, 598]                                                                                                    | New HTTP status code in the response. If unset, falls back to the original status code.                                                                                                                                                                                             |
+| body            | string  | False    |         |                                                                                                               | New body of the response. The content-length would also be reset.                                                                                                                                                                                                                   |
+| body_base64     | boolean | False    | false   |                                                                                                               | When set, the body passed in `body` will be decoded before writing to the client which is used in some image and Protobuffer scenarios. Note that this field only allows decoding the body passed in plugin configuration and does not decode upstream response.                                                                                                                                                                                                       |
+| headers         | object  | False    |         |                                                                                                               |                                                                                                                                                                                                                                                                                     |
+| headers.add     | array   | False    |         |                                                                                                               | Append the new headers to the response. The format is `["name: value", ...]`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`.                                                                                                          |
+| headers.set     | object  | False    |         |                                                                                                               | Rewriting the headers. The format is `{"name": "value", ...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. |
+| headers.remove  | array   | False    |         |                                                                                                               | Remove the headers. The format is `["name", ...]`.                                                                                                                                                                                                                                  |
+| vars            | array[] | False    |         | See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available operators. | Nginx variable expressions to conditionally execute the rewrite. The Plugin will be executed unconditionally if this value is empty.                                                                                                                                                |
+| filters         | array[] | False    |         |                                                                                                               | List of filters that modify the response body by replacing one specified string with another.                                                                                                                                                                                       |
+| filters.regex   | string  | True     |         |                                                                                                               | Regex pattern to match on the response body.                                                                                                                                                                                                                                        |
+| filters.scope   | string  | False    | "once"  | "once","global"                                                                                               | Range to substitute. `once` substitutes the first match of `filters.regex` and `global` does global substitution.                                                                                                                                                                   |
+| filters.replace | string  | True     |         |                                                                                                               | Content to substitute with.                                                                                                                                                                                                                                                         |
+| filters.options | string  | False    | "jo"    |                                                                                                               | Regex options. See [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch).                                                                                                                                                                                        |
 
 :::note
 
@@ -63,12 +67,12 @@ Only one of `body` or `filters` can be configured.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `response-rewrite` Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",
@@ -76,9 +80,11 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
         "response-rewrite": {
             "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
             "headers": {
-                "X-Server-id": 3,
-                "X-Server-status": "on",
-                "X-Server-balancer_addr": "$balancer_ip:$balancer_port"
+                "set": {
+                    "X-Server-id": 3,
+                    "X-Server-status": "on",
+                    "X-Server-balancer-addr": "$balancer_ip:$balancer_port"
+                }
             },
             "vars":[
                 [ "status","==",200 ]
@@ -95,6 +101,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 ```
 
 Here, `vars` is configured to run the Plugin only on responses with a 200 status code.
+
+Besides `set` operation, you can also `add` or `remove` response header like:
+
+```json
+"headers": {
+    "add": [
+        "X-Server-balancer-addr: $balancer_ip:$balancer_port"
+    ],
+    "remove": [
+        "X-TO-BE-REMOVED"
+    ]
+}
+```
+
+The execution order among those operations are ["add", "set", "remove"].
+
+If you are using the deprecated `headers` configuration which puts the headers directly under `headers`,
+you need to move them to `headers.set`.
 
 ## Example usage
 
@@ -113,7 +137,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 X-Server-id: 3
 X-Server-status: on
-X-Server-balancer_addr: 127.0.0.1:80
+X-Server-balancer-addr: 127.0.0.1:80
 
 {"code":"ok","message":"new json body"}
 ```
@@ -138,14 +162,16 @@ So, if you have configured the `response-rewrite` Plugin, it do a force overwrit
 The example below shows how you can replace a key in the response body. Here, the key X-Amzn-Trace-Id is replaced with X-Amzn-Trace-Id-Replace by configuring the filters attribute using regex:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "plugins":{
     "response-rewrite":{
       "headers":{
-        "X-Server-id":3,
-        "X-Server-status":"on",
-        "X-Server-balancer_addr":"$balancer_ip:$balancer_port"
+        "set": {
+            "X-Server-id":3,
+            "X-Server-status":"on",
+            "X-Server-balancer-addr":"$balancer_ip:$balancer_port"
+        }
       },
       "filters":[
         {
@@ -200,12 +226,12 @@ X-Server-id: 3
 
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `response-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `response-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",

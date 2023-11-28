@@ -24,7 +24,7 @@ title: DNS
 ## service discovery via DNS
 
 Some service discovery system, like Consul, support exposing service information
-via DNS. Therefore we can use this way to discover service directly.
+via DNS. Therefore we can use this way to discover service directly. Both L4 and L7 are supported.
 
 First of all, we need to configure the address of DNS servers:
 
@@ -64,8 +64,23 @@ and `test.consul.service` be resolved as `1.1.1.1` and `1.1.1.2`, this result wi
 Note that all the IPs from `test.consul.service` share the same weight.
 
 The resolved records will be cached according to their TTL.
-For service whose record is not in the cache, we will query it in the order of `SRV -> A -> AAAA -> CNAME`.
+For service whose record is not in the cache, we will query it in the order of `SRV -> A -> AAAA -> CNAME` by default.
 When we refresh the cache record, we will try from the last previously successful type.
+We can also customize the order by modifying the configuration file.
+
+```yaml
+# add this to config.yaml
+discovery:
+   dns:
+     servers:
+       - "127.0.0.1:8600"          # use the real address of your dns server
+     order:                        # order in which to try different dns record types when resolving
+       - last                      # "last" will try the last previously successful type for a hostname.
+       - SRV
+       - A
+       - AAAA
+       - CNAME
+```
 
 If you want to specify the port for the upstream server, you can add it to the `service_name`:
 

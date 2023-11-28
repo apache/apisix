@@ -1,7 +1,7 @@
 ---
 title: mqtt-proxy
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - MQTT Proxy
@@ -39,12 +39,8 @@ This Plugin supports both the protocols [3.1.*](http://docs.oasis-open.org/mqtt/
 |----------------|---------|------------|-----------------------------------------------------------------------------------|
 | protocol_name  | string  | True       | Name of the protocol. Generally `MQTT`.                                           |
 | protocol_level | integer | True       | Level of the protocol. It should be `4` for MQTT `3.1.*` and `5` for MQTT `5.0`.  |
-| upstream       | object  | Deprecated | Use separate Upstream in the Route instead.                                       |
-| upstream.host  | string  | True       | IP or host of the upstream to forward the current request to.                     |
-| upstream.ip    | string  | Deprecated | Use `host` instead. IP address of the upstream to forward the current request to. |
-| upstream.port  | number  | True       | Port of the upstream to forward the current request to.                           |
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, you need to first enable the `stream_proxy` configuration in your configuration file (`conf/config.yaml`). The below configuration represents listening on the `9100` TCP port:
 
@@ -54,7 +50,6 @@ To enable the Plugin, you need to first enable the `stream_proxy` configuration 
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
     stream_proxy:                 # TCP/UDP proxy
-      only: false                 # needed if HTTP and Stream Proxy should be enabled
       tcp:                        # TCP proxy port list
         - 9100
     dns_resolver:
@@ -66,7 +61,7 @@ You can now send the MQTT request to port `9100`.
 You can now create a stream Route and enable the `mqtt-proxy` Plugin:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
@@ -94,7 +89,7 @@ If you are using Docker in macOS, then `host.docker.internal` is the right param
 This Plugin exposes a variable `mqtt_client_id` which can be used for load balancing as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "mqtt-proxy": {
@@ -156,10 +151,10 @@ curl 127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 The `sni` name must match one or more of the SNIs provided to the SSL object that you created with the CA and server certificates.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `mqtt-proxy` Plugin you can remove the corresponding configuration as shown below:
+To remove the `mqtt-proxy` Plugin you can remove the corresponding configuration as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```

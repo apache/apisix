@@ -23,10 +23,6 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-    if (!defined $block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -280,6 +276,7 @@ proxy request to 127.0.0.2:1995
 --- yaml_config
 apisix:
   node_listen: 1984
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100

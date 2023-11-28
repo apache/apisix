@@ -32,13 +32,17 @@ etcdctl --endpoints=127.0.0.1:2379 auth enable
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2379
-  prefix: /apisix
-  timeout: 30
-  user: root
-  password: apache-api6
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2379
+    prefix: /apisix
+    timeout: 30
+    user: root
+    password: apache-api6
 ' > conf/config.yaml
 
 make init
@@ -84,10 +88,14 @@ echo "passed: properly handle the error when connecting to etcd without auth"
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2389
-  prefix: /apisix
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2389
+    prefix: /apisix
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -102,10 +110,14 @@ echo "passed: Show retry time info successfully"
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2389
-  prefix: /apisix
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2389
+    prefix: /apisix
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -129,13 +141,17 @@ etcdctl --endpoints=127.0.0.1:2379 auth enable
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 del /apisix --prefix
 
 echo '
-etcd:
-  host:
-    - http://127.0.0.1:2379
-  prefix: /apisix
-  timeout: 30
-  user: root
-  password: apache-api7
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://127.0.0.1:2379
+    prefix: /apisix
+    timeout: 30
+    user: root
+    password: apache-api7
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -150,3 +166,36 @@ echo "passed: show password error successfully"
 etcdctl --endpoints=127.0.0.1:2379 --user=root:apache-api6 auth disable
 etcdctl --endpoints=127.0.0.1:2379 role delete root
 etcdctl --endpoints=127.0.0.1:2379 user delete root
+
+# check connect to etcd with ipv6 address
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - http://[::1]:2379
+    prefix: /apisix
+    timeout: 30
+' > conf/config.yaml
+
+rm logs/error.log || true
+make run
+sleep 0.1
+
+if grep "update endpoint: http://\[::1\]:2379 to unhealthy" logs/error.log; then
+    echo "failed: connect to etcd via ipv6 address failed"
+    exit 1
+fi
+
+if grep "host or service not provided, or not known" logs/error.log; then
+    echo "failed: luasocket resolve ipv6 addresses failed"
+    exit 1
+fi
+
+make stop
+
+echo "passed: connect to etcd via ipv6 address successfully"

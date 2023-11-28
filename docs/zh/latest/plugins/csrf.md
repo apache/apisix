@@ -1,7 +1,7 @@
 ---
 title: csrf
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 跨站请求伪造攻击
   - Cross-site request forgery
@@ -43,12 +43,14 @@ description: CSRF 插件基于 Double Submit Cookie 的方式，帮助用户阻�
 | expires | number | 否 | `7200` | | CSRF Cookie 的过期时间，单位为秒。当设置为 `0` 时，会忽略 CSRF Cookie 过期时间检查。|
 | key | string | 是 |  |  | 加密 Token 的密钥。        |
 
+注意：schema 中还定义了 `encrypt_fields = {"key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+
 ## 启用插件
 
 以下示例展示了如何在指定路由上启用并配置 `csrf` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
   "plugins": {
@@ -125,12 +127,12 @@ curl -i http://127.0.0.1:9080/hello -X POST -H 'apisix-csrf-token: eyJyYW5kb20iO
 HTTP/1.1 200 OK
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
   "upstream": {

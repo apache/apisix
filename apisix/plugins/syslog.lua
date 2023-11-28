@@ -20,22 +20,20 @@ local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
 local plugin_name = "syslog"
-local ngx = ngx
 
-local batch_processor_manager = bp_manager_mod.new("http sys logger")
+local batch_processor_manager = bp_manager_mod.new("sys logger")
 local schema = {
     type = "object",
     properties = {
         host = {type = "string"},
         port = {type = "integer"},
-        max_retry_times = {type = "integer", minimum = 1},
-        retry_interval = {type = "integer", minimum = 0},
         flush_limit = {type = "integer", minimum = 1, default = 4096},
         drop_limit = {type = "integer", default = 1048576},
         timeout = {type = "integer", minimum = 1, default = 3000},
         sock_type = {type = "string", default = "tcp", enum = {"tcp", "udp"}},
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false}
     },
     required = {"host", "port"}
@@ -44,29 +42,33 @@ local schema = {
 
 local schema = batch_processor_manager:wrap_schema(schema)
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = log_util.metadata_schema_log_format,
+    },
+}
+
 local _M = {
     version = 0.1,
     priority = 401,
     name = plugin_name,
     schema = schema,
+    metadata_schema = metadata_schema,
     flush_syslog = syslog.flush_syslog,
 }
 
 
-function _M.check_schema(conf)
-    local ok, err = core.schema.check(schema, conf)
-    if not ok then
-        return false, err
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
     end
-
-    conf.max_retry_count = conf.max_retry_times or conf.max_retry_count
-    conf.retry_delay = conf.retry_interval or conf.retry_delay
-    return true
+    return core.schema.check(schema, conf)
 end
 
 
 function _M.log(conf, ctx)
-    local entry = log_util.get_full_log(ngx, conf)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     syslog.push_entry(conf, ctx, entry)
 end
 

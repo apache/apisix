@@ -1,7 +1,8 @@
 ---
 title: wolf-rbac
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - wolf RBAC
   - wolf-rbac
@@ -36,7 +37,7 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 | 名称          | 类型   | 必选项  | 默认值                    | 描述                                                                                                                                               |
 | ------------- | ------ | ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | server        | string | 否     | "http://127.0.0.1:12180" |  `wolf-server` 的服务地址。                                                                                                                          |
-| appid         | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。                                                                                                               |
+| appid         | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                       |
 | header_prefix | string | 否     | "X-"                     | 自定义 HTTP 头的前缀。`wolf-rbac` 在鉴权成功后，会在请求头 (用于传给后端) 及响应头 (用于传给前端) 中添加 3 个 header：`X-UserId`, `X-Username`, `X-Nickname`。|
 
 ## 接口
@@ -64,7 +65,7 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 首先需要创建一个 Consumer 并配置该插件，如下所示：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/consumers  \
+curl http://127.0.0.1:9180/apisix/admin/consumers  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "username":"wolf_rbac",
@@ -87,7 +88,7 @@ curl http://127.0.0.1:9080/apisix/admin/consumers  \
 然后你需要添加 `wolf-rbac` 插件到 Route 或 Service 中。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -117,7 +118,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 你可以使用 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露 API.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/wal \
+curl http://127.0.0.1:9180/apisix/admin/routes/wal \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/apisix/plugin/wolf-rbac/login",
@@ -268,12 +269,12 @@ HTTP/1.1 200 OK
 {"message":"success to change password"}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `wolf-rbac` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

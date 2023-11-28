@@ -1,12 +1,45 @@
 {
-  "version": "2.15.0",
+  "version": "3.7.0",
   "sidebar": [
     {
       "type": "category",
-      "label": "Architecture Design",
+      "label": "Getting Started",
       "items": [
-        "architecture-design/apisix",
-        "architecture-design/deployment-role"
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "installation-guide"
+    },
+    {
+      "type": "doc",
+      "id": "architecture-design/apisix"
+    },
+    {
+      "type": "category",
+      "label": "Tutorials",
+      "items": [
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        {
+          "type": "category",
+          "label": "Observability",
+          "items": [
+            "tutorials/observe-your-api",
+            "tutorials/health-check",
+            "tutorials/monitor-api-health-check"
+          ]
+        },
+        "tutorials/manage-api-consumers",
+        "tutorials/cache-api-responses",
+        "tutorials/add-multiple-api-versions",
+        "tutorials/client-to-apisix-mtls",
+        "tutorials/websocket-authentication"
       ]
     },
     {
@@ -15,6 +48,7 @@
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
+        "terminology/consumer-group",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -22,16 +56,9 @@
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/secret"
       ]
-    },
-    {
-      "type": "doc",
-      "id": "getting-started"
-    },
-    {
-      "type": "doc",
-      "id": "installation-guide"
     },
     {
       "type": "category",
@@ -49,7 +76,9 @@
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-resp",
+            "plugins/inspect",
+            "plugins/workflow"
           ]
         },
         {
@@ -61,7 +90,9 @@
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
-            "plugins/mocking"
+            "plugins/mocking",
+            "plugins/degraphql",
+            "plugins/body-transformer"
           ]
         },
         {
@@ -75,11 +106,13 @@
             "plugins/authz-casdoor",
             "plugins/wolf-rbac",
             "plugins/openid-connect",
+            "plugins/cas-auth",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
-            "plugins/forward-auth"
+            "plugins/forward-auth",
+            "plugins/multi-auth"
           ]
         },
         {
@@ -93,7 +126,9 @@
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
             "plugins/csrf",
-            "plugins/public-api"
+            "plugins/public-api",
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -153,7 +188,10 @@
                 "plugins/google-cloud-logging",
                 "plugins/splunk-hec-logging",
                 "plugins/file-logger",
-                "plugins/loggly"
+                "plugins/loggly",
+                "plugins/elasticsearch-logger",
+                "plugins/tencent-cloud-cls",
+                "plugins/loki-logger"
               ]
             }
           ]
@@ -165,7 +203,8 @@
             "plugins/serverless",
             "plugins/azure-functions",
             "plugins/openwhisk",
-            "plugins/aws-lambda"
+            "plugins/aws-lambda",
+            "plugins/openfunction"
           ]
         },
         {
@@ -203,9 +242,42 @@
         },
         {
           "type": "doc",
+          "id": "support-fips-in-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
+        },
+        {
+          "type": "link",
+          "label": "CODE_STYLE",
+          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
+        },
+        {
+          "type": "category",
+          "label": "internal",
+          "items": [
+            "internal/plugin-runner",
+            "internal/testing-framework"
+          ]
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
           "id": "debug-mode"
         }
       ]
+    },
+    {
+      "type": "doc",
+      "id": "deployment-modes"
     },
     {
       "type": "doc",
@@ -221,6 +293,7 @@
           "items": [
             "discovery",
             "discovery/dns",
+            "discovery/consul",
             "discovery/consul_kv",
             "discovery/nacos",
             "discovery/eureka",
@@ -246,15 +319,7 @@
         },
         {
           "type": "doc",
-          "id": "health-check"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",
@@ -286,24 +351,7 @@
         },
         {
           "type": "doc",
-          "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
           "id": "apisix-variable"
-        },
-        {
-          "type": "doc",
-          "id": "external-plugin"
-        },
-        {
-          "type": "doc",
-          "id": "wasm"
-        },
-        {
-          "type": "link",
-          "label": "CODE_STYLE",
-          "href": "https://github.com/apache/apisix/blob/master/CODE_STYLE.md"
         },
         {
           "type": "doc",
@@ -318,16 +366,12 @@
           "id": "debug-function"
         },
         {
-          "type": "category",
-          "label": "internal",
-          "items": [
-            "internal/plugin-runner",
-            "internal/testing-framework"
-          ]
+          "type": "doc",
+          "id": "profile"
         },
         {
           "type": "doc",
-          "id": "profile"
+          "id": "ssl-protocol"
         }
       ]
     },
@@ -335,6 +379,10 @@
       "type": "link",
       "label": "CHANGELOG",
       "href": "https://github.com/apache/apisix/blob/master/CHANGELOG.md"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

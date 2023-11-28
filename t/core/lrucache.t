@@ -53,8 +53,6 @@ GET /t
 obj: {"idx":1}
 obj: {"idx":1}
 obj: {"idx":2}
---- no_error_log
-[error]
 
 
 
@@ -96,8 +94,6 @@ obj: {"idx":1}
 obj: {"idx":2}
 obj: {"idx":2}
 obj: {"idx":3}
---- no_error_log
-[error]
 
 
 
@@ -129,8 +125,6 @@ GET /t
 obj: 1
 obj: 1
 obj: 2
---- no_error_log
-[error]
 
 
 
@@ -165,8 +159,6 @@ GET /t
 obj: {"name":"aaa"}
 release: {"name":"aaa"}
 obj: {"name":"bbb"}
---- no_error_log
-[error]
 
 
 
@@ -202,8 +194,6 @@ GET /t
 obj: {"idx":1}
 obj: {"idx":1}
 obj: {"idx":2}
---- no_error_log
-[error]
 
 
 
@@ -240,8 +230,6 @@ GET /t
 --- response_body
 obj: {"idx":1}
 obj: {"idx":1}
---- no_error_log
-[error]
 
 
 
@@ -281,5 +269,3 @@ fetch obj: true
 create obj 2 time
 fetch obj: true
 fetch obj: true
---- no_error_log
-[error]

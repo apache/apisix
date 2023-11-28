@@ -32,9 +32,12 @@ return {
         ["/global_rules"] = true,
         ["/protos"] = true,
         ["/plugin_configs"] = true,
+        ["/consumer_groups"] = true,
+        ["/secrets"] = true,
     },
     STREAM_ETCD_DIRECTORY = {
         ["/upstreams"] = true,
+        ["/services"] = true,
         ["/plugins"] = true,
         ["/ssls"] = true,
         ["/stream_routes"] = true,

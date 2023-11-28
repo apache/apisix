@@ -39,22 +39,17 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 | -------------- | ------- | ----- | ------------------------------------------------------ |
 | protocol_name  | string  | 是    | 协议名称，正常情况下应为 `MQTT`。                          |
 | protocol_level | integer | 是    | 协议级别，MQTT `3.1.*` 为 `4`，MQTT `5.0` 应是`5`。   |
-| upstream       | object  | 废弃  | 推荐使用 Route 上配置的上游信息。                          |
-| upstream.host  | string  | 是    | 将当前请求转发到的上游的 IP 地址或域名。                    |
-| upstream.ip    | string  | 废弃  | 推荐使用 `host` 代替。将当前请求转发到的上游的 IP 地址。       |
-| upstream.port  | number  | 是    | 将当前请求转发到的上游的端口。                           |
 
 ## 启用插件
 
 为了启用该插件，需要先在配置文件（`./conf/config.yaml`）中加载 `stream_proxy` 相关配置。以下配置代表监听 `9100` TCP 端口：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
     ...
     router:
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
     stream_proxy:                 # TCP/UDP proxy
-      only: false                 # 如需 HTTP 与 Stream 代理同时生效，需要增加该键值
       tcp:                        # TCP proxy port list
         - 9100
     dns_resolver:
@@ -66,7 +61,7 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 你可以创建一个 stream 路由并启用 `mqtt-proxy` 插件。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -91,7 +86,7 @@ curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 \
 该插件暴露了一个变量 `mqtt_client_id`，你可以使用它来通过客户端 ID 进行负载均衡。比如：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -159,11 +154,11 @@ curl 127.0.0.1:9180/apisix/admin/stream_routes/1 \
 
 :::
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```

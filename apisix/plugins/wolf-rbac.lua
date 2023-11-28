@@ -21,7 +21,6 @@ local json     = require("apisix.core.json")
 local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
-local ipairs   = ipairs
 local ngx      = ngx
 local rawget   = rawget
 local rawset   = rawset
@@ -33,10 +32,6 @@ local req_get_body_data = ngx.req.get_body_data
 
 local plugin_name = "wolf-rbac"
 
-
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 
 local schema = {
     type = "object",
@@ -64,23 +59,6 @@ local _M = {
     schema = schema,
 }
 
-
-local create_consume_cache
-do
-    local consumer_names = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.appid] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
 
 local token_version = 'V1'
 local function create_rbac_token(appid, wolf_token)
@@ -285,17 +263,16 @@ function _M.rewrite(conf, ctx)
         return 401, fail_response("Missing related consumer")
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
-    local consumer = consumers[appid]
-    if not consumer then
+    local cur_consumer = consumers[appid]
+    if not cur_consumer then
         core.log.error("consumer [", appid, "] not found")
         return 401, fail_response("Invalid appid in rbac token")
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
-    local server = consumer.auth_conf.server
+    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
+    local server = cur_consumer.auth_conf.server
 
     local res = check_url_permission(server, appid, action, url,
                     client_ip, wolf_token)
@@ -310,7 +287,7 @@ function _M.rewrite(conf, ctx)
         local userId = userInfo.id
         username = userInfo.username
         nickname = userInfo.nickname or userInfo.username
-        local prefix = consumer.auth_conf.header_prefix or ''
+        local prefix = cur_consumer.auth_conf.header_prefix or ''
         core.response.set_header(prefix .. "UserId", userId)
         core.response.set_header(prefix .. "Username", username)
         core.response.set_header(prefix .. "Nickname", ngx.escape_uri(nickname))
@@ -326,6 +303,7 @@ function _M.rewrite(conf, ctx)
             ") failed, res: ",core.json.delay_encode(res))
         return res.status, fail_response(res.err, { username = username, nickname = nickname })
     end
+    consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
     core.log.info("wolf-rbac check permission passed")
 end
 
@@ -353,8 +331,7 @@ local function get_consumer(appid)
         core.response.exit(500)
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "appid")
 
     core.log.info("------ consumers: ", core.json.delay_encode(consumers))
     local consumer = consumers[appid]

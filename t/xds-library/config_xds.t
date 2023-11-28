@@ -64,8 +64,10 @@ _EOC_
         my $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: xds
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: xds
 _EOC_
 
         $block->set_value("yaml_config", $yaml_config);
@@ -110,11 +112,17 @@ qr/can not load xDS library/
 --- config
     location /t {
         content_by_lua_block {
-            -- wait for xds library sync data
-            ngx.sleep(1.5)
             local core = require("apisix.core")
-            local version = ngx.shared["xds-config-version"]:get("version")
-            ngx.say(version)
+            local version
+            for i = 1, 5 do
+                version = ngx.shared["xds-config-version"]:get("version")
+                if version then
+                    ngx.say(version)
+                    break
+                end
+                -- wait for xds library sync data
+                ngx.sleep(1.5)
+            end
         }
     }
 --- response_body eval

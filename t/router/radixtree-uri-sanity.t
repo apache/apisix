@@ -25,9 +25,25 @@ no_shuffle();
 our $servlet_yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    admin_key: null
+    router:
+        http: 'radixtree_uri'
     normalize_uri_like_servlet: true
 _EOC_
+
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    router:
+        http: 'radixtree_uri'
+_EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
 
 run_tests();
 
@@ -63,8 +79,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -74,8 +88,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -85,8 +97,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -98,8 +108,6 @@ Host: not_found.com
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -110,8 +118,6 @@ GET /hello
 Host: foo.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -144,8 +150,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -155,8 +159,6 @@ GET /hello
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -167,8 +169,6 @@ GET /server_port
 Host: anydomain.com
 --- response_body_like eval
 qr/1981/
---- no_error_log
-[error]
 
 
 
@@ -201,8 +201,6 @@ qr/1981/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -212,8 +210,6 @@ GET /hello2
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -224,8 +220,6 @@ GET /hello
 Host: anydomain.com
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -248,8 +242,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -281,8 +273,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -291,8 +281,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -300,8 +288,6 @@ hello world
 --- request
 GET /hello/
 --- error_code: 404
---- no_error_log
-[error]
 --- response_body
 {"error_msg":"404 Route Not Found"}
 
@@ -314,8 +300,6 @@ GET /hello;world
 --- response_body eval
 qr/404 Not Found/
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -352,8 +336,6 @@ qr/404 Not Found/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -362,8 +344,6 @@ passed
 --- request
 GET /hello;a=b/world;a/;
 --- error_code: 403
---- no_error_log
-[error]
 
 
 
@@ -397,3 +377,5 @@ GET /hello;a=b/world;a/;
 GET /t
 --- response_body
 ok
+--- error_log
+failed to normalize

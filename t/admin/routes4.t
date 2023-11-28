@@ -69,12 +69,10 @@ location /t {
             ngx.HTTP_GET,
             nil,
             [[{
-                "node": {
-                    "value": {
-                        "uri": "/index.html"
-                    },
-                    "key": "/apisix/routes/1"
-                }
+                "value": {
+                    "uri": "/index.html"
+                },
+                "key": "/apisix/routes/1"
             }]]
         )
 
@@ -131,7 +129,7 @@ location /t {
         ngx.say("[push] succ: ", body)
         ngx.sleep(2.5)
 
-        local id = string.sub(res.node.key, #"/apisix/routes/" + 1)
+        local id = string.sub(res.key, #"/apisix/routes/" + 1)
         code, body = t('/apisix/admin/routes/' .. id, ngx.HTTP_GET)
 
         ngx.say("code: ", code)
@@ -198,12 +196,10 @@ location /t {
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "priority": 0
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "priority": 0
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -236,12 +232,10 @@ passed
                     "priority": 1
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "priority": 1
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "priority": 1
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -387,12 +381,10 @@ passed
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "name": "test name"
-                        },
-                        "key": "/apisix/routes/1"
-                    }
+                    "value": {
+                        "name": "test name"
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -619,7 +611,7 @@ failed to read request body: request size 1678025 is greater than the maximum si
                         "methods": ["GET", "GET"],
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:8080": 1,
+                                "apisix.com:8080": 1,
                                 "test.com:8080": 1
                             },
                             "type": "roundrobin",
@@ -661,26 +653,24 @@ failed to read request body: request size 1678025 is greater than the maximum si
                     "uri": "/index.html"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "labels": {
-                                "build": "16",
-                                "env": "production",
-                                "version": "v2"
-                            }
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
-                    }
+                        "labels": {
+                            "build": "16",
+                            "env": "production",
+                            "version": "v2"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -706,26 +696,24 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "methods": [
-                                "GET"
-                            ],
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "methods": [
+                            "GET"
+                        ],
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "labels": {
-                                "env": "production",
-                                "version": "v2",
-                                "build": "17"
-                            }
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
-                    }
+                        "labels": {
+                            "env": "production",
+                            "version": "v2",
+                            "build": "17"
+                        }
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
             )
 
@@ -783,20 +771,18 @@ passed
                     "update_time": 1602893670
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "uri": "/index.html",
-                            "upstream": {
-                                "nodes": {
-                                    "127.0.0.1:8080": 1
-                                },
-                                "type": "roundrobin"
+                    "value": {
+                        "uri": "/index.html",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:8080": 1
                             },
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
+                            "type": "roundrobin"
                         },
-                        "key": "/apisix/routes/1"
-                    }
+                        "create_time": 1602883670,
+                        "update_time": 1602893670
+                    },
+                    "key": "/apisix/routes/1"
                 }]]
                 )
 
@@ -804,21 +790,6 @@ passed
             ngx.say(body)
         }
     }
---- response_body
-passed
-
-
-
-=== TEST 23: delete test route(id : 1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE
-            )
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/

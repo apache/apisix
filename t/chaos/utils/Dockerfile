@@ -17,7 +17,7 @@
 
 ARG ENABLE_PROXY=false
 
-FROM openresty/openresty:1.19.3.2-alpine-fat AS production-stage
+FROM openresty/openresty:1.21.4.2-alpine-fat AS production-stage
 
 ARG ENABLE_PROXY
 ARG APISIX_PATH
@@ -33,6 +33,7 @@ RUN set -x \
     git \
     openldap-dev \
     pcre-dev \
+    sudo \
     && cd apisix \
     && git config --global url.https://github.com/.insteadOf git://github.com/ \
     && make deps \
@@ -67,7 +68,7 @@ RUN mkdir -p logs && touch logs/access.log && touch logs/error.log \
 
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
-EXPOSE 9080 9443
+EXPOSE 9080 9180 9443
 
 CMD ["sh", "-c", "/usr/bin/apisix init && /usr/bin/apisix init_etcd && /usr/local/openresty/bin/openresty -p /usr/local/apisix -g 'daemon off;'"]
 

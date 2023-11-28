@@ -320,6 +320,24 @@ local function check(age, name)
 end
 ```
 
+The function should return `<boolean>`, `err`.
+The first return value means successful or not, if not, the second return value specifies the error message.
+The error message can be ignored in some cases.
+
+```lua
+--No
+local function check()
+    return "failed"
+end
+```
+
+```lua
+--Yes
+local function check()
+    return false, "failed"
+end
+```
+
 ## Module
 
 All require libraries must be localized:

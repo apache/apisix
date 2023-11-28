@@ -1,11 +1,10 @@
 ---
 title: request-validation
 keywords:
-  - APISIX
-  - Plugin
+  - Apache APISIX
+  - API Gateway
   - Request Validation
-  - proxy-cache
-description: This document contains information about the Apache APISIX request-validation Plugin.
+description: This document describes the information about the Apache APISIX request-validation Plugin, you can use it to validate the requests before forwarding them to an Upstream service.
 ---
 
 <!--
@@ -46,12 +45,13 @@ At least one of `header_schema` or `body_schema` should be filled in.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the Plugin on a specific Route as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 The examples below shows how you can configure this Plugin for different validation scenarios:
 
-Enum validation:
+### Enum validation
 
 ```json
 {
@@ -96,7 +96,7 @@ Enum validation:
 }
 ```
 
-Boolean validation:
+### Boolean validation
 
 ```json
 {
@@ -113,7 +113,7 @@ Boolean validation:
 }
 ```
 
-Number or Integer validation:
+### Number or Integer validation
 
 ```json
 {
@@ -131,7 +131,7 @@ Number or Integer validation:
 }
 ```
 
-String validation:
+### String validation
 
 ```json
 {
@@ -149,7 +149,7 @@ String validation:
 }
 ```
 
-Regular expression validation:
+### Regular expression validation
 
 ```json
 {
@@ -168,7 +168,7 @@ Regular expression validation:
 }
 ```
 
-Array validation:
+### Array validation
 
 ```json
 {
@@ -192,7 +192,24 @@ Array validation:
 }
 ```
 
-Combined validation:
+### Header validation
+
+```json
+{
+    "header_schema": {
+        "type": "object",
+        "required": ["Content-Type"],
+        "properties": {
+            "Content-Type": {
+                "type": "string",
+                "pattern": "^application\/json$"
+            }
+        }
+    }
+}
+```
+
+### Combined validation
 
 ```json
 {
@@ -225,7 +242,7 @@ Combined validation:
 }
 ```
 
-Custom rejection message:
+### Custom rejection message
 
 ```json
 {
@@ -265,12 +282,13 @@ curl --header "Content-Type: application/json" \
   http://127.0.0.1:9080/get
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `request-validation` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `request-validation` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

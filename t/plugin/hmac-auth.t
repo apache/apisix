@@ -53,8 +53,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -83,8 +81,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" is required"\}/
---- no_error_log
-[error]
 
 
 
@@ -113,8 +109,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"access_key\\" is required"\}/
---- no_error_log
-[error]
 
 
 
@@ -144,8 +138,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"access_key\\" validation failed: string too long, expected at most 256, got 320"\}/
---- no_error_log
-[error]
 
 
 
@@ -175,8 +167,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"secret_key\\" validation failed: string too long, expected at most 256, got 384"\}/
---- no_error_log
-[error]
 
 
 
@@ -211,8 +201,6 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -226,8 +214,6 @@ GET /hello
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: access key or signature missing
---- no_error_log
-[error]
 
 
 
@@ -245,8 +231,6 @@ X-HMAC-ACCESS-KEY: my-access-key
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: algorithm missing
---- no_error_log
-[error]
 
 
 
@@ -265,8 +249,6 @@ X-HMAC-ACCESS-KEY: sdf
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid access key
---- no_error_log
-[error]
 
 
 
@@ -285,8 +267,6 @@ X-HMAC-ACCESS-KEY: my-access-key
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: algorithm ljlj not supported
---- no_error_log
-[error]
 
 
 
@@ -305,8 +285,6 @@ X-HMAC-ACCESS-KEY: my-access-key
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Clock skew exceeded
---- no_error_log
-[error]
 
 
 
@@ -324,8 +302,6 @@ X-HMAC-ACCESS-KEY: my-access-key
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid GMT format time
---- no_error_log
-[error]
 
 
 
@@ -344,8 +320,6 @@ X-HMAC-ACCESS-KEY: my-access-key
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid GMT format time
---- no_error_log
-[error]
 
 
 
@@ -405,8 +379,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -438,8 +410,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -458,8 +428,6 @@ X-HMAC-ACCESS-KEY: my-access-key3
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid signature
---- no_error_log
-[error]
 
 
 
@@ -492,8 +460,6 @@ client request can't be validated: Invalid signature
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -551,8 +517,6 @@ qr/{"message":"client request can't be validated"}/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Clock skew exceeded
---- no_error_log
-[error]
 
 
 
@@ -616,8 +580,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -680,8 +642,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -695,8 +655,6 @@ GET /hello
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: access key or signature missing
---- no_error_log
-[error]
 
 
 
@@ -729,8 +687,6 @@ client request can't be validated: access key or signature missing
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -786,8 +742,6 @@ qr/{"message":"client request can't be validated"}/
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
 client request can't be validated: Invalid signed header x-custom-header-c
---- no_error_log
-[error]
 
 
 
@@ -843,8 +797,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -872,5 +824,3 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"(access|secret)_key\\" is required"\}/
---- no_error_log
-[error]

@@ -25,10 +25,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -36,18 +32,7 @@ add_block_preprocessor(sub {
     my $http_config = $block->http_config // <<_EOC_;
     server {
         listen 10420;
-        location /clickhouse-logger/test {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "clickhouse body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
-                end
-                ngx.say("ok")
-            }
-        }
+
         location /clickhouse-logger/test1 {
             content_by_lua_block {
                 ngx.req.read_body()
@@ -82,7 +67,7 @@ __DATA__
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test",
+                                                 endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server",
                                                  max_retry_count = 1,
                                                  name = "clickhouse logger",
                                                  ssl_verify = false
@@ -109,7 +94,7 @@ passed
                                                  password = "a",
                                                  database = "default",
                                                  logtable = "t",
-                                                 endpoint_addr = "http://127.0.0.1:10420/clickhouse-logger/test"
+                                                 endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server"
                                                  })
 
             if not ok then
@@ -161,7 +146,7 @@ value should match only one schema, but matches none
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/clickhouse-logger/test",
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server",
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -198,11 +183,11 @@ passed
                         "plugins": {
                             "clickhouse-logger": {
                                 "user": "default",
-                                "password": "a",
+                                "password": "",
                                 "database": "default",
-                                "logtable": "t",
-                                "endpoint_addrs": ["http://127.0.0.1:10420/clickhouse-logger/test",
-                                                  "http://127.0.0.1:10420/clickhouse-logger/test1"],
+                                "logtable": "test",
+                                "endpoint_addrs": ["http://127.0.0.1:8123",
+                                                  "http://127.0.0.1:8124"],
                                 "batch_max_size":1,
                                 "inactive_timeout":1
                             }
@@ -229,14 +214,102 @@ passed
 
 
 
-=== TEST 6: access local server
+=== TEST 6: hit route
 --- request
 GET /opentracing
---- response_body
-opentracing
---- error_log
-clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:a
-clickhouse headers: x-clickhouse-user:default
-clickhouse headers: x-clickhouse-database:default
+--- error_code: 200
 --- wait: 5
+
+
+
+=== TEST 7: get log
+--- exec
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
+echo "select * from default.test" | curl 'http://localhost:8124/' --data-binary @-
+--- response_body_like
+.*127.0.0.1.*1.*
+
+
+
+=== TEST 8: to show that different endpoints will be chosen randomly
+--- config
+    location /t {
+        content_by_lua_block {
+            local code_count = {}
+            local t = require("lib.test_admin").test
+            for i = 1, 12 do
+                local code, body = t('/opentracing', ngx.HTTP_GET)
+                if code ~= 200 then
+                    ngx.say("code: ", code, " body: ", body)
+                end
+                code_count[code] = (code_count[code] or 0) + 1
+            end
+
+            local code_arr = {}
+            for code, count in pairs(code_count) do
+                table.insert(code_arr, {code = code, count = count})
+            end
+
+            ngx.say(require("toolkit.json").encode(code_arr))
+            ngx.exit(200)
+        }
+    }
+--- response_body
+[{"code":200,"count":12}]
+--- error_log
+sending a batch logs to http://127.0.0.1:8123
+sending a batch logs to http://127.0.0.1:8124
+
+
+
+=== TEST 9: use single clickhouse server
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "clickhouse-logger": {
+                                "user": "default",
+                                "password": "",
+                                "database": "default",
+                                "logtable": "test",
+                                "endpoint_addr": "http://127.0.0.1:8123"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: hit route
+--- request
+GET /opentracing
+--- error_code: 200
+--- wait: 5
+
+
+
+=== TEST 11: get log
+--- exec
+echo "select * from default.test" | curl 'http://localhost:8123/' --data-binary @-
+--- response_body_like
+.*127.0.0.1.*1.*

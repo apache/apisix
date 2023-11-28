@@ -28,10 +28,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     my $http_config = $block->http_config // <<_EOC_;
     server {
         listen 12001;
@@ -90,6 +86,12 @@ add_block_preprocessor(sub {
                 else
                     ngx.log(ngx.WARN, "logs:", body)
                 end
+            }
+        }
+
+        location / {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "test http logger for root path")
             }
         }
     }
@@ -309,3 +311,49 @@ test-http-logger-request
 --- error_log
 received Authorization header: [nil]
 --- wait: 1.5
+
+
+
+=== TEST 10: add default path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:12001",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:12001": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/http-logger/test"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: hit
+--- request
+GET /http-logger/test
+--- error_log
+test http logger for root path

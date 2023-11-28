@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core           = require("apisix.core")
+local secret         = require("apisix.secret")
 local plugin         = require("apisix.plugin")
 local plugin_checker = require("apisix.plugin").plugin_checker
 local error          = error
@@ -28,6 +29,9 @@ local _M = {
     version = 0.3,
 }
 
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
 
 local function plugin_consumer()
     local plugins = {}
@@ -56,6 +60,7 @@ local function plugin_consumer()
                 -- is 'username' field in admin
                 new_consumer.consumer_name = new_consumer.id
                 new_consumer.auth_conf = config
+                new_consumer.modifiedIndex = consumer.modifiedIndex
                 core.log.info("consumer:", core.json.delay_encode(new_consumer))
                 core.table.insert(plugins[name].nodes, new_consumer)
             end
@@ -79,6 +84,7 @@ end
 function _M.attach_consumer(ctx, consumer, conf)
     ctx.consumer = consumer
     ctx.consumer_name = consumer.consumer_name
+    ctx.consumer_group_id = consumer.group_id
     ctx.consumer_ver = conf.conf_version
 end
 
@@ -89,6 +95,28 @@ function _M.consumers()
     end
 
     return consumers.values, consumers.conf_version
+end
+
+
+local function create_consume_cache(consumers_conf, key_attr)
+    local consumer_names = {}
+
+    for _, consumer in ipairs(consumers_conf.nodes) do
+        core.log.info("consumer node: ", core.json.delay_encode(consumer))
+        local new_consumer = core.table.clone(consumer)
+        new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf)
+        consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
+    end
+
+    return consumer_names
+end
+
+
+function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
+    local consumers = lrucache("consumers_key#" .. plugin_name, consumer_conf.conf_version,
+        create_consume_cache, consumer_conf, key_attr)
+
+    return consumers
 end
 
 
@@ -109,13 +137,12 @@ end
 
 function _M.init_worker()
     local err
-    local config = core.config.new()
     local cfg = {
         automatic = true,
         item_schema = core.schema.consumer,
         checker = check_consumer,
     }
-    if config.type ~= "etcd" then
+    if core.config.type ~= "etcd" then
         cfg.filter = filter
     end
 
