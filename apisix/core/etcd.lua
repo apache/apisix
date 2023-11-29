@@ -32,7 +32,6 @@ local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
 local ngx_get_phase     = ngx.get_phase
---local inspect =  require "inspect"
 
 
 local _M = {}
@@ -202,27 +201,27 @@ function _M.get_format(res, real_key, is_dir, formatter)
     else
         -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
         -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-        res.body.node = {}
-        res.body.node.dir = true
-        res.body.node.nodes = setmetatable({}, array_mt)
-        if not res.body.kvs[1].value then
-            res.body.node.key  = real_key
-            for i=2, #res.body.kvs do
-                res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
+        res.body.node = {
+            key = real_key,
+            dir = true,
+            nodes = setmetatable({}, array_mt)
+        }
+        local kvs = res.body.kvs
+        if #kvs >= 1 and not kvs[1].value then
+            res.body.node.createdIndex = tonumber(kvs[1].create_revision)
+            res.body.node.modifiedIndex = tonumber(kvs[1].mod_revision)
+            for i=2, #kvs do
+                res.body.node.nodes[i-1] = kvs_to_node(kvs[i])
             end
         else
-            res.body.node.key = real_key
-            for i=1, #res.body.kvs do
-                res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
+            for i=1, #kvs do
+                res.body.node.nodes[i] = kvs_to_node(kvs[i])
             end
         end
-
-        --ngx.log(ngx.ERR, "v2 list", inspect(res.body))
     end
 
     res.body.kvs = nil
     v3_adapter.to_v3_list(res.body)
-    --ngx.log(ngx.ERR, "v3 list", inspect(res.body))
     return res
 end
 
@@ -316,7 +315,6 @@ function _M.get(key, is_dir)
     if not res then
         return nil, err
     end
-    --ngx.log(ngx.ERR, "etcd get: ", inspect(res))
     return _M.get_format(res, key, is_dir)
 end
 
