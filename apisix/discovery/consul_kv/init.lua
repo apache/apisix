@@ -369,7 +369,7 @@ function _M.init_worker()
       end
     end
 
-    events = require("apisix.event")
+    events = require("apisix.events")
     events_list = events:event_list(
         "discovery_consul_update_application",
         "updating"

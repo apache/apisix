@@ -120,7 +120,7 @@ function _M.http_init_worker()
         core.grpc = nil
     end
 
-    require("apisix.event").init_worker()
+    require("apisix.events").init_worker()
 
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
@@ -1018,7 +1018,7 @@ function _M.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
 
-    require("apisix.event").init_worker()
+    require("apisix.events").init_worker()
 
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then

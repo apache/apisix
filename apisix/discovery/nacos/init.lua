@@ -395,7 +395,7 @@ end
 
 
 function _M.init_worker()
-    events = require("apisix.event")
+    events = require("apisix.events")
     events_list = events:event_list("discovery_nacos_update_application",
                                     "updating")
 
