@@ -85,7 +85,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 我们生成 100 个请求来测试负载均衡的效果：
 
 ```shell
-hc=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/headers" -sL | grep "httpbin" | wc -l); echo httpbin.org: $hc, mock.api7.ai: $((100 - $hc))
+hc=$(seq 100 | xargs -I {} curl "http://127.0.0.1:9080/headers" -sL | grep "httpbin" | wc -l); echo httpbin.org: $hc, mock.api7.ai: $((100 - $hc))
 ```
 
 结果显示，请求几乎平均分配给这两个上游服务：
