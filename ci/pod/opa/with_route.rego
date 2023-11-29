@@ -16,5 +16,9 @@
 #
 package with_route
 default allow = false
-allow { input.request.method == "GET"}
-status_code = 201 {not allow}
+
+allow { 
+  input.route.name == "valid"
+}
+
+status_code = 403 {not allow}
