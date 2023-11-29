@@ -143,7 +143,7 @@ Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: 
+Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://sub.domain.com
 
 
@@ -215,12 +215,12 @@ Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: 
+Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://sub.domain.com
 
 
 
-=== TEST 7: origin not matching 
+=== TEST 7: origin not matching
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -287,8 +287,8 @@ Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: 
-Timing-Allow-Origin: 
+Access-Control-Allow-Credentials:
+Timing-Allow-Origin:
 
 
 
@@ -308,7 +308,7 @@ Timing-Allow-Origin: http://another.domain.com
 
 
 
-=== TEST 11: origin not matching 
+=== TEST 11: origin not matching
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -375,7 +375,7 @@ Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: 
+Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://one.domain.com
 
 
@@ -391,12 +391,12 @@ Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: 
+Access-Control-Allow-Credentials:
 Timing-Allow-Origin:
 
 
 
-=== TEST 15: origin not matching 
+=== TEST 15: origin not matching
 --- request
 GET /hello HTTP/1.1
 --- more_headers
@@ -463,7 +463,7 @@ Access-Control-Allow-Methods: GET,POST
 Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
-Access-Control-Allow-Credentials: 
+Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://one.domain.com
 
 
@@ -480,7 +480,7 @@ Access-Control-Allow-Headers: request-h
 Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
 Access-Control-Allow-Credentials:
-Timing-Allow-Origin: 
+Timing-Allow-Origin:
 
 
 
@@ -500,7 +500,7 @@ Timing-Allow-Origin: http://three.domain.com
 
 
 
-=== TEST 20: origin not matching 
+=== TEST 20: origin not matching
 --- request
 GET /hello HTTP/1.1
 --- more_headers

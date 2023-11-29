@@ -45,7 +45,6 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 | allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling CORS. For example, `[".*\.test.com"]` can match all subdomain of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `allow_origins` is.                                                                                                                                                                   |
 | allow_origins_by_metadata | array   | False    | nil     | Origins to enable CORS referenced from `allow_origins` set in the Plugin metadata. For example, if `"allow_origins": {"EXAMPLE": "https://example.com"}` is set in the Plugin metadata, then `["EXAMPLE"]` can be used to allow CORS on the origin `https://example.com`.                                                                                                                          |
 
-
 :::info IMPORTANT
 
 1. The `allow_credential` attribute is sensitive and must be used carefully. If set to `true` the default value `*` of the other attributes will be invalid and they should be specified explicitly.
@@ -60,18 +59,16 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 | timing_allow_origins             | string  | False    | nil     | Origin to allow to access the resource timing information. See [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin). Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. |
 | timing_allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling access to the resource timing information. For example, `[".*\.test.com"]` can match all subdomain of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `timing_allow_origins` is. |
 
-
 :::note
 
 The Timing-Allow-Origin header is defined in the Resource Timing API, but it is related to the CORS concept.
 
 Suppose you have 2 domains, `domain-A.com` and `domain-B.com`.
 You are on a page on `domain-A.com`, you have an XHR call to a resource on `domain-B.com` and you need its timing information.
-You can allow the browser to show this timing information only if you have cross-origin permissions on `domain-B.com`. 
+You can allow the browser to show this timing information only if you have cross-origin permissions on `domain-B.com`.
 So, you have to set the CORS headers first, then access the `domain-B.com` URL, and if you set [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin), the browser will show the requested timing information.
 
 :::
-
 
 ## Metadata
 
