@@ -41,7 +41,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: set route(id: 1)
 --- config
     location /t {
@@ -76,13 +75,16 @@ GET /t
 passed
 
 
-=== TEST 1: hit routes
+
+=== TEST 2: hit routes
 --- request
 GET /name/json/bar
 --- response_body
 hello world
 
-=== TEST 2: hit route: Chinese character
+
+
+=== TEST 3: hit route: Chinese character
 --- request
 GET /name/中文/bar
 --- response_body
