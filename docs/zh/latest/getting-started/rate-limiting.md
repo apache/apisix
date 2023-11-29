@@ -50,7 +50,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes/getting-started-ip" -X PATCH 
 我们同时生成 100 个请求来测试限速插件的效果。
 
 ```shell
-count=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/ip" -I -sL | grep "503" | wc -l); echo \"200\": $((100 - $count)), \"503\": $count
+count=$(seq 100 | xargs -I {} curl "http://127.0.0.1:9080/ip" -I -sL | grep "503" | wc -l); echo \"200\": $((100 - $count)), \"503\": $count
 ```
 
 请求结果同预期一致：在这 100 个请求中，有 2 个请求发送成功（状态码为 `200`），其他请求均被拒绝（状态码为 `503`）。
