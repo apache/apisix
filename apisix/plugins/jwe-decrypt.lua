@@ -17,9 +17,10 @@
 local core            = require("apisix.core")
 local consumer_mod    = require("apisix.consumer")
 local base64          = require("ngx.base64")
+local aes             = require("resty.aes")
 local ngx             = ngx
 local sub_str         = string.sub
-local cipher          = require("resty.openssl.cipher").new("aes-256-gcm")
+local cipher          = aes.cipher(256, "gcm")
 
 local plugin_name     = "jwe-decrypt"
 
@@ -104,15 +105,33 @@ end
 local function jwe_decrypt_with_obj(o, consumer)
     local secret = get_secret(consumer.auth_conf)
     local dec = base64.decode_base64url
-    return cipher:decrypt(secret, dec(o.iv), dec(o.ciphertext), false, o.header, dec(o.tag))
+
+    local aes_default = aes:new(
+        secret,
+        nil,
+        cipher,
+        {iv = o.iv}
+    )
+
+    local decrypted = aes_default:decrypt(o.ciphertext, o.tag)
+    return decrypted
 end
 
 
 local function jwe_encrypt(o, consumer)
     local secret = get_secret(consumer.auth_conf)
     local enc = base64.encode_base64url
-    o.ciphertext = cipher:encrypt(secret, o.iv, o.plaintext, false, o.header)
-    o.tag = cipher:get_aead_tag()
+
+    local aes_default = aes:new(
+        secret,
+        nil,
+        cipher,
+        {iv = o.iv})
+
+    local encrypted = aes_default:encrypt(o.plaintext)
+
+    o.ciphertext = encrypted[1]
+    o.tag = encrypted[2]
     return o.header .. ".." .. enc(o.iv) .. "." .. enc(o.ciphertext) .. "." .. enc(o.tag)
 end
 

@@ -324,7 +324,7 @@ Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6Ik
             ngx.say("code: ", code < 300, " body: ", body)
 
             ngx.sleep(1)
-            code, body = t('/apisix/plugin/jwe/encrypt?key=chen-key',
+            code, body = t('/apisix/plugin/jwe/encrypt?key=chen-key&payload=hello',
                 ngx.HTTP_GET)
             ngx.say("code: ", code < 300, " body: ", body)
         }
