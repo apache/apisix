@@ -113,7 +113,7 @@ local function jwe_decrypt_with_obj(o, consumer)
         {iv = o.iv}
     )
 
-    local decrypted = aes_default:decrypt(o.ciphertext, o.tag)
+    local decrypted = aes_default:decrypt(dec(o.ciphertext), dec(o.tag))
     return decrypted
 end
 
