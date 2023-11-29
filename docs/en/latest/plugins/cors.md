@@ -32,6 +32,8 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 
 ## Attributes
 
+### CORS attributes
+
 | Name                      | Type    | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                        |
 |---------------------------|---------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allow_origins             | string  | False    | "*"     | Origins to allow CORS. Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. If `allow_credential` is set to `false`, you can enable CORS for all origins by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all origins by using `**` but it will pose some security issues. |
@@ -42,8 +44,7 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 | allow_credential          | boolean | False    | false   | When set to `true`, allows requests to include credentials like cookies. According to CORS specification, if you set this to `true`, you cannot use '*' to allow all for the other attributes.                                                                                                                                                                                                     |
 | allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling CORS. For example, `[".*\.test.com"]` can match all subdomain of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `allow_origins` is.                                                                                                                                                                   |
 | allow_origins_by_metadata | array   | False    | nil     | Origins to enable CORS referenced from `allow_origins` set in the Plugin metadata. For example, if `"allow_origins": {"EXAMPLE": "https://example.com"}` is set in the Plugin metadata, then `["EXAMPLE"]` can be used to allow CORS on the origin `https://example.com`.                                                                                                                          |
-| timing_allow_origins             | string  | False    | nil     | Origin to allow to access the resource timing information. See [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin). Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. |
-| timing_allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling access to the resource timing information. For example, `[".*\.test.com"]` can match all subdomain of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `timing_allow_origins` is. |
+
 
 :::info IMPORTANT
 
@@ -51,6 +52,14 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 2. When using `**` you are vulnerable to security risks like CSRF. Make sure that this meets your security levels before using it.
 
 :::
+
+### Resource Timing attributes
+
+| Name                      | Type    | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                        |
+|---------------------------|---------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| timing_allow_origins             | string  | False    | nil     | Origin to allow to access the resource timing information. See [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin). Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. |
+| timing_allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling access to the resource timing information. For example, `[".*\.test.com"]` can match all subdomain of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `timing_allow_origins` is. |
+
 
 :::note
 

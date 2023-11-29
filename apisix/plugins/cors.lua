@@ -236,10 +236,6 @@ local function set_cors_headers(conf, ctx)
     if conf.allow_credential then
         core.response.set_header("Access-Control-Allow-Credentials", true)
     end
-
-    if ctx.timing_allow_origin then
-        core.response.set_header("Timing-Allow-Origin", ctx.timing_allow_origin)
-    end
 end
 
 local function set_timing_headers(conf, ctx)
@@ -363,7 +359,7 @@ function _M.header_filter(conf, ctx)
     if conf.allow_origins ~= "*" then
         core.response.add_header("Vary", "Origin")
     end
-    if allow_origins then   
+    if allow_origins then
         ctx.cors_allow_origins = allow_origins
         set_cors_headers(conf, ctx)
     end

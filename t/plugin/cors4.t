@@ -163,6 +163,7 @@ Access-Control-Allow-Credentials:
 Timing-Allow-Origin:
 
 
+
 === TEST 5: set route ( allow_origins same as timing_allow_origins )
 --- config
     location /t {
@@ -234,6 +235,7 @@ Access-Control-Allow-Credentials:
 Timing-Allow-Origin:
 
 
+
 === TEST 8: set route ( allow_origins differs from timing_allow_origins )
 --- config
     location /t {
@@ -289,6 +291,7 @@ Access-Control-Allow-Credentials:
 Timing-Allow-Origin: 
 
 
+
 === TEST 10: origin matching timing_allow_origins
 --- request
 GET /hello HTTP/1.1
@@ -318,6 +321,7 @@ Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
 Timing-Allow-Origin:
+
 
 
 === TEST 12: set route ( allow_origins superset of timing_allow_origins )
@@ -375,6 +379,7 @@ Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://one.domain.com
 
 
+
 === TEST 14: origin matching only allow_origins
 --- request
 GET /hello HTTP/1.1
@@ -389,6 +394,8 @@ Access-Control-Max-Age: 10
 Access-Control-Allow-Credentials: 
 Timing-Allow-Origin:
 
+
+
 === TEST 15: origin not matching 
 --- request
 GET /hello HTTP/1.1
@@ -402,6 +409,7 @@ Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
 Timing-Allow-Origin:
+
 
 
 === TEST 16: set route ( allow_origins and timing_allow_origins are two different sets with intersection )
@@ -459,6 +467,7 @@ Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://one.domain.com
 
 
+
 === TEST 18: origin matching only allow_origins
 --- request
 GET /hello HTTP/1.1
@@ -472,6 +481,8 @@ Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
 Access-Control-Allow-Credentials:
 Timing-Allow-Origin: 
+
+
 
 === TEST 19: origin matching only timing_allow_origins
 --- request
@@ -487,6 +498,8 @@ Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
 Timing-Allow-Origin: http://three.domain.com
 
+
+
 === TEST 20: origin not matching 
 --- request
 GET /hello HTTP/1.1
@@ -500,6 +513,7 @@ Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
 Timing-Allow-Origin:
+
 
 
 === TEST 21: set route ( allow_origins and timing_allow_origins specified with regex )
@@ -555,6 +569,8 @@ Access-Control-Expose-Headers: expose-h
 Access-Control-Max-Age: 10
 Timing-Allow-Origin: http://sub.domain.com
 
+
+
 === TEST 23: regex no match
 --- request
 GET /hello HTTP/1.1
@@ -567,6 +583,7 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Timing-Allow-Origin:
+
 
 
 === TEST 24: set route ( allow_origins and timing_allow_origins specified with different regex )
@@ -609,7 +626,8 @@ GET /t
 passed
 
 
-=== TEST 24: regex specified match, test priority of regex over list of origins
+
+=== TEST 25: regex specified match, test priority of regex over list of origins
 --- request
 GET /hello HTTP/1.1
 --- more_headers
