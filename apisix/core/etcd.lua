@@ -32,6 +32,7 @@ local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
 local ngx_get_phase     = ngx.get_phase
+--local inspect =  require "inspect"
 
 
 local _M = {}
@@ -154,16 +155,6 @@ local function kvs_to_node(kvs)
 end
 _M.kvs_to_node = kvs_to_node
 
-local function kvs_to_nodes(res)
-    res.body.node.dir = true
-    res.body.node.nodes = setmetatable({}, array_mt)
-    for i=2, #res.body.kvs do
-        res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
-    end
-    return res
-end
-
-
 local function not_found(res)
     res.body.message = "Key not found"
     res.reason = "Not found"
@@ -211,18 +202,27 @@ function _M.get_format(res, real_key, is_dir, formatter)
     else
         -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
         -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-        res.body.node = kvs_to_node(res.body.kvs[1])
+        res.body.node = {}
+        res.body.node.dir = true
+        res.body.node.nodes = setmetatable({}, array_mt)
         if not res.body.kvs[1].value then
-            -- remove last "/" when necessary
-            if string.byte(res.body.node.key, -1) == 47 then
-                res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+            res.body.node.key  = real_key
+            for i=2, #res.body.kvs do
+                res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
             end
-            res = kvs_to_nodes(res)
+        else
+            res.body.node.key = real_key
+            for i=1, #res.body.kvs do
+                res.body.node.nodes[i] = kvs_to_node(res.body.kvs[i])
+            end
         end
+
+        --ngx.log(ngx.ERR, "v2 list", inspect(res.body))
     end
 
     res.body.kvs = nil
     v3_adapter.to_v3_list(res.body)
+    --ngx.log(ngx.ERR, "v3 list", inspect(res.body))
     return res
 end
 
@@ -316,7 +316,7 @@ function _M.get(key, is_dir)
     if not res then
         return nil, err
     end
-
+    --ngx.log(ngx.ERR, "etcd get: ", inspect(res))
     return _M.get_format(res, key, is_dir)
 end
 
