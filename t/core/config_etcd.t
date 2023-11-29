@@ -354,7 +354,7 @@ GET /t
 --- grep_error_log eval
 qr/readdir key: fake res: .+/
 --- grep_error_log_out eval
-qr/readdir key: fake res: \{("value":"bar","key":"foo"|"key":"foo","value":"bar")\}/
+qr/readdir key: fake res: \[\{("value":"bar","key":"foo"|"key":"foo","value":"bar")\}\]/
 --- wait: 1
 --- no_error_log
 [error]
