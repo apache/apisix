@@ -17,7 +17,7 @@
 package with_route
 default allow = false
 
-allow { 
+allow {
   input.route.name == "valid"
 }
 
