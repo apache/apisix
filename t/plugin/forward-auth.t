@@ -414,7 +414,16 @@ Authorization: 111
             local http = require("resty.http")
             local httpc = http.new()
 
-            local large_body = t.read_file("t/plugin/forward-auth/fw-auth-large-file.bin")
+            local tempFileName = os.tmpname()
+            local file = io.open(tempFileName, "wb")
+
+            local fileSizeInBytes = 11 * 1024 * 1024 -- 11MB
+            for i = 1, fileSizeInBytes do
+                file:write(string.char(0))
+            end
+            file:close()
+
+            local large_body = t.read_file(tempFileName)
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
             .. "/large-body"
             local res, err = httpc:request_uri(uri,
