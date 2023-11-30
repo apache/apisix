@@ -45,8 +45,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -71,8 +69,6 @@ done
 GET /t
 --- response_body
 value should match only one schema, but matches none
---- no_error_log
-[error]
 
 
 
@@ -113,8 +109,6 @@ value should match only one schema, but matches none
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -140,8 +134,6 @@ passed
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -178,8 +170,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -189,8 +179,6 @@ GET /hello
 --- error_code: 403
 --- response_body_like eval
 qr/"Access Denied"/
---- no_error_log
-[error]
 
 
 
@@ -202,8 +190,6 @@ user: bob
 --- error_code: 403
 --- response_body
 {"message":"Access Denied"}
---- no_error_log
-[error]
 
 
 
@@ -215,8 +201,6 @@ user: admin
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -228,8 +212,6 @@ user: alice
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -241,8 +223,6 @@ user: jack
 --- error_code: 403
 --- response_body
 {"message":"Access Denied"}
---- no_error_log
-[error]
 
 
 
@@ -284,8 +264,6 @@ user: jack
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -297,8 +275,6 @@ user: jack
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -337,8 +313,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -350,8 +324,6 @@ user: alice
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -363,8 +335,6 @@ user: bob
 --- error_code: 403
 --- response_body
 {"message":"Access Denied"}
---- no_error_log
-[error]
 
 
 
@@ -420,8 +390,6 @@ user: bob
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -433,8 +401,6 @@ user: jack
 --- error_code: 200
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -446,8 +412,6 @@ user: bob
 --- error_code: 403
 --- response_body
 {"message":"Access Denied"}
---- no_error_log
-[error]
 
 
 
@@ -480,5 +444,3 @@ user: bob
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

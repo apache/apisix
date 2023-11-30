@@ -24,33 +24,17 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
 
-    my $http_config = $block->http_config // <<_EOC_;
-    server {
-        listen 10420;
-        location /error-logger-clickhouse/test {
-            content_by_lua_block {
-                ngx.req.read_body()
-                local data = ngx.req.get_body_data()
-                local headers = ngx.req.get_headers()
-                ngx.log(ngx.WARN, "clickhouse error log body: ", data)
-                for k, v in pairs(headers) do
-                    ngx.log(ngx.WARN, "clickhouse headers: " .. k .. ":" .. v)
-                end
-                ngx.say("ok")
-            }
-        }
-    }
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugins:
+    - error-log-logger
 _EOC_
-
-    $block->set_value("http_config", $http_config);
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
 });
 
 run_tests();
@@ -70,7 +54,7 @@ __DATA__
                         password = "a",
                         database = "default",
                         logtable = "t",
-                        endpoint_addr = "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                        endpoint_addr = "http://127.0.0.1:1980/clickhouse_logger_server"
                     }
                 },
                 core.schema.TYPE_METADATA
@@ -88,12 +72,6 @@ done
 
 
 === TEST 2: test unreachable server
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -107,7 +85,7 @@ plugins:
                                 "password": "a",
                                 "database": "default",
                                 "logtable": "t",
-                                "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                                "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server"
                     },
                     "inactive_timeout": 1
                 }]]
@@ -119,7 +97,7 @@ plugins:
 --- response_body
 --- error_log
 this is a warning message for test2
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -128,12 +106,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 3: put plugin metadata and log an error level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -147,7 +119,7 @@ plugins:
                         "password": "a",
                         "database": "default",
                         "logtable": "t",
-                        "endpoint_addr": "http://127.0.0.1:10420/error-logger-clickhouse/test"
+                        "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server"
                     },
                     "batch_max_size": 15,
                     "inactive_timeout": 1
@@ -160,7 +132,7 @@ plugins:
 --- response_body
 --- error_log
 this is a warning message for test3
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -169,12 +141,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 4: log a warn level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -185,7 +151,7 @@ plugins:
 --- response_body
 --- error_log
 this is a warning message for test4
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -194,12 +160,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 5: log some messages
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -210,7 +170,7 @@ plugins:
 --- response_body
 --- error_log
 this is a warning message for test5
-clickhouse error log body: INSERT INTO t FORMAT JSONEachRow
+clickhouse body: INSERT INTO t FORMAT JSONEachRow
 clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
@@ -219,12 +179,6 @@ clickhouse headers: x-clickhouse-database:default
 
 
 === TEST 6: log an info level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -240,12 +194,6 @@ this is an info message for test6
 
 
 === TEST 7: delete metadata for the plugin, recover to the default
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -263,3 +211,85 @@ plugins:
     }
 --- response_body
 passed
+
+
+
+=== TEST 8: data encryption for clickhouse.password
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "clickhouse": {
+                        "user": "default",
+                        "password": "bar",
+                        "database": "default",
+                        "logtable": "t",
+                        "endpoint_addr": "http://127.0.0.1:1980/clickhouse_logger_server"
+                    },
+                    "batch_max_size": 15,
+                    "inactive_timeout": 1
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value["clickhouse"].password)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/plugin_metadata/error-log-logger'))
+
+            ngx.say(res.body.node.value["clickhouse"].password)
+        }
+    }
+--- response_body
+bar
+77+NmbYqNfN+oLm0aX5akg==
+
+
+
+=== TEST 9: verify use the decrypted password to connect to clickhouse
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            core.log.warn("this is a warning message for test9")
+        }
+    }
+--- response_body
+--- error_log
+this is a warning message for test9
+clickhouse headers: x-clickhouse-key:bar
+--- wait: 5

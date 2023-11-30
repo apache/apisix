@@ -54,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -82,8 +80,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -92,8 +88,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -128,8 +122,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -138,8 +130,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -173,8 +163,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -201,8 +189,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -211,5 +197,3 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]

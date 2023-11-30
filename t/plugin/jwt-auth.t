@@ -24,10 +24,6 @@ no_shuffle();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -217,8 +213,6 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
---- no_error_log
-[error]
 
 
 
@@ -230,8 +224,6 @@ GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4
 {"message":"failed to verify jwt"}
 --- error_log
 failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
---- no_error_log
-[error]
 
 
 
@@ -285,8 +277,6 @@ Authorization: bearer invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
---- no_error_log
-[error]
 
 
 
@@ -440,8 +430,6 @@ GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtl
 {"message":"JWT token invalid"}
 --- error_log
 JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
---- no_error_log
-[error]
 
 
 
@@ -455,8 +443,6 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 {"message":"failed to verify jwt"}
 --- error_log
 failed to verify jwt: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
---- no_error_log
-[error]
 
 
 
@@ -517,7 +503,7 @@ property "key" is required
                 ngx.HTTP_GET,
                 nil,
                 [[
-                {"properties":{"disable":{"type":"boolean"}},"type":"object"}
+                {"properties":{},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -535,7 +521,7 @@ property "key" is required
                 ngx.HTTP_GET,
                 nil,
                 [[
-                {"properties":{"disable":{"type":"boolean"}},"type":"object"}
+                {"properties":{},"type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -572,6 +558,8 @@ property "key" is required
     }
 --- response_body
 passed
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -604,6 +592,8 @@ passed
     }
 --- response_body
 passed
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -632,6 +622,8 @@ passed
     }
 --- response_body
 hello world
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -662,6 +654,8 @@ hello world
     }
 --- response_body
 passed
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -694,6 +688,8 @@ passed
     }
 --- response_body
 passed
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -722,6 +718,8 @@ passed
     }
 --- response_body
 hello world
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -750,6 +748,8 @@ hello world
     }
 --- response_body
 hello world
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -780,6 +780,7 @@ hello world
     }
 --- response_body
 passed
+--- error_code_like: ^(?:200|201)?$
 
 
 
@@ -1126,7 +1127,7 @@ base64_secret required but the secret is not in base64 format
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body, res_data = t('/apisix/admin/consumers',
+            local code, body, res = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
                     "username": "kerouac",
@@ -1136,28 +1137,18 @@ base64_secret required but the secret is not in base64 format
                             "secret": "my-secret-key"
                         }
                     }
-                }]],
-                [[{
-                    "node": {
-                        "value": {
-                            "username": "kerouac",
-                            "plugins": {
-                                "jwt-auth": {
-                                    "key": "exp-not-set",
-                                    "secret": "my-secret-key"
-                                }
-                            }
-                        }
-                    }
                 }]]
-                )
+            )
+
+            res = require("toolkit.json").decode(res)
+            assert(res.value.plugins["jwt-auth"].exp == 86400)
 
             ngx.status = code
-            ngx.say(require("toolkit.json").encode(res_data))
+            ngx.say(body)
         }
     }
---- response_body_like eval
-qr/"exp":86400/
+--- response_body
+passed
 
 
 
@@ -1297,6 +1288,8 @@ passed
     }
 --- response_body
 passed
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'
 
 
 
@@ -1325,3 +1318,5 @@ passed
     }
 --- response_body
 hello world
+--- skip_eval
+1: $ENV{OPENSSL_FIPS} eq 'yes'

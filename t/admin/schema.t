@@ -31,8 +31,6 @@ __DATA__
 GET /apisix/admin/schema/route
 --- response_body eval
 qr/"plugins":\{"type":"object"}/
---- no_error_log
-[error]
 
 
 
@@ -56,8 +54,6 @@ qr/"plugins":\{"type":"object"}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -65,8 +61,6 @@ passed
 --- request
 GET /apisix/admin/schema/noexits
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -74,8 +68,6 @@ GET /apisix/admin/schema/noexits
 --- request
 PUT /apisix/admin/schema/service
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -83,8 +75,6 @@ PUT /apisix/admin/schema/service
 --- request
 POST /apisix/admin/schema/service
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -108,8 +98,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -118,17 +106,13 @@ passed
 GET /apisix/admin/schema/plugins/limit-count
 --- response_body eval
 qr/"required":\["count","time_window"\]/
---- no_error_log
-[error]
 
 
 
 === TEST 8: get not exist plugin
 --- request
 GET /apisix/admin/schema/plugins/no-exist
---- error_code: 400
---- no_error_log
-[error]
+--- error_code: 404
 
 
 
@@ -167,8 +151,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -207,8 +189,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -217,8 +197,6 @@ passed
 GET /apisix/admin/schema/plugins/udp-logger
 --- response_body  eval
 qr/"properties":/
---- no_error_log
-[error]
 
 
 
@@ -227,8 +205,6 @@ qr/"properties":/
 GET /apisix/admin/schema/plugins/grpc-transcode
 --- response_body eval
 qr/("proto_id".*additionalProperties|additionalProperties.*"proto_id")/
---- no_error_log
-[error]
 
 
 
@@ -237,8 +213,6 @@ qr/("proto_id".*additionalProperties|additionalProperties.*"proto_id")/
 GET /apisix/admin/schema/plugins/prometheus
 --- response_body eval
 qr/"disable":\{"type":"boolean"\}/
---- no_error_log
-[error]
 
 
 
@@ -250,8 +224,6 @@ plugins:
 GET /apisix/admin/schema/plugins/node-status
 --- response_body eval
 qr/"disable":\{"type":"boolean"\}/
---- no_error_log
-[error]
 
 
 
@@ -260,8 +232,6 @@ qr/"disable":\{"type":"boolean"\}/
 GET /apisix/admin/schema/global_rule
 --- response_body eval
 qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
---- no_error_log
-[error]
 
 
 
@@ -270,8 +240,6 @@ qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"crea
 GET /apisix/admin/schema/proto
 --- response_body eval
 qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
---- no_error_log
-[error]
 
 
 
@@ -280,5 +248,3 @@ qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"crea
 GET /apisix/admin/schema/stream_route
 --- response_body eval
 qr/("update_time":\{"type":"integer"\}.*"create_time":\{"type":"integer"\}|"create_time":\{"type":"integer"\}.*"update_time":\{"type":"integer"\})/
---- no_error_log
-[error]

@@ -55,8 +55,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -70,8 +68,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -85,8 +81,6 @@ GET /hello
 --- more_headers
 Host: not_found.com
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -101,8 +95,6 @@ GET /hello
 X-Real-IP: 192.168.1.100
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -117,5 +109,3 @@ GET /hello
 X-Real-IP: 127.0.0.3
 --- response_body
 hello world
---- no_error_log
-[error]

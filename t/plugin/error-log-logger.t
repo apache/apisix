@@ -63,6 +63,15 @@ _EOC_
 _EOC_
 
     $block->set_value("stream_server_config", $stream_default_server);
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugins:
+    - error-log-logger
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
+
 });
 
 run_tests;
@@ -70,6 +79,7 @@ run_tests;
 __DATA__
 
 === TEST 1: not enable the plugin
+--- extra_yaml_config
 --- config
     location /tg {
         content_by_lua_block {
@@ -87,9 +97,6 @@ error-log-logger
 
 
 === TEST 2: enable the plugin, but not init the metadata
---- yaml_config
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -107,12 +114,6 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 === TEST 3: set a wrong metadata
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -145,12 +146,6 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 === TEST 4: test unreachable server
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -180,12 +175,6 @@ qr/\[Server\] receive data:.*this is a warning message for test./
 
 
 === TEST 5: log a warn level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -215,9 +204,6 @@ qr/\[Server\] receive data:.*this is a warning message for test./
 
 
 === TEST 6: log an error level message
---- yaml_config
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -236,9 +222,6 @@ qr/\[Server\] receive data:.*this is an error message for test./
 
 
 === TEST 7: log an info level message
---- yaml_config
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -257,12 +240,6 @@ qr/\[Server\] receive data:.*this is an info message for test./
 
 
 === TEST 8: delete metadata for the plugin, recover to the default
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -282,18 +259,10 @@ plugins:
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 9: want to reload the plugin by route
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -336,12 +305,6 @@ qr/please set the correct plugin_metadata for error-log-logger/
 
 
 === TEST 10: avoid sending stale error log
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -375,12 +338,6 @@ qr/\[Server\] receive data:.*this is an error message for test./
 
 
 === TEST 11: delete the route
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -400,18 +357,10 @@ plugins:
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 12: log a warn level message (schema compatibility testing)
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -441,9 +390,6 @@ qr/\[Server\] receive data:.*this is a warning message for test./
 
 
 === TEST 13: log an error level message (schema compatibility testing)
---- yaml_config
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -462,9 +408,6 @@ qr/\[Server\] receive data:.*this is an error message for test./
 
 
 === TEST 14: log an info level message (schema compatibility testing)
---- yaml_config
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -483,12 +426,6 @@ qr/\[Server\] receive data:.*this is an info message for test./
 
 
 === TEST 15: delete metadata for the plugin, recover to the default (schema compatibility testing)
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -508,5 +445,3 @@ plugins:
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]

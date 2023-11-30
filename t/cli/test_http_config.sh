@@ -39,22 +39,6 @@ echo "passed: define custom shdict"
 
 git checkout conf/config.yaml
 
-echo '
-nginx_config:
-  http:
-    lua_shared_dicts:
-      my_dict: 1m
-' > conf/config.yaml
-
-make init
-
-if ! grep "lua_shared_dict my_dict 1m;" conf/nginx.conf > /dev/null; then
-    echo "failed: define custom shdict in the old way"
-    exit 1
-fi
-
-echo "passed: define custom shdict in the old way"
-
 echo "
 plugins:
     - ip-restriction

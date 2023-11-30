@@ -51,8 +51,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -94,8 +92,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -105,7 +101,60 @@ GET /hello
 --- response_body
 hello world
 --- wait: 0.5
---- no_error_log
-[error]
 --- error_log eval
 qr/send data to rocketmq: \{.*"host":"localhost"/
+
+
+
+=== TEST 4: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "rocketmq-logger": {
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
+                                "key" : "key1",
+                                "tag" : "tag1",
+                                "log_format": {
+                                    "x_ip": "$remote_addr"
+                                },
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 5: hit route and report logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- error_log eval
+qr/send data to rocketmq: \{.*"x_ip":"127.0.0.1".*\}/

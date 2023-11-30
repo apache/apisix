@@ -28,6 +28,7 @@ plugins:
     - opentelemetry
 plugin_attr:
     opentelemetry:
+        trace_id_source: x-request-id
         batch_span_processor:
             max_export_batch_size: 1
             inactive_timeout: 0.5
@@ -35,35 +36,8 @@ _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
 
-
-    if (!$block->extra_init_by_lua) {
-        my $extra_init_by_lua = <<_EOC_;
--- mock exporter http client
-local client = require("opentelemetry.trace.exporter.http_client")
-client.do_request = function()
-    ngx.log(ngx.INFO, "opentelemetry export span")
-end
-local ctx_new = require("opentelemetry.context").new
-require("opentelemetry.context").new = function (...)
-    local ctx = ctx_new(...)
-    local current = ctx.current
-    ctx.current = function (...)
-        ngx.log(ngx.INFO, "opentelemetry context current")
-        return current(...)
-    end
-    return ctx
-end
-_EOC_
-
-        $block->set_value("extra_init_by_lua", $extra_init_by_lua);
-    }
-
     if (!$block->request) {
         $block->set_value("request", "GET /t");
-    }
-
-    if (!$block->no_error_log && !$block->error_log) {
-        $block->set_value("no_error_log", "[error]");
     }
 
     $block;
@@ -133,12 +107,12 @@ passed
 --- request
 GET /hello
 --- error_code: 401
---- wait: 1
---- grep_error_log eval
-qr/(opentelemetry export span|opentelemetry context current|plugin body_filter phase)/
---- grep_error_log_out
-plugin body_filter phase
-plugin body_filter phase
-opentelemetry context current
-opentelemetry context current
-opentelemetry export span
+--- wait: 2
+
+
+
+=== TEST 3: check log
+--- exec
+tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
+--- response_body eval
+qr/.*\/hello.*/

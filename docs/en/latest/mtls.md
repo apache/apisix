@@ -1,5 +1,10 @@
 ---
 title: Mutual TLS Authentication
+keywords:
+  - Apache APISIX
+  - Mutual TLS
+  - mTLS
+description: This document describes how you can secure communication to and within APISIX with mTLS.
 ---
 
 <!--
@@ -35,8 +40,10 @@ The clients will provide their certificates to the server and the server will ch
 
 2. Modify configuration items in `conf/config.yaml`:
 
-```yaml
-  port_admin: 9180
+```yaml title="conf/config.yaml"
+  admin_listen:
+    ip: 127.0.0.1
+    port: 9180
   https_admin: true
 
   admin_api_mtls:
@@ -66,18 +73,22 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### How to configure
 
-You need to build [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
+You need to configure `etcd.tls` for APISIX to work on an etcd cluster with mTLS enabled as shown below:
 
-```yaml
-etcd:
-  tls:
-    cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
-    key: /data/certs/etcd_client.key        # path of key used by the etcd client
+```yaml title="conf/config.yaml"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    tls:
+      cert: /data/certs/etcd_client.pem       # path of certificate used by the etcd client
+      key: /data/certs/etcd_client.key        # path of key used by the etcd client
 ```
 
 If APISIX does not trust the CA certificate that used by etcd server, we need to set up the CA certificate.
 
-```yaml
+```yaml title="conf/config.yaml"
 apisix:
   ssl:
     ssl_trusted_certificate: /path/to/certs/ca-certificates.crt       # path of CA certificate used by the etcd server
@@ -89,16 +100,19 @@ apisix:
 
 Using mTLS is a way to verify clients cryptographically. It is useful and important in cases where you want to have encrypted and secure traffic in both directions.
 
+* Note: the mTLS protection only happens in HTTPS. If your route can also be accessed via HTTP, you should add additional protection in HTTP or disable the access via HTTP.*
+
 ### How to configure
+
+We provide a [tutorial](./tutorials/client-to-apisix-mtls.md) that explains in detail how to configure mTLS between the client and APISIX.
 
 When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain. Please refer to [Admin API](./admin-api.md#ssl) for details.
 
 Here is an example Python script to create SSL with mTLS (id is `1`, changes admin API url if needed):
 
-```py
+```python title="create-ssl.py"
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as ssl.py
 import sys
 # sudo pip install requests
 import requests
@@ -126,7 +140,7 @@ if len(sys.argv) >= 5:
         reqParam["client"]["ca"] = clientCert
     if len(sys.argv) >= 6:
         reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json=reqParam, headers={
+resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)
@@ -136,7 +150,7 @@ print(resp.text)
 Create SSL:
 
 ```bash
-./ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
+./create-ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
 
 # test it
 curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX_URL>:<APISIX_HTTPS_PORT>/hello" -k --cert ./client.pem --key ./client.key
@@ -154,14 +168,13 @@ Sometimes the upstream requires mTLS. In this situation, the APISIX acts as the 
 
 When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams. Please refer to [Admin API](./admin-api.md#upstream) for details.
 
-This feature requires APISIX to run on [APISIX-Base](./FAQ/#how-do-i-build-the-apisix-base-environment).
+This feature requires APISIX to run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment).
 
 Here is a similar Python script to patch a existed upstream with mTLS (changes admin API url if needed):
 
-```python
+```python title="patch_upstream_mtls.py"
 #!/usr/bin/env python
 # coding: utf-8
-# save this file as patch_upstream_mtls.py
 import sys
 # sudo pip install requests
 import requests
@@ -183,7 +196,7 @@ reqParam = {
     },
 }
 
-resp = requests.patch("http://127.0.0.1:9080/apisix/admin/upstreams/"+id, json=reqParam, headers={
+resp = requests.patch("http://127.0.0.1:9180/apisix/admin/upstreams/"+id, json=reqParam, headers={
     "X-API-KEY": api_key,
 })
 print(resp.status_code)

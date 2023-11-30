@@ -21,6 +21,19 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 worker_connections(128);
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
+plugins:
+    - error-log-logger
+_EOC_
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
+});
+
 run_tests;
 
 __DATA__
@@ -50,18 +63,10 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
 === TEST 2: test unreachable server
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -90,12 +95,6 @@ qr/Batch Processor\[error-log-logger\] failed to process entries: error while se
 
 
 === TEST 3: put plugin metadata and log an error level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -119,19 +118,13 @@ plugins:
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- error_log
+this is an error message for test
 --- wait: 5
 
 
 
 === TEST 4: log a warn level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -149,12 +142,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is a warning message for test.*
 
 
 === TEST 5: log some messages
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -173,12 +160,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\
 
 
 === TEST 6: log an info level message
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -196,12 +177,6 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"
 
 
 === TEST 7: delete metadata for the plugin, recover to the default
---- yaml_config
-apisix:
-    enable_admin: true
-    admin_key: null
-plugins:
-  - error-log-logger
 --- config
     location /tg {
         content_by_lua_block {
@@ -221,5 +196,34 @@ plugins:
 GET /tg
 --- response_body
 passed
---- no_error_log
-[error]
+
+
+
+=== TEST 8: put plugin metadata with $hostname and log an error level message
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "skywalking": {
+                        "endpoint_addr": "http://127.0.0.1:1982/log",
+                        "service_instance_name": "$hostname"
+                    },
+                    "batch_max_size": 15,
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.error("this is an error message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/\\\"serviceInstance\\\":\\\"\$hostname\\\"/
+qr/\\\"serviceInstance\\\":\\\"\\\"/
+--- wait: 0.5

@@ -59,7 +59,9 @@ echo "passed: nginx.conf file contains reuseport configuration"
 echo "
 apisix:
     ssl:
-        listen_port: 8443
+        listen:
+            - port: 8443
+
 " > conf/config.yaml
 
 make init
@@ -87,10 +89,11 @@ apisix:
     - 9081
     - 9082
   ssl:
-    listen_port:
-      - 9443
-      - 9444
-      - 9445
+    enable: true
+    listen:
+        - port: 9443
+        - port: 9444
+        - port: 9445
 " > conf/config.yaml
 
 make init
@@ -208,6 +211,42 @@ fi
 
 echo "passed: resolve variables"
 
+# support reserved environment variable APISIX_DEPLOYMENT_ETCD_HOST
+
+echo '
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2333"
+' > conf/config.yaml
+
+failed_msg="failed: failed to configure etcd host with reserved environment variable"
+
+out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make init 2>&1 || true)
+if echo "$out" | grep "connection refused" > /dev/null; then
+    echo $failed_msg
+    exit 1
+fi
+
+out=$(APISIX_DEPLOYMENT_ETCD_HOST='["http://127.0.0.1:2379"]' make run 2>&1 || true)
+if echo "$out" | grep "connection refused" > /dev/null; then
+    echo $failed_msg
+    exit 1
+fi
+
+if ! grep "env APISIX_DEPLOYMENT_ETCD_HOST;" conf/nginx.conf > /dev/null; then
+    echo "failed: 'env APISIX_DEPLOYMENT_ETCD_HOST;' not in nginx.conf"
+    echo $failed_msg
+    exit 1
+fi
+
+make stop
+
+echo "passed: configure etcd host with reserved environment variable"
+
 echo '
 nginx_config:
     worker_rlimit_nofile: ${{nofile9}}
@@ -253,9 +292,13 @@ echo "passed: resolve variables wrapped with whitespace"
 
 # support environment variables in local_conf
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+      - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
 ' > conf/config.yaml
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
@@ -267,9 +310,13 @@ fi
 
 # don't override user's envs configuration
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+      - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
 nginx_config:
     envs:
         - ETCD_HOST
@@ -288,9 +335,13 @@ if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
 fi
 
 echo '
-etcd:
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
     host:
-        - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
+      - "http://${{ETCD_HOST}}:${{ETCD_PORT}}"
 nginx_config:
     envs:
         - ETCD_HOST=1.1.1.1
@@ -446,13 +497,13 @@ git checkout conf/config.yaml
 
 make init
 
-grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
-if [ ! $? -eq 0 ]; then
-    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
+count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
+if [ $count -ne 0 ]; then
+    echo "failed: nginx.conf file found worker_cpu_affinity when disabling it"
     exit 1
 fi
 
-echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
+echo "passed: nginx.conf file disables cpu affinity"
 
 # check the 'worker_shutdown_timeout' in 'nginx.conf' .
 
@@ -505,71 +556,23 @@ fi
 sed -i 's/worker_processes: 2/worker_processes: auto/'  conf/config.yaml
 echo "passed: worker_processes number is configurable"
 
-# check customized config.yaml is copied and reverted.
-
-git checkout conf/config.yaml
-
-echo "
-apisix:
-    admin_api_mtls:
-        admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-        admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-    port_admin: 9180
-    https_admin: true
-" > conf/customized_config.yaml
-
-cp conf/config.yaml conf/config_original.yaml
-
-make init
-
-if ./bin/apisix start -c conf/not_existed_config.yaml; then
-    echo "failed: apisix still start with invalid customized config.yaml"
-    exit 1
-fi
-
-./bin/apisix start -c conf/customized_config.yaml
-
-if cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
-    rm conf/config_original.yaml
-    echo "failed: customized config.yaml copied failed"
-    exit 1
-fi
-
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
-if [ ! $code -eq 200 ]; then
-    rm conf/config_original.yaml conf/customized_config.yaml
-    echo "failed: customized config.yaml not be used"
-    exit 1
-fi
-
-make stop
-
-if ! cmp -s "conf/config.yaml" "conf/config_original.yaml"; then
-    rm conf/config_original.yaml conf/customized_config.yaml
-    echo "failed: customized config.yaml reverted failed"
-    exit 1
-fi
-
-rm conf/config_original.yaml conf/customized_config.yaml
-echo "passed: customized config.yaml copied and reverted succeeded"
-
 # check disable cpu affinity
 git checkout conf/config.yaml
 
 echo '
 nginx_config:
-  enable_cpu_affinity: false
+  enable_cpu_affinity: true
 ' > conf/config.yaml
 
 make init
 
-count=`grep -c "worker_cpu_affinity" conf/nginx.conf  || true`
-if [ $count -ne 0 ]; then
-    echo "failed: nginx.conf file found worker_cpu_affinity when disable it"
+grep -E "worker_cpu_affinity" conf/nginx.conf > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: nginx.conf file is missing worker_cpu_affinity configuration"
     exit 1
 fi
 
-echo "passed: nginx.conf file disable cpu affinity"
+echo "passed: nginx.conf file contains worker_cpu_affinity configuration"
 
 # set worker processes with env
 git checkout conf/config.yaml
@@ -624,7 +627,7 @@ stream_plugins:
     - 3rd-party
 ' > conf/config.yaml
 
-rm logs/error.log
+rm logs/error.log || true
 make init
 make run
 
@@ -667,10 +670,10 @@ echo "passed: bad lua_module_hook should be rejected"
 
 echo '
 apisix:
+    proxy_mode: http&stream
     extra_lua_path: "\$prefix/example/?.lua"
     lua_module_hook: "my_hook"
     stream_proxy:
-        only: false
         tcp:
             - addr: 9100
 ' > conf/config.yaml
@@ -693,43 +696,6 @@ if ! grep "my hook works in stream" logs/error.log > /dev/null; then
 fi
 
 echo "passed: hook can take effect"
-
-# check restart with old nginx.pid exist
-echo "-1" > logs/nginx.pid
-out=$(./bin/apisix start 2>&1 || true)
-if echo "$out" | grep "APISIX is running"; then
-    rm logs/nginx.pid
-    echo "failed: should reject bad nginx.pid"
-    exit 1
-fi
-
-./bin/apisix stop
-sleep 0.5
-rm logs/nginx.pid || true
-
-# check no corresponding process
-make run
-oldpid=$(< logs/nginx.pid)
-make stop
-sleep 0.5
-echo $oldpid > logs/nginx.pid
-out=$(make run || true)
-if ! echo "$out" | grep "nginx.pid exists but there's no corresponding process with pid"; then
-    echo "failed: should find no corresponding process"
-    exit 1
-fi
-make stop
-echo "pass: no corresponding process"
-
-# check running when run repeatedly
-out=$(make run; make run || true)
-if ! echo "$out" | grep "APISIX is running"; then
-    echo "failed: should find APISIX running"
-    exit 1
-fi
-
-make stop
-echo "pass: check APISIX running"
 
 # check the keepalive related parameter settings in the upstream
 git checkout conf/config.yaml
@@ -844,6 +810,7 @@ git checkout conf/config.yaml
 
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - addr: 9100

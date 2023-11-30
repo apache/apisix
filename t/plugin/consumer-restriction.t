@@ -49,8 +49,6 @@ __DATA__
 GET /t
 --- response_body
 {"rejected_code":403,"title":"whitelist","type":"consumer_name","whitelist":["jack1","jack2"]}
---- no_error_log
-[error]
 
 
 
@@ -71,8 +69,6 @@ GET /t
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -103,8 +99,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -135,8 +129,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -176,8 +168,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -187,8 +177,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing authorization in request"}
---- no_error_log
-[error]
 
 
 
@@ -199,8 +187,6 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -212,8 +198,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
 {"message":"The consumer_name is forbidden."}
---- no_error_log
-[error]
 
 
 
@@ -254,8 +238,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -265,8 +247,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing authorization in request"}
---- no_error_log
-[error]
 
 
 
@@ -278,8 +258,6 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
 {"message":"request is forbidden"}
---- no_error_log
-[error]
 
 
 
@@ -290,8 +268,6 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -330,8 +306,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -340,9 +314,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
---- no_error_log
-[error]
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -353,9 +325,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
---- no_error_log
-[error]
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -366,9 +336,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
---- no_error_log
-[error]
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -407,8 +375,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -417,9 +383,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
---- no_error_log
-[error]
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -430,9 +394,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
---- no_error_log
-[error]
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -443,9 +405,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
---- no_error_log
-[error]
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -486,8 +446,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -499,8 +457,6 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
 {"message":"The consumer_name is forbidden."}
---- no_error_log
-[error]
 
 
 
@@ -541,8 +497,6 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -553,8 +507,6 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -598,8 +550,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -611,8 +561,6 @@ Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 403
 --- response_body
 {"message":"The consumer_name is forbidden."}
---- no_error_log
-[error]
 
 
 
@@ -623,8 +571,6 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -666,8 +612,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -678,8 +622,6 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -691,8 +633,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 403
 --- response_body
 {"message":"The consumer_name is forbidden."}
---- no_error_log
-[error]
 
 
 
@@ -726,8 +666,6 @@ Authorization: Basic amFjazIwMjA6MTIzNDU2
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -738,8 +676,6 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -750,8 +686,6 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -760,8 +694,6 @@ hello world
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -792,8 +724,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -829,8 +759,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -866,8 +794,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -926,8 +852,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -958,8 +882,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -995,8 +917,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1058,8 +978,6 @@ GET /t
 --- error_code: 401
 --- response_body eval
 qr/\{"message":"The service_id is forbidden."\}/
---- no_error_log
-[error]
 
 
 
@@ -1094,8 +1012,6 @@ qr/\{"message":"The service_id is forbidden."\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1131,8 +1047,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1192,8 +1106,6 @@ GET /t
 --- error_code: 401
 --- response_body eval
 qr/\{"message":"The service_id is forbidden."\}/
---- no_error_log
-[error]
 
 
 
@@ -1229,8 +1141,6 @@ qr/\{"message":"The service_id is forbidden."\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1289,8 +1199,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1325,8 +1233,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1383,8 +1289,6 @@ location /t {
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1419,8 +1323,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1480,8 +1382,6 @@ GET /t
 --- error_code: 401
 --- response_body eval
 qr/\{"message":"The route_id is forbidden."\}/
---- no_error_log
-[error]
 
 
 
@@ -1500,8 +1400,6 @@ qr/\{"message":"The route_id is forbidden."\}/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1520,8 +1418,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -1540,5 +1436,3 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

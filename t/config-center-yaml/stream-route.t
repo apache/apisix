@@ -27,8 +27,10 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -113,9 +115,6 @@ stream_routes:
       mqtt-proxy:
         protocol_name: "MQTT"
         protocol_level: 4
-        upstream:
-          ip: "127.0.0.1"
-          port: 1995
 upstreams:
   - nodes:
       "127.0.0.1:1995": 1

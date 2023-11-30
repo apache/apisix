@@ -1,7 +1,8 @@
 ---
 title: ext-plugin-pre-req
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - ext-plugin-pre-req
 description: 本文介绍了关于 Apache APISIX `ext-plugin-pre-req` 插件的基本信息及使用方法。
@@ -50,7 +51,7 @@ External Plugin 执行的结果会影响当前请求的行为。
 以下示例展示了如何在指定路由中启用 `ext-plugin-pre-req` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -59,6 +60,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  \
             "conf" : [
                 {"name": "ext-plugin-A", "value": "{\"enable\":\"feature\"}"}
             ]
+        }
     },
     "upstream": {
         "type": "roundrobin",
@@ -79,12 +81,12 @@ curl -i http://127.0.0.1:9080/index.html
 
 在返回结果中可以看到刚刚配置的 Plugin Runner 已经被触发，同时 `ext-plugin-A` 插件也已经被执行。
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `ext-plugin-pre-req` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",

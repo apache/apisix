@@ -172,7 +172,11 @@ local function report(premature, report_ttl)
             return
 
         else
-            server_info.etcd_version = res.body.etcdcluster
+            if res.body.etcdcluster == "" then
+                server_info.etcd_version = res.body.etcdserver
+            else
+                server_info.etcd_version = res.body.etcdcluster
+            end
         end
     end
 

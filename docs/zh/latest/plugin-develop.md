@@ -28,7 +28,7 @@ title: 插件开发
 Apache APISIX 提供了两种方式来添加新的功能。
 
 1. 修改 Apache APISIX 的源代码并重新发布 (不推荐)。
-2. 配置 `extra_lua_path` 和 `extra_lua_cpath` 在 `conf/config.yaml` 以加载你自己的代码文件。 你应该给自己的代码文件起一个不包含在原来库中的名字，而不是使用相同名称的代码文件，但是如果有需要，你可以使用这种方式覆盖内置的代码文件。
+2. 配置 `extra_lua_path` 和 `extra_lua_cpath` 在 `conf/config.yaml` 以加载你自己的代码文件。你应该给自己的代码文件起一个不包含在原来库中的名字，而不是使用相同名称的代码文件，但是如果有需要，你可以使用这种方式覆盖内置的代码文件。
 
 比如，你可以创建一个目录目录结构，像下面这样：
 
@@ -56,7 +56,7 @@ apisix:
     extra_lua_path: "/path/to/example/?.lua"
 ```
 
-现在使用 `require "apisix.plugins.3rd-party"` 会加载你自己的插件， 比如 `require "apisix.plugins.jwt-auth"`会加载 `jwt-auth` 插件。
+现在使用 `require "apisix.plugins.3rd-party"` 会加载你自己的插件，比如 `require "apisix.plugins.jwt-auth"`会加载 `jwt-auth` 插件。
 
 可能你会想覆盖一个文件中的函数，你可以在 `conf/config.yaml` 文件中配置 `lua_module_hook` 来使你的 hook 生效。
 
@@ -74,7 +74,7 @@ apisix:
 
 ## 检查外部依赖
 
-如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。 如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
+如果你的插件，涉及到一些外部的依赖和三方库，请首先检查一下依赖项的内容。如果插件需要用到共享内存，需要在 [自定义 Nginx 配置](./customize-nginx-configuration.md)，例如：
 
 ```yaml
 # put this in config.yaml:
@@ -86,7 +86,7 @@ nginx_config:
         lua_shared_dict introspection        10m; # cache for JWT verification results
 ```
 
-插件本身提供了 init 方法。方便插件加载后做初始化动作。
+插件本身提供了 init 方法。方便插件加载后做初始化动作。如果你需要清理初始化动作创建出来的内容，你可以在对应的 destroy 方法里完成这一操作。
 
 注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 __apisix/init.lua__ 文件的初始化方法 http_init 中添加逻辑，并且可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
 
@@ -107,7 +107,7 @@ local _M = {
 }
 ```
 
-注：新插件的优先级（ priority 属性 ）不能与现有插件的优先级相同，您可以使用 [control API](./control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级 ( priority ) 值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0 ，`ip-restriction` 的优先级是 3000 ，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的 [确定执行阶段](#确定执行阶段) 这一节。对于你的插件，建议采用 1 到 99 之间的优先级。
+注：新插件的优先级（priority 属性）不能与现有插件的优先级相同，您可以使用 [control API](./control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级 ( priority ) 值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0，`ip-restriction` 的优先级是 3000，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的 [确定执行阶段](#确定执行阶段) 这一节。对于你的插件，建议采用 1 到 99 之间的优先级。
 
 在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
 
@@ -196,7 +196,7 @@ end
 
 注：项目已经提供了 __core.schema.check__ 公共方法，直接使用即可完成配置参数校验。
 
-另外，如果插件需要使用一些元数据，可以定义插件的 `metadata_schema` ，然后就可以通过 `admin api` 动态的管理这些元数据了。如：
+另外，如果插件需要使用一些元数据，可以定义插件的 `metadata_schema` ，然后就可以通过 `Admin API` 动态的管理这些元数据了。如：
 
 ```lua
 local metadata_schema = {
@@ -239,7 +239,7 @@ local _M = {
 }
 ```
 
-你在创建 [Consumer](https://github.com/apache/apisix/blob/master/docs/zh/latest/admin-api.md#consumer) 时会用到它。
+你在创建 [Consumer](./admin-api.md#consumer) 时会用到它。
 
 为了检验这个配置，这个插件使用了如下的 schema:
 
@@ -273,9 +273,52 @@ function _M.check_schema(conf, schema_type)
 end
 ```
 
+### 加密存储字段
+
+指定参数需要被加密存储（需要 APISIX 版本不小于 3.1）
+
+有些插件需要将参数加密存储，比如 `basic-auth` 插件的 `password` 参数。这个插件需要在 `schema` 中指定哪些参数需要被加密存储。
+
+```lua
+encrypt_fields = {"password"}
+```
+
+如果是嵌套的参数，比如 `error-log-logger` 插件的 `clickhouse.password` 参数，需要用 `.` 来分隔：
+
+```lua
+encrypt_fields = {"clickhouse.password"}
+```
+
+目前还不支持：
+
+1. 两层以上的嵌套
+2. 数组中的字段
+
+通过在 `schema` 中指定 `encrypt_fields = {"password"}`，可以将参数加密存储。APISIX 将提供以下功能：
+
+- 通过 `Admin API` 来新增和更新资源时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动加密存储在 etcd 中
+- 通过 `Admin API` 来获取资源时，以及在运行插件时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动解密
+
+如何开启该功能？
+
+在 `config.yaml` 中开启 `data_encryption`：
+
+```yaml
+apisix:
+    data_encryption:
+    enable: true
+    keyring:
+        - edd1c9f0985e76a2
+        - qeddd145sfvddff4
+```
+
+`keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对在 `encrypt_fields` 声明的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
+
+如果 `keyring` 中的 key 都无法解密数据，则使用原始数据。
+
 ## 确定执行阶段
 
-根据业务功能，确定你的插件需要在哪个阶段执行。 key-auth 是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，只有认证逻辑可以在 rewrite 阶段里面完成，其他需要在代理到上游之前执行的逻辑都是在 access 阶段完成的。
+根据业务功能，确定你的插件需要在哪个阶段执行。key-auth 是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，只有认证逻辑可以在 rewrite 阶段里面完成，其他需要在代理到上游之前执行的逻辑都是在 access 阶段完成的。
 
 **注意：我们不能在 rewrite 和 access 阶段调用 `ngx.exit`、`ngx.redirect` 或者 `core.respond.exit`。如果确实需要退出，只需要 return 状态码和正文，插件引擎将使用返回的状态码和正文进行退出。[例子](https://github.com/apache/apisix/blob/35269581e21473e1a27b11cceca6f773cad0192a/apisix/plugins/limit-count.lua#L177)**
 
@@ -297,7 +340,7 @@ end
 在对应的阶段方法里编写功能的逻辑代码，在阶段方法中具有 `conf` 和 `ctx` 两个参数，以 `limit-conn` 插件配置为例。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -465,11 +508,11 @@ done
 
 一个测试用例主要有三部分内容：
 
-- 程序代码： Nginx location 的配置内容
-- 输入： http 的 request 信息
-- 输出检查： status ，header ，body ，error_log 检查
+- 程序代码：Nginx location 的配置内容
+- 输入：http 的 request 信息
+- 输出检查：status，header，body，error_log 检查
 
-这里请求 __/t__ ，经过配置文件 __location__ ，调用 __content_by_lua_block__ 指令完成 lua 的脚本，最终返回。
+这里请求 __/t__，经过配置文件 __location__，调用 __content_by_lua_block__ 指令完成 lua 的脚本，最终返回。
 用例的断言是 response_body 返回 "done"，__no_error_log__ 表示会对 Nginx 的 error.log 检查，
 必须没有 ERROR 级别的记录。
 
@@ -477,4 +520,4 @@ done
 
 根据我们在 Makefile 里配置的 PATH，和每一个 __.t__ 文件最前面的一些配置项，框架会组装成一个完整的 nginx.conf 文件，
 __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据测试用例提供的信息，发起 http 请求并检查 http 的返回项，
-包括 http status，http response header， http response body 等。
+包括 http status，http response header，http response body 等。

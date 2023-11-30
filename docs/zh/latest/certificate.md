@@ -33,87 +33,80 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 * `key`：SSL 密钥对的私钥，pem 格式
 * `snis`：SSL 证书所指定的一个或多个域名，注意在设置这个参数之前，你需要确保这个证书对应的私钥是有效的。
 
-为了简化示例，我们会使用下面的 Python 脚本：
-
-```python
-#!/usr/bin/env python
-# coding: utf-8
-# save this file as ssl.py
-import sys
-# sudo pip install requests
-import requests
-
-if len(sys.argv) <= 3:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1]) as f:
-    cert = f.read()
-with open(sys.argv[2]) as f:
-    key = f.read()
-sni = sys.argv[3]
-api_key = "edd1c9f034335f136f87ad84b625c8f1"
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json={
-    "cert": cert,
-    "key": key,
-    "snis": [sni],
-}, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
-```
+创建一个包含证书和密钥，单一域名 SNI 的 SSL 对象：
 
 ```shell
-# 创建 SSL 对象
-./ssl.py t.crt t.key test.com
-
-# 创建 Router 对象
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/hello",
+     "cert" : "'"$(cat t/certs/apisix.crt)"'",
+     "key": "'"$(cat t/certs/apisix.key)"'",
+     "snis": ["test.com"]
+}'
+```
+
+创建路由：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/get",
     "hosts": ["test.com"],
     "methods": ["GET"],
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "httpbin.org": 1
         }
     }
 }'
+```
 
-# 测试一下
+测试：
 
-curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
+```shell
+curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/get -k -vvv
+
 * Added test.com:9443:127.0.0.1 to DNS cache
 * About to connect() to test.com port 9443 (#0)
 *   Trying 127.0.0.1...
 * Connected to test.com (127.0.0.1) port 9443 (#0)
-* Initializing NSS with certpath: sql:/etc/pki/nssdb
-* skipping SSL peer certificate verification
-* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
 * Server certificate:
-* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-* 	start date: Jun 24 22:18:05 2019 GMT
-* 	expire date: May 31 22:18:05 2119 GMT
-* 	common name: test.com
-* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-> GET /hello HTTP/1.1
-> User-Agent: curl/7.29.0
+*   subject: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*   start date: Jun 24 22:18:05 2019 GMT
+*   expire date: May 31 22:18:05 2119 GMT
+*   issuer: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*   SSL certificate verify result: self-signed certificate (18), continuing anyway.
+> GET /get HTTP/2
 > Host: test.com:9443
-> Accept: */*
+> user-agent: curl/7.81.0
+> accept: */*
 ```
 
 ### 泛域名
 
-一个 SSL 证书的域名也可能包含泛域名，如 `*.test.com`，它代表所有以 `test.com` 结尾的域名都可以使用该证书。
-比如 `*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
+一个 SSL 证书的域名也可能包含泛域名，如 `*.test.com`，它代表所有以 `test.com` 结尾的域名都可以使用该证书。比如 `*.test.com`，可以匹配 `www.test.com`、`mail.test.com`。
 
-看下面这个例子，请注意我们把 `*.test.com` 作为 sni 传递进来：
+以下是在 APISIX 中配置泛域名 SNI 的 SSL 证书的示例。
+
+创建一个包含证书和密钥，泛域名 SNI 的 SSL 对象：
 
 ```shell
-./ssl.py t.crt t.key '*.test.com'
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+     "cert" : "'"$(cat t/certs/apisix.crt)"'",
+     "key": "'"$(cat t/certs/apisix.key)"'",
+     "snis": ["*.test.com"]
+}'
+```
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+创建路由：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/hello",
     "hosts": ["*.test.com"],
@@ -125,33 +118,34 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         }
     }
 }'
+```
 
-# 测试一下
+测试：
 
-curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -vvv
-* Added test.com:9443:127.0.0.1 to DNS cache
-* About to connect() to test.com port 9443 (#0)
-*   Trying 127.0.0.1...
-* Connected to test.com (127.0.0.1) port 9443 (#0)
-* Initializing NSS with certpath: sql:/etc/pki/nssdb
-* skipping SSL peer certificate verification
-* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+```shell
+curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/get -k -vvv
+
+* Added www.test.com:9443:127.0.0.1 to DNS cache
+* Hostname www.test.com was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to www.test.com (127.0.0.1) port 9443 (#0)
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
 * Server certificate:
-* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-* 	start date: Jun 24 22:18:05 2019 GMT
-* 	expire date: May 31 22:18:05 2119 GMT
-* 	common name: test.com
-* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-> GET /hello HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: test.com:9443
-> Accept: */*
+*  subject: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  start date: Jun 24 22:18:05 2019 GMT
+*  expire date: May 31 22:18:05 2119 GMT
+*  issuer: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> GET /get HTTP/2
+> Host: www.test.com:9443
+> user-agent: curl/7.74.0
+> accept: */*
 ```
 
 ### 多域名的情况
 
-如果一个 SSL 证书包含多个独立域名，比如 `www.test.com` 和 `mail.test.com`，
-你可以把它们都放入 `snis` 数组中，就像这样：
+如果一个 SSL 证书包含多个独立域名，比如 `www.test.com` 和 `mail.test.com`，你可以把它们都放入 `snis` 数组中，就像这样：
 
 ```json
 {
@@ -171,7 +165,7 @@ curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -v
 
 ### 设置多个 CA 证书
 
-APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.md#保护-admin-api)，[保护 ETCD](./mtls.md#保护-etcd)，以及 [部署模式](../../en/latest/architecture-design/deployment-role.md) 等。
+APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.md#保护-admin-api)，[保护 ETCD](./mtls.md#保护-etcd)，以及 [部署模式](../../en/latest/deployment-modes.md) 等。
 
 在这些地方，使用 `ssl_trusted_certificate` 或 `trusted_ca_cert` 来配置 CA 证书，但是这些配置最终将转化为 OpenResty 的 [lua_ssl_trusted_certificate](https://github.com/openresty/lua-nginx-module#lua_ssl_trusted_certificate) 指令。
 
@@ -188,8 +182,8 @@ APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.
 | foo_ca.crt       | CA 证书  | 签发客户端与 APISIX Admin API 进行 mTLS 通信所需的次级证书。                                                             |
 | foo_client.crt   | 证书     | 由 `foo_ca.crt` 签发，客户端使用，访问 APISIX Admin API 时证明自身身份的证书。                                             |
 | foo_client.key   | 密钥文件  | 由 `foo_ca.crt` 签发，客户端使用，访问 APISIX Admin API 所需的密钥文件。                                                  |
-| foo_server.crt   | 证书     | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `apisix.admin_api_mtls.admin_ssl_cert` 配置项。                                 |
-| foo_server.key   | 密钥文件  | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `apisix.admin_api_mtls.admin_ssl_cert_key` 配置项。                             |
+| foo_server.crt   | 证书     | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `admin_api_mtls.admin_ssl_cert` 配置项。                                 |
+| foo_server.key   | 密钥文件  | 由 `foo_ca.crt` 签发，APISIX 使用，对应 `admin_api_mtls.admin_ssl_cert_key` 配置项。                             |
 | admin.apisix.dev | 域名     | 签发 `foo_server.crt` 证书时使用的 Common Name，客户端通过该域名访问 APISIX Admin API                                     |
 | bar_ca.crt       | CA 证书  | 签发 APISIX 与 ETCD 进行 mTLS 通信所需的次级证书。                                                                       |
 | bar_etcd.crt     | 证书     | 由 `bar_ca.crt` 签发，ETCD 使用，对应 ETCD 启动命令中的 `--cert-file` 选项。                                              |
@@ -201,7 +195,7 @@ APISIX 目前支持在多处设置 CA 证书，比如 [保护 Admin API](./mtls.
 
 1. 制作 CA bundle 文件
 
-```
+```shell
 cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 ```
 
@@ -224,32 +218,39 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 
 3. 更新 `config.yaml`
 
-```yaml
+```yaml title="conf/config.yaml"
+deployment:
+  admin:
+    admin_key
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
+    admin_listen:
+      ip: 127.0.0.1
+      port: 9180
+    https_admin: true
+    admin_api_mtls:
+      admin_ssl_ca_cert: /path/to/apisix.ca-bundle
+      admin_ssl_cert: /path/to/foo_server.crt
+      admin_ssl_cert_key: /path/to/foo_server.key
+
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
-  port_admin: 9180
-  https_admin: true
-
-  admin_api_mtls:
-    admin_ssl_ca_cert: /path/to/apisix.ca-bundle
-    admin_ssl_cert: /path/to/foo_server.crt
-    admin_ssl_cert_key: /path/to/foo_server.key
-
   ssl:
     ssl_trusted_certificate: /path/to/apisix.ca-bundle
 
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-    - "https://127.0.0.1:22379"
-    - "https://127.0.0.1:32379"
-  tls:
-    cert: /path/to/bar_apisix.crt
-    key: /path/to/bar_apisix.key
-    sni: etcd.cluster.dev
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+      - "https://127.0.0.1:22379"
+      - "https://127.0.0.1:32379"
+    tls:
+      cert: /path/to/bar_apisix.crt
+      key: /path/to/bar_apisix.key
+      sni: etcd.cluster.dev
 ```
 
 4. 测试 Admin API

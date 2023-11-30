@@ -1,5 +1,10 @@
 ---
 title: FAQ
+keywords:
+  - Apache APISIX
+  - API Gateway
+  - FAQ
+description: This article lists solutions to common problems when using Apache APISIX.
 ---
 
 <!--
@@ -58,7 +63,7 @@ It does the following dynamically:
 - Health checks
 - Traffic split
 
-## Does Apache APISIX have a user interface？
+## Does Apache APISIX have a user interface?
 
 Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is independent from Apache APISIX. To work with Apache APISIX through a user interface, you can deploy the Apache APISIX Dashboard.
 
@@ -100,7 +105,7 @@ Mainland China users can use `luarocks.cn` as the LuaRocks server. You can use t
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
+If this does not solve your problem, you can try getting a detailed log by using the `--verbose` or `-v` flag to diagnose the problem.
 
 ## How do I build the APISIX-Base environment?
 
@@ -118,7 +123,7 @@ There are two different ways to achieve this in Apache APISIX:
 1. Using the `vars` field in a [Route](terminology/route.md):
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -131,7 +136,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -158,7 +163,7 @@ Apache APISIX provides several different ways to achieve this:
 1. Setting `http_to_https` to `true` in the [redirect](plugins/redirect.md) Plugin:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -173,7 +178,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. Advanced routing with `vars` in the redirect Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -196,7 +201,7 @@ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. Using the `serverless` Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -267,18 +272,31 @@ To configure Apache APISIX to listen on multiple ports, you can:
         - 9082
    ```
 
-   Similarly for HTTPS requests, modify the parameter `ssl.listen_port` in `conf/config.yaml`:
+   Similarly for HTTPS requests, modify the parameter `ssl.listen` in `conf/config.yaml`:
 
    ```
    apisix:
      ssl:
-       listen_port:
-         - 9443
-         - 9444
-         - 9445
+       enable: true
+       listen:
+         - port: 9443
+         - port: 9444
+         - port: 9445
    ```
 
 2. Reload or restart Apache APISIX.
+
+## After uploading the SSL certificate, why can't the corresponding route be accessed through HTTPS + IP?
+
+If you directly use HTTPS + IP address to access the server, the server will use the IP address to compare with the bound SNI. Since the SSL certificate is bound to the domain name, the corresponding resource cannot be found in the SNI, so that the certificate will be verified. The authentication fails, and the user cannot access the gateway via HTTPS + IP.
+
+You can implement this function by setting the `fallback_sni` parameter in the configuration file and configuring the domain name. When the user uses HTTPS + IP to access the gateway, when the SNI is empty, it will fall back to the default SNI to achieve HTTPS + IP access to the gateway.
+
+```yaml title="./conf/config.yaml"
+apisix
+  ssl：
+    fallback_sni: "${your sni}"
+```
 
 ## How does Apache APISIX achieve millisecond-level configuration synchronization?
 
@@ -364,8 +382,11 @@ You can follow the steps below to configure this:
 1. Configure different ports for Apache APISIX proxy and Admin API. Or, disable the Admin API.
 
 ```yaml
-apisix:
-  port_admin: 9180 # use a separate port
+deployment:
+  admin:
+    admin_listen: # use a separate port
+      ip: 127.0.0.1
+      port: 9180
 ```
 
 2. Add a proxy Route for the Apache APISIX dashboard:
@@ -395,7 +416,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 You can use the `vars` field in a Route for matching regular expressions:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/*",
     "vars": [
@@ -431,7 +452,7 @@ For more info on using `vars` refer to [lua-resty-expr](https://github.com/api7/
 Yes. The example below shows configuring the FQDN `httpbin.default.svc.cluster.local` (a Kubernetes service):
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/ip",
     "upstream": {
@@ -469,7 +490,7 @@ apisix:
 Now, to access the Admin API:
 
 ```shell
-$ curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
+$ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: newkey' -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"admin-token-test",
@@ -498,9 +519,10 @@ By default, Apache APISIX only allows IPs in the range `127.0.0.0/24` to access 
 To allow IPs in all ranges, you can update your configuration file as show below and restart or reload Apache APISIX.
 
 ```yaml
-apisix:
-  allow_admin:
-    - 0.0.0.0/0
+deployment:
+  admin:
+    allow_admin:
+      - 0.0.0.0/0
 ```
 
 **Note**: This should only be used in non-production environments to allow all clients to access Apache APISIX and is not safe for production environments. Always authorize specific IP addresses or address ranges for production environments.
@@ -532,7 +554,7 @@ You can check [this post](https://juejin.cn/post/6965778290619449351) for a more
 To strip a prefix from a path in your route, like to take `/foo/get` and strip it to `/get`, you can use the [proxy-rewrite](plugins/proxy-rewrite.md) Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/foo/*",
     "plugins": {
@@ -590,6 +612,150 @@ The differences between the two are described in the table below:
 | Metadata of a Plugin shared by all configuration instances of the Plugin.                                        | Collection of configuration instances of multiple different Plugins.                                                                                |
 | Used when there are property changes that needs to be propagated across all configuration instances of a Plugin. | Used when you need to reuse a common set of configuration instances so that it can be extracted to a `plugin-config` and bound to different Routes. |
 | Takes effect on all the entities bound to the configuration instances of the Plugin.                             | Takes effect on Routes bound to the `plugin-config`.                                                                                                |
+
+## After deploying Apache APISIX, how to detect the survival of the APISIX data plane?
+
+You can create a route named `health-info` and enable the [fault-injection](https://apisix.apache.org/docs/apisix/plugins/fault-injection/) plugin (where YOUR-TOKEN is the user's token; 127.0.0.1 is the IP address of the control plane, which can be modified by yourself):
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/health-info \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+   "plugins": {
+     "fault-injection": {
+       "abort": {
+        "http_status": 200,
+        "body": "fine"
+       }
+     }
+   },
+   "uri": "/status"
+}'
+````
+
+Verification:
+
+Access the `/status` of the Apache APISIX data plane to detect APISIX. If the response code is 200, it means APISIX is alive.
+
+:::note
+
+This method only detects whether the APISIX data plane is alive or not. It does not mean that the routing and other functions of APISIX are normal. These require more routing-level detection.
+
+:::
+
+## What are the scenarios with high APISIX latency related to [etcd](https://etcd.io/) and how to fix them?
+
+etcd is the data storage component of apisix, and its stability is related to the stability of APISIX.
+
+In actual scenarios, if APISIX uses a certificate to connect to etcd through HTTPS, the following two problems of high latency for data query or writing may occur:
+
+1. Query or write data through APISIX Admin API.
+2. In the monitoring scenario, Prometheus crawls the APISIX data plane Metrics API timeout.
+
+These problems related to higher latency seriously affect the service stability of APISIX, and the reason why such problems occur is mainly because etcd provides two modes of operation: HTTP (HTTPS) and gRPC. And APISIX uses the HTTP (HTTPS) protocol to operate etcd by default.
+In this scenario, etcd has a bug about HTTP/2: if etcd is operated over HTTPS (HTTP is not affected), the upper limit of HTTP/2 connections is the default `250` in Golang. Therefore, when the number of APISIX data plane nodes is large, once the number of connections between all APISIX nodes and etcd exceeds this upper limit, the response of APISIX API interface will be very slow.
+
+In Golang, the default upper limit of HTTP/2 connections is `250`, the code is as follows:
+
+```go
+package http2
+
+import ...
+
+const (
+    prefaceTimeout         = 10 * time.Second
+    firstSettingsTimeout   = 2 * time.Second // should be in-flight with preface anyway
+    handlerChunkWriteSize  = 4 << 10
+    defaultMaxStreams      = 250 // TODO: make this 100 as the GFE seems to?
+    maxQueuedControlFrames = 10000
+)
+
+```
+
+etcd officially maintains two main branches, `3.4` and `3.5`. In the `3.4` series, the recently released `3.4.20` version has fixed this issue. As for the `3.5` version, the official is preparing to release the `3.5.5` version a long time ago, but it has not been released as of now (2022.09.13). So, if you are using etcd version less than `3.5.5`, you can refer to the following ways to solve this problem:
+
+1. Change the communication method between APISIX and etcd from HTTPS to HTTP.
+2. Roll back the etcd to `3.4.20`.
+3. Clone the etcd source code and compile the `release-3.5` branch directly (this branch has fixed the problem of HTTP/2 connections, but the new version has not been released yet).
+
+The way to recompile etcd is as follows:
+
+```shell
+git checkout release-3.5
+make GOOS=linux GOARCH=amd64
+```
+
+The compiled binary is in the bin directory, replace it with the etcd binary of your server environment, and then restart etcd:
+
+For more information, please refer to:
+
+- [when etcd node have many http long polling connections, it may cause etcd to respond slowly to http requests.](https://github.com/etcd-io/etcd/issues/14185)
+- [bug: when apisix starts for a while, its communication with etcd starts to time out](https://github.com/apache/apisix/issues/7078)
+- [the prometheus metrics API is tool slow](https://github.com/apache/apisix/issues/7353)
+- [Support configuring `MaxConcurrentStreams` for http2](https://github.com/etcd-io/etcd/pull/14169)
+
+Another solution is to switch to an experimental gRPC-based configuration synchronization. This requires setting `use_grpc: true` in the configuration file `conf/config.yaml`:
+
+```yaml
+  etcd:
+    use_grpc: true
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+```
+
+## Why is the file-logger logging garbled?
+
+If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the accept-encoding in the request header to not receive compressed responses using the [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) plugin:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+    "methods":[
+        "GET"
+    ],
+    "uri":"/test/index.html",
+    "plugins":{
+        "proxy-rewrite":{
+            "headers":{
+                "set":{
+                    "accept-encoding":"gzip;q=0,deflate,sdch"
+                }
+            }
+        }
+    },
+    "upstream":{
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:80":1
+        }
+    }
+}'
+```
+
+## How does APISIX configure ETCD with authentication?
+
+Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
+
+## What is the difference between SSLs and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
+
+The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
+
+The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are used for mTLS communication with the upstream.
+
+The `ssl_trusted_certificate` in config-default.yaml configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
 
 ## Where can I find more answers?
 

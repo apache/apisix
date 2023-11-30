@@ -1,7 +1,8 @@
 ---
 title: azure-functions
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Azure Functions
   - azure-functions
@@ -64,18 +65,18 @@ The relative order priority is as follows:
 To add a new master API key, you can make a request to `/apisix/admin/plugin_metadata` with the required metadata as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/azure-functions -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "master_apikey" : "<Your Azure master access key>"
 }'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can configure the Plugin on a specific Route as shown below assuming that you already have your Azure Functions up and running:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -138,7 +139,7 @@ The `uri` configured on a Route must end with `*` for this feature to work prope
 The example below configures this feature:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -170,12 +171,12 @@ Server: APISIX/2.11.0
 Hello, APISIX
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `azure-functions` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `azure-functions` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/azure",
     "plugins": {},

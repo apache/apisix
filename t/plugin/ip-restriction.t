@@ -58,8 +58,6 @@ __DATA__
 GET /t
 --- response_body
 {"message":"Your IP address is not allowed","whitelist":["10.255.254.0/24","192.168.0.0/16"]}
---- no_error_log
-[error]
 
 
 
@@ -87,8 +85,6 @@ GET /t
 GET /t
 --- response_body_like eval
 qr/failed to validate item 1: object matches none of the required/
---- no_error_log
-[error]
 
 
 
@@ -116,8 +112,6 @@ qr/failed to validate item 1: object matches none of the required/
 GET /t
 --- response_body_like eval
 qr/failed to validate item 1: object matches none of the required/
---- no_error_log
-[error]
 
 
 
@@ -140,8 +134,6 @@ GET /t
 --- response_body
 value should match only one schema, but matches none
 done
---- no_error_log
-[error]
 
 
 
@@ -163,8 +155,6 @@ done
 GET /t
 --- response_body_like eval
 qr/expect array to have at least 1 items/
---- no_error_log
-[error]
 
 
 
@@ -186,8 +176,6 @@ GET /t
 --- response_body
 value should match only one schema, but matches both schemas 1 and 2
 done
---- no_error_log
-[error]
 
 
 
@@ -227,8 +215,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -237,8 +223,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -252,8 +236,6 @@ X-Forwarded-For: 113.74.26.106
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -270,8 +252,6 @@ GET /hello
 {"message":"Your IP address is not allowed"}
 --- error_log
 ip-restriction exits with http status code 403
---- no_error_log
-[error]
 
 
 
@@ -286,8 +266,6 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -327,8 +305,6 @@ GET /hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -338,8 +314,6 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -354,8 +328,6 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -369,8 +341,6 @@ X-Forwarded-For: 114.114.114.114
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -384,8 +354,6 @@ X-Forwarded-For: 2001:db8::2
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -419,8 +387,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -429,8 +395,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -458,8 +422,6 @@ hello world
 GET /t
 --- response_body
 pass
---- no_error_log
-[error]
 
 
 
@@ -499,8 +461,6 @@ pass
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -509,8 +469,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -525,8 +483,6 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -541,8 +497,6 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Your IP address is not allowed"}
---- no_error_log
-[error]
 
 
 
@@ -568,8 +522,6 @@ GET /hello
 GET /t
 --- response_body_like eval
 qr/failed to validate item 1: object matches none of the required/
---- no_error_log
-[error]
 
 
 
@@ -587,7 +539,9 @@ qr/failed to validate item 1: object matches none of the required/
                             "blacklist": [
                                 "127.0.0.0/24"
                             ],
-                            "disable": true
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     }
                 }]]
@@ -603,8 +557,6 @@ qr/failed to validate item 1: object matches none of the required/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -645,8 +597,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -656,8 +606,6 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Do you want to do something bad?"}
---- no_error_log
-[error]
 
 
 
@@ -672,14 +620,12 @@ GET /hello
 --- error_code: 403
 --- response_body
 {"message":"Do you want to do something bad?"}
---- no_error_log
-[error]
 
 
 
 === TEST 29: set whitelist and user-defined message
 --- config
-    location /t {
+location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
@@ -714,8 +660,6 @@ GET /hello
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -732,8 +676,6 @@ GET /hello
 {"message":"Do you want to do something bad?"}
 --- error_log
 ip-restriction exits with http status code 403
---- no_error_log
-[error]
 
 
 
@@ -771,8 +713,6 @@ ip-restriction exits with http status code 403
 GET /t
 --- response_body_like eval
 qr/string too short, expected at least 1, got 0/
---- no_error_log
-[error]
 
 
 
@@ -814,5 +754,3 @@ qr/string too short, expected at least 1, got 0/
 GET /t
 --- response_body_like eval
 qr/string too long, expected at most 1024, got 1025/
---- no_error_log
-[error]

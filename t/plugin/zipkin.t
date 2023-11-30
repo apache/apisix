@@ -41,8 +41,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -64,8 +62,6 @@ GET /t
 --- response_body
 property "sample_ratio" validation failed: expected -0.1 to be at least 1e-05
 done
---- no_error_log
-[error]
 
 
 
@@ -87,8 +83,6 @@ GET /t
 --- response_body
 property "sample_ratio" validation failed: expected 2 to be at most 1
 done
---- no_error_log
-[error]
 
 
 
@@ -127,16 +121,12 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 5: tiger zipkin
 --- request
 GET /opentracing
---- no_error_log
-[error]
 --- wait: 10
 
 
@@ -175,8 +165,6 @@ GET /opentracing
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -185,8 +173,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 
 
 
@@ -220,8 +206,6 @@ opentracing
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -230,8 +214,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 
 
 
@@ -271,16 +253,12 @@ opentracing
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 11: tiger zipkin
 --- request
 GET /opentracing
---- no_error_log
-[error]
 --- wait: 10
 
 
@@ -306,8 +284,6 @@ GET /opentracing
 GET /t
 --- response_body
 property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}$" with "badip"
---- no_error_log
-[error]
 
 
 
@@ -345,8 +321,6 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -412,8 +386,6 @@ x-b3-sampled: 0
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

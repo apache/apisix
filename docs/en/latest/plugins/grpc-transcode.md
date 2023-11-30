@@ -1,7 +1,8 @@
 ---
 title: grpc-transcode
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - gRPC Transcode
   - grpc-transcode
@@ -44,6 +45,8 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 | method    | string                                                 | True     |         | Method name of the gRPC service.     |
 | deadline  | number                                                 | False    | 0       | Deadline for the gRPC service in ms. |
 | pb_option | array[string([pb_option_def](#options-for-pb_option))] | False    |         | protobuf options.                    |
+| show_status_in_body  | boolean                                     | False    | false   | Whether to display the parsed `grpc-status-details-bin` in the response body |
+| status_detail_type | string                                        | False    |         | The message type corresponding to the [details](https://github.com/googleapis/googleapis/blob/b7cb84f5d42e6dba0fdcc2d8689313f6a8c9d7b9/google/rpc/status.proto#L46) part of `grpc-status-details-bin`, if not specified, this part will not be decoded  |
 
 ### Options for pb_option
 
@@ -54,14 +57,14 @@ APISIX takes in an HTTP request, transcodes it and forwards it to a gRPC service
 | default values  | `auto_default_values`, `no_default_values`, `use_default_values`, `use_default_metatable` |
 | hooks           | `enable_hooks`, `disable_hooks`                                                           |
 
-## Enabling the Plugin
+## Enable Plugin
 
 Before enabling the Plugin, you have to add the content of your `.proto` or `.pb` files to APISIX.
 
 You can use the `/admin/protos/id` endpoint and add the contents of the file to the `content` field:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/protos/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/protos/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -99,34 +102,14 @@ The output binary file, `proto.pb` will contain both `helloworld.proto` and `imp
 
 We can now use the content of `proto.pb` in the `content` field of the API request.
 
-As the content of the proto is binary, we encode it in `base64` using this Python script:
+As the content of the proto is binary, we encode it in `base64` using this shell command:
 
-```python title="upload_pb.py"
-#!/usr/bin/env python
-# coding: utf-8
-
-import base64
-import sys
-
-# sudo pip install requests
-import requests
-
-if len(sys.argv) <= 1:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1], 'rb') as f:
-    content = base64.b64encode(f.read())
-id = sys.argv[2]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # use a different API key
-
-reqParam = {
-    "content": content,
-}
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/protos/" + id, json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
+```shell
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "'"$(base64 -w0 /path/to/proto.pb)"'"
+}'
 ```
 
 This script will take in a `.pb` file and the `id` to create, encodes the content of the proto to `base64`, and calls the Admin API with this encoded content.
@@ -151,7 +134,7 @@ Response:
 Now, we can enable the `grpc-transcode` Plugin to a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -205,7 +188,7 @@ Proxy-Connection: keep-alive
 You can also configure the `pb_option` as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
@@ -248,12 +231,156 @@ Trailer: grpc-message
 {"workflowKey":"#2251799813685260","workflowInstanceKey":"#2251799813688013","bpmnProcessId":"order-process","version":1}
 ```
 
-## Disable Plugin
+## Show `grpc-status-details-bin` in response body
 
-To disable the `grpc-transcode` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+If the gRPC service returns an error, there may be a `grpc-status-details-bin` field in the response header describing the error, which you can decode and display in the response body.
+
+Upload the proto file：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "syntax = \"proto3\";
+    package helloworld;
+    service Greeter {
+        rpc GetErrResp (HelloRequest) returns (HelloReply) {}
+    }
+    message HelloRequest {
+        string name = 1;
+        repeated string items = 2;
+    }
+    message HelloReply {
+        string message = 1;
+        repeated string items = 2;
+    }"
+}'
+```
+
+Enable the `grpc-transcode` plugin，and set the option `show_status_in_body` to `true`：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/grpctest",
+    "plugins": {
+        "grpc-transcode": {
+         "proto_id": "1",
+         "service": "helloworld.Greeter",
+         "method": "GetErrResp",
+         "show_status_in_body": true
+        }
+    },
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+```
+
+Access the route configured above：
+
+```shell
+curl -i http://127.0.0.1:9080/grpctest?name=world
+```
+
+Response:
+
+```Shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Date: Wed, 10 Aug 2022 08:59:46 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+grpc-status: 14
+grpc-message: Out of service
+grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
+Server: APISIX web server
+
+{"error":{"details":[{"type_url":"type.googleapis.com\/helloworld.ErrorDetail","value":"\b\u0001\u0012\u001cThe server is out of service\u001a\u0007service"}],"message":"Out of service","code":14}}
+```
+
+Note that there is an undecoded field in the return body. If you need to decode the field, you need to add the `message type` of the field in the uploaded proto file.
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "syntax = \"proto3\";
+    package helloworld;
+    service Greeter {
+        rpc GetErrResp (HelloRequest) returns (HelloReply) {}
+    }
+    message HelloRequest {
+        string name = 1;
+        repeated string items = 2;
+    }
+    message HelloReply {
+        string message = 1;
+        repeated string items = 2;
+    }
+    message ErrorDetail {
+        int64 code = 1;
+        string message = 2;
+        string type = 3;
+    }"
+}'
+```
+
+Also configure the option `status_detail_type` to `helloworld.ErrorDetail`.
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "methods": ["GET"],
+    "uri": "/grpctest",
+    "plugins": {
+        "grpc-transcode": {
+         "proto_id": "1",
+         "service": "helloworld.Greeter",
+         "method": "GetErrResp",
+         "show_status_in_body": true,
+         "status_detail_type": "helloworld.ErrorDetail"
+        }
+    },
+    "upstream": {
+        "scheme": "grpc",
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:50051": 1
+        }
+    }
+}'
+```
+
+The fully decoded result is returned.
+
+```Shell
+HTTP/1.1 503 Service Temporarily Unavailable
+Date: Wed, 10 Aug 2022 09:02:46 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+grpc-status: 14
+grpc-message: Out of service
+grpc-status-details-bin: CA4SDk91dCBvZiBzZXJ2aWNlGlcKKnR5cGUuZ29vZ2xlYXBpcy5jb20vaGVsbG93b3JsZC5FcnJvckRldGFpbBIpCAESHFRoZSBzZXJ2ZXIgaXMgb3V0IG9mIHNlcnZpY2UaB3NlcnZpY2U
+Server: APISIX web server
+
+{"error":{"details":[{"type":"service","message":"The server is out of service","code":1}],"message":"Out of service","code":14}}
+```
+
+## Delete Plugin
+
+To remove the `grpc-transcode` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/grpctest",
     "plugins": {},

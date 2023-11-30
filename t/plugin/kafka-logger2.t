@@ -26,10 +26,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests;
@@ -61,7 +57,7 @@ done
 
 
 
-=== TEST 2: report log to kafka, with required_acks(1, 0, -1)
+=== TEST 2: report log to kafka, with required_acks(1, -1)
 --- config
 location /t {
     content_by_lua_block {
@@ -102,30 +98,6 @@ location /t {
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = -1,
-                            meta_format = "origin",
-                        }
-                    },
-                    upstream = {
-                        nodes = {
-                            ["127.0.0.1:1980"] = 1
-                        },
-                        type = "roundrobin"
-                    },
-                    uri = "/hello",
-                },
-            },
-            {
-                input = {
-                    plugins = {
-                        ["kafka-logger"] = {
-                            broker_list = {
-                                ["127.0.0.1"] = 9092
-                            },
-                            kafka_topic = "test2",
-                            producer_type = "sync",
-                            timeout = 1,
-                            batch_max_size = 1,
-                            required_acks = 0,
                             meta_format = "origin",
                         }
                     },
@@ -340,6 +312,119 @@ qr/not found topic, retryable: true, topic: undefined_topic, partition_id: -1/
                         key= "key1",
                     },
                 },
+                {
+                    input = {
+                        brokers = {
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                            }
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                port = 9092,
+                            }
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = "9093",
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 0,
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 65536,
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 9093,
+                                sasl_config = {
+                                    mechanism = "INVALID",
+                                    user = "admin",
+                                    password = "admin-secret",
+                                },
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 9093,
+                                sasl_config = {
+                                    user = "admin",
+                                },
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
+                {
+                    input = {
+                        brokers = {
+                            {
+                                host = "127.0.0.1",
+                                port = 9093,
+                                sasl_config = {
+                                    password = "admin-secret",
+                                },
+                            },
+                        },
+                        kafka_topic = "test",
+                        key = "key1",
+                    },
+                },
             }
 
             local plugin = require("apisix.plugins.kafka-logger")
@@ -361,6 +446,15 @@ property "broker_list" validation failed: expect object to have at least 1 prope
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): wrong type: expected integer, got string
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 0 to be at least 1
 property "broker_list" validation failed: failed to validate 127.0.0.1 (matching ".*"): expected 65536 to be at most 65535
+property "brokers" validation failed: expect array to have at least 1 items
+property "brokers" validation failed: failed to validate item 1: property "port" is required
+property "brokers" validation failed: failed to validate item 1: property "host" is required
+property "brokers" validation failed: failed to validate item 1: property "port" validation failed: wrong type: expected integer, got string
+property "brokers" validation failed: failed to validate item 1: property "port" validation failed: expected 0 to be at least 1
+property "brokers" validation failed: failed to validate item 1: property "port" validation failed: expected 65536 to be at most 65535
+property "brokers" validation failed: failed to validate item 1: property "sasl_config" validation failed: property "mechanism" validation failed: matches none of the enum values
+property "brokers" validation failed: failed to validate item 1: property "sasl_config" validation failed: property "password" is required
+property "brokers" validation failed: failed to validate item 1: property "sasl_config" validation failed: property "user" is required
 
 
 
@@ -714,4 +808,124 @@ hello world
 --- no_error_log eval
 [qr/send data to kafka: \{.*"body":"abcdef"/,
 qr/send data to kafka: \{.*"body":"hello world\\n"/]
+--- wait: 2
+
+
+
+=== TEST 20: update route(id: 1,include_req_body = true,include_req_body_expr = array)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "brokers" :
+                                  [{
+                                    "host":"127.0.0.1",
+                                    "port": 9092
+                                  }],
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "include_req_body": true,
+                                "include_req_body_expr": [
+                                    [
+                                      "arg_name",
+                                      "==",
+                                      "qwerty"
+                                    ]
+                                ],
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- response_body
+passed
+
+
+
+=== TEST 21: hit route, expr eval success
+--- request
+POST /hello?name=qwerty
+abcdef
+--- response_body
+hello world
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
+--- wait: 2
+
+
+
+=== TEST 22: setup route with meta_refresh_interval
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "brokers" :
+                                  [{
+                                    "host":"127.0.0.1",
+                                    "port": 9092
+                                  }],
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "meta_refresh_interval": 1,
+                                "batch_max_size": 1,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- response_body
+passed
+
+
+
+=== TEST 23: hit route, send data to kafka successfully
+--- request
+POST /hello
+abcdef
+--- response_body
+hello world
+--- no_error_log
+[error]
+--- error_log eval
+qr/send data to kafka: \{.*"body":"abcdef"/
 --- wait: 2

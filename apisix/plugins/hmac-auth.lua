@@ -39,9 +39,6 @@ local SIGNED_HEADERS_KEY = "X-HMAC-SIGNED-HEADERS"
 local plugin_name   = "hmac-auth"
 local MAX_REQ_BODY = 1024 * 512
 
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 
 local schema = {
     type = "object",
@@ -93,6 +90,7 @@ local consumer_schema = {
             default = MAX_REQ_BODY,
         },
     },
+    encrypt_fields = {"secret_key"},
     required = {"access_key", "secret_key"},
 }
 
@@ -139,24 +137,6 @@ local function remove_headers(ctx, ...)
 end
 
 
-local create_consumer_cache
-do
-    local consumer_names = {}
-
-    function create_consumer_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.access_key] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
-
-
 function _M.check_schema(conf, schema_type)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
@@ -178,9 +158,7 @@ local function get_consumer(access_key)
         return nil, "Missing related consumer"
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consumer_cache, consumer_conf)
-
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "access_key")
     local consumer = consumers[access_key]
     if not consumer then
         return nil, "Invalid access key"

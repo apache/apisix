@@ -1,7 +1,7 @@
 ---
 title: client-control
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Client Control
 description: This document describes the Apache APISIX client-control Plugin, you can use it to control NGINX behavior to handle a client request dynamically.
@@ -42,12 +42,12 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 | ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
 | max_body_size | integer | False    | [0,...]      | Dynamically set the [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
@@ -85,12 +85,12 @@ HTTP/1.1 413 Request Entity Too Large
 </html>
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `client-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload, and you do not have to restart for this to take effect.
+To remove the `client-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload, and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",

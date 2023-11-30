@@ -23,10 +23,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -210,6 +206,55 @@ property "request_method" validation failed: matches none of the enum values
                         "uri": "/ping"
                     }]],
                 },
+                {
+                    url = "/apisix/admin/routes/4",
+                    data = [[{
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function() require(\"apisix.core\").response.exit(444); end"]
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/crashed-auth"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/5",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/crashed-auth",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"]
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/nodegr"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/6",
+                    data = [[{
+                        "uri": "/hello",
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/crashed-auth",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "allow_degradation": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "test.com:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                    }]],
+                }
             }
 
             local t = require("lib.test_admin").test
@@ -221,7 +266,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"201passed\n" x 6
+"201passed\n" x 9
 
 
 
@@ -309,3 +354,23 @@ POST /ping
 --- error_code: 403
 --- response_headers
 Location: http://example.com/auth
+
+
+
+=== TEST 11: hit route (unavailable auth server, expect failure)
+--- request
+GET /nodegr
+--- more_headers
+Authorization: 111
+--- error_code: 403
+--- error_log
+failed to process forward auth, err: closed
+
+
+
+=== TEST 12: hit route (unavailable auth server, allow degradation)
+--- request
+GET /hello
+--- more_headers
+Authorization: 111
+--- error_code: 200

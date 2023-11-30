@@ -27,10 +27,17 @@
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-  prefix: "/apisix"
+apisix:
+  ssl:
+    ssl_trusted_certificate: t/certs/mtls_ca.crt
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+    prefix: "/apisix"
   ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -46,12 +53,16 @@ echo "passed: Show certificate verify failed info successfully"
 git checkout conf/config.yaml
 
 echo '
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-  tls:
-    verify: false
-  prefix: "/apisix"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+    prefix: "/apisix"
+    tls:
+      verify: false
   ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)

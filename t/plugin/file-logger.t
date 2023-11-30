@@ -25,10 +25,6 @@ add_block_preprocessor(sub {
     if (! $block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if (! $block->no_error_log && ! $block->error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 
@@ -211,3 +207,134 @@ write file log success
     }
 --- error_log
 failed to open file: /log/file.log, error info: /log/file.log: No such file or directory
+
+
+
+=== TEST 6: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- ensure the format is not set
+            t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_DELETE
+            )
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file.log",
+                                "log_format": {
+                                    "host": "$host",
+                                    "client_ip": "$remote_addr"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: verify plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file.log, error info: ", err)
+                return
+            end
+
+            msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg.client_ip == '127.0.0.1' and new_msg.route_id == '1'
+                and new_msg.host == '127.0.0.1'
+            then
+                msg = "write file log success"
+                ngx.status = code
+                ngx.say(msg)
+            end
+        }
+    }
+--- response_body
+write file log success
+
+
+
+=== TEST 8: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/file-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "log_format": {
+                        "host": "$host"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: ensure config in plugin is prior to the one in plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_GET)
+            local fd, err = io.open("file.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file.log, error info: ", err)
+                return
+            end
+
+            msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
+            if new_msg.client_ip == '127.0.0.1' and new_msg.route_id == '1'
+                and new_msg.host == '127.0.0.1'
+            then
+                msg = "write file log success"
+                ngx.status = code
+                ngx.say(msg)
+            end
+        }
+    }
+--- response_body
+write file log success

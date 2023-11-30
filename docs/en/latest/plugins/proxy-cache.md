@@ -1,11 +1,10 @@
 ---
 title: proxy-cache
 keywords:
-  - APISIX
-  - Plugin
+  - Apache APISIX
+  - API Gateway
   - Proxy Cache
-  - proxy-cache
-description: This document contains information about the Apache APISIX proxy-cache Plugin.
+description: This document contains information about the Apache APISIX proxy-cache Plugin, you can use it to cache the response from the Upstream.
 ---
 <!--
 #
@@ -28,7 +27,7 @@ description: This document contains information about the Apache APISIX proxy-ca
 
 ## Description
 
-The `proxy-cache` Plugin can be used to cache the response from the Upstream. It can be used with other Plugins and currently supports disk-based caching.
+The `proxy-cache` Plugin can be used to cache the response from the Upstream. It can be used with other Plugins and currently supports disk-based and memory-based caching.
 
 The data to be cached can be filtered with response codes, request modes, or more complex methods using the `no_cache` and `cache_bypass` attributes.
 
@@ -37,48 +36,57 @@ The data to be cached can be filtered with response codes, request modes, or mor
 | Name               | Type           | Required | Default                   | Valid values            | Description                                                                                                                                                                                                                                                                                           |
 |--------------------|----------------|----------|---------------------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cache_strategy     | string         | False    | disk                      | ["disk","memory"]       | Specifies where the cached data should be stored.                                                                                                                                                                                                                                                     |
-| cache_zone         | string         | False    | disk_cache_one            |                         | Specifies which cache area to use. Each cache area can be configured with different paths. Cache areas can be predefined in your configuration file (conf/config.yaml). If the specified cache area is inconsistent with the pre-defined cache area in your configuration file, the cache is invalid. |
+| cache_zone         | string         | False    | disk_cache_one            |                         | Specifies which cache area to use. Each cache area can be configured with different paths. Cache areas can be predefined in your configuration file (`conf/config.yaml`). If the specified cache area is inconsistent with the pre-defined cache area in your configuration file, the cache is invalid. |
 | cache_key          | array[string]  | False    | ["$host", "$request_uri"] |                         | Key to use for caching. For example, `["$host", "$uri", "-cache-id"]`.                                                                                                                                                                                                                                |
-| cache_bypass       | array[string]  | False    |                           |                         | Conditions in which response from cache is bypassed. Whether to skip cache retrieval. If at least one value of the string parameters is not empty and is not equal to “0” then the response will not be taken from the cache. For example, `["$arg_bypass"]`.                                         |
+| cache_bypass       | array[string]  | False    |                           |                         | Conditions in which response from cache is bypassed. Whether to skip cache retrieval. If at least one value of the string parameters is not empty and is not equal to `0` then the response will not be taken from the cache. For example, `["$arg_bypass"]`.                                         |
 | cache_method       | array[string]  | False    | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | Request methods for which the response will be cached.                                                                                                                                                                                                                                                |
 | cache_http_status  | array[integer] | False    | [200, 301, 404]           | [200, 599]              | HTTP status codes of the Upstream response for which the response will be cached.                                                                                                                                                                                                                     |
-| hide_cache_headers | boolean        | False    | false                     |                         | When set to true adds the `Expires` and `Cache-Control` headers to the client response.                                                                                                                                                                                                               |
-| cache_control      | boolean        | False    | false                     |                         | When set to true, complies with Cache-Control behavior in the HTTP specification. Used only for memory strategy.                                                                                                                                                                                      |
-| no_cache           | array[string]  | False    |                           |                         | Conditions in which the response will not be cached. If at least one value of the string parameters is not empty and is not equal to “0” then the response will not be saved.                                                                                                                         |
+| hide_cache_headers | boolean        | False    | false                     |                         | When set to `true` adds the `Expires` and `Cache-Control` headers to the client response.                                                                                                                                                                                                               |
+| cache_control      | boolean        | False    | false                     |                         | When set to `true`, complies with Cache-Control behavior in the HTTP specification. Used only for memory strategy.                                                                                                                                                                                      |
+| no_cache           | array[string]  | False    |                           |                         | Conditions in which the response will not be cached. If at least one value of the string parameters is not empty and is not equal to `0` then the response will not be saved.                                                                                                                         |
 | cache_ttl          | integer        | False    | 300 seconds               |                         | Time that a response is cached until it is deleted or refreshed. Comes in to effect when the `cache_control` attribute is not enabled or the proxied server does not return cache header. Used only for memory strategy.                                                                              |
 
 :::note
 
-The cache expiration time cannot be configured dynamically. It can only be set by the Upstream response header `Expires` or `Cache-Control`. The default expiration time is 10s if there is no `Expires` or `Cache-Control` in the Upstream response header.
-
-If the Upstream service is not available and APISIX returns a 502 or 504 status code, it will be cached for 10s.
-
-Variables (start with `$`) can be specified in `cache_key`, `cache_bypass` and `no_cache`. It's worth mentioning that the variable value will be an empty string if it doesn't exist.
-
-You can also combine a number of variables and strings (constants), by writing them into an array, eventually, variables will be parsed and stitched together with strings.
+- The cache expiration time cannot be configured dynamically. It can only be set by the Upstream response header `Expires` or `Cache-Control`. The default expiration time is 10s if there is no `Expires` or `Cache-Control` in the Upstream response header.
+- If the Upstream service is not available and APISIX returns a `502` or `504` status code, it will be cached for 10s.
+- Variables (start with `$`) can be specified in `cache_key`, `cache_bypass` and `no_cache`. It's worth mentioning that the variable value will be an empty string if it doesn't exist.
+- You can also combine a number of variables and strings (constants), by writing them into an array, eventually, variables will be parsed and stitched together with strings.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can add your cache configuration in you APISIX configuration file (`conf/config.yaml`) as shown below:
 
 ```yaml title="conf/config.yaml"
-proxy_cache:
-    cache_ttl: 10s                 # default caching time if the upstream doesn't specify the caching time
+apisix:
+  proxy_cache:
+    cache_ttl: 10s  # default cache TTL for caching on disk
     zones:
-    - name: disk_cache_one         # name of the cache. Admin can specify which cache to use in the Admin API by name
-      memory_size: 50m             # size of shared memory, used to store the cache index
-      disk_size: 1G                # size of disk, used to store the cache data
-      disk_path: "/tmp/disk_cache_one" # path to store the cache data
-      cache_levels: "1:2"          # hierarchy levels of the cache
+      - name: disk_cache_one
+        memory_size: 50m
+        disk_size: 1G
+        disk_path: /tmp/disk_cache_one
+        cache_levels: 1:2
+    #   - name: disk_cache_two
+    #     memory_size: 50m
+    #     disk_size: 1G
+    #     disk_path: "/tmp/disk_cache_two"
+    #     cache_levels: "1:2"
+      - name: memory_cache
+        memory_size: 50m
 ```
 
-You can enable the Plugin on a specific Route as shown below:
+### Use disk-based caching
+
+You can enable the Plugin on a Route as shown below. The Plugin uses the disk-based `cache_strategy` and `disk_cache_one` as the `cache_zone` by default:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
+    "uri": "/ip",
     "plugins": {
         "proxy-cache": {
             "cache_key":  ["$uri", "-cache-id"],
@@ -91,32 +99,49 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
     },
     "upstream": {
         "nodes": {
-            "127.0.0.1:1999": 1
+            "httpbin.org": 1
         },
         "type": "roundrobin"
-    },
-    "uri": "/hello"
+    }
 }'
 ```
 
-In the above configuration, the `cache_zone` attribute defaults to `disk_cache_one`.
+### Use memory-based caching
+
+You can enable the Plugin on a Route with in-memory `cache_strategy` and a corresponding in-memory `cache_zone` as shown below:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/ip",
+    "plugins": {
+        "proxy-cache": {
+            "cache_strategy": "memory",
+            "cache_zone": "memory_cache",
+            "cache_ttl": 10
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "httpbin.org": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
 
 ## Example usage
 
 Once you have configured the Plugin as shown above, you can make an initial request:
 
 ```shell
-curl http://127.0.0.1:9080/hello -i
+curl http://127.0.0.1:9080/ip -i
 ```
 
 ```shell
 HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-Content-Length: 6
-Connection: keep-alive
-Server: APISIX web server
-Date: Tue, 03 Mar 2020 10:45:36 GMT
-Last-Modified: Tue, 03 Mar 2020 10:36:38 GMT
+···
 Apisix-Cache-Status: MISS
 
 hello
@@ -125,58 +150,49 @@ hello
 The `Apisix-Cache-Status` in the response shows `MISS` meaning that the response is not cached, as expected. Now, if you make another request, you will see that you get a cached response:
 
 ```shell
-curl http://127.0.0.1:9080/hello -i
+curl http://127.0.0.1:9080/ip -i
 ```
 
 ```shell
 HTTP/1.1 200 OK
-Content-Type: application/octet-stream
-Content-Length: 6
-Connection: keep-alive
-Server: APISIX web server
-Date: Tue, 03 Mar 2020 11:14:46 GMT
-Last-Modified: Thu, 20 Feb 2020 14:21:41 GMT
+···
 Apisix-Cache-Status: HIT
 
 hello
 ```
 
-If you set `"cache_zone": "invalid_disk_cache"` attribute to an invalid value (cache not configured in the your configuration file), then it will return a 404 response.
+If you set `"cache_zone": "invalid_disk_cache"` attribute to an invalid value (cache not configured in the your configuration file), then it will return a `404` response.
 
 :::tip
 
-To clear the cached data, you can send a request with PURGE method:
+To clear the cached data, you can send a request with `PURGE` method:
 
 ```shell
-curl -i http://127.0.0.1:9080/hello -X PURGE
+curl -i http://127.0.0.1:9080/ip -X PURGE
 ```
 
 ```shell
 HTTP/1.1 200 OK
-Date: Tue, 03 Mar 2020 11:17:35 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
 ```
 
-If the response code is 200, the deletion is successful. If the cached data is not found, a 404 response code will be returned.
+If the response code is `200`, the deletion is successful. If the cached data is not found, a `404` response code will be returned.
 
 :::
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `proxy-cache` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `proxy-cache` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/hello",
+    "uri": "/ip",
     "plugins": {},
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1999": 1
+            "httpbin.org": 1
         }
     }
 }'

@@ -29,10 +29,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->error_log && !defined $block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     $block;
 });
 
@@ -62,6 +58,7 @@ __DATA__
 
 --- response_body
 real-ip
+ai
 client-control
 proxy-control
 request-id
@@ -77,7 +74,10 @@ referer-restriction
 csrf
 uri-blocker
 request-validation
+chaitin-waf
+multi-auth
 openid-connect
+cas-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
@@ -90,9 +90,11 @@ consumer-restriction
 forward-auth
 opa
 authz-keycloak
-proxy-mirror
 proxy-cache
+body-transformer
+proxy-mirror
 proxy-rewrite
+workflow
 api-breaker
 limit-conn
 limit-count
@@ -102,12 +104,15 @@ server-info
 traffic-split
 redirect
 response-rewrite
+degraphql
 kafka-proxy
 grpc-transcode
 grpc-web
 public-api
 prometheus
 datadog
+loki-logger
+elasticsearch-logger
 echo
 loggly
 http-logger
@@ -122,22 +127,25 @@ syslog
 udp-logger
 file-logger
 clickhouse-logger
+tencent-cloud-cls
+inspect
 example-plugin
 aws-lambda
 azure-functions
 openwhisk
+openfunction
 serverless-post-function
 ext-plugin-post-req
 ext-plugin-post-resp
 
 
 
-=== TEST 2: wrong path
+=== TEST 2: invalid plugin
 --- request
-GET /apisix/admin/plugins
---- error_code: 400
+GET /apisix/admin/plugins/asdf
+--- error_code: 404
 --- response_body
-{"error_msg":"not found plugin name"}
+{"error_msg":"plugin not found in subsystem http"}
 
 
 
@@ -150,7 +158,7 @@ GET /apisix/admin/plugins
                 ngx.HTTP_GET,
                 nil,
                 [[
-                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"disable":{"type":"boolean"},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
+                {"type":"object","required":["rate","burst","key"],"properties":{"rate":{"type":"number","exclusiveMinimum":0},"key_type":{"type":"string","enum":["var","var_combination"],"default":"var"},"burst":{"type":"number","minimum":0},"nodelay":{"type":"boolean","default":false},"key":{"type":"string"},"rejected_code":{"type":"integer","minimum":200,"maximum":599,"default":503},"rejected_msg":{"type":"string","minLength":1},"allow_degradation":{"type":"boolean","default":false}}}
                 ]]
                 )
 
@@ -172,7 +180,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"type":"object"}
+{"properties":{},"type":"object"}
                 ]]
                 )
 
@@ -191,7 +199,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"type":"object"}
+{"properties":{},"type":"object"}
                 ]]
                 )
 
@@ -210,7 +218,7 @@ plugins:
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
 
@@ -265,7 +273,7 @@ plugins:
         }
     }
 --- response_body eval
-qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"_meta":\{"properties":\{"error_response":\{"oneOf":\[\{"type":"string"\},\{"type":"object"\}\]\},"filter":\{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"\},"priority":\{"description":"priority of plugins by customized order","type":"integer"\}\},"type":"object"\},"disable":\{"type":"boolean"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
+qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"skey":\{"type":"string"\}\},"required":\["ikey","skey"\],"type":"object"\},"priority":0,"schema":\{"\$comment":"this is a mark for our injected plugin schema","properties":\{"_meta":\{"properties":\{"disable":\{"type":"boolean"\},"error_response":\{"oneOf":\[\{"type":"string"\},\{"type":"object"\}\]\},"filter":\{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"\},"priority":\{"description":"priority of plugins by customized order","type":"integer"\}\},"type":"object"\},"i":\{"minimum":0,"type":"number"\},"ip":\{"type":"string"\},"port":\{"type":"integer"\},"s":\{"type":"string"\},"t":\{"minItems":1,"type":"array"\}\},"required":\["i"\],"type":"object"\},"version":0.1\}/
 
 
 
@@ -304,7 +312,7 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
         }
     }
 --- response_body eval
-qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
+qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"key-auth","priority":2500\}\]/
 
 
 
@@ -336,7 +344,7 @@ qr/\[\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540
         }
     }
 --- response_body eval
-qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
+qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\}\},"required":\["username","password"\],"title":"work with consumer object","type":"object"\}/
 
 
 
@@ -366,15 +374,12 @@ qr/\{"properties":\{"password":\{"type":"string"\},"username":\{"type":"string"\
         }
     }
 --- response_body
-{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"_meta":{"properties":{"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"filter":{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"},"priority":{"description":"priority of plugins by customized order","type":"integer"}},"type":"object"},"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"disable":{"type":"boolean"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
+{"priority":1003,"schema":{"$comment":"this is a mark for our injected plugin schema","properties":{"_meta":{"properties":{"disable":{"type":"boolean"},"error_response":{"oneOf":[{"type":"string"},{"type":"object"}]},"filter":{"description":"filter determines whether the plugin needs to be executed at runtime","type":"array"},"priority":{"description":"priority of plugins by customized order","type":"integer"}},"type":"object"},"burst":{"minimum":0,"type":"integer"},"conn":{"exclusiveMinimum":0,"type":"integer"},"default_conn_delay":{"exclusiveMinimum":0,"type":"number"},"key":{"type":"string"},"key_type":{"default":"var","enum":["var","var_combination"],"type":"string"},"only_use_default_delay":{"default":false,"type":"boolean"}},"required":["conn","burst","default_conn_delay","key"],"type":"object"},"version":0.1}
 
 
 
 === TEST 12: confirm the scope of plugin
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
+--- extra_yaml_config
 plugins:
   - batch-requests
   - error-log-logger
@@ -409,3 +414,54 @@ plugins:
     }
 --- response_body
 {"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
+
+
+
+=== TEST 13: check with wrong plugin subsystem
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local _, message, _ = t('/apisix/admin/plugins?subsystem=asdf',
+                ngx.HTTP_GET
+            )
+            ngx.say(message)
+        }
+    }
+--- response_body eval
+qr/\{"error_msg":"unsupported subsystem: asdf"\}/
+
+
+
+=== TEST 14: check with right plugin in wrong subsystem
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local _, message, _ = t('/apisix/admin/plugins/http-logger?subsystem=stream',
+                ngx.HTTP_GET
+            )
+            ngx.say(message)
+        }
+    }
+--- response_body eval
+qr/\{"error_msg":"plugin not found in subsystem stream"\}/
+
+
+
+=== TEST 15: check with right plugin in right subsystem
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local _, _ , message = t('/apisix/admin/plugins/http-logger?subsystem=http',
+                ngx.HTTP_GET
+            )
+            ngx.say(message)
+        }
+    }
+--- response_body eval
+qr/this is a mark for our injected plugin schema/

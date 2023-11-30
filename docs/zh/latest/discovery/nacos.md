@@ -56,11 +56,13 @@ discovery:
 
 ### Upstream 设置
 
+#### 七层
+
 例如，转发 URI 匹配 "/nacos/*" 的请求到一个上游服务，
-该服务在 Nacos 中的服务名是 APISIX-NACOS ，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS ，创建路由时指定服务发现类型为 nacos 。
+该服务在 Nacos 中的服务名是 APISIX-NACOS，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS，创建路由时指定服务发现类型为 nacos。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/nacos/*",
     "upstream": {
@@ -97,6 +99,23 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 }
 ```
 
+#### 四层
+
+nacos 服务发现也支持在四层中使用，配置方式与七层的类似。
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+        "scheme": "tcp",
+        "discovery_type": "nacos",
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin"
+    }
+}'
+```
+
 ### 参数
 
 | 名字         | 类型   | 可选项 | 默认值 | 有效值 | 说明                                                  |
@@ -107,10 +126,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 #### 指定命名空间
 
 例如，转发 URI 匹配 "/nacosWithNamespaceId/*" 的请求到一个上游服务，
-该服务在 Nacos 中的服务名是 APISIX-NACOS，命名空间是 test_ns，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns ，创建路由时指定服务发现类型为 nacos 。
+该服务在 Nacos 中的服务名是 APISIX-NACOS，命名空间是 test_ns，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns，创建路由时指定服务发现类型为 nacos。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/nacosWithNamespaceId/*",
     "upstream": {
@@ -156,10 +175,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 #### 指定组
 
 例如，转发 URI 匹配 "/nacosWithGroupName/*" 的请求到一个上游服务，
-该服务在 Nacos 中的服务名是 APISIX-NACOS，组名是 test_group，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group ，创建路由时指定服务发现类型为 nacos 。
+该服务在 Nacos 中的服务名是 APISIX-NACOS，组名是 test_group，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group，创建路由时指定服务发现类型为 nacos。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/nacosWithGroupName/*",
     "upstream": {
@@ -205,10 +224,10 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f
 #### 同时指定命名空间和组
 
 例如，转发 URI 匹配 "/nacosWithNamespaceIdAndGroupName/*" 的请求到一个上游服务，
-该服务在 Nacos 中的服务名是 APISIX-NACOS，命名空间是 test_ns，组名是 test_group，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group ，创建路由时指定服务发现类型为 nacos 。
+该服务在 Nacos 中的服务名是 APISIX-NACOS，命名空间是 test_ns，组名是 test_group，查询地址是 http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group，创建路由时指定服务发现类型为 nacos。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/nacosWithNamespaceIdAndGroupName/*",
     "upstream": {

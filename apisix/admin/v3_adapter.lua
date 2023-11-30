@@ -17,6 +17,7 @@
 
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local try_read_attr     = require("apisix.core.table").try_read_attr
+local deepcopy          = require("apisix.core.table").deepcopy
 local log               = require("apisix.core.log")
 local request           = require("apisix.core.request")
 local response          = require("apisix.core.response")
@@ -47,7 +48,7 @@ local function enable_v3()
         return false
     end
 
-    local api_ver = try_read_attr(local_conf, "apisix", "admin_api_version")
+    local api_ver = try_read_attr(local_conf, "deployment", "admin", "admin_api_version")
     if api_ver ~= "v3" then
         admin_api_version = "default"
         return false
@@ -176,13 +177,37 @@ end
 
 function _M.filter(body)
     if not enable_v3() then
-        return
+        return body
     end
 
     local args = request.get_uri_args()
+    local processed_body = deepcopy(body)
 
-    pagination(body, args)
-    filter(body, args)
+    if processed_body.deleted then
+        processed_body.node = nil
+    end
+
+    -- strip node wrapping for single query, create, and update scenarios.
+    if processed_body.node then
+        processed_body = processed_body.node
+    end
+
+    -- filter and paging logic for list query only
+    if processed_body.list then
+        filter(processed_body, args)
+
+        -- calculate the total amount of filtered data
+        processed_body.total = processed_body.list and #processed_body.list or 0
+
+        pagination(processed_body, args)
+
+        -- remove the count field returned by etcd
+        -- we don't need a field that reflects the length of the currently returned data,
+        -- it doesn't make sense
+        processed_body.count = nil
+    end
+
+    return processed_body
 end
 
 

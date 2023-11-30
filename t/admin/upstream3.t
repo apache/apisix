@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"count":0,"list":[]}
+{"list":[],"total":0}
 
 
 
@@ -139,16 +139,14 @@ __DATA__
                     "desc": "new upstream"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new upstream"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -178,16 +176,14 @@ passed
                     "desc": "new 21 upstream"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new 21 upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new 21 upstream"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -214,16 +210,14 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1,
-                                "127.0.0.1:8081": 3,
-                                "127.0.0.1:8082": 4
-                            },
-                            "type": "roundrobin",
-                            "desc": "new 21 upstream"
-                        }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1,
+                            "127.0.0.1:8081": 3,
+                            "127.0.0.1:8082": 4
+                        },
+                        "type": "roundrobin",
+                        "desc": "new 21 upstream"
                     }
                 }]]
             )
@@ -251,15 +245,13 @@ passed
                     }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8081": 3,
-                                "127.0.0.1:8082": 0
-                            },
-                            "type": "roundrobin",
-                            "desc": "new 21 upstream"
-                        }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8081": 3,
+                            "127.0.0.1:8082": 0
+                        },
+                        "type": "roundrobin",
+                        "desc": "new 21 upstream"
                     }
                 }]]
             )
@@ -288,16 +280,14 @@ passed
                     "desc": "new upstream 24"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new upstream 24"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new upstream 24"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -319,16 +309,14 @@ passed
                 ngx.HTTP_PATCH,
                 '"new 25 upstream"',
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.1:8080": 1
-                            },
-                            "type": "roundrobin",
-                            "desc": "new 25 upstream"
+                    "value": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
                         },
-                        "key": "/apisix/upstreams/1"
-                    }
+                        "type": "roundrobin",
+                        "desc": "new 25 upstream"
+                    },
+                    "key": "/apisix/upstreams/1"
                 }]]
             )
 
@@ -353,15 +341,13 @@ passed
                     "127.0.0.7:8082": 4
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.6:8081": 3,
-                                "127.0.0.7:8082": 4
-                            },
-                            "type": "roundrobin",
-                            "desc": "new 25 upstream"
-                        }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.6:8081": 3,
+                            "127.0.0.7:8082": 4
+                        },
+                        "type": "roundrobin",
+                        "desc": "new 25 upstream"
                     }
                 }]]
             )
@@ -387,15 +373,13 @@ passed
                     "127.0.0.8:8082": 4
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "nodes": {
-                                "127.0.0.7:8081": 0,
-                                "127.0.0.8:8082": 4
-                            },
-                            "type": "roundrobin",
-                            "desc": "new 25 upstream"
-                        }
+                    "value": {
+                        "nodes": {
+                            "127.0.0.7:8081": 0,
+                            "127.0.0.8:8082": 4
+                        },
+                        "type": "roundrobin",
+                        "desc": "new 25 upstream"
                     }
                 }]]
             )
@@ -415,15 +399,15 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "server_name",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -450,7 +434,7 @@ passed
                     "key": "not_support",
                     "desc": "new upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -458,7 +442,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 
 
 
@@ -468,8 +452,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "arg_device_id",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -477,7 +461,7 @@ passed
                     "type": "chash",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -494,15 +478,15 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "server_name",
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
                     "type": "chash"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -529,7 +513,7 @@ passed
                     "key": "not_support",
                     "desc": "new upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -537,7 +521,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 
 
 
@@ -556,7 +540,7 @@ passed
                     "type": "chash",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -573,8 +557,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "arg_device_id",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -583,7 +567,7 @@ passed
                     "hash_on": "vars",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -600,8 +584,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "custom_header",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -610,7 +594,7 @@ passed
                     "hash_on": "header",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -627,8 +611,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "$#^@",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -637,7 +621,7 @@ passed
                     "hash_on": "header",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -655,8 +639,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "custom_cookie",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -665,7 +649,7 @@ passed
                     "hash_on": "cookie",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -682,8 +666,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "$#^@abc",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -692,7 +676,7 @@ passed
                     "hash_on": "cookie",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)
@@ -710,8 +694,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
@@ -719,7 +703,7 @@ passed
                     "hash_on": "consumer",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -736,8 +720,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "nodes": {
                         "127.0.0.1:8080": 1
                     },
@@ -746,7 +730,7 @@ passed
                     "key": "invalid-key",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.say(body)
@@ -763,8 +747,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "key": "dsadas",
                     "nodes": {
                         "127.0.0.1:8080": 1
@@ -773,7 +757,7 @@ passed
                     "hash_on": "aabbcc",
                     "desc": "new chash upstream"
                 }]]
-                )
+            )
 
             ngx.status = code
             ngx.print(body)

@@ -155,6 +155,7 @@ resp-X-Runner: Go-runner
 --- error_code: 200
 --- response_headers
 X-Runner: Test-Runner
+Content-Type: application/json
 --- response_body
 hello world
 

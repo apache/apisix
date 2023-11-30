@@ -64,7 +64,8 @@ func getEtcdKillChaos() *v1alpha1.PodChaos {
 
 var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	e := httpexpect.New(ginkgo.GinkgoT(), utils.Host)
-	eSilent := utils.GetSilentHttpexpectClient()
+	eDataPanel := httpexpect.New(ginkgo.GinkgoT(), utils.DataPanelHost)
+	ePrometheus := httpexpect.New(ginkgo.GinkgoT(), utils.PrometheusHost)
 
 	var cliSet *utils.ClientSet
 	var apisixPod *v1.Pod
@@ -89,8 +90,8 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 		utils.SetRoute(e, httpexpect.Status2xx)
 		utils.GetRouteList(e, http.StatusOK)
 
-		utils.WaitUntilMethodSucceed(e, http.MethodGet, 1)
-		utils.TestPrometheusEtcdMetric(e, 1)
+		utils.WaitUntilMethodSucceed(eDataPanel, http.MethodGet, 1)
+		utils.TestPrometheusEtcdMetric(ePrometheus, 1)
 	})
 
 	ginkgo.It("run request in background", func() {
@@ -99,7 +100,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 			for {
 				go func() {
 					defer ginkgo.GinkgoRecover()
-					utils.GetRoute(eSilent, http.StatusOK)
+					utils.GetRoute(eDataPanel, http.StatusOK)
 				}()
 				time.Sleep(100 * time.Millisecond)
 				stopLoop := false
@@ -119,7 +120,7 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 
 	ginkgo.It("get stats before kill etcd", func() {
 		timeStart := time.Now()
-		bandwidthBefore, durationBefore = utils.GetEgressBandwidthPerSecond(e)
+		bandwidthBefore, durationBefore = utils.GetEgressBandwidthPerSecond(ePrometheus)
 		bpsBefore = bandwidthBefore / durationBefore
 		gomega.Expect(bpsBefore).NotTo(gomega.BeZero())
 
@@ -139,17 +140,12 @@ var _ = ginkgo.Describe("Test Get Success When Etcd Got Killed", func() {
 	// fail to set route since etcd is all killed
 	// while get route could still succeed
 	ginkgo.It("get stats after kill etcd", func() {
-		timeStart := time.Now()
 		utils.SetRoute(e, httpexpect.Status5xx)
-		utils.GetRoute(e, http.StatusOK)
-		utils.TestPrometheusEtcdMetric(e, 0)
+		utils.GetRoute(eDataPanel, http.StatusOK)
+		utils.TestPrometheusEtcdMetric(ePrometheus, 0)
 
-		bandwidthAfter, durationAfter = utils.GetEgressBandwidthPerSecond(e)
+		bandwidthAfter, durationAfter = utils.GetEgressBandwidthPerSecond(ePrometheus)
 		bpsAfter = bandwidthAfter / durationAfter
-
-		errorLog, err := utils.Log(apisixPod, cliSet.KubeCli, timeStart)
-		gomega.Expect(err).To(gomega.BeNil())
-		gomega.Ω(errorLog).Should(gomega.ContainSubstring("no healthy etcd endpoint available"))
 	})
 
 	ginkgo.It("ingress bandwidth per second not change much", func() {

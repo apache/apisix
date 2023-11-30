@@ -1,11 +1,10 @@
 ---
 title: limit-conn
 keywords:
-  - APISIX
-  - Plugin
+  - Apache APISIX
+  - API Gateway
   - Limit Connection
-  - limit-con
-description: This document contains information about the Apache APISIX limit-con Plugin.
+description: This document contains information about the Apache APISIX limit-con Plugin, you can use it to limits the number of concurrent requests to your services.
 ---
 
 <!--
@@ -29,7 +28,7 @@ description: This document contains information about the Apache APISIX limit-co
 
 ## Description
 
-The `limit-con` Plugin limits the number of concurrent requests to your services.
+The `limit-conn` Plugin limits the number of concurrent requests to your services.
 
 ## Attributes
 
@@ -40,17 +39,18 @@ The `limit-con` Plugin limits the number of concurrent requests to your services
 | default_conn_delay     | number  | True     |         | default_conn_delay > 0     | Delay in seconds to process the concurrent requests exceeding `conn` (and `conn` + `burst`).                                                                                                                                                                                                                                                                                                          |
 | only_use_default_delay | boolean | False    | false   | [true,false]               | When set to `true`, the Plugin will always set a delay of `default_conn_delay` and would not use any other calculations.                                                                                                                                                                                                                                                                              |
 | key_type               | string  | False    | "var"   | ["var", "var_combination"] | Type of user specified key to use.                                                                                                                                                                                                                                                                                                                                                                    |
-| key                    | string  | True     |         |                            | User specified key to base the request limiting on. If the `key_type` attribute is set to `var`, the key will be treated as a name of variable, like `remote_addr` or `consumer_name`. If the `key_type` is set to `var_combination`, the key will be a combination of variables, like `$remote_addr $consumer_name`. If the value of the key is empty, `remote_addr` will be set as the default key. |
+| key                    | string  | True     |         |                            | User specified key to base the request limiting on. If the `key_type` attribute is set to `"var"`, the key will be treated as a name of variable, like `remote_addr` or `consumer_name`. If the `key_type` is set to `"var_combination"`, the key will be a combination of variables, like `$remote_addr $consumer_name`. If the value of the key is empty, `remote_addr` will be set as the default key. |
 | rejected_code          | string  | False    | 503     | [200,...,599]              | HTTP status code returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                     |
 | rejected_msg           | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
 | allow_degradation      | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route as shown below:
 
-```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -75,8 +75,9 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 You can also configure the `key_type` to `var_combination` as shown:
 
-```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -99,19 +100,17 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-<!-- ![enable limit-conn plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/limit-conn-1.png) -->
-
 ## Example usage
 
-The example above configures the Plugin to only allow one concurrent request. When more than one request is received, the Plugin will respond with a 503 status code:
+The example above configures the Plugin to only allow one connection on this route. When more than one request is received, the Plugin will respond with a `503` HTTP status code and reject the connection:
 
-```bash
+```shell
 curl -i http://127.0.0.1:9080/index.html?sleep=20 &
 
 curl -i http://127.0.0.1:9080/index.html?sleep=20
 ```
 
-```bash
+```shell
 <html>
 <head><title>503 Service Temporarily Unavailable</title></head>
 <body>
@@ -121,12 +120,13 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 </html>
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
-```bash
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -142,75 +142,68 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Limit the number of concurrent WebSocket connections
+## Example of application scenarios
+
+### Limit the number of concurrent WebSocket connections
 
 Apache APISIX supports WebSocket proxy, we can use `limit-conn` plugin to limit the number of concurrent WebSocket connections.
 
 1. Create a Route, enable the WebSocket proxy and the `limit-conn` plugin.
 
-````shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "uri": "/ws",
-    "enable_websocket": true,
-    "plugins": {
-        "limit-conn": {
-            "conn": 1,
-            "burst": 0,
-            "default_conn_delay": 0.1,
-            "rejected_code": 503,
-            "key_type": "var",
-            "key": "remote_addr"
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    {
+        "uri": "/ws",
+        "enable_websocket": true,
+        "plugins": {
+            "limit-conn": {
+                "conn": 1,
+                "burst": 0,
+                "default_conn_delay": 0.1,
+                "rejected_code": 503,
+                "key_type": "var",
+                "key": "remote_addr"
+            }
+        },
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": {
+                "127.0.0.1:1980": 1
+            }
         }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-````
+    }'
+    ```
 
-The above route enables the WebSocket proxy on `/ws`, and limits the number of concurrent WebSocket connections to 1. More than 1 concurrent WebSocket connection will return `503` to reject the request.
+    The above route enables the WebSocket proxy on `/ws`, and limits the number of concurrent WebSocket connections to 1. More than 1 concurrent WebSocket connection will return `503` to reject the request.
 
-2. Initiate a WebSocket request, and the connection is established successfully
+2. Initiate a WebSocket request, and the connection is established successfully.
 
-````shell
-curl --include \
-     --no-buffer \
-     --header "Connection: Upgrade" \
-     --header "Upgrade: websocket" \
-     --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
-     --header "Sec-WebSocket-Version: 13" \
-     --http1.1 \
-     http://127.0.0.1:9080/ws
-```
+    ```shell
+    curl --include \
+        --no-buffer \
+        --header "Connection: Upgrade" \
+        --header "Upgrade: websocket" \
+        --header "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==" \
+        --header "Sec-WebSocket-Version: 13" \
+        --http1.1 \
+        http://127.0.0.1:9080/ws
+    ```
 
-```shell
-HTTP/1.1 101 Switching Protocols
-Connection: upgrade
-Upgrade: websocket
-Sec-WebSocket-Accept: HSmrc0sMlYUkAGmm5OPpG2HaGWk=
-Server: APISIX/2.15.0
-...
-````
+    ```shell
+    HTTP/1.1 101 Switching Protocols
+    ```
 
-3. Initiate the WebSocket request again in another terminal, the request will be rejected
+3. Initiate the WebSocket request again in another terminal, the request will be rejected.
 
-````shell
-HTTP/1.1 503 Service Temporarily Unavailable
-Date: Mon, 01 Aug 2022 03:49:17 GMT
-Content-Type: text/html; charset=utf-8
-Content-Length: 194
-Connection: keep-alive
-Server: APISIX/2.15.0
-
-<html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-````
+    ```shell
+    HTTP/1.1 503 Service Temporarily Unavailable
+    ···
+    <html>
+    <head><title>503 Service Temporarily Unavailable</title></head>
+    <body>
+    <center><h1>503 Service Temporarily Unavailable</h1></center>
+    <hr><center>openresty</center>
+    </body>
+    </html>
+    ```

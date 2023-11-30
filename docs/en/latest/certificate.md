@@ -31,125 +31,121 @@ It is most common for an SSL certificate to contain only one domain. We can crea
 * `key`: PEM-encoded private key of the SSL key pair.
 * `snis`: Hostname(s) to associate with this certificate as SNIs. To set this attribute this certificate must have a valid private key associated with it.
 
-We will use the Python script below to simplify the example:
+The following is an example of configuring an SSL certificate with a single SNI in APISIX.
 
-```python
-#!/usr/bin/env python
-# coding: utf-8
-# save this file as ssl.py
-import sys
-# sudo pip install requests
-import requests
-
-if len(sys.argv) <= 3:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1]) as f:
-    cert = f.read()
-with open(sys.argv[2]) as f:
-    key = f.read()
-sni = sys.argv[3]
-api_key = "edd1c9f034335f136f87ad84b625c8f1"
-resp = requests.put("http://127.0.0.1:9080/apisix/admin/ssls/1", json={
-    "cert": cert,
-    "key": key,
-    "snis": [sni],
-}, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
-```
+Create an SSL object with the certificate and key valid for the SNI:
 
 ```shell
-# create SSL object
-./ssl.py t.crt t.key test.com
-
-# create Router object
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/hello",
+     "cert" : "'"$(cat t/certs/apisix.crt)"'",
+     "key": "'"$(cat t/certs/apisix.key)"'",
+     "snis": ["test.com"]
+}'
+```
+
+Create a Router object:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "uri": "/get",
     "hosts": ["test.com"],
     "methods": ["GET"],
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "httpbin.org": 1
         }
     }
 }'
+```
 
-# make a test
+Send a request to verify:
 
-curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello  -vvv
+```shell
+curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello -k -vvv
+
 * Added test.com:9443:127.0.0.1 to DNS cache
 * About to connect() to test.com port 9443 (#0)
 *   Trying 127.0.0.1...
 * Connected to test.com (127.0.0.1) port 9443 (#0)
-* Initializing NSS with certpath: sql:/etc/pki/nssdb
-* skipping SSL peer certificate verification
-* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
 * Server certificate:
-* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-* 	start date: Jun 24 22:18:05 2019 GMT
-* 	expire date: May 31 22:18:05 2119 GMT
-* 	common name: test.com
-* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-> GET /hello HTTP/1.1
-> User-Agent: curl/7.29.0
+*   subject: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*   start date: Jun 24 22:18:05 2019 GMT
+*   expire date: May 31 22:18:05 2119 GMT
+*   issuer: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*   SSL certificate verify result: self-signed certificate (18), continuing anyway.
+> GET /get HTTP/2
 > Host: test.com:9443
-> Accept: */*
+> user-agent: curl/7.81.0
+> accept: */*
 ```
 
 ### wildcard SNI
 
-Sometimes, one SSL certificate may contain a wildcard domain like `*.test.com`,
-that means it can accept more than one domain, eg: `www.test.com` or `mail.test.com`.
+An SSL certificate could also be valid for a wildcard domain like `*.test.com`, which means it is valid for any domain of that pattern, including `www.test.com` and `mail.test.com`.
 
-Here is an example, note that the value we pass as `sni` is `*.test.com`.
+The following is an example of configuring an SSL certificate with a wildcard SNI in APISIX.
+
+Create an SSL object with the certificate and key valid for the SNI:
 
 ```shell
-./ssl.py t.crt t.key '*.test.com'
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+ -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+ {
+      "cert" : "'"$(cat t/certs/apisix.crt)"'",
+      "key": "'"$(cat t/certs/apisix.key)"'",
+      "snis": ["*.test.com"]
+ }'
+```
 
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+Create a Router object:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
-    "uri": "/hello",
+    "uri": "/get",
     "hosts": ["*.test.com"],
     "methods": ["GET"],
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "httpbin.org": 1
         }
     }
 }'
+```
 
-# make a test
+Send a request to verify:
 
-curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/hello  -vvv
-* Added test.com:9443:127.0.0.1 to DNS cache
-* About to connect() to test.com port 9443 (#0)
-*   Trying 127.0.0.1...
-* Connected to test.com (127.0.0.1) port 9443 (#0)
-* Initializing NSS with certpath: sql:/etc/pki/nssdb
-* skipping SSL peer certificate verification
-* SSL connection using TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+```shell
+curl --resolve 'www.test.com:9443:127.0.0.1' https://www.test.com:9443/get -k -vvv
+
+* Added www.test.com:9443:127.0.0.1 to DNS cache
+* Hostname www.test.com was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to www.test.com (127.0.0.1) port 9443 (#0)
+* SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384
+* ALPN, server accepted to use h2
 * Server certificate:
-* 	subject: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-* 	start date: Jun 24 22:18:05 2019 GMT
-* 	expire date: May 31 22:18:05 2119 GMT
-* 	common name: test.com
-* 	issuer: CN=test.com,O=iresty,L=ZhuHai,ST=GuangDong,C=CN
-> GET /hello HTTP/1.1
-> User-Agent: curl/7.29.0
-> Host: test.com:9443
-> Accept: */*
+*  subject: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  start date: Jun 24 22:18:05 2019 GMT
+*  expire date: May 31 22:18:05 2119 GMT
+*  issuer: C=CN; ST=GuangDong; L=ZhuHai; O=iresty; CN=test.com
+*  SSL certificate verify result: self signed certificate (18), continuing anyway.
+> GET /get HTTP/2
+> Host: www.test.com:9443
+> user-agent: curl/7.74.0
+> accept: */*
 ```
 
 ### multiple domain
 
-If your SSL certificate may contain more than one domain, like `www.test.com`
-and `mail.test.com`, then you can add them into the `snis` array. For example:
+If your SSL certificate may contain more than one domain, like `www.test.com` and `mail.test.com`, then you can add them into the `snis` array. For example:
 
 ```json
 {
@@ -174,7 +170,7 @@ pair. So the length of `certs` and `keys` must be same.
 
 ### set up multiple CA certificates
 
-APISIX currently uses CA certificates in several places, such as [Protect Admin API](./mtls.md#protect-admin-api), [etcd with mTLS](./mtls.md#etcd-with-mtls), and [Deployment Modes](./architecture-design/deployment-role.md).
+APISIX currently uses CA certificates in several places, such as [Protect Admin API](./mtls.md#protect-admin-api), [etcd with mTLS](./mtls.md#etcd-with-mtls), and [Deployment Modes](./deployment-modes.md).
 
 In these places, `ssl_trusted_certificate` or `trusted_ca_cert` will be used to set up the CA certificate, but these configurations will eventually be translated into [lua_ssl_trusted_certificate](https://github.com/openresty/lua-nginx-module#lua_ssl_trusted_certificate) directive in OpenResty.
 
@@ -191,8 +187,8 @@ The following table details the configurations involved in this example and what
 | foo_ca.crt       | CA cert  | Issues the secondary certificate required for the client to communicate with the APISIX Admin API over mTLS.                                                                 |
 | foo_client.crt   | cert     | A certificate issued by `foo_ca.crt` and used by the client to prove its identity when accessing the APISIX Admin API.                                                       |
 | foo_client.key   | key      | Issued by `foo_ca.crt`, used by the client, the key file required to access the APISIX Admin API.                                                                            |
-| foo_server.crt   | cert     | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `apisix.admin_api_mtls.admin_ssl_cert` configuration entry.                                                     |
-| foo_server.key   | key      | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `apisix.admin_api_mtls.admin_ssl_cert_key` configuration entry.                                                 |
+| foo_server.crt   | cert     | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `admin_api_mtls.admin_ssl_cert` configuration entry.                                                     |
+| foo_server.key   | key      | Issued by `foo_ca.crt`, used by APISIX, corresponding to the `admin_api_mtls.admin_ssl_cert_key` configuration entry.                                                 |
 | admin.apisix.dev | doname   | Common Name used in issuing `foo_server.crt` certificate, through which the client accesses APISIX Admin API                                                                 |
 | bar_ca.crt       | CA cert  | Issues the secondary certificate required for APISIX to communicate with ETCD over mTLS.                                                                                     |
 | bar_etcd.crt     | cert     | Issued by `bar_ca.crt` and used by ETCD, corresponding to the `-cert-file` option in the ETCD startup command.                                                               |
@@ -204,7 +200,7 @@ The following table details the configurations involved in this example and what
 
 1. Create CA bundle files
 
-```
+```shell
 cat /path/to/foo_ca.crt /path/to/bar_ca.crt > apisix.ca-bundle
 ```
 
@@ -227,32 +223,39 @@ goreman -f Procfile-single-enable-mtls start > goreman.log 2>&1 &
 
 3. Update `config.yaml`
 
-```yaml
+```yaml title="conf/config.yaml"
+deployment:
+  admin:
+    admin_key
+      - name: admin
+        key: edd1c9f034335f136f87ad84b625c8f1
+        role: admin
+    admin_listen:
+      ip: 127.0.0.1
+      port: 9180
+    https_admin: true
+    admin_api_mtls:
+      admin_ssl_ca_cert: /path/to/apisix.ca-bundle
+      admin_ssl_cert: /path/to/foo_server.crt
+      admin_ssl_cert_key: /path/to/foo_server.key
+
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
-  port_admin: 9180
-  https_admin: true
-
-  admin_api_mtls:
-    admin_ssl_ca_cert: /path/to/apisix.ca-bundle
-    admin_ssl_cert: /path/to/foo_server.crt
-    admin_ssl_cert_key: /path/to/foo_server.key
-
   ssl:
     ssl_trusted_certificate: /path/to/apisix.ca-bundle
 
-etcd:
-  host:
-    - "https://127.0.0.1:12379"
-    - "https://127.0.0.1:22379"
-    - "https://127.0.0.1:32379"
-  tls:
-    cert: /path/to/bar_apisix.crt
-    key: /path/to/bar_apisix.key
-    sni: etcd.cluster.dev
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "https://127.0.0.1:12379"
+      - "https://127.0.0.1:22379"
+      - "https://127.0.0.1:32379"
+    tls:
+      cert: /path/to/bar_apisix.crt
+      key: /path/to/bar_apisix.key
+      sni: etcd.cluster.dev
 ```
 
 4. Test APISIX Admin API

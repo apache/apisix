@@ -30,9 +30,13 @@ import (
 )
 
 var (
-	token        = "edd1c9f034335f136f87ad84b625c8f1"
-	Host         = "http://127.0.0.1:9080"
-	setRouteBody = `{
+	token = "edd1c9f034335f136f87ad84b625c8f1"
+	// TODO: refactor the code. We should move the endpoint from the expect to the http call.
+	// So we don't need to remember to pass the correct expect.
+	Host           = "http://127.0.0.1:9180"
+	DataPanelHost  = "http://127.0.0.1:9080"
+	PrometheusHost = "http://127.0.0.1:9080"
+	setRouteBody   = `{
 		"uri": "/get",
 		"plugins": {
 			"prometheus": {}
@@ -168,11 +172,11 @@ func DeleteRoute(e *httpexpect.Expect) *httpexpect.Response {
 
 func SetPrometheusMetricsPublicAPI(e *httpexpect.Expect) *httpexpect.Response {
 	return caseCheck(httpTestCase{
-		E:                 e,
-		Method:            http.MethodPut,
-		Path:              "/apisix/admin/routes/metrics",
-		Headers:           map[string]string{"X-API-KEY": token},
-		Body:              `{
+		E:       e,
+		Method:  http.MethodPut,
+		Path:    "/apisix/admin/routes/metrics",
+		Headers: map[string]string{"X-API-KEY": token},
+		Body: `{
 			"uri": "/apisix/prometheus/metrics",
 			"plugins": {
 				"public-api": {}

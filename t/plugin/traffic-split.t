@@ -84,8 +84,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -125,8 +123,6 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -173,8 +169,6 @@ done
 GET /t
 --- response_body eval
 qr/failed to validate the 'vars' expression: invalid operator '123'/
---- no_error_log
-[error]
 
 
 
@@ -208,8 +202,6 @@ qr/failed to validate the 'vars' expression: invalid operator '123'/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -231,8 +223,6 @@ location /t {
 GET /t
 --- response_body
 1980, 1980, 1980, 1980, 1980, 1980
---- no_error_log
-[error]
 
 
 
@@ -272,8 +262,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -295,8 +283,6 @@ location /t {
 GET /t
 --- response_body
 1980, 1980, 1980, 1980, 1980, 1980
---- no_error_log
-[error]
 
 
 
@@ -355,8 +341,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -365,8 +349,6 @@ passed
 GET /server_port?name=jack&age=14
 --- response_body eval
 1980
---- no_error_log
-[error]
 
 
 
@@ -388,8 +370,6 @@ location /t {
 GET /t
 --- response_body
 1980, 1980, 1981, 1981, 1981, 1981
---- no_error_log
-[error]
 
 
 
@@ -466,8 +446,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -476,8 +454,6 @@ passed
 GET /server_port?name=jack&age=0
 --- response_body eval
 1980
---- no_error_log
-[error]
 
 
 
@@ -499,8 +475,6 @@ location /t {
 GET /t
 --- response_body
 1980, 1981, 1981, 1982, 1982
---- no_error_log
-[error]
 
 
 
@@ -573,8 +547,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -596,8 +568,6 @@ location /t {
 GET /t
 --- response_body
 1981, 1981, 1981, 1982, 1982, 1982
---- no_error_log
-[error]
 
 
 
@@ -662,8 +632,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -738,17 +706,16 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 19: domain name resolved successfully
---- request
-GET /
---- error_code: 200
---- error_log eval
-qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
+--- pipelined_requests eval
+["GET /", "GET /"]
+--- error_code eval
+[200, 200]
+--- error_log_like eval
+qr/(dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+){2}/
 
 
 
@@ -800,8 +767,6 @@ qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -823,5 +788,3 @@ location /t {
 GET /t
 --- response_body
 1980, 1980, 1981, 1981, 1981, 1981
---- no_error_log
-[error]

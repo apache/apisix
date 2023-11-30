@@ -1,7 +1,7 @@
 ---
 title: ext-plugin-post-req
 keywords:
-  - APISIX
+  - Apache APISIX
   - Plugin
   - ext-plugin-post-req
 description: 本文介绍了关于 Apache APISIX `ext-plugin-post-req` 插件的基本信息及使用方法。

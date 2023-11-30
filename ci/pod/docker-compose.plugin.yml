@@ -23,25 +23,40 @@ services:
     # The latest image is the latest stable version
     image: redis:latest
     restart: unless-stopped
+    volumes:
+      - ./t/certs:/certs
+    command: "--tls-port 6380 \
+            --tls-cert-file /certs/mtls_server.crt \
+            --tls-key-file /certs/mtls_server.key \
+            --tls-ca-cert-file /certs/mtls_ca.crt \
+            --tls-auth-clients no \
+            --user alice on +@all ~* \\&* \\>somepassword"
     ports:
       - "6379:6379"
+      - "6380:6380"
     networks:
       apisix_net:
-
 
   ## keycloak
   apisix_keycloak:
-    image: sshniro/keycloak-apisix:1.0.0
+    container_name: apisix_keycloak
+    image: quay.io/keycloak/keycloak:18.0.2
+    # use host network because in CAS auth,
+    # keycloak needs to send back-channel POST to apisix.
+    network_mode: host
     environment:
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: 123456
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
     restart: unless-stopped
-    ports:
-      - "8090:8080"
-      - "8443:8443"
-    networks:
-      apisix_net:
-
+    command: ["start-dev"]
+    volumes:
+      - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
+      - ./ci/pod/keycloak/server.crt.pem:/opt/keycloak/conf/server.crt.pem
+      - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
+      - ./ci/pod/keycloak/kcadm_configure_cas.sh:/tmp/kcadm_configure_cas.sh
+      - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
 
   ## kafka-cluster
   zookeeper-server1:
@@ -82,17 +97,20 @@ services:
   kafka-server2:
     image: bitnami/kafka:2.8.1
     env_file:
-      - ci/pod/kafka/kafka-server/env/common.env
+      - ci/pod/kafka/kafka-server/env/common2.env
     environment:
       KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper-server2:2181
     restart: unless-stopped
     ports:
-      - "19092:9092"
+      - "19092:19092"
+      - "19094:19094"
     depends_on:
       - zookeeper-server1
       - zookeeper-server2
     networks:
       kafka_net:
+    volumes:
+      - ./ci/pod/kafka/kafka-server/kafka_jaas.conf:/opt/bitnami/kafka/config/kafka_jaas.conf:ro
 
   ## SkyWalking
   skywalking:
@@ -104,22 +122,6 @@ services:
       - "12800:12800"
     networks:
       skywalk_net:
-
-  ## HashiCorp Vault
-  vault:
-    image: vault:1.9.0
-    container_name: vault
-    restart: unless-stopped
-    ports:
-      - "8200:8200"
-    cap_add:
-      - IPC_LOCK
-    environment:
-      VAULT_DEV_ROOT_TOKEN_ID: root
-      VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
-    command: [ "vault", "server", "-dev" ]
-    networks:
-      vault_net:
 
 
   ## OpenLDAP
@@ -140,6 +142,15 @@ services:
     volumes:
       - ./t/certs:/certs
 
+
+  ## Grafana Loki
+  loki:
+    image: grafana/loki:2.8.0
+    command: -config.file=/etc/loki/local-config.yaml -auth.enabled -querier.multi-tenant-queries-enabled
+    ports:
+      - "3100:3100"
+    networks:
+      - loki_net
 
   rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
@@ -185,17 +196,157 @@ services:
     networks:
       opa_net:
 
-  # Splunk HEC Logging Service
-  splunk:
-    image: splunk/splunk:8.2.3
+  # Elasticsearch Logger Service
+  elasticsearch-noauth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
     restart: unless-stopped
     ports:
-      - "18088:8088"
+      - "9200:9200"
+      - "9300:9300"
     environment:
-      SPLUNK_PASSWORD: "ApacheAPISIX@666"
-      SPLUNK_START_ARGS: "--accept-license"
-      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
-      SPLUNK_HEC_SSL: "False"
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      xpack.security.enabled: 'false'
+
+  elasticsearch-auth:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
+    restart: unless-stopped
+    ports:
+      - "9201:9201"
+      - "9301:9301"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      transport.tcp.port: 9301
+      xpack.security.enabled: 'true'
+
+
+  # The function services of OpenFunction
+  test-header:
+    image: test-header-image:latest
+    restart: unless-stopped
+    ports:
+      - "30583:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-uri:
+    image: test-uri-image:latest
+    restart: unless-stopped
+    ports:
+      - "30584:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  test-body:
+    image: test-body-image:latest
+    restart: unless-stopped
+    ports:
+      - "30585:8080"
+    environment:
+      CONTEXT_MODE: "self-host"
+      FUNC_CONTEXT: "{\"name\":\"HelloWorld\",\"version\":\"v1.0.0\",\"port\":\"8080\",\"runtime\":\"Knative\"}"
+
+  ## RedisCluster Enable TLS
+  redis-node-0:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7000:6379'
+
+  redis-node-1:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7001:6379'
+
+  redis-node-2:
+    image: docker.io/bitnami/redis-cluster:7.0
+    volumes:
+      - ./t/certs:/certs
+    depends_on:
+      - redis-node-0
+      - redis-node-1
+    environment:
+      - 'ALLOW_EMPTY_PASSWORD=yes'
+      - 'REDIS_CLUSTER_REPLICAS=0'
+      - 'REDIS_NODES=redis-node-0 redis-node-1 redis-node-2'
+      - 'REDIS_CLUSTER_CREATOR=yes'
+      - 'REDIS_TLS_ENABLED=yes'
+      - 'REDIS_TLS_CERT_FILE=/certs/mtls_server.crt'
+      - 'REDIS_TLS_KEY_FILE=/certs/mtls_server.key'
+      - 'REDIS_TLS_CA_FILE=/certs/mtls_ca.crt'
+      - 'REDIS_TLS_AUTH_CLIENTS=no'
+    ports:
+      - '7002:6379'
+
+  graphql-demo:
+    # the owner doesn't provide a semver tag
+    image: npalm/graphql-java-demo:latest
+    ports:
+      - '8888:8080'
+
+  vector:
+    image: timberio/vector:0.29.1-debian
+    container_name: vector
+    volumes:
+      - ./ci/pod/vector:/etc/vector/
+      - ./t/certs:/certs
+    ports:
+      - '3000:3000' #tcp logger
+      - '8127:8127/udp'
+      - '43000:43000'
+      - '5140:5140'
+      - "18088:18088" # For splunk logging tests
+      - '5150:5150/udp'
+      - "3001:3001" #http logger
+    networks:
+      vector_net:
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse
+    ports:
+      - '8123:8123'
+    networks:
+      clickhouse_net:
+
+  clickhouse2:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse2
+    ports:
+      - '8124:8123'
+    networks:
+      clickhouse_net:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib
+    volumes:
+    - ./ci/pod/otelcol-contrib:/etc/otelcol-contrib:rw
+    ports:
+      - '4318:4318'
 
 
 networks:
@@ -203,5 +354,7 @@ networks:
   kafka_net:
   skywalk_net:
   rocketmq_net:
-  vault_net:
   opa_net:
+  vector_net:
+  clickhouse_net:
+  loki_net:

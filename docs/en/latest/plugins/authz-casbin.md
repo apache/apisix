@@ -1,7 +1,8 @@
 ---
 title: authz-casbin
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Authz Casbin
   - authz-casbin
@@ -56,7 +57,7 @@ If you wish to use a global Casbin configuration, you can first specify `model` 
 | model  | string | True     | Casbin model configuration in text format. |
 | policy | string | True     | Casbin policy in text format.              |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route by either using the model/policy file paths or using the model/policy text in Plugin configuration/metadata.
 
@@ -65,7 +66,7 @@ You can enable the Plugin on a Route by either using the model/policy file paths
 The example below shows setting up Casbin authentication from your model/policy configuration file:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "authz-casbin": {
@@ -89,7 +90,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The example below shows setting up Casbin authentication from your model/policy text in your Plugin configuration:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "authz-casbin": {
@@ -132,7 +133,7 @@ First, you need to send a `PUT` request to the Admin API to add the `model` and 
 All Routes configured this way will use a single Casbin enforcer with the configured Plugin metadata. You can also update the model/policy in this way and the Plugin will automatically update to the new configuration.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/authz-casbin -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/authz-casbin -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
 "model": "[request_definition]
 r = sub, obj, act
@@ -158,7 +159,7 @@ g, alice, admin"
 Once you have updated the Plugin metadata, you can add the Plugin to a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "authz-casbin": {
@@ -233,12 +234,12 @@ And only users with admin privileges can access the endpoints:
 curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `authz-casbin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `authz-casbin` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",

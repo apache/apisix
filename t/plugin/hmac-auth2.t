@@ -27,10 +27,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests;
@@ -400,7 +396,7 @@ x-real-ip: 127.0.0.1
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -436,7 +432,7 @@ x-real-ip: 127.0.0.1
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code

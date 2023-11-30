@@ -47,7 +47,7 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 以下示例展示了如何在指定路由上启用 `proxy-control` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/upload",
@@ -75,12 +75,12 @@ curl -i http://127.0.0.1:9080/upload -d @very_big_file
 
 如果在错误日志中没有找到关于 "a client request body is buffered to a temporary file" 的信息，则说明插件生效。
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d
 {
     "uri": "/upload",

@@ -1,13 +1,34 @@
 {
-  "version": "2.15.0",
+  "version": "3.7.0",
   "sidebar": [
     {
       "type": "category",
-      "label": "Architecture Design",
+      "label": "Getting Started",
       "items": [
-        "architecture-design/apisix",
-        "architecture-design/plugin-config",
-        "architecture-design/debug-mode"
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
+    },
+    {
+      "type": "doc",
+      "id": "installation-guide"
+    },
+    {
+      "type": "doc",
+      "id": "architecture-design/apisix"
+    },
+    {
+      "type": "category",
+      "label": "Tutorials",
+      "items": [
+        "tutorials/expose-api",
+        "tutorials/protect-api",
+        "tutorials/observe-your-api",
+        "tutorials/health-check",
+        "tutorials/client-to-apisix-mtls"
       ]
     },
     {
@@ -16,22 +37,17 @@
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
+        "terminology/consumer-group",
         "terminology/global-rule",
         "terminology/plugin",
+        "terminology/plugin-config",
         "terminology/route",
         "terminology/router",
         "terminology/script",
         "terminology/service",
-        "terminology/upstream"
+        "terminology/upstream",
+        "terminology/secret"
       ]
-    },
-    {
-      "type": "doc",
-      "id": "getting-started"
-    },
-    {
-      "type": "doc",
-      "id": "installation-guide"
     },
     {
       "type": "category",
@@ -47,9 +63,10 @@
             "plugins/gzip",
             "plugins/real-ip",
             "plugins/server-info",
-            "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-pre-req",
-            "plugins/ext-plugin-post-resp"
+            "plugins/ext-plugin-post-req",
+            "plugins/ext-plugin-post-resp",
+            "plugins/workflow"
           ]
         },
         {
@@ -93,7 +110,9 @@
             "plugins/referer-restriction",
             "plugins/consumer-restriction",
             "plugins/csrf",
-            "plugins/public-api"
+            "plugins/public-api",
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -152,7 +171,11 @@
                 "plugins/sls-logger",
                 "plugins/google-cloud-logging",
                 "plugins/splunk-hec-logging",
-                "plugins/file-logger"
+                "plugins/file-logger",
+                "plugins/loggly",
+                "plugins/elasticsearch-logger",
+                "plugins/tencent-cloud-cls",
+                "plugins/loki-logger"
               ]
             }
           ]
@@ -164,12 +187,13 @@
             "plugins/serverless",
             "plugins/azure-functions",
             "plugins/openwhisk",
-            "plugins/aws-lambda"
+            "plugins/aws-lambda",
+            "plugins/openfunction"
           ]
         },
         {
           "type": "category",
-          "label": "其它",
+          "label": "Other protocols",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy"
@@ -198,6 +222,26 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "support-fips-in-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "CODE_STYLE"
+        },
+        {
+          "type": "doc",
+          "id": "plugin-develop"
+        },
+        {
+          "type": "doc",
+          "id": "debug-mode"
         }
       ]
     },
@@ -223,19 +267,7 @@
         },
         {
           "type": "doc",
-          "id": "external-plugin"
-        },
-        {
-          "type": "doc",
-          "id": "health-check"
-        },
-        {
-          "type": "doc",
           "id": "router-radixtree"
-        },
-        {
-          "type": "doc",
-          "id": "stand-alone"
         },
         {
           "type": "doc",
@@ -255,6 +287,10 @@
         },
         {
           "type": "doc",
+          "id": "apisix-variable"
+        },
+        {
+          "type": "doc",
           "id": "batch-processor"
         },
         {
@@ -267,14 +303,6 @@
         },
         {
           "type": "doc",
-          "id": "plugin-develop"
-        },
-        {
-          "type": "doc",
-          "id": "CODE_STYLE"
-        },
-        {
-          "type": "doc",
           "id": "mtls"
         },
         {
@@ -284,12 +312,20 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },
     {
       "type": "doc",
       "id": "CHANGELOG"
+    },
+    {
+      "type": "doc",
+      "id": "upgrade-guide-from-2.15.x-to-3.0.0"
     }
   ]
 }

@@ -76,7 +76,7 @@ return _M
 
 #### Eureka 与 APISIX 之间数据转换逻辑
 
-APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？ 假如从 Eureka 获取如下数据：
+APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？假如从 Eureka 获取如下数据：
 
 ```json
 {
@@ -118,7 +118,7 @@ APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册�
 
 解析 instance 数据步骤：
 
-1. 首先要选择状态为 “UP” 的实例： overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
+1. 首先要选择状态为“UP”的实例：overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
 2. IP 地址：以 ipAddr 的值为 IP; 并且必须是 IPv4 或 IPv6 格式的；
 3. 端口：端口取值规则是，如果 port["@enabled"] 等于 "true" 那么使用 port["\$"] 的值；如果 securePort["@enabled"] 等于 "true" 那么使用 securePort["$"] 的值；
 4. 权重：权重取值顺序是，先判断 `metadata.weight` 是否有值，如果没有，则取配置中的 `eureka.weight` 的值，如果还没有，则取默认值`100`；
@@ -151,7 +151,7 @@ discovery:
 
 此名称要与 `apisix/discovery/` 目录中实现对应注册中心的文件名保持一致。
 
-现已支持注册中心有：Eureka 。
+现已支持注册中心有：Eureka。
 
 ### Eureka 的配置
 
@@ -186,10 +186,12 @@ discovery:
 
 ## upstream 配置
 
+### 七层
+
 APISIX 是通过 `upstream.discovery_type` 选择使用的服务发现，`upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/\*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/user/*",
     "upstream": {
@@ -212,7 +214,7 @@ Server: APISIX web server
 因为上游的接口 URL 可能会有冲突，通常会在网关通过前缀来进行区分：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/a/*",
     "plugins": {
@@ -227,7 +229,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
     }
 }'
 
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/b/*",
     "plugins": {
@@ -246,3 +248,33 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f
 假如 A-SERVICE 和 B-SERVICE 都提供了一个 `/test` 的接口，通过上面的配置，可以通过 `/a/test` 访问 A-SERVICE 的 `/test` 接口，通过 `/b/test` 访问 B-SERVICE 的 `/test` 接口。
 
 **注意**：配置 `upstream.service_name` 后 `upstream.nodes` 将不再生效，而是使用从注册中心的数据来替换，即使注册中心的数据是空的。
+
+### 四层
+
+eureka 服务发现也支持在四层中使用，配置方式与七层的类似。
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+{
+    "remote_addr": "127.0.0.1",
+    "upstream": {
+        "scheme": "tcp",
+        "discovery_type": "eureka",
+        "service_name": "APISIX-EUREKA",
+        "type": "roundrobin"
+    }
+}'
+HTTP/1.1 200 OK
+Date: Fri, 30 Dec 2022 03:52:19 GMT
+Content-Type: application/json
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/3.0.0
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Access-Control-Expose-Headers: *
+Access-Control-Max-Age: 3600
+X-API-VERSION: v3
+
+{"key":"\/apisix\/stream_routes\/1","value":{"remote_addr":"127.0.0.1","upstream":{"hash_on":"vars","type":"roundrobin","discovery_type":"eureka","scheme":"tcp","pass_host":"pass","service_name":"APISIX-EUREKA"},"id":"1","create_time":1672106762,"update_time":1672372339}}
+```

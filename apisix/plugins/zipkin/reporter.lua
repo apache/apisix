@@ -56,6 +56,9 @@ end
 
 
 function _M.report(self, span)
+    if span:get_baggage_item("x-b3-sampled") == "0" then
+        return
+    end
     local span_context = span:context()
 
     local zipkin_tags = {}

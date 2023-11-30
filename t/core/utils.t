@@ -69,8 +69,6 @@ qr/random seed \d+(\.\d+)?(e\+\d+)?\ntwice: false/
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -93,8 +91,6 @@ GET /t
 GET /t
 --- response_body eval
 qr/"address":.+,"name":"github.com"/
---- no_error_log
-[error]
 
 
 
@@ -118,8 +114,6 @@ GET /t
 resolvers: ["8.8.8.8","114.114.114.114"]
 --- error_log eval
 qr/"address":.+,"name":"github.com"/
---- no_error_log
-[error]
 
 
 
@@ -128,8 +122,6 @@ qr/"address":.+,"name":"github.com"/
 apisix:
   node_listen: 1984
   enable_server_tokens: false
-  admin_key: null
-
 --- config
 location /t {
     content_by_lua_block {
@@ -202,8 +194,6 @@ received: Connection: close
 received: Server: APISIX
 received: \nreceived: hello world
 close: 1 nil}
---- no_error_log
-[error]
 
 
 
@@ -272,8 +262,6 @@ res:JohnDavid
 GET /t
 --- response_body
 ip_info: {"address":"127.0.0.1","class":1,"name":"test.com","ttl":315360000,"type":1}
---- no_error_log
-[error]
 
 
 
@@ -299,8 +287,6 @@ apisix:
 GET /t
 --- response_body_like
 .+"name":"apisix\.apache\.org".+
---- no_error_log
-[error]
 
 
 
@@ -375,3 +361,35 @@ apisix:
 GET /t
 --- error_log
 failed to parse domain: ipv6.local
+
+
+
+=== TEST 12: get_last_index
+--- config
+    location /t {
+        content_by_lua_block {
+            local string_rfind = require("pl.stringx").rfind
+            local cases = {
+                {"you are welcome", "co"},
+                {"nice to meet you", "meet"},
+                {"chicken run", "cc"},
+                {"day day up", "day"},
+                {"happy new year", "e"},
+                {"apisix__1928", "__"}
+            }
+
+            for _, case in ipairs(cases) do
+                local res = string_rfind(case[1], case[2])
+                ngx.say("res:", res)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+res:12
+res:9
+res:nil
+res:5
+res:12
+res:7

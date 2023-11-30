@@ -53,6 +53,7 @@ loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2990 name: referer-restriction
 loaded plugin and sort by priority: 2900 name: uri-blocker
 loaded plugin and sort by priority: 2800 name: request-validation
+loaded plugin and sort by priority: 2600 name: multi-auth
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac
 loaded plugin and sort by priority: 2530 name: hmac-auth
@@ -61,8 +62,8 @@ loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
 loaded plugin and sort by priority: 2400 name: consumer-restriction
 loaded plugin and sort by priority: 2000 name: authz-keycloak
+loaded plugin and sort by priority: 1085 name: proxy-cache
 loaded plugin and sort by priority: 1010 name: proxy-mirror
-loaded plugin and sort by priority: 1009 name: proxy-cache
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
 loaded plugin and sort by priority: 1005 name: api-breaker
 loaded plugin and sort by priority: 1003 name: limit-conn
@@ -119,8 +120,6 @@ loaded plugin and sort by priority: -3000 name: ext-plugin-post-req
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -132,8 +131,6 @@ GET /hello
 hello world
 --- response_headers
 Apisix-Plugins: no plugin
---- no_error_log
-[error]
 
 
 
@@ -181,8 +178,6 @@ Apisix-Plugins: no plugin
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -213,8 +208,6 @@ passed
 GET /t
 --- response_body
 {"limit-conn":true,"limit-count":true}
---- no_error_log
-[error]
 
 
 
@@ -245,8 +238,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -279,8 +270,6 @@ GET /t
 {"limit-conn":true,"limit-count":true,"response-rewrite":true}
 --- error_log
 Apisix-Plugins: response-rewrite
---- no_error_log
-[error]
 
 
 
@@ -303,8 +292,6 @@ Apisix-Plugins: response-rewrite
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -321,12 +308,19 @@ passed
                     "plugins": {
                         "mqtt-proxy": {
                             "protocol_name": "MQTT",
-                            "protocol_level": 4,
-                            "upstream": {
-                                "ip": "127.0.0.1",
-                                "port": 1995
-                            }
+                            "protocol_level": 4
                         }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1995,
+                                "weight": 1
+                            }
+                        ]
                     }
                 }]]
                 )
@@ -341,8 +335,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -354,5 +346,3 @@ passed
 hello world
 --- error_log
 mqtt client id: foo while prereading client data
---- no_error_log
-[error]

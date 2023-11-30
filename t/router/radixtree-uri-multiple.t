@@ -22,6 +22,21 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    router:
+        http: 'radixtree_uri'
+_EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
+
 run_tests();
 
 __DATA__
@@ -54,8 +69,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -87,8 +100,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -120,8 +131,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -131,8 +140,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -141,8 +148,6 @@ GET /not_found
 GET /server_port
 --- response_body eval
 qr/1980/
---- no_error_log
-[error]
 
 
 
@@ -151,8 +156,6 @@ qr/1980/
 GET /server_port/route2
 --- response_body eval
 qr/1981/
---- no_error_log
-[error]
 
 
 
@@ -161,8 +164,6 @@ qr/1981/
 GET /server_port/hello
 --- response_body eval
 qr/1982/
---- no_error_log
-[error]
 
 
 
@@ -185,8 +186,6 @@ qr/1982/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -209,5 +208,3 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]

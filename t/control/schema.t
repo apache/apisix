@@ -50,6 +50,7 @@ __DATA__
                 [[{
                     "main": {
                         "consumer": {"type":"object"},
+                        "consumer_group": {"type":"object"},
                         "global_rule": {"type":"object"},
                         "plugin_config": {"type":"object"},
                         "plugins": {"type":"array"},
@@ -69,7 +70,11 @@ __DATA__
                             "schema": {
                                 "type":"object",
                                 "properties": {
-                                    "disable": {"type": "boolean"}
+                                    "_meta": {
+                                         "properties": {
+                                             "disable": {"type": "boolean"}
+                                         }
+                                    }
                                 }
                             },
                             "metadata_schema": {"type":"object"}
@@ -84,7 +89,11 @@ __DATA__
                             "schema": {
                                 "type":"object",
                                 "properties": {
-                                    "disable": {"type": "boolean"}
+                                    "_meta": {
+                                         "properties": {
+                                             "disable": {"type": "boolean"}
+                                         }
+                                    }
                                 }
                             },
                             "priority": 1000
@@ -102,10 +111,7 @@ passed
 
 
 === TEST 2: confirm the scope of plugin
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: null
+--- extra_yaml_config
 plugins:
   - batch-requests
   - error-log-logger

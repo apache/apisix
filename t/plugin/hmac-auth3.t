@@ -682,3 +682,76 @@ location /t {
 }
 --- response_body
 passed
+
+
+
+=== TEST 13: delete exist consumers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- delete exist consumers
+            local code, body = t('/apisix/admin/consumers/robin', ngx.HTTP_DELETE)
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: data encryption for secret_key
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "hmac-auth": {
+                            "access_key": "my-access-key",
+                            "secret_key": "my-secret-key",
+                            "clock_skew": 10
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+            ngx.sleep(0.1)
+
+            -- get plugin conf from admin api, password is decrypted
+            local code, message, res = t('/apisix/admin/consumers/jack',
+                ngx.HTTP_GET
+            )
+            res = json.decode(res)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            ngx.say(res.value.plugins["hmac-auth"].secret_key)
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/consumers/jack'))
+            ngx.say(res.body.node.value.plugins["hmac-auth"].secret_key)
+        }
+    }
+--- response_body
+my-secret-key
+IRWpPjbDq5BCgHyIllnOMA==

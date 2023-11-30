@@ -60,7 +60,7 @@ __DATA__
         }
     }
 --- response_body
-{"count":0,"list":[]}
+{"list":[],"total":0}
 
 
 
@@ -88,13 +88,13 @@ __DATA__
             end
 
             res = json.decode(res)
-            res.node.value.create_time = nil
-            res.node.value.update_time = nil
+            res.value.create_time = nil
+            res.value.update_time = nil
             ngx.say(json.encode(res))
         }
     }
 --- response_body
-{"node":{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
 
 
 
@@ -116,11 +116,18 @@ __DATA__
             end
 
             res = json.decode(res)
-            ngx.say(json.encode(res))
+            assert(res.total == 1)
+            assert(#res.list == 1)
+            assert(res.list[1].createdIndex ~= nil)
+            assert(res.list[1].modifiedIndex ~= nil)
+            assert(res.list[1].key == "/apisix/global_rules/1")
+            assert(res.list[1].value ~= nil)
+
+            ngx.say(message)
         }
     }
 --- response_body_like
-{"count":1,"list":[{"createdIndex":\d+,"key":"/apisix/global_rules/1".*
+passed
 
 
 

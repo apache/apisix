@@ -18,14 +18,12 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local plugin = require("apisix.plugin")
 
 local math     = math
 local pairs    = pairs
 local type     = type
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
-local ngx = ngx
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -39,6 +37,8 @@ local schema = {
             default = "default",
             enum = {"default", "origin"},
         },
+        log_format = {type = "object"},
+        -- deprecated, use "brokers" instead
         broker_list = {
             type = "object",
             minProperties = 1,
@@ -51,6 +51,41 @@ local schema = {
                 },
             },
         },
+        brokers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "object",
+                properties = {
+                    host = {
+                        type = "string",
+                        description = "the host of kafka broker",
+                    },
+                    port = {
+                        type = "integer",
+                        minimum = 1,
+                        maximum = 65535,
+                        description = "the port of kafka broker",
+                    },
+                    sasl_config = {
+                        type = "object",
+                        description = "sasl config",
+                        properties = {
+                            mechanism = {
+                                type = "string",
+                                default = "PLAIN",
+                                enum = {"PLAIN"},
+                            },
+                            user = { type = "string", description = "user" },
+                            password =  { type = "string", description = "password" },
+                        },
+                        required = {"user", "password"},
+                    },
+                },
+                required = {"host", "port"},
+            },
+            uniqueItems = true,
+        },
         kafka_topic = {type = "string"},
         producer_type = {
             type = "string",
@@ -60,7 +95,7 @@ local schema = {
         required_acks = {
             type = "integer",
             default = 1,
-            enum = { 0, 1, -1 },
+            enum = { 1, -1 },
         },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -87,9 +122,13 @@ local schema = {
         producer_batch_num = {type = "integer", minimum = 1, default = 200},
         producer_batch_size = {type = "integer", minimum = 0, default = 1048576},
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
-        producer_time_linger = {type = "integer", minimum = 1, default = 1}
+        producer_time_linger = {type = "integer", minimum = 1, default = 1},
+        meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
     },
-    required = {"broker_list", "kafka_topic"}
+    oneOf = {
+        { required = {"broker_list", "kafka_topic"},},
+        { required = {"brokers", "kafka_topic"},},
+    }
 }
 
 local metadata_schema = {
@@ -181,17 +220,7 @@ function _M.log(conf, ctx)
         -- core.log.info("origin entry: ", entry)
 
     else
-        local metadata = plugin.plugin_metadata(plugin_name)
-        core.log.info("metadata: ", core.json.delay_encode(metadata))
-        if metadata and metadata.value.log_format
-          and core.table.nkeys(metadata.value.log_format) > 0
-        then
-            entry = log_util.get_custom_format_log(ctx, metadata.value.log_format)
-            core.log.info("custom log format entry: ", core.json.delay_encode(entry))
-        else
-            entry = log_util.get_full_log(ngx, conf)
-            core.log.info("full log entry: ", core.json.delay_encode(entry))
-        end
+        entry = log_util.get_log_entry(plugin_name, conf, ctx)
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
@@ -199,15 +228,17 @@ function _M.log(conf, ctx)
     end
 
     -- reuse producer via lrucache to avoid unbalanced partitions of messages in kafka
-    local broker_list = core.table.new(core.table.nkeys(conf.broker_list), 0)
+    local broker_list = core.table.clone(conf.brokers or {})
     local broker_config = {}
 
-    for host, port in pairs(conf.broker_list) do
-        local broker = {
-            host = host,
-            port = port
-        }
-        core.table.insert(broker_list, broker)
+    if conf.broker_list then
+        for host, port in pairs(conf.broker_list) do
+            local broker = {
+                host = host,
+                port = port
+            }
+            core.table.insert(broker_list, broker)
+        end
     end
 
     broker_config["request_timeout"] = conf.timeout * 1000
@@ -217,6 +248,7 @@ function _M.log(conf, ctx)
     broker_config["batch_size"] = conf.producer_batch_size
     broker_config["max_buffering"] = conf.producer_max_buffering
     broker_config["flush_time"] = conf.producer_time_linger * 1000
+    broker_config["refresh_interval"] = conf.meta_refresh_interval * 1000
 
     local prod, err = core.lrucache.plugin_ctx(lrucache, ctx, nil, create_producer,
                                                broker_list, broker_config, conf.cluster_name)

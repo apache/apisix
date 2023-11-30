@@ -32,7 +32,7 @@ __DATA__
 
             ngx.say("node_listen: ", config.apisix.node_listen)
             ngx.say("stream_proxy: ", encode_json(config.apisix.stream_proxy))
-            ngx.say("admin_key: ", encode_json(config.apisix.admin_key))
+            ngx.say("admin_key: ", encode_json(config.deployment.admin.admin_key))
         }
     }
 --- request
@@ -56,15 +56,16 @@ failed to parse yaml config: failed to merge, path[apisix->node_listen] expect: 
 
 === TEST 3: use `null` means delete
 --- yaml_config
-apisix:
-  admin_key: null
+deployment:
+    admin:
+        admin_key: null
 --- config
   location /t {
     content_by_lua_block {
         local encode_json = require("toolkit.json").encode
         local config = require("apisix.core").config.local_conf()
 
-        ngx.say("admin_key: ", encode_json(config.apisix.admin_key))
+        ngx.say("admin_key: ", encode_json(config.deployment.admin.admin_key))
     }
 }
 --- request
@@ -76,15 +77,16 @@ admin_key: null
 
 === TEST 4: use `~` means delete
 --- yaml_config
-apisix:
-  admin_key: ~
+deployment:
+    admin:
+        admin_key: null
 --- config
   location /t {
     content_by_lua_block {
         local encode_json = require("toolkit.json").encode
         local config = require("apisix.core").config.local_conf()
 
-        ngx.say("admin_key: ", encode_json(config.apisix.admin_key))
+        ngx.say("admin_key: ", encode_json(config.deployment.admin.admin_key))
     }
 }
 --- request
@@ -113,8 +115,6 @@ apisix:
 GET /t
 --- response_body
 node_listen: [1985,1986]
---- no_error_log
-[error]
 
 
 
@@ -139,5 +139,3 @@ apisix:
 GET /t
 --- response_body
 node_listen: [{"enable_http2":true,"port":1985},{"enable_http2":true,"port":1986}]
---- no_error_log
-[error]

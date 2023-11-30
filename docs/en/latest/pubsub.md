@@ -44,7 +44,7 @@ Currently, Apache APISIX supports WebSocket communication with the client, which
 
 ## Supported messaging systems
 
-- [Aapche Kafka](pubsub/kafka.md)
+- [Apache Kafka](pubsub/kafka.md)
 
 ## How to support other messaging systems
 
@@ -115,7 +115,7 @@ The plugins list [config-default.yaml](https://github.com/apache/apisix/blob/mas
 After this is done, create a route like the one below to connect to this messaging system via APISIX using the WebSocket.
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/kafka' \
     -H 'X-API-KEY: ${api-key}' \
     -H 'Content-Type: application/json' \
     -d '{

@@ -19,6 +19,7 @@ local core   = require("apisix.core")
 local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
 local type   = type
+local ipairs = ipairs
 
 local schema = {
     type = "object",
@@ -37,6 +38,14 @@ local schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        send_headers_upstream = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string"
+            },
+            description = "list of headers to pass to upstream in request"
+        },
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
         with_route = {type = "boolean", default = false},
@@ -125,6 +134,14 @@ function _M.access(conf, ctx)
         end
 
         return status_code, reason
+    else if result.headers and conf.send_headers_upstream then
+        for _, name in ipairs(conf.send_headers_upstream) do
+            local value = result.headers[name]
+            if value then
+                core.request.set_header(ctx, name, value)
+            end
+        end
+        end
     end
 end
 

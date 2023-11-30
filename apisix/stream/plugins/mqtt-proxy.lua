@@ -15,8 +15,6 @@
 -- limitations under the License.
 --
 local core      = require("apisix.core")
-local upstream  = require("apisix.upstream")
-local ipmatcher = require("resty.ipmatcher")
 local bit       = require("bit")
 local ngx       = ngx
 local str_byte  = string.byte
@@ -32,20 +30,7 @@ local schema = {
     type = "object",
     properties = {
         protocol_name = {type = "string"},
-        protocol_level = {type = "integer"},
-        upstream = {
-            description = "Deprecated. We should configure upstream outside of the plugin",
-            type = "object",
-            properties = {
-                ip = {type = "string"}, -- deprecated, use "host" instead
-                host = {type = "string"},
-                port = {type = "number"},
-            },
-            oneOf = {
-                {required = {"host", "port"}},
-                {required = {"ip", "port"}},
-            },
-        }
+        protocol_level = {type = "integer"}
     },
     required = {"protocol_name", "protocol_level"},
 }
@@ -189,48 +174,6 @@ function _M.preread(conf, ctx)
     if res.client_id ~= "" then
         ctx.mqtt_client_id = res.client_id
     end
-
-    if not conf.upstream then
-        return
-    end
-
-    local host = conf.upstream.host
-    if not host then
-        host = conf.upstream.ip
-    end
-
-    if conf.host_is_domain == nil then
-        conf.host_is_domain = not ipmatcher.parse_ipv4(host)
-                              and not ipmatcher.parse_ipv6(host)
-    end
-
-    if conf.host_is_domain then
-        local ip, err = core.resolver.parse_domain(host)
-        if not ip then
-            core.log.error("failed to parse host ", host, ", err: ", err)
-            return 503
-        end
-
-        host = ip
-    end
-
-    local up_conf = {
-        type = "roundrobin",
-        nodes = {
-            {host = host, port = conf.upstream.port, weight = 1},
-        }
-    }
-
-    local ok, err = upstream.check_schema(up_conf)
-    if not ok then
-        core.log.error("failed to check schema ", core.json.delay_encode(up_conf),
-                       ", err: ", err)
-        return 503
-    end
-
-    local matched_route = ctx.matched_route
-    upstream.set(ctx, up_conf.type .. "#route_" .. matched_route.value.id,
-                 ctx.conf_version, up_conf)
     return
 end
 

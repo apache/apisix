@@ -21,11 +21,11 @@ if not local_conf then
     error("failed to parse yaml config: " .. err)
 end
 
-local config_center = local_conf.apisix and local_conf.apisix.config_center
+local config_provider = local_conf.deployment and local_conf.deployment.config_provider
                       or "etcd"
-log.info("use config_center: ", config_center)
-local config = require("apisix.core.config_" .. config_center)
-config.type = config_center
+log.info("use config_provider: ", config_provider)
+local config = require("apisix.core.config_" .. config_provider)
+config.type = config_provider
 
 
 return {
@@ -54,4 +54,6 @@ return {
     os          = require("apisix.core.os"),
     pubsub      = require("apisix.core.pubsub"),
     math        = require("apisix.core.math"),
+    event       = require("apisix.core.event"),
+    env         = require("apisix.core.env"),
 }

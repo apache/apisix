@@ -1,0 +1,164 @@
+name: CI FIPS
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master]
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-20.04
+        os_name:
+          - linux_openresty
+        test_dir:
+          # all plugins only use three parts of openssl API: RSA via ffi, SHA via ffi and SSL API wrapped by nginx.
+          # The latter one is already covered by the core tests, so no need to repeat it in plugin tests.
+          # The RSA and SHA tests are fully covered by jwt-auth and hmac-auth plugin tests, while other plugins only repeat such tests.
+          - t/plugin/jwt-auth2.t t/plugin/jwt-auth.t t/plugin/hmac-auth.t
+          # all SSL related core tests are covered by below two lists.
+          - t/admin/ssl* t/admin/schema.t t/admin/upstream.t t/config-center-yaml/ssl.t t/core/etcd-mtls.t t/core/config_etcd.t t/misc/patch.t
+          - t/node/grpc-proxy-unary.t t/node/upstream-keepalive-pool.t t/node/upstream-websocket.t t/node/client-mtls.t t/node/upstream-mtls.t t/pubsub/kafka.t t/router/radixtree-sni2.t t/router/multi-ssl-certs.t t/router/radixtree-sni.t t/stream-node/mtls.t t/stream-node/tls.t t/stream-node/upstream-tls.t t/stream-node/sni.t
+          - t/fips
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 90
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+
+      - name: Cache openssl-3.0 compilation
+        id: cache-openssl
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-openssl
+        with:
+          path: ~/openssl-3.0
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}
+
+      - name: set openssl prefix
+        id: set_openssl_prefix
+        shell: bash
+        run: |
+          echo "openssl3_prefix=$HOME" >>$GITHUB_OUTPUT
+
+      - name: Toggle openssl compile
+        id: test_ssl_env
+        shell: bash
+        if: steps.cache-openssl.outputs.cache-hit != 'true'
+        run: |
+          echo "openssl3=yes" >>$GITHUB_OUTPUT
+
+      - name: Extract test type
+        shell: bash
+        id: test_env
+        run: |
+          test_dir="${{ matrix.test_dir }}"
+          if [[ $test_dir =~ 't/plugin' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/fips' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/admin' ]]; then
+            echo "type=first" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/node' ]]; then
+            echo "type=last" >>$GITHUB_OUTPUT
+          fi
+
+      - name: Free disk space
+        run: |
+          bash ./ci/free_disk_space.sh
+
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
+      - name: Cache images
+        id: cache-images
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-apisix-docker-images
+        with:
+          path: docker-images-backup
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
+
+      - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
+        name: Load saved docker images
+        run: |
+          if [[ -f docker-images-backup/apisix-images.tar ]]; then
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+            docker load --input docker-images-backup/apisix-images.tar
+            rm docker-images-backup/apisix-images.tar
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            echo "loaded docker images"
+            if [[ ${{ steps.test_env.outputs.type }} != first ]]; then
+              sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+            fi
+          fi
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Linux launch services
+        run: |
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+          echo "make ci-env-up, done"
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+          echo "Linux launch services, done"
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Linux Install
+        env:
+          COMPILE_OPENSSL3: ${{ steps.test_ssl_env.outputs.openssl3 }}
+          OPENSSL3_PREFIX: ${{ steps.set_openssl_prefix.outputs.openssl3_prefix }}
+          USE_OPENSSL3: yes
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          --preserve-env=COMPILE_OPENSSL3 \
+          --preserve-env=OPENSSL3_PREFIX \
+          --preserve-env=USE_OPENSSL3 \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Linux Script
+        env:
+          OPENSSL_FIPS: yes
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Save docker images
+        run: |
+          echo "start backing up, $(date)"
+          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+          echo "backup done, $(date)"

@@ -22,6 +22,22 @@ worker_connections(256);
 no_root_location();
 no_shuffle();
 
+our $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    router:
+        http: 'radixtree_uri'
+_EOC_
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+
+});
+
 run_tests();
 
 __DATA__
@@ -56,8 +72,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -69,8 +83,6 @@ User-Agent: ios
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -81,8 +93,6 @@ GET /hello
 User-Agent: android
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -93,8 +103,6 @@ GET /hello
 User-Agent: Android
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -128,8 +136,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -141,8 +147,6 @@ User-Agent: android
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -153,8 +157,6 @@ GET /hello
 User-Agent: ios
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -188,8 +190,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -200,8 +200,6 @@ GET /hello
 User-Agent: ios
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -212,8 +210,6 @@ GET /hello
 User-Agent: android
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -247,8 +243,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -260,8 +254,6 @@ User-Agent: android
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -270,8 +262,6 @@ User-Agent: android
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -306,8 +296,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -318,8 +306,6 @@ GET /hello
 User-Agent: ios
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -356,8 +342,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -369,8 +353,6 @@ User-Agent: android
 demo: prod
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -381,8 +363,6 @@ GET /hello
 User-Agent: ios
 demo: prod
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -416,8 +396,6 @@ demo: prod
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -426,8 +404,6 @@ passed
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -461,5 +437,3 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to validate the 'vars' expression: rule should be wrapped inside brackets"}
---- no_error_log
-[error]

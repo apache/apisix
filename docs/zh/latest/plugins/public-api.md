@@ -55,7 +55,7 @@ description: 本文介绍了 public-api 的相关操作，你可以使用 public
 然后，使用以下命令在指定路由上启用并配置 `public-api` 插件：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r1' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -85,7 +85,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1MzIsImtleSI6InVzZXIta2V
 然后，你可以使用一个自定义的 URI 来暴露 API：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -115,7 +115,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1NjIsImtleSI6InVzZXIta2V
 你可以配合使用 `key-auth` 插件来添加认证，从而确保路由的安全：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/r2' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -156,12 +156,12 @@ curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
 HTTP/1.1 401 Unauthorized
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
   "uri": "/hello",
   "upstream": {

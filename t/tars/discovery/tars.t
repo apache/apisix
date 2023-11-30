@@ -28,8 +28,11 @@ add_block_preprocessor(sub {
     my $yaml_config = <<_EOC_;
 apisix:
   node_listen: 1984
-  config_center: yaml
   enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 discovery:
   tars:
     db_conf:
@@ -51,9 +54,8 @@ _EOC_
 
     $block->set_value("apisix_yaml", $apisix_yaml);
 
-    my $extra_init_by_lua = <<_EOC_;
+    my $extra_init_by_lua_start = <<_EOC_;
         -- reduce incremental_fetch_interval,full_fetch_interval
-        local core = require("apisix.core")
         local schema = require("apisix.discovery.tars.schema")
         schema.properties.incremental_fetch_interval.minimum=1
         schema.properties.incremental_fetch_interval.default=1
@@ -61,7 +63,7 @@ _EOC_
         schema.properties.full_fetch_interval.default = 3
 _EOC_
 
-    $block->set_value("extra_init_by_lua", $extra_init_by_lua);
+    $block->set_value("extra_init_by_lua_start", $extra_init_by_lua_start);
 
     my $config = $block->config // <<_EOC_;
         location /count {
@@ -149,10 +151,6 @@ _EOC_
 _EOC_
 
     $block->set_value("config", $config);
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 
 });
 

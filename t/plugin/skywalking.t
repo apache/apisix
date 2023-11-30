@@ -94,8 +94,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -104,8 +102,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/skywalking run \w+/
 --- grep_error_log_out
@@ -149,8 +145,6 @@ skywalking run prepareForReport
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -162,8 +156,6 @@ opentracing
 --- grep_error_log eval
 qr/skywalking run \w+/
 --- grep_error_log_out
---- no_error_log
-[error]
 
 
 
@@ -197,8 +189,6 @@ qr/skywalking run \w+/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -245,8 +235,6 @@ rewrite phase of skywalking plugin
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -255,8 +243,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/skywalking run \w+/
 --- grep_error_log_out
@@ -316,8 +302,6 @@ skywalking run prepareForReport
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -326,8 +310,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/skywalking run \w+/
 --- grep_error_log_out
@@ -347,7 +329,9 @@ skywalking run prepareForReport
                 [[{
                     "plugins": {
                         "skywalking": {
-                            "disable": 1
+                            "_meta": {
+                                "disable": true
+                            }
                         }
                     },
                     "upstream": {
@@ -387,8 +371,6 @@ skywalking run prepareForReport
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -397,8 +379,6 @@ passed
 GET /opentracing
 --- response_body
 opentracing
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/skywalking run \w+/
 --- grep_error_log_out
@@ -425,8 +405,6 @@ skywalking run prepareForReport
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -481,8 +459,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -490,8 +466,6 @@ passed
 --- request
 GET /opentracing
 --- error_code: 401
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/(skywalking run \w+|plugin body_filter phase)/
 --- grep_error_log_out

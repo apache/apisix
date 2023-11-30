@@ -36,10 +36,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -84,7 +80,7 @@ __DATA__
 --- response_body
 {"error_msg":"failed to check the configuration of plugin real-ip err: property \"source\" is required"}
 {"error_msg":"failed to check the configuration of plugin real-ip err: property \"trusted_addresses\" validation failed: failed to validate item 1: object matches none of the required"}
-{"error_msg":"failed to check the configuration of plugin real-ip err: invalid ip address: ::1\/129"}
+{"error_msg":"failed to check the configuration of plugin real-ip err: invalid ip address: ::1/129"}
 
 
 

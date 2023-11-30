@@ -23,7 +23,7 @@ title: xRPC
 
 ## What is xRPC
 
-APISIX supports proxy TCP protocols, but there are times when a pure TCP protocol proxy is not enough. It would help if you had an application-specific proxy, such as Redis Proxy, Kafka Proxy, etc. In addition, some features must be coded and decoded for that protocol before they can be implemented.
+APISIX supports proxy TCP protocols, but there are times when a pure TCP protocol proxy is not enough. It would be helpful if you had an application-specific proxy, such as Redis Proxy, Kafka Proxy, etc. In addition, some features must be coded and decoded for that protocol before they can be implemented.
 
 Therefore, Apache APISIX implements an L4 protocol extension framework called xRPC that allows developers to customize application-specific protocols. Based on xRPC, developers can codec requests and responses through Lua code and then implement fault injection, log reporting, dynamic routing, and other functions based on understanding the protocol content.
 
@@ -129,7 +129,7 @@ To solve this problem, the concept of superior and subordinate is used in xRPC r
 
 One specifies the `superior_id`, whose corresponding value is the ID of another route; the other specifies that the route with the `superior_id` is a subordinate route, subordinate to the one with the `superior_id`. Only the superior route is involved in matching at the entry point. The subordinate route is then matched by the specific protocol when the request is decoded.
 
-For example, for the Dubbo RPC protocol, the subordinate route is matched based on the service_name and other parameters configured in the route and the actual service_name brought in the request. If the match is successful, the configuration above the subordinate route is used, otherwise the configuration of the superior route is still used. In the above example, if the match for route 2 is successful, it will be forwarded to upstream 2; otherwise, it will still be forwarded to upstream 1.
+For example, for the Dubbo RPC protocol, the subordinate route is matched based on the service_name and other parameters configured in the route and the actual service_name brought in the request. If the match is successful, the configuration above the subordinate route is used, otherwise, the configuration of the superior route is still used. In the above example, if the match for route 2 is successful, it will be forwarded to upstream 2; otherwise, it will still be forwarded to upstream 1.
 
 ### Log Reporting
 
@@ -164,9 +164,9 @@ Each logger item configuration parameter will contain
 }
 ```
 
-This configuration means that when the `rpc_time` is greater than 0.01 seconds, xPRC reports the request log to the log server via the `syslog` plugin. `conf` is the configuration of the logging server required by the `syslog` plugin.
+This configuration means that when the `rpc_time` is greater than 0.01 seconds, xRPC reports the request log to the log server via the `syslog` plugin. `conf` is the configuration of the logging server required by the `syslog` plugin.
 
-Unlike standard TCP proxies, which only execute a logger when the connection is closed, xRPC's executed logger at the end of each 'request'.
+Unlike standard TCP proxies, which only execute a logger when the connection is closed, xRPC executes a logger at the end of each 'request'.
 
 The protocol itself defines the granularity of the specific request, and the xRPC extension code implements the request's granularity.
 

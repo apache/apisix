@@ -38,12 +38,11 @@ __DATA__
                      "desc": "new consumer"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer"
-                        }
-                    }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer"
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -55,8 +54,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -85,17 +82,16 @@ passed
                         }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
-                    }
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -113,8 +109,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -127,17 +121,16 @@ passed
                  ngx.HTTP_GET,
                  nil,
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "plugins": {
-                                "key-auth": {
-                                    "key": "auth-one"
-                                }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "plugins": {
+                            "key-auth": {
+                                "key": "auth-one"
                             }
                         }
-                    }
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -149,8 +142,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -172,8 +163,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -193,8 +182,6 @@ passed
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -209,10 +196,8 @@ GET /t
                      "id":"jack"
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "id": "jack"
-                        }
+                    "value": {
+                        "id": "jack"
                     }
                 }]]
                 )
@@ -226,8 +211,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"username\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -248,17 +231,16 @@ GET /t
                      }
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "jack",
-                            "desc": "new consumer",
-                            "labels": {
-                                "build":"16",
-                                "env":"production",
-                                "version":"v2"
-                            }
+                    "value": {
+                        "username": "jack",
+                        "desc": "new consumer",
+                        "labels": {
+                            "build":"16",
+                            "env":"production",
+                            "version":"v2"
                         }
-                    }
+                    },
+                    "key": "/apisix/consumers/jack"
                 }]]
                 )
 
@@ -270,8 +252,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -300,8 +280,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid configuration: property \"labels\" validation failed: failed to validate env (matching \".*\"): wrong type: expected string, got table"}
---- no_error_log
-[error]
 
 
 
@@ -324,8 +302,6 @@ GET /t
 --- error_code: 405
 --- response_body
 {"error_msg":"not supported `POST` method for consumer"}
---- no_error_log
-[error]
 
 
 
@@ -343,14 +319,13 @@ GET /t
                      "update_time": 1602893670
                 }]],
                 [[{
-                    "node": {
-                        "value": {
-                            "username": "pony",
-                            "desc": "new consumer",
-                            "create_time": 1602883670,
-                            "update_time": 1602893670
-                        }
-                    }
+                    "value": {
+                        "username": "pony",
+                        "desc": "new consumer",
+                        "create_time": 1602883670,
+                        "update_time": 1602893670
+                    },
+                    "key": "/apisix/consumers/pony"
                 }]]
                 )
 
@@ -360,30 +335,6 @@ GET /t
     }
 --- request
 GET /t
---- response_body
-passed
---- no_error_log
-[error]
-
-
-
-=== TEST 11: delete test consumer(pony)
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(0.3)
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers/pony',
-                 ngx.HTTP_DELETE
-            )
-
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
---- no_error_log
-[error]
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/

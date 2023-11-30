@@ -29,6 +29,7 @@ local pairs = pairs
 local cached_tab = {}
 
 
+cjson.encode_escape_forward_slash(false)
 cjson.decode_array_with_array_mt(true)
 local _M = {
     version = 0.1,

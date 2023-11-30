@@ -27,10 +27,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if (!$block->error_log && !$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests();
@@ -756,3 +752,113 @@ GET /uri?id=1
 qr/host: 127.0.0.1/
 --- error_log
 proxy request to 127.0.0.1:1980
+
+
+
+=== TEST 20: invalid upstream_id should report failure
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            local data = {
+                uri = "/route",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                weighted_upstreams = {
+                                    {
+                                        upstream_id = "invalid-id",
+                                        weight = 1
+                                    }
+                                }
+                            },
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PATCH,
+                json.encode(data)
+            )
+            ngx.status, body = t('/route', ngx.HTTP_GET)
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 500
+--- error_log
+failed to find upstream by id: invalid-id
+
+
+
+=== TEST 21: use upstream with https scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+
+            local data = {
+                uri = "/hello",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                match = { {
+                                    vars = { { "arg_scheme", "==", "https" } }
+                                } },
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            type = "roundrobin",
+                                            pass_host = "node",
+                                            nodes = {
+                                                ["127.0.0.1:1983"] = 1,
+                                            },
+                                            scheme = "https"
+                                        },
+                                        weight = 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                }
+            }
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 22: hit route
+--- request
+GET /hello?scheme=https
+--- error_code: 200

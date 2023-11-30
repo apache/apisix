@@ -45,10 +45,6 @@ _EOC_
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests;
@@ -136,7 +132,8 @@ done
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
                                 "buffer_duration": 2,
-                                "inactive_timeout": 2
+                                "inactive_timeout": 2,
+                                "service_instance_name": "$hostname"
                             }
                         },
                         "upstream": {
@@ -231,4 +228,69 @@ GET /opentracing
 opentracing
 --- error_log eval
 qr/.*\{\\\"json\\\":\\\"\{(\\\\\\\"\@timestamp\\\\\\\":\\\\\\\".*\\\\\\\"|\\\\\\\"client_ip\\\\\\\":\\\\\\\"127\.0\.0\.1\\\\\\\"|\\\\\\\"host\\\\\\\":\\\\\\\"localhost\\\\\\\"|\\\\\\\"route_id\\\\\\\":\\\\\\\"1\\\\\\\"|,){7}\}/
+--- wait: 0.5
+
+
+
+=== TEST 10: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "skywalking-logger": {
+                                "endpoint_addr": "http://127.0.0.1:1986",
+                                "log_format": {
+                                    "my_ip": "$remote_addr"
+                                },
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: access local server and test log format
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- error_log eval
+qr/.*\{\\\"json\\\":.*\\\\\\"my_ip\\\\\\":\\\\\\"127\.0\.0\.1\\\\\\".*\}/
+--- wait: 0.5
+
+
+
+=== TEST 12: test serviceInstance $hostname
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- no_error_log eval
+qr/\\\"serviceInstance\\\":\\\"\$hostname\\\"/
+qr/\\\"serviceInstance\\\":\\\"\\\"/
 --- wait: 0.5

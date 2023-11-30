@@ -48,8 +48,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -79,8 +77,6 @@ GET /t
 --- response_body
 property "max_age" validation failed: wrong type: expected integer, got string
 done
---- no_error_log
-[error]
 
 
 
@@ -116,8 +112,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -159,8 +153,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -194,8 +186,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -232,8 +222,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -250,8 +238,6 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -293,8 +279,6 @@ Access-Control-Allow-Credentials:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -314,8 +298,6 @@ Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
 Access-Control-Max-Age: 50
 Access-Control-Allow-Credentials: true
---- no_error_log
-[error]
 
 
 
@@ -333,8 +315,6 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -374,8 +354,6 @@ Access-Control-Allow-Credentials:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -398,8 +376,6 @@ Access-Control-Allow-Headers: req-header1,req-header2
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -419,8 +395,6 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -428,9 +402,6 @@ Access-Control-Allow-Credentials:
 --- request
 OPTIONS /hello HTTP/1.1
 --- response_body
-
---- no_error_log
-[error]
 
 
 
@@ -471,8 +442,6 @@ OPTIONS /hello HTTP/1.1
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -494,8 +463,6 @@ Access-Control-Allow-Headers: *
 Access-Control-Expose-Headers: *
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -536,8 +503,6 @@ Access-Control-Allow-Credentials:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -550,8 +515,6 @@ Origin: https://sub.domain.com
 /headers
 --- response_headers
 Access-Control-Allow-Origin: https://sub.domain.com
---- no_error_log
-[error]
 
 
 
@@ -564,8 +527,6 @@ Origin: https://sub.domain.com
 /headers
 --- response_headers
 Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
---- no_error_log
-[error]
 
 
 
@@ -578,8 +539,6 @@ Origin: https://sub.domain.com
 /headers
 --- response_headers
 Access-Control-Allow-Headers: request-h
---- no_error_log
-[error]
 
 
 
@@ -592,8 +551,6 @@ Origin: https://sub.domain.com
 /headers
 --- response_headers
 Access-Control-Expose-Headers: expose-h
---- no_error_log
-[error]
 
 
 
@@ -606,8 +563,6 @@ Origin: https://sub.domain.com
 /headers
 --- response_headers
 Access-Control-Max-Age: 5
---- no_error_log
-[error]
 
 
 
@@ -620,8 +575,6 @@ Origin: https://sub.domain.com
 /headers
 --- response_headers
 Access-Control-Allow-Credentials: true
---- no_error_log
-[error]
 
 
 
@@ -654,8 +607,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin cors err: you can not/
---- no_error_log
-[error]
 
 
 
@@ -688,8 +639,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin cors err: you can not/
---- no_error_log
-[error]
 
 
 
@@ -722,8 +671,6 @@ GET /t
 --- error_code: 400
 --- response_body eval
 qr/failed to check the configuration of plugin cors err: you can not/
---- no_error_log
-[error]
 
 
 
@@ -776,7 +723,7 @@ qr/failed to check the configuration of plugin cors err: you can not/
                             "expose_headers": "ex-headr1,ex-headr2",
                             "max_age": 50,
                             "allow_credential": true,
-                            "allow_origins_by_regex":[".*\\.test.com"]
+                            "allow_origins_by_regex":[".*\\.test.com$"]
                         }
                     },
                     "upstream": {
@@ -799,8 +746,6 @@ qr/failed to check the configuration of plugin cors err: you can not/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -820,8 +765,6 @@ Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
 Access-Control-Max-Age: 50
 Access-Control-Allow-Credentials: true
---- no_error_log
-[error]
 
 
 
@@ -840,8 +783,6 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -861,7 +802,7 @@ Access-Control-Allow-Credentials:
                             "expose_headers": "ex-headr1,ex-headr2",
                             "max_age": 50,
                             "allow_credential": true,
-                            "allow_origins_by_regex":[".*\\.test.com",".*\\.example.org"]
+                            "allow_origins_by_regex":[".*\\.test.com$",".*\\.example.org$"]
                         }
                     },
                     "upstream": {
@@ -884,8 +825,6 @@ Access-Control-Allow-Credentials:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -905,8 +844,6 @@ Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
 Access-Control-Max-Age: 50
 Access-Control-Allow-Credentials: true
---- no_error_log
-[error]
 
 
 
@@ -925,8 +862,6 @@ Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
 Access-Control-Max-Age:
 Access-Control-Allow-Credentials:
---- no_error_log
-[error]
 
 
 
@@ -973,8 +908,6 @@ Access-Control-Allow-Credentials:
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -994,5 +927,3 @@ Access-Control-Allow-Headers: headr1,headr2
 Access-Control-Expose-Headers: ex-headr1,ex-headr2
 Access-Control-Max-Age: 50
 Access-Control-Allow-Credentials: true
---- no_error_log
-[error]

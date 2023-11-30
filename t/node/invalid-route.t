@@ -116,8 +116,6 @@ qr{invalid item data of \[/apisix/routes/1\], val: mexxxxxxxxxxxxxxx, it should 
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -150,8 +148,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 

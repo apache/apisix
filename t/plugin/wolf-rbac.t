@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{VAULT_TOKEN} = "root";
+}
+
 use t::APISIX 'no_plan';
 
 
@@ -51,8 +55,6 @@ __DATA__
     }
 --- response_body_like eval
 qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
---- no_error_log
-[error]
 
 
 
@@ -72,8 +74,6 @@ qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"
 --- response_body
 property "appid" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -150,8 +150,6 @@ done
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -184,8 +182,6 @@ passed
     }
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -198,8 +194,6 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body_like eval
 qr/appid is missing/
---- no_error_log
-[error]
 
 
 
@@ -212,8 +206,6 @@ Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body_like eval
 qr/appid not found/
---- no_error_log
-[error]
 
 
 
@@ -299,8 +291,6 @@ qr/ERR_PASSWORD_ERROR/
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -310,8 +300,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing rbac token in request"}
---- no_error_log
-[error]
 
 
 
@@ -323,8 +311,6 @@ GET /hello
 x-rbac-token: invalid-rbac-token
 --- response_body
 {"message":"invalid rbac token: parse failed"}
---- no_error_log
-[error]
 
 
 
@@ -336,6 +322,8 @@ GET /hello
 x-rbac-token: V1#invalid-appid#rbac-token
 --- response_body
 {"message":"Invalid appid in rbac token"}
+--- error_log
+consumer [invalid-appid] not found
 
 
 
@@ -365,8 +353,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -381,8 +367,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -397,8 +381,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -413,8 +395,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -424,8 +404,6 @@ GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
 --- response_body
 {"message":"Missing rbac token in request"}
---- no_error_log
-[error]
 
 
 
@@ -437,8 +415,6 @@ GET /apisix/plugin/wolf-rbac/user_info
 x-rbac-token: invalid-rbac-token
 --- response_body
 {"message":"invalid rbac token: parse failed"}
---- no_error_log
-[error]
 
 
 
@@ -458,8 +434,6 @@ x-rbac-token: invalid-rbac-token
             ngx.status = code
         }
     }
---- no_error_log
-[error]
 
 
 
@@ -502,8 +476,6 @@ X-Username: admin
 X-Nickname: administrator
 --- response_body
 id:100,username:admin,nickname:administrator
---- no_error_log
-[error]
 
 
 
@@ -578,3 +550,188 @@ qr/ERR_TOKEN_INVALID */
 ERR_TOKEN_INVALID
 ERR_TOKEN_INVALID
 ERR_TOKEN_INVALID
+
+
+
+=== TEST 31: set hmac-auth conf: appid uses secret ref
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+             -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_unit_test",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid",
+                            "server": "http://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 32: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/wolf_rbac_unit_test appid=wolf-rbac-app
+--- response_body
+Success! Data written to: kv/apisix/wolf_rbac_unit_test
+
+
+
+=== TEST 33: login successfully
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[
+                {"appid": "wolf-rbac-app", "username": "admin","password": "123456"}
+                ]],
+                [[
+                {"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":{"nickname":"administrator","username":"admin","id":"100"}}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+        }
+    }
+
+
+
+=== TEST 34: set hmac-auth conf with the token in an env var: appid uses secret ref
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+             -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "$ENV://VAULT_TOKEN"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_unit_test",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "$secret://vault/test1/wolf_rbac_unit_test/appid",
+                            "server": "http://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: login successfully
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[
+                {"appid": "wolf-rbac-app", "username": "admin","password": "123456"}
+                ]],
+                [[
+                {"rbac_token":"V1#wolf-rbac-app#wolf-rbac-token","user_info":{"nickname":"administrator","username":"admin","id":"100"}}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+        }
+    }
+
+
+
+=== TEST 36: add consumer with echo plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_with_other_plugins",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app",
+                            "server": "http://127.0.0.1:1982"
+                        },
+                        "echo": {
+                            "body": "consumer merge echo plugins\n"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 37: verify echo plugin in consumer
+--- request
+GET /hello
+--- more_headers
+Authorization: V1#wolf-rbac-app#wolf-rbac-token
+--- response_headers
+X-UserId: 100
+X-Username: admin
+X-Nickname: administrator
+--- response_body
+consumer merge echo plugins
+--- no_error_log
+[error]

@@ -18,6 +18,8 @@
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/helloworld.proto
 //go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/import.proto
 //go:generate protoc  --include_imports --descriptor_set_out=proto.pb --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/src.proto
+//go:generate protoc --descriptor_set_out=echo.pb --include_imports --proto_path=$PWD/proto echo.proto
+//go:generate protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out=. --go-grpc_opt=paths=source_relative proto/echo.proto
 
 // Package main implements a server for Greeter service.
 package main
@@ -29,13 +31,17 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net"
+	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
+
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -47,9 +53,10 @@ import (
 )
 
 var (
-	grpcAddr      = ":50051"
-	grpcsAddr     = ":50052"
+	grpcAddr      = ":10051"
+	grpcsAddr     = ":10052"
 	grpcsMtlsAddr string
+	grpcHTTPAddr  string
 
 	crtFilePath = "../t/cert/apisix.crt"
 	keyFilePath = "../t/cert/apisix.key"
@@ -60,6 +67,7 @@ func init() {
 	flag.StringVar(&grpcAddr, "grpc-address", grpcAddr, "address for grpc")
 	flag.StringVar(&grpcsAddr, "grpcs-address", grpcsAddr, "address for grpcs")
 	flag.StringVar(&grpcsMtlsAddr, "grpcs-mtls-address", grpcsMtlsAddr, "address for grpcs in mTLS")
+	flag.StringVar(&grpcHTTPAddr, "grpc-http-address", grpcHTTPAddr, "addresses for http and grpc services at the same time")
 	flag.StringVar(&crtFilePath, "crt", crtFilePath, "path to certificate")
 	flag.StringVar(&keyFilePath, "key", keyFilePath, "path to key")
 	flag.StringVar(&caFilePath, "ca", caFilePath, "path to ca")
@@ -70,6 +78,7 @@ type server struct {
 	// Embed the unimplemented server
 	pb.UnimplementedGreeterServer
 	pb.UnimplementedTestImportServer
+	pb.UnimplementedEchoServer
 }
 
 // SayHello implements helloworld.GreeterServer
@@ -95,8 +104,22 @@ func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloRe
 	}, nil
 }
 
-func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+// GetErrResp implements helloworld.GreeterServer
+func (s *server) GetErrResp(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
+	st := status.New(codes.Unavailable, "Out of service")
+	st, err := st.WithDetails(&pb.ErrorDetail{
+		Code:    1,
+		Message: "The server is out of service",
+		Type:    "service",
+	})
+	if err != nil {
+		panic(fmt.Sprintf("Unexpected error attaching metadata: %v", err))
+	}
 
+	return nil, st.Err()
+}
+
+func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
 	select {
 	case <-time.After(1 * time.Second):
 		fmt.Println("overslept")
@@ -117,6 +140,14 @@ func (s *server) SayHelloAfterDelay(ctx context.Context, in *pb.HelloRequest) (*
 func (s *server) Plus(ctx context.Context, in *pb.PlusRequest) (*pb.PlusReply, error) {
 	log.Printf("Received: %v %v", in.A, in.B)
 	return &pb.PlusReply{Result: in.A + in.B}, nil
+}
+
+func (s *server) EchoStruct(ctx context.Context, in *pb.StructRequest) (*pb.StructReply, error) {
+	log.Printf("Received: %+v", in)
+
+	return &pb.StructReply{
+		Data: in.Data,
+	}, nil
 }
 
 // SayHelloServerStream streams HelloReply back to the client.
@@ -201,6 +232,21 @@ func (s *server) Run(ctx context.Context, in *pb.Request) (*pb.Response, error) 
 	return &pb.Response{Body: in.User.Name + " " + in.Body}, nil
 }
 
+func gRPCAndHTTPFunc(grpcServer *grpc.Server) http.Handler {
+	return h2c.NewHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		mux := http.NewServeMux()
+		mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("hello http"))
+		})
+
+		if r.ProtoMajor == 2 && strings.Contains(r.Header.Get("Content-Type"), "application/grpc") {
+			grpcServer.ServeHTTP(w, r)
+		} else {
+			mux.ServeHTTP(w, r)
+		}
+	}), &http2.Server{})
+}
+
 func main() {
 	flag.Parse()
 
@@ -210,9 +256,12 @@ func main() {
 			log.Fatalf("failed to listen: %v", err)
 		}
 		s := grpc.NewServer()
+
 		reflection.Register(s)
 		pb.RegisterGreeterServer(s, &server{})
 		pb.RegisterTestImportServer(s, &server{})
+		pb.RegisterEchoServer(s, &server{})
+
 		if err := s.Serve(lis); err != nil {
 			log.Fatalf("failed to serve: %v", err)
 		}
@@ -236,6 +285,24 @@ func main() {
 		}
 	}()
 
+	if grpcHTTPAddr != "" {
+		go func() {
+			lis, err := net.Listen("tcp", grpcHTTPAddr)
+			if err != nil {
+				log.Fatalf("failed to listen: %v", err)
+			}
+			s := grpc.NewServer()
+
+			reflection.Register(s)
+			pb.RegisterGreeterServer(s, &server{})
+			pb.RegisterTestImportServer(s, &server{})
+
+			if err := http.Serve(lis, gRPCAndHTTPFunc(s)); err != nil {
+				log.Fatalf("failed to serve grpc: %v", err)
+			}
+		}()
+	}
+
 	if grpcsMtlsAddr != "" {
 		go func() {
 			lis, err := net.Listen("tcp", grpcsMtlsAddr)
@@ -249,7 +316,7 @@ func main() {
 			}
 
 			certPool := x509.NewCertPool()
-			ca, err := ioutil.ReadFile(caFilePath)
+			ca, err := os.ReadFile(caFilePath)
 			if err != nil {
 				log.Fatalf("could not read ca certificate: %s", err)
 			}

@@ -37,8 +37,6 @@ __DATA__
     }
 --- request
 GET /delete
---- no_error_log
-[error]
 --- ignore_response
 
 
@@ -106,8 +104,6 @@ Host: foo.com
 --- response_body eval
 ["passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n",
 "passed\n", "hello world\n", "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n"]
---- no_error_log
-[error]
 --- timeout: 5
 
 
@@ -229,8 +225,6 @@ Host: foo.com
 --- response_body eval
 ["passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n", "ok\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n",
 "passed\n", "hello world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n", "hello1 world\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n"]
---- no_error_log
-[error]
 --- timeout: 5
 
 
@@ -330,8 +324,6 @@ Host: foo.com
 [201, 200, 201, 200, 200, 200, 200, 404]
 --- response_body eval
 ["passed\n", "/print_uri_20\n", "passed\n", "/print_uri_36\n", "passed\n", "/print_uri_12\n", "passed\n", "{\"error_msg\":\"404 Route Not Found\"}\n"]
---- no_error_log
-[error]
 --- timeout: 20
 
 
@@ -349,8 +341,6 @@ Host: foo.com
 --- request
 GET /t
 --- error_code: 404
---- no_error_log
-[error]
 
 
 
@@ -369,8 +359,6 @@ GET /t
 GET /t
 --- response_body
 ab
---- no_error_log
-[error]
 
 
 
@@ -407,31 +395,9 @@ ab
     }
 --- request
 GET /t
---- no_error_log
-[error]
 --- grep_error_log eval
-qr/init_by_lua:\d+: \S+/
---- grep_error_log_out
-init_by_lua:12: ab
-init_by_lua:19: 200
-init_by_lua:26: 404
-
-
-
-=== TEST 8: error handling in server_version
---- config
-    location /t {
-        content_by_lua_block {
-            local etcd_lib = require("resty.etcd")
-            etcd_lib.new = function()
-                return nil, "ouch"
-            end
-            local etcd = require("apisix.core.etcd")
-            local res, err = etcd.server_version()
-            ngx.say(err)
-        }
-    }
---- request
-GET /t
---- response_body
-ouch
+qr/init_by_lua.*: \S+/
+--- grep_error_log_out eval
+qr{init_by_lua.* ab
+init_by_lua.* 200
+init_by_lua.* 404}

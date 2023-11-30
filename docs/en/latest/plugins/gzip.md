@@ -1,7 +1,8 @@
 ---
 title: gzip
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - gzip
 description: This document contains information about the Apache APISIX gzip Plugin.
@@ -48,12 +49,12 @@ This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the
 | buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
 | vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `gzip` Plugin on the specified Route:
 
 ```shell
-curl -i http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -94,12 +95,12 @@ Warning: curl to output it to your terminal anyway, or consider "--output
 Warning: <FILE>" to save to a file.
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `gzip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `gzip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {

@@ -48,8 +48,6 @@ __DATA__
 --- request
 GET /t
 --- error_code: 400
---- no_error_log
-[error]
 
 
 
@@ -79,8 +77,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -107,8 +103,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -118,8 +112,6 @@ GET /not_found
 --- error_code: 404
 --- response_body
 {"error_msg":"404 Route Not Found"}
---- no_error_log
-[error]
 
 
 
@@ -128,8 +120,6 @@ GET /not_found
 GET /hello
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -149,8 +139,6 @@ hello world
 GET /t
 --- response_body
 [delete] code: 400 message: {"error_msg":"can not delete this upstream, route [1] is still using it now"}
---- no_error_log
-[error]
 
 
 
@@ -169,8 +157,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -189,8 +175,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 200 message: passed
---- no_error_log
-[error]
 
 
 
@@ -209,8 +193,6 @@ GET /t
 GET /t
 --- response_body
 [delete] code: 404
---- no_error_log
-[error]
 
 
 
@@ -223,7 +205,7 @@ GET /t
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "httpbin.org:80": 1
+                        "test.com:1980": 1
                     },
                     "type": "roundrobin",
                     "desc": "new upstream",
@@ -241,8 +223,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -254,7 +234,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/get",
+                    "uri": "/echo",
                     "upstream_id": "1"
                 }]]
                 )
@@ -269,18 +249,14 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 12: hit route
 --- request
-GET /get
---- response_body eval
-qr/"Host": "httpbin.org"/
---- no_error_log
-[error]
+GET /echo
+--- response_headers
+host: test.com:1980
 
 
 
@@ -298,7 +274,7 @@ qr/"Host": "httpbin.org"/
                     "type": "roundrobin",
                     "desc": "new upstream",
                     "pass_host": "rewrite",
-                    "upstream_host": "httpbin.org"
+                    "upstream_host": "test.com"
                 }]]
                 )
 
@@ -312,8 +288,6 @@ qr/"Host": "httpbin.org"/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -325,7 +299,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/uri",
+                    "uri": "/echo",
                     "upstream_id": "1"
                 }]]
                 )
@@ -340,18 +314,14 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 15: hit route
 --- request
-GET /uri
---- response_body eval
-qr/host: httpbin.org/
---- no_error_log
-[error]
+GET /echo
+--- response_headers
+host: test.com
 
 
 
@@ -376,8 +346,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
---- no_error_log
-[error]
 
 
 
@@ -422,8 +390,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -478,8 +444,6 @@ proxy request to 127.0.0.1:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -534,8 +498,6 @@ proxy request to 127.0.0.1:1980
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -544,8 +506,6 @@ passed
 GET /uri
 --- response_body eval
 qr/host: localhost:1980/
---- no_error_log
-[error]
 
 
 
@@ -591,8 +551,6 @@ qr/host: localhost:1980/
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -670,5 +628,3 @@ GET /t
 --- timeout: 5
 --- response_body
 [{"count":8,"port":"1982"},{"count":8,"port":"1981"},{"count":8,"port":"1980"}]
---- no_error_log
-[error]

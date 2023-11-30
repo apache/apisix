@@ -45,6 +45,8 @@ luac.out
 *.orig
 *.rej
 t/servroot
+t/certs/*.csr
+t/certs/*.srl
 t/xds-library/libxds.h
 conf/apisix.uid
 conf/nginx.conf
@@ -80,6 +82,8 @@ boofuzz-results/
 t/grpc_server_example/grpc_server_example
 t/plugin/grpc-web/grpc-web-server
 t/plugin/grpc-web/node_modules/
+pack
+pack-v*-linux.tgz*
 
 # release tar package
 *.tgz

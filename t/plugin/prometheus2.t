@@ -34,10 +34,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -352,9 +348,9 @@ GET /apisix/prometheus/metrics
                             "syslog": {
                                 "host": "127.0.0.1",
                                 "include_req_body": false,
-                                "max_retry_times": 1,
+                                "max_retry_count": 1,
                                 "tls": false,
-                                "retry_interval": 1,
+                                "retry_delay": 1,
                                 "batch_max_size": 1000,
                                 "buffer_duration": 60,
                                 "port": 1000,
@@ -923,5 +919,5 @@ lua_shared_dict test-shared-dict 10m;
 --- request
 GET /apisix/prometheus/metrics
 --- response_body_like
-.*apisix_shared_dict_capacity_bytes{name="test-shared-dict"} 10485760(?:.|\n)*
-apisix_shared_dict_free_space_bytes{name="test-shared-dict"} \d+.*
+.*apisix_shared_dict_capacity_bytes\{name="test-shared-dict"\} 10485760(?:.|\n)*
+apisix_shared_dict_free_space_bytes\{name="test-shared-dict"\} \d+.*

@@ -1,5 +1,11 @@
 ---
 title: syslog
+keywords:
+  - APISIX
+  - API 网关
+  - Plugin
+  - syslog
+description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 Syslog 服务器。
 ---
 
 <!--
@@ -23,35 +29,37 @@ title: syslog
 
 ## 描述
 
-`sys` 是一个将 Log data 请求推送到 Syslog 的插件。
+`syslog` 插件可用于将日志推送到 Syslog 服务器。
 
-这将提供将 Log 数据请求作为 JSON 对象发送的功能。
+该插件还实现了将日志数据以 JSON 格式发送到 Syslog 服务的能力。
 
 ## 属性
 
-| 名称             | 类型    | 必选项 | 默认值       | 有效值        | 描述                                                                                                                                 |
+| 名称             | 类型     | 必选项 | 默认值       | 有效值        | 描述                                                                                                                                 |
 | ---------------- | ------- | ------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| host             | string  | 必须   |              |               | IP 地址或主机名                                                                                                                       |
-| port             | integer | 必须   |              |               | 目标上游端口                                                                                                                         |
-| name             | string  | 可选   | "sys logger" |               |                                                                                                                                      |
-| timeout          | integer | 可选   | 3000         | [1, ...]      | 上游发送数据超时（以毫秒为单位）。                                                                                                   |
-| tls              | boolean | 可选   | false        |               | 用于控制是否执行 SSL 验证                                                                                                              |
-| flush_limit      | integer | 可选   | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器。默认为 4096（4KB）|
-| drop_limit       | integer | 可选   | 1048576      |               | 如果缓冲的消息的大小加上当前消息的大小大于此限制（以字节为单位），则由于缓冲区大小有限，当前的日志消息将被丢弃。默认为 1048576（1MB）|
-| sock_type        | string  | 可选   | "tcp"        | ["tcp","udp"] | 用于传输层的 IP 协议类型。                                                                                                             |
-| max_retry_times  | integer | 可选   |              | [1, ...]      | 已废弃。请改用 `max_retry_count`。连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。                                                               |
-| retry_interval   | integer | 可选   |              | [0, ...]      | 已废弃。请改用 `retry_delay`。重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位）。                                                   |
-| pool_size        | integer | 可选   | 5            | [5, ...]      | sock：keepalive 使用的 Keepalive 池大小。                                                                                               |
-| include_req_body | boolean | 可选   | false        |               | 是否包括请求 body                                                                                                                    |
+| host             | string  | 是     |              |               | IP 地址或主机名。                                                                                                                      |
+| port             | integer | 是     |              |               | 目标上游端口。                                                                                                                         |
+| name             | string  | 否     | "sys logger" |               | syslog 服务器的标识符。                                                                                                                |
+| timeout          | integer | 否     | 3000         | [1, ...]      | 上游发送数据超时（以毫秒为单位）。                                                                                                       |
+| tls              | boolean | 否     | false        |               | 当设置为 `true` 时执行 SSL 验证。                                                                                                       |
+| flush_limit      | integer | 否     | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器，默认为 4096（4KB）。              |
+| drop_limit       | integer | 否     | 1048576      |               | 如果缓冲的消息的大小加上当前消息的大小大于此限制（以字节为单位），则由于缓冲区大小有限，当前的日志消息将被丢弃，默认为 1048576（1MB）。        |
+| sock_type        | string  | 否     | "tcp"        | ["tcp","udp"] | 用于传输层的 IP 协议类型。                                                                                                               |
+| max_retry_count  | integer | 否     |              | [1, ...]      | 连接到日志服务器失败或将日志消息发送到日志服务器失败后的最大重试次数。                                                                      |
+| retry_delay      | integer | 否     |              | [0, ...]      | 重试连接到日志服务器或重试向日志服务器发送日志消息之前的时间延迟（以毫秒为单位）。                                                           |
+| pool_size        | integer | 否     | 5            | [5, ...]      | `sock：keepalive` 使用的 Keepalive 池大小。                                                                                              |
+| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| include_req_body | boolean | 否     | false        |               | 当设置为 `true` 时包括请求体。                                                                                                        |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
-## 如何开启
+## 启用插件
 
-1. 下面例子展示了如何为指定路由开启 `sys-logger` 插件的。
+你可以通过以下命令在指定路由中启用该插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "syslog": {
@@ -72,21 +80,25 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功的情况：
+现在你可以向 APISIX 发起请求：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
+curl -i http://127.0.0.1:9080/hello
+```
+
+```
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-## 禁用插件
+## 删除插件
 
-想要禁用“sys-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
+当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -51,8 +51,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -61,8 +59,6 @@ passed
 mmm
 --- stream_response
 hello world
---- no_error_log
-[error]
 
 
 
@@ -94,16 +90,12 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
 === TEST 4: not hit route
 --- stream_enable
 --- stream_response
---- no_error_log
-[error]
 
 
 
@@ -126,8 +118,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -160,8 +150,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -189,8 +177,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -216,8 +202,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -226,8 +210,6 @@ passed
 mmm
 --- stream_response
 hello world
---- no_error_log
-[error]
 
 
 
@@ -277,8 +259,6 @@ location /t {
 GET /t
 --- response_body
 hello world
---- no_error_log
-[error]
 
 
 
@@ -304,8 +284,6 @@ hello world
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -314,8 +292,6 @@ passed
 mmm
 --- stream_response
 hello world
---- no_error_log
-[error]
 
 
 
@@ -341,7 +317,7 @@ hello world
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid remote_addr: :\/8"}
+{"error_msg":"invalid remote_addr: :/8"}
 
 
 
@@ -371,8 +347,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -381,8 +355,6 @@ passed
 mmm
 --- stream_response
 hello world
---- no_error_log
-[error]
 
 
 
@@ -418,8 +390,6 @@ hello world
 mmm
 --- stream_response
 hello world
---- no_error_log
-[error]
 --- grep_error_log eval
 qr/(fetch|release) (ctx var|table \w+)/
 --- grep_error_log_out

@@ -33,6 +33,7 @@ services:
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
       - ETCD_INITIAL_CLUSTER=etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_ENABLE_GRPC_GATEWAY=${ETCD_ENABLE_GRPC_GATEWAY:-true}
 
   etcd1:
     image: "gcr.io/etcd-development/etcd:v3.4.15"
@@ -50,6 +51,7 @@ services:
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
       - ETCD_INITIAL_CLUSTER=etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_ENABLE_GRPC_GATEWAY=${ETCD_ENABLE_GRPC_GATEWAY:-true}
 
   etcd2:
     image: "gcr.io/etcd-development/etcd:v3.4.15"
@@ -67,3 +69,4 @@ services:
       - ETCD_INITIAL_CLUSTER_TOKEN=etcd-cluster
       - ETCD_INITIAL_CLUSTER=etcd0=http://etcd0:2380,etcd1=http://etcd1:2380,etcd2=http://etcd2:2380
       - ETCD_INITIAL_CLUSTER_STATE=new
+      - ETCD_ENABLE_GRPC_GATEWAY=${ETCD_ENABLE_GRPC_GATEWAY:-true}

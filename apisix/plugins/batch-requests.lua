@@ -275,7 +275,14 @@ local function batch_requests(ctx)
             headers = resp.headers,
         }
         if resp.has_body then
-            sub_resp.body = resp:read_body()
+            local err
+            sub_resp.body, err = resp:read_body()
+            if err then
+                sub_resp.read_body_err = err
+                core.log.error("read pipeline response body failed: ", err)
+            else
+                resp:read_trailers()
+            end
         end
         core.table.insert(aggregated_resp, sub_resp)
     end

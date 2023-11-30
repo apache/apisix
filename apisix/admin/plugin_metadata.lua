@@ -17,11 +17,10 @@
 local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
-local utils   = require("apisix.admin.utils")
+local resource = require("apisix.admin.resource")
+local encrypt_conf = require("apisix.plugin").encrypt_conf
 
 local injected_mark = "injected metadata_schema"
-local _M = {
-}
 
 
 local function validate_plugin(name)
@@ -46,10 +45,6 @@ local function check_conf(plugin_name, conf)
         return nil, {error_msg = "invalid plugin name"}
     end
 
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
     if not plugin_object.metadata_schema then
         plugin_object.metadata_schema = {
             type = "object",
@@ -58,9 +53,6 @@ local function check_conf(plugin_name, conf)
         }
     end
     local schema = plugin_object.metadata_schema
-
-    core.log.info("schema: ", core.json.delay_encode(schema))
-    core.log.info("conf: ", core.json.delay_encode(conf))
 
     local ok, err
     if schema['$comment'] == injected_mark
@@ -72,6 +64,8 @@ local function check_conf(plugin_name, conf)
         ok, err = plugin_object.check_schema(conf, core.schema.TYPE_METADATA)
     end
 
+    encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
+
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -80,60 +74,10 @@ local function check_conf(plugin_name, conf)
 end
 
 
-function _M.put(plugin_name, conf)
-    local plugin_name, err = check_conf(plugin_name, conf)
-    if not plugin_name then
-        return 400, err
-    end
-
-    local key = "/plugin_metadata/" .. plugin_name
-    core.log.info("key: ", key)
-    local res, err = core.etcd.set(key, conf)
-    if not res then
-        core.log.error("failed to put plugin metadata[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.get(key)
-    local path = "/plugin_metadata"
-    if key then
-        path = path .. "/" .. key
-    end
-
-    local res, err = core.etcd.get(path, not key)
-    if not res then
-        core.log.error("failed to get metadata[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, key)
-    return res.status, res.body
-end
-
-
-function _M.post(key, conf)
-    return 405, {error_msg = "not supported `POST` method for metadata"}
-end
-
-
-function _M.delete(key)
-    if not key then
-        return 400, {error_msg = "missing metadata key"}
-    end
-
-    local key = "/plugin_metadata/" .. key
-    local res, err = core.etcd.delete(key)
-    if not res then
-        core.log.error("failed to delete metadata[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-return _M
+return resource.new({
+    name = "plugin_metadata",
+    kind = "plugin_metadata",
+    schema = core.schema.plugin_metadata,
+    checker = check_conf,
+    unsupported_methods = {"post", "patch"}
+})

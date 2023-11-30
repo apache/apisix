@@ -63,7 +63,7 @@ __DATA__
 --- request
 GET /t
 --- error_log eval
-qr /insufficient credentials code: 401/
+qr /(insufficient credentials code: 401|etcdserver: user name is empty)/
 
 
 
@@ -79,12 +79,16 @@ qr /insufficient credentials code: 401/
         }
     }
 --- yaml_config
-etcd:
-  host:
-    - "http://127.0.0.1:2379"
-  prefix: "/apisix"
-  user: apisix
-  password: abc123
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    user: apisix
+    password: abc123
 --- request
 GET /t
 --- error_log eval

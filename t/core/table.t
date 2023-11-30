@@ -43,8 +43,6 @@ GET /t
 --- response_body
 encode: ["first","a",1,true]
 encode: ["a",1,true,true]
---- no_error_log
-[error]
 
 
 
@@ -75,8 +73,6 @@ encode: ["a",1,true,true]
 GET /t
 --- response_body
 ok
---- no_error_log
-[error]
 
 
 
@@ -101,8 +97,6 @@ GET /t
 --- response_body
 value
 nil
---- no_error_log
-[error]
 
 
 
@@ -134,8 +128,6 @@ nil
 ok
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -169,8 +161,6 @@ GET /t
 ok
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -202,8 +192,6 @@ GET /t
 ok
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -227,5 +215,3 @@ GET /t
 GET /t
 --- response_body
 ok
---- no_error_log
-[error]

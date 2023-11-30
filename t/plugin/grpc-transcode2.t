@@ -26,10 +26,6 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 run_tests;
@@ -91,7 +87,7 @@ __DATA__
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -175,7 +171,7 @@ Content-Type: application/json
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -266,7 +262,7 @@ failed to encode request data to protobuf
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -315,7 +311,7 @@ Content-Type: application/json
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -342,7 +338,7 @@ Content-Type: application/json
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -448,7 +444,7 @@ passed
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -490,7 +486,7 @@ GET /grpc_plus?a=1&b=2
 --- response_body eval
 qr/\{"result":3\}/
 --- error_log eval
-qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003"/
+qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003"/
 
 
 
@@ -537,7 +533,7 @@ qr/request log: \{.*body":\"\\u0000\\u0000\\u0000\\u0000\\u0002\\b\\u0003\\u0000
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -569,7 +565,11 @@ qr/request log: \{.*body":\"\{\\"result\\":3}/
     local pb = require("pb")
     local old_f = pb.option
     pb.option = function(o)
-        ngx.log(ngx.WARN, "set protobuf option: ", o)
+        if o ~= "int64_as_string" and o ~= "int64_as_number" then
+            -- filter out options set by other components.
+            -- we can still test some options like enum_as_name
+            ngx.log(ngx.WARN, "set protobuf option: ", o)
+        end
         return old_f(o)
     end
 --- config
@@ -617,7 +617,7 @@ qr/request log: \{.*body":\"\{\\"result\\":3}/
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -644,7 +644,7 @@ qr/request log: \{.*body":\"\{\\"result\\":3}/
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -673,13 +673,10 @@ qr/request log: \{.*body":\"\{\\"result\\":3}/
 qr/set protobuf option: \w+/
 --- grep_error_log_out
 set protobuf option: enum_as_name
-set protobuf option: int64_as_string
 set protobuf option: auto_default_values
 set protobuf option: disable_hooks
 set protobuf option: enum_as_name
-set protobuf option: int64_as_number
 set protobuf option: enum_as_name
-set protobuf option: int64_as_string
 
 
 
@@ -688,7 +685,11 @@ set protobuf option: int64_as_string
     local pb = require("pb")
     local old_f = pb.option
     pb.option = function(o)
-        ngx.log(ngx.WARN, "set protobuf option: ", o)
+        if o ~= "int64_as_string" and o ~= "int64_as_number" then
+            -- filter out options set by other components
+            -- we can still test some options like enum_as_name
+            ngx.log(ngx.WARN, "set protobuf option: ", o)
+        end
         return old_f(o)
     end
 --- config
@@ -736,7 +737,7 @@ set protobuf option: int64_as_string
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -762,7 +763,7 @@ set protobuf option: int64_as_string
                         "scheme": "grpc",
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:50051": 1
+                            "127.0.0.1:10051": 1
                         }
                     }
                 }]]
@@ -793,4 +794,3 @@ qr/set protobuf option: \w+/
 set protobuf option: auto_default_values
 set protobuf option: disable_hooks
 set protobuf option: enum_as_name
-set protobuf option: int64_as_number

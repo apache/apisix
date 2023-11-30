@@ -14,6 +14,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    $ENV{VAULT_TOKEN} = "root";
+}
+
 use t::APISIX 'no_plan';
 
 repeat_each(2);
@@ -42,8 +46,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -66,8 +68,6 @@ GET /t
 --- response_body
 property "username" validation failed: wrong type: expected string, got number
 done
---- no_error_log
-[error]
 
 
 
@@ -98,8 +98,6 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -134,8 +132,6 @@ passed
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -145,8 +141,6 @@ GET /hello
 --- error_code: 401
 --- response_body
 {"message":"Missing authorization in request"}
---- no_error_log
-[error]
 
 
 
@@ -162,8 +156,6 @@ Authorization: Bad_header YmFyOmJhcgo=
 qr/Invalid authorization header format/
 --- grep_error_log_out
 Invalid authorization header format
---- no_error_log
-[error]
 
 
 
@@ -179,8 +171,6 @@ Authorization: Basic aca_a
 qr/Failed to decode authentication header: aca_a/
 --- grep_error_log_out
 Failed to decode authentication header: aca_a
---- no_error_log
-[error]
 
 
 
@@ -196,8 +186,6 @@ Authorization: Basic YmFy
 qr/Split authorization err: invalid decoded data: bar/
 --- grep_error_log_out
 Split authorization err: invalid decoded data: bar
---- no_error_log
-[error]
 
 
 
@@ -209,8 +197,6 @@ Authorization: Basic YmFyOmJhcgo=
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
---- no_error_log
-[error]
 
 
 
@@ -222,8 +208,6 @@ Authorization: Basic Zm9vOmZvbwo=
 --- error_code: 401
 --- response_body
 {"message":"Invalid user authorization"}
---- no_error_log
-[error]
 
 
 
@@ -234,8 +218,6 @@ GET /hello
 Authorization: Basic Zm9vOmJhcg==
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 find consumer foo
 
@@ -267,8 +249,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \"password\" is required"}
---- no_error_log
-[error]
 
 
 
@@ -297,8 +277,6 @@ GET /t
 --- error_code: 400
 --- response_body_like eval
 qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin basic-auth err: property \\"(username|password)\\" is required"\}/
---- no_error_log
-[error]
 
 
 
@@ -326,8 +304,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid plugins configuration: invalid plugin conf \"blah\" for plugin [basic-auth]"}
---- no_error_log
-[error]
 
 
 
@@ -340,7 +316,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -348,8 +324,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -370,8 +344,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -384,7 +356,7 @@ GET /t
                 ngx.HTTP_GET,
                 nil,
                 [[
-{"properties":{"disable":{"type":"boolean"}},"title":"work with route or service object","type":"object"}
+{"properties":{},"title":"work with route or service object","type":"object"}
                 ]]
                 )
             ngx.status = code
@@ -392,8 +364,6 @@ GET /t
     }
 --- request
 GET /t
---- no_error_log
-[error]
 
 
 
@@ -430,8 +400,6 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -442,8 +410,6 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 !Authorization
---- no_error_log
-[error]
 
 
 
@@ -480,8 +446,6 @@ Authorization: Basic Zm9vOmJhcg==
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -492,5 +456,167 @@ GET /echo
 Authorization: Basic Zm9vOmJhcg==
 --- response_headers
 Authorization: Basic Zm9vOmJhcg==
---- no_error_log
-[error]
+
+
+
+=== TEST 22: set basic-auth conf: password uses secret ref
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "root"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- change consumer with secrets ref: vault
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "$secret://vault/test1/foo/passwd"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- set route
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {
+                            "hide_credentials": false
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: store secret into vault
+--- exec
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo passwd=bar
+--- response_body
+Success! Data written to: kv/apisix/foo
+
+
+
+=== TEST 24: verify Authorization with foo/bar, request header should not hidden
+--- request
+GET /echo
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_headers
+Authorization: Basic Zm9vOmJhcg==
+
+
+
+=== TEST 25: set basic-auth conf with the token in an env var: password uses secret ref
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- put secret vault config
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "http://127.0.0.1:8200",
+                    "prefix" : "kv/apisix",
+                    "token" : "$ENV://VAULT_TOKEN"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            -- change consumer with secrets ref: vault
+            code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "foo",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "foo",
+                            "password": "$secret://vault/test1/foo/passwd"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+            -- set route
+            code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {
+                            "hide_credentials": false
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 26: verify Authorization with foo/bar, request header should not hidden
+--- request
+GET /echo
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_headers
+Authorization: Basic Zm9vOmJhcg==

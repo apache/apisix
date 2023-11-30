@@ -17,12 +17,7 @@
 local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
-local ipairs   = ipairs
 
-
-local lrucache = core.lrucache.new({
-    type = "plugin",
-})
 
 local schema = {
     type = "object",
@@ -45,8 +40,9 @@ local schema = {
 local consumer_schema = {
     type = "object",
     properties = {
-        key = {type = "string"},
+        key = { type = "string" },
     },
+    encrypt_fields = {"key"},
     required = {"key"},
 }
 
@@ -59,24 +55,6 @@ local _M = {
     schema = schema,
     consumer_schema = consumer_schema,
 }
-
-
-local create_consume_cache
-do
-    local consumer_names = {}
-
-    function create_consume_cache(consumers)
-        core.table.clear(consumer_names)
-
-        for _, consumer in ipairs(consumers.nodes) do
-            core.log.info("consumer node: ", core.json.delay_encode(consumer))
-            consumer_names[consumer.auth_conf.key] = consumer
-        end
-
-        return consumer_names
-    end
-
-end -- do
 
 
 function _M.check_schema(conf, schema_type)
@@ -107,9 +85,7 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing related consumer"}
     end
 
-    local consumers = lrucache("consumers_key", consumer_conf.conf_version,
-        create_consume_cache, consumer_conf)
-
+    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
     local consumer = consumers[key]
     if not consumer then
         return 401, {message = "Invalid API key in request"}

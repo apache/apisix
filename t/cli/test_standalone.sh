@@ -26,11 +26,14 @@ standalone() {
 
 trap standalone EXIT
 
-# support environment variables
+# support environment variables in yaml values
 echo '
 apisix:
   enable_admin: false
-  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
 ' > conf/config.yaml
 
 echo '
@@ -62,6 +65,33 @@ code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test)
 if [ ! $code -eq 200 ]; then
     echo "failed: resolve variables in apisix.yaml conf failed"
     exit 1
+fi
+
+echo "passed: resolve variables in apisix.yaml conf success"
+
+# support environment variables in yaml keys
+echo '
+routes:
+  -
+    uri: "/test"
+    plugins:
+      proxy-rewrite:
+        uri: "/apisix/nginx_status"
+    upstream:
+      nodes:
+        "${{HOST_IP}}:${{PORT}}": 1
+      type: roundrobin
+#END
+' > conf/apisix.yaml
+
+# variable is valid
+HOST_IP="127.0.0.1" PORT="9091" make init
+HOST_IP="127.0.0.1" PORT="9091" make run
+sleep 0.1
+
+code=$(curl -o /dev/null -s -m 5 -w %{http_code} http://127.0.0.1:9080/test)
+if [ ! $code -eq 200 ]; then
+    echo "failed: resolve variables in apisix.yaml conf failed"
 fi
 
 echo "passed: resolve variables in apisix.yaml conf success"

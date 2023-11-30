@@ -89,8 +89,6 @@ GET /t
 host: 39.97.63.215 count: 4
 host: 39.97.63.216 count: 4
 host: 39.97.63.217 count: 4
---- no_error_log
-[error]
 
 
 
@@ -120,8 +118,6 @@ GET /t
 host: 39.97.63.215 count: 2
 host: 39.97.63.216 count: 4
 host: 39.97.63.217 count: 6
---- no_error_log
-[error]
 
 
 
@@ -166,8 +162,6 @@ host: 39.97.63.215 count: 4
 host: 39.97.63.216 count: 4
 host: 39.97.63.217 count: 4
 host: 39.97.63.218 count: 12
---- no_error_log
-[error]
 
 
 
@@ -211,8 +205,6 @@ GET /t
 host: 39.97.63.215 count: 12
 host: 39.97.63.215 count: 12
 host: 39.97.63.218 count: 12
---- no_error_log
-[error]
 
 
 
@@ -249,5 +241,3 @@ host: 39.97.63.215 count: 4
 host: 39.97.63.216 count: 4
 host: 39.97.63.217 count: 4
 host: 39.97.63.218 count: 12
---- no_error_log
-[error]

@@ -23,10 +23,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -56,7 +52,9 @@ __DATA__
                         "username": "test",
                         "plugins": {
                             "key-auth": {
-                                "disable": false,
+                                "_meta": {
+                                    "disable": false
+                                },
                                 "key": "test-key"
                             }
                         }
@@ -68,7 +66,9 @@ __DATA__
                         "name": "s1",
                         "plugins": {
                             "key-auth": {
-                                "disable": false
+                                "_meta": {
+                                    "disable": false
+                                }
                             }
                         }
                     }]],

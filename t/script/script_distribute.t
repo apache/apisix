@@ -59,8 +59,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
@@ -70,8 +68,6 @@ GET /hello
 --- yaml_config eval: $::yaml_config
 --- response_body
 hello world
---- no_error_log
-[error]
 --- error_log
 string "route#1"
 phase_func(): hit access phase
@@ -116,8 +112,6 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to load 'script' string: [string \"invalid script\"]:1: '=' expected near 'script'"}
---- no_error_log
-[error]
 
 
 
@@ -154,5 +148,3 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"failed to load 'script' string: [string \"invalid script\"]:1: '=' expected near 'script'"}
---- no_error_log
-[error]

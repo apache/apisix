@@ -1,5 +1,11 @@
 ---
 title: udp-logger
+keywords:
+  - APISIX
+  - API 网关
+  - Plugin
+  - UDP Logger
+description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger 插件将日志数据发送到 UDP 服务器。
 ---
 
 <!--
@@ -23,33 +29,62 @@ title: udp-logger
 
 ## 描述
 
-`udp-logger` 是用于将日志数据发送到 UDP 服务的插件。
+`udp-logger` 插件可用于将日志数据发送到 UDP 服务器。
 
-以实现将日志数据以 JSON 格式发送到监控工具或其它 UDP 服务的能力。
-
-此插件提供了将批处理数据批量推送到外部 UDP 服务器的功能。如果您没有收到日志数据，请等待一些时间，它会在我们的批处理处理器中的计时器功能到期后自动发送日志
-
-有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考：
-[Batch-Processor](../batch-processor.md)
+该插件还实现了将日志数据以 JSON 格式发送到监控工具或其它 UDP 服务的能力。
 
 ## 属性
 
-| 名称             | 类型    | 必选项 | 默认值       | 有效值  | 描述                                             |
+| 名称             | 类型    | 必选项  | 默认值       | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------ | ------- | ------------------------------------------------ |
-| host             | string  | 必须   |              |         | UDP 服务的 IP 地址或主机名                       |
-| port             | integer | 必须   |              | [0,...] | 目标端口                                         |
-| timeout          | integer | 可选   | 1000         | [1,...] | 发送数据超时间                                   |
-| name             | string  | 可选   | "udp logger" |         | 用于识别批处理器                                 |
-| include_req_body | boolean | 可选   |              |         | 是否包括请求 body                                |
+| host             | string  | 是     |              |         | UDP 服务的 IP 地址或主机名。                       |
+| port             | integer | 是     |              | [0,...] | 目标端口。                                         |
+| timeout          | integer | 否     | 1000         | [1,...] | 发送数据超时间。                                   |
+| log_format       | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| name             | string  | 否     | "udp logger" |         | 用于识别批处理器。                                 |
+| include_req_body | boolean | 否     |              |         | 当设置为 `true` 时，日志中将包含请求体。           |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+## 插件元数据
+
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+
+:::info 注意
+
+该设置全局生效。如果指定了 `log_format`，则所有绑定 `udp-logger` 的路由或服务都将使用该日志格式。
+
+:::
+
+以下示例展示了如何通过 Admin API 配置插件元数据：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/udp-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+配置完成后，你将在日志系统中看到如下类似日志：
+
+```json
+{"@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1","host":"localhost","client_ip":"127.0.0.1"}
+```
 
 ## 如何开启
 
-1. 下面例子展示了如何为指定路由开启 `udp-logger` 插件的。
+你可以通过如下命令在指定路由上启用 `udp-logger` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
       "plugins": {
             "udp-logger": {
@@ -71,21 +106,24 @@ curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f13
 
 ## 测试插件
 
-* 成功的情况：
+现在你可以向 APISIX 发起请求：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
+curl -i http://127.0.0.1:9080/hello
+```
+
+```
 HTTP/1.1 200 OK
 ...
 hello, world
 ```
 
-## 禁用插件
+## 删除插件
 
-想要禁用“udp-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
+当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

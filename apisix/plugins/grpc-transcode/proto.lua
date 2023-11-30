@@ -99,7 +99,7 @@ end
 
 local function compile_proto(content)
     -- clear pb state
-    pb.state(nil)
+    local old_pb_state = pb.state(nil)
 
     local compiled, err = compile_proto_text(content)
     if not compiled then
@@ -110,7 +110,7 @@ local function compile_proto(content)
     end
 
     -- fetch pb state
-    compiled.pb_state = pb.state(nil)
+    compiled.pb_state = pb.state(old_pb_state)
     return compiled
 end
 
@@ -157,6 +157,97 @@ function _M.protos()
 end
 
 
+local grpc_status_proto = [[
+    syntax = "proto3";
+
+    package grpc_status;
+
+    message Any {
+      // A URL/resource name that uniquely identifies the type of the serialized
+      // protocol buffer message. This string must contain at least
+      // one "/" character. The last segment of the URL's path must represent
+      // the fully qualified name of the type (as in
+      // `path/google.protobuf.Duration`). The name should be in a canonical form
+      // (e.g., leading "." is not accepted).
+      //
+      // In practice, teams usually precompile into the binary all types that they
+      // expect it to use in the context of Any. However, for URLs which use the
+      // scheme `http`, `https`, or no scheme, one can optionally set up a type
+      // server that maps type URLs to message definitions as follows:
+      //
+      // * If no scheme is provided, `https` is assumed.
+      // * An HTTP GET on the URL must yield a [google.protobuf.Type][]
+      //   value in binary format, or produce an error.
+      // * Applications are allowed to cache lookup results based on the
+      //   URL, or have them precompiled into a binary to avoid any
+      //   lookup. Therefore, binary compatibility needs to be preserved
+      //   on changes to types. (Use versioned type names to manage
+      //   breaking changes.)
+      //
+      // Note: this functionality is not currently available in the official
+      // protobuf release, and it is not used for type URLs beginning with
+      // type.googleapis.com.
+      //
+      // Schemes other than `http`, `https` (or the empty scheme) might be
+      // used with implementation specific semantics.
+      //
+      string type_url = 1;
+
+      // Must be a valid serialized protocol buffer of the above specified type.
+      bytes value = 2;
+    }
+
+    // The `Status` type defines a logical error model that is suitable for
+    // different programming environments, including REST APIs and RPC APIs. It is
+    // used by [gRPC](https://github.com/grpc). Each `Status` message contains
+    // three pieces of data: error code, error message, and error details.
+    //
+    // You can find out more about this error model and how to work with it in the
+    // [API Design Guide](https://cloud.google.com/apis/design/errors).
+    message ErrorStatus {
+        // The status code, which should be an enum value of [google.rpc.Code][google.rpc.Code].
+        int32 code = 1;
+
+        // A developer-facing error message, which should be in English. Any
+        // user-facing error message should be localized and sent in the
+        // [google.rpc.Status.details][google.rpc.Status.details] field, or localized by the client.
+        string message = 2;
+
+        // A list of messages that carry the error details.  There is a common set of
+        // message types for APIs to use.
+        repeated Any details = 3;
+    }
+]]
+
+
+local status_pb_state
+local function init_status_pb_state()
+    if not status_pb_state then
+        -- clear current pb state
+        local old_pb_state = pb.state(nil)
+
+        -- initialize protoc compiler
+        protoc.reload()
+        local status_protoc = protoc.new()
+        -- do not use loadfile here, it can not load the proto file when using a relative address
+        -- after luarocks install apisix
+        local ok, err = status_protoc:load(grpc_status_proto, "grpc_status.proto")
+        if not ok then
+            status_protoc:reset()
+            pb.state(old_pb_state)
+            return "failed to load grpc status protocol: " .. err
+        end
+
+        status_pb_state = pb.state(old_pb_state)
+    end
+end
+
+
+function _M.fetch_status_pb_state()
+    return status_pb_state
+end
+
+
 function _M.init()
     local err
     protos, err = core.config.new("/protos", {
@@ -168,7 +259,21 @@ function _M.init()
                        err)
         return
     end
+
+    if not status_pb_state then
+        err = init_status_pb_state()
+        if err then
+            core.log.error("failed to init grpc status proto: ",
+                            err)
+            return
+        end
+    end
 end
 
+function _M.destroy()
+    if protos then
+        protos:close()
+    end
+end
 
 return _M

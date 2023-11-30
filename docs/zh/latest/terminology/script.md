@@ -1,5 +1,10 @@
 ---
 title: Script
+keywords:
+  - API 网关
+  - Apache APISIX
+  - Router
+description: 本文介绍了 Apache APISIX Script 的使用方法及注意事项。
 ---
 
 <!--
@@ -21,15 +26,17 @@ title: Script
 #
 -->
 
-`Script` 表示将在 `HTTP` 请求/响应生命周期期间执行的脚本。
+## 描述
 
-`Script` 配置可直接绑定在 `Route` 上。
+Script 表示将在 `HTTP` 请求/响应生命周期期间执行的脚本。
 
-`Script` 与 `Plugin` 互斥，且优先执行 `Script` ，这意味着配置 `Script` 后，`Route` 上配置的 `Plugin` 将不被执行。
+Script 配置需要绑定在路由上。
 
-理论上，在 `Script` 中可以写任意 lua 代码，也可以直接调用已有插件以重用已有的代码。
+Script 与 Plugin 不兼容，并且 Script 优先执行 Script，这意味着配置 Script 后，Route 上配置的 Plugin 将**不被执行**。
 
-`Script` 也有执行阶段概念，支持 `access`、`header_filter`、`body_filter` 和 `log` 阶段。系统会在相应阶段中自动执行 `Script` 脚本中对应阶段的代码。
+理论上，在 Script 中可以编写任意 Lua 代码，你也可以直接调用已有的插件以复用已有的代码。
+
+Script 也有执行阶段概念，支持 `access`、`header_filter`、`body_filter` 和 `log` 阶段。系统会在相应阶段中自动执行 `Script` 脚本中对应阶段的代码。
 
 ```json
 {

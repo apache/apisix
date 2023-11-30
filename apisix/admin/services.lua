@@ -16,44 +16,18 @@
 --
 local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
+local get_stream_routes = require("apisix.router").stream_routes
 local apisix_upstream = require("apisix.upstream")
+local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
-local utils = require("apisix.admin.utils")
-local v3_adapter = require("apisix.admin.v3_adapter")
 local tostring = tostring
 local ipairs = ipairs
 local type = type
 local loadstring = loadstring
 
 
-local _M = {
-    version = 0.3,
-}
-
-
-local function check_conf(id, conf, need_id)
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
-    id = id or conf.id
-    if need_id and not id then
-        return nil, {error_msg = "missing service id"}
-    end
-
-    if not need_id and id then
-        return nil, {error_msg = "wrong service id, do not need it"}
-    end
-
-    if need_id and conf.id and tostring(conf.id) ~= tostring(id) then
-        return nil, {error_msg = "wrong service id"}
-    end
-
-    conf.id = id
-
-    core.log.info("schema: ", core.json.delay_encode(core.schema.service))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.service, conf)
+local function check_conf(id, conf, need_id, schema)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -106,75 +80,11 @@ local function check_conf(id, conf, need_id)
         end
     end
 
-    return need_id and id or true
+    return true
 end
 
 
-function _M.put(id, conf)
-    local id, err = check_conf(id, conf, true)
-    if not id then
-        return 400, err
-    end
-
-    local key = "/services/" .. id
-    core.log.info("key: ", key)
-
-    local ok, err = utils.inject_conf_with_prev_conf("service", key, conf)
-    if not ok then
-        return 503, {error_msg = err}
-    end
-
-    local res, err = core.etcd.set(key, conf)
-    if not res then
-        core.log.error("failed to put service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.get(id)
-    local key = "/services"
-    if id then
-        key = key .. "/" .. id
-    end
-
-    local res, err = core.etcd.get(key, not id)
-    if not res then
-        core.log.error("failed to get service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, id)
-    v3_adapter.filter(res.body)
-    return res.status, res.body
-end
-
-
-function _M.post(id, conf)
-    local id, err = check_conf(id, conf, false)
-    if not id then
-        return 400, err
-    end
-
-    local key = "/services"
-    utils.inject_timestamp(conf)
-    local res, err = core.etcd.push(key, conf)
-    if not res then
-        core.log.error("failed to post service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.delete(id)
-    if not id then
-        return 400, {error_msg = "missing service id"}
-    end
-
+local function delete_checker(id)
     local routes, routes_ver = get_routes()
     core.log.info("routes: ", core.json.delay_encode(routes, true))
     core.log.info("routes_ver: ", routes_ver)
@@ -190,75 +100,29 @@ function _M.delete(id)
         end
     end
 
-    local key = "/services/" .. id
-    local res, err = core.etcd.delete(key)
-    if not res then
-        core.log.error("failed to delete service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.patch(id, conf, sub_path)
-    if not id then
-        return 400, {error_msg = "missing service id"}
-    end
-
-    if not conf then
-        return 400, {error_msg = "missing new configuration"}
-    end
-
-    if not sub_path or sub_path == "" then
-        if type(conf) ~= "table"  then
-            return 400, {error_msg = "invalid configuration"}
+    local stream_routes, stream_routes_ver = get_stream_routes()
+    core.log.info("stream_routes: ", core.json.delay_encode(stream_routes, true))
+    core.log.info("stream_routes_ver: ", stream_routes_ver)
+    if stream_routes_ver and stream_routes then
+        for _, route in ipairs(stream_routes) do
+            if type(route) == "table" and route.value
+               and route.value.service_id
+               and tostring(route.value.service_id) == id then
+                return 400, {error_msg = "can not delete this service directly,"
+                                         .. " stream_route [" .. route.value.id
+                                         .. "] is still using it now"}
+            end
         end
     end
 
-    local key = "/services" .. "/" .. id
-    local res_old, err = core.etcd.get(key)
-    if not res_old then
-        core.log.error("failed to get service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    if res_old.status ~= 200 then
-        return res_old.status, res_old.body
-    end
-    core.log.info("key: ", key, " old value: ",
-                  core.json.delay_encode(res_old, true))
-
-    local node_value = res_old.body.node.value
-    local modified_index = res_old.body.node.modifiedIndex
-
-    if sub_path and sub_path ~= "" then
-        local code, err, node_val = core.table.patch(node_value, sub_path, conf)
-        node_value = node_val
-        if code then
-            return code, err
-        end
-        utils.inject_timestamp(node_value, nil, true)
-    else
-        node_value = core.table.merge(node_value, conf)
-        utils.inject_timestamp(node_value, nil, conf)
-    end
-
-    core.log.info("new value ", core.json.delay_encode(node_value, true))
-
-    local id, err = check_conf(id, node_value, true)
-    if not id then
-        return 400, err
-    end
-
-    local res, err = core.etcd.atomic_set(key, node_value, nil, modified_index)
-    if not res then
-        core.log.error("failed to set new service[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
+    return nil, nil
 end
 
 
-return _M
+return resource.new({
+    name = "services",
+    kind = "service",
+    schema = core.schema.service,
+    checker = check_conf,
+    delete_checker = delete_checker
+})

@@ -34,7 +34,6 @@ import "C"
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"strconv"
 	"time"
 	"unsafe"
@@ -84,7 +83,7 @@ func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 "create_time": 1646972532,
 "uri": "/hello1",
 "priority": 0,
-"id": "1",
+"id": "2",
 "upstream_id": "1"
 }`)
 
@@ -95,17 +94,21 @@ func write_config(config_zone unsafe.Pointer, version_zone unsafe.Pointer) {
 
 }
 
+func get_version() string {
+	return strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
+}
+
 func update_conf_version(zone unsafe.Pointer) {
 	ctx := context.Background()
+	key := "version"
+	write_shdict(key, get_version(), zone)
 	go func() {
 		for {
 			select {
 			case <-ctx.Done():
 				return
-			case <-time.After(time.Second * time.Duration(rand.Intn(10))):
-				key := "version"
-				version := strconv.FormatInt(time.Now().UnixNano()/1e6, 10)
-				write_shdict(key, version, zone)
+			case <-time.After(time.Second * 5):
+				write_shdict("version", get_version(), zone)
 			}
 		}
 	}()

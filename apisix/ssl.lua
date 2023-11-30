@@ -14,14 +14,18 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local ngx_ssl = require("ngx.ssl")
+local core           = require("apisix.core")
+local secret         = require("apisix.secret")
+local ngx_ssl        = require("ngx.ssl")
+local ngx_ssl_client = require("ngx.ssl.clienthello")
+
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
 local str_lower = string.lower
 local assert = assert
 local type = type
+local ipairs = ipairs
 
 
 local cert_cache = core.lrucache.new {
@@ -36,8 +40,13 @@ local pkey_cache = core.lrucache.new {
 local _M = {}
 
 
-function _M.server_name()
-    local sni, err = ngx_ssl.server_name()
+function _M.server_name(clienthello)
+    local sni, err
+    if clienthello then
+        sni, err = ngx_ssl_client.get_client_hello_server_name()
+    else
+        sni, err = ngx_ssl.server_name()
+    end
     if err then
         return nil, err
     end
@@ -55,64 +64,124 @@ function _M.server_name()
 end
 
 
-local _aes_128_cbc_with_iv = false
-local function get_aes_128_cbc_with_iv()
-    if _aes_128_cbc_with_iv == false then
-        local local_conf = core.config.local_conf()
-        local iv = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
-        if type(iv) =="string" and #iv == 16 then
-            _aes_128_cbc_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
-        else
-            _aes_128_cbc_with_iv = nil
+function _M.set_protocols_by_clienthello(ssl_protocols)
+    if ssl_protocols then
+       return ngx_ssl_client.set_protocols(ssl_protocols)
+    end
+    return true
+end
+
+
+local function init_iv_tbl(ivs)
+    local _aes_128_cbc_with_iv_tbl = core.table.new(2, 0)
+    local type_ivs = type(ivs)
+
+    if type_ivs == "table" then
+        for _, iv in ipairs(ivs) do
+            local aes_with_iv = assert(aes:new(iv, nil, aes.cipher(128, "cbc"), {iv = iv}))
+            core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
         end
+    elseif type_ivs == "string" then
+        local aes_with_iv = assert(aes:new(ivs, nil, aes.cipher(128, "cbc"), {iv = ivs}))
+        core.table.insert(_aes_128_cbc_with_iv_tbl, aes_with_iv)
     end
-    return _aes_128_cbc_with_iv
+
+    return _aes_128_cbc_with_iv_tbl
 end
 
 
-function _M.aes_encrypt_pkey(origin)
-    local aes_128_cbc_with_iv = get_aes_128_cbc_with_iv()
-    if aes_128_cbc_with_iv ~= nil and core.string.has_prefix(origin, "---") then
-        local encrypted = aes_128_cbc_with_iv:encrypt(origin)
-        if encrypted == nil then
-            core.log.error("failed to encrypt key[", origin, "] ")
-            return origin
-        end
-
-        return ngx_encode_base64(encrypted)
+local _aes_128_cbc_with_iv_tbl_ssl
+local function get_aes_128_cbc_with_iv_ssl(local_conf)
+    if _aes_128_cbc_with_iv_tbl_ssl == nil then
+        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
+        _aes_128_cbc_with_iv_tbl_ssl = init_iv_tbl(ivs)
     end
 
-    return origin
+    return _aes_128_cbc_with_iv_tbl_ssl
 end
 
 
-local function decrypt_priv_pkey(iv, key)
-    local decoded_key = ngx_decode_base64(key)
-    if not decoded_key then
-        core.log.error("base64 decode ssl key failed. key[", key, "] ")
-        return nil
+local _aes_128_cbc_with_iv_tbl_gde
+local function get_aes_128_cbc_with_iv_gde(local_conf)
+    if _aes_128_cbc_with_iv_tbl_gde == nil then
+        local ivs = core.table.try_read_attr(local_conf, "apisix", "data_encryption", "keyring")
+        _aes_128_cbc_with_iv_tbl_gde = init_iv_tbl(ivs)
     end
 
-    local decrypted = iv:decrypt(decoded_key)
-    if not decrypted then
-        core.log.error("decrypt ssl key failed. key[", key, "] ")
-    end
-
-    return decrypted
+    return _aes_128_cbc_with_iv_tbl_gde
 end
 
 
-local function aes_decrypt_pkey(origin)
-    if core.string.has_prefix(origin, "---") then
+
+local function encrypt(aes_128_cbc_with_iv, origin)
+    local encrypted = aes_128_cbc_with_iv:encrypt(origin)
+    if encrypted == nil then
+        core.log.error("failed to encrypt key[", origin, "] ")
         return origin
     end
 
-    local aes_128_cbc_with_iv = get_aes_128_cbc_with_iv()
-    if aes_128_cbc_with_iv ~= nil then
-        return decrypt_priv_pkey(aes_128_cbc_with_iv, origin)
+    return ngx_encode_base64(encrypted)
+end
+
+function _M.aes_encrypt_pkey(origin, field)
+    local local_conf = core.config.local_conf()
+
+    if not field then
+        -- default used by ssl
+        local aes_128_cbc_with_iv_tbl_ssl = get_aes_128_cbc_with_iv_ssl(local_conf)
+        local aes_128_cbc_with_iv_ssl = aes_128_cbc_with_iv_tbl_ssl[1]
+        if aes_128_cbc_with_iv_ssl ~= nil and core.string.has_prefix(origin, "---") then
+            return encrypt(aes_128_cbc_with_iv_ssl, origin)
+        end
+    else
+        if field == "data_encrypt" then
+            local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
+            local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
+            if aes_128_cbc_with_iv_gde ~= nil then
+                return encrypt(aes_128_cbc_with_iv_gde, origin)
+            end
+        end
     end
+
     return origin
 end
+
+
+local function aes_decrypt_pkey(origin, field)
+    local local_conf = core.config.local_conf()
+    local aes_128_cbc_with_iv_tbl
+
+    if not field then
+        if core.string.has_prefix(origin, "---") then
+            return origin
+        end
+        aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_ssl(local_conf)
+    else
+        if field == "data_encrypt" then
+            aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
+        end
+    end
+
+    if #aes_128_cbc_with_iv_tbl == 0 then
+        return origin
+    end
+
+    local decoded_key = ngx_decode_base64(origin)
+    if not decoded_key then
+        core.log.error("base64 decode ssl key failed. key[", origin, "] ")
+        return nil
+    end
+
+    for _, aes_128_cbc_with_iv in ipairs(aes_128_cbc_with_iv_tbl) do
+        local decrypted = aes_128_cbc_with_iv:decrypt(decoded_key)
+        if decrypted then
+            return decrypted
+        end
+    end
+
+    return nil, "decrypt ssl key failed"
+end
+_M.aes_decrypt_pkey = aes_decrypt_pkey
 
 
 local function validate(cert, key)
@@ -126,8 +195,10 @@ local function validate(cert, key)
         return true
     end
 
-    key = aes_decrypt_pkey(key)
+    local err
+    key, err = aes_decrypt_pkey(key)
     if not key then
+        core.log.error(err)
         return nil, "failed to decrypt previous encrypted key"
     end
 
@@ -163,7 +234,12 @@ end
 local function parse_pem_priv_key(sni, pkey)
     core.log.debug("parsing priv key for sni: ", sni)
 
-    local parsed, err = ngx_ssl.parse_pem_priv_key(aes_decrypt_pkey(pkey))
+    local key, err = aes_decrypt_pkey(pkey)
+    if not key then
+        core.log.error(err)
+        return nil, err
+    end
+    local parsed, err = ngx_ssl.parse_pem_priv_key(key)
     return parsed, err
 end
 
@@ -192,9 +268,13 @@ function _M.check_ssl_conf(in_dp, conf)
         end
     end
 
-    local ok, err = validate(conf.cert, conf.key)
-    if not ok then
-        return nil, err
+    if not secret.check_secret_uri(conf.cert) and
+        not secret.check_secret_uri(conf.key) then
+
+        local ok, err = validate(conf.cert, conf.key)
+        if not ok then
+            return nil, err
+        end
     end
 
     if conf.type == "client" then
@@ -208,9 +288,13 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        local ok, err = validate(conf.certs[i], conf.keys[i])
-        if not ok then
-            return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+        if not secret.check_secret_uri(conf.cert[i]) and
+            not secret.check_secret_uri(conf.key[i]) then
+
+            local ok, err = validate(conf.certs[i], conf.keys[i])
+            if not ok then
+                return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+            end
         end
     end
 

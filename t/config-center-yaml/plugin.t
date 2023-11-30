@@ -27,8 +27,11 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -45,10 +48,6 @@ routes:
 _EOC_
 
     $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
-
-    if (!$block->no_error_log) {
-        $block->set_value("no_error_log", "[error]");
-    }
 });
 
 our $debug_config = t::APISIX::read_file("conf/debug.yaml");
@@ -84,7 +83,7 @@ GET /t
 --- response_body
 hello world
 --- error_log
-use config_center: yaml
+use config_provider: yaml
 load(): loaded plugin and sort by priority: 3000 name: ip-restriction
 load(): loaded plugin and sort by priority: 2510 name: jwt-auth
 load_stream(): loaded stream plugin and sort by priority: 1000 name: mqtt-proxy
@@ -102,8 +101,11 @@ load(): new plugins
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 plugins:
     - ip-restriction
     - jwt-auth
@@ -169,8 +171,11 @@ GET /apisix/prometheus/metrics
 --- yaml_config
 apisix:
     node_listen: 1984
-    config_center: yaml
     enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 plugins:
     - ip-restriction
     - jwt-auth
@@ -188,3 +193,32 @@ hello world
 property "stream" validation failed: wrong type: expected boolean, got string
 --- no_error_log
 load(): plugins not changed
+
+
+
+=== TEST 6: empty plugin list
+--- apisix_yaml
+plugins:
+stream_plugins:
+--- debug_config eval: $::debug_config
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.3)
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                })
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+--- error_log
+use config_provider: yaml
+load(): new plugins: {}
+load_stream(): new plugins: {}

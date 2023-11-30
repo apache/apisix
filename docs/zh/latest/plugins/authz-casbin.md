@@ -1,7 +1,8 @@
 ---
 title: authz-casbin
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Authz Casbin
   - authz-casbin
@@ -65,7 +66,7 @@ description: 本文介绍了关于 Apache APISIX `authz-casbin` 插件的基本�
 以下示例展示了通过 model/policy 配置文件来设置 Casbin 身份验证：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -90,7 +91,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 以下示例展示了通过你的 model/policy 文本来设置 Casbin 身份验证：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -134,7 +135,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 \
 所有通过这种方式创建的 Route 都会带有一个带插件元数据配置的 Casbin enforcer。你也可以使用这种方式更新 model/policy，该插件将会自动同步最新的配置信息。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/authz-casbin \
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/authz-casbin \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
 {
 "model": "[request_definition]
@@ -161,7 +162,7 @@ g, alice, admin"
 更新插件元数据后，可以将插件添加到指定 Route 中：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
@@ -240,12 +241,12 @@ HTTP/1.1 403 Forbidden
 curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `authz-casbin` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

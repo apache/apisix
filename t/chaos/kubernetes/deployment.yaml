@@ -77,7 +77,7 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-          image: "apache/apisix:latest"
+          image: "apache/apisix:alpine-local"
           imagePullPolicy: IfNotPresent
           name: apisix-gw-deployment
           ports:
@@ -86,6 +86,9 @@ spec:
               protocol: TCP
             - containerPort: 9443
               name: https
+              protocol: TCP
+            - containerPort: 9180
+              name: admin-port
               protocol: TCP
           readinessProbe:
             failureThreshold: 6

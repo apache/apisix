@@ -31,7 +31,7 @@ __DATA__
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token"
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token"
                             })
             if not ok then
                 ngx.say(err)
@@ -44,8 +44,6 @@ __DATA__
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
@@ -56,7 +54,7 @@ done
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
+                                discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration"
                             })
             if not ok then
                 ngx.say(err)
@@ -69,37 +67,10 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 3: minimal valid configuration with audience
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({
-                                audience = "foo",
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
-                            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-[error]
-
-
-
-=== TEST 4: minimal valid configuration w/o discovery when lazy_load_paths=true
+=== TEST 3: minimal valid configuration w/o discovery when lazy_load_paths=true
 --- config
     location /t {
         content_by_lua_block {
@@ -107,8 +78,8 @@ done
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
                                 lazy_load_paths = true,
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set"
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token",
+                                resource_registration_endpoint = "https://host.domain/realms/foo/authz/protection/resource_set"
                             })
             if not ok then
                 ngx.say(err)
@@ -121,12 +92,10 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 5: minimal valid configuration with discovery when lazy_load_paths=true
+=== TEST 4: minimal valid configuration with discovery when lazy_load_paths=true
 --- config
     location /t {
         content_by_lua_block {
@@ -134,7 +103,7 @@ done
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
                                 lazy_load_paths = true,
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
+                                discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration"
                             })
             if not ok then
                 ngx.say(err)
@@ -147,22 +116,19 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 6: full schema check
+=== TEST 5: full schema check
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set",
+                                discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration",
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token",
+                                resource_registration_endpoint = "https://host.domain/realms/foo/authz/protection/resource_set",
                                 client_id = "University",
-                                audience = "University",
                                 client_secret = "secret",
                                 grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 policy_enforcement_mode = "ENFORCING",
@@ -192,12 +158,10 @@ done
 GET /t
 --- response_body
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 7: token_endpoint and discovery both missing
+=== TEST 6: token_endpoint and discovery both missing
 --- config
     location /t {
         content_by_lua_block {
@@ -215,17 +179,15 @@ GET /t
 --- response_body
 allOf 1 failed: object matches none of the required: ["discovery"] or ["token_endpoint"]
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 8: client_id and audience both missing
+=== TEST 7: client_id missing
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"})
+            local ok, err = plugin.check_schema({discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration"})
             if not ok then
                 ngx.say(err)
             end
@@ -236,21 +198,19 @@ done
 --- request
 GET /t
 --- response_body
-allOf 2 failed: object matches none of the required: ["client_id"] or ["audience"]
+property "client_id" is required
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 9: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
+=== TEST 8: resource_registration_endpoint and discovery both missing and lazy_load_paths is true
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token",
                                 lazy_load_paths = true
                             })
             if not ok then
@@ -263,14 +223,12 @@ done
 --- request
 GET /t
 --- response_body
-allOf 3 failed: object matches none of the required
+allOf 2 failed: object matches none of the required
 done
---- no_error_log
-[error]
 
 
 
-=== TEST 10: Add https endpoint with ssl_verify true (default)
+=== TEST 9: Add https endpoint with ssl_verify true (default)
 --- config
     location /t {
         content_by_lua_block {
@@ -280,7 +238,7 @@ done
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -307,12 +265,10 @@ done
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 11: TEST with fake token and https endpoint
+=== TEST 10: TEST with fake token and https endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -340,12 +296,12 @@ GET /t
 --- response_body
 false
 --- error_log
-Error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18: self signed certificate
+Error while sending authz request to https://127.0.0.1:8443/realms/University/protocol/openid-connect/token: 18
 --- error_code: 503
 
 
 
-=== TEST 12: Add https endpoint with ssl_verify false
+=== TEST 11: Add https endpoint with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -355,7 +311,7 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -383,12 +339,10 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 13: TEST for https based token verification with ssl_verify false
+=== TEST 12: TEST for https based token verification with ssl_verify false
 --- config
     location /t {
         content_by_lua_block {
@@ -418,7 +372,7 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
 
 
 
-=== TEST 14: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values
+=== TEST 13: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values
 --- config
     location /t {
         content_by_lua_block {
@@ -428,7 +382,7 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "policy_enforcement_mode": "ENFORCING",
@@ -455,12 +409,10 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 15: test for permission is empty and enforcement mode is "ENFORCING".
+=== TEST 14: test for permission is empty and enforcement mode is "ENFORCING".
 --- config
     location /t {
         content_by_lua_block {
@@ -485,7 +437,7 @@ GET /t
 
 
 
-=== TEST 16: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values , access_denied_redirect_uri is "http://127.0.0.1/test"
+=== TEST 15: set enforcement mode is "ENFORCING", lazy_load_paths and permissions use default values , access_denied_redirect_uri is "http://127.0.0.1/test"
 --- config
     location /t {
         content_by_lua_block {
@@ -495,7 +447,7 @@ GET /t
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "policy_enforcement_mode": "ENFORCING",
@@ -523,12 +475,10 @@ GET /t
 GET /t
 --- response_body
 passed
---- no_error_log
-[error]
 
 
 
-=== TEST 17: test for permission is empty and enforcement mode is "ENFORCING" , access_denied_redirect_uri is "http://127.0.0.1/test".
+=== TEST 16: test for permission is empty and enforcement mode is "ENFORCING" , access_denied_redirect_uri is "http://127.0.0.1/test".
 --- config
     location /t {
         content_by_lua_block {
@@ -555,7 +505,7 @@ Location: http://127.0.0.1/test
 
 
 
-=== TEST 18: Add https endpoint with password_grant_token_generation_incoming_uri
+=== TEST 17: Add https endpoint with password_grant_token_generation_incoming_uri
 --- config
     location /t {
         content_by_lua_block {
@@ -565,7 +515,7 @@ Location: http://127.0.0.1/test
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#view"],
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
@@ -624,12 +574,10 @@ Location: http://127.0.0.1/test
 GET /t
 --- response_body
 true
---- no_error_log
-[error]
 
 
 
-=== TEST 19: no username or password
+=== TEST 18: no username or password
 --- config
     location /t {
         content_by_lua_block {
@@ -639,7 +587,7 @@ true
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#view"],
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
@@ -697,5 +645,3 @@ GET /t
 --- response_body
 {"message":"username is missing."}
 {"message":"password is missing."}
---- no_error_log
-[error]

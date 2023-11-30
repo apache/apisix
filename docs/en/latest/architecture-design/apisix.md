@@ -1,7 +1,11 @@
 ---
-title: APISIX
+title: Architecture
+keywords:
+  - API Gateway
+  - Apache APISIX
+  - APISIX architecture
+description: Architecture of Apache APISIX—the Cloud Native API Gateway.
 ---
-
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -21,25 +25,27 @@ title: APISIX
 #
 -->
 
-## Apache APISIX : Software Architecture
+APISIX is built on top of Nginx and [ngx_lua](https://github.com/openresty/lua-nginx-module) leveraging the power offered by LuaJIT. See [Why Apache APISIX chose Nginx and Lua to build API Gateway?](https://apisix.apache.org/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/).
 
-![flow-software-architecture](../../../assets/images/flow-software-architecture.png)
+![flow-software-architecture](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-software-architecture.png)
 
-Apache APISIX is a dynamic, real-time, high-performance cloud-native API gateway. It is built on top of NGINX + ngx_lua technology and leverages the power offered by LuaJIT. [Why Apache APISIX chose Nginx and Lua to build API Gateway?](https://apisix.apache.org/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)
+APISIX has two main parts:
 
-APISIX is divided into two main parts:
+1. APISIX core, Lua plugin, multi-language Plugin runtime, and the WASM plugin runtime.
+2. Built-in Plugins that adds features for observability, security, traffic control, etc.
 
-1. APISIX core, including Lua plugin, multi-language plugin runtime, Wasm plugin runtime, etc.
-2. Feature-rich variety of built-in plugins: including observability, security, traffic control, etc.
+The APISIX core handles the important functions like matching Routes, load balancing, service discovery, configuration management, and provides a management API. It also includes APISIX Plugin runtime supporting Lua and multilingual Plugins (Go, Java , Python, JavaScript, etc) including the experimental WASM Plugin runtime.
 
-In the APISIX core, important functions such as route matching, load balancing, service discovery, management API, and basic modules such as configuration management are provided. In addition, APISIX plugin runtime is also included, providing the runtime framework for native Lua plugins and multilingual plugins, as well as the experimental Wasm plugin runtime, etc. APISIX multilingual plugin runtime provides support for various development languages, such as Golang, Java, Python, JS, etc.
+APISIX also has a set of [built-in Plugins](https://apisix.apache.org/docs/apisix/plugins/batch-requests) that adds features like authentication, security, observability, etc. They are written in Lua.
 
-APISIX currently has various plugins built in, covering various areas of API gateways, such as authentication and authentication, security, observability, traffic management, multi-protocol access, and so on. The plugins currently built into APISIX are implemented using native Lua. For the introduction and usage of each plugin, please check the [documentation](https://apisix.apache.org/docs/apisix/plugins/batch-requests) of the relevant plugin.
+## Request handling process
 
-## Plugin Loading Process
+The diagram below shows how APISIX handles an incoming request and applies corresponding Plugins:
 
-![flow-load-plugin](../../../assets/images/flow-load-plugin.png)
+![flow-load-plugin](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-load-plugin.png)
 
-## Plugin Hierarchy Structure
+## Plugin hierarchy
 
-![flow-plugin-internal](../../../assets/images/flow-plugin-internal.png)
+The chart below shows the order in which different types of Plugin are applied to a request:
+
+![flow-plugin-internal](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/flow-plugin-internal.png)

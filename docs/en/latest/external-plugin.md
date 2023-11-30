@@ -23,9 +23,9 @@ title: External Plugin
 
 ## What are external plugin and plugin runner
 
-APISIX supports writing plugins in Lua. This type of plugins will be executed
-inside APISIX. Sometimes you want to develop plugin in other languages, so APISIX
-provides sidecars that loading your plugins and run them when the requests hit
+APISIX supports writing plugins in Lua. This type of plugin will be executed
+inside APISIX. Sometimes you want to develop plugins in other languages, so APISIX
+provides sidecars that load your plugins and run them when the requests hit
 APISIX. These sidecars are called plugin runners and your plugins are called
 external plugins.
 
@@ -49,7 +49,7 @@ plugins. Like other plugins, they can be enabled and reconfigured on the fly.
 
 ## How is it implemented
 
-If you are instested in the implementation of Plugin Runner, please refer to [The Implementation of Plugin Runner](./internal/plugin-runner.md).
+If you are interested in the implementation of Plugin Runner, please refer to [The Implementation of Plugin Runner](./internal/plugin-runner.md).
 
 ## Supported plugin runners
 
@@ -60,7 +60,7 @@ If you are instested in the implementation of Plugin Runner, please refer to [Th
 
 ## Configuration for plugin runner in APISIX
 
-To run plugin runner in the prod, add the section below to `config.yaml`:
+To run the plugin runner in the prod, add the section below to `config.yaml`:
 
 ```yaml
 ext-plugin:
@@ -99,7 +99,7 @@ path will be generated dynamically.
 
 ### When managing by APISIX, the runner can't access my environment variable
 
-Since `v2.7`, APISIX can pass environment to the runner.
+Since `v2.7`, APISIX can pass environment variables to the runner.
 
 However, Nginx will hide all environment variables by default. So you need to
 declare your variable first in the `conf/config.yaml`:
@@ -115,7 +115,7 @@ nginx_config:
 Since `v2.7`, APISIX will stop the runner with SIGTERM when it is running on
 OpenResty 1.19+.
 
-However, APISIX needs to wait the runner to quit so that we can ensure the resource
+However, APISIX needs to wait for the runner to quit so that we can ensure the resource
 for the process group is freed.
 
 Therefore, we send SIGTERM first. And then after 1 second, if the runner is still

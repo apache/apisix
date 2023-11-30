@@ -72,6 +72,18 @@ local schema = {
                 "disable_hooks",
             }
         },
+        show_status_in_body = {
+            description = "show decoded grpc-status-details-bin in response body",
+            type        = "boolean",
+            default     = false
+        },
+        -- https://github.com/googleapis/googleapis/blob/b7cb84f5d42e6dba0fdcc2d8689313f6a8c9d7b9/
+        -- google/rpc/status.proto#L46
+        status_detail_type = {
+            description = "the message type of the grpc-status-details-bin's details part, "
+                            .. "if not given, the details part will not be decoded",
+            type        = "string",
+        },
     },
     additionalProperties = true,
     required = { "proto_id", "service", "method" },
@@ -110,6 +122,11 @@ function _M.init()
 end
 
 
+function _M.destroy()
+    proto.destroy()
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -143,6 +160,7 @@ function _M.access(conf, ctx)
     end
 
     ctx.proto_obj = proto_obj
+
 end
 
 
@@ -152,9 +170,10 @@ function _M.header_filter(conf, ctx)
     end
 
     ngx.header["Content-Type"] = "application/json"
-    ngx.header["Trailer"] = {"grpc-status", "grpc-message"}
+    ngx.header.content_length = nil
 
     local headers = ngx.resp.get_headers()
+
     if headers["grpc-status"] ~= nil and headers["grpc-status"] ~= "0" then
         local http_status = status_rel[headers["grpc-status"]]
         if http_status ~= nil then
@@ -162,14 +181,16 @@ function _M.header_filter(conf, ctx)
         else
             ngx.status = 599
         end
-        return
+    else
+        -- The error response body does not contain grpc-status and grpc-message
+        ngx.header["Trailer"] = {"grpc-status", "grpc-message"}
     end
 
 end
 
 
 function _M.body_filter(conf, ctx)
-    if ngx.status >= 300 then
+    if ngx.status >= 300 and not conf.show_status_in_body then
         return
     end
 
@@ -178,7 +199,8 @@ function _M.body_filter(conf, ctx)
         return
     end
 
-    local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option)
+    local err = response(ctx, proto_obj, conf.service, conf.method, conf.pb_option,
+                         conf.show_status_in_body, conf.status_detail_type)
     if err then
         core.log.error("transform response error: ", err)
         return

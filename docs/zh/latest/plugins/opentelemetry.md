@@ -1,5 +1,11 @@
 ---
 title: opentelemetry
+keywords:
+  - Apache APISIX
+  - API 网关
+  - Plugin
+  - OpenTelemetry
+description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本信息及使用方法。
 ---
 
 <!--
@@ -51,7 +57,7 @@ title: opentelemetry
 | trace_id_source                            | enum    | random                                            | trace ID 的来源。有效值为：`random` 或 `x-request-id`。当设置为 `x-request-id` 时，`x-request-id` 头的值将用作跟踪 ID。请确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}`。 |
 | resource                                   | object  |                                                   | 追加到 trace 的额外 [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md)。 |
 | collector                                  | object  | {address = "127.0.0.1:4318", request_timeout = 3} | OpenTelemetry Collector 配置。 |
-| collector.address                          | string  | 127.0.0.1:4318                                    | 数据采集服务的地址。             |
+| collector.address                          | string  | 127.0.0.1:4318                                    | 数据采集服务的地址。如果数据采集服务使用的是 HTTPS 协议，可以将 address 设置为 https://127.0.0.1:4318。 |
 | collector.request_timeout                  | integer | 3                                                 | 数据采集服务上报请求超时时长，单位为秒。 |
 | collector.request_headers                  | object  |                                                   | 数据采集服务上报请求附加的 HTTP 请求头。 |
 | batch_span_processor                       | object  |                                                   | trace span 处理器参数配置。 |
@@ -82,6 +88,29 @@ plugin_attr:
       max_export_batch_size: 2
 ```
 
+## 如何使用变量
+
+以下`nginx`变量是由`opentelemetry` 设置的。
+
+- `opentelemetry_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), 例如：`00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
+- `opentelemetry_trace_id` - 当前 span 的 trace_id
+- `opentelemetry_span_id` - 当前 span 的 span_id
+
+如何使用？你需要在配置文件（`./conf/config.yaml`）设置如下：
+
+```yaml title="./conf/config.yaml"
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - opentelemetry
+plugin_attr:
+  opentelemetry:
+    set_ngx_var: true
+```
+
 ## 如何启用
 
 `opentelemetry` 插件默认为禁用状态，你需要在配置文件（`./conf/config.yaml`）中开启该插件：
@@ -95,7 +124,7 @@ plugins:
 开启成功后，可以通过如下命令在指定路由上启用 `opentelemetry` 插件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -118,12 +147,12 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  \
 }'
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `opentelemetry` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  \
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],

@@ -28,10 +28,6 @@ exit_if_not_customed_nginx
 
 echo '
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
   ssl:
     ssl_trusted_certificate: t/certs/apisix.crt
 nginx_config:
@@ -54,7 +50,7 @@ make init
 make run
 sleep 0.1
 
-curl -k -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -k -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "upstream": {
@@ -73,7 +69,7 @@ curl -k -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034
     }
 }'
 
-sleep 0.1
+sleep 1
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/hello)
 
@@ -91,10 +87,6 @@ echo "passed: connection to upstream with mTLS success"
 # test proxy_ssl_trusted_certificate and use incorrect ca cert
 echo '
 apisix:
-  admin_key:
-    - name: admin
-      key: edd1c9f034335f136f87ad84b625c8f1
-      role: admin
   ssl:
     ssl_trusted_certificate: t/certs/apisix_ecc.crt
 nginx_config:
@@ -117,7 +109,7 @@ make init
 make run
 sleep 0.1
 
-curl -k -i http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -k -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "upstream": {

@@ -26,6 +26,7 @@ VERSION                ?= master
 project_name           ?= apache-apisix
 project_release_name   ?= $(project_name)-$(VERSION)-src
 
+OTEL_CONFIG ?= ./ci/pod/otelcol-contrib/data-otlp.json
 
 # Hyperconverged Infrastructure
 ENV_OS_NAME            ?= $(shell uname -s | tr '[:upper:]' '[:lower:]')
@@ -68,6 +69,8 @@ endif
 ifeq ($(ENV_OS_NAME), darwin)
 	ifeq ($(ENV_OS_ARCH), arm64)
 		ENV_HOMEBREW_PREFIX := /opt/homebrew
+		ENV_INST_BINDIR := $(ENV_INST_PREFIX)/local/bin
+		ENV_INST_LUADIR := $(shell which lua | xargs realpath | sed 's/bin\/lua//g')
 	endif
 
 	# OSX archive `._` cache file
@@ -79,6 +82,9 @@ ifeq ($(ENV_OS_NAME), darwin)
 	endif
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111
+	endif
+	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/pcre && echo -n yes), yes)
+		ENV_PCRE_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/pcre
 	endif
 endif
 
@@ -145,7 +151,7 @@ help:
 	@echo
 
 
-### deps : Installation dependencies
+### deps : Installing dependencies
 .PHONY: deps
 deps: runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
@@ -153,14 +159,15 @@ deps: runtime
 		mkdir -p ~/.luarocks; \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
-		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree=deps --only-deps --local $(ENV_LUAROCKS_SERVER_OPT); \
+		[ '$(ENV_OS_NAME)' == 'darwin' ] && $(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.PCRE_INCDIR $(addprefix $(ENV_PCRE_PREFIX), /include); \
+		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
 		exit 1; \
 	fi
 
 
-### undeps : Uninstallation dependencies
+### undeps : Uninstalling dependencies
 .PHONY: undeps
 undeps:
 	@$(call func_echo_status, "$@ -> [ Start ]")
@@ -172,11 +179,11 @@ undeps:
 .PHONY: utils
 utils:
 ifeq ("$(wildcard utils/lj-releng)", "")
-	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
+	wget -qP utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/lj-releng
 	chmod a+x utils/lj-releng
 endif
 ifeq ("$(wildcard utils/reindex)", "")
-	wget -P utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
+	wget -qP utils https://raw.githubusercontent.com/iresty/openresty-devel-utils/master/reindex
 	chmod a+x utils/reindex
 endif
 
@@ -259,18 +266,18 @@ install: runtime
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
-	# Lua directories listed in alphabetical order
+	# directories listed in alphabetical order
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix
 	$(ENV_INSTALL) apisix/*.lua $(ENV_INST_LUADIR)/apisix/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/include/apisix/model
-	$(ENV_INSTALL) apisix/include/apisix/model/*.proto $(ENV_INST_LUADIR)/apisix/include/apisix/model/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/admin
 	$(ENV_INSTALL) apisix/admin/*.lua $(ENV_INST_LUADIR)/apisix/admin/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/balancer
 	$(ENV_INSTALL) apisix/balancer/*.lua $(ENV_INST_LUADIR)/apisix/balancer/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/cli
+	$(ENV_INSTALL) apisix/cli/*.lua $(ENV_INST_LUADIR)/apisix/cli/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/control
 	$(ENV_INSTALL) apisix/control/*.lua $(ENV_INST_LUADIR)/apisix/control/
@@ -281,21 +288,16 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/core/dns
 	$(ENV_INSTALL) apisix/core/dns/*.lua $(ENV_INST_LUADIR)/apisix/core/dns
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/cli
-	$(ENV_INSTALL) apisix/cli/*.lua $(ENV_INST_LUADIR)/apisix/cli/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery
 	$(ENV_INSTALL) apisix/discovery/*.lua $(ENV_INST_LUADIR)/apisix/discovery/
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul_kv,dns,eureka,nacos,kubernetes,tars}
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/discovery/{consul,consul_kv,dns,eureka,nacos,kubernetes,tars}
+	$(ENV_INSTALL) apisix/discovery/consul/*.lua $(ENV_INST_LUADIR)/apisix/discovery/consul
 	$(ENV_INSTALL) apisix/discovery/consul_kv/*.lua $(ENV_INST_LUADIR)/apisix/discovery/consul_kv
 	$(ENV_INSTALL) apisix/discovery/dns/*.lua $(ENV_INST_LUADIR)/apisix/discovery/dns
 	$(ENV_INSTALL) apisix/discovery/eureka/*.lua $(ENV_INST_LUADIR)/apisix/discovery/eureka
-	$(ENV_INSTALL) apisix/discovery/nacos/*.lua $(ENV_INST_LUADIR)/apisix/discovery/nacos
 	$(ENV_INSTALL) apisix/discovery/kubernetes/*.lua $(ENV_INST_LUADIR)/apisix/discovery/kubernetes
+	$(ENV_INSTALL) apisix/discovery/nacos/*.lua $(ENV_INST_LUADIR)/apisix/discovery/nacos
 	$(ENV_INSTALL) apisix/discovery/tars/*.lua $(ENV_INST_LUADIR)/apisix/discovery/tars
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/pubsub
-	$(ENV_INSTALL) apisix/pubsub/*.lua $(ENV_INST_LUADIR)/apisix/pubsub/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http
 	$(ENV_INSTALL) apisix/http/*.lua $(ENV_INST_LUADIR)/apisix/http/
@@ -303,11 +305,20 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/http/router
 	$(ENV_INSTALL) apisix/http/router/*.lua $(ENV_INST_LUADIR)/apisix/http/router/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/include/apisix/model
+	$(ENV_INSTALL) apisix/include/apisix/model/*.proto $(ENV_INST_LUADIR)/apisix/include/apisix/model/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/inspect
+	$(ENV_INSTALL) apisix/inspect/*.lua $(ENV_INST_LUADIR)/apisix/inspect/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins
 	$(ENV_INSTALL) apisix/plugins/*.lua $(ENV_INST_LUADIR)/apisix/plugins/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
+	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
@@ -321,9 +332,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
-	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/opa
 	$(ENV_INSTALL) apisix/plugins/opa/*.lua $(ENV_INST_LUADIR)/apisix/plugins/opa/
 
@@ -336,11 +344,17 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/serverless
 	$(ENV_INSTALL) apisix/plugins/serverless/*.lua $(ENV_INST_LUADIR)/apisix/plugins/serverless/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/slslog
-	$(ENV_INSTALL) apisix/plugins/slslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/slslog/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/syslog
 	$(ENV_INSTALL) apisix/plugins/syslog/*.lua $(ENV_INST_LUADIR)/apisix/plugins/syslog/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/tencent-cloud-cls
+	$(ENV_INSTALL) apisix/plugins/tencent-cloud-cls/*.lua $(ENV_INST_LUADIR)/apisix/plugins/tencent-cloud-cls/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/pubsub
+	$(ENV_INSTALL) apisix/pubsub/*.lua $(ENV_INST_LUADIR)/apisix/pubsub/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/secret
+	$(ENV_INSTALL) apisix/secret/*.lua $(ENV_INST_LUADIR)/apisix/secret/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/zipkin
 	$(ENV_INSTALL) apisix/plugins/zipkin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/zipkin/
@@ -362,6 +376,9 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/redis
 	$(ENV_INSTALL) apisix/stream/xrpc/protocols/redis/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/redis/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/dubbo
+	$(ENV_INSTALL) apisix/stream/xrpc/protocols/dubbo/*.lua $(ENV_INST_LUADIR)/apisix/stream/xrpc/protocols/dubbo/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/utils
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
@@ -431,6 +448,8 @@ compress-tar:
 .PHONY: ci-env-up
 ci-env-up:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	touch $(OTEL_CONFIG)
+	chmod 777 $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) up -d
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
@@ -455,5 +474,6 @@ ci-env-rebuild:
 .PHONY: ci-env-down
 ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
+	rm $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) down
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

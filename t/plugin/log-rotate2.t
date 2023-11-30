@@ -25,11 +25,8 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!defined $block->yaml_config) {
-        my $yaml_config = <<_EOC_;
-apisix:
-  node_listen: 1984
-  admin_key: ~
+    if (! $block->extra_yaml_config) {
+        my $extra_yaml_config = <<_EOC_;
 plugins:
   - log-rotate
 plugin_attr:
@@ -39,12 +36,9 @@ plugin_attr:
     enable_compression: true
 _EOC_
 
-        $block->set_value("yaml_config", $yaml_config);
+        $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
 
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
@@ -61,7 +55,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             ngx.log(ngx.ERR, "start xxxxxx")
-            ngx.sleep(2.5)
+            ngx.sleep(3.5)
             local has_split_access_file = false
             local has_split_error_file = false
             local lfs = require("lfs")
@@ -105,7 +99,7 @@ start xxxxxx
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(2)
+            ngx.sleep(3)
 
             local default_logs = {}
             for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
@@ -178,3 +172,35 @@ plugin_attr:
     }
 --- response_body
 passed
+
+
+
+=== TEST 5: max_kept effective on compression files
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 1
+    max_kept: 1
+    enable_compression: true
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(3.5)
+            local has_split_access_file = false
+            local has_split_error_file = false
+            local lfs = require("lfs")
+            local count = 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, ".tar.gz$") then
+                    count = count + 1
+                end
+            end
+            --- only two compression file, access.log.tar.gz and error.log.tar.gz
+            ngx.say(count)
+        }
+    }
+--- response_body
+2
+--- timeout: 5

@@ -83,7 +83,7 @@ title: 路由 RadixTree
 创建两条 `priority` 值不同的路由（值越大，优先级越高）。
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -97,7 +97,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -124,7 +124,7 @@ curl http://127.0.0.1:1980/hello
 以下是设置主机匹配规则的示例：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -138,7 +138,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -197,7 +197,7 @@ apisix:
 具体参数及使用方式请查看 [radixtree#new](https://github.com/api7/lua-resty-radixtree#new) 文档，下面是一个简单的示例：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -226,7 +226,7 @@ APISIX 支持通过 POST 表单属性过滤路由，其中需要您使用 `Conte
 我们可以定义这样的路由：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "methods": ["POST"],
     "uri": "/_post",
@@ -248,7 +248,7 @@ $ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 
 目前，APISIX 可以处理 HTTP GET 和 POST 方法。请求体正文可以是 GraphQL 查询字符串，也可以是 JSON 格式的内容。
 
-APISIX 支持通过 GraphQL 的一些属性过滤路由。 目前我们支持：
+APISIX 支持通过 GraphQL 的一些属性过滤路由。目前我们支持：
 
 * graphql_operation
 * graphql_name
@@ -274,7 +274,7 @@ query getRepo {
 我们可以用以下方法过滤掉这样的路由：
 
 ```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/graphql",
@@ -323,11 +323,11 @@ $ curl -H 'content-type: application/graphql' -X GET \
 ```
 
 为了防止花费太多时间读取无效的 `GraphQL` 请求正文，我们只读取前 `1 MiB`
-来自请求体的数据。 此限制是通过以下方式配置的：
+来自请求体的数据。此限制是通过以下方式配置的：
 
 ```yaml
 graphql:
   max_size: 1048576
 ```
 
-如果你需要传递一个大于限制的 GraphQL 查询语句 ，你可以增加 `conf/config.yaml` 中的值。
+如果你需要传递一个大于限制的 GraphQL 查询语句，你可以增加 `conf/config.yaml` 中的值。

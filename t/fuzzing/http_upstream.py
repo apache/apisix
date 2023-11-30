@@ -22,7 +22,7 @@ import http.client
 import json
 import random
 import threading
-from public import check_leak, run_test
+from public import check_leak, run_test, connect_admin
 
 
 REQ_PER_THREAD = 50
@@ -32,7 +32,7 @@ TOTOL_ROUTES = 10
 
 def create_route():
     for i in range(TOTOL_ROUTES):
-        conn = http.client.HTTPConnection("127.0.0.1", port=9080)
+        conn = connect_admin()
         scheme = "http" if i % 2 == 0 else "https"
         port = ":6666" if i % 2 == 0 else ":6667"
         suffix = str(i + 1)

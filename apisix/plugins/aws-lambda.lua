@@ -122,8 +122,10 @@ local function request_processor(conf, ctx, params)
 
     -- computing canonical query string
     local canonical_qs = {}
+    local canonical_qs_i = 0
     for k, v in pairs(params.query) do
-        canonical_qs[#canonical_qs+1] = ngx.unescape_uri(k) .. "=" .. ngx.unescape_uri(v)
+        canonical_qs_i = canonical_qs_i + 1
+        canonical_qs[canonical_qs_i] = ngx.unescape_uri(k) .. "=" .. ngx.unescape_uri(v)
     end
 
     tab_sort(canonical_qs)
@@ -132,10 +134,12 @@ local function request_processor(conf, ctx, params)
     -- computing canonical and signed headers
 
     local canonical_headers, signed_headers = {}, {}
+    local signed_headers_i = 0
     for k, v in pairs(headers) do
         k = k:lower()
         if k ~= "connection" then
-            signed_headers[#signed_headers+1] = k
+            signed_headers_i = signed_headers_i + 1
+            signed_headers[signed_headers_i] = k
             -- strip starting and trailing spaces including strip multiple spaces into single space
             canonical_headers[k] =  str_strip(v)
         end

@@ -1,7 +1,8 @@
 ---
 title: authz-keycloak
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Authz Keycloak
   - authz-keycloak
@@ -43,12 +44,11 @@ Refer to [Authorization Services Guide](https://www.keycloak.org/docs/latest/aut
 
 | Name                                         | Type          | Required | Default                                       | Valid values                                                       | Description                                                                                                                                                                                                                                           |
 |----------------------------------------------|---------------|----------|-----------------------------------------------|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| discovery                                    | string        | False    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to [discovery document](https://www.keycloak.org/docs/14.0/authorization_services/#_service_authorization_api) of Keycloak Authorization Services.                                                                                                |
+| discovery                                    | string        | False    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to [discovery document](https://www.keycloak.org/docs/latest/authorization_services/index.html) of Keycloak Authorization Services.                                                                                                |
 | token_endpoint                               | string        | False    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | An OAuth2-compliant token endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. If provided, overrides the value from discovery.                                                                                       |
 | resource_registration_endpoint               | string        | False    |                                               | https://host.domain/auth/realms/foo/authz/protection/resource_set  | A UMA-compliant resource registration endpoint. If provided, overrides the value from discovery.                                                                                                                                                      |
-| client_id                                    | string        | False    |                                               |                                                                    | The identifier of the resource server to which the client is seeking access. Either `client_id` or `audience` is required.                                                                                                                            |
-| audience                                     | string        | False    |                                               |                                                                    | Legacy parameter now replaced by `client_id` kept for backwards compatibility. Either `client_id` or `audience` is required.                                                                                                                          |
-| client_secret                                | string        | False    |                                               |                                                                    | The client secret, if required.                                                                                                                                                                                                                       |
+| client_id                                    | string        | True     |                                               |                                                                    | The identifier of the resource server to which the client is seeking access.                                                                                                                                                                         |
+| client_secret                                | string        | False    |                                               |                                                                    | The client secret, if required. You can use APISIX secret to store and reference this value. APISIX currently supports storing secrets in two ways. [Environment Variables and HashiCorp Vault](../terminology/secret.md)                                                                                                                                                                                                                         |
 | grant_type                                   | string        | False    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                                                                                                                       |
 | policy_enforcement_mode                      | string        | False    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                                                                                                                       |
 | permissions                                  | array[string] | False    |                                               |                                                                    | An array of strings, each representing a set of one or more resources and scopes the client is seeking access.                                                                                                                                        |
@@ -67,6 +67,8 @@ Refer to [Authorization Services Guide](https://www.keycloak.org/docs/latest/aut
 | access_denied_redirect_uri                   | string        | False    |                                               | [1, 2048]                                                          | URI to redirect the user to instead of returning an error message like `"error_description":"not_authorized"`.                                                                                                                                        |
 | password_grant_token_generation_incoming_uri | string        | False    |                                               | /api/token                                                         | Set this to generate token using the password grant type. The Plugin will compare incoming request URI to this value.                                                                                                                                 |
 
+NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+
 ### Discovery and endpoints
 
 It is recommended to use the `discovery` attribute as the `authz-keycloak` Plugin can discover the Keycloak API endpoints from it.
@@ -75,9 +77,7 @@ If set, the `token_endpoint` and `resource_registration_endpoint` will override 
 
 ### Client ID and secret
 
-The Plugin needs the `client_id` or `audience` (for backwards compatibility) attribute for identification and to specify the context in which to evaluate permissions when interacting with Keycloak.
-
-If both are configured, `client_id` is preferred.
+The Plugin needs the `client_id` attribute for identification and to specify the context in which to evaluate permissions when interacting with Keycloak.
 
 If the `lazy_load_paths` attribute is set to true, then the Plugin additionally needs to obtain an access token for itself from Keycloak. In such cases, if the client access to Keycloak is confidential, you need to configure the `client_secret` attribute.
 
@@ -143,19 +143,19 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 --data-urlencode 'password=<Password>'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `authz-keycloak` Plugin on a specific Route. `${realm}` represents the realm name in Keycloak.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
         "authz-keycloak": {
             "token_endpoint": "http://127.0.0.1:8090/auth/realms/${realm}/protocol/openid-connect/token",
             "permissions": ["resource name#scope name"],
-            "audience": "Client ID"
+            "client_id": "Client ID"
         }
     },
     "upstream": {
@@ -200,12 +200,12 @@ The image below shows how the policies are configured in the Keycloak server:
 
 ![Keycloak policy design](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/authz-keycloak.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

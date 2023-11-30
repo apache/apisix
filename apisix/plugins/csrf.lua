@@ -44,6 +44,7 @@ local schema = {
             default = "apisix-csrf-token"
         }
     },
+    encrypt_fields = {"key"},
     required = {"key"}
 }
 

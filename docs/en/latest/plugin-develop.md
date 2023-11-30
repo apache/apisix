@@ -90,7 +90,7 @@ nginx_config:
 ```
 
 The plugin itself provides the init method. It is convenient for plugins to perform some initialization after
-the plugin is loaded.
+the plugin is loaded. If you need to clean up the initialization, you can put it in the corresponding destroy method.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
 method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
@@ -144,12 +144,6 @@ Note: the order of the plugins is not related to the order of execution.
 To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
 
 ```yaml
-apisix:
-  admin_key:
-    - name: "admin"
-      key: edd1c9f034335f136f87ad84b625c8f1 # using fixed API token has security risk, please update it when you deploy to production environment
-      role: admin
-
 plugins: # copied from config-default.yaml
   ...
   - your-plugin
@@ -222,7 +216,7 @@ end
 Note: the project has provided the public method "__core.schema.check__", which can be used directly to complete JSON
 verification.
 
-In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `admin api`. Example:
+In addition, if the plugin needs to use some metadata, we can define the plugin `metadata_schema`, and then we can dynamically manage these metadata through the `Admin API`. Example:
 
 ```lua
 local metadata_schema = {
@@ -265,7 +259,7 @@ Here is the consumer configuration for key-auth plugin:
 }
 ```
 
-It will be used when you try to create a [Consumer](https://github.com/apache/apisix/blob/master/docs/en/latest/admin-api.md#consumer)
+It will be used when you try to create a [Consumer](./admin-api.md#consumer)
 
 To validate the configuration, the plugin uses a schema like this:
 
@@ -298,6 +292,49 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 ```
+
+### encrypted storage fields
+
+Specify the parameters to be stored encrypted. (Requires APISIX version >= 3.1.0)
+
+Some plugins require parameters to be stored encrypted, such as the `password` parameter of the `basic-auth` plugin. This plugin needs to specify in the `schema` which parameters need to be stored encrypted.
+
+```lua
+encrypt_fields = {"password"}
+```
+
+If it is a nested parameter, such as the `clickhouse.password` parameter of the `error-log-logger` plugin, it needs to be separated by `.`:
+
+```lua
+encrypt_fields = {"clickhouse.password"}
+```
+
+Currently not supported yet:
+
+1. more than two levels of nesting
+2. fields in arrays
+
+Parameters can be stored encrypted by specifying `encrypt_fields = {"password"}` in the `schema`. APISIX will provide the following functionality.
+
+- When adding and updating resources via the `Admin API`, APISIX automatically encrypts the parameters declared in `encrypt_fields` and stores them in etcd
+- When fetching resources via the `Admin API` and when running the plugin, APISIX automatically decrypts the parameters declared in `encrypt_fields`
+
+How to enable this feature?
+
+Enable `data_encryption` in `config.yaml`.
+
+```yaml
+apisix:
+    data_encryption:
+        enable: true
+        keyring:
+            - edd1c9f0985e76a2
+            - qeddd145sfvddff4
+```
+
+APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.
+
+If none of the keys in `keyring` can decrypt the data, the original data is used.
 
 ## choose phase to run
 
@@ -334,7 +371,7 @@ end
 Write the logic of the plugin in the corresponding phase. There are two parameters `conf` and `ctx` in the phase method, take the `limit-conn` plugin configuration as an example.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -514,7 +551,7 @@ are located in the following folder: 't/servroot/logs'.
 
 The above test case represents a simple scenario. Most scenarios will require multiple steps to validate. To do this, create multiple tests `=== TEST 1`, `=== TEST 2`, and so on. These tests will be executed sequentially, allowing you to break down scenarios into a sequence of atomic steps.
 
-Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.lua). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
+Additionally, there are some convenience testing endpoints which can be found [here](https://github.com/apache/apisix/blob/master/t/lib/server.lua#L36). For example, see [proxy-rewrite](https://github.com/apache/apisix/blob/master/t/plugin/proxy-rewrite.t). In test 42, the upstream `uri` is made to redirect `/test?new_uri=hello` to `/hello` (which always returns `hello world`). In test 43, the response body is confirmed to equal `hello world`, meaning the proxy-rewrite configuration added with test 42 worked correctly.
 
 Refer the following [document](building-apisix.md) to setup the testing framework.
 

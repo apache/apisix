@@ -27,17 +27,19 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
-local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
+local consumer_group  = require("apisix.consumer_group")
 local script          = require("apisix.script")
 local service_fetch   = require("apisix.http.service").get
 local admin_init      = require("apisix.admin.init")
 local get_var         = require("resty.ngxvar").fetch
 local router          = require("apisix.router")
 local apisix_upstream = require("apisix.upstream")
+local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
+local apisix_global_rules    = require("apisix.global_rules")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
@@ -55,7 +57,9 @@ local re_split        = require("ngx.re").split
 local str_byte        = string.byte
 local str_sub         = string.sub
 local tonumber        = tonumber
+local type            = type
 local pairs           = pairs
+local ngx_re_match    = ngx.re.match
 local control_api_router
 
 local is_http = false
@@ -73,6 +77,7 @@ local load_balancer
 local local_conf
 local ver_header = "APISIX/" .. core.version.VERSION
 
+local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 local _M = {version = 0.4}
 
@@ -80,6 +85,7 @@ local _M = {version = 0.4}
 function _M.http_init(args)
     core.resolver.init_resolver(args)
     core.id.init()
+    core.env.init()
 
     local process = require("ngx.process")
     local ok, err = process.enable_privileged_agent()
@@ -95,7 +101,6 @@ function _M.http_init(args)
     end
 
     xrpc.init()
-    conf_server.init()
 end
 
 
@@ -108,6 +113,13 @@ function _M.http_init_worker()
     math.randomseed(seed)
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
+
+    -- Because go's scheduler doesn't work after fork, we have to load the gRPC module
+    -- in each worker.
+    core.grpc = require("apisix.core.grpc")
+    if type(core.grpc) ~= "table" then
+        core.grpc = nil
+    end
 
     local we = require("resty.worker.events")
     local ok, err = we.configure({shm = "worker-events", interval = 0.1})
@@ -139,6 +151,10 @@ function _M.http_init_worker()
     require("apisix.http.service").init_worker()
     plugin_config.init_worker()
     require("apisix.consumer").init_worker()
+    consumer_group.init_worker()
+    apisix_secret.init_worker()
+
+    apisix_global_rules.init_worker()
 
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
@@ -152,17 +168,41 @@ end
 
 
 function _M.http_exit_worker()
+    -- TODO: we can support stream plugin later - currently there is not `destroy` method
+    -- in stream plugins
+    plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
 end
 
 
 function _M.http_ssl_phase()
+    local ok, err = router.router_ssl.set(ngx.ctx.matched_ssl)
+    if not ok then
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+        end
+        ngx_exit(-1)
+    end
+end
+
+
+function _M.http_ssl_client_hello_phase()
+    local sni, err = apisix_ssl.server_name(true)
+    if not sni or type(sni) ~= "string" then
+        local advise = "please check if the client requests via IP or uses an outdated " ..
+        "protocol. If you need to report an issue, " ..
+        "provide a packet capture file of the TLS handshake."
+        core.log.error("failed to find SNI: " .. (err or advise))
+        ngx_exit(-1)
+    end
+
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    local ok, err = router.router_ssl.match_and_set(api_ctx)
+    local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
+    ngx_ctx.matched_ssl = api_ctx.matched_ssl
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
 
@@ -170,8 +210,31 @@ function _M.http_ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        core.log.error("failed to match any SSL certificate by SNI: ", sni)
         ngx_exit(-1)
     end
+
+    ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
+    if not ok then
+        core.log.error("failed to set ssl protocols: ", err)
+        ngx_exit(-1)
+    end
+end
+
+
+local function stash_ngx_ctx()
+    local ref = ctxdump.stash_ngx_ctx()
+    core.log.info("stash ngx ctx: ", ref)
+    ngx_var.ctx_ref = ref
+end
+
+
+local function fetch_ctx()
+    local ref = ngx_var.ctx_ref
+    core.log.info("fetch ngx ctx: ", ref)
+    local ctx = ctxdump.apply_ngx_ctx(ref)
+    ngx_var.ctx_ref = ''
+    return ctx
 end
 
 
@@ -191,9 +254,15 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    -- Here we copy the whole route instead of part of it,
-    -- so that we can avoid going back from route.value to route during copying.
-    route.dns_value = core.table.deepcopy(route).value
+    local parent = route.value.upstream.parent
+    if parent then
+        route.value.upstream.parent = nil
+    end
+    route.dns_value = core.table.deepcopy(route.value)
+    if parent then
+        route.value.upstream.parent = parent
+        route.dns_value.upstream.parent = parent
+    end
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -229,6 +298,16 @@ local function set_upstream_headers(api_ctx, picked_server)
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
     end
+
+    local x_forwarded_host = api_ctx.var.http_x_forwarded_host
+    if x_forwarded_host then
+        api_ctx.var.var_x_forwarded_host = x_forwarded_host
+    end
+
+    local port = api_ctx.var.http_x_forwarded_port
+    if port then
+        api_ctx.var.var_x_forwarded_port = port
+    end
 end
 
 
@@ -254,6 +333,77 @@ local function verify_tls_client(ctx)
                 core.log.error("client certificate verification is not passed: ", res)
             end
 
+            return false
+        end
+    end
+
+    return true
+end
+
+
+local function uri_matches_skip_mtls_route_patterns(ssl, uri)
+    for _, pat in ipairs(ssl.value.client.skip_mtls_uri_regex) do
+        if ngx_re_match(uri, pat,  "jo") then
+            return true
+        end
+    end
+end
+
+
+local function verify_https_client(ctx)
+    local scheme = ctx.var.scheme
+    if scheme ~= "https" then
+        return true
+    end
+
+    local matched_ssl = ngx.ctx.matched_ssl
+    if matched_ssl.value.client
+        and matched_ssl.value.client.skip_mtls_uri_regex
+        and apisix_ssl.support_client_verification()
+        and (not uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)) then
+        local res = ctx.var.ssl_client_verify
+        if res ~= "SUCCESS" then
+            if res == "NONE" then
+                core.log.error("client certificate was not present")
+            else
+                core.log.error("client certificate verification is not passed: ", res)
+            end
+
+            return false
+        end
+    end
+
+    local host = ctx.var.host
+    local matched = router.router_ssl.match_and_set(ctx, true, host)
+    if not matched then
+        return true
+    end
+
+    local matched_ssl = ctx.matched_ssl
+    if matched_ssl.value.client and apisix_ssl.support_client_verification() then
+        local verified = apisix_base_flags.client_cert_verified_in_handshake
+        if not verified then
+            -- vanilla OpenResty requires to check the verification result
+            local res = ctx.var.ssl_client_verify
+            if res ~= "SUCCESS" then
+                if res == "NONE" then
+                    core.log.error("client certificate was not present")
+                else
+                    core.log.error("client certificate verification is not passed: ", res)
+                end
+
+                return false
+            end
+        end
+
+        local sni = apisix_ssl.server_name()
+        if sni ~= host then
+            -- There is a case that the user configures a SSL object with `*.domain`,
+            -- and the client accesses with SNI `a.domain` but uses Host `b.domain`.
+            -- This case is complex and we choose to restrict the access until there
+            -- is a stronge demand in real world.
+            core.log.error("client certificate verified with SNI ", sni,
+                           ", but the host is ", host)
             return false
         end
     end
@@ -317,141 +467,8 @@ local function common_phase(phase_name)
 end
 
 
-function _M.http_access_phase()
-    local ngx_ctx = ngx.ctx
 
-    -- always fetch table from the table pool, we don't need a reused api_ctx
-    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-    ngx_ctx.api_ctx = api_ctx
-
-    if not verify_tls_client(api_ctx) then
-        return core.response.exit(400)
-    end
-
-    core.ctx.set_vars_meta(api_ctx)
-
-    debug.dynamic_debug(api_ctx)
-
-    local uri = api_ctx.var.uri
-    if local_conf.apisix then
-        if local_conf.apisix.delete_uri_tail_slash then
-            if str_byte(uri, #uri) == str_byte("/") then
-                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
-                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
-            end
-        end
-
-        if local_conf.apisix.normalize_uri_like_servlet then
-            local new_uri, err = normalize_uri_like_servlet(uri)
-            if not new_uri then
-                core.log.error("failed to normalize: ", err)
-                return core.response.exit(400)
-            end
-
-            api_ctx.var.uri = new_uri
-            -- forward the original uri so the servlet upstream
-            -- can consume the param after ';'
-            api_ctx.var.upstream_uri = uri
-        end
-    end
-
-    -- To prevent being hacked by untrusted request_uri, here we
-    -- record the normalized but not rewritten uri as request_uri,
-    -- the original request_uri can be accessed via var.real_request_uri
-    api_ctx.var.real_request_uri = api_ctx.var.request_uri
-    api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
-
-    router.router_http.match(api_ctx)
-
-    local route = api_ctx.matched_route
-    if not route then
-        -- run global rule when there is no matching route
-        plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
-        core.log.info("not find any matched route")
-        return core.response.exit(404,
-                    {error_msg = "404 Route Not Found"})
-    end
-
-    core.log.info("matched route: ",
-                  core.json.delay_encode(api_ctx.matched_route, true))
-
-    local enable_websocket = route.value.enable_websocket
-
-    if route.value.plugin_config_id then
-        local conf = plugin_config.get(route.value.plugin_config_id)
-        if not conf then
-            core.log.error("failed to fetch plugin config by ",
-                            "id: ", route.value.plugin_config_id)
-            return core.response.exit(503)
-        end
-
-        route = plugin_config.merge(route, conf)
-    end
-
-    if route.value.service_id then
-        local service = service_fetch(route.value.service_id)
-        if not service then
-            core.log.error("failed to fetch service configuration by ",
-                           "id: ", route.value.service_id)
-            return core.response.exit(404)
-        end
-
-        route = plugin.merge_service_route(service, route)
-        api_ctx.matched_route = route
-        api_ctx.conf_type = "route&service"
-        api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
-        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
-        api_ctx.service_id = service.value.id
-        api_ctx.service_name = service.value.name
-
-        if enable_websocket == nil then
-            enable_websocket = service.value.enable_websocket
-        end
-
-    else
-        api_ctx.conf_type = "route"
-        api_ctx.conf_version = route.modifiedIndex
-        api_ctx.conf_id = route.value.id
-    end
-    api_ctx.route_id = route.value.id
-    api_ctx.route_name = route.value.name
-
-    -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, nil)
-
-    if route.value.script then
-        script.load(route, api_ctx)
-        script.run("access", api_ctx)
-
-    else
-        local plugins = plugin.filter(api_ctx, route)
-        api_ctx.plugins = plugins
-
-        plugin.run_plugin("rewrite", plugins, api_ctx)
-        if api_ctx.consumer then
-            local changed
-            route, changed = plugin.merge_consumer_route(
-                route,
-                api_ctx.consumer,
-                api_ctx
-            )
-
-            core.log.info("find consumer ", api_ctx.consumer.username,
-                          ", config changed: ", changed)
-
-            if changed then
-                api_ctx.matched_route = route
-                core.table.clear(api_ctx.plugins)
-                local phase = "rewrite_in_consumer"
-                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
-                -- rerun rewrite phase for newly added plugins in consumer
-                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
-            end
-        end
-        plugin.run_plugin("access", plugins, api_ctx)
-    end
-
+function _M.handle_upstream(api_ctx, route, enable_websocket)
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
@@ -520,10 +537,6 @@ function _M.http_access_phase()
         core.log.info("enabled websocket for route: ", route.value.id)
     end
 
-    if route.value.service_protocol == "grpc" then
-        api_ctx.upstream_scheme = "grpc"
-    end
-
     -- load balancer is not required by kafka upstream, so the upstream
     -- node selection process is intercepted and left to kafka to
     -- handle on its own
@@ -550,27 +563,169 @@ function _M.http_access_phase()
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
 
-    local ref = ctxdump.stash_ngx_ctx()
-    core.log.info("stash ngx ctx: ", ref)
-    ngx_var.ctx_ref = ref
-
     local up_scheme = api_ctx.upstream_scheme
     if up_scheme == "grpcs" or up_scheme == "grpc" then
+        stash_ngx_ctx()
         return ngx.exec("@grpc_pass")
     end
 
     if api_ctx.dubbo_proxy_enabled then
+        stash_ngx_ctx()
         return ngx.exec("@dubbo_pass")
     end
 end
 
 
-local function fetch_ctx()
-    local ref = ngx_var.ctx_ref
-    core.log.info("fetch ngx ctx: ", ref)
-    local ctx = ctxdump.apply_ngx_ctx(ref)
-    ngx_var.ctx_ref = ''
-    return ctx
+function _M.http_access_phase()
+    local ngx_ctx = ngx.ctx
+
+    -- always fetch table from the table pool, we don't need a reused api_ctx
+    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
+    ngx_ctx.api_ctx = api_ctx
+
+    core.ctx.set_vars_meta(api_ctx)
+
+    if not verify_https_client(api_ctx) then
+        return core.response.exit(400)
+    end
+
+    debug.dynamic_debug(api_ctx)
+
+    local uri = api_ctx.var.uri
+    if local_conf.apisix then
+        if local_conf.apisix.delete_uri_tail_slash then
+            if str_byte(uri, #uri) == str_byte("/") then
+                api_ctx.var.uri = str_sub(api_ctx.var.uri, 1, #uri - 1)
+                core.log.info("remove the end of uri '/', current uri: ", api_ctx.var.uri)
+            end
+        end
+
+        if local_conf.apisix.normalize_uri_like_servlet then
+            local new_uri, err = normalize_uri_like_servlet(uri)
+            if not new_uri then
+                core.log.error("failed to normalize: ", err)
+                return core.response.exit(400)
+            end
+
+            api_ctx.var.uri = new_uri
+            -- forward the original uri so the servlet upstream
+            -- can consume the param after ';'
+            api_ctx.var.upstream_uri = uri
+        end
+    end
+
+    -- To prevent being hacked by untrusted request_uri, here we
+    -- record the normalized but not rewritten uri as request_uri,
+    -- the original request_uri can be accessed via var.real_request_uri
+    api_ctx.var.real_request_uri = api_ctx.var.request_uri
+    api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
+
+    router.router_http.match(api_ctx)
+
+    local route = api_ctx.matched_route
+    if not route then
+        -- run global rule when there is no matching route
+        local global_rules = apisix_global_rules.global_rules()
+        plugin.run_global_rules(api_ctx, global_rules, nil)
+
+        core.log.info("not find any matched route")
+        return core.response.exit(404,
+                    {error_msg = "404 Route Not Found"})
+    end
+
+    core.log.info("matched route: ",
+                  core.json.delay_encode(api_ctx.matched_route, true))
+
+    local enable_websocket = route.value.enable_websocket
+
+    if route.value.plugin_config_id then
+        local conf = plugin_config.get(route.value.plugin_config_id)
+        if not conf then
+            core.log.error("failed to fetch plugin config by ",
+                            "id: ", route.value.plugin_config_id)
+            return core.response.exit(503)
+        end
+
+        route = plugin_config.merge(route, conf)
+    end
+
+    if route.value.service_id then
+        local service = service_fetch(route.value.service_id)
+        if not service then
+            core.log.error("failed to fetch service configuration by ",
+                           "id: ", route.value.service_id)
+            return core.response.exit(404)
+        end
+
+        route = plugin.merge_service_route(service, route)
+        api_ctx.matched_route = route
+        api_ctx.conf_type = "route&service"
+        api_ctx.conf_version = route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = route.value.id .. "&" .. service.value.id
+        api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
+
+        if enable_websocket == nil then
+            enable_websocket = service.value.enable_websocket
+        end
+
+    else
+        api_ctx.conf_type = "route"
+        api_ctx.conf_version = route.modifiedIndex
+        api_ctx.conf_id = route.value.id
+    end
+    api_ctx.route_id = route.value.id
+    api_ctx.route_name = route.value.name
+
+    -- run global rule
+    local global_rules = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, nil)
+
+    if route.value.script then
+        script.load(route, api_ctx)
+        script.run("access", api_ctx)
+
+    else
+        local plugins = plugin.filter(api_ctx, route)
+        api_ctx.plugins = plugins
+
+        plugin.run_plugin("rewrite", plugins, api_ctx)
+        if api_ctx.consumer then
+            local changed
+            local group_conf
+
+            if api_ctx.consumer.group_id then
+                group_conf = consumer_group.get(api_ctx.consumer.group_id)
+                if not group_conf then
+                    core.log.error("failed to fetch consumer group config by ",
+                        "id: ", api_ctx.consumer.group_id)
+                    return core.response.exit(503)
+                end
+            end
+
+            route, changed = plugin.merge_consumer_route(
+                route,
+                api_ctx.consumer,
+                group_conf,
+                api_ctx
+            )
+
+            core.log.info("find consumer ", api_ctx.consumer.username,
+                          ", config changed: ", changed)
+
+            if changed then
+                api_ctx.matched_route = route
+                core.table.clear(api_ctx.plugins)
+                local phase = "rewrite_in_consumer"
+                api_ctx.plugins = plugin.filter(api_ctx, route, api_ctx.plugins, nil, phase)
+                -- rerun rewrite phase for newly added plugins in consumer
+                plugin.run_plugin(phase, api_ctx.plugins, api_ctx)
+            end
+        end
+        plugin.run_plugin("access", plugins, api_ctx)
+    end
+
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
@@ -591,6 +746,10 @@ function _M.grpc_access_phase()
     if code then
         core.log.error("failed to set grpcs upstream param: ", err)
         core.response.exit(code)
+    end
+
+    if api_ctx.enable_mirror == true and has_mod then
+        apisix_ngx_client.enable_mirror()
     end
 end
 
@@ -621,16 +780,6 @@ end
 
 
 function _M.http_header_filter_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     core.response.set_header("Server", ver_header)
 
     local up_status = get_var("upstream_status")
@@ -716,16 +865,6 @@ end
 
 
 function _M.http_log_phase()
-    if ngx_var.ctx_ref ~= '' then
-        -- prevent for the table leak
-        local stash_ctx = fetch_ctx()
-
-        -- internal redirect, so we should apply the ctx
-        if ngx_var.from_error_page == "true" then
-            ngx.ctx = stash_ctx
-        end
-    end
-
     local api_ctx = common_phase("log")
     if not api_ctx then
         return
@@ -763,7 +902,7 @@ end
 
 local function cors_admin()
     local_conf = core.config.local_conf()
-    if local_conf.apisix and not local_conf.apisix.enable_admin_cors then
+    if not core.table.try_read_attr(local_conf, "deployment", "admin", "enable_admin_cors") then
         return
     end
 
@@ -869,13 +1008,28 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    if core.config.init_worker then
+        local ok, err = core.config.init_worker()
+        if not ok then
+            core.log.error("failed to init worker process of ", core.config.type,
+                           " config center, err: ", err)
+        end
+    end
+
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
+    require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
 
-    if core.config == require("apisix.core.config_yaml") then
-        core.config.init_worker()
+    local we = require("resty.worker.events")
+    local ok, err = we.configure({shm = "worker-events-stream", interval = 0.1})
+    if not ok then
+        error("failed to init worker event: " .. err)
+    end
+    local discovery = require("apisix.discovery.init").discovery
+    if discovery and discovery.init_worker then
+        discovery.init_worker()
     end
 
     load_balancer = require("apisix.balancer")
@@ -923,6 +1077,34 @@ function _M.stream_preread_phase()
 
         api_ctx.matched_upstream = upstream
 
+    elseif matched_route.value.service_id then
+        local service = service_fetch(matched_route.value.service_id)
+        if not service then
+            core.log.error("failed to fetch service configuration by ",
+                    "id: ", matched_route.value.service_id)
+            return core.response.exit(404)
+        end
+
+        matched_route = plugin.merge_service_stream_route(service, matched_route)
+        api_ctx.matched_route = matched_route
+        api_ctx.conf_type = "stream_route&service"
+        api_ctx.conf_version = matched_route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = matched_route.value.id .. "&" .. service.value.id
+        api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
+        api_ctx.matched_upstream = matched_route.value.upstream
+        if matched_route.value.upstream_id and not matched_route.value.upstream then
+            local upstream = apisix_upstream.get_by_id(matched_route.value.upstream_id)
+            if not upstream then
+                if is_http then
+                    return core.response.exit(502)
+                end
+
+                return ngx_exit(1)
+            end
+
+            api_ctx.matched_upstream = upstream
+        end
     else
         if matched_route.has_domain then
             local err

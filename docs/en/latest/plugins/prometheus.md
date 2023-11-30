@@ -1,7 +1,7 @@
 ---
 title: prometheus
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Prometheus
@@ -75,6 +75,26 @@ plugin_attr:
             extra_labels:
                 - upstream_addr: $upstream_addr
                 - upstream_status: $upstream_status
+```
+
+### Specifying `default_buckets`
+
+`DEFAULT_BUCKETS` is the default value for bucket array in `http_latency` metrics.
+
+You can change the `DEFAULT_BUCKETS` by configuring `default_buckets` attribute in you configuration file.
+
+Here is a configuration example:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    default_buckets:
+      - 15
+      - 55
+      - 105
+      - 205
+      - 505
+```
 
 ## API
 
@@ -102,14 +122,23 @@ plugin_attr:
 
 You can then expose it by using the [public-api](public-api.md) Plugin.
 
-## Enabling the Plugin
+:::info IMPORTANT
+
+If the Prometheus plugin collects too many metrics, it will take CPU resources to calculate the metric data when getting the metrics via URI, which may affect APISIX to process normal requests. To solve this problem, APISIX exposes the URI and calculates the metrics in the [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent).
+If the URI is exposed using the public-api plugin, then APISIX will calculate the metric data in a normal worker process, which may still affect APISIX processing of normal requests.
+
+This feature requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment).
+
+:::
+
+## Enable Plugin
 
 The `prometheus` Plugin can be enabled with an empty table.
 
 The example below shows how you can configure the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -226,6 +255,16 @@ The following metrics are exported by the `prometheus` Plugin:
 - Info: Information about the APISIX node.
 - Shared dict: The capacity and free space of all nginx.shared.DICT in APISIX.
 
+- `apisix_upstream_status`: Health check result status of upstream nodes. A value of `1` represents healthy and `0` represents unhealthy.
+
+  The available attributes are:
+
+  | Name         | Description                                                                                                                   |
+  |--------------|-------------------------------------------------------------------------------------------------------------------------------|
+  | name         | resource id where the upstream node is attached to, e.g. `/apisix/routes/1`, `/apisix/upstreams/1`.                                                                            |
+  | ip        | ip address of the node.                          |
+  | port  | port number of the node.                               |
+
 Here are the original metrics from APISIX:
 
 ```shell
@@ -314,14 +353,18 @@ apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
 apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
 apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
 ...
+# HELP apisix_upstream_status Upstream status from health check
+# TYPE apisix_upstream_status gauge
+apisix_upstream_status{name="/apisix/routes/1",ip="100.24.156.8",port="80"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="52.86.68.46",port="80"} 1
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `prometheus` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `prometheus` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},
@@ -355,7 +398,7 @@ stream_plugins:
 Then you need to configure the `prometheus` plugin on the stream route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
         "prometheus":{}

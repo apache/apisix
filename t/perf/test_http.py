@@ -37,8 +37,14 @@ def create_conf():
     with open("./conf/config-perf.yaml", "w") as f:
         conf = {
             "apisix": {
-                "config_center": "yaml",
                 "enable_admin": False,
+            },
+            "deployment": {
+                "role": "data_plane",
+                "role_data_plane": {
+                    "config_provider": "yaml",
+                }
+
             },
             "nginx_config": {
                 "worker_processes": 2

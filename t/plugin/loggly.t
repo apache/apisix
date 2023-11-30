@@ -75,10 +75,6 @@ _EOC_
 
     $block->set_value("http_config", $http_config);
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -673,3 +669,73 @@ service temporarily unavailable
 qr/message received: [ -~]+/
 --- grep_error_log_out eval
 qr/message received: <11>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"route_id":"1"\}/
+
+
+
+=== TEST 16: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/loggly',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "host":"127.0.0.1",
+                        "port": 8126,
+                        "log_format":{
+                            "client":"$remote_addr"
+                        }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "loggly": {
+                                "customer_token" : "tok",
+                                "log_format":{
+                                    "host":"$host",
+                                    "client":"$remote_addr"
+                                },
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: hit
+--- request
+GET /opentracing?foo=bar
+--- response_body
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: [ -~]+/
+--- grep_error_log_out eval
+qr/message received: <14>1 [\d\-T:.]+Z \w+ apisix [\d]+ - \[tok\@41058 tag="apisix"] \{"client":"[\d.]+","host":"\w+","route_id":"1"\}/

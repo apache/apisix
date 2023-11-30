@@ -1,7 +1,7 @@
 ---
 title: Plugin Config
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Plugin Config
 description: Plugin Config in Apache APISIX.
@@ -26,12 +26,19 @@ description: Plugin Config in Apache APISIX.
 #
 -->
 
+## Description
+
 Plugin Configs are used to extract commonly used [Plugin](./plugin.md) configurations and can be bound directly to a [Route](./route.md).
+
+While configuring the same plugin, only one copy of the configuration is valid. Please read the [plugin execution order](../terminology/plugin.md#plugins-execution-order) and [plugin merging order](../terminology/plugin.md#plugins-merging-precedence).
+
+## Example
 
 The example below illustrates how to create a Plugin Config and bind it to a Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "desc": "blah",
     "plugins": {
@@ -45,7 +52,8 @@ curl http://127.0.0.1:9080/apisix/admin/plugin_configs/1 -H 'X-API-KEY: edd1c9f0
 ```
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY:edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -58,13 +66,21 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-When APISIX can't find the Plugin Config with the `id`, the requests reaching this Route are terminated with a status code of 503.
+When APISIX can't find the Plugin Config with the `id`, the requests reaching this Route are terminated with a status code of `503`.
 
-If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it. The same plugin in the Plugin Config will not override the ones configured directly in the Route.
+:::note
 
-For example, if we configure a Plugin Config as shown below
+If a Route already has the `plugins` field configured, the plugins in the Plugin Config will effectively be merged to it.
 
-```
+The same plugin in the Plugin Config will not override the ones configured directly in the Route. For more information, see [Plugin](./plugin.md).
+
+:::
+
+For example, if you configure a Plugin Config as shown below:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
+ -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "desc": "I am plugin_config 1",
     "plugins": {
@@ -80,12 +96,14 @@ For example, if we configure a Plugin Config as shown below
             "rejected_code": 503
         }
     }
-}
+}'
 ```
 
 to a Route as shown below,
 
-```
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -98,7 +116,6 @@ to a Route as shown below,
     "plugins": {
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
@@ -108,12 +125,14 @@ to a Route as shown below,
             "key": "remote_addr"
         }
     }
-}
+}'
 ```
 
 the effective configuration will be as the one shown below:
 
-```
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "upstream": {
@@ -131,7 +150,6 @@ the effective configuration will be as the one shown below:
         },
         "proxy-rewrite": {
             "uri": "/test/add",
-            "scheme": "https",
             "host": "apisix.iresty.com"
         },
         "limit-count": {
@@ -140,5 +158,5 @@ the effective configuration will be as the one shown below:
             "rejected_code": 503
         }
     }
-}
+}'
 ```

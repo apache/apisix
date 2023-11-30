@@ -1,7 +1,8 @@
 ---
 title: redirect
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Redirect
 description: This document contains information about the Apache APISIX redirect Plugin.
@@ -32,14 +33,14 @@ The `redirect` Plugin can be used to configure redirects.
 
 ## Attributes
 
-| Name                | Type          | Required | Default | Valid values | Description                                                                                                                                                                                                                                                                                                                                                                        |
-|---------------------|---------------|----------|---------|--------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| http_to_https       | boolean       | False    | false   |              | When set to `true` and the request is HTTP, it will be redirected to HTTPS with the same URI with a 301 status code.  Note the querystring from the raw URI will also be contained in the Location header.                                                                                                                                                                                                                                                               |
-| uri                 | string        | False    |         |              | URI to redirect to. Can contain Nginx variables. For example, `/test/index.html`, `$uri/index.html`, `${uri}/index.html`. If you refer to a variable name that doesn't exist, instead of throwing an error, it will treat it as an empty variable.                                                                                                                                 |
-| regex_uri           | array[string] | False    |         |              | Match the URL from client with a regular expression and redirect. If it doesn't match, the request will be forwarded to the Upstream. Only either of `uri` or `regex_uri` can be used at a time. For example, [" ^/iresty/(.*)/(.*)/(.*)", "/$1-$2-$3"], where the first element is the regular expression to match and the second element is the URI to redirect to.              |
-| ret_code            | integer       | False    | 302     | [200, ...]   | HTTP response code.                                                                                                                                                                                                                                                                                                                                                                |
-| encode_uri          | boolean       | False    | false   |              | When set to `true` the URI in the `Location` header will be encoded as per [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986).                                                                                                                                                                                                                                               |
-| append_query_string | boolean       | False    | false   |              | When set to `true`, adds the query string from the original request to the `Location` header. If the configured `uri` or `regex_uri` already contains a query string, the query string from the request will be appended to it with an `&`. Do not use this if you have already handled the query string (for example, with an Nginx variable `$request_uri`) to avoid duplicates. |
+| Name                | Type          | Required | Default | Valid values | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+|---------------------|---------------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| http_to_https       | boolean       | False    | false   |              | When set to `true` and the request is HTTP, it will be redirected to HTTPS with the same URI with a 301 status code.  Note the querystring from the raw URI will also be contained in the Location header.                                                                                                                                                                                                                                                          |
+| uri                 | string        | False    |         |              | URI to redirect to. Can contain Nginx variables. For example, `/test/index.html`, `$uri/index.html`, `${uri}/index.html`, `https://example.com/foo/bar`. If you refer to a variable name that doesn't exist, instead of throwing an error, it will treat it as an empty variable.                                                                                                                                                                                   |
+| regex_uri           | array[string] | False    |         |              | Match the URL from client with a regular expression and redirect. If it doesn't match, the request will be forwarded to the Upstream. Only either of `uri` or `regex_uri` can be used at a time. For example, [" ^/iresty/(.*)/(.*)/(.*)", "/$1-$2-$3"], where the first element is the regular expression to match and the second element is the URI to redirect to. APISIX only support one `regex_uri` currently, so the length of the `regex_uri` array is `2`. |
+| ret_code            | integer       | False    | 302     | [200, ...]   | HTTP response code.                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| encode_uri          | boolean       | False    | false   |              | When set to `true` the URI in the `Location` header will be encoded as per [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986).                                                                                                                                                                                                                                                                                                                                |
+| append_query_string | boolean       | False    | false   |              | When set to `true`, adds the query string from the original request to the `Location` header. If the configured `uri` or `regex_uri` already contains a query string, the query string from the request will be appended to it with an `&`. Do not use this if you have already handled the query string (for example, with an Nginx variable `$request_uri`) to avoid duplicates.                                                                                  |
 
 :::note
 
@@ -47,17 +48,17 @@ The `redirect` Plugin can be used to configure redirects.
 * Only one of `http_to_https` and `append_query_string` can be configured.
 * When enabling `http_to_https`, the ports in the redirect URL will pick a value in the following order (in descending order of priority)
   * Read `plugin_attr.redirect.https_port` from the configuration file (`conf/config.yaml`).
-  * If `apisix.ssl` is enabled, read `apisix.ssl.listen_port` first, and if it does not exist, read `apisix.ssl.listen` and select a port randomly from it.
+  * If `apisix.ssl` is enabled, read `apisix.ssl.listen` and select a port randomly from it.
   * Use 443 as the default https port.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `redirect` Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {
@@ -78,7 +79,7 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 You can also use any built-in Nginx variables in the new URI:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test",
     "plugins": {
@@ -119,7 +120,7 @@ The response shows the response code and the `Location` header implying that the
 The example below shows how you can redirect HTTP to HTTPS:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -143,12 +144,12 @@ Location: https://127.0.0.1:9443/hello
 ...
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `redirect` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `redirect` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "uri": "/test/index.html",
     "plugins": {},

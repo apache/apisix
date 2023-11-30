@@ -41,6 +41,7 @@ fi
 
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100
@@ -62,6 +63,7 @@ echo "pass: dns_resolver_valid takes effect"
 
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100
@@ -123,3 +125,51 @@ if grep "fe80::21c:42ff:fe00:18%eth0" conf/nginx.conf > /dev/null; then
 fi
 
 echo "passed: check dns resolver"
+
+# dns resolver in stream subsystem
+rm logs/error.log || true
+
+echo "
+apisix:
+    enable_admin: true
+    proxy_mode: http&stream
+    stream_proxy:
+        tcp:
+            - addr: 9100
+    dns_resolver:
+        - 127.0.0.1:1053
+nginx_config:
+    error_log_level: info
+" > conf/config.yaml
+
+make run
+sleep 0.5
+
+curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
+    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -d '{
+        "upstream": {
+            "type": "roundrobin",
+            "nodes": [{
+                "host": "sd.test.local",
+                "port": 1995,
+                "weight": 1
+            }]
+        }
+    }'
+
+curl http://127.0.0.1:9100 || true
+make stop
+sleep 0.1 # wait for logs output
+
+if grep -E 'dns client error: 101 empty record received while prereading client data' logs/error.log; then
+    echo "failed: resolve upstream host in stream subsystem should works fine"
+    exit 1
+fi
+
+if ! grep -E 'dns resolver domain: sd.test.local to 127.0.0.(1|2) while prereading client data' logs/error.log; then
+    echo "failed: resolve upstream host in preread phase should works fine"
+    exit 1
+fi
+
+echo "success: resolve upstream host in stream subsystem works fine"

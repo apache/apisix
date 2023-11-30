@@ -47,7 +47,7 @@ routes:
     upstream:
       scheme: grpc
       nodes:
-        "127.0.0.1:50051": 1
+        "127.0.0.1:10051": 1
       type: roundrobin
 #END
 --- exec
@@ -70,10 +70,10 @@ routes:
     methods: [
         POST
     ]
-    service_protocol: grpc
     upstream:
+      scheme: grpc
       nodes:
-        "127.0.0.1:50051": 1
+        "127.0.0.1:10051": 1
       type: roundrobin
 #END
 --- exec
@@ -99,7 +99,7 @@ routes:
     upstream:
       scheme: grpcs
       nodes:
-        "127.0.0.1:50052": 1
+        "127.0.0.1:10052": 1
       type: roundrobin
 #END
 --- exec
@@ -131,7 +131,7 @@ routes:
     upstream:
       scheme: grpc
       nodes:
-        "127.0.0.1:50051": 1
+        "127.0.0.1:10051": 1
       type: roundrobin
 #END
 --- exec

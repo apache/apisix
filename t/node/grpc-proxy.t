@@ -31,8 +31,10 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
-    config_center: yaml
-    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
@@ -94,6 +96,8 @@ routes:
 --- more_headers
 apikey: user-key
 --- error_code: 502
+--- error_log
+Connection refused
 
 
 
@@ -102,13 +106,13 @@ apikey: user-key
 upstreams:
     - id: 1
       type: roundrobin
+      scheme: grpc
       nodes:
         "127.0.0.1:9088": 1
 routes:
     - id: 1
       methods:
           - POST
-      service_protocol: grpc
       uri: "/hello"
       upstream_id: 1
 #END
@@ -130,7 +134,6 @@ routes:
     - id: 1
       methods:
           - POST
-      service_protocol: grpc
       uri: "/hello"
       plugins:
           key-auth:
@@ -139,12 +142,15 @@ routes:
                   - jack
       upstream:
           type: roundrobin
+          scheme: grpc
           nodes:
               "127.0.0.1:9088": 1
 #END
 --- more_headers
 apikey: user-key
 --- error_code: 502
+--- error_log
+Connection refused
 
 
 
@@ -183,3 +189,99 @@ GET /hello
 --- error_code: 502
 --- error_log
 upstream: "grpc://127.0.0.1:80"
+
+
+
+=== TEST 7: set authority header
+--- log_level: debug
+--- http2
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uris:
+        - /helloworld.Greeter/SayHello
+    methods: [
+        POST
+    ]
+    upstream:
+      scheme: grpc
+      nodes:
+        "127.0.0.1:10051": 1
+      type: roundrobin
+#END
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHello
+--- response_body
+{
+  "message": "Hello apisix"
+}
+--- grep_error_log eval
+qr/grpc header: "(:authority|host): [^"]+"/
+--- grep_error_log_out eval
+qr/grpc header: "(:authority|host): 127.0.0.1:1984"/
+
+
+
+=== TEST 8: set authority header to node header
+--- log_level: debug
+--- http2
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uris:
+        - /helloworld.Greeter/SayHello
+    methods: [
+        POST
+    ]
+    upstream:
+      scheme: grpc
+      pass_host: node
+      nodes:
+        "127.0.0.1:10051": 1
+      type: roundrobin
+#END
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHello
+--- response_body
+{
+  "message": "Hello apisix"
+}
+--- grep_error_log eval
+qr/grpc header: "(:authority|host): [^"]+"/
+--- grep_error_log_out eval
+qr/grpc header: "(:authority|host): 127.0.0.1:10051"/
+
+
+
+=== TEST 9: set authority header to specific value
+--- log_level: debug
+--- http2
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uris:
+        - /helloworld.Greeter/SayHello
+    methods: [
+        POST
+    ]
+    upstream:
+      scheme: grpc
+      pass_host: rewrite
+      upstream_host: hello.world
+      nodes:
+        "127.0.0.1:10051": 1
+      type: roundrobin
+#END
+--- exec
+grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plaintext -d '{"name":"apisix"}' 127.0.0.1:1984 helloworld.Greeter.SayHello
+--- response_body
+{
+  "message": "Hello apisix"
+}
+--- grep_error_log eval
+qr/grpc header: "(:authority|host): [^"]+"/
+--- grep_error_log_out eval
+qr/grpc header: "(:authority|host): hello.world"/

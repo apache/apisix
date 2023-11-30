@@ -1,7 +1,8 @@
 ---
 title: Apache Kafka
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - PubSub
   - Kafka
 description: This document contains information about the Apache APISIX kafka pubsub scenario.
@@ -74,7 +75,7 @@ Possible response body: When an error occurs, `ErrorResp` will be returned, whic
 Create a route, set the upstream `scheme` field to `kafka`, and configure `nodes` to be the address of the Kafka broker.
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/kafka' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
@@ -98,7 +99,7 @@ After configuring the route, you can use this feature.
 Simply turn on the `kafka-proxy` plugin on the created route and enable the Kafka TLS handshake and SASL authentication through the configuration, which can be found in the [plugin documentation](../../../en/latest/plugins/kafka-proxy.md).
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9080/apisix/admin/routes/kafka' \
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/kafka' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{

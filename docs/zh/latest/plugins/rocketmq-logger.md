@@ -1,5 +1,11 @@
 ---
 title: rocketmq-logger
+keywords:
+  - APISIX
+  - API 网关
+  - Plugin
+  - RocketMQ
+description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志作为 JSON 对象推送到 Apache RocketMQ 集群中。
 ---
 
 <!--
@@ -23,37 +29,43 @@ title: rocketmq-logger
 
 ## 描述
 
-`rocketmq-logger` 插件可以将接口请求日志以 JSON 的形式推送给外部 rocketmq 集群。
-
-如果在短时间内没有收到日志数据，请放心，它会在我们的批处理处理器中的计时器功能到期后自动发送日志。
-
-有关 Apache APISIX 中 Batch-Processor 的更多信息，请参考。
-[Batch-Processor](../batch-processor.md)
+`rocketmq-logger` 插件可以将日志以 JSON 的形式推送给外部 RocketMQ 集群。
 
 ## 属性
 
-| 名称             | 类型    | 必选项 | 默认值         | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | -------------- | ------- | ------------------------------------------------ |
-| nameserver_list  | object  | 必须   |                |         | 要推送的 rocketmq 的 nameserver 列表。        |
-| topic            | string  | 必须   |                |         | 要推送的 topic 。                             |
-| key              | string  | 可选   |                |         | 发送消息的 keys 。                             |
-| tag              | string  | 可选   |                |         | 发送消息的 tags 。                             |
-| timeout          | integer | 可选   | 3              | [1,...] | 发送数据的超时时间。                          |
-| use_tls          | boolean | 可选   | false          |         | 是否开启 TLS 加密。                             |
-| access_key       | string  | 可选   | ""             |         | ACL 认证的 access key ，空字符串表示不开启 ACL 。     |
-| secret_key       | string  | 可选   | ""             |         | ACL 认证的 secret key 。                         |
-| name             | string  | 可选   | "rocketmq logger" |         | batch processor 的唯一标识。               |
-| meta_format      | enum    | 可选   | "default"      | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。[具体示例](#meta_format-参考示例)|
-| include_req_body | boolean | 可选   | false          | [false, true] | 是否包括请求 body 。false ： 表示不包含请求的 body ；true ： 表示包含请求的 body 。注意：如果请求 body 没办法完全放在内存中，由于 Nginx 的限制，我们没有办法把它记录下来。|
-| include_req_body_expr | array  | 可选    |           |         | 当 `include_req_body` 开启时，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 表达式的结果进行记录。如果该选项存在，只有在表达式为真的时候才会记录请求 body 。 |
-| include_resp_body| boolean | 可选   | false          | [false, true] | 是否包括响应体。包含响应体，当为 `true` 。 |
-| include_resp_body_expr | array  | 可选    |           |         | 是否采集响体，基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 该选项需要开启 `include_resp_body` |
+| 名称                   | 类型     | 必选项 | 默认值            | 有效值                 | 描述                                              |
+| ---------------------- | ------- | ------ | ----------------  | ------------- ------- | ------------------------------------------------ |
+| nameserver_list        | object  | 是     |                   |                       | RocketMQ 的 nameserver 列表。                     |
+| topic                  | string  | 是     |                   |                       | 要推送的 topic 名称。                             |
+| key                    | string  | 否     |                   |                       | 发送消息的 keys。                                 |
+| tag                    | string  | 否     |                   |                       | 发送消息的 tags。                                 |
+| log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| timeout                | integer | 否     | 3                 | [1,...]               | 发送数据的超时时间。                              |
+| use_tls                | boolean | 否     | false             |                       | 当设置为 `true` 时，开启 TLS 加密。               |
+| access_key             | string  | 否     | ""                |                       | ACL 认证的 Access key，空字符串表示不开启 ACL。    |
+| secret_key             | string  | 否     | ""                |                       | ACL 认证的 Secret key。                           |
+| name                   | string  | 否     | "rocketmq logger" |                       | Batch Processor 的唯一标识。               |
+| meta_format            | enum    | 否     | "default"         | ["default"，"origin"] | `default`：获取请求信息以默认的 JSON 编码方式。`origin`：获取请求信息以 HTTP 原始请求方式。更多信息，请参考 [meta_format](#meta_format-示例)。|
+| include_req_body       | boolean | 否     | false             | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
+| include_req_body_expr  | array   | 否     |                   |                       | 当 `include_req_body` 属性设置为 `true` 时进行过滤请求体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录请求体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
+| include_resp_body      | boolean | 否     | false             | [false, true]         | 当设置为 `true` 时，包含响应体。 |
+| include_resp_body_expr | array   | 否     |                   |                       | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 
-本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
+注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
-### meta_format 参考示例
+该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
-- **default**:
+:::tip 提示
+
+数据首先写入缓冲区。当缓冲区超过 `batch_max_size` 或 `buffer_duration` 设置的值时，则会将数据发送到 RocketMQ 服务器并刷新缓冲区。
+
+如果发送成功，则返回 `true`。如果出现错误，则返回 `nil`，并带有描述错误的字符串 `buffer overflow`。
+
+:::
+
+### meta_format 示例
+
+- default:
 
 ```json
     {
@@ -96,7 +108,7 @@ title: rocketmq-logger
     }
 ```
 
-- **origin**:
+- origin:
 
 ```http
     GET /hello?ab=cd HTTP/1.1
@@ -107,32 +119,46 @@ title: rocketmq-logger
     abcdef
 ```
 
-## 工作原理
+## 插件元数据设置
 
-消息将首先写入缓冲区。
-当缓冲区超过 `batch_max_size` 时，它将发送到 rocketmq 服务器，
-或每个 `buffer_duration` 刷新缓冲区。
+| 名称             | 类型    | 必选项 | 默认值        |  描述                                             |
+| ---------------- | ------- | ------ | ------------- |------------------------------------------------ |
+| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
-如果成功，则返回 `true` 。
-如果出现错误，则返回 `nil` ，并带有描述错误的字符串（`buffer overflow`）。
+:::note 注意
 
-### Nameserver 列表
+该设置全局生效。如果指定了 `log_format`，则所有绑定 `rocketmq-logger` 的路由或服务都将使用该日志格式。
 
-配置多个 nameserver 地址如下：
+:::
 
-```json
-[
-    "127.0.0.1:9876",
-    "127.0.0.2:9876"
-]
-```
-
-## 如何启用
-
-1. 为特定路由启用 rocketmq-logger 插件。
+以下示例展示了如何通过 Admin API 配置插件元数据：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "log_format": {
+        "host": "$host",
+        "@timestamp": "$time_iso8601",
+        "client_ip": "$remote_addr"
+    }
+}'
+```
+
+在日志收集处，将得到类似下面的日志：
+
+```shell
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
+```
+
+## 启用插件
+
+你可以通过如下命令在指定路由上启用 `rocketmq-logger` 插件：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "plugins": {
        "rocketmq-logger": {
@@ -150,49 +176,30 @@ curl http://127.0.0.1:9080/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
+该插件还支持一次推送到多个 `nameserver`，示例如下：
+
+```json
+[
+    "127.0.0.1:9876",
+    "127.0.0.2:9876"
+]
+```
+
 ## 测试插件
 
-成功
+你可以通过以下命令向 APISIX 发出请求：
 
 ```shell
-$ curl -i http://127.0.0.1:9080/hello
-HTTP/1.1 200 OK
-...
-hello, world
+curl -i http://127.0.0.1:9080/hello
 ```
 
-## 插件元数据设置
+## 删除插件
 
-| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
-| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。请注意，**该设置是全局生效的**，因此在指定 log_format 后，将对所有绑定 rocketmq-logger 的 Route 或 Service 生效。 |
-
-### 设置日志格式示例
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/plugin_metadata/rocketmq-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
-```
-
-在日志收集处，将得到类似下面的日志：
-
-```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-```
-
-## 禁用插件
-
-当您要禁用 `rocketmq-logger` 插件时，这很简单，您可以在插件配置中删除相应的 json 配置，无需重新启动服务，它将立即生效：
-
-```shell
-$ curl http://127.0.0.1:9080/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
