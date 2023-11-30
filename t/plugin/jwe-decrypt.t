@@ -123,7 +123,7 @@ passed
 
 
 
-=== TEST 5: enable jwt auth plugin using admin api
+=== TEST 5: enable jwe-decrypt plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
