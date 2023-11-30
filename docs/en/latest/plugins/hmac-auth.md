@@ -238,7 +238,7 @@ You can also refer to [Generating HMAC signatures](../examples/plugins-hmac-auth
 
 ### Validating request body
 
-When the `validate_request_body` attribute is set to `true`, the Plugin will calculate the HMAC-SHA value of the request body and checks it again the `X-HMAC-DIGEST` header:
+When the `validate_request_body` attribute is set to `true`, the Plugin will calculate the HMAC-SHA value of the request body and checks it against the `X-HMAC-DIGEST` header:
 
 ```
 X-HMAC-DIGEST: base64(hmac-sha(<body>))
