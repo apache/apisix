@@ -393,3 +393,81 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 18: create public API route (jwe-decrypt sign)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwe/encrypt"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 19: sign / verify in argument
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=hello',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            ngx.log(ngx.WARN, "dibag: ", token)
+
+            code, err, body = t('/hello',
+                ngx.HTTP_GET,
+                nil,
+                nil,
+                { Authorization = token }
+            )
+
+            ngx.print(body)
+        }
+    }
+--- response_body
+hello world
+
+
+
+=== TEST 20: verify (in header)
+--- request
+GET /hello
+--- more_headers
+Authorization: Bearer eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
+--- response_body
+hello world
+
+
+
+=== TEST 21: verify (in header without Bearer)
+--- request
+GET /hello
+--- more_headers
+Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
+--- response_body
+hello world
