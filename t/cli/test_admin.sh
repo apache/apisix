@@ -431,8 +431,8 @@ fi
 sleep 0.5
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; -o \
-   ! grep -E 'new plugins: {"node-status":true,"public-api":true}' logs/error.log; then
+if ! grep logs/error.log -E -e 'new plugins: {"public-api":true,"node-status":true}' \
+   -e 'new plugins: {"node-status":true,"public-api":true}'; then
     echo "failed: first time load http plugins list failed"
     exit 1
 fi
@@ -460,8 +460,8 @@ if [ ! $code -eq 200 ]; then
 fi
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; -o \
-   ! grep -E 'new plugins: {"node-status":true,"public-api":true}' logs/error.log; then
+if ! grep logs/error.log -E -e 'new plugins: {"public-api":true,"node-status":true}' \
+   -e 'new plugins: {"node-status":true,"public-api":true}'; then
     echo "failed: second time load http plugins list failed"
     exit 1
 fi
