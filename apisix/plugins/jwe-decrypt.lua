@@ -76,7 +76,7 @@ local function get_secret(conf)
     local secret = conf.secret
 
     if conf.is_base64_encoded then
-        return base64.decode_base64(secret)
+        return base64.decode_base64url(secret)
     end
 
     return secret
