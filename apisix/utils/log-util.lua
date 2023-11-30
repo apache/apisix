@@ -137,7 +137,9 @@ local function get_full_log(ngx, conf)
             method = ngx.req.get_method(),
             headers = ngx.req.get_headers(),
             querystring = ngx.req.get_uri_args(),
-            size = var.request_length
+            size = var.request_length,
+            http_version = ngx.req.http_version()
+
         },
         response = {
             status = ngx.status,
