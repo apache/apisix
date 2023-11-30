@@ -48,7 +48,7 @@ local consumer_schema = {
     properties = {
         key = { type = "string" },
         secret = { type = "string", minLength = 32 },
-         is_base64_encoded = { type = "boolean" },
+        is_base64_encoded = { type = "boolean" },
     },
     required = { "key", "secret" },
 }
@@ -75,7 +75,7 @@ end
 local function get_secret(conf)
     local secret = conf.secret
 
-    if conf. is_base64_encoded then
+    if conf.is_base64_encoded then
         return base64.decode_base64(secret)
     end
 

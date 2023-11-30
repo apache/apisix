@@ -350,7 +350,7 @@ code: true body: passed
                         "jwe-decrypt": {
                             "key": "user-key",
                             "secret": "fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=",
-                            " is_base64_encoded": true
+                            "is_base64_encoded": true
                         }
                     }
                 }]]
@@ -367,7 +367,7 @@ passed
 
 
 
-=== TEST 17: enable jwt auth plugin with base64 secret
+=== TEST 17: enable jwt decrypt plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
