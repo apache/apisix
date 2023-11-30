@@ -42,7 +42,7 @@ local process, ngx_pipe, events
 if is_http then
     process = require("ngx.process")
     ngx_pipe = require("ngx.pipe")
-    events = require("resty.worker.events")
+    events = require("apisix.events")
 end
 local resty_lock = require("resty.lock")
 local resty_signal = require "resty.signal"
@@ -969,7 +969,7 @@ local function setup_runner(cmd)
 
             runner = nil
 
-            local ok, err = events.post(events_list._source, events_list.runner_exit)
+            local ok, err = events:post(events_list._source, events_list.runner_exit)
             if not ok then
                 core.log.error("post event failure with ", events_list._source, ", error: ", err)
             end
@@ -990,13 +990,13 @@ function _M.init_worker()
         return
     end
 
-    events_list = events.event_list(
+    events_list = events:event_list(
         "process_runner_exit_event",
         "runner_exit"
     )
 
     -- flush cache when runner exited
-    events.register(recreate_lrucache, events_list._source, events_list.runner_exit)
+    events:register(recreate_lrucache, events_list._source, events_list.runner_exit)
 
     -- note that the runner is run under the same user as the Nginx master
     if process.type() == "privileged agent" then
