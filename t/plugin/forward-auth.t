@@ -275,12 +275,14 @@ property "request_method" validation failed: matches none of the enum values
                                 "uri": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST"
-                            },
-                            "proxy-rewrite": {
-                                "uri": "/echo"
                             }
                         },
-                        "upstream_id": "u1",
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
                         "uri": "/large-body"
                     }]],
                 }
