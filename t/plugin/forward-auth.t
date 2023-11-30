@@ -426,18 +426,16 @@ Authorization: 111
             .. "/large-body"
             local res, err = httpc:request_uri(uri,
                 {
-                    method = ngx.HTTP_POST,
+                    method = "POST",
                     body = large_body,
                     headers = {
-                        Authorization = "large-body"
+                        ["Authorization"] = "large-body",
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
                     }
                 }
             )
 
-            if not res then
-                ngx.log(ngx.ERR, err)
-                return
-            end
+            ngx.say(res.body)
         }
     }
 --- error_code: 200
