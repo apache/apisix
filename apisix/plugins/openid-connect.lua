@@ -19,6 +19,7 @@ local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
+local jwt = require("resty.jwt")
 local string  = string
 local ngx     = ngx
 local ipairs = ipairs
