@@ -136,10 +136,6 @@ property "request_method" validation failed: matches none of the enum values
                                         return function(conf, ctx)
                                         local core = require("apisix.core")
                                         if core.request.get_method() == "POST" and core.request.header(ctx, "Authorization") == "large-body" then
-                                           local req_body, err = core.request.get_body()
-                                           if err then
-                                               core.response.exit(400)
-                                           end
                                            core.response.exit(200)
                                         end
                                     end]]
