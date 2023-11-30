@@ -286,8 +286,6 @@ Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6Ik
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(1)
-
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
@@ -321,7 +319,6 @@ Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6Ik
                 ngx.HTTP_DELETE)
             ngx.say("code: ", code < 300, " body: ", body)
 
-            ngx.sleep(1)
             code, body = t('/apisix/plugin/jwe/encrypt?key=chen-key&payload=hello',
                 ngx.HTTP_GET)
             ngx.say("code: ", code < 300, " body: ", body)
