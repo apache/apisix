@@ -734,3 +734,55 @@ GET /t
 --- error_code: 400
 --- response_body_like
 {"error_msg":"invalid configuration: property \\"host\\" validation failed: failed to match pattern .*
+
+
+
+=== TEST 23: removing the init_dir key from etcd can still list all routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local etcd = require("apisix.core.etcd")
+
+            local code, body = t('/apisix/admin/routes/del_init_dir_1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+            assert(code == 200 or code == 201, "failed to add route")
+
+            local code, body = t('/apisix/admin/routes/del_init_dir_2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:8080": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/index.html"
+                }]]
+                )
+            assert(code == 200 or code == 201, "failed to add route")
+
+            -- remove the init_dir key from etcd
+            assert(etcd.delete("/routes/"))
+
+            -- list all routes and check them
+            local code, body, res = t('/apisix/admin/routes', ngx.HTTP_GET)
+            ngx.status = code
+            ngx.say(res)
+        }
+    }
+--- request
+GET /t
+--- response_body eval
+qr/del_init_dir_1.*del_init_dir_2/
