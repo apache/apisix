@@ -106,9 +106,7 @@ done
                     "plugins": {
                         "jwe-decrypt": {
                             "key": "user-key",
-                            "secret": "12345678901234567890123456789012",
-                            "header": "Authorization",
-                            "forward_header": "Authorization"
+                            "secret": "12345678901234567890123456789012"
                         }
                     }
                 }]]
