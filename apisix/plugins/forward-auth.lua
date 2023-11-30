@@ -116,6 +116,8 @@ function _M.access(conf, ctx)
         if client_body_reader then
             params.body = client_body_reader
         else
+            core.log.warn("failed to get client_body_reader. err: ", err,
+            " using core.request.get_body() instead")
             params.body = core.request.get_body()
         end
     end
