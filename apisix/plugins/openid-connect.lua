@@ -94,7 +94,8 @@ local schema = {
         },
         symmetric_key = {
             type = "string",
-            description = "base64url-encoded secret for verifying tokens with symmetric algorithm, such as HS256",
+            description = "base64url-encoded secret for verifying tokens with symmetric algorithm, such as HS256"
+        },
         unauth_action = {
             type = "string",
             default = "auth",
