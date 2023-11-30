@@ -85,7 +85,7 @@ From `mock.api7.ai`:
 Let's generate 100 requests to test the load-balancing effect:
 
 ```shell
-hc=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/headers" -sL | grep "httpbin" | wc -l); echo httpbin.org: $hc, mock.api7.ai: $((100 - $hc))
+hc=$(seq 100 | xargs -I {} curl "http://127.0.0.1:9080/headers" -sL | grep "httpbin" | wc -l); echo httpbin.org: $hc, mock.api7.ai: $((100 - $hc))
 ```
 
 The result shows the requests were distributed over the two services almost equally:

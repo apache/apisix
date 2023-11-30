@@ -50,7 +50,7 @@ You will receive an `HTTP/1.1 201 OK` response if the plugin was added successfu
 Let's generate 100 simultaneous requests to see the rate limiting plugin in effect.
 
 ```shell
-count=$(seq 100 | xargs -i curl "http://127.0.0.1:9080/ip" -I -sL | grep "503" | wc -l); echo \"200\": $((100 - $count)), \"503\": $count
+count=$(seq 100 | xargs -I {} curl "http://127.0.0.1:9080/ip" -I -sL | grep "503" | wc -l); echo \"200\": $((100 - $count)), \"503\": $count
 ```
 
 The results are as expected: out of the 100 requests, 2 requests were sent successfully (status code `200`) while the others were rejected (status code `503`).
