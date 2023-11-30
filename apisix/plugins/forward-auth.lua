@@ -88,6 +88,9 @@ function _M.access(conf, ctx)
         ["X-Forwarded-Host"] = core.request.get_host(ctx),
         ["X-Forwarded-Uri"] = ctx.var.request_uri,
         ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
+        ["Expect"] = core.request.header(ctx, "expect"),
+        ["Content-Length"] = core.request.header(ctx, "content-length"),
+        ["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
     }
 
     -- append headers that need to be get from the client request header
@@ -108,10 +111,11 @@ function _M.access(conf, ctx)
 
     local httpc = http.new()
     if params.method == "POST" then
-        params.body = core.request.get_body()
         local client_body_reader, err = httpc:get_client_body_reader()
-        if not err then
+        if client_body_reader then
             params.body = client_body_reader
+        else
+            params.body = core.request.get_body()
         end
     end
 
