@@ -105,10 +105,10 @@ install_nodejs () {
 }
 
 install_brotli () {
-    BORTLI_VERSION="1.1.0"
+    local BORTLI_VERSION="1.1.0"
     wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip
     unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build
-    CMAKE=$(command -v cmake3 > /dev/null 2>&1 && echo cmake3 || echo cmake)
+    local CMAKE=$(command -v cmake3 > /dev/null 2>&1 && echo cmake3 || echo cmake)
     ${CMAKE} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
     sudo ${CMAKE} --build . --config Release --target install
     if [ -d "/usr/local/brotli/lib64" ]; then
