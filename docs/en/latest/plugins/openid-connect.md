@@ -73,7 +73,6 @@ description: OpenID Connect allows the client to obtain user information from th
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
-
 ## Scenarios
 
 :::tip
