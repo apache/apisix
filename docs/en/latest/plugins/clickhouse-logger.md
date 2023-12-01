@@ -90,7 +90,8 @@ docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-serv
 Then create a table in your ClickHouse database to store the logs.
 
 ```shell
-echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
+curl -X POST 'http://localhost:8123/' \
+--data-binary 'CREATE TABLE default.test (host String, client_ip String, route_id String, service_id String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' --user default:
 ```
 
 ## Enable Plugin
@@ -104,7 +105,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
       "plugins": {
             "clickhouse-logger": {
                 "user": "default",
-                "password": "a",
+                "password": "",
                 "database": "default",
                 "logtable": "test",
                 "endpoint_addrs": ["http://127.0.0.1:8123"]
