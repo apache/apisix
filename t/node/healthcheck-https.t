@@ -102,7 +102,7 @@ run_tests;
 
 __DATA__
 
-==== TEST 1: https health check (two health nodes)
+=== TEST 1: https health check (two health nodes)
 --- config
     location /t {
         lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -181,7 +181,7 @@ GET /t
 
 
 
-=== TEST 1: https health check (one healthy node, one unhealthy node)
+=== TEST 2: https health check (one healthy node, one unhealthy node)
 --- config
     location /t {
         lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
@@ -265,7 +265,7 @@ qr/\([^)]+\) unhealthy .* for '.*'/
 
 
 
-=== TEST 2: https health check (two unhealthy nodes)
+=== TEST 3: https health check (two unhealthy nodes)
 --- config
     location /t {
         lua_ssl_trusted_certificate ../../certs/mtls_ca.crt;
