@@ -83,7 +83,8 @@ docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-serv
 然后在您的 ClickHouse 数据库中创建一个表来存储日志。
 
 ```shell
-echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
+curl -X POST 'http://localhost:8123/' \
+--data-binary 'CREATE TABLE default.test (host String, client_ip String, route_id String, service_id String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' --user default:
 ```
 
 ## 启用插件
@@ -97,7 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
       "plugins": {
             "clickhouse-logger": {
                 "user": "default",
-                "password": "a",
+                "password": "",
                 "database": "default",
                 "logtable": "test",
                 "endpoint_addrs": ["http://127.0.0.1:8123"]
