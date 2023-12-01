@@ -22,7 +22,7 @@ local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
 local type = type
-local brotli = require("brotli")
+local ok, brotli = pcall(require, "brotli")
 
 
 local schema = {
@@ -62,11 +62,13 @@ local schema = {
             type = "integer",
             minimum = 0,
             maximum = 11,
-            default = 11,
+            default = 6,
+            -- follow the default value from ngx_brotli brotli_comp_level
         },
         lgwin = {
             type = "integer",
-            default = 24,
+            default = 19,
+            -- follow the default value from ngx_brotli brotli_window
             enum = {0,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24},
         },
         lgblock = {
@@ -109,21 +111,12 @@ local function create_brotli_compressor(mode, comp_level, lgwin, lgblock)
 end
 
 
-local function brotli_compress(conf, ctx, body)
-    local compressor = create_brotli_compressor(conf.mode, conf.comp_level,
-                                                conf.lgwin, conf.lgblock)
-    if not compressor then
-        core.log.error("failed to create brotli compressor")
+function _M.header_filter(conf, ctx)
+    if not ok then
+        core.log.error("please check the brotli library")
         return
     end
 
-    local chunk = compressor:compress(body)
-    local chunk_fin = compressor:finish()
-    return chunk .. chunk_fin
-end
-
-
-function _M.header_filter(conf, ctx)
     local types = conf.types
     local content_type = ngx_header["Content-Type"]
     if not content_type then
@@ -168,26 +161,38 @@ function _M.header_filter(conf, ctx)
         core.response.add_header("Vary", "Accept-Encoding")
     end
 
+    compressor = create_brotli_compressor(conf.mode, conf.comp_level,
+                                          conf.lgwin, conf.lgblock)
+    if not compressor then
+        core.log.error("failed to create brotli compressor")
+        return
+    end
+
     ctx.brotli_matched = true
+    ctx.compressor = compressor
     core.response.clear_header_as_body_modified()
     core.response.add_header("Content-Encoding", "br")
 end
 
 
 function _M.body_filter(conf, ctx)
-    if ctx.brotli_matched then
-        local body = core.response.hold_body_chunk(ctx)
-        if ngx.arg[2] == false and not body then
-            return
-        end
+    if not ok then
+        core.log.error("please check the brotli library")
+        return
+    end
 
-        local compressed = brotli_compress(conf, ctx, body)
-        if not compressed then
-            core.log.error("failed to compress response body with brotli encoding")
-            return
-        end
+    if not ctx.brotli_matched then
+        return
+    end
 
-        ngx.arg[1] = compressed
+    local chunk, eof = ngx.arg[1], ngx.arg[2]
+    if type(chunk) == "string" and chunk ~= "" then
+        local encode_chunk = ctx.compressor:compress(chunk)
+        ngx.arg[1] = encode_chunk .. ctx.compressor:flush()
+    end
+
+    if eof then
+        ngx.arg[1] = ctx.compressor:finish()
     end
 end
 

@@ -27,6 +27,13 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    my $extra_yaml_config = <<_EOC_;
+plugins:
+    - brotli
+_EOC_
+
+    $block->set_value("extra_yaml_config", $extra_yaml_config);
 });
 
 run_tests();
@@ -107,9 +114,9 @@ Vary:
         }
     }
 --- response_body
-{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":24,"min_length":20,"mode":0,"types":["text/html"]}
-{"comp_level":11,"http_version":1.1,"lgblock":0,"lgwin":24,"min_length":20,"mode":1,"types":["text/html"]}
-{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":24,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":6,"http_version":1.1,"lgblock":0,"lgwin":19,"min_length":20,"mode":0,"types":["text/html"]}
+{"comp_level":6,"http_version":1.1,"lgblock":0,"lgwin":19,"min_length":20,"mode":1,"types":["text/html"]}
+{"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":19,"min_length":20,"mode":0,"types":["text/html"]}
 {"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"]}
 {"comp_level":5,"http_version":1.1,"lgblock":0,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"],"vary":true}
 {"comp_level":5,"http_version":1.1,"lgblock":16,"lgwin":12,"min_length":20,"mode":0,"types":["text/html"],"vary":true}
@@ -574,38 +581,7 @@ passed
 
 
 
-=== TEST 21: hit - compressed requset body same as respone body
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/echo"
-            local httpc = http.new()
-            local req_body = ("012345"):rep(1024)
-            local res, err = httpc:request_uri(uri,
-                {method = "POST", body = req_body})
-            if not res then
-                ngx.say(err)
-                return
-            end
-
-            local brotli = require "brotli"
-            local compressor = brotli.compressor:new()
-            local chunk = compressor:compress(req_body)
-            local chunk_fin = compressor:finish()
-            local chunks = chunk .. chunk_fin
-            if #chunks == #res.body then
-                ngx.say("ok")
-            end
-        }
-    }
---- response_body
-ok
-
-
-
-=== TEST 22: hit - decompressed respone body same as requset body
+=== TEST 21: hit - decompressed respone body same as requset body
 --- config
     location /t {
         content_by_lua_block {
