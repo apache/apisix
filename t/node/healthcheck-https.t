@@ -229,12 +229,10 @@ GET /t
             end
 
             local http = require("resty.http")
-            for i = 1, 3 do
-                local httpc = http.new()
-                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
-                local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-                ngx.sleep(0.5)
-            end
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
+            local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(1.5)
 
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
             local httpc = http.new()
@@ -313,12 +311,10 @@ qr/\([^)]+\) unhealthy .* for '.*'/
             end
 
             local http = require("resty.http")
-            for i = 1, 3 do
-                local httpc = http.new()
-                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
-                local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-                ngx.sleep(0.5)
-            end
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
+            local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(1.5)
 
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
             local httpc = http.new()
