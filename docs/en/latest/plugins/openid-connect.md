@@ -211,4 +211,4 @@ In this example, the Plugin can enforce that the access token, the ID token, and
 
 - `redirect_uri` needs to be captured by the route where the current APISIX is located. For example, the `uri` of the current route is `/api/v1/*`, `redirect_uri` can be filled in as `/api/v1/callback`;
 - `scheme` and `host` of `redirect_uri` (`scheme:host`) are the values required to access APISIX from the perspective of the identity provider.
-- See also [this GitHub issue](https://github.com/apache/apisix/issues/2426), especially these comments: [@starsz](https://github.com/apache/apisix/issues/2426#issuecomment-1091021687), [@david-woelfle](https://github.com/apache/apisix/issues/2426#issuecomment-1090675455), [@liweitianux (1)](https://github.com/apache/apisix/issues/2426#issuecomment-1206107085), [@liweitianux (2)](https://github.com/apache/apisix/issues/2426#issuecomment-1207423283)
+- `redirect_uri` should not be the same as the URI of the route. This is because when a user initiates a request to visit the protected resource, the request directly hits the redirection URI with no session cookie in the request, which leads to the `no session state found` error.
