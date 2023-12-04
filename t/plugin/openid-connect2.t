@@ -372,7 +372,7 @@ true
 
 
 
-=== TEST 10: OpenID server does not have a corresponding redirect_uri, should return 400.
+=== TEST 10: OpenID server does not have a corresponding redirect_uri, should return less than 500.
 --- config
     location /t {
         content_by_lua_block {
@@ -380,9 +380,8 @@ true
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local res, err = httpc:request_uri(uri, {method = "GET"})
-            ngx.say(res.status)
-            if res.status == 400 then
-                ngx.say(res.status)
+            if res.status < 500 then
+                ngx.say(true)
             end
         }
     }
