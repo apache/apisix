@@ -334,3 +334,58 @@ passed
 --- timeout: 10s
 --- response_body
 true
+
+
+=== TEST 9: Set up route with plugin matching URI `/hello` with redirect_uri use default value.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                "scope": "openid profile",
+                                "bearer_only": false
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+            if code == 200 then
+                ngx.say(true)
+            end
+        }
+    }
+--- response_body
+true
+
+
+
+=== TEST 10: OpenID server does not have a corresponding redirect_uri, should return 400.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.say(res.status)
+            if res.status == 400 then
+                ngx.say(res.status)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true

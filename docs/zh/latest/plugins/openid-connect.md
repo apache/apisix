@@ -208,4 +208,4 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 - `redirect_uri` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
 - `redirect_uri`（`scheme:host`）的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
-- 另请参考[此 GitHub 问题](https://github.com/apache/apisix/issues/2426), 尤其是下述评论：[@starsz](https://github.com/apache/apisix/issues/2426#issuecomment-1091021687), [@david-woelfle](https://github.com/apache/apisix/issues/2426#issuecomment-1090675455), [@liweitianux (1)](https://github.com/apache/apisix/issues/2426#issuecomment-1206107085), [@liweitianux (2)](https://github.com/apache/apisix/issues/2426#issuecomment-1207423283)
+- `redirect_uri`  不应与路由的 URI 相同。这是因为当用户发起访问受保护资源的请求时，请求会直接指向重定向 URI，而请求中没有会话 cookie，从而导致 `no session state found` 错误。
