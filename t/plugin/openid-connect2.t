@@ -336,6 +336,7 @@ passed
 true
 
 
+
 === TEST 9: Set up route with plugin matching URI `/hello` with redirect_uri use default value.
 --- config
     location /t {
