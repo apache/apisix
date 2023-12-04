@@ -161,8 +161,8 @@ function _M.header_filter(conf, ctx)
         core.response.add_header("Vary", "Accept-Encoding")
     end
 
-    compressor = create_brotli_compressor(conf.mode, conf.comp_level,
-                                          conf.lgwin, conf.lgblock)
+    local compressor = create_brotli_compressor(conf.mode, conf.comp_level,
+                                                conf.lgwin, conf.lgblock)
     if not compressor then
         core.log.error("failed to create brotli compressor")
         return
