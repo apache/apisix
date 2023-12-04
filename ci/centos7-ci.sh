@@ -41,7 +41,8 @@ install_dependencies() {
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    #wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    wget https://raw.githubusercontent.com/Sn0rt/apisix-build-tools/guohao/update-lua-resty-events/build-apisix-runtime.sh
     chmod +x build-apisix-runtime-debug-centos7.sh
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime-debug-centos7.sh
