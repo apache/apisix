@@ -139,6 +139,10 @@ apisix:
                                   # with the new key. Removing the old keys directly can render the data
                                   # unrecoverable.
 
+  events:                             # Event distribution module configuration
+    module: lua-resty-events          # Sets the name of the events module used.
+                                      # Supported module: lua-resty-worker-events and lua-resty-events
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.

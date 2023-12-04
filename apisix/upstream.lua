@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
+local events = require("apisix.events")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -110,10 +111,17 @@ local function create_checker(upstream)
     end
     upstream.is_creating_checker = true
 
+    if not events.healthcheck_events_module then
+        core.log.debug("no configured health check event module found, fallback to lua-resty-worker-events")
+    end
+
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
+        -- the events.init_worker will be executed in the init_worker phase, events.healthcheck_events_module is set
+        -- while the healthcheck object is executed in the http access phase, so it can be used here
+        events_module = events.healthcheck_events_module or "resty.worker.events",
     })
 
     if not checker then
