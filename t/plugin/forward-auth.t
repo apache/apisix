@@ -109,6 +109,19 @@ property "request_method" validation failed: matches none of the enum values
                                             core.response.exit(403, core.request.headers(ctx));
                                         end
                                     end]],
+                                    [[
+                                        return function(conf, ctx)
+                                        local core = require("apisix.core")
+                                        if core.request.get_method() == "POST" then
+                                            if core.request.header(ctx, "Authorization") == "large-body" then
+                                                core.response.set_header("X-User-ID", "large-body")
+                                                core.response.exit(200)
+                                            end
+                                            if core.request.header(ctx, "Authorization") == "i-am-not-an-user-large-body" then
+                                                core.response.exit(403)
+                                            end
+                                        end
+                                    end]],
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core")
                                         if core.request.get_method() == "POST" then
@@ -129,14 +142,6 @@ property "request_method" validation failed: matches none of the enum values
                                                    core.response.exit(403)
                                                end
                                            end
-                                        end
-                                    end]],
-                                    [[
-                                        -- test large body
-                                        return function(conf, ctx)
-                                        local core = require("apisix.core")
-                                        if core.request.get_method() == "POST" and core.request.header(ctx, "Authorization") == "large-body" then
-                                           core.response.exit(200)
                                         end
                                     end]]
                                 }
@@ -269,16 +274,15 @@ property "request_method" validation failed: matches none of the enum values
                         "plugins": {
                             "forward-auth": {
                                 "uri": "http://127.0.0.1:1984/auth",
+                                "upstream_headers": ["X-User-ID"],
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
                             }
                         },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
+                        "upstream_id": "u1",
                         "uri": "/large-body"
                     }]],
                 }
@@ -288,12 +292,12 @@ property "request_method" validation failed: matches none of the enum values
 
             for _, data in ipairs(data) do
                 local code, body = t(data.url, ngx.HTTP_PUT, data.data)
-                ngx.say(code..body)
+                ngx.say(body)
             end
         }
     }
 --- response_body eval
-"201passed\n" x 10
+"passed\n" x 10
 
 
 
@@ -408,9 +412,9 @@ Authorization: 111
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local t    = require("lib.test_admin")
             local http = require("resty.http")
-            local httpc = http.new()
 
             local tempFileName = os.tmpname()
             local file = io.open(tempFileName, "wb")
@@ -422,9 +426,24 @@ Authorization: 111
             file:close()
 
             local large_body = t.read_file(tempFileName)
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-            .. "/large-body"
-            local res, err = httpc:request_uri(uri,
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/large-body"
+
+            local httpc = http.new()
+            local res1, err = httpc:request_uri(uri,
+                {
+                    method = "POST",
+                    body = large_body,
+                    headers = {
+                        ["Authorization"] = "i-am-not-an-user-large-body",
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                }
+            )
+            assert(res1.status == 403, "status: " .. res1.status)
+            data1 = core.json.decode(res1.body)
+
+            local res2, err = httpc:request_uri(uri,
                 {
                     method = "POST",
                     body = large_body,
@@ -434,8 +453,9 @@ Authorization: 111
                     }
                 }
             )
-
-            ngx.say(res.body)
+            assert(res2.status == 200, "status: " .. res2.status)
+            data2 = core.json.decode(res2.body)
+            assert(data2["x-user-id"] == "large-body", "x-user-id: " .. data2["x-user-id"])
         }
     }
 --- error_code: 200
