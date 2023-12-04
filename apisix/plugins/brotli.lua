@@ -22,7 +22,7 @@ local str_sub = string.sub
 local ipairs = ipairs
 local tonumber = tonumber
 local type = type
-local ok, brotli = pcall(require, "brotli")
+local is_loaded, brotli = pcall(require, "brotli")
 
 
 local schema = {
@@ -112,7 +112,7 @@ end
 
 
 function _M.header_filter(conf, ctx)
-    if not ok then
+    if not is_loaded then
         core.log.error("please check the brotli library")
         return
     end
@@ -176,7 +176,7 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    if not ok then
+    if not is_loaded then
         core.log.error("please check the brotli library")
         return
     end
