@@ -467,6 +467,7 @@ plugins:                           # plugin list (sorted by priority)
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510
+  - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
   - forward-auth                   # priority: 2002
