@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local expr = require("resty.expr.v1")
 local ngx  = ngx
+local type = type
 local pairs = pairs
 local ngx_now = ngx.now
 local os_date = os.date
@@ -34,21 +35,20 @@ local lru_log_format = core.lrucache.new({
 local _M = {}
 _M.metadata_schema_log_format = {
     type = "object",
-    default = {
-        ["host"] = "$host",
-        ["@timestamp"] = "$time_iso8601",
-        ["client_ip"] = "$remote_addr",
-    },
 }
 
 
 local function gen_log_format(format)
     local log_format = {}
-    for k, var_name in pairs(format) do
-        if var_name:byte(1, 1) == str_byte("$") then
-            log_format[k] = {true, var_name:sub(2)}
+    for k, v in pairs(format) do
+        if type(v) == "table" then
+            log_format[k] = gen_log_format(v)
         else
-            log_format[k] = {false, var_name}
+            if v:byte(1, 1) == str_byte("$") then
+                log_format[k] = {true, v:sub(2)}
+            else
+                log_format[k] = {false, v}
+            end
         end
     end
     core.log.info("log_format: ", core.json.delay_encode(log_format))
@@ -57,14 +57,35 @@ end
 
 local function get_custom_format_log(ctx, format)
     local log_format = lru_log_format(format or "", nil, gen_log_format, format)
-    local entry = core.table.new(0, core.table.nkeys(log_format))
-    for k, var_attr in pairs(log_format) do
-        if var_attr[1] then
-            entry[k] = ctx.var[var_attr[2]]
-        else
-            entry[k] = var_attr[2]
+    local parse_format
+
+    -- parse the format, and return the log key values table
+    parse_format = function(sub_log_format)
+        local sub_entry = core.table.new(0, core.table.nkeys(sub_log_format))
+        for key, var_attr in pairs(sub_log_format) do
+            if type(var_attr[1]) ~= "boolean" then
+                -- parse the sub log, like the `request`
+                -- if its first is value not a bool, so its a sub log
+                -- "log_format": {
+                --    "request": {
+                --        "host": "$host",
+                --        "@timestamp": "$time_iso8601"
+                --    },
+                --    "client_ip": "$remote_addr"
+                --}
+                sub_entry[key] = parse_format(var_attr)
+            else
+                if var_attr[1] then
+                    sub_entry[key] = ctx.var[var_attr[2]]
+                else
+                    sub_entry[key] = var_attr[2]
+                end
+            end
         end
+        return sub_entry
     end
+
+    local entry = parse_format(log_format)
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
