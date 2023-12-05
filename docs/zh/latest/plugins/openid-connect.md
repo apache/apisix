@@ -76,16 +76,16 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | access_token_expires_in         | integer | 否    |               |             | 访问令牌的生命周期，以秒为单位，如果令牌终端响应中不存在 `expires_in` 属性。  |
 | refresh_session_interval        | integer | 否    | 900           |             | 刷新用户 ID 令牌而无需重新进行身份验证的时间间隔，以秒为单位。  |
 | iat_slack                       | integer | 否    | 120           |             | 与 ID 令牌中的 `iat` 声明的时钟偏差容忍度，以秒为单位。  |
-| accept_none_alg                 | boolean | 否    | false         |             | 如果 OpenID 提供程序不对其ID令牌进行签名将其设置为 true。  |
-| accept_unsupported_alg          | boolean | 否    | true          |             | 如果为 true，忽略 ID令牌签名以接受不支持的签名算法。 |
+| accept_none_alg                 | boolean | 否    | false         |             | 如果 OpenID 提供程序不对其 ID 令牌进行签名将其设置为 true。  |
+| accept_unsupported_alg          | boolean | 否    | true          |             | 如果为 true，忽略 ID 令牌签名以接受不支持的签名算法。 |
 | access_token_expires_leeway     | integer | 否    | 0             |             | 访问令牌续订的过期宽限期，以秒为单位。当设置为大于 0 的值时，令牌续订将在令牌到期之前的一段时间内进行。这样可以避免在到达资源服务器时令牌刚好过期时出现错误。 |
 | force_reauthorize               | boolean | 否    | false         |             | 如果为 true，即使已缓存令牌，也执行授权流程。 |
-| use_nonce                       | boolean | 否    | false         |             | 如果为 true，启用授权请求中的nonce参数。|
+| use_nonce                       | boolean | 否    | false         |             | 如果为 true，启用授权请求中的 nonce 参数。|
 | revoke_tokens_on_logout         | boolean | 否    | false         |             | 如果为 true，通知授权服务器不再需要先前获取的刷新令牌或访问令牌，发送到吊销端点。|
 | jwk_expires_in                  | integer | 否    | 86400         |             | JWK 缓存的过期时间，以秒为单位。|
 | jwt_verification_cache_ignore   | boolean | 否    | false         |             | 如果为 true，请强制对持有者令牌进行重新验证，并忽略任何现有的缓存验证结果。 |
 | cache_segment                   | string  | 否    |               |             | 可选的缓存段的名称，用于区分和区分用于令牌内省或 JWT 验证的缓存。 |
-| introspection_interval          | integer | 否    | 0             |             | 以秒为单位的缓存和内省访问令牌的TTL。   |
+| introspection_interval          | integer | 否    | 0             |             | 以秒为单位的缓存和内省访问令牌的 TTL。   |
 | introspection_expiry_claim      | string  | 否    |               |             | 过期声明的名称，用于控制缓存和内省访问令牌的 TTL。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
