@@ -413,6 +413,11 @@ _EOC_
 
         require "resty.core"
 
+        local events_sock_path = "$apisix_home/t/servroot/logs/stream_worker_events.sock"
+        if os.getenv("TEST_NGINX_USE_HUP") ~= "1" and require("pl.path").exists(events_sock_path) then
+            os.remove(events_sock_path)
+        end
+
         $stream_extra_init_by_lua_start
 
         apisix = require("apisix")
@@ -436,6 +441,14 @@ _EOC_
     }
 
     $extra_stream_config
+
+    server {
+        listen unix:$apisix_home/t/servroot/logs/stream_worker_events.sock;
+        access_log off;
+        content_by_lua_block {
+            require("resty.events.compat").run()
+        }
+    }
 
     # fake server, only for test
     server {
@@ -515,6 +528,11 @@ _EOC_
     end
 
     require "resty.core"
+
+    local events_sock_path = "$apisix_home/t/servroot/logs/worker_events.sock"
+    if os.getenv("TEST_NGINX_USE_HUP") ~= "1" and require("pl.path").exists(events_sock_path) then
+        os.remove(events_sock_path)
+    end
 
     $extra_init_by_lua_start
 
@@ -687,6 +705,18 @@ _EOC_
         }
     }
 
+_EOC_
+
+    $http_config .= <<_EOC_;
+    server {
+        listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
+        access_log off;
+        location / {
+            content_by_lua_block {
+                require("resty.events.compat").run()
+            }
+        }
+    }
 _EOC_
 
     $block->set_value("http_config", $http_config);
