@@ -168,29 +168,29 @@ local schema = {
             type = "object"
         },
         client_rsa_private_key = {
-            description = "Client RSA private key used to sign JWT for authentication to the OP. Required when token_endpoint_auth_method is private_key_jwt.",
+            description = "Client RSA private key used to sign JWT for authentication to the OP.",
             type = "string"
         },
         client_rsa_private_key_id = {
-            description = "Client RSA private key ID used to compute a signed JWT. Optional when token_endpoint_auth_method is private_key_jwt.",
+            description = "Client RSA private key ID used to compute a signed JWT.",
             type = "string"
         },
         client_jwt_assertion_expires_in = {
-            description = " Life duration of the signed JWT for authentication to the OP, in seconds. Used when token_endpoint_auth_method is private_key_jwt.",
+            description = " Life duration of the signed JWT for authentication to the OP, in seconds.",
             type = "integer",
             default = 60
         },
         renew_access_token_on_expiry = {
-            description = "Attempt to silently renew the access token when it expires or if a refresh token is available.",
+            description = "Whether to attempt silently renewing the access token.",
             type = "boolean",
             default = true
         },
         access_token_expires_in = {
-            description = "Lifetime of the access token in seconds if no expires_in attribute is present in the token endpoint response.",
+            description = "Lifetime of the access token in seconds if expires_in is not present.",
             type = "integer"
         },
         refresh_session_interval = {
-            description = "Time interval to refresh user ID token without requiring re-authentication.",
+            description = "Time interval to refresh user ID token without re-authentication.",
             type = "integer",
             default = 900
         },
@@ -210,12 +210,12 @@ local schema = {
             default = true
         },
         access_token_expires_leeway = {
-            description = "Expiration leeway in seconds for access token renewal. When set to a value greater than 0, token renewal will take place the set amount of time before token expiration.",
+            description = "Expiration leeway in seconds for access token renewal.",
             type = "integer",
             default = 0
         },
         force_reauthorize = {
-            description = "Whether to execute the authorization flow even when a token has been cached.",
+            description = "Whether to execute the authorization flow when a token has been cached.",
             type = "boolean",
             default = false
         },
@@ -225,7 +225,7 @@ local schema = {
             default = false
         },
         revoke_tokens_on_logout = {
-            description = "Whether to notify the authorization server a previously obtained refresh or access token is no longer needed at the revocation endpoint.",
+            description = "Notify authorization server a previous token is no longer needed.",
             type = "boolean",
             default = false
         },
@@ -235,12 +235,12 @@ local schema = {
             default = 86400
         },
         jwt_verification_cache_ignore = {
-            description = "Whether to force re-verification for a bearer token and ignore any existing cached verification results.",
+            description = "Whether to ignore cached verification and re-verify.",
             type = "boolean",
             default = false
         },
         cache_segment = {
-            description = "Optional name of a cache segment, used to separate and differentiate caches used by toke introspection or JWT verification.",
+            description = "Name of a cache segment to differentiate caches.",
             type = "string"
         },
         introspection_interval = {
@@ -249,7 +249,7 @@ local schema = {
             default = 0
         },
         introspection_expiry_claim = {
-            description = "Name of the expiry claim, which controls the TTL of the cached and introspected access token.",
+            description = "Name of the expiry claim that controls the cached access token TTL.",
             type = "string"
         },
         required_scopes = {
