@@ -35,8 +35,8 @@ script() {
     sudo rm -rf /usr/local/share/lua/5.1/apisix
 
     # install APISIX with local version
-    luarocks install rockspec/apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
-    luarocks make rockspec/apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
+    luarocks install apisix-master-0.rockspec --only-deps > build.log 2>&1 || (cat build.log && exit 1)
+    luarocks make apisix-master-0.rockspec > build.log 2>&1 || (cat build.log && exit 1)
     # ensure all files under apisix is installed
     diff -rq apisix /usr/local/share/lua/5.1/apisix
 
