@@ -100,7 +100,6 @@ api-breaker
 limit-conn
 limit-count
 limit-req
-brotli
 gzip
 server-info
 traffic-split
