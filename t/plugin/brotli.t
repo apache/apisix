@@ -700,7 +700,7 @@ passed
             local httpc = http.new()
             local req_body = ("abcdf01234"):rep(1024)
             local res, err = httpc:request_uri(uri,
-                {method = "POST", body = req_body})
+                {method = "POST", headers = {["Accept-Encoding"] = "br"}, body = req_body})
             if not res then
                 ngx.say(err)
                 return
