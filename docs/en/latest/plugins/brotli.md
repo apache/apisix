@@ -100,8 +100,8 @@ Access-Control-Allow-Credentials: true
 Server: APISIX/3.6.0
 Content-Encoding: br
 
-Warning: Binary output can mess up your terminal. Use "--output -" to tell 
-Warning: curl to output it to your terminal anyway, or consider "--output 
+Warning: Binary output can mess up your terminal. Use "--output -" to tell
+Warning: curl to output it to your terminal anyway, or consider "--output
 Warning: <FILE>" to save to a file.
 ```
 
