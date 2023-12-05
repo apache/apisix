@@ -19,8 +19,8 @@ BEGIN {
         $SkipReason = "unavailable for the hup tests";
 
     } else {
-        $ENV{TEST_NGINX_USE_HUP} = 1;
-        undef $ENV{TEST_NGINX_USE_STAP};
+        #$ENV{TEST_NGINX_USE_HUP} = 1;
+        #undef $ENV{TEST_NGINX_USE_STAP};
     }
 }
 
