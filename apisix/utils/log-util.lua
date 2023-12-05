@@ -25,22 +25,12 @@ local str_byte = string.byte
 local math_floor = math.floor
 local ngx_update_time = ngx.update_time
 local req_get_body_data = ngx.req.get_body_data
-local is_http = ngx.config.subsystem == "http"
 
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
 })
 
 local _M = {}
-_M.metadata_schema_log_format = {
-    type = "object",
-    default = {
-        ["host"] = "$host",
-        ["@timestamp"] = "$time_iso8601",
-        ["client_ip"] = "$remote_addr",
-    },
-}
-
 
 local function gen_log_format(format)
     local log_format = {}
@@ -105,6 +95,48 @@ end
 _M.latency_details_in_ms = latency_details_in_ms
 
 
+local function insert_log_req_resp_body(log, ctx, conf)
+    if ctx.resp_body then
+        log.response_body = ctx.resp_body
+    end
+
+    if conf.include_req_body then
+        local log_request_body = true
+        if conf.include_req_body_expr then
+            if not conf.request_expr then
+                local request_expr, err = expr.new(conf.include_req_body_expr)
+                if not request_expr then
+                    core.log.error('generate request expr err ' .. err)
+                    return log
+                end
+                conf.request_expr = request_expr
+            end
+
+            local result = conf.request_expr:eval(ctx.var)
+
+            if not result then
+                log_request_body = false
+            end
+        end
+
+        if log_request_body then
+            local body = req_get_body_data()
+            if body then
+                log.request_body = body
+            else
+                local body_file = ngx.req.get_body_file()
+                if body_file then
+                    log.request_body_file = body_file
+                else
+                    core.log.info("fail to get body_file")
+                end
+            end
+        end
+    end
+    return log
+end
+
+
 local function get_full_log(ngx, conf)
     local ctx = ngx.ctx.api_ctx
     local var = ctx.var
@@ -152,53 +184,14 @@ local function get_full_log(ngx, conf)
         service_id = service_id,
         route_id = route_id,
         consumer = consumer,
-        client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
+        client_ip = core.request.get_remote_client_ip(ctx),
         start_time = ngx.req.start_time() * 1000,
         latency = latency,
         upstream_latency = upstream_latency,
         apisix_latency = apisix_latency
     }
 
-    if ctx.resp_body then
-        log.response.body = ctx.resp_body
-    end
-
-    if conf.include_req_body then
-
-        local log_request_body = true
-
-        if conf.include_req_body_expr then
-
-            if not conf.request_expr then
-                local request_expr, err = expr.new(conf.include_req_body_expr)
-                if not request_expr then
-                    core.log.error('generate request expr err ' .. err)
-                    return log
-                end
-                conf.request_expr = request_expr
-            end
-
-            local result = conf.request_expr:eval(ctx.var)
-
-            if not result then
-                log_request_body = false
-            end
-        end
-
-        if log_request_body then
-            local body = req_get_body_data()
-            if body then
-                log.request.body = body
-            else
-                local body_file = ngx.req.get_body_file()
-                if body_file then
-                    log.request.body_file = body_file
-                end
-            end
-        end
-    end
-
-    return log
+    return insert_log_req_resp_body(log, ctx, conf)
 end
 _M.get_full_log = get_full_log
 
@@ -224,6 +217,21 @@ local function is_match(match, ctx)
 end
 
 
+local function get_default_log(ngx, conf)
+    local ctx = ngx.ctx.api_ctx
+    local default_format = {
+        ["host"] = "$host",
+        ["@timestamp"] = "$time_iso8601",
+        ["client_ip"] = "$remote_addr"
+    }
+
+    local log = get_custom_format_log(ctx, default_format)
+
+    return insert_log_req_resp_body(log, ctx, conf)
+end
+_M.get_default_log = get_default_log
+
+
 function _M.get_log_entry(plugin_name, conf, ctx)
     -- If the "match" configuration is set and the matching conditions are not met,
     -- then do not log the message.
@@ -232,7 +240,7 @@ function _M.get_log_entry(plugin_name, conf, ctx)
     end
 
     local metadata = plugin.plugin_metadata(plugin_name)
-    core.log.info("metadata: ", core.json.delay_encode(metadata))
+    core.log.info("plugin metadata: ", core.json.delay_encode(metadata))
 
     local entry
     local customized = false
@@ -244,12 +252,7 @@ function _M.get_log_entry(plugin_name, conf, ctx)
         customized = true
         entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
     else
-        if is_http then
-            entry = get_full_log(ngx, conf)
-        else
-            -- get_full_log doesn't work in stream
-            core.log.error(plugin_name, "'s log_format is not set")
-        end
+        entry = get_default_log(ngx, conf)
     end
 
     return entry, customized

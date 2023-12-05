@@ -134,7 +134,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object",
+        },
     },
 }
 
@@ -218,7 +220,6 @@ function _M.log(conf, ctx)
     if conf.meta_format == "origin" then
         entry = log_util.get_req_original(ctx, conf)
         -- core.log.info("origin entry: ", entry)
-
     else
         entry = log_util.get_log_entry(plugin_name, conf, ctx)
     end

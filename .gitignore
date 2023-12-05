@@ -84,6 +84,7 @@ t/plugin/grpc-web/grpc-web-server
 t/plugin/grpc-web/node_modules/
 pack
 pack-v*-linux.tgz*
+etcd_data/
 
 # release tar package
 *.tgz
