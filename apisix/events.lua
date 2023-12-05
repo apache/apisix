@@ -21,7 +21,8 @@ local ngx     = ngx
 local core    = require("apisix.core")
 
 local _M = {
-    healthcheck_events_module = nil
+    events_module = nil,
+    --healthcheck_events_module = nil
 }
 
 _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS = 'lua-resty-worker-events'
@@ -30,7 +31,8 @@ _M.EVENTS_MODULE_LUA_RESTY_EVENTS = 'lua-resty-events'
 
 -- use lua-resty-worker-events
 local function init_resty_worker_events()
-    _M.healthcheck_events_module = "resty.worker.events"
+    _M.events_module = _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS
+    --_M.healthcheck_events_module = "resty.worker.events"
 
     local we = require("resty.worker.events")
     local shm = ngx.config.subsystem == "http" and "worker-events" or "worker-events-stream"
@@ -45,7 +47,8 @@ end
 
 -- use lua-resty-events
 local function init_resty_events()
-    _M.healthcheck_events_module = "resty.events"
+    _M.events_module = _M.EVENTS_MODULE_LUA_RESTY_EVENTS
+    --_M.healthcheck_events_module = "resty.events"
 
     local listening = "unix:" .. ngx.config.prefix() .. "logs/"
     if ngx.config.subsystem == "http" then
@@ -96,13 +99,37 @@ function _M.register(self, ...)
 end
 
 
-function _M.event_list(self, ...)
-    return self.worker_events.event_list(...)
+function _M.event_list(self, source, ...)
+    -- a patch for the lua-resty-events to support event_list
+    -- this snippet is copied from the lua-resty-worker-events lib
+    if self.events_module == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
+        local events = { _source = source }
+        for _, event in pairs({...}) do
+            events[event] = event
+        end
+        return setmetatable(events, {
+            __index = function(_, key)
+            error("event '"..tostring(key).."' is an unknown event", 2)
+            end
+        })
+    end
+
+    -- the lua-resty-worker-events has a built-in event_list implementation
+    return self.worker_events.event_list(source, ...)
 end
 
 
 function _M.post(self, ...)
     return self.worker_events.post(...)
+end
+
+
+function _M.get_healthcheck_events_modele(self)
+    if self.events_module == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
+        return "resty.events"
+    else
+        return "resty.worker.events"
+    end
 end
 
 
