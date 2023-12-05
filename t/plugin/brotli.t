@@ -73,7 +73,7 @@ passed
 
 
 
-=== TEST 2: hit
+=== TEST 2: hit, single Accept-Encoding
 --- request
 POST /echo
 0123456789
@@ -87,7 +87,116 @@ Vary:
 
 
 
-=== TEST 3: default buffers and compress level
+=== TEST 3: hit, single wildcard Accept-Encoding
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: *
+Content-Type: text/html
+--- response_headers
+Content-Encoding: br
+Vary:
+
+
+
+=== TEST 4: not hit, single Accept-Encoding
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip
+Content-Type: text/html
+--- response_headers
+Vary:
+
+
+
+=== TEST 5: hit, br in multi Accept-Encoding
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip, br
+Content-Type: text/html
+--- response_headers
+Content-Encoding: br
+Vary:
+
+
+
+=== TEST 6: hit, no br in multi Accept-Encoding, but wildcard
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip, *
+Content-Type: text/html
+--- response_headers
+Content-Encoding: br
+Vary:
+
+
+
+=== TEST 7: not hit, no br in multi Accept-Encoding
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip, deflate
+Content-Type: text/html
+--- response_headers
+Vary:
+
+
+
+=== TEST 8: hit, multi Accept-Encoding with quality
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip;q=0.5, br;q=0.6
+Content-Type: text/html
+--- response_headers
+Content-Encoding: br
+Vary:
+
+
+
+=== TEST 9: not hit, multi Accept-Encoding with quality and disable br
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip;q=0.5, br;q=0
+Content-Type: text/html
+--- response_headers
+Vary:
+
+
+
+=== TEST 10: hit, multi Accept-Encoding with quality and wildcard
+--- request
+POST /echo
+0123456789
+012345678
+--- more_headers
+Accept-Encoding: gzip;q=0.8, deflate, sdch;q=0.6, *;q=0.1
+Content-Type: text/html
+--- response_headers
+Content-Encoding: br
+Vary:
+
+
+
+=== TEST 11: default buffers and compress level
 --- config
     location /t {
         content_by_lua_block {
@@ -124,7 +233,7 @@ Vary:
 
 
 
-=== TEST 4: compress level
+=== TEST 12: compress level
 --- config
     location /t {
         content_by_lua_block {
@@ -184,7 +293,7 @@ passed
 
 
 
-=== TEST 5: hit
+=== TEST 13: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -215,7 +324,7 @@ ok
 
 
 
-=== TEST 6: min length
+=== TEST 14: min length
 --- config
     location /t {
         content_by_lua_block {
@@ -249,7 +358,7 @@ passed
 
 
 
-=== TEST 7: not hit
+=== TEST 15: not hit
 --- request
 POST /echo
 0123456789
@@ -262,7 +371,7 @@ Content-Encoding:
 
 
 
-=== TEST 8: http version
+=== TEST 16: http version
 --- config
     location /t {
         content_by_lua_block {
@@ -296,7 +405,7 @@ passed
 
 
 
-=== TEST 9: not hit
+=== TEST 17: not hit
 --- request
 POST /echo HTTP/1.0
 0123456789
@@ -309,7 +418,7 @@ Content-Encoding:
 
 
 
-=== TEST 10: hit again
+=== TEST 18: hit again
 --- request
 POST /echo HTTP/1.1
 0123456789
@@ -322,7 +431,7 @@ Content-Encoding: br
 
 
 
-=== TEST 11: types
+=== TEST 19: types
 --- config
     location /t {
         content_by_lua_block {
@@ -356,7 +465,7 @@ passed
 
 
 
-=== TEST 12: not hit
+=== TEST 20: not hit
 --- request
 POST /echo
 0123456789
@@ -369,7 +478,7 @@ Content-Encoding:
 
 
 
-=== TEST 13: hit again
+=== TEST 21: hit again
 --- request
 POST /echo
 0123456789
@@ -382,7 +491,7 @@ Content-Encoding: br
 
 
 
-=== TEST 14: hit with charset
+=== TEST 22: hit with charset
 --- request
 POST /echo
 0123456789
@@ -395,7 +504,7 @@ Content-Encoding: br
 
 
 
-=== TEST 15: match all types
+=== TEST 23: match all types
 --- config
     location /t {
         content_by_lua_block {
@@ -429,7 +538,7 @@ passed
 
 
 
-=== TEST 16: hit
+=== TEST 24: hit
 --- request
 POST /echo
 0123456789
@@ -442,7 +551,7 @@ Content-Encoding: br
 
 
 
-=== TEST 17: vary
+=== TEST 25: vary
 --- config
     location /t {
         content_by_lua_block {
@@ -476,7 +585,7 @@ passed
 
 
 
-=== TEST 18: hit
+=== TEST 26: hit
 --- request
 POST /echo
 0123456789
@@ -491,7 +600,7 @@ Vary: upstream, Accept-Encoding
 
 
 
-=== TEST 19: schema check
+=== TEST 27: schema check
 --- config
     location /t {
         content_by_lua_block {
@@ -547,7 +656,7 @@ Vary: upstream, Accept-Encoding
 
 
 
-=== TEST 20: body checksum
+=== TEST 28: body checksum
 --- config
     location /t {
         content_by_lua_block {
@@ -581,7 +690,7 @@ passed
 
 
 
-=== TEST 21: hit - decompressed respone body same as requset body
+=== TEST 29: hit - decompressed respone body same as requset body
 --- config
     location /t {
         content_by_lua_block {

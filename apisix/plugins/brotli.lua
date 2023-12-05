@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local ngx = ngx
+local ngx_re_gmatch = ngx.re.gmatch
 local ngx_header = ngx.header
 local req_http_version = ngx.req.http_version
 local str_sub = string.sub
@@ -111,9 +112,54 @@ local function create_brotli_compressor(mode, comp_level, lgwin, lgblock)
 end
 
 
+local function check_accept_encoding(ctx)
+    local accept_encoding = core.request.header(ctx, "Accept-Encoding")
+    -- no Accept-Encoding
+    if not accept_encoding then
+        return false
+    end
+
+    -- single Accept-Encoding
+    if accept_encoding == "*" or accept_encoding == "br" then
+        return true
+    end
+
+    -- multi Accept-Encoding
+    local iterator, err = ngx_re_gmatch(accept_encoding,
+                                        [[([a-z\*]+)(;q=)?([0-9.]*)?]], "jo")
+    if not iterator then
+        core.log.error("gmatch failed, error: ", err)
+        return false
+    end
+
+    local captures
+    while true do
+        captures, err = iterator()
+        if not captures then
+            break
+        end
+        if err then
+            core.log.error("iterator failed, error: ", err)
+            return false
+        end
+        if (captures[1] == "br" or captures[1] == "*") and
+           (not captures[2] or captures[3] ~= "0") then
+            return true
+        end
+    end
+
+    return false
+end
+
+
 function _M.header_filter(conf, ctx)
     if not is_loaded then
         core.log.error("please check the brotli library")
+        return
+    end
+
+    local allow_encoding = check_accept_encoding(ctx)
+    if not allow_encoding then
         return
     end
 

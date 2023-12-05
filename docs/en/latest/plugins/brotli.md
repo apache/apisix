@@ -53,9 +53,9 @@ sudo ldconfig
 |----------------|----------------------|----------|---------------|--------------|-----------------------------------------------------------------------------------------|
 | types          | array[string] or "*" | False    | ["text/html"] |              | Dynamically sets the `brotli_types` directive. Special value `"*"` matches any MIME type. |
 | min_length     | integer              | False    | 20            | >= 1         | Dynamically sets the `brotli_min_length` directive. |
-| comp_level     | integer              | False    | 11            | [0, 11]      | Dynamically sets the `brotli_comp_level` directive. |
+| comp_level     | integer              | False    | 6             | [0, 11]      | Dynamically sets the `brotli_comp_level` directive. |
 | mode           | integer              | False    | 0             | [0, 2]       | Dynamically sets the `brotli decompress mode`, more info in [RFC 7932](https://tools.ietf.org/html/rfc7932). |
-| lgwin          | integer              | False    | 24            | [0, 10-24]   | Dynamically sets the `brotli sliding window size`, `lgwin` is Base 2 logarithm of the sliding window size, set to `0` lets compressor decide over the optimal value, more info in [RFC 7932](https://tools.ietf.org/html/rfc7932). |
+| lgwin          | integer              | False    | 19            | [0, 10-24]   | Dynamically sets the `brotli sliding window size`, `lgwin` is Base 2 logarithm of the sliding window size, set to `0` lets compressor decide over the optimal value, more info in [RFC 7932](https://tools.ietf.org/html/rfc7932). |
 | lgblock        | integer              | False    | 0             | [0, 16-24]   | Dynamically sets the `brotli input block size`, `lgblock` is Base 2 logarithm of the maximum input block size, set to `0` lets compressor decide over the optimal value, more info in [RFC 7932](https://tools.ietf.org/html/rfc7932). |
 | http_version   | number               | False    | 1.1           | 1.1, 1.0     | Like the `gzip_http_version` directive, sets the minimum HTTP version of a request required to compress a response. |
 | vary           | boolean              | False    | false         |              | Like the `gzip_vary` directive, enables or disables inserting the “Vary: Accept-Encoding” response header field. |
