@@ -176,11 +176,6 @@ end
 
 
 function _M.body_filter(conf, ctx)
-    if not is_loaded then
-        core.log.error("please check the brotli library")
-        return
-    end
-
     if not ctx.brotli_matched then
         return
     end

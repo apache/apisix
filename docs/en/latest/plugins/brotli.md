@@ -67,7 +67,7 @@ The example below enables the `brotli` Plugin on the specified Route:
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/index.html",
+    "uri": "/",
     "plugins": {
         "brotli": {
         }
@@ -75,7 +75,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "httpbin.org": 1
         }
     }
 }'
@@ -86,20 +86,22 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 Once you have configured the Plugin as shown above, you can make a request as shown below:
 
 ```shell
-curl http://127.0.0.1:9080/index.html -i -H "Accept-Encoding: br"
+curl http://127.0.0.1:9080/ -i -H "Accept-Encoding: br"
 ```
 
 ```
-HTTP/1.1 404 Not Found
+HTTP/1.1 200 OK
 Content-Type: text/html; charset=utf-8
 Transfer-Encoding: chunked
 Connection: keep-alive
-Date: Wed, 21 Jul 2021 03:52:55 GMT
-Server: APISIX/2.7
+Date: Tue, 05 Dec 2023 03:06:49 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/3.6.0
 Content-Encoding: br
 
-Warning: Binary output can mess up your terminal. Use "--output -" to tell
-Warning: curl to output it to your terminal anyway, or consider "--output
+Warning: Binary output can mess up your terminal. Use "--output -" to tell 
+Warning: curl to output it to your terminal anyway, or consider "--output 
 Warning: <FILE>" to save to a file.
 ```
 
@@ -110,11 +112,11 @@ To remove the `brotli` Plugin, you can delete the corresponding JSON configurati
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "uri": "/index.html",
+    "uri": "/",
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "127.0.0.1:1980": 1
+            "httpbin.org": 1
         }
     }
 }'
