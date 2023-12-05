@@ -15,26 +15,26 @@
 -- limitations under the License.
 --
 
-local core    = require("apisix.core")
-local ngx_re  = require("ngx.re")
-local openidc = require("resty.openidc")
-local random  = require("resty.random")
-local string  = string
-local ngx     = ngx
-local ipairs = ipairs
-local concat = table.concat
+local core              = require("apisix.core")
+local ngx_re            = require("ngx.re")
+local openidc           = require("resty.openidc")
+local random            = require("resty.random")
+local string            = string
+local ngx               = ngx
+local ipairs            = ipairs
+local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
-local plugin_name = "openid-connect"
+local plugin_name       = "openid-connect"
 
 
 local schema = {
     type = "object",
     properties = {
-        client_id = {type = "string"},
-        client_secret = {type = "string"},
-        discovery = {type = "string"},
+        client_id = { type = "string" },
+        client_secret = { type = "string" },
+        discovery = { type = "string" },
         scope = {
             type = "string",
             default = "openid",
@@ -73,7 +73,7 @@ local schema = {
                     minLength = 16,
                 },
             },
-            required = {"secret"},
+            required = { "secret" },
             additionalProperties = false,
         },
         realm = {
@@ -95,13 +95,13 @@ local schema = {
         unauth_action = {
             type = "string",
             default = "auth",
-            enum = {"auth", "deny", "pass"},
+            enum = { "auth", "deny", "pass" },
             description = "The action performed when client is not authorized. Use auth to " ..
                 "redirect user to identity provider, deny to respond with 401 Unauthorized, and " ..
                 "pass to allow the request regardless."
         },
-        public_key = {type = "string"},
-        token_signing_alg_values_expected = {type = "string"},
+        public_key = { type = "string" },
+        token_signing_alg_values_expected = { type = "string" },
         use_pkce = {
             description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
             type = "boolean",
@@ -167,6 +167,91 @@ local schema = {
             description = "Extra authorization params to the authorize endpoint",
             type = "object"
         },
+        client_rsa_private_key = {
+            description = "Client RSA private key used to sign JWT for authentication to the OP. Required when token_endpoint_auth_method is private_key_jwt.",
+            type = "string"
+        },
+        client_rsa_private_key_id = {
+            description = "Client RSA private key ID used to compute a signed JWT. Optional when token_endpoint_auth_method is private_key_jwt.",
+            type = "string"
+        },
+        client_jwt_assertion_expires_in = {
+            description = " Life duration of the signed JWT for authentication to the OP, in seconds. Used when token_endpoint_auth_method is private_key_jwt.",
+            type = "integer",
+            default = 60
+        },
+        renew_access_token_on_expiry = {
+            description = "Attempt to silently renew the access token when it expires or if a refresh token is available.",
+            type = "boolean",
+            default = true
+        },
+        access_token_expires_in = {
+            description = "Lifetime of the access token in seconds if no expires_in attribute is present in the token endpoint response.",
+            type = "integer"
+        },
+        refresh_session_interval = {
+            description = "Time interval to refresh user ID token without requiring re-authentication.",
+            type = "integer",
+            default = 900
+        },
+        iat_slack = {
+            description = "Tolerance of clock skew in seconds with the iat claim in an ID token.",
+            type = "integer",
+            default = 120
+        },
+        accept_none_alg = {
+            description = "Set to true if the OpenID provider does not sign its ID token.",
+            type = "boolean",
+            default = false
+        },
+        accept_unsupported_alg = {
+            description = "Ignore ID token signature to accept unsupported signature algorithm.",
+            type = "boolean",
+            default = true
+        },
+        access_token_expires_leeway = {
+            description = "Expiration leeway in seconds for access token renewal. When set to a value greater than 0, token renewal will take place the set amount of time before token expiration.",
+            type = "integer",
+            default = 0
+        },
+        force_reauthorize = {
+            description = "Whether to execute the authorization flow even when a token has been cached.",
+            type = "boolean",
+            default = false
+        },
+        use_nonce = {
+            description = "Whether to include nonce parameter in authorization request.",
+            type = "boolean",
+            default = false
+        },
+        revoke_tokens_on_logout = {
+            description = "Whether to notify the authorization server a previously obtained refresh or access token is no longer needed at the revocation endpoint.",
+            type = "boolean",
+            default = false
+        },
+        jwk_expires_in = {
+            description = "Expiration time for JWK cache in seconds.",
+            type = "integer",
+            default = 86400
+        },
+        jwt_verification_cache_ignore = {
+            description = "Whether to force re-verification for a bearer token and ignore any existing cached verification results.",
+            type = "boolean",
+            default = false
+        },
+        cache_segment = {
+            description = "Optional name of a cache segment, used to separate and differentiate caches used by toke introspection or JWT verification.",
+            type = "string"
+        },
+        introspection_interval = {
+            description = "TTL of the cached and introspected access token in seconds.",
+            type = "integer",
+            default = 0
+        },
+        introspection_expiry_claim = {
+            description = "Name of the expiry claim, which controls the TTL of the cached and introspected access token.",
+            type = "string"
+        },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",
@@ -175,8 +260,8 @@ local schema = {
             }
         }
     },
-    encrypt_fields = {"client_secret"},
-    required = {"client_id", "client_secret", "discovery"}
+    encrypt_fields = { "client_secret" },
+    required = { "client_id", "client_secret", "discovery" }
 }
 
 
@@ -196,7 +281,7 @@ function _M.check_schema(conf)
 
     if not conf.bearer_only and not conf.session then
         core.log.warn("when bearer_only = false, " ..
-                       "you'd better complete the session configuration manually")
+            "you'd better complete the session configuration manually")
         conf.session = {
             -- generate a secret when bearer_only = false and no secret is configured
             secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
@@ -210,7 +295,6 @@ function _M.check_schema(conf)
 
     return true
 end
-
 
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
@@ -389,7 +473,7 @@ function _M.rewrite(plugin_conf, ctx)
                     core.log.error("OIDC introspection failed: ", "required scopes not present")
                     local error_response = {
                         error = "required scopes " .. concat(conf.required_scopes, ", ") ..
-                        " not present"
+                            " not present"
                     }
                     return 403, core.json.encode(error_response)
                 end
@@ -420,7 +504,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
             if err == "unauthorized request" then
@@ -461,6 +545,5 @@ function _M.rewrite(plugin_conf, ctx)
         end
     end
 end
-
 
 return _M
