@@ -69,7 +69,7 @@ fi
 
 
 # rockspec
-matched=`ls -l rockspec/ | grep  "$ver" `
+matched=`ls -l | grep  "$ver" `
 
 if [ -z "$matched" ]; then
     echo -e "${RED}failed: (rockspec) VERSION = $ver \"$ver\" ${NC}" 1>&2

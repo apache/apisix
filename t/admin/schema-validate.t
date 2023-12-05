@@ -398,3 +398,44 @@ location /t {
 --- error_code: 400
 --- response
 {"error_msg":"allOf 1 failed: value should match only one schema, but matches none"}
+
+
+
+=== TEST 13: Check node_schema optional port
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes',
+                ngx.HTTP_POST,
+                {
+                    uri = "/hello",
+                    upstream = {
+                        type = "roundrobin",
+                        nodes = {
+                            { host = "127.0.0.1:1980", weight = 1,}
+                        }
+                    },
+                    methods = {"GET"},
+                }
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 14: Test route upstream
+--- request
+GET /hello
+--- response_body
+hello world

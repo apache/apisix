@@ -285,3 +285,129 @@ passed
     }
 --- response_body
 [200,200]
+
+
+
+=== TEST 9: add consumer jack1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack1",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jack2019",
+                            "password": "123456"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: add consumer jack2
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack2",
+                    "plugins": {
+                        "basic-auth": {
+                            "username": "jack2020",
+                            "password": "123456"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: set route with consumers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "basic-auth": {},
+                        "consumer-restriction":{
+                            "whitelist":[
+                                "jack1",
+                                "jack2"
+                            ],
+                            "rejected_code": 403,
+                            "type":"consumer_name"
+                        },
+                        "limit-count": {
+                            "count": 1,
+                            "time_window": 60,
+                            "rejected_code": 429
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: hit jack1, pass
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMTk6MTIzNDU2
+--- response_body
+hello world
+
+
+
+=== TEST 13: hit jack2, reject, the two consumers share the same counter
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic amFjazIwMjA6MTIzNDU2
+--- error_code: 429

@@ -37,7 +37,7 @@ jobs:
         cache-name: cache-deps
       with:
         path: deps
-        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+        key: ${{ runner.os }}-${{ env.cache-name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
     - name: Linux launch common services
       run: |

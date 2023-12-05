@@ -41,7 +41,7 @@ jobs:
         cache-name: cache-deps
       with:
         path: deps
-        key: ${{ runner.os }}-${{ env.cache-name }}-ubi8.6-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+        key: ${{ runner.os }}-${{ env.cache-name }}-ubi8.6-${{ hashFiles('apisix-master-0.rockspec') }}
 
     - name: Extract branch name
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -88,7 +88,7 @@ jobs:
         cd apisix-build-tools
         make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=ubi image_tag=8.6 local_code_path=./apisix
         cd ..
-        rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
+        rm -rf $(ls -1 -I apisix-build-tools -I t -I utils -I ci --ignore=Makefile -I "*.rockspec")
 
     - name: Start Dubbo Backend
       run: |

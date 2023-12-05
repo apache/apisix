@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.7.0](#370)
 - [3.6.0](#360)
 - [3.5.0](#350)
 - [3.4.0](#340)
@@ -72,6 +73,44 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.7.0
+
+### Change
+
+- :warning: Creating core resources does not allow passing in `create_time` and `update_time`: [#10232](https://github.com/apache/apisix/pull/10232)
+- :warning: Remove self-contained info fields `exptime` and `validity_start` and `validity_end` from ssl schema: [10323](https://github.com/apache/apisix/pull/10323)
+- :warning: Replace `route` with `apisix.route_name`, `service` with `apisix.service_name` in the attributes of opentelemetry plugin to follow the standards for span name and attributes: [#10393](https://github.com/apache/apisix/pull/10393)
+
+### Core
+
+- :sunrise: Added token to support access control for consul discovery: [#10278](https://github.com/apache/apisix/pull/10278)
+- :sunrise: Support configuring `service_id` in stream_route to reference service resources: [#10298](https://github.com/apache/apisix/pull/10298)
+- :sunrise: Using `apisix-runtime` as the apisix runtime:
+  - [#10415](https://github.com/apache/apisix/pull/10415)
+  - [#10427](https://github.com/apache/apisix/pull/10427)
+
+### Plugins
+
+- :sunrise: Add tests for authz-keycloak with apisix secrets: [#10353](https://github.com/apache/apisix/pull/10353)
+- :sunrise: Add authorization params to openid-connect plugin: [#10058](https://github.com/apache/apisix/pull/10058)
+- :sunrise: Support set variable in zipkin plugin: [#10361](https://github.com/apache/apisix/pull/10361)
+- :sunrise: Support Nacos ak/sk authentication: [#10445](https://github.com/apache/apisix/pull/10445)
+
+### Bugfixes
+
+- Fix: Use warn log for get healthcheck target status failure:
+  - [#10156](https://github.com/apache/apisix/pull/10156)
+- Fix: Keep healthcheck target state when upstream changes:
+  - [#10312](https://github.com/apache/apisix/pull/10312)
+  - [#10307](https://github.com/apache/apisix/pull/10307)
+- Fix: Add name field in plugin_config schema for consistency: [#10315](https://github.com/apache/apisix/pull/10315)
+- Fix: Optimize tls in upstream_schema and wrong variable: [#10269](https://github.com/apache/apisix/pull/10269)
+- Fix(consul): Failed to exit normally: [#10342](https://github.com/apache/apisix/pull/10342)
+- Fix: The request header with `Content-Type: application/x-www-form-urlencoded;charset=utf-8` will cause vars condition `post_arg_xxx` matching to failed: [#10372](https://github.com/apache/apisix/pull/10372)
+- Fix: Make install failed on mac: [#10403](https://github.com/apache/apisix/pull/10403)
+- Fix(log-rotate): Log compression timeout caused data loss: [#8620](https://github.com/apache/apisix/pull/8620)
+- Fix(kafka-logger): Remove 0 from enum of required_acks: [#10469](https://github.com/apache/apisix/pull/10469)
 
 ## 3.6.0
 

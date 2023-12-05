@@ -21,7 +21,10 @@ local template          = require("resty.template")
 local ngx               = ngx
 local decode_base64     = ngx.decode_base64
 local req_set_body_data = ngx.req.set_body_data
+local req_get_uri_args  = ngx.req.get_uri_args
 local str_format        = string.format
+local decode_args       = ngx.decode_args
+local str_find          = core.string.find
 local type              = type
 local pcall             = pcall
 local pairs             = pairs
@@ -31,8 +34,9 @@ local next              = next
 local transform_schema = {
     type = "object",
     properties = {
-        input_format = { type = "string", enum = {"xml", "json"} },
+        input_format = { type = "string", enum = {"xml", "json", "encoded", "args"} },
         template = { type = "string" },
+        template_is_base64 = { type = "boolean" },
     },
     required = {"template"},
 }
@@ -108,6 +112,12 @@ local decoders = {
     json = function(data)
         return core.json.decode(data)
     end,
+    encoded = function(data)
+        return decode_args(data)
+    end,
+    args = function()
+        return req_get_uri_args()
+    end,
 }
 
 
@@ -116,11 +126,11 @@ function _M.check_schema(conf)
 end
 
 
-local function transform(conf, body, typ, ctx)
+local function transform(conf, body, typ, ctx, request_method)
     local out = {}
-    if body then
+    local format = conf[typ].input_format
+    if body or request_method == "GET" then
         local err
-        local format = conf[typ].input_format
         if format then
             out, err = decoders[format](body)
             if not out then
@@ -134,7 +144,9 @@ local function transform(conf, body, typ, ctx)
     end
 
     local text = conf[typ].template
-    text = decode_base64(text) or text
+    if (conf[typ].template_is_base64 or (format and format ~= "encoded" and format ~= "args")) then
+        text = decode_base64(text) or text
+    end
     local ok, render = pcall(template.compile, text)
     if not ok then
         local err = render
@@ -159,12 +171,17 @@ local function transform(conf, body, typ, ctx)
 end
 
 
-local function set_input_format(conf, typ, ct)
+local function set_input_format(conf, typ, ct, method)
+    if method == "GET" then
+        conf[typ].input_format = "args"
+    end
     if conf[typ].input_format == nil and ct then
         if ct:find("text/xml") then
             conf[typ].input_format = "xml"
         elseif ct:find("application/json") then
             conf[typ].input_format = "json"
+        elseif str_find(ct:lower(), "application/x-www-form-urlencoded", nil, true) then
+            conf[typ].input_format = "encoded"
         end
     end
 end
@@ -172,11 +189,12 @@ end
 
 function _M.rewrite(conf, ctx)
     if conf.request then
+        local request_method  = ngx.var.request_method
         conf = core.table.deepcopy(conf)
         ctx.body_transformer_conf = conf
         local body = core.request.get_body()
-        set_input_format(conf, "request", ctx.var.http_content_type)
-        local out, status, err = transform(conf, body, "request", ctx)
+        set_input_format(conf, "request", ctx.var.http_content_type, request_method)
+        local out, status, err = transform(conf, body, "request", ctx, request_method)
         if not out then
             return status, { message = err }
         end

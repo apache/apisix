@@ -161,3 +161,72 @@ The health check status can be fetched via `GET /v1/healthcheck` in [Control API
 curl http://127.0.0.1:9090/v1/healthcheck/upstreams/healthycheck -s | jq .
 
 ```
+
+## Health Check Status
+
+APISIX provides comprehensive health check information, with particular emphasis on the `status` and `counter` parameters for effective health monitoring. In the APISIX context, nodes exhibit four states: `healthy`, `unhealthy`, `mostly_unhealthy`, and `mostly_healthy`. The `mostly_healthy` status indicates that the current node is considered healthy, but during health checks, the node's health status is not consistently successful. The `mostly_unhealthy` status indicates that the current node is considered unhealthy, but during health checks, the node's health detection is not consistently unsuccessful. The transition of a node's state depends on the success or failure of the current health check, along with the recording of four key metrics in the `counter`: `tcp_failure`, `http_failure`, `success`, and `timeout_failure`.
+
+To retrieve health check information, you can use the following curl command:
+
+```shell
+ curl -i http://127.0.0.1:9090/v1/healthcheck
+```
+
+Response Example:
+
+```json
+[
+  {
+    "nodes": {},
+    "name": "/apisix/routes/1",
+    "type": "http"
+  },
+  {
+    "nodes": [
+      {
+        "port": 1970,
+        "hostname": "127.0.0.1",
+        "status": "healthy",
+        "ip": "127.0.0.1",
+        "counter": {
+          "tcp_failure": 0,
+          "http_failure": 0,
+          "success": 0,
+          "timeout_failure": 0
+        }
+      },
+      {
+        "port": 1980,
+        "hostname": "127.0.0.1",
+        "status": "healthy",
+        "ip": "127.0.0.1",
+        "counter": {
+          "tcp_failure": 0,
+          "http_failure": 0,
+          "success": 0,
+          "timeout_failure": 0
+        }
+      }
+    ],
+    "name": "/apisix/routes/example-hc-route",
+    "type": "http"
+  }
+]
+```
+
+### State Transition Diagram
+
+![image](../../../assets/images/health_check_node_state_diagram.png)
+
+Note that all nodes start with the `healthy` status without any initial probes, and the counter only resets and updates with a state change. Hence, when nodes are `healthy` and all subsequent checks are successful, the `success` counter is not updated and remains zero.
+
+### Counter Information
+
+In the event of a health check failure, the `success` count in the counter will be reset to zero. Upon a successful health check, the `tcp_failure`, `http_failure`, and `timeout_failure` data will be reset to zero.
+
+| Name            | Description                            | Purpose                                                                                                                  |
+|----------------|----------------------------------------|--------------------------------------------------------------------------------------------------------------------------|
+| success        | Number of successful health checks     | When `success` exceeds the configured `healthy.successes` value, the node transitions to a `healthy` state.              |
+| tcp_failure    | Number of TCP health check failures    | When `tcp_failure` exceeds the configured `unhealthy.tcp_failures` value, the node transitions to an `unhealthy` state.  |
+| http_failure   | Number of HTTP health check failures   | When `http_failure` exceeds the configured `unhealthy.http_failures` value, the node transitions to an `unhealthy` state. |
+| timeout_failure | Number of health check timeouts        | When `timeout_failure` exceeds the configured `unhealthy.timeouts` value, the node transitions to an `unhealthy` state.  |
