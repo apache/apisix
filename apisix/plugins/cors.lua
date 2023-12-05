@@ -125,7 +125,7 @@ local schema = {
             description =
                 "you can use '*' to allow all origins which can view timing information " ..
                 "when no credentials," ..
-                "'**' to allow forcefully (it will bring some security risks, be carefully)," ..
+                "'**' to allow forcefully (it will bring some security risks, be careful)," ..
                 "multiple origin use ',' to split. default: nil",
             type = "string",
             pattern = origins_pattern
