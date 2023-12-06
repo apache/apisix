@@ -44,6 +44,9 @@ install_dependencies() {
     chmod +x build-apisix-runtime-debug-centos7.sh
     ./build-apisix-runtime-debug-centos7.sh
 
+    # patch lua-resty-events
+    sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
+
     # install luarocks
     ./utils/linux-install-luarocks.sh
 
