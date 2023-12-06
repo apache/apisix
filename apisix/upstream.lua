@@ -111,10 +111,7 @@ local function create_checker(upstream)
     end
     upstream.is_creating_checker = true
 
-    if not events.healthcheck_events_module then
-        core.log.debug("no configured health check event module found, fallback to lua-resty-worker-events")
-    end
-
+    core.log.debug("events module used by the healthcheck: ", events.events_module, ", module name: ",events:get_healthcheck_events_modele())
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
