@@ -56,6 +56,7 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 | redis_cluster_name      | string  | required when `policy` is `redis-cluster` |               |                                        | Name of the Redis cluster service nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
 | redis_cluster_ssl      | boolean  |  False |     false         |                                        | If set to `true`, then uses SSL to connect to redis-cluster. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
 | redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+NOTE: `encrypt_fields = {"redis_password", "redis_username}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 ## Enable Plugin
 
@@ -246,6 +247,37 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
             ],
             "redis_password": "password",
             "redis_cluster_name": "redis-cluster-1"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+In addition, you can use APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md). For example, in
+case you have environment variables `REDIS_HOST` and `REDIS_PASSWORD` set, you can use them in the plugin configuration as shown below:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "policy": "redis",
+            "redis_host": "$ENV://REDIS_HOST",
+            "redis_port": 6379,
+            "redis_password": "$ENV://REDIS_PASSWORD",
+            "redis_database": 1,
+            "redis_timeout": 1001
         }
     },
     "upstream": {
