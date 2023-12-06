@@ -531,10 +531,8 @@ _EOC_
 
     local events_sock_path = "$apisix_home/t/servroot/logs/worker_events.sock"
     if os.getenv("TEST_NGINX_USE_HUP") ~= "1" then
-        --ngx.log(ngx.WARN, "GGGGGGGGGGGGGGGGGGGGGGGG123123")
         pcall(os.remove, events_sock_path)
     end
-    --ngx.log(ngx.WARN, "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
 
     $extra_init_by_lua_start
 
