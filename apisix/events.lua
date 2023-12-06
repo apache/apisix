@@ -84,13 +84,13 @@ function _M.init_worker()
     local conf = core.config.local_conf()
     local module_name = core.table.try_read_attr(conf, "apisix", "events", "module") or _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS
 
-    if module_name == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
+    --if module_name == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
         -- use lua-resty-events as an event module via the apisix.events.module key in the configuration file.
         _M.worker_events = init_resty_events()
-    else
+    --else
         -- use lua-resty-worker-events default now
-        _M.worker_events = init_resty_worker_events()
-    end
+        --_M.worker_events = init_resty_worker_events()
+    --end
 end
 
 
@@ -126,8 +126,10 @@ end
 
 function _M.get_healthcheck_events_modele(self)
     if self.events_module == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
+        ngx.log(ngx.WARN, "resty.events")
         return "resty.events"
     else
+        ngx.log(ngx.WARN, "resty.worker.events")
         return "resty.worker.events"
     end
 end
