@@ -97,7 +97,13 @@ _M.latency_details_in_ms = latency_details_in_ms
 
 local function insert_log_req_resp_body(log, ctx, conf)
     if ctx.resp_body then
-        log.response_body = ctx.resp_body
+        if log.response == nil then
+            log.response = {
+                body = ctx.resp_body,
+            }
+            else
+            log.response.body = ctx.resp_body
+        end
     end
 
     if conf.include_req_body then
@@ -122,11 +128,23 @@ local function insert_log_req_resp_body(log, ctx, conf)
         if log_request_body then
             local body = req_get_body_data()
             if body then
-                log.request_body = body
+                if log.request == nil then
+                    log.request = {
+                        body = body
+                    }
+                else
+                    log.request.body = body
+                end
             else
                 local body_file = ngx.req.get_body_file()
                 if body_file then
-                    log.request_body_file = body_file
+                    if log.request == nil then
+                        log.request = {
+                            body_file = body_file
+                        }
+                    else
+                        log.request.body_file = body_file
+                    end
                 else
                     core.log.info("fail to get body_file")
                 end
