@@ -85,4 +85,4 @@ chmod +x build-apisix-runtime.sh
 ./build-apisix-runtime.sh latest
 
 # patch lua-resty-events
-sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
+sudo sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
