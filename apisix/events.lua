@@ -15,14 +15,17 @@
 -- limitations under the License.
 --
 
-local require = require
-local error   = error
-local ngx     = ngx
-local core    = require("apisix.core")
+local require      = require
+local error        = error
+local assert       = assert
+local tostring     = tostring
+local pairs        = pairs
+local setmetatable = setmetatable
+local ngx          = ngx
+local core         = require("apisix.core")
 
 local _M = {
     events_module = nil,
-    --healthcheck_events_module = nil
 }
 
 _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS = 'lua-resty-worker-events'
@@ -32,7 +35,6 @@ _M.EVENTS_MODULE_LUA_RESTY_EVENTS = 'lua-resty-events'
 -- use lua-resty-worker-events
 local function init_resty_worker_events()
     _M.events_module = _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS
-    --_M.healthcheck_events_module = "resty.worker.events"
 
     local we = require("resty.worker.events")
     local shm = ngx.config.subsystem == "http" and "worker-events" or "worker-events-stream"
@@ -48,7 +50,6 @@ end
 -- use lua-resty-events
 local function init_resty_events()
     _M.events_module = _M.EVENTS_MODULE_LUA_RESTY_EVENTS
-    --_M.healthcheck_events_module = "resty.events"
 
     local listening = "unix:" .. ngx.config.prefix() .. "logs/"
     if ngx.config.subsystem == "http" then
