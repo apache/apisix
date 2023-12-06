@@ -20,7 +20,7 @@ jobs:
       run: |
         . ./ci/common.sh
         export_or_prefix
-        export OPENRESTY_VERSION=default
+        sudo export OPENRESTY_VERSION=default
 
         sudo ./ci/linux-install-openresty.sh
         ./utils/linux-install-luarocks.sh
