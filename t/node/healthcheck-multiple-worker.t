@@ -27,7 +27,7 @@ BEGIN {
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('info');
+log_level('debug');
 no_root_location();
 no_shuffle();
 workers(2);
@@ -90,6 +90,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(3) -- wait for new workers replacement to complete
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
@@ -136,4 +137,4 @@ qr/unhealthy TCP increment/
 --- grep_error_log_out
 unhealthy TCP increment
 unhealthy TCP increment
---- timeout: 10
+--- timeout: 20
