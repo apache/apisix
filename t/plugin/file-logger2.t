@@ -173,7 +173,7 @@ contain with target
             t("/hello?name=pix", ngx.HTTP_GET)
             msg = fd:read("*l")
             local new_msg = core.json.decode(msg)
-            if new_msg.response.body == nil then
+            if new_msg.response == nil then
                 ngx.say('skip unconcern body')
             end
         }

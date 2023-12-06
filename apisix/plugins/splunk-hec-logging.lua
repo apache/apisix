@@ -92,7 +92,7 @@ end
 
 
 local function get_logger_entry(conf, ctx)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx, true)
     local splunk_entry = {
         time = ngx_now(),
         source = DEFAULT_SPLUNK_HEC_ENTRY_SOURCE,

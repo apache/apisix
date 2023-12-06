@@ -145,8 +145,6 @@ local function insert_log_req_resp_body(log, ctx, conf)
                     else
                         log.request.body_file = body_file
                     end
-                else
-                    core.log.info("fail to get body_file")
                 end
             end
         end
@@ -250,7 +248,14 @@ end
 _M.get_default_log = get_default_log
 
 
-function _M.get_log_entry(plugin_name, conf, ctx)
+-- for test
+function _M.inject_get_default_log(f)
+    get_default_log = f
+    _M.get_default_log = f
+end
+
+
+function _M.get_log_entry(plugin_name, conf, ctx, default_full_log)
     -- If the "match" configuration is set and the matching conditions are not met,
     -- then do not log the message.
     if conf.match and not is_match(conf.match, ctx) then
@@ -270,9 +275,12 @@ function _M.get_log_entry(plugin_name, conf, ctx)
         customized = true
         entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
     else
-        entry = get_default_log(ngx, conf)
+        if default_full_log == true then
+            entry = get_full_log(ngx, conf)
+        else
+            entry = get_default_log(ngx, conf)
+        end
     end
-
     return entry, customized
 end
 

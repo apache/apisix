@@ -158,7 +158,7 @@ passed
     local http = require("resty.http")
     local ngx_re = require("ngx.re")
     local log_util = require("apisix.utils.log-util")
-    log_util.inject_get_full_log(function(ngx, conf)
+    log_util.inject_get_default_log(function(ngx, conf)
         return {
             test = "test"
         }
@@ -175,7 +175,7 @@ passed
         end
 
         local entry = core.json.decode(arr[2])
-        local origin_entry = log_util.get_full_log(ngx, {})
+        local origin_entry = log_util.get_default_log(ngx, {})
         for k, v in pairs(origin_entry) do
             local vv = entry[k]
             if not vv or vv ~= v then
@@ -183,7 +183,7 @@ passed
             end
         end
 
-        core.log.error("check elasticsearch full log body success")
+        core.log.error("check elasticsearch default log body success")
         return {
             status = 200,
             body = "success"
@@ -195,7 +195,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-check elasticsearch full log body success
+check elasticsearch default log body success
 
 
 

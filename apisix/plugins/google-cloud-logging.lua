@@ -173,7 +173,7 @@ end
 
 
 local function get_logger_entry(conf, ctx, oauth)
-    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry, customized = log_util.get_log_entry(plugin_name, conf, ctx, true)
     local google_entry
     if not customized then
         google_entry = {
@@ -190,7 +190,7 @@ local function get_logger_entry(conf, ctx, oauth)
             },
             jsonPayload = {
                 route_id = entry.route_id,
-                service_id = entry.service_id,
+                service_id = entry.service_id
             },
         }
     else

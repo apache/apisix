@@ -54,13 +54,13 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 
 你还可以通过插件元数据配置插件。详细配置如下：
 
-| 名称       | 类型    | 必选项 | 默认值               | 有效值                           | 描述                                                                |
-|------------|---------|-------|----------------------|--------------------------------|---------------------------------------------------------------------|
-| host       | string  | 否    | "logs-01.loggly.com" |                                | 发送日志的主机的端点。                                                |
-| port       | integer | 否    | 514                  |                                | 要连接的 Loggly 端口。仅用于 `syslog` 协议。                         |
-| timeout    | integer | 否    | 5000                 |                                | 发送数据请求超时时间（以毫秒为单位）。                                 |
-| protocol   | string  | 否    | "syslog"             | [ "syslog", "http", "https" ]  | 将日志发送到 Loggly 的协议。                                          |
-| log_format | object  | 否    | nil                  |                                | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| 名称         | 类型      | 必选项 | 默认值                  | 有效值                           | 描述                                                                                                                                                               |
+|------------|---------|-----|----------------------|-------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| host       | string  | 否   | "logs-01.loggly.com" |                               | 发送日志的主机的端点。                                                                                                                                                      |
+| port       | integer | 否   | 514                  |                               | 要连接的 Loggly 端口。仅用于 `syslog` 协议。                                                                                                                                  |
+| timeout    | integer | 否   | 5000                 |                               | 发送数据请求超时时间（以毫秒为单位）。                                                                                                                                              |
+| protocol   | string  | 否   | "syslog"             | [ "syslog", "http", "https" ] | 将日志发送到 Loggly 的协议。                                                                                                                                               |
+| log_format | object  | 否   |                      |                               | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 APISIX 支持 [Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm)、[HTTP/S](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/http-bulk-endpoint.htm)（批量端点）协议将日志事件发送到 Loggly。**默认情况下 `protocol` 的值为 `syslog`**。该协议允许你通过一些细粒度的控制（基于上游 HTTP 响应代码的日志严重性映射）发送符合 RFC5424 的系统日志事件。但是 HTTP/S 批量端点非常适合以更快的传输速度发送更大量的日志事件。
 

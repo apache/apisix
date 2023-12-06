@@ -534,7 +534,7 @@ passed
             t('/hello',ngx.HTTP_GET)
             ngx.sleep(0.5)
             t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
+            ngx.sleep(2.5)
         }
     }
 --- timeout: 5s
@@ -580,7 +580,7 @@ qr/partition_id: 2/]
             t('/hello',ngx.HTTP_GET)
             ngx.sleep(0.5)
             t('/hello',ngx.HTTP_GET)
-            ngx.sleep(0.5)
+            ngx.sleep(2.5)
         }
     }
 --- timeout: 5s

@@ -70,7 +70,7 @@ end
 
 
 function _M.log(conf, ctx)
-    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx, true)
     syslog.push_entry(conf, ctx, entry)
 end
 
