@@ -88,6 +88,8 @@ __DATA__
 --- response_body
 remaining: 1
 
+
+
 === TEST 2: set route, with redis host as environemnt variable
 --- config
     location /t {
@@ -124,6 +126,8 @@ remaining: 1
     }
 --- response_body
 passed
+
+
 
 === TEST 3: up the limit with host environment variable
 --- pipelined_requests eval

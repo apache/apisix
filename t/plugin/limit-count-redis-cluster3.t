@@ -82,6 +82,8 @@ __DATA__
 --- response_body
 remaining: 1
 
+
+
 === TEST 2: set route, with redis_cluster_nodes as environement variables and redis_cluster_name
 --- config
     location /t {
@@ -123,6 +125,8 @@ remaining: 1
     }
 --- response_body
 passed
+
+
 
 === TEST 3: up the limit with environment variables for redis_cluster_nodes
 --- pipelined_requests eval

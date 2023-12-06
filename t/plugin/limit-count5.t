@@ -92,6 +92,8 @@ remaining: 0
 rejected
 rejected
 
+
+
 === TEST 2: set route(id: 1) using environment variable for key
 --- config
     location /t {
@@ -127,6 +129,8 @@ rejected
     }
 --- response_body
 passed
+
+
 
 === TEST 3: up the limit with environment variable for key
 --- pipelined_requests eval
