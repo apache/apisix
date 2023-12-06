@@ -84,7 +84,7 @@ remaining: 1
 
 
 
-=== TEST 2: set route, with redis_cluster_nodes as environement variables and redis_cluster_name
+=== TEST 2: set route, with redis_cluster_nodes as environment variables and redis_cluster_name
 --- config
     location /t {
         content_by_lua_block {

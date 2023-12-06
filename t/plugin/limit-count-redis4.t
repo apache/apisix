@@ -90,7 +90,7 @@ remaining: 1
 
 
 
-=== TEST 2: set route, with redis host as environemnt variable
+=== TEST 2: set route, with redis host as environment variable
 --- config
     location /t {
         content_by_lua_block {
