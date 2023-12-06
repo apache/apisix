@@ -118,9 +118,9 @@ local function create_checker(upstream)
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
-        -- the events.init_worker will be executed in the init_worker phase, 
+        -- the events.init_worker will be executed in the init_worker phase,
         -- events.healthcheck_events_module is set
-        -- while the healthcheck object is executed in the http access phase, 
+        -- while the healthcheck object is executed in the http access phase,
         -- so it can be used here
         events_module = events:get_healthcheck_events_modele(),
     })
