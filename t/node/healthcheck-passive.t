@@ -89,7 +89,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(1) -- wait for sync
+            ngx.sleep(3) -- wait for sync
 
             local json_sort = require("toolkit.json")
             local http = require("resty.http")
@@ -304,6 +304,8 @@ enabled healthcheck passive
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(3) -- wait for sync
+
             local t = require("lib.test_admin").test
             local json_sort = require("toolkit.json")
             local http = require("resty.http")
