@@ -83,3 +83,6 @@ fi
 wget https://raw.githubusercontent.com/Sn0rt/apisix-build-tools/guohao/update-lua-resty-events/build-apisix-runtime.sh
 chmod +x build-apisix-runtime.sh
 ./build-apisix-runtime.sh latest
+
+# patch lua-resty-events
+sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
