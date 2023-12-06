@@ -82,15 +82,17 @@ function _M.init_worker()
     _M.inited = true
 
     local conf = core.config.local_conf()
-    local module_name = core.table.try_read_attr(conf, "apisix", "events", "module") or _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS
+    local module_name = core.table.try_read_attr(conf, "apisix", "events", "module")
+                            or _M.EVENTS_MODULE_LUA_RESTY_WORKER_EVENTS
 
-    --if module_name == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
-        -- use lua-resty-events as an event module via the apisix.events.module key in the configuration file.
+    if module_name == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
+        -- use lua-resty-events as an event module via the apisix.events.module
+        -- key in the configuration file
         _M.worker_events = init_resty_events()
-    --else
+    else
         -- use lua-resty-worker-events default now
-        --_M.worker_events = init_resty_worker_events()
-    --end
+        _M.worker_events = init_resty_worker_events()
+    end
 end
 
 

@@ -111,13 +111,17 @@ local function create_checker(upstream)
     end
     upstream.is_creating_checker = true
 
-    core.log.debug("events module used by the healthcheck: ", events.events_module, ", module name: ",events:get_healthcheck_events_modele())
+    core.log.debug("events module used by the healthcheck: ", events.events_module,
+                    ", module name: ",events:get_healthcheck_events_modele())
+
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
-        -- the events.init_worker will be executed in the init_worker phase, events.healthcheck_events_module is set
-        -- while the healthcheck object is executed in the http access phase, so it can be used here
+        -- the events.init_worker will be executed in the init_worker phase, 
+        -- events.healthcheck_events_module is set
+        -- while the healthcheck object is executed in the http access phase, 
+        -- so it can be used here
         events_module = events:get_healthcheck_events_modele(),
     })
 
