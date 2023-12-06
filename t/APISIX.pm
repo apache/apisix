@@ -414,8 +414,8 @@ _EOC_
         require "resty.core"
 
         local events_sock_path = "$apisix_home/t/servroot/logs/stream_worker_events.sock"
-        if os.getenv("TEST_NGINX_USE_HUP") ~= "1" and require("pl.path").exists(events_sock_path) then
-            os.remove(events_sock_path)
+        if os.getenv("TEST_NGINX_USE_HUP") ~= "1" then
+            pcall(os.remove, events_sock_path)
         end
 
         $stream_extra_init_by_lua_start
@@ -530,9 +530,11 @@ _EOC_
     require "resty.core"
 
     local events_sock_path = "$apisix_home/t/servroot/logs/worker_events.sock"
-    if os.getenv("TEST_NGINX_USE_HUP") ~= "1" and require("pl.path").exists(events_sock_path) then
-        os.remove(events_sock_path)
+    if os.getenv("TEST_NGINX_USE_HUP") ~= "1" then
+        --ngx.log(ngx.WARN, "GGGGGGGGGGGGGGGGGGGGGGGG123123")
+        pcall(os.remove, events_sock_path)
     end
+    --ngx.log(ngx.WARN, "HHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH")
 
     $extra_init_by_lua_start
 

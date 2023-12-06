@@ -121,7 +121,7 @@ local function create_checker(upstream)
         checks = upstream.checks,
         -- the events.init_worker will be executed in the init_worker phase, events.healthcheck_events_module is set
         -- while the healthcheck object is executed in the http access phase, so it can be used here
-        events_module = events.healthcheck_events_module or "resty.worker.events",
+        events_module = events:get_healthcheck_events_modele(),
     })
 
     if not checker then
