@@ -17,7 +17,7 @@
 
 BEGIN {
     if ($ENV{TEST_EVENTS_MODULE} ne "lua-resty-events") {
-        $SkipReason = "Only fot lua-resty-events events module";
+        $SkipReason = "Only for lua-resty-events events module";
     }
 }
 
