@@ -200,11 +200,11 @@ apisix quit
 apisix stop
 ```
 
-## 为 APISIX 构建 APISIX-Base
+## 为 APISIX 构建 APISIX-Runtime
 
 APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
 
-如果要使用这些功能，你需要构建一个自定义的 OpenResty 发行版（APISIX-Base）。请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools) 配置你的构建环境并进行构建。
+如果要使用这些功能，你需要构建一个自定义的 OpenResty 发行版（APISIX-Runtime）。请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools) 配置你的构建环境并进行构建。
 
 ## 运行测试用例
 

@@ -35,7 +35,7 @@ description: 本文介绍了关于 Apache APISIX `real-ip` 插件的基本信息
 
 :::info IMPORTANT
 
-该插件要求 APISIX  运行在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 上。
+该插件要求 APISIX  运行在 [APISIX-Runtime](../FAQ.md#如何构建-apisix-runtime-环境) 上。
 
 :::
 
