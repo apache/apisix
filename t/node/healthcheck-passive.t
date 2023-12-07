@@ -116,8 +116,8 @@ passed
             -- a non-health condition, a request is first triggered manually here to
             -- trigger a passive health check to refresh the monitoring state of the build
             --
-            -- The reason for this is to avoid delays in event synchronization timing due 
-            -- to non-deterministic asynchronous connections when using lua-resty-events 
+            -- The reason for this is to avoid delays in event synchronization timing due
+            -- to non-deterministic asynchronous connections when using lua-resty-events
             -- as an events module.
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             if not res then
@@ -357,7 +357,7 @@ enabled healthcheck passive
             -- the Nginx event loop to process socket connections.
             -- When lua-resty-healthcheck handles passive healthchecks and uses lua-resty-events
             -- as the events module, the synchronization of the first event usually occurs
-            -- before the start of the passive healthcheck. So when the execution finishes and 
+            -- before the start of the passive healthcheck. So when the execution finishes and
             -- healthchecker tries to record the healthcheck status, it will not be able to find
             -- an existing target (because the synchronization event has not finished yet), which
             -- will lead to some anomalies that deviate from the original test case, so compatibility
