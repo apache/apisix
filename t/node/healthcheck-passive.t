@@ -110,9 +110,24 @@ passed
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
 
+            local httpc = http.new()
+
+            -- Since a failed request attempt triggers a passive health check to report
+            -- a non-health condition, a request is first triggered manually here to
+            -- trigger a passive health check to refresh the monitoring state of the build
+            --
+            -- The reason for this is to avoid delays in event synchronization timing due 
+            -- to non-deterministic asynchronous connections when using lua-resty-events 
+            -- as an events module.
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.sleep(1) -- Wait for health check unhealthy events sync
+
             local ports_count = {}
             for i = 1, 6 do
-                local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
                 if not res then
                     ngx.say(err)
@@ -326,7 +341,6 @@ enabled healthcheck passive
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
 
-            local ports_count = {}
             local httpc = http.new()
             local res, err = httpc:request_uri(uri .. "/hello")
             if not res then
@@ -335,6 +349,29 @@ enabled healthcheck passive
             end
             ngx.say(res.status)
 
+            -- The first time request to /hello_
+            -- Ensure that the event that triggers the healthchecker to perform
+            -- add_target has been sent and processed correctly
+            --
+            -- Due to the implementation of lua-resty-events, it relies on the kernel and
+            -- the Nginx event loop to process socket connections.
+            -- When lua-resty-healthcheck handles passive healthchecks and uses lua-resty-events
+            -- as the events module, the synchronization of the first event usually occurs
+            -- before the start of the passive healthcheck. So when the execution finishes and 
+            -- healthchecker tries to record the healthcheck status, it will not be able to find
+            -- an existing target (because the synchronization event has not finished yet), which
+            -- will lead to some anomalies that deviate from the original test case, so compatibility
+            -- operations are performed here.
+            local res, err = httpc:request_uri(uri .. "/hello_")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.say(res.status)
+
+            ngx.sleep(1) -- Wait for health check unhealthy events sync
+
+            -- The second time request to /hello_
             local res, err = httpc:request_uri(uri .. "/hello_")
             if not res then
                 ngx.say(err)
@@ -346,6 +383,7 @@ enabled healthcheck passive
 --- request
 GET /t
 --- response_body
+502
 502
 502
 --- grep_error_log eval
