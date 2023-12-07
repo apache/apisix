@@ -286,7 +286,9 @@ local function run_watch(premature)
     ngx_thread_kill(run_watch_th)
     ngx_thread_kill(check_worker_th)
 
-    ngx_timer_at(0, run_watch)
+    if not exiting() then
+        ngx_timer_at(0, run_watch)
+    end
 end
 
 
