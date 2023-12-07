@@ -19,6 +19,7 @@ local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
 local plugin_name = "response-rewrite"
 local ngx         = ngx
+local ngx_header  = ngx.header
 local re_match    = ngx.re.match
 local re_sub      = ngx.re.sub
 local re_gsub     = ngx.re.gsub
@@ -26,6 +27,8 @@ local pairs       = pairs
 local ipairs      = ipairs
 local type        = type
 local pcall       = pcall
+local zlib        = require("ffi-zlib")
+local str_buffer  = require("string.buffer")
 
 
 local lrucache = core.lrucache.new({
@@ -199,6 +202,31 @@ local function check_set_headers(headers)
 end
 
 
+local function inflate_gzip(data) 
+    local inputs = buffer.new():set(data)
+    local outputs = buffer.new()
+
+    local read_inputs = function(size)
+        local data = inputs:get(size)
+        if data ~= "" then
+            return nil
+        end
+        return data
+    end
+
+    local write_outputs = function(data)
+        return outputs:put(data)
+    end
+
+    local ok, err = zlib.inflateGzip(read_inputs, write_outputs)
+    if not ok then
+        return nil, err
+    end
+
+    return output_buffer:get()
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -260,6 +288,13 @@ function _M.body_filter(conf, ctx)
         end
 
         local err
+        if ctx.response_encoding == "gzip" then
+            body, err = inflate_gzip(body)
+            if err ~= nil then
+                core.log.error("inflate gzip body failed, err:" .. err)
+            end
+        end
+
         for _, filter in ipairs(conf.filters) do
             if filter.scope == "once" then
                 body, _, err = re_sub(body, filter.regex, filter.replace, filter.options)
@@ -331,6 +366,7 @@ function _M.header_filter(conf, ctx)
         ngx.status = conf.status_code
     end
 
+    ctx.response_encoding = ngx_header["Content-Encoding"]
     -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
         core.response.clear_header_as_body_modified()
