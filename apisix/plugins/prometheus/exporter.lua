@@ -201,7 +201,7 @@ function _M.stream_init()
     end
 
     if not pcall(function() return C.ngx_meta_lua_ffi_shdict_udata_to_zone end) then
-        core.log.error("need to build APISIX-Base to support L4 metrics")
+        core.log.error("need to build APISIX-Runtime to support L4 metrics")
         return
     end
 

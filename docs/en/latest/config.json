@@ -1,5 +1,5 @@
 {
-  "version": "3.6.0",
+  "version": "3.7.0",
   "sidebar": [
     {
       "type": "category",
@@ -101,6 +101,7 @@
           "items": [
             "plugins/key-auth",
             "plugins/jwt-auth",
+            "plugins/jwe-decrypt",
             "plugins/basic-auth",
             "plugins/authz-keycloak",
             "plugins/authz-casdoor",
@@ -111,7 +112,8 @@
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
-            "plugins/forward-auth"
+            "plugins/forward-auth",
+            "plugins/multi-auth"
           ]
         },
         {

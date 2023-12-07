@@ -292,11 +292,13 @@ local resolve_var
 do
     local _ctx
     local n_resolved
-    local pat = [[(?<!\\)\$\{?(\w+)\}?]]
+    local pat = [[(?<!\\)\$(\{(\w+)\}|(\w+))]]
     local _escaper
 
     local function resolve(m)
-        local v = _ctx[m[1]]
+        local variable = m[2] or m[3]
+        local v = _ctx[variable]
+
         if v == nil then
             return ""
         end

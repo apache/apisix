@@ -308,6 +308,8 @@ nginx_config:                     # Config for render the template to generate n
 #      connect: 2000       # Default 2000ms
 #      send: 2000          # Default 2000ms
 #      read: 5000          # Default 5000ms
+#    access_key: ""        # Nacos AccessKey ID in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
+#    secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
 #  consul_kv:              # Consul KV
 #    servers:              # Consul KV address(es)
 #      - "http://127.0.0.1:8500"
@@ -455,6 +457,7 @@ plugins:                           # plugin list (sorted by priority)
   - uri-blocker                    # priority: 2900
   - request-validation             # priority: 2800
   - chaitin-waf                    # priority: 2700
+  - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
   - cas-auth                       # priority: 2597
   - authz-casbin                   # priority: 2560
@@ -464,6 +467,7 @@ plugins:                           # plugin list (sorted by priority)
   - hmac-auth                      # priority: 2530
   - basic-auth                     # priority: 2520
   - jwt-auth                       # priority: 2510
+  - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
   - forward-auth                   # priority: 2002
@@ -543,6 +547,7 @@ stream_plugins:                    # stream plugin list (sorted by priority)
 #     - name: pingpong
 plugin_attr:          # Plugin attributes
   log-rotate:         # Plugin: log-rotate
+    timeout: 10000    # maximum wait time for a log rotation(unit: millisecond)
     interval: 3600    # Set the log rotate interval in seconds.
     max_kept: 168     # Set the maximum number of log files to keep. If exceeded, historic logs are deleted.
     max_size: -1      # Set the maximum size of log files in bytes before a rotation.

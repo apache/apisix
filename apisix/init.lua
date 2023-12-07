@@ -27,7 +27,6 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
-local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
 local consumer_group  = require("apisix.consumer_group")
@@ -50,7 +49,6 @@ local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
 local math            = math
-local error           = error
 local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
@@ -102,7 +100,6 @@ function _M.http_init(args)
     end
 
     xrpc.init()
-    conf_server.init()
 end
 
 
@@ -123,11 +120,8 @@ function _M.http_init_worker()
         core.grpc = nil
     end
 
-    local we = require("resty.worker.events")
-    local ok, err = we.configure({shm = "worker-events", interval = 0.1})
-    if not ok then
-        error("failed to init worker event: " .. err)
-    end
+    require("apisix.events").init_worker()
+
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
@@ -315,7 +309,7 @@ end
 
 local function verify_tls_client(ctx)
     if apisix_base_flags.client_cert_verified_in_handshake then
-        -- For apisix-base, there is no need to rematch SSL rules as the invalid
+        -- For apisix-runtime, there is no need to rematch SSL rules as the invalid
         -- connections are already rejected in the handshake
         return true
     end
@@ -1024,11 +1018,8 @@ function _M.stream_init_worker()
     require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
 
-    local we = require("resty.worker.events")
-    local ok, err = we.configure({shm = "worker-events-stream", interval = 0.1})
-    if not ok then
-        error("failed to init worker event: " .. err)
-    end
+    require("apisix.events").init_worker()
+
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()

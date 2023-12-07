@@ -54,7 +54,7 @@ curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-depend
 Save the APISIX version to an environment variable to be used next:
 
 ```shell
-APISIX_VERSION='3.6.0'
+APISIX_VERSION='3.7.0'
 ```
 
 Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
@@ -203,7 +203,7 @@ apisix stop
 
 Some features of APISIX requires additional Nginx modules to be introduced into OpenResty.
 
-To use these features, you need to build a custom distribution of OpenResty (apisix-base). See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for setting up your build environment and building it.
+To use these features, you need to build a custom distribution of OpenResty (apisix-runtime). See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for setting up your build environment and building it.
 
 ## Running tests
 

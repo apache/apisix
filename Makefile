@@ -160,7 +160,7 @@ deps: runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		[ '$(ENV_OS_NAME)' == 'darwin' ] && $(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.PCRE_INCDIR $(addprefix $(ENV_PCRE_PREFIX), /include); \
-		$(ENV_LUAROCKS) install rockspec/apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
+		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
 		exit 1; \
@@ -435,8 +435,8 @@ compress-tar:
 	./apisix \
 	./bin \
 	./conf \
-	./rockspec/apisix-$(VERSION)*.rockspec \
-	./rockspec/apisix-master-0.rockspec \
+	./apisix-$(VERSION)*.rockspec \
+	./apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \
 	NOTICE \

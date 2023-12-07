@@ -49,9 +49,10 @@ end
 
 
 local function build_http_route(conf, ctx, remove_upstream)
-    local route = core.table.clone(ctx.matched_route).value
+    local route = core.table.deepcopy(ctx.matched_route).value
 
     if remove_upstream and route and route.upstream then
+        -- unimportant to send upstream info to OPA
         route.upstream = nil
     end
 

@@ -894,3 +894,178 @@ location /demo {
             assert(core.json.stably_encode(data1) == core.json.stably_encode(data2))
         }
     }
+
+
+
+=== TEST 13: test x-www-form-urlencoded to JSON
+--- config
+    location /demo {
+      content_by_lua_block {
+          local core = require("apisix.core")
+          local body = core.request.get_body()
+          local data = core.json.decode(body)
+          assert(data.foo == "hello world" and data.bar == 30)
+      }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foo":"{{name .. " world"}}","bar":{{age+10}}}]]
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local data = {name = "hello", age = 20}
+            local body = ngx.encode_args(data)
+            local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/x-www-form-urlencoded"}}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }
+
+
+
+=== TEST 14: test get request  to JSON
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            local data = core.json.decode(body)
+            assert(data.foo == "hello world" and data.bar == 30)
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = [[{"foo":"{{name .. " world"}}","bar":{{age+10}}}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar" .. "?name=hello&age=20"
+            local opt = {method = "GET"}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }
+
+
+
+=== TEST 15: test input is in base64-encoded urlencoded format
+--- config
+    location /demo {
+      content_by_lua_block {
+          local core = require("apisix.core")
+          local body = core.request.get_body()
+          local data = ngx.decode_args(body)
+          assert(data.foo == "hello world" and data.bar == "30")
+      }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local req_template = ngx.encode_base64[[foo={{name .. " world"}}&bar={{age+10}}]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "template_is_base64": true,
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], req_template:gsub('"', '\\"'), ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local core = require("apisix.core")
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local data = {name = "hello", age = 20}
+            local body = ngx.encode_args(data)
+            local opt = {method = "POST", body = body, headers = {["Content-Type"] = "application/x-www-form-urlencoded"}}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 200)
+        }
+    }

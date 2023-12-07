@@ -52,9 +52,9 @@ function install_dependencies_with_yum() {
         local apisix_pkg=apache-apisix-repo-1.0-1.noarch
         rpm -q --quiet ${apisix_pkg} || sudo yum install -y https://repos.apiseven.com/packages/centos/${apisix_pkg}.rpm
 
-        # install apisix-base and some compilation tools
+        # install apisix-runtime and some compilation tools
         # shellcheck disable=SC2086
-        sudo yum install -y apisix-base $common_dep
+        sudo yum install -y apisix-runtime $common_dep
     else
         # add OpenResty source
         sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"

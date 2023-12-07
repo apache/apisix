@@ -36,7 +36,7 @@ The Redis protocol support allows APISIX to proxy Redis commands, and provide va
 
 :::note
 
-This feature requires APISIX to be run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment).
+This feature requires APISIX to be run on [APISIX-Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
 It also requires the data sent from clients are well-formed and sane. Therefore, it should only be used in deployments where both the downstream and upstream are trusted.
 
