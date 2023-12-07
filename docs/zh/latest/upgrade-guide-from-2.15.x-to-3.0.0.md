@@ -58,7 +58,7 @@ APISIX 的版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
 如果你使用提供的二进制包（Debian 和 RHEL）或者镜像，则它们已经捆绑了 APISIX 所有必要的依赖项，你可以跳过本节。
 
-APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。如果要使用这些功能，你需要构建一个自定义的 OpenResty 发行版（APISIX-Base）。你可以参考 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 中的代码，构建自己的 APISIX-Base 环境。
+APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。如果要使用这些功能，你需要构建一个自定义的 OpenResty 发行版（APISIX-Runtime）。你可以参考 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 中的代码，构建自己的 APISIX-Runtime 环境。
 
 如果你希望 APISIX 运行在原生的 OpenResty 上，这种情况下将只支持运行在 OpenResty 1.19.3.2 及以上的版本。
 

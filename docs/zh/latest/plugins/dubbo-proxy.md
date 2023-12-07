@@ -27,7 +27,7 @@ title: dubbo-proxy
 
 ## 要求
 
-如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境)。
+如果你正在使用 `OpenResty`, 你需要编译它来支持 `dubbo`, 参考 [APISIX-Runtime](../FAQ.md#如何构建-apisix-runtime-环境)。
 
 ## 运行时属性
 

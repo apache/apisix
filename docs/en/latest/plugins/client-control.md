@@ -32,7 +32,7 @@ The `client-control` Plugin can be used to dynamically control the behavior of N
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
+This Plugin requires APISIX to run on APISIX-Runtime. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
 
 :::
 
