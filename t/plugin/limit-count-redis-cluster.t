@@ -95,8 +95,7 @@ __DATA__
                             "policy": "redis-cluster",
                             "redis_timeout": 1001,
                             "redis_cluster_nodes": [
-                                "127.0.0.1:5000",
-                                "127.0.0.1:5001"
+                                "127.0.0.1:5000"
                             ],
                             "redis_cluster_name": "redis-cluster-1"
                         }

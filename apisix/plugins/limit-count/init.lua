@@ -76,7 +76,7 @@ local policy_to_additional_properties = {
                 type = "array",
                 minItems = 2,
                 items = {
-                    type = "string", minLength = 2, maxLength = 100
+                    type = "string", minLength = 1, maxLength = 100
                 },
             },
             redis_password = {
