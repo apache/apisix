@@ -202,7 +202,7 @@ local function check_set_headers(headers)
 end
 
 
-local function inflate_gzip(data) 
+local function inflate_gzip(data)
     local inputs = buffer.new():set(data)
     local outputs = buffer.new()
 
