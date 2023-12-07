@@ -15,10 +15,10 @@
 -- limitations under the License.
 --
 local fetch_secrets = require("apisix.secret").fetch_secrets
-local limit_count   = require("apisix.plugins.limit-count.init")
+local limit_count = require("apisix.plugins.limit-count.init")
 
-local plugin_name   = "limit-count"
-local _M            = {
+local plugin_name = "limit-count"
+local _M = {
     version = 0.5,
     priority = 1002,
     name = plugin_name,
