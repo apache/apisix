@@ -191,8 +191,7 @@ local schema = {
         },
         refresh_session_interval = {
             description = "Time interval to refresh user ID token without re-authentication.",
-            type = "integer",
-            default = 900
+            type = "integer"
         },
         iat_slack = {
             description = "Tolerance of clock skew in seconds with the iat claim in an ID token.",
