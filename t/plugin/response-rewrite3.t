@@ -196,7 +196,7 @@ Content-Encoding:
 
 
 
-=== TEST 6: set response-rewrite route use filter conf and route for mock unsupport compression encoding type
+=== TEST 6: set response-rewrite route use filter conf and route for mock unsupported compression encoding type
 --- config
     location /t {
         content_by_lua_block {
@@ -280,7 +280,7 @@ filters may not work as expected due to unsupported compression encoding type
 
 
 
-=== TEST 8: set response-rewrite route use body conf and use the route for mock unsupport compression encoding type
+=== TEST 8: set response-rewrite route use body conf and use the route for mock unsupported compression encoding type
 --- config
     location /t {
         content_by_lua_block {
