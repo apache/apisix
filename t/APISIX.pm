@@ -78,11 +78,12 @@ if ($custom_dns_server) {
 }
 
 
+my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
 $default_yaml_config =~ s/#- example-plugin/- example-plugin/;
 $default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
-$default_yaml_config =~ s/module: lua-resty-events/module: $ENV{TEST_EVENTS_MODULE}/;
+$default_yaml_config =~ s/module: lua-resty-events/module: $events_module/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
