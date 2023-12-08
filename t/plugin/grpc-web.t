@@ -95,7 +95,7 @@ node ./t/plugin/grpc-web/client.js TEXT STREAM
 OPTIONS /grpc/web/a6.RouteService/GetRoute
 --- error_code: 204
 --- response_headers
-Access-Control-Allow-Methods: POST
+Access-Control-Allow-Methods: POST, OPTIONS
 Access-Control-Allow-Headers: content-type,x-grpc-web,x-user-agent
 Access-Control-Allow-Origin: *
 
