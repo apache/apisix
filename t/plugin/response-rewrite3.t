@@ -43,7 +43,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 4: set header(rewrite header and body)
+=== TEST 1: set gzip route and response-rewrite route, use response-rewrite body conf
 --- config
     location /t {
         content_by_lua_block {
@@ -53,7 +53,8 @@ __DATA__
                 [[{
                     "plugins": {
                         "gzip": {
-                            "types": "*"
+                            "types": "*",
+                            "min_length": 1
                         }
                     },
                     "upstream": {
@@ -62,7 +63,7 @@ __DATA__
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/echo"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -75,8 +76,80 @@ __DATA__
                 ngx.HTTP_PUT,
                 [[{
                     "plugins": {
-                        "redirect": {
-                            "uri": "/echo"
+                        "proxy-rewrite": {
+                            "uri": "/hello",
+                            "headers": {
+                                "set": {
+                                    "Accept-Encoding": "gzip"
+                                }
+                            }
+                        },
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "body": "new body\n"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/rewrited_hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2: gzip route should return compressed body
+--- request
+GET /hello
+--- more_headers
+Accept-Encoding: gzip
+--- response_headers
+Content-Encoding: gzip
+
+
+
+=== TEST 3: response-rewrite route should rewrite body and not Content-Encoding
+--- request
+GET /rewrited_hello
+--- response_body
+new body
+--- response_headers
+Content-Encoding:
+
+
+
+=== TEST 4: set response-rewrite route, use response-rewrite filter conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello",
+                            "headers": {
+                                "set": {
+                                    "Accept-Encoding": "gzip"
+                                }
+                            }
                         },
                         "response-rewrite": {
                             "vars": [
@@ -96,7 +169,7 @@ __DATA__
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/with_header"
+                    "uri": "/rewrited_hello"
                 }]]
                 )
 
@@ -113,42 +186,205 @@ passed
 
 
 
+=== TEST 5: response-rewrite route should rewrite body and not Content-Encoding
+--- request
+GET /rewrited_hello
+--- response_body
+test world
+--- response_headers
+Content-Encoding:
 
-=== TEST 5: check body with deleted header
+
+
+=== TEST 6: set response-rewrite route use filter conf and route for mock unsupport compression encoding type
 --- config
     location /t {
         content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/with_header"
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "response-rewrite": {
+                            "headers": {
+                                "set": {
+                                    "Content-Encoding": "br"
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
 
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {method = "GET"})
-            if not res then
-                ngx.say(err)
+            if code >= 300 then
+                ngx.status = code
                 return
             end
 
-            if res.headers['Content-Type'] then
-                ngx.say('fail content-type should not be exist, now is'..res.headers['Content-Type'])
-                return
-            end
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        },
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "filters": [
+                                {
+                                    "regex": "hello",
+                                    "replace": "test"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/rewrited_hello"
+                }]]
+                )
 
-            if res.headers['X-Server-status'] ~= 'on' then
-                ngx.say('fail X-Server-status needs to be on')
-                return
+            if code >= 300 then
+                ngx.status = code
             end
-
-            if res.headers['X-Server-id'] ~= '3' then
-                ngx.say('fail X-Server-id needs to be 3')
-                return
-            end
-
-            ngx.print(res.body)
-            ngx.exit(200)
+            ngx.say(body)
         }
     }
 --- request
 GET /t
 --- response_body
+passed
+
+
+
+=== TEST 7: response-rewrite route should try rewrite body and not Content-Encoding, report error
+--- request
+GET /rewrited_hello
+--- response_headers
+Content-Encoding:
+--- error_log
+filters may not work as expected due to unsupported compression encoding type
+
+
+
+=== TEST 8: set response-rewrite route use body conf and use the route for mock unsupport compression encoding type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        },
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "body": "new body\n"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/rewrited_hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: response-rewrite route should rewrite body and not Content-Encoding
+--- request
+GET /rewrited_hello
+--- response_body
 new body
+--- response_headers
+Content-Encoding:
+
+
+
+=== TEST 10: set response-rewrite route not use filter conf or body conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/hello"
+                        },
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "headers": {
+                                "set": {
+                                    "X-Server-id": 3,
+                                    "X-Server-status": "on",
+                                    "Content-Type": ""
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/rewrited_hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: body should keep Content-Encoding
+--- request
+GET /rewrited_hello
+--- response_headers
+Content-Encoding: br
+X-Server-id: 3
+X-Server-status: on
+Content-Type:
