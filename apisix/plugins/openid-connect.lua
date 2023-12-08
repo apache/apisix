@@ -167,6 +167,90 @@ local schema = {
             description = "Extra authorization params to the authorize endpoint",
             type = "object"
         },
+        client_rsa_private_key = {
+            description = "Client RSA private key used to sign JWT.",
+            type = "string"
+        },
+        client_rsa_private_key_id = {
+            description = "Client RSA private key ID used to compute a signed JWT.",
+            type = "string"
+        },
+        client_jwt_assertion_expires_in = {
+            description = "Life duration of the signed JWT in seconds.",
+            type = "integer",
+            default = 60
+        },
+        renew_access_token_on_expiry = {
+            description = "Whether to attempt silently renewing the access token.",
+            type = "boolean",
+            default = true
+        },
+        access_token_expires_in = {
+            description = "Lifetime of the access token in seconds if expires_in is not present.",
+            type = "integer"
+        },
+        refresh_session_interval = {
+            description = "Time interval to refresh user ID token without re-authentication.",
+            type = "integer"
+        },
+        iat_slack = {
+            description = "Tolerance of clock skew in seconds with the iat claim in an ID token.",
+            type = "integer",
+            default = 120
+        },
+        accept_none_alg = {
+            description = "Set to true if the OpenID provider does not sign its ID token.",
+            type = "boolean",
+            default = false
+        },
+        accept_unsupported_alg = {
+            description = "Ignore ID token signature to accept unsupported signature algorithm.",
+            type = "boolean",
+            default = true
+        },
+        access_token_expires_leeway = {
+            description = "Expiration leeway in seconds for access token renewal.",
+            type = "integer",
+            default = 0
+        },
+        force_reauthorize = {
+            description = "Whether to execute the authorization flow when a token has been cached.",
+            type = "boolean",
+            default = false
+        },
+        use_nonce = {
+            description = "Whether to include nonce parameter in authorization request.",
+            type = "boolean",
+            default = false
+        },
+        revoke_tokens_on_logout = {
+            description = "Notify authorization server a previous token is no longer needed.",
+            type = "boolean",
+            default = false
+        },
+        jwk_expires_in = {
+            description = "Expiration time for JWK cache in seconds.",
+            type = "integer",
+            default = 86400
+        },
+        jwt_verification_cache_ignore = {
+            description = "Whether to ignore cached verification and re-verify.",
+            type = "boolean",
+            default = false
+        },
+        cache_segment = {
+            description = "Name of a cache segment to differentiate caches.",
+            type = "string"
+        },
+        introspection_interval = {
+            description = "TTL of the cached and introspected access token in seconds.",
+            type = "integer",
+            default = 0
+        },
+        introspection_expiry_claim = {
+            description = "Name of the expiry claim that controls the cached access token TTL.",
+            type = "string"
+        },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",

@@ -102,7 +102,7 @@ end
 
 function _M.header_filter(conf, ctx)
     if not is_apisix_or then
-        core.log.error("need to build APISIX-Base to support setting gzip")
+        core.log.error("need to build APISIX-Runtime to support setting gzip")
         return 501
     end
 

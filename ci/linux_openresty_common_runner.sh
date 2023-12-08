@@ -62,6 +62,9 @@ do_install() {
 
     # install vault cli capabilities
     install_vault_cli
+
+    # install brotli
+    install_brotli
 }
 
 script() {

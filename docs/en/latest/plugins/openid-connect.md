@@ -69,6 +69,24 @@ description: OpenID Connect allows the client to obtain user information from th
 | proxy_opts.https_proxy_authorization | string   | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `https_proxy`. Cannot be overridden with custom `Proxy-Authorization` request header since with with HTTPS the authorization is completed when connecting.                         |
 | proxy_opts.no_proxy                  | string   | False    |                       |                                  | Comma separated list of hosts that should not be proxied.                                                                                                                                                                             |
 | authorization_params                 | object   | False    |                       |                                  | Additional parameters to send in the in the request to the authorization endpoint.                                                                                                                                                    |
+| client_rsa_private_key | string | False |  |  | Client RSA private key used to sign JWT. |
+| client_rsa_private_key_id | string | False |  |  | Client RSA private key ID used to compute a signed JWT. |
+| client_jwt_assertion_expires_in | integer | False | 60 |  | Life duration of the signed JWT in seconds. |
+| renew_access_token_on_expiry | boolean | False | true |  | If true, attempt to silently renew the access token when it expires or if a refresh token is available. If the token fails to renew, redirect user for re-authentication. |
+| access_token_expires_in | integer | False |  |  | Lifetime of the access token in seconds if no `expires_in` attribute is present in the token endpoint response. |
+| refresh_session_interval | integer | False |  |  | Time interval to refresh user ID token without requiring re-authentication. When not set, it will not check the expiration time of the session issued to the client by the gateway. If set to 900, it means refreshing the user's id_token (or session in the browser) after 900 seconds without requiring re-authentication. |
+| iat_slack | integer | False | 120 |  | Tolerance of clock skew in seconds with the `iat` claim in an ID token. |
+| accept_none_alg | boolean | False | false |  | Set to true if the OpenID provider does not sign its ID token, such as when the signature algorithm is set to `none`. |
+| accept_unsupported_alg | boolean | False | true |  | If true, ignore ID token signature to accept unsupported signature algorithm. |
+| access_token_expires_leeway | integer | False | 0 |  | Expiration leeway in seconds for access token renewal. When set to a value greater than 0, token renewal will take place the set amount of time before token expiration. This avoids errors in case the access token just expires when arriving to the resource server. |
+| force_reauthorize | boolean | False | false |  | If true, execute the authorization flow even when a token has been cached. |
+| use_nonce | boolean | False | false |  | If true, enable nonce parameter in authorization request. |
+| revoke_tokens_on_logout | boolean | False | false |  | If true, notify the authorization server a previously obtained refresh or access token is no longer needed at the revocation endpoint. |
+| jwk_expires_in | integer | False | 86400 |  | Expiration time for JWK cache in seconds. |
+| jwt_verification_cache_ignore | boolean | False | false |  | If true, force re-verification for a bearer token and ignore any existing cached verification results. |
+| cache_segment | string | False |  |  | Optional name of a cache segment, used to separate and differentiate caches used by token introspection or JWT verification. |
+| introspection_interval | integer | False | 0 |  | TTL of the cached and introspected access token in seconds. |
+| introspection_expiry_claim | string | False |  |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. The default value is 0, which means this option is not used and the plugin defaults to use the TTL passed by expiry claim defined in `introspection_expiry_claim`. If `introspection_interval` is larger than 0 and less than the TTL passed by expiry claim defined in `introspection_expiry_claim`, use `introspection_interval`. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 

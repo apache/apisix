@@ -928,7 +928,7 @@ The following should be considered when setting the `hash_on` value:
 - When set to `consumer`, the `key` is optional and the key is set to the `consumer_name` captured from the authentication Plugin.
 - When set to `vars_combinations`, the `key` is required. The value of the key can be a combination of any of the [Nginx variables](http://nginx.org/en/docs/varindex.html) like `$request_uri$remote_addr`.
 
-The features described below requires APISIX to be run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment):
+The features described below requires APISIX to be run on [APISIX-Runtime](./FAQ.md#how-do-i-build-the-apisix-runtime-environment):
 
 You can set the `scheme` to `tls`, which means "TLS over TCP".
 

@@ -111,9 +111,9 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 或 `-v` 参数获取详细的日志来诊断问题。
 
-## 如何构建 APISIX-Base 环境？
+## 如何构建 APISIX-Runtime 环境？
 
-有些功能需要引入额外的 NGINX 模块，这就要求 APISIX 需要运行在 APISIX-Base 上。如果你需要这些功能，你可以参考 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 中的代码，构建自己的 APISIX-Base 环境。
+有些功能需要引入额外的 NGINX 模块，这就要求 APISIX 需要运行在 APISIX-Runtime 上。如果你需要这些功能，你可以参考 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 中的代码，构建自己的 APISIX-Runtime 环境。
 
 ## 我该如何使用 Apache APISIX 进行灰度发布？
 
