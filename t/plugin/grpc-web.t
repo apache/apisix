@@ -239,5 +239,4 @@ Content-Type: application/grpc-web
 Access-Control-Allow-Origin: http://test.com
 Content-Type: application/grpc-web
 Access-Control-Expose-Headers: grpc-status,grpc-message
-Access-Control-Allow-Methods: 
 
