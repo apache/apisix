@@ -74,7 +74,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | client_jwt_assertion_expires_in | integer | False | 60 |  | Life duration of the signed JWT in seconds. |
 | renew_access_token_on_expiry | boolean | False | true |  | If true, attempt to silently renew the access token when it expires or if a refresh token is available. If the token fails to renew, redirect user for re-authentication. |
 | access_token_expires_in | integer | False |  |  | Lifetime of the access token in seconds if no `expires_in` attribute is present in the token endpoint response. |
-| refresh_session_interval | integer | False | 900 |  | Time interval to refresh user ID token without requiring re-authentication. |
+| refresh_session_interval | integer | False |  |  | Time interval to refresh user ID token without requiring re-authentication. When not set, it will not check the expiration time of the session issued to the client by the gateway. If set to 900, it means refreshing the user's id_token (or session in the browser) after 900 seconds without requiring re-authentication. |
 | iat_slack | integer | False | 120 |  | Tolerance of clock skew in seconds with the `iat` claim in an ID token. |
 | accept_none_alg | boolean | False | false |  | Set to true if the OpenID provider does not sign its ID token, such as when the signature algorithm is set to `none`. |
 | accept_unsupported_alg | boolean | False | true |  | If true, ignore ID token signature to accept unsupported signature algorithm. |

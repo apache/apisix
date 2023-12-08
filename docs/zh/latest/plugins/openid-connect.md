@@ -74,7 +74,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | client_jwt_assertion_expires_in | integer | 否    | 60            |             | 签名 JWT 的生存期，以秒为单位。 |
 | renew_access_token_on_expiry    | boolean | 否    | true          |             | 如果为 true，在访问令牌过期或存在刷新令牌时，尝试静默更新访问令牌。如果令牌无法更新，则重定向用户进行重新认证。  |
 | access_token_expires_in         | integer | 否    |               |             | 访问令牌的生命周期，以秒为单位，如果令牌终端响应中不存在 `expires_in` 属性。  |
-| refresh_session_interval        | integer | 否    | 900           |             | 刷新用户 ID 令牌而无需重新进行身份验证的时间间隔，以秒为单位。  |
+| refresh_session_interval        | integer | 否    | 900           |             | 刷新用户 ID 令牌而无需重新进行身份验证的时间间隔，以秒为单位。若未设置，则不会检查网关向客户端签发的 ID 令牌（如浏览器中的 session）过期时间。如果设置为 900，意味着在 900 秒后刷新用户的 ID 令牌（如浏览器中的 session），而无需重新进行身份验证。  |
 | iat_slack                       | integer | 否    | 120           |             | 与 ID 令牌中的 `iat` 声明的时钟偏差容忍度，以秒为单位。  |
 | accept_none_alg                 | boolean | 否    | false         |             | 如果 OpenID 提供程序不对其 ID 令牌进行签名将其设置为 true。  |
 | accept_unsupported_alg          | boolean | 否    | true          |             | 如果为 true，忽略 ID 令牌签名以接受不支持的签名算法。 |
