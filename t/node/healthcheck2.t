@@ -27,12 +27,9 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->yaml_config) {
-        my $events_module = $ENV{TEST_EVENTS_MODULE} or "lua-resty-events";
         my $yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
-    events:
-        module: "$events_module"
 deployment:
     role: data_plane
     role_data_plane:

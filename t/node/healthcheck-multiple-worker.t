@@ -27,26 +27,11 @@ BEGIN {
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('debug');
+log_level('info');
 no_root_location();
 no_shuffle();
 workers(2);
 worker_connections(256);
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    if (!$block->yaml_config) {
-        my $events_module = $ENV{TEST_EVENTS_MODULE} or "lua-resty-events";
-        my $yaml_config = <<_EOC_;
-apisix:
-    events:
-        module: "$events_module"
-_EOC_
-
-        $block->set_value("yaml_config", $yaml_config);
-    }
-});
 
 run_tests();
 

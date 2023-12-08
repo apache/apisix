@@ -30,18 +30,6 @@ no_root_location();
 no_shuffle();
 worker_connections(256);
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    my $yaml_config = <<_EOC_;
-apisix:
-    events:
-        module: lua-resty-worker-events # fixed configuration
-_EOC_
-
-    $block->set_value("yaml_config", $yaml_config);
-});
-
 run_tests();
 
 __DATA__
