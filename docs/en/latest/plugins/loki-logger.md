@@ -36,22 +36,22 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 
 ## Attributes
 
-| Name | Type | Required | Default | Description |
-|---|---|---|---|---|
-| endpoint_addrs | array[string] | True |  | Loki API base URL, format like http://127.0.0.1:3100, supports HTTPS and domain names. If multiple endpoints are configured, they will be written randomly. |
-| endpoint_uri | string | False | /loki/api/v1/push | If you are using a log collection service that is compatible with the Loki Push API, you can use this configuration item to customize the API path. |
-| tenant_id | string | False | fake | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), its default value is set to the default value `fake` under single-tenancy. |
-| log_labels | object | False | {job = "apisix"} | Loki log label. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`, both individual and combined, such as `$host` or `$remote_addr:$remote_port`. |
-| ssl_verify        | boolean       | False    | true | When set to `true`, verifies the SSL certificate. |
-| timeout           | integer       | False    | 3000ms | Timeout for the Loki service HTTP call. Range from 1 to 60,000ms.  |
-| keepalive         | boolean       | False    | true | When set to `true`, keeps the connection alive for multiple requests. |
-| keepalive_timeout | integer       | False    | 60000ms | Idle time after which the connection is closed. Range greater than or equal than 1000ms.  |
-| keepalive_pool    | integer       | False    | 5       | Connection pool limit. Range greater than or equal than 1. |
-| log_format | object | False    |          | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
-| include_req_body       | boolean | False    | false | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
-| include_req_body_expr  | array   | False    |  | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
-| include_resp_body      | boolean | False    | false | When set to `true` includes the response body in the log. |
-| include_resp_body_expr | array   | False    |  | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
+| Name                   | Type          | Required | Default           | Description                                                                                                                                                                                                                                         |
+|------------------------|---------------|----------|-------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| endpoint_addrs         | array[string] | True     |                   | Loki API base URL, format like http://127.0.0.1:3100, supports HTTPS and domain names. If multiple endpoints are configured, they will be written randomly.                                                                                         |
+| endpoint_uri           | string        | False    | /loki/api/v1/push | If you are using a log collection service that is compatible with the Loki Push API, you can use this configuration item to customize the API path.                                                                                                 |
+| tenant_id              | string        | False    | fake              | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), its default value is set to the default value `fake` under single-tenancy.                         |
+| log_labels             | object        | False    | {job = "apisix"}  | Loki log label. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`, both individual and combined, such as `$host` or `$remote_addr:$remote_port`. |
+| ssl_verify             | boolean       | False    | true              | When set to `true`, verifies the SSL certificate.                                                                                                                                                                                                   |
+| timeout                | integer       | False    | 3000ms            | Timeout for the Loki service HTTP call. Range from 1 to 60,000ms.                                                                                                                                                                                   |
+| keepalive              | boolean       | False    | true              | When set to `true`, keeps the connection alive for multiple requests.                                                                                                                                                                               |
+| keepalive_timeout      | integer       | False    | 60000ms           | Idle time after which the connection is closed. Range greater than or equal than 1000ms.                                                                                                                                                            |
+| keepalive_pool         | integer       | False    | 5                 | Connection pool limit. Range greater than or equal than 1.                                                                                                                                                                                          |
+| log_format             | object        | False    |                   | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`.           |
+| include_req_body       | boolean       | False    | false             | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                    |
+| include_req_body_expr  | array         | False    |                   | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                             |
+| include_resp_body      | boolean       | False    | false             | When set to `true` includes the response body in the log.                                                                                                                                                                                           |
+| include_resp_body_expr | array         | False    |                   | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                           |
 
 This plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -59,9 +59,9 @@ This plugin supports using batch processors to aggregate and process entries (lo
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name | Type | Required | Default | Description |
-|------|------|----------|---------|-------------|
-| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
+| Name       | Type   | Required | Default | Description                                                                                                                                                                                                                               |
+|------------|--------|----------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format | object | False    |         | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 

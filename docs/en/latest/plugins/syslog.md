@@ -34,19 +34,19 @@ Logs can be set as JSON objects.
 
 ## Attributes
 
-| Name             | Type    | Required | Default      | Valid values  | Description                                                                                                              |
-|------------------|---------|----------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
-| host             | string  | True     |              |               | IP address or the hostname of the Syslog server.                                                                         |
-| port             | integer | True     |              |               | Target port of the Syslog server.                                                                                        |
-| name             | string  | False    | "sys logger" |               | Identifier for the server.                                                                                               |
-| timeout          | integer | False    | 3000         | [1, ...]      | Timeout in ms for the upstream to send data.                                                                             |
-| tls              | boolean | False    | false        |               | When set to `true` performs TLS verification.                                                                            |
-| flush_limit      | integer | False    | 4096         | [1, ...]      | Maximum size of the buffer (KB) and the current message before it is flushed and written to the server.                  |
-| drop_limit       | integer | False    | 1048576      |               | Maximum size of the buffer (KB) and the current message before the current message is dropped because of the size limit. |
-| sock_type        | string  | False    | "tcp"        | ["tcp", "udp] | Transport layer protocol to use.                                                                                         |
-| pool_size        | integer | False    | 5            | [5, ...]      | Keep-alive pool size used by `sock:keepalive`.                                                                           |
-| log_format       | object  | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
-| include_req_body | boolean | False    | false        |               | When set to `true` includes the request body in the log.                                                                 |
+| Name             | Type    | Required | Default      | Valid values  | Description                                                                                                                                                                                                                    |
+|------------------|---------|----------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| host             | string  | True     |              |               | IP address or the hostname of the Syslog server.                                                                                                                                                                               |
+| port             | integer | True     |              |               | Target port of the Syslog server.                                                                                                                                                                                              |
+| name             | string  | False    | "sys logger" |               | Identifier for the server.                                                                                                                                                                                                     |
+| timeout          | integer | False    | 3000         | [1, ...]      | Timeout in ms for the upstream to send data.                                                                                                                                                                                   |
+| tls              | boolean | False    | false        |               | When set to `true` performs TLS verification.                                                                                                                                                                                  |
+| flush_limit      | integer | False    | 4096         | [1, ...]      | Maximum size of the buffer (KB) and the current message before it is flushed and written to the server.                                                                                                                        |
+| drop_limit       | integer | False    | 1048576      |               | Maximum size of the buffer (KB) and the current message before the current message is dropped because of the size limit.                                                                                                       |
+| sock_type        | string  | False    | "tcp"        | ["tcp", "udp] | Transport layer protocol to use.                                                                                                                                                                                               |
+| pool_size        | integer | False    | 5            | [5, ...]      | Keep-alive pool size used by `sock:keepalive`.                                                                                                                                                                                 |
+| log_format       | object  | False    |              |               | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| include_req_body | boolean | False    | false        |               | When set to `true` includes the request body in the log.                                                                                                                                                                       |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -54,9 +54,9 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
-| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| Name       | Type   | Required | Default | Description                                                                                                                                                                                                                    |
+|------------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format | object | False    |         | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 

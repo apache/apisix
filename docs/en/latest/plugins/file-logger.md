@@ -55,9 +55,9 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
-| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| Name       | Type   | Required | Default | Description                                                                                                                                                                                                                    |
+|------------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| log_format | object | False    |         | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 The example below shows how you can configure through the Admin API:
 
