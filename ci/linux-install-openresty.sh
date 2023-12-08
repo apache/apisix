@@ -79,7 +79,10 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
         export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
     fi
 fi
-wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+
+# TODO: disabled temporarily, waiting for APISIX 3.8 to be released to synchronize the apisix-runtime version
+#wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+wget "https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime.sh"
 chmod +x build-apisix-runtime.sh
 ./build-apisix-runtime.sh latest
 
