@@ -288,6 +288,9 @@ local function run_watch(premature)
 
     if not exiting() then
         ngx_timer_at(0, run_watch)
+    else
+        -- notify child watchers
+        produce_res(nil, "worker exited")
     end
 end
 
@@ -843,6 +846,9 @@ local function _automatic_fetch(premature, self)
                                        .. backoff_duration .. "s")
                         end
                     end
+                elseif err == "worker exited" then
+                    log.info("worker exited.")
+                    return
                 elseif err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
