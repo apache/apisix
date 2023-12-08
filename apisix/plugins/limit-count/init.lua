@@ -68,7 +68,6 @@ local policy_to_additional_properties = {
                 type = "boolean", default = false,
             },
         },
-        encrypt_fields = {"redis_password"},
         required = {"redis_host"},
     },
     ["redis-cluster"] = {
@@ -96,7 +95,6 @@ local policy_to_additional_properties = {
                 type = "boolean", default = false,
             },
         },
-        encrypt_fields = {"redis_password"},
         required = {"redis_cluster_nodes", "redis_cluster_name"},
     },
 }
