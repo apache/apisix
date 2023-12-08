@@ -227,3 +227,17 @@ Content-Type: application/grpc-web
 --- response_headers
 Access-Control-Allow-Origin: http://test.com
 Content-Type: application/grpc-web
+
+=== TEST 11: grpc-web access control expose headers for non grpc servers that don't implment grpc-web
+--- request
+POST /grpc/web/a6.RouteService/GetRoute
+{}
+--- more_headers
+Origin: http://test.com
+Content-Type: application/grpc-web
+--- response_headers
+Access-Control-Allow-Origin: http://test.com
+Content-Type: application/grpc-web
+Access-Control-Expose-Headers: grpc-status,grpc-message
+Access-Control-Allow-Methods: 
+
