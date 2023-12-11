@@ -18,7 +18,7 @@ local limit_count = require("apisix.plugins.limit-count.init")
 
 local plugin_name = "limit-count"
 local _M = {
-    version = 0.4,
+    version = 0.5,
     priority = 1002,
     name = plugin_name,
     schema = limit_count.schema,
