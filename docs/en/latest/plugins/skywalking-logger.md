@@ -35,15 +35,15 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 
 ## Attributes
 
-| Name                  | Type    | Required | Default                | Valid values  | Description                                                                                                                                                                                                                    |
-|-----------------------|---------|----------|------------------------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                                                                                                                                              |
-| service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                                                                                                                                      |
-| service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname.                                                                                                                   |
-| log_format            | object  | False    |                        |               | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
-| timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                                                                                                                                                 |
-| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger.                                                                                                                                                                                      |
-| include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                                                                                                                                       |
+| Name                  | Type    | Required | Default                | Valid values  | Description                                                                                                  |
+|-----------------------|---------|----------|------------------------|---------------|--------------------------------------------------------------------------------------------------------------|
+| endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                            |
+| service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
+| service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
+| log_format | object | False    |   |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
+| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger.                                                                    |
+| include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                     |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -51,9 +51,9 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name       | Type   | Required | Default | Description                                                                                                                                                                                                                    |
-|------------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | False    |         | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 

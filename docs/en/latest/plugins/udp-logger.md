@@ -37,14 +37,14 @@ This plugin also allows to push logs as a batch to your external UDP server. It 
 
 ## Attributes
 
-| Name             | Type    | Required | Default      | Valid values | Description                                                                                                                                                                                                                    |
-|------------------|---------|----------|--------------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| host             | string  | True     |              |              | IP address or the hostname of the UDP server.                                                                                                                                                                                  |
-| port             | integer | True     |              | [0,...]      | Target upstream port.                                                                                                                                                                                                          |
-| timeout          | integer | False    | 3            | [1,...]      | Timeout for the upstream to send data.                                                                                                                                                                                         |
-| log_format       | object  | False    |              |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
-| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor.                                                                                                                                                                                     |
-| include_req_body | boolean | False    | false        |              | When set to `true` includes the request body in the log.                                                                                                                                                                       |
+| Name             | Type    | Required | Default      | Valid values | Description                                              |
+|------------------|---------|----------|--------------|--------------|----------------------------------------------------------|
+| host             | string  | True     |              |              | IP address or the hostname of the UDP server.            |
+| port             | integer | True     |              | [0,...]      | Target upstream port.                                    |
+| timeout          | integer | False    | 3            | [1,...]      | Timeout for the upstream to send data.                   |
+| log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor.               |
+| include_req_body | boolean | False    | false        |              | When set to `true` includes the request body in the log. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -52,9 +52,9 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
-| Name       | Type   | Required | Default | Description                                                                                                                                                                                                                    |
-|------------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | False    |         | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
+| ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 

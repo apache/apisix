@@ -35,25 +35,25 @@ description: 本文介绍了 API 网关 Apache APISIX 的 http-logger 插件。�
 
 ## 属性
 
-| 名称                     | 类型      | 必选项 | 默认值    | 有效值                  | 描述                                                                                                                                               |
-|------------------------|---------|-----|--------|----------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
-| uri                    | string  | 是   |        |                      | HTTP 或 HTTPS 服务器的 URI。                                                                                                                           |
-| auth_header            | string  | 否   |        |                      | 授权 header（如果需要）。                                                                                                                                 |
-| timeout                | integer | 否   | 3      | [1,...]              | 发送请求后保持连接处于活动状态的时间。                                                                                                                              |
-| log_format             | object  | 否   |        |                      | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| include_req_body       | boolean | 否   | false  | [false, true]        | 当设置为 `true` 时，将请求体包含在日志中。如果请求体太大而无法保存在内存中，由于 NGINX 的限制，无法记录。                                                                                     |
-| include_resp_body      | boolean | 否   | false  | [false, true]        | 当设置为 `true` 时，包含响应体。                                                                                                                             |
-| include_resp_body_expr | array   | 否   |        |                      | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
-| concat_method          | string  | 否   | "json" | ["json", "new_line"] | 枚举类型： **json**：对所有待发日志使用 `json.encode` 编码。**new_line**：对每一条待发日志单独使用 `json.encode` 编码并使用 `\n` 连接起来。                                               |
-| ssl_verify             | boolean | 否   | false  | [false, true]        | 当设置为 `true` 时验证证书。                                                                                                                               |
+| 名称                   | 类型     | 必选项 | 默认值         | 有效值               | 描述                                             |
+| ---------------------- | ------- | ------ | ------------- | -------------------- | ------------------------------------------------ |
+| uri                    | string  | 是     |               |                      | HTTP 或 HTTPS 服务器的 URI。                   |
+| auth_header            | string  | 否     |               |                      | 授权 header（如果需要）。                                    |
+| timeout                | integer | 否     | 3             | [1,...]              | 发送请求后保持连接处于活动状态的时间。           |
+| log_format             | object  | 否     |               |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| include_req_body       | boolean | 否     | false         | [false, true]        | 当设置为 `true` 时，将请求体包含在日志中。如果请求体太大而无法保存在内存中，由于 NGINX 的限制，无法记录。 |
+| include_resp_body      | boolean | 否     | false         | [false, true]        | 当设置为 `true` 时，包含响应体。                                                                                               |
+| include_resp_body_expr | array   | 否     |               |                      | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
+| concat_method          | string  | 否     | "json"        | ["json", "new_line"] | 枚举类型： **json**：对所有待发日志使用 `json.encode` 编码。**new_line**：对每一条待发日志单独使用 `json.encode` 编码并使用 `\n` 连接起来。 |
+| ssl_verify             | boolean | 否     | false          | [false, true]       | 当设置为 `true` 时验证证书。 |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch Processor](../batch-processor.md#配置)。
 
 ## 插件元数据
 
-| 名称         | 类型     | 必选项 | 默认值 | 描述                                                                                                                                                             |
-|------------|--------|-----|-----|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | 否   |     | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
+| ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
+| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 注意
 
