@@ -19,7 +19,7 @@
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
 
-set -ex
+set -e
 
 check_failure() {
     cat logs/error.log
@@ -30,7 +30,7 @@ clean_up() {
         check_failure
     fi
     make stop || true
-    git checkout conf/config.yaml
+    git checkout conf/config.yaml conf/apisix.yaml
 }
 
 trap clean_up EXIT

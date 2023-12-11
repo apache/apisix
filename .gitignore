@@ -50,6 +50,7 @@ t/certs/*.srl
 t/xds-library/libxds.h
 conf/apisix.uid
 conf/nginx.conf
+conf/nginx-test-standalone.conf
 deps
 scgi_temp
 uwsgi_temp

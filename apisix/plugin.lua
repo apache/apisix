@@ -758,29 +758,22 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
     return new_conf, new_conf ~= route_conf
 end
 
-
-local init_plugins_syncer
-do
-    local plugins_conf
-
-    function init_plugins_syncer()
-        local err
-        plugins_conf, err = core.config.new("/plugins", {
-            automatic = true,
-            item_schema = core.schema.plugins,
-            single_item = true,
-            filter = function(item)
-                -- we need to pass 'item' instead of plugins_conf because
-                -- the latter one is nil at the first run
-                _M.load(item)
-            end,
-        })
-        if not plugins_conf then
-            error("failed to create etcd instance for fetching /plugins : " .. err)
-        end
+function _M.init_config(automatic)
+    local plugins_conf, err = core.config.new("/plugins", {
+        automatic = automatic,
+        item_schema = core.schema.plugins,
+        single_item = true,
+        filter = function(item)
+            -- we need to pass 'item' instead of plugins_conf because
+            -- the latter one is nil at the first run
+            _M.load(item)
+        end,
+    })
+    if not plugins_conf then
+        error("failed to create etcd instance for fetching /plugins : " .. err)
     end
+    return plugins_conf
 end
-
 
 function _M.init_worker()
     local _, http_plugin_names, stream_plugin_names = get_plugin_names()
@@ -799,7 +792,7 @@ function _M.init_worker()
     _M.load()
 
     if local_conf and not local_conf.apisix.enable_admin then
-        init_plugins_syncer()
+        _M.init_config(true)
     end
 
     local plugin_metadatas, err = core.config.new("/plugin_metadata",

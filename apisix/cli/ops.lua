@@ -153,7 +153,7 @@ local function get_lua_path(conf)
 end
 
 
-local function init(env)
+local function init_sysconf(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
               .. 'development environments and it is dangerous to do so. '
@@ -742,6 +742,13 @@ Please modify "admin_key" in conf/config.yaml .
     sys_conf["extra_lua_path"] = get_lua_path(yaml_conf.apisix.extra_lua_path)
     sys_conf["extra_lua_cpath"] = get_lua_path(yaml_conf.apisix.extra_lua_cpath)
 
+    return sys_conf
+end
+
+
+local function init(env)
+    local sys_conf = init_sysconf(env)
+
     local conf_render = template.compile(ngx_tpl)
     local ngxconf = conf_render(sys_conf)
 
@@ -862,6 +869,106 @@ local function start(env, ...)
 end
 
 
+local function test_standalone(env)
+    local sys_conf = init_sysconf(env)
+
+    -- In order to validate the apisix.yaml we require the ngx module which is part of openresty.
+    -- For this reason we define the script here and create a custom nginx.config that will execute the script.
+    local validate_script = [=[
+    local config_yaml = require("apisix.core.config_local").local_conf(true)
+    local config_provider = config_yaml.deployment.config_provider
+    if config_provider == "yaml" then
+        -- Load config as done withing apisix.core.config
+        local apisix_config = require("apisix.core.config_" .. config_provider)
+        apisix_config.type = config_provider
+        apisix_config.init()
+        --local apisix_config = require("apisix.core.config_yaml")
+        --config.type = config_yaml.deployment.config_provider
+
+        -- require("apisix.discovery.init")
+        -- require("apisix.balancer")
+        -- require("apisix.admin.init")
+        -- require("apisix.timers")
+        -- require("apisix.debug")
+        -- core.config.init_worker
+
+        -- The list and order of the modules to be loaded and their configs to be validated.
+        -- This order should match the one in apisix.init.http_init_worker
+        local modules = {
+            ['apisix.plugin'] = function()
+                local plugin = require("apisix.plugin")
+                plugin.load()
+                return plugin.init_config(false)
+            end
+        }
+            -- "apisix.router",
+            -- "apisix.http.service",
+            -- "apisix.plugin_config",
+            -- "apisix.consumer",
+            -- "apisix.consumer_group",
+            -- "apisix.secret",
+            -- "apisix.global_rules",
+            -- "apisix.upstream",
+            -- "apisix.plugins.ext-plugin.init"
+
+
+        local apisix_core = require("apisix.core")
+        apisix_core.log.orig_error = apisix_core.log.error
+
+        -- If an error is logged then mark the module as invalid
+        apisix_core.log.no_error_logs = true
+        apisix_core.log.error = function(...)
+             apisix_core.log.orig_error(...)
+             apisix_core.log.no_error_logs = false
+        end
+
+        local valid = true
+        for module_name, cfg_func in pairs(modules) do
+            apisix_core.log.no_error_logs = true
+
+            local cfg = cfg_func()
+            apisix_config.load(cfg)
+            if apisix_core.log.no_error_logs then
+                ngx.say(module_name .. " - valid")
+            else
+                valid = false
+                ngx.say(module_name .. " - failed")
+            end
+        end
+
+        if valid then
+            ngx.exit(0)
+            return
+        end
+        ngx.exit(1)
+    end
+    ]=]
+    sys_conf["script"] = require('pl.stringx').quote_string(validate_script)
+
+    local conf_render = template.compile(require("apisix.cli.ngx_cli_tpl"))
+    local ngxconf = conf_render(sys_conf)
+
+    local ok, err = util.write_file(env.apisix_home .. "/conf/nginx-test-standalone.conf",
+            ngxconf)
+    if not ok then
+        util.die("failed to update nginx.conf: ", err, "\n")
+    end
+
+    local validate_cmd = string.gsub(env.openresty_args, env.apisix_home .. [[/conf/nginx.conf]], env.apisix_home .. [[/conf/nginx-test-standalone.conf]])
+    local test_ret = execute((validate_cmd))
+
+    -- When success,
+    -- On linux, os.execute returns 0,
+    -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
+    if (test_ret == 0 or test_ret == true) then
+        print("apisix.yaml test is successful")
+        return
+    end
+
+    util.die("apisix.yaml test failed\n")
+end
+
+
 local function test(env, backup_ngx_conf)
     -- backup nginx.conf
     local ngx_conf_path = env.apisix_home .. "/conf/nginx.conf"
@@ -892,6 +999,8 @@ local function test(env, backup_ngx_conf)
     -- On linux, os.execute returns 0,
     -- On macos, os.execute returns 3 values: true, exit, 0, and we need the first.
     if (test_ret == 0 or test_ret == true) then
+        test_standalone(env)
+
         print("configuration test is successful")
         return
     end

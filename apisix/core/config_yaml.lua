@@ -120,10 +120,6 @@ end
 
 
 local function sync_data(self)
-    if not self.key then
-        return nil, "missing 'key' arguments"
-    end
-
     if not apisix_yaml_ctime then
         log.warn("wait for more time")
         return nil, "failed to read local file " .. apisix_yaml_path
@@ -131,6 +127,18 @@ local function sync_data(self)
 
     if self.conf_version == apisix_yaml_ctime then
         return true
+    end
+
+    _M.load(self)
+
+    self.conf_version = apisix_yaml_ctime
+    return true
+end
+
+
+function _M.load(self)
+    if not self.key then
+        return nil, "missing 'key' arguments"
     end
 
     local items = apisix_yaml[self.key]
@@ -185,7 +193,6 @@ local function sync_data(self)
                 self.filter(conf_item)
             end
         end
-
     else
         self.values = new_tab(#items, 0)
         self.values_hash = new_tab(0, #items)
@@ -236,10 +243,8 @@ local function sync_data(self)
         end
     end
 
-    self.conf_version = apisix_yaml_ctime
     return true
 end
-
 
 function _M.get(self, key)
     if not self.values_hash then
