@@ -28,7 +28,6 @@ local ipairs      = ipairs
 local type        = type
 local pcall       = pcall
 local zlib        = require("ffi-zlib")
-local str_buffer  = require("string.buffer")
 
 
 local lrucache = core.lrucache.new({
@@ -203,6 +202,7 @@ end
 
 
 local function inflate_gzip(data)
+    local str_buffer  = require("string.buffer")
     local inputs = buffer.new():set(data)
     local outputs = buffer.new()
 
@@ -288,14 +288,13 @@ function _M.body_filter(conf, ctx)
         end
 
         local err
-        --- need to fix here
-        core.log.error(ctx.response_encoding)
         if ctx.response_encoding == "gzip" then
+            core.log.error("hit")
             body, err = inflate_gzip(body)
             if err ~= nil then
                 core.log.error("filters may not work as expected, inflate gzip err:" .. err)
             end
-        else
+        elseif ctx.response_encoding ~= nil then
             core.log.error("filters may not work as expected due to unsupported compression encoding type")
         end
 

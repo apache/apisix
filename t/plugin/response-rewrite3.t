@@ -43,7 +43,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set gzip route and response-rewrite route, use response-rewrite body conf
+=== TEST 1: set route use response-rewrite body conf
 --- config
     location /t {
         content_by_lua_block {
@@ -51,55 +51,23 @@ __DATA__
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "plugins": {
-                        "gzip": {
-                            "types": "*",
-                            "min_length": 1
-                        }
-                    },
+                    "uri": "/hello",
                     "upstream": {
                         "nodes": {
                             "127.0.0.1:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/2',
-                ngx.HTTP_PUT,
-                [[{
                     "plugins": {
-                        "proxy-rewrite": {
-                            "uri": "/hello",
-                            "headers": {
-                                "set": {
-                                    "Accept-Encoding": "gzip"
-                                }
-                            }
-                        },
                         "response-rewrite": {
                             "vars": [
                                 ["status","==",200]
                             ],
                             "body": "new body\n"
                         }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/rewrited_hello"
+                    }
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -113,24 +81,30 @@ GET /t
 passed
 
 
-
-=== TEST 2: gzip route should return compressed body
+=== TEST 4: response-rewrite route should rewrite body and not Content-Encoding
 --- request
 GET /hello
---- more_headers
-Accept-Encoding: gzip
---- response_headers
-Content-Encoding: gzip
-
-
-
-=== TEST 3: response-rewrite route should rewrite body and not Content-Encoding
---- request
-GET /rewrited_hello
 --- response_body
 new body
 --- response_headers
 Content-Encoding:
+
+
+
+=== TEST 5: response-rewrite route should rewrite body and not Content-Encoding
+--- http_config
+gzip on;
+gzip_types *;
+gzip_min_length 1;
+--- request
+GET /hello
+--- response_body
+new body
+--- more_headers
+Accept-Encoding: gzip
+--- response_headers
+Content-Encoding:
+
 
 
 
@@ -139,18 +113,17 @@ Content-Encoding:
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "plugins": {
-                        "proxy-rewrite": {
-                            "uri": "/hello",
-                            "headers": {
-                                "set": {
-                                    "Accept-Encoding": "gzip"
-                                }
-                            }
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
                         },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
                         "response-rewrite": {
                             "vars": [
                                 ["status","==",200]
@@ -158,20 +131,14 @@ Content-Encoding:
                             "filters": [
                                 {
                                     "regex": "hello",
-                                    "replace": "test"
+                                    "replace": "test",
+                                    "scope":"global"
                                 }
                             ]
                         }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/rewrited_hello"
+                    }
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
@@ -185,10 +152,9 @@ GET /t
 passed
 
 
-
-=== TEST 5: response-rewrite route should rewrite body and not Content-Encoding
+=== TEST 6: response-rewrite route should rewrite body and not Content-Encoding
 --- request
-GET /rewrited_hello
+GET /hello
 --- response_body
 test world
 --- response_headers
@@ -196,195 +162,16 @@ Content-Encoding:
 
 
 
-=== TEST 6: set response-rewrite route use filter conf and route for mock unsupported compression encoding type
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "response-rewrite": {
-                            "headers": {
-                                "set": {
-                                    "Content-Encoding": "br"
-                                }
-                            }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/2',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "proxy-rewrite": {
-                            "uri": "/hello"
-                        },
-                        "response-rewrite": {
-                            "vars": [
-                                ["status","==",200]
-                            ],
-                            "filters": [
-                                {
-                                    "regex": "hello",
-                                    "replace": "test"
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/rewrited_hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
+=== TEST 7: response-rewrite route should rewrite body and not Content-Encoding
+--- http_config
+gzip on;
+gzip_types *;
+gzip_min_length 1;
 --- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 7: response-rewrite route should try rewrite body and not Content-Encoding, report error
---- request
-GET /rewrited_hello
---- response_headers
-Content-Encoding:
---- error_log
-filters may not work as expected due to unsupported compression encoding type
-
-
-
-=== TEST 8: set response-rewrite route use body conf and use the route for mock unsupported compression encoding type
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "proxy-rewrite": {
-                            "uri": "/hello"
-                        },
-                        "response-rewrite": {
-                            "vars": [
-                                ["status","==",200]
-                            ],
-                            "body": "new body\n"
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/rewrited_hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 9: response-rewrite route should rewrite body and not Content-Encoding
---- request
-GET /rewrited_hello
+GET /hello
 --- response_body
 new body
+--- more_headers
+Accept-Encoding: gzip
 --- response_headers
 Content-Encoding:
-
-
-
-=== TEST 10: set response-rewrite route not use filter conf or body conf
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "proxy-rewrite": {
-                            "uri": "/hello"
-                        },
-                        "response-rewrite": {
-                            "vars": [
-                                ["status","==",200]
-                            ],
-                            "headers": {
-                                "set": {
-                                    "X-Server-id": 3,
-                                    "X-Server-status": "on",
-                                    "Content-Type": ""
-                                }
-                            }
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/rewrited_hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 11: body should keep Content-Encoding
---- request
-GET /rewrited_hello
---- response_headers
-Content-Encoding: br
-X-Server-id: 3
-X-Server-status: on
-Content-Type:
