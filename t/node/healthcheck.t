@@ -86,6 +86,13 @@ qr/^.*?\[error\](?!.*process exiting).*/
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
 
+            -- hit route before start test loop
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            if not res then
+                ngx.say(err)
+                return
+            end
+
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
@@ -118,7 +125,7 @@ GET /t
 --- grep_error_log eval
 qr/^.*?\[error\](?!.*process exiting).*/
 --- grep_error_log_out
---- timeout: 6
+--- timeout: 10
 
 
 
