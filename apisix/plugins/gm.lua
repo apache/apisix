@@ -136,7 +136,7 @@ local _M = {
 function _M.init()
     if not pcall(function () return C.Tongsuo_version_num end) then
         error("need to build Tongsuo (https://github.com/Tongsuo-Project/Tongsuo) " ..
-              "into the APISIX-Base")
+              "into the APISIX-Runtime")
     end
 
     ssl.enable_ntls()

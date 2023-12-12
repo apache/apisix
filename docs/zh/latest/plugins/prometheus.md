@@ -109,7 +109,7 @@ plugin_attr:
 如果 Prometheus 插件收集的指标数量过多，在通过 URI 获取指标时，会占用 CPU 资源来计算指标数据，可能会影响 APISIX 处理正常请求。为解决此问题，APISIX 在 [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) 中暴露 URI 并且计算指标。
 如果使用 public-api 插件暴露该 URI，那么 APISIX 将在普通的 worker 进程中计算指标数据，这仍可能会影响 APISIX 处理正常请求。
 
-该特性要求 APISIX  运行在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 上。
+该特性要求 APISIX  运行在 [APISIX-Runtime](../FAQ.md#如何构建-apisix-runtime-环境) 上。
 
 :::
 
@@ -351,7 +351,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 :::info IMPORTANT
 
-该功能要求 APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
+该功能要求 APISIX 运行在 [APISIX-Runtime](../FAQ.md#如何构建-APISIX-Runtime-环境？) 上。
 
 :::
 

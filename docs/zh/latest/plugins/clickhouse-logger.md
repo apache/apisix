@@ -60,7 +60,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
+| log_format       | object  | 否   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger \

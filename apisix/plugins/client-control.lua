@@ -49,7 +49,7 @@ end
 
 function _M.rewrite(conf, ctx)
     if not ok then
-        core.log.error("need to build APISIX-Base to support client control")
+        core.log.error("need to build APISIX-Runtime to support client control")
         return 501
     end
 

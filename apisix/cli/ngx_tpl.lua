@@ -776,7 +776,7 @@ http {
 
             {% if use_apisix_base then %}
             # For servers which obey the standard, when `:authority` is missing,
-            # `host` will be used instead. When used with apisix-base, we can do
+            # `host` will be used instead. When used with apisix-runtime, we can do
             # better by setting `:authority` directly
             grpc_set_header   ":authority" $upstream_host;
             {% else %}

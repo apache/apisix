@@ -168,7 +168,7 @@ Sometimes the upstream requires mTLS. In this situation, the APISIX acts as the 
 
 When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams. Please refer to [Admin API](./admin-api.md#upstream) for details.
 
-This feature requires APISIX to run on [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment).
+This feature requires APISIX to run on [APISIX-Runtime](./FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
 Here is a similar Python script to patch a existed upstream with mTLS (changes admin API url if needed):
 

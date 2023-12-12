@@ -55,6 +55,10 @@ install_dependencies() {
     # install vault cli capabilities
     install_vault_cli
 
+    # install brotli
+    yum install -y cmake3
+    install_brotli
+
     # install test::nginx
     yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)

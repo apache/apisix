@@ -32,7 +32,7 @@ The proxy-control Plugin dynamically controls the behavior of the NGINX proxy.
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment). See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
+This Plugin requires APISIX to run on [APISIX-Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment). See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
 
 :::
 
