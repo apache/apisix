@@ -317,7 +317,7 @@ Content-Encoding: deflate
 --- response_headers
 Content-Encoding:
 --- error_log
-filters may not work as expected due to unsupported compression encoding type
+filters may not work as expected due to unsupported compression encoding type: deflate
 
 
 

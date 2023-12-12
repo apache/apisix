@@ -291,11 +291,13 @@ function _M.body_filter(conf, ctx)
         if ctx.response_encoding == "gzip" then
             body, err = inflate_gzip(body)
             if err ~= nil then
-                core.log.error("filters may not work as expected, inflate gzip err:" .. err)
+                core.log.error("filters may not work as expected, inflate gzip err: ", err)
+                return
             end
         elseif ctx.response_encoding ~= nil then
-            core.log.error("filters may not work as expected due to unsupported compression encoding type: "
-                           .. ctx.response_encoding)
+            core.log.error("filters may not work as expected due to unsupported compression encoding type: ",
+                           ctx.response_encoding)
+            return
         end
 
         for _, filter in ipairs(conf.filters) do
@@ -369,14 +371,11 @@ function _M.header_filter(conf, ctx)
         ngx.status = conf.status_code
     end
 
-    local response_encoding = ngx_header["Content-Encoding"]
     -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
+        local response_encoding = ngx_header["Content-Encoding"]
         core.response.clear_header_as_body_modified()
         ctx.response_encoding = response_encoding
-    -- if response body won't be modified and response body is compressed
-    --elseif response_encoding ~= nil then
-    --    core.response.add_header("Content-Encoding", ctx.response_encoding)
     end
 
     if not conf.headers then
