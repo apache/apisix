@@ -374,7 +374,6 @@ function _M.header_filter(conf, ctx)
     if conf.filters or conf.body then
         core.response.clear_header_as_body_modified()
         ctx.response_encoding = response_encoding
-    --- 
     -- if response body won't be modified and response body is compressed
     --elseif response_encoding ~= nil then
     --    core.response.add_header("Content-Encoding", ctx.response_encoding)
