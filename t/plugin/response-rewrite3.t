@@ -378,7 +378,7 @@ Content-Type:
 
 
 
-=== TEST 13: set route use response-write plugin but not use filter conf or body conf, and mock unsupported compression encoding type
+=== TEST 13: response-write without filter conf or body conf, and mock unsupported compression encoding type
 --- config
     location /t {
         content_by_lua_block {
