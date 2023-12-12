@@ -28,6 +28,7 @@ local ipairs      = ipairs
 local type        = type
 local pcall       = pcall
 local zlib        = require("ffi-zlib")
+local str_buffer  = require("string.buffer")
 
 
 local lrucache = core.lrucache.new({
@@ -202,13 +203,12 @@ end
 
 
 local function inflate_gzip(data)
-    local str_buffer  = require("string.buffer")
-    local inputs = buffer.new():set(data)
-    local outputs = buffer.new()
+    local inputs = str_buffer.new():set(data)
+    local outputs = str_buffer.new()
 
     local read_inputs = function(size)
         local data = inputs:get(size)
-        if data ~= "" then
+        if data == "" then
             return nil
         end
         return data
@@ -223,7 +223,7 @@ local function inflate_gzip(data)
         return nil, err
     end
 
-    return output_buffer:get()
+    return outputs:get()
 end
 
 
@@ -289,13 +289,13 @@ function _M.body_filter(conf, ctx)
 
         local err
         if ctx.response_encoding == "gzip" then
-            core.log.error("hit")
             body, err = inflate_gzip(body)
             if err ~= nil then
                 core.log.error("filters may not work as expected, inflate gzip err:" .. err)
             end
         elseif ctx.response_encoding ~= nil then
-            core.log.error("filters may not work as expected due to unsupported compression encoding type")
+            core.log.error("filters may not work as expected due to unsupported compression encoding type: "
+                           .. ctx.response_encoding)
         end
 
         for _, filter in ipairs(conf.filters) do
@@ -374,9 +374,10 @@ function _M.header_filter(conf, ctx)
     if conf.filters or conf.body then
         core.response.clear_header_as_body_modified()
         ctx.response_encoding = response_encoding
+    --- 
     -- if response body won't be modified and response body is compressed
-    elseif response_encoding ~= nil then
-        core.response.add_header("Content-Encoding", ctx.response_encoding)
+    --elseif response_encoding ~= nil then
+    --    core.response.add_header("Content-Encoding", ctx.response_encoding)
     end
 
     if not conf.headers then
