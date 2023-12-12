@@ -32,14 +32,6 @@ local lru_log_format = core.lrucache.new({
 })
 
 local _M = {}
-_M.metadata_schema_log_format = {
-    type = "object",
-    default = {
-        ["host"] = "$host",
-        ["@timestamp"] = "$time_iso8601",
-        ["client_ip"] = "$remote_addr",
-    },
-}
 
 
 local function gen_log_format(format)

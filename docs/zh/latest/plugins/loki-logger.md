@@ -61,7 +61,7 @@ description: 本文件包含关于 Apache APISIX loki-logger 插件的信息。
 
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 |------|------|----------|--|-------------|
-| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | 日志格式以 JSON 格式声明为键值对。值只支持字符串类型。可以通过在字符串前面加上 `$` 来使用 [APISIX 变量](../apisix-variable.md) 和 [Nginx 变量](http://nginx.org/en/docs/varindex.html) 。 |
+| log_format | object | False |  | 日志格式以 JSON 格式声明为键值对。值只支持字符串类型。可以通过在字符串前面加上 `$` 来使用 [APISIX 变量](../apisix-variable.md) 和 [Nginx 变量](http://nginx.org/en/docs/varindex.html) 。 |
 
 :::info 重要提示
 
