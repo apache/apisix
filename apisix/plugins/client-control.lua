@@ -26,6 +26,7 @@ local schema = {
         max_body_size = {
             type = "integer",
             minimum = 0,
+            description = "Maximum request body size in bytes, the request body size is not checked when the value is 0"
         },
     },
 }

@@ -40,7 +40,7 @@ This Plugin requires APISIX to run on APISIX-Runtime. See [apisix-build-tools](h
 
 | Name          | Type    | Required | Valid values | Description                                                                                                                          |
 | ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| max_body_size | integer | False    | [0,...]      | Set the maximum limit for the client request body and dynamically adjust the size of [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size), measured in bytes. |
+| max_body_size | integer | False    | [0,...]      | Set the maximum limit for the client request body and dynamically adjust the size of [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size), measured in bytes. When `client_max_body_size` is set to 0, no check will be performed on the client request body size. |
 
 ## Enable Plugin
 
