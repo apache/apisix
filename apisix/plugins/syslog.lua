@@ -45,7 +45,9 @@ local schema = batch_processor_manager:wrap_schema(schema)
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
