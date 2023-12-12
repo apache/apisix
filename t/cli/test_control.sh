@@ -36,6 +36,7 @@ make run
 
 sleep 0.1
 
+set +e
 times=1
 code=000
 while [ $code -eq 000 ] && [ $times -lt 10 ]
@@ -44,6 +45,7 @@ do
   sleep 0.2
   times=$(($times+1))
 done
+set -e
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
@@ -77,6 +79,7 @@ make run
 
 sleep 0.1
 
+set +e
 times=1
 code=000
 while [ $code -eq 000 ] && [ $times -lt 10 ]
@@ -85,6 +88,7 @@ do
   sleep 0.2
   times=$(($times+1))
 done
+set -e
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
@@ -111,6 +115,7 @@ make run
 
 sleep 0.1
 
+set +e
 times=1
 code=000
 while [ $code -eq 000 ] && [ $times -lt 10 ]
@@ -119,6 +124,7 @@ do
   sleep 0.2
   times=$(($times+1))
 done
+set -e
 
 if [ ! $code -eq 200 ]; then
     echo "failed: access control server"
