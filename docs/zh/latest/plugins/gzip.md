@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 
 ## 描述
 
-`gzip` 插件能动态设置 NGINX 的压缩行为。
+`gzip` 插件能动态设置 [NGINX](https://docs.nginx.com/nginx/admin-guide/web-server/compression/) 的压缩行为。当启用 gzip 插件时，客户端在发起请求时需要在请求头中添加 `Accept-Encoding: gzip`，以表明客户端支持 `gzip` 压缩。`APISIX` 在接收到请求后，会根据客户端的支持情况和服务器配置动态判断是否对响应内容进行 gzip 压缩。如果判定条件得到满足，APISIX 将在响应头中添加 `Content-Encoding: gzip` 字段，以指示响应内容已经通过 `gzip` 压缩。在客户端接收到响应后，根据响应头中的 `Content-Encoding` 字段使用相应的解压缩算法对响应内容进行解压，从而获取原始的响应内容。
 
 :::info IMPORTANT
 
