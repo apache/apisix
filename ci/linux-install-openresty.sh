@@ -35,41 +35,12 @@ sudo add-apt-repository -y "deb https://openresty.org/package/${arch_path}ubuntu
 sudo add-apt-repository -y "deb http://repos.apiseven.com/packages/${arch_path}debian bullseye main"
 
 sudo apt-get update
-sudo apt-get install -y openresty-openssl111 openresty-openssl111-dev libldap2-dev openresty-pcre openresty-zlib
+sudo apt-get install -y libldap2-dev openresty-pcre openresty-zlib
 
-COMPILE_OPENSSL3=${COMPILE_OPENSSL3-no}
-USE_OPENSSL3=${USE_OPENSSL3-no}
-OPENSSL3_PREFIX=${OPENSSL3_PREFIX-/home/runner}
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
+ENABLE_FIPS=${ENABLE_FIPS:-"false"}
 
 if [ "$OPENRESTY_VERSION" == "source" ]; then
-    export openssl_prefix=/usr/local/openresty/openssl111
-    export zlib_prefix=/usr/local/openresty/zlib
-    export pcre_prefix=/usr/local/openresty/pcre
-
-    export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
-    export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib"
-
-    if [ "$COMPILE_OPENSSL3" == "yes" ]; then
-        apt install -y build-essential
-        git clone https://github.com/openssl/openssl
-        cd openssl
-        ./Configure --prefix=$OPENSSL3_PREFIX/openssl-3.0 enable-fips
-        make install
-        bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
-        ldconfig
-        $OPENSSL3_PREFIX/openssl-3.0/bin/openssl fipsinstall -out $OPENSSL3_PREFIX/openssl-3.0/ssl/fipsmodule.cnf -module $OPENSSL3_PREFIX/openssl-3.0/lib64/ossl-modules/fips.so
-        sed -i 's@# .include fipsmodule.cnf@.include '"$OPENSSL3_PREFIX"'/openssl-3.0/ssl/fipsmodule.cnf@g; s/# \(fips = fips_sect\)/\1\nbase = base_sect\n\n[base_sect]\nactivate=1\n/g' $OPENSSL3_PREFIX/openssl-3.0/ssl/openssl.cnf
-        cd ..
-    fi
-
-    if [ "$USE_OPENSSL3" == "yes" ]; then
-        bash -c "echo $OPENSSL3_PREFIX/openssl-3.0/lib64 > /etc/ld.so.conf.d/openssl3.conf"
-        ldconfig
-        export cc_opt="-I$OPENSSL3_PREFIX/openssl-3.0/include"
-        export ld_opt="-L$OPENSSL3_PREFIX/openssl-3.0/lib64 -Wl,-rpath,$OPENSSL3_PREFIX/openssl-3.0/lib64"
-    fi
-
     if [ "$SSL_LIB_VERSION" == "tongsuo" ]; then
         export openssl_prefix=/usr/local/tongsuo
         export zlib_prefix=$OPENRESTY_PREFIX/zlib
@@ -80,6 +51,6 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     fi
 fi
 
-wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
 chmod +x build-apisix-runtime.sh
-./build-apisix-runtime.sh latest
+sudo ./build-apisix-runtime.sh latest
