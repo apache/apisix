@@ -27,7 +27,6 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
-local conf_server     = require("apisix.conf_server")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
 local consumer_group  = require("apisix.consumer_group")
@@ -40,6 +39,7 @@ local apisix_upstream = require("apisix.upstream")
 local apisix_secret   = require("apisix.secret")
 local set_upstream    = apisix_upstream.set_by_route
 local apisix_ssl      = require("apisix.ssl")
+local apisix_global_rules    = require("apisix.global_rules")
 local upstream_util   = require("apisix.utils.upstream")
 local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
@@ -49,7 +49,6 @@ local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
 local math            = math
-local error           = error
 local ipairs          = ipairs
 local ngx_now         = ngx.now
 local ngx_var         = ngx.var
@@ -59,6 +58,7 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
+local ngx_re_match    = ngx.re.match
 local control_api_router
 
 local is_http = false
@@ -76,6 +76,7 @@ local load_balancer
 local local_conf
 local ver_header = "APISIX/" .. core.version.VERSION
 
+local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 local _M = {version = 0.4}
 
@@ -99,7 +100,6 @@ function _M.http_init(args)
     end
 
     xrpc.init()
-    conf_server.init()
 end
 
 
@@ -120,11 +120,8 @@ function _M.http_init_worker()
         core.grpc = nil
     end
 
-    local we = require("resty.worker.events")
-    local ok, err = we.configure({shm = "worker-events", interval = 0.1})
-    if not ok then
-        error("failed to init worker event: " .. err)
-    end
+    require("apisix.events").init_worker()
+
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
@@ -153,6 +150,8 @@ function _M.http_init_worker()
     consumer_group.init_worker()
     apisix_secret.init_worker()
 
+    apisix_global_rules.init_worker()
+
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 
@@ -165,7 +164,7 @@ end
 
 
 function _M.http_exit_worker()
-    -- TODO: we can support stream plugin later - currently there is not `destory` method
+    -- TODO: we can support stream plugin later - currently there is not `destroy` method
     -- in stream plugins
     plugin.exit_worker()
     require("apisix.plugins.ext-plugin.init").exit_worker()
@@ -173,12 +172,33 @@ end
 
 
 function _M.http_ssl_phase()
+    local ok, err = router.router_ssl.set(ngx.ctx.matched_ssl)
+    if not ok then
+        if err then
+            core.log.error("failed to fetch ssl config: ", err)
+        end
+        ngx_exit(-1)
+    end
+end
+
+
+function _M.http_ssl_client_hello_phase()
+    local sni, err = apisix_ssl.server_name(true)
+    if not sni or type(sni) ~= "string" then
+        local advise = "please check if the client requests via IP or uses an outdated " ..
+        "protocol. If you need to report an issue, " ..
+        "provide a packet capture file of the TLS handshake."
+        core.log.error("failed to find SNI: " .. (err or advise))
+        ngx_exit(-1)
+    end
+
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
     ngx_ctx.api_ctx = api_ctx
 
-    local ok, err = router.router_ssl.match_and_set(api_ctx)
+    local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
+    ngx_ctx.matched_ssl = api_ctx.matched_ssl
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
 
@@ -186,6 +206,13 @@ function _M.http_ssl_phase()
         if err then
             core.log.error("failed to fetch ssl config: ", err)
         end
+        core.log.error("failed to match any SSL certificate by SNI: ", sni)
+        ngx_exit(-1)
+    end
+
+    ok, err = apisix_ssl.set_protocols_by_clienthello(ngx_ctx.matched_ssl.value.ssl_protocols)
+    if not ok then
+        core.log.error("failed to set ssl protocols: ", err)
         ngx_exit(-1)
     end
 end
@@ -223,9 +250,15 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    -- Here we copy the whole route instead of part of it,
-    -- so that we can avoid going back from route.value to route during copying.
-    route.dns_value = core.table.deepcopy(route).value
+    local parent = route.value.upstream.parent
+    if parent then
+        route.value.upstream.parent = nil
+    end
+    route.dns_value = core.table.deepcopy(route.value)
+    if parent then
+        route.value.upstream.parent = parent
+        route.dns_value.upstream.parent = parent
+    end
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -276,7 +309,7 @@ end
 
 local function verify_tls_client(ctx)
     if apisix_base_flags.client_cert_verified_in_handshake then
-        -- For apisix-base, there is no need to rematch SSL rules as the invalid
+        -- For apisix-runtime, there is no need to rematch SSL rules as the invalid
         -- connections are already rejected in the handshake
         return true
     end
@@ -304,10 +337,36 @@ local function verify_tls_client(ctx)
 end
 
 
+local function uri_matches_skip_mtls_route_patterns(ssl, uri)
+    for _, pat in ipairs(ssl.value.client.skip_mtls_uri_regex) do
+        if ngx_re_match(uri, pat,  "jo") then
+            return true
+        end
+    end
+end
+
+
 local function verify_https_client(ctx)
     local scheme = ctx.var.scheme
     if scheme ~= "https" then
         return true
+    end
+
+    local matched_ssl = ngx.ctx.matched_ssl
+    if matched_ssl.value.client
+        and matched_ssl.value.client.skip_mtls_uri_regex
+        and apisix_ssl.support_client_verification()
+        and (not uri_matches_skip_mtls_route_patterns(matched_ssl, ngx.var.uri)) then
+        local res = ctx.var.ssl_client_verify
+        if res ~= "SUCCESS" then
+            if res == "NONE" then
+                core.log.error("client certificate was not present")
+            else
+                core.log.error("client certificate verification is not passed: ", res)
+            end
+
+            return false
+        end
     end
 
     local host = ctx.var.host
@@ -562,7 +621,8 @@ function _M.http_access_phase()
     local route = api_ctx.matched_route
     if not route then
         -- run global rule when there is no matching route
-        plugin.run_global_rules(api_ctx, router.global_rules, nil)
+        local global_rules = apisix_global_rules.global_rules()
+        plugin.run_global_rules(api_ctx, global_rules, nil)
 
         core.log.info("not find any matched route")
         return core.response.exit(404,
@@ -614,7 +674,8 @@ function _M.http_access_phase()
     api_ctx.route_name = route.value.name
 
     -- run global rule
-    plugin.run_global_rules(api_ctx, router.global_rules, nil)
+    local global_rules = apisix_global_rules.global_rules()
+    plugin.run_global_rules(api_ctx, global_rules, nil)
 
     if route.value.script then
         script.load(route, api_ctx)
@@ -681,6 +742,10 @@ function _M.grpc_access_phase()
     if code then
         core.log.error("failed to set grpcs upstream param: ", err)
         core.response.exit(code)
+    end
+
+    if api_ctx.enable_mirror == true and has_mod then
+        apisix_ngx_client.enable_mirror()
     end
 end
 
@@ -950,13 +1015,11 @@ function _M.stream_init_worker()
     plugin.init_worker()
     xrpc.init_worker()
     router.stream_init_worker()
+    require("apisix.http.service").init_worker()
     apisix_upstream.init_worker()
 
-    local we = require("resty.worker.events")
-    local ok, err = we.configure({shm = "worker-events-stream", interval = 0.1})
-    if not ok then
-        error("failed to init worker event: " .. err)
-    end
+    require("apisix.events").init_worker()
+
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
         discovery.init_worker()
@@ -1007,6 +1070,34 @@ function _M.stream_preread_phase()
 
         api_ctx.matched_upstream = upstream
 
+    elseif matched_route.value.service_id then
+        local service = service_fetch(matched_route.value.service_id)
+        if not service then
+            core.log.error("failed to fetch service configuration by ",
+                    "id: ", matched_route.value.service_id)
+            return core.response.exit(404)
+        end
+
+        matched_route = plugin.merge_service_stream_route(service, matched_route)
+        api_ctx.matched_route = matched_route
+        api_ctx.conf_type = "stream_route&service"
+        api_ctx.conf_version = matched_route.modifiedIndex .. "&" .. service.modifiedIndex
+        api_ctx.conf_id = matched_route.value.id .. "&" .. service.value.id
+        api_ctx.service_id = service.value.id
+        api_ctx.service_name = service.value.name
+        api_ctx.matched_upstream = matched_route.value.upstream
+        if matched_route.value.upstream_id and not matched_route.value.upstream then
+            local upstream = apisix_upstream.get_by_id(matched_route.value.upstream_id)
+            if not upstream then
+                if is_http then
+                    return core.response.exit(502)
+                end
+
+                return ngx_exit(1)
+            end
+
+            api_ctx.matched_upstream = upstream
+        end
     else
         if matched_route.has_domain then
             local err

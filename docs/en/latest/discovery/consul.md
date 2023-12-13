@@ -37,6 +37,7 @@ discovery:
     servers:                      # make sure service name is unique in these consul servers
       - "http://127.0.0.1:8500"   # `http://127.0.0.1:8500` and `http://127.0.0.1:8600` are different clusters
       - "http://127.0.0.1:8600"   # `consul` service is default skip service
+    token: "..."                  # if your consul cluster has enabled acl access control, you need to specify the token
     skip_services:                # if you need to skip special services
       - "service_a"
     timeout:
@@ -143,7 +144,7 @@ curl -X PUT 'http://127.0.0.1:8500/v1/agent/service/register' \
 }'
 ```
 
-In some case, same service name exist in different consul servers.
+In some cases, same service name might exist in different consul servers.
 To avoid confusion, use the full consul key url path as service name in practice.
 
 ### Upstream setting

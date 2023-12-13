@@ -486,6 +486,7 @@ qr{\[error\].*while connecting to upstream.*}
 qr{.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*
+.*http://127.0.0.1:1960/server_port.*
 .*http://127.0.0.1:1961/server_port.*
 .*http://127.0.0.1:1961/server_port.*}
 --- timeout: 10

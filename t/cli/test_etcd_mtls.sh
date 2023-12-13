@@ -102,6 +102,7 @@ echo "passed: certificate verify with CA success expectedly"
 # etcd mTLS in stream subsystem
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - addr: 9100
@@ -167,7 +168,7 @@ make run
 sleep 1
 make stop
 
-if ! grep -E 'upstream SSL certificate does not match \"127.0.0.1\" while SSL handshaking to upstream' logs/error.log; then
+if ! grep -F 'certificate host mismatch' logs/error.log; then
     echo "failed: should got certificate host mismatch when use host in etcd.host as sni"
     exit 1
 fi

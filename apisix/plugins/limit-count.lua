@@ -18,7 +18,7 @@ local limit_count = require("apisix.plugins.limit-count.init")
 
 local plugin_name = "limit-count"
 local _M = {
-    version = 0.4,
+    version = 0.5,
     priority = 1002,
     name = plugin_name,
     schema = limit_count.schema,
@@ -31,7 +31,7 @@ end
 
 
 function _M.access(conf, ctx)
-    return limit_count.rate_limit(conf, ctx)
+    return limit_count.rate_limit(conf, ctx, plugin_name, 1)
 end
 
 

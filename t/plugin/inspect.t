@@ -527,3 +527,31 @@ upvar2=yes
 --- error_log
 inspect: remove hook: t/lib/test_inspect.lua#27
 inspect: all hooks removed
+
+
+
+=== TEST 14: jit should be recovered after all hooks are done
+--- config
+    location /t {
+        content_by_lua_block {
+            local test = require("lib.test_inspect")
+
+            local t1 = test.hot1()
+
+            write_hooks([[
+            local test = require("lib.test_inspect")
+            local dbg = require "apisix.inspect.dbg"
+            dbg.set_hook("t/lib/test_inspect.lua", 47, test.hot1, function(info)
+                return true
+            end)
+            ]])
+
+            ngx.sleep(1.5)
+
+            local t2 = test.hot1()
+            assert(t2-t1 < t1*0.8, "hot1 consumes at least double times than before")
+        }
+    }
+--- error_log
+inspect: remove hook: t/lib/test_inspect.lua#47
+inspect: all hooks removed

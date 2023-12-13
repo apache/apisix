@@ -34,12 +34,19 @@ deployment:
         config_provider: yaml
 _EOC_
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
+
 run_tests();
 
 __DATA__
 
 === TEST 1: hit routes(priority: 1 + priority: 2)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -72,7 +79,6 @@ use config_provider: yaml
 
 
 === TEST 2: hit routes(priority: 2 + priority: 1)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -105,7 +111,6 @@ use config_provider: yaml
 
 
 === TEST 3: hit routes(priority: default_value + priority: 1)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -137,7 +142,6 @@ use config_provider: yaml
 
 
 === TEST 4: hit routes(priority: 1 + priority: default_value)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -

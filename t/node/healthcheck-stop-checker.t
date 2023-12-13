@@ -165,15 +165,6 @@ create new checker: table: 0x
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
-            -- release the clean handler of previous test
-            local code, _, body = t('/apisix/admin/routes/1', "DELETE")
-
-            if code > 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
             local code, _, body = t('/apisix/admin/upstreams/stopchecker',
                 "PUT",
                 [[{"type":"roundrobin","nodes":{"127.0.0.1:1980":1,"127.0.0.1:1981":1},"checks":{"active":{"http_path":"/status","healthy":{"interval":1,"successes":1},"unhealthy":{"interval":1,"http_failures":2}}}}]]
@@ -256,7 +247,6 @@ ok
 --- grep_error_log eval
 qr/create new checker: table: 0x|try to release checker: table: 0x/
 --- grep_error_log_out
-try to release checker: table: 0x
 create new checker: table: 0x
 try to release checker: table: 0x
 create new checker: table: 0x

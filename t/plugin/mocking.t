@@ -424,3 +424,44 @@ passed
 GET /hello
 --- response_body chomp
 empty_var:
+
+
+
+=== TEST 19: set route (return headers)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "mocking": {
+                                   "response_example": "hello world",
+                                   "response_headers": {
+                                        "X-Apisix": "is, cool",
+                                        "X-Really": "yes"
+                                    }
+                               }
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit route
+--- request
+GET /hello
+--- response_headers
+X-Apisix: is, cool
+X-Really: yes

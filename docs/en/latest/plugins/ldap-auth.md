@@ -54,7 +54,7 @@ For Route:
 | tls_verify| boolean  | False     | `false`        | Whether to verify the server certificate when `use_tls` is enabled; If set to `true`, you must set `ssl_trusted_certificate` in `config.yaml`, and make sure the host of `ldap_uri` matches the host in server certificate. |
 | uid      | string  | False    | `cn`    | uid attribute.                                                         |
 
-## Enabling the plugin
+## Enable plugin
 
 First, you have to create a Consumer and enable the `ldap-auth` Plugin on it:
 
@@ -139,9 +139,9 @@ HTTP/1.1 401 Unauthorized
 {"message":"Invalid user authorization"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `ldap-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `ldap-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

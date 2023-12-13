@@ -70,7 +70,9 @@ function resp_exit(code, ...)
                 error("failed to encode data: " .. err, -2)
             else
                 idx = idx + 1
-                t[idx] = body .. "\n"
+                t[idx] = body
+                idx = idx + 1
+                t[idx] = "\n"
             end
 
         elseif v ~= nil then
@@ -80,7 +82,7 @@ function resp_exit(code, ...)
     end
 
     if idx > 0 then
-        ngx_print(concat_tab(t, "", 1, idx))
+        ngx_print(t)
     end
 
     if code then
@@ -177,14 +179,19 @@ end
 function _M.hold_body_chunk(ctx, hold_the_copy)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
+
+    if not ctx._body_buffer then
+        ctx._body_buffer = {}
+    end
+
     if type(chunk) == "string" and chunk ~= "" then
-        body_buffer = ctx._body_buffer
+        body_buffer = ctx._body_buffer[ctx._plugin_name]
         if not body_buffer then
             body_buffer = {
                 chunk,
                 n = 1
             }
-            ctx._body_buffer = body_buffer
+            ctx._body_buffer[ctx._plugin_name] = body_buffer
         else
             local n = body_buffer.n + 1
             body_buffer.n = n
@@ -193,13 +200,13 @@ function _M.hold_body_chunk(ctx, hold_the_copy)
     end
 
     if eof then
-        body_buffer = ctx._body_buffer
+        body_buffer = ctx._body_buffer[ctx._plugin_name]
         if not body_buffer then
             return chunk
         end
 
         body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
-        ctx._body_buffer = nil
+        ctx._body_buffer[ctx._plugin_name] = nil
         return body_buffer
     end
 

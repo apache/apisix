@@ -54,7 +54,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -122,7 +124,7 @@ local function send_http_data(conf, log_message)
 
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
-        path = url_decoded.path,
+        path = #url_decoded.path ~= 0 and url_decoded.path or "/",
         query = url_decoded.query,
         body = log_message,
         headers = {

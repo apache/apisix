@@ -70,7 +70,7 @@ passed
 
 
 
-=== TEST 2: add plugin with algorithm range_id
+=== TEST 2: add plugin with algorithm range_id (set automatic default)
 --- config
     location /t {
         content_by_lua_block {
@@ -103,7 +103,13 @@ passed
 
 
 
-=== TEST 3: add plugin with algorithm range_id
+=== TEST 3: hit
+--- request
+GET /opentracing
+
+
+
+=== TEST 4: add plugin with algorithm range_id
 --- config
     location /t {
         content_by_lua_block {

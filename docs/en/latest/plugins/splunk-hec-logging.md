@@ -44,7 +44,7 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 | endpoint.channel | False    |         | Splunk HEC send data channel identifier. Read more: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck). |
 | endpoint.timeout | False    | 10      | Splunk HEC send data timeout in seconds.                                                                                                                                         |
 | ssl_verify       | False    | true    | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                          |
-| log_format       | False    |                             | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format       | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
@@ -54,7 +54,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -81,7 +81,7 @@ With this configuration, your logs would be formatted as shown below:
 [{"time":1673976669.269,"source":"apache-apisix-splunk-hec-logging","event":{"host":"localhost","client_ip":"127.0.0.1","@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1"},"host":"DESKTOP-2022Q8F-wsl","sourcetype":"_json"}]
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 
@@ -152,9 +152,9 @@ You should be able to login and search these logs from your Splunk dashboard:
 
 ![splunk hec search view](../../../assets/images/plugin/splunk-hec-admin-en.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `splunk-hec-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `splunk-hec-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

@@ -42,7 +42,7 @@ APISIX 目前支持通过以下方式存储密钥：
 
 你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 APISIX Secret 功能，比如 `key-auth` 插件。
 
-::: note
+:::note
 
 如果某个配置项为：`key: "$ENV://ABC"`，当 APISIX Secret 中没有检索到 $ENV://ABC 对应的真实值，那么 key 的值将是 "$ENV://ABC" 而不是 `nil`。
 
@@ -125,9 +125,9 @@ $secret://$manager/$id/$secret_name/$key
 ```
 
 - manager: 密钥管理服务，可以是 Vault、AWS 等
-- APISIX Secret 资源 ID， 需要与添加 APISIX Secret 资源时指定的 ID 保持一致
+- APISIX Secret 资源 ID，需要与添加 APISIX Secret 资源时指定的 ID 保持一致
 - secret_name: 密钥管理服务中的密钥名称
-- key： 密钥管理服务中密钥对应的 key
+- key：密钥管理服务中密钥对应的 key
 
 ### 示例：在 key-auth 插件中使用
 

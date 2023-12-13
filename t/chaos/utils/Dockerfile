@@ -17,7 +17,7 @@
 
 ARG ENABLE_PROXY=false
 
-FROM openresty/openresty:1.19.3.2-alpine-fat AS production-stage
+FROM openresty/openresty:1.21.4.2-alpine-fat AS production-stage
 
 ARG ENABLE_PROXY
 ARG APISIX_PATH
@@ -33,6 +33,7 @@ RUN set -x \
     git \
     openldap-dev \
     pcre-dev \
+    sudo \
     && cd apisix \
     && git config --global url.https://github.com/.insteadOf git://github.com/ \
     && make deps \

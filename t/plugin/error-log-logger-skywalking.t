@@ -118,8 +118,8 @@ qr/Batch Processor\[error-log-logger\] failed to process entries: error while se
 --- request
 GET /tg
 --- response_body
---- error_log eval
-qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an error message for test.*\"\}\},\"endpoint\":\"\",\"service\":\"APISIX\",\"serviceInstance\":\"instance\".*/
+--- error_log
+this is an error message for test
 --- wait: 5
 
 
@@ -196,3 +196,34 @@ qr/.*\[\{\"body\":\{\"text\":\{\"text\":\".*this is an info message for test.*\"
 GET /tg
 --- response_body
 passed
+
+
+
+=== TEST 8: put plugin metadata with $hostname and log an error level message
+--- config
+    location /tg {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/error-log-logger',
+                ngx.HTTP_PUT,
+                [[{
+                    "skywalking": {
+                        "endpoint_addr": "http://127.0.0.1:1982/log",
+                        "service_instance_name": "$hostname"
+                    },
+                    "batch_max_size": 15,
+                    "inactive_timeout": 1
+                }]]
+                )
+            ngx.sleep(2)
+            core.log.error("this is an error message for test.")
+        }
+    }
+--- request
+GET /tg
+--- response_body
+--- no_error_log eval
+qr/\\\"serviceInstance\\\":\\\"\$hostname\\\"/
+qr/\\\"serviceInstance\\\":\\\"\\\"/
+--- wait: 0.5

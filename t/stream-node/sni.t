@@ -276,6 +276,7 @@ proxy request to 127.0.0.2:1995
 --- yaml_config
 apisix:
   node_listen: 1984
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100

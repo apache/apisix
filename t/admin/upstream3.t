@@ -442,7 +442,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 
 
 
@@ -521,7 +521,7 @@ passed
     }
 --- error_code: 400
 --- response_body
-{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
+{"error_msg":"invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"not_support\""}
 
 
 

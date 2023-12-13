@@ -55,7 +55,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。|
+| log_format       | object  | 否   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。|
 
 :::info 重要
 
@@ -117,9 +117,9 @@ curl -i http://127.0.0.1:9080/hello
 
 完成上述步骤后，你可以在 SkyWalking UI 查看到相关日志。
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

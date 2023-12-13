@@ -37,7 +37,7 @@ description: 本文介绍了关于 Apache APISIX `redirect` 插件的基本信�
 |---------------------|---------------|-----|-------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | http_to_https       | boolean       | 否   | false | [true,false] | 当设置为 `true` 并且请求是 HTTP 时，它将被重定向具有相同 URI 和 301 状态码的 HTTPS，原 URI 的查询字符串也将包含在 Location 头中。                                                                                                                                           |
 | uri                 | string        | 否   |       |              | 要重定向到的 URI，可以包含 NGINX 变量。例如：`/test/index.htm`，`$uri/index.html`，`${uri}/index.html`，`https://example.com/foo/bar`。如果你引入了一个不存在的变量，它不会报错，而是将其视为一个空变量。                                              |
-| regex_uri           | array[string] | 否   |       |              | 将来自客户端的 URL 与正则表达式匹配并重定向。当匹配成功后使用模板替换发送重定向到客户端，如果未匹配成功会将客户端请求的 URI 转发至上游。 和 `regex_uri` 不可以同时存在。例如：["^/iresty/(.)/(.)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 URI 正则表达式，第二个元素代表匹配成功后发送重定向到客户端的 URI 模板。 |
+| regex_uri           | array[string] | 否   |       |              | 将来自客户端的 URL 与正则表达式匹配并重定向。当匹配成功后使用模板替换发送重定向到客户端，如果未匹配成功会将客户端请求的 URI 转发至上游。和 `regex_uri` 不可以同时存在。例如：["^/iresty/(.)/(.)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 URI 正则表达式，第二个元素代表匹配成功后发送重定向到客户端的 URI 模板。 |
 | ret_code            | integer       | 否   | 302   | [200, ...]   | HTTP 响应码                                                                                                                                                                                            |
 | encode_uri          | boolean       | 否   | false | [true,false] | 当设置为 `true` 时，对返回的 `Location` Header 按照 [RFC3986](https://datatracker.ietf.org/doc/html/rfc3986) 的编码格式进行编码。                                                                                          |
 | append_query_string | boolean       | 否   | false | [true,false] | 当设置为 `true` 时，将原始请求中的查询字符串添加到 `Location` Header。如果已配置 `uri` 或 `regex_uri` 已经包含查询字符串，则请求中的查询字符串将附加一个`&`。如果你已经处理过查询字符串（例如，使用 NGINX 变量 `$request_uri`），请不要再使用该参数以避免重复。                                 |
@@ -147,7 +147,7 @@ Location: https://127.0.0.1:9443/hello
 ...
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `redirect` 插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

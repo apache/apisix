@@ -30,58 +30,83 @@ description: This article introduces the related information of the APISIX Plugi
 
 ## Description
 
-This represents the configuration of the plugins that are executed during the HTTP request/response lifecycle. A **Plugin** configuration can be bound directly to a [`Route`](./route.md), a [`Service`](./service.md), a [`Consumer`](./consumer.md) or a [`Plugin Config`](./plugin-config.md).
+APISIX Plugins extend APISIX's functionalities to meet organization or user-specific requirements in traffic management, observability, security, request/response transformation, serverless computing, and more.
 
-You can also refer to [Admin API](../admin-api.md#plugin) for how to use this resource.
+A **Plugin** configuration can be bound directly to a [`Route`](route.md), [`Service`](service.md), [`Consumer`](consumer.md) or [`Plugin Config`](plugin-config.md). You can refer to [Admin API plugins](../admin-api.md#plugin) for how to use this resource.
 
-:::note
+If existing APISIX Plugins do not meet your needs, you can also write your own plugins in Lua or other languages such as Java, Python, Go, and Wasm.
 
-While configuring the same plugin, only one copy of the configuration is valid. The order of precedence is always `Consumer` > `Consumer Group` > `Route` > `Plugin Config` > `Service`.
+## Plugins installation
 
-:::
+APISIX comes with a default configuration file called `config-default.yaml` and a user-defined configuration file called `config.yaml`. These files are located in the `conf` directory. If the same key (e.g. `plugins`) exists in both files, the configuration values for the key in `config.yaml` will overwrite those in `config-default.yaml`.
 
-While configuring APISIX, you can declare the Plugins that are supported by the local APISIX node. This acts as a whitelisting mechanism as Plugins that are not in this whitelist will be automatically ignored. So, this feature can be used to temporarily turn off/turn on specific plugins.
+The `plugins` block is where you can declare the Plugins loaded to your APISIX instance:
 
-## Adding a Plugin
-
-For adding new plugins based on existing plugins, copy the data in the `plugins` node from the default configuration file `conf/config-default.yaml` to your configuration file (`conf/config.yaml`).
-
-In a request, a Plugin is only executed once. This is true even if it is bound to multiple different objects like Routes and Services. The order in which Plugins are run is determined by its configured priorities:
-
-```lua
-local _M = {
-    version = 0.1,
-    priority = 0, -- the priority of this plugin will be 0
-    name = plugin_name,
-    schema = schema,
-    metadata_schema = metadata_schema,
-}
+```yaml
+plugins:
+  - real-ip         # loaded
+  - ai
+  - client-control
+  - proxy-control
+  - request-id
+  - zipkin
+  # - skywalking    # not loaded
+...
 ```
 
-A Plugin configuration is submitted as part of the Route or Service and is placed under `plugins`. It internally uses the Plugin name as the hash key to holding the configuration items for the different Plugins.
+## Plugins execution lifecycle
+
+An installed plugin is first initialized. The configuration of the plugin is then checked against the defined [JSON Schema](https://json-schema.org) to make sure the plugins configuration schema is correct.
+
+When a request goes through APISIX, the plugin's corresponding methods are executed in one or more of the following phases : `rewrite`, `access`, `before_proxy`, `header_filter`, `body_filter`, and `log`. These phases are largely influenced by the [OpenResty directives](https://openresty-reference.readthedocs.io/en/latest/Directives/).
+
+<br />
+<div style={{textAlign: 'center'}}>
+<img src="https://static.apiseven.com/uploads/2023/03/09/ZsH5C8Og_plugins-phases.png" alt="Routes Diagram" width="50%"/>
+</div>
+<br />
+
+## Plugins execution order
+
+In general, plugins are executed in the following order:
+
+1. Plugins in [global rules](./global-rule.md)
+   1. plugins in rewrite phase
+   2. plugins in access phase
+
+2. Plugins bound to other objects
+   1. plugins in rewrite phase
+   2. plugins in access phase
+
+Within each phase, you can optionally define a new priority number in the `_meta.priority` field of the plugin, which takes precedence over the default plugins priority during execution. Plugins with higher priority numbers are executed first.
+
+For example, if you want to have `limit-count` (priority 1002) run before `ip-restriction` (priority 3000) when requests hit a route, you can do so by passing a higher priority number to `_meta.priority` field of `limit-count`:
 
 ```json
 {
-    ...
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr"
-        },
-        "prometheus": {}
+  ...,
+  "plugins": {
+    "limit-count": {
+      ...,
+      "_meta": {
+        "priority": 3010
+      }
     }
+  }
 }
 ```
 
-Not all Plugins have specific configuration items (for example, [prometheus](/docs/apisix/plugins/prometheus/)). In such cases, an empty object identifier can be used.
+To reset the priority of this plugin instance to the default, simply remove the `_meta.priority` field from your plugin configuration.
 
-A warning level log as shown below indicates that the request was rejected by the Plugin.
+## Plugins merging precedence
 
-```shell
-ip-restriction exits with http status code 403
-```
+When the same plugin is configured both globally in a global rule and locally in an object (e.g. a route), both plugin instances are executed sequentially.
+
+However, if the same plugin is configured locally on multiple objects, such as on [Route](./route.md), [Service](./service.md), [Consumer](./consumer.md), [Consumer Group](./consumer-group.md), or [Plugin Config](./plugin-config.md), only one copy of configuration is used as each non-global plugin is only executed once. This is because during execution, plugins configured in these objects are merged with respect to a specific order of precedence:
+
+`Consumer`  > `Consumer Group` > `Route` > `Plugin Config` > `Service`
+
+such that if the same plugin has different configurations in different objects, the plugin configuration with the highest order of precedence during merging will be used.
 
 ## Plugin common configuration
 
@@ -276,6 +301,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 
 If a configured Plugin is disabled, then its execution will be skipped.
 
-### Hot reload in stand-alone mode
+:::
 
-For hot-reloading in stand-alone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#stand-alone).
+### Hot reload in standalone mode
+
+For hot-reloading in standalone mode, see the plugin related section in [stand alone mode](../deployment-modes.md#standalone).

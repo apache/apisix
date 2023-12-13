@@ -72,7 +72,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 
 该插件默认为禁用状态，你可以在 `./conf/config.yaml` 中启用 `error-log-logger` 插件。你可以参考如下示例启用插件：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
 plugins:                          # plugin list
   ......
   - request-id
@@ -162,7 +162,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 }'
 ```
 
-## 禁用插件
+## 删除插件
 
 当你不再需要该插件时，只需要在 `./conf/config.yaml` 中删除或注释该插件即可。
 

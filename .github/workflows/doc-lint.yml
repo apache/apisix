@@ -5,11 +5,13 @@ on:
     paths:
       - "docs/**"
       - "**/*.md"
+      - ".github/workflows/doc-lint.yml"
   pull_request:
     branches: [master, "release/**"]
     paths:
       - "docs/**"
       - "**/*.md"
+      - ".github/workflows/doc-lint.yml"
 
 permissions:
   contents: read
@@ -20,9 +22,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v3.2.0
+      - uses: actions/checkout@v4
       - name: 🚀 Use Node.js
-        uses: actions/setup-node@v3.5.1
+        uses: actions/setup-node@v4.0.0
         with:
           node-version: "12.x"
       - run: npm install -g markdownlint-cli@0.25.0
@@ -47,8 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 1
     steps:
-      - uses: actions/checkout@v3
-      - name: Check Chinese copywriting
-        uses: huacnlee/autocorrect-action@v2.6.2
+      - uses: actions/checkout@v4
         with:
-          args: --lint --no-diff-bg-color docs/zh/latest/**.md
+          submodules: recursive
+      - name: Check Chinese copywriting
+        uses: ./.github/actions/autocorrect
+        with:
+          args: autocorrect --lint --no-diff-bg-color ./docs/zh/latest/

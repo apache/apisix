@@ -16,6 +16,8 @@
 #
 use t::APISIX;
 
+log_level("warn");
+
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 my $version = eval { `$nginx_binary -V 2>&1` };
 
@@ -117,7 +119,7 @@ passed
                             {
                                 name = "syslog",
                                 filter = {
-                                    {"rpc_time", ">=", 0.01},
+                                    {"rpc_time", ">=", 0.001},
                                 },
                                 conf = {
                                     host = "127.0.0.1",
@@ -149,6 +151,7 @@ passed
 
 
 === TEST 3: verify the data received by the log server
+--- stream_conf_enable
 --- config
     location /t {
         content_by_lua_block {
@@ -190,11 +193,10 @@ passed
 hmset animals: OK
 hmget animals: barkmeow
 ping: pong
---- stream_conf_enable
 --- wait: 1
 --- grep_error_log eval
-qr/message received:.*\"redis_cmd_line\\"\:[^,]+/
+qr/message received:.*\"redis_cmd_line\":[^}|^,]+/
 --- grep_error_log_out eval
-[qr/message received:.*\"redis_cmd_line\\"\:\\\"hmset animals dog bark cat meow\\\"/,
-qr/message received:.*\"redis_cmd_line\\"\:\\\"hmget animals dog cat\\\"/,
-qr/message received:.*\"redis_cmd_line\\"\:\\\"ping\\\"/]
+qr{message received:.*\"redis_cmd_line\":\"hmset animals dog bark cat meow\"(?s).*
+message received:.*\"redis_cmd_line\":\"hmget animals dog cat\"(?s).*
+message received:.*\"redis_cmd_line\":\"ping\"}

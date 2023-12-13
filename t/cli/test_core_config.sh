@@ -45,6 +45,7 @@ echo "passed: set lua_max_running_timers successfully"
 
 echo "
 apisix:
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100

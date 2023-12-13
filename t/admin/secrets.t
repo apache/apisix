@@ -131,7 +131,7 @@ passed
 
 
 
-=== TEST 4: PATCH
+=== TEST 4: PATCH on path
 --- config
     location /t {
         content_by_lua_block {
@@ -169,7 +169,69 @@ passed
 
 
 
-=== TEST 5: DELETE
+=== TEST 5: PATCH
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/secrets/vault/test1'))
+            local prev_create_time = res.body.node.value.create_time
+            assert(prev_create_time ~= nil, "create_time is nil")
+            local prev_update_time = res.body.node.value.update_time
+            assert(prev_update_time ~= nil, "update_time is nil")
+            ngx.sleep(1)
+
+            local code, body = t('/apisix/admin/secrets/vault/test1',
+                ngx.HTTP_PATCH,
+                [[{
+                    "uri": "http://127.0.0.1:12800/get",
+                    "prefix" : "apisix",
+                    "token" : "apisix"
+                }]],
+                [[{
+                    "value": {
+                        "uri": "http://127.0.0.1:12800/get",
+                        "prefix" : "apisix",
+                        "token" : "apisix"
+                    },
+                    "key": "/apisix/secrets/vault/test1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+
+            local res = assert(etcd.get('/secrets/vault/test1'))
+            assert(res.body.node.value.token == "apisix")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: PATCH without id
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/secrets/vault',
+                ngx.HTTP_PATCH,
+                [[{}]],
+                [[{}]]
+                )
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"no secret id"}
+
+
+
+=== TEST 7: DELETE
 --- config
     location /t {
         content_by_lua_block {
@@ -185,7 +247,7 @@ passed
 
 
 
-=== TEST 6: PUT with invalid format
+=== TEST 8: PUT with invalid format
 --- config
     location /t {
         content_by_lua_block {

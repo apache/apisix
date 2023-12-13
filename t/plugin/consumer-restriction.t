@@ -314,7 +314,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -325,7 +325,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -336,7 +336,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -383,7 +383,7 @@ passed
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -394,7 +394,7 @@ GET /hello
 Authorization: Basic amFjazIwMTk6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 
@@ -405,7 +405,7 @@ GET /hello
 Authorization: Basic amFjazIwMjA6MTIzNDU2
 --- error_code: 401
 --- response_body
-{"message":"Missing authentication or identity verification."}
+{"message":"The request is rejected, please check the consumer_name for this request"}
 
 
 

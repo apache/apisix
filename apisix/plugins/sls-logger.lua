@@ -21,7 +21,7 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 
 local plugin_name = "sls-logger"
 local ngx = ngx
-local rf5424 = require("apisix.plugins.slslog.rfc5424")
+local rf5424 = require("apisix.utils.rfc5424")
 local tcp = ngx.socket.tcp
 local tostring = tostring
 local ipairs = ipairs
@@ -138,9 +138,14 @@ function _M.log(conf, ctx)
         return
     end
 
-    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host,"apisix",
-                                      ctx.var.pid, conf.project, conf.logstore,
-                                      conf.access_key_id, conf.access_key_secret, json_str)
+    local structured_data = {
+        {name = "project", value = conf.project},
+        {name = "logstore", value = conf.logstore},
+        {name = "access-key-id", value = conf.access_key_id},
+        {name = "access-key-secret", value = conf.access_key_secret},
+    }
+    local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
+                                      ctx.var.pid, json_str, structured_data)
 
     local process_context = {
         data = rf5424_data,

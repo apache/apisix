@@ -89,7 +89,30 @@ plugin_attr:
       max_export_batch_size: 2
 ```
 
-## Enabling the Plugin
+## Variables
+
+The following nginx variables are set by OpenTelemetry:
+
+- `opentelemetry_context_traceparent` -  [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format), e.g.: `00-0af7651916cd43dd8448eb211c80319c-b9c7c989f97918e1-01`
+- `opentelemetry_trace_id` - Trace Id of the current span
+- `opentelemetry_span_id` -  Span Id of the current span
+
+How to use variables? you have to add it to your configuration file (`conf/config.yaml`):
+
+```yaml title="./conf/config.yaml"
+http:
+    enable_access_log: true
+    access_log: "/dev/stdout"
+    access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr","uri": "$uri"}'
+    access_log_format_escape: json
+plugins:
+  - opentelemetry
+plugin_attr:
+  opentelemetry:
+    set_ngx_var: true
+```
+
+## Enable Plugin
 
 To enable the Plugin, you have to add it to your configuration file (`conf/config.yaml`):
 
@@ -124,9 +147,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `opentelemetry` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `opentelemetry` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

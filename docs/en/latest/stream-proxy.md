@@ -21,67 +21,66 @@ title: Stream Proxy
 #
 -->
 
-TCP is the protocol for many popular applications and services, such as LDAP, MySQL, and RTMP. UDP (User Datagram Protocol) is the protocol for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
+A stream proxy operates at the transport layer, handling stream-oriented traffic based on TCP and UDP protocols. TCP is used for many applications and services, such as LDAP, MySQL, and RTMP. UDP is used for many popular non-transactional applications, such as DNS, syslog, and RADIUS.
 
-APISIX can dynamically load balancing TCP/UDP proxy. In Nginx world, we call TCP/UDP proxy to stream proxy, we followed this statement.
+APISIX can serve as a stream proxy, in addition to being an application layer proxy.
 
 ## How to enable stream proxy?
 
-Setting the `stream_proxy` option in `conf/config.yaml`, specify a list of addresses that require dynamic proxy.
-By default, no stream proxy is enabled.
+By default, stream proxy is disabled.
+
+To enable this option, set `apisix.proxy_mode` to `stream` or `http&stream`, depending on whether you want stream proxy only or both http and stream. Then add the `apisix.stream_proxy` option in `conf/config.yaml` and specify the list of addresses where APISIX should act as a stream proxy and listen for incoming requests.
+:::note
+
+This "apisix.stream_proxy" option has only been added in versions after 3.2.1.
+
+:::
 
 ```yaml
 apisix:
-  stream_proxy: # TCP/UDP proxy
-    tcp: # TCP proxy address list
-      - 9100
+  stream_proxy:
+    tcp:
+      - 9100 # listen on 9100 ports of all network interfaces for TCP requests
       - "127.0.0.1:9101"
-    udp: # UDP proxy address list
-      - 9200
+    udp:
+      - 9200 # listen on 9200 ports of all network interfaces for UDP requests
       - "127.0.0.1:9211"
 ```
 
-If `apisix.enable_admin` is true, both HTTP and stream proxy are enabled with the configuration above.
+If `apisix.stream_proxy` is undefined in `conf/config.yaml`, you will encounter an error similar to the following and not be able to add a stream route:
 
-If you have set the `enable_admin` to false, and need to enable both HTTP and stream proxy, set the `only` to false:
-
-```yaml
-apisix:
-  enable_admin: false
-  stream_proxy: # TCP/UDP proxy
-    only: false
-    tcp: # TCP proxy address list
-      - 9100
+```
+{"error_msg":"stream mode is disabled, can not add stream routes"}
 ```
 
-## How to set route?
+## How to set a route?
 
-Here is a mini example:
+You can create a stream route using the Admin API `/stream_routes` endpoint. For example:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
-    "remote_addr": "127.0.0.1",
+    "remote_addr": "192.168.5.3",
     "upstream": {
         "nodes": {
-            "127.0.0.1:1995": 1
+            "192.168.4.10:1995": 1
         },
         "type": "roundrobin"
     }
 }'
 ```
 
-It means APISIX will proxy the request to `127.0.0.1:1995` which the client remote address is `127.0.0.1`.
+With this configuration, APISIX would only forward the request to the upstream service at `192.168.4.10:1995` if and only if the request is sent from `192.168.5.3`. See the next section to learn more about filtering options.
 
-For more use cases, please take a look at [test case](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
+More examples can be found in [test cases](https://github.com/apache/apisix/blob/master/t/stream-node/sanity.t).
 
-## More route match options
+## More stream route filtering options
 
-And we can add more options to match a route. Currently stream route configuration supports 3 fields for filtering:
+Currently there are three attributes in stream routes that can be used for filtering requests:
 
-- server_addr: The address of the APISIX server that accepts the L4 stream connection.
-- server_port: The port of the APISIX server that accepts the L4 stream connection.
-- remote_addr: The address of client from which the request has been made.
+- `server_addr`: The address of the APISIX server that accepts the L4 stream connection.
+- `server_port`: The port of the APISIX server that accepts the L4 stream connection.
+- `remote_addr`: The address of client from which the request has been made.
 
 Here is an example:
 
@@ -101,7 +100,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 
 It means APISIX will proxy the request to `127.0.0.1:1995` when the server address is `127.0.0.1` and the server port is equal to `2000`.
 
-Let's take another real world example:
+Here is an example with MySQL:
 
 1. Put this config inside `config.yaml`
 
@@ -116,7 +115,7 @@ Let's take another real world example:
 2. Now run a mysql docker container and expose port 3306 to the host
 
    ```shell
-   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql
+   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql mysqld --default-authentication-plugin=mysql_native_password
    # check it using a mysql client that it works
    $ mysql --host=127.0.0.1 --port=3306 -u root -p
    Enter password:

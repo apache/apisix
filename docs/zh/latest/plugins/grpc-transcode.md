@@ -103,34 +103,14 @@ protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
 
 然后将 `proto.pb` 的内容作为 proto 的 `content` 字段提交。
 
-由于 proto 的内容是二进制的，我们需要使用以下 Python 脚本将其转换成 `base64`：
+由于 proto 的内容是二进制的，我们需要使用以下 shell 命令将其转换成 `base64`：
 
-```python
-#!/usr/bin/env python
-# coding: utf-8
-
-import base64
-import sys
-
-# sudo pip install requests
-import requests
-
-if len(sys.argv) <= 1:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1], 'rb') as f:
-    content = base64.b64encode(f.read())
-id = sys.argv[2]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # use your API key
-
-reqParam = {
-    "content": content,
-}
-resp = requests.put("http://127.0.0.1:9180/apisix/admin/protos/" + id, json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
+```shell
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "content" : "'"$(base64 -w0 /path/to/proto.pb)"'"
+}'
 ```
 
 该脚本将使用 `.pb` 文件和要创建的 `id`，将 proto 的内容转换成 `base64`，并使用转换后的内容调用 Admin API。
@@ -259,7 +239,7 @@ Trailer: grpc-message
 上传 proto 文件：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/proto/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -281,7 +261,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 \
 启用 `grpc-transcode` 插件，并设置选项 `show_status_in_body` 为 `true`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -329,7 +309,7 @@ Server: APISIX web server
 注意返回体中还存在未解码的字段，如果需要解码该字段，需要在上传的 proto 文件中加上该字段对应的 `message type`。
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/proto/1 \
+curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
@@ -356,7 +336,7 @@ curl http://127.0.0.1:9080/apisix/admin/proto/1 \
 同时配置选项 `status_detail_type` 为 `helloworld.ErrorDetail`：
 
 ```shell
-curl http://127.0.0.1:9080/apisix/admin/routes/1 \
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
 {
     "methods": ["GET"],
@@ -396,7 +376,7 @@ Server: APISIX web server
 {"error":{"details":[{"type":"service","message":"The server is out of service","code":1}],"message":"Out of service","code":14}}
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

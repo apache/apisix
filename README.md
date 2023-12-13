@@ -123,14 +123,14 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
 
   - Zipkin tracing: [Zipkin](docs/en/latest/plugins/zipkin.md)
   - Open source APM: support [Apache SkyWalking](docs/en/latest/plugins/skywalking.md)
-  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul_kv.md), [Nacos](docs/en/latest/discovery/nacos.md), [Eureka](docs/en/latest/discovery/eureka.md) and [Zookeeper (CP)](docs/en/latest/discovery/zookeeper.md).
+  - Works with external service discovery: In addition to the built-in etcd, it also supports [Consul](docs/en/latest/discovery/consul.md), [Consul_kv](docs/en/latest/discovery/consul_kv.md), [Nacos](docs/en/latest/discovery/nacos.md), [Eureka](docs/en/latest/discovery/eureka.md) and [Zookeeper (CP)](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md).
   - Monitoring And Metrics: [Prometheus](docs/en/latest/plugins/prometheus.md)
   - Clustering: APISIX nodes are stateless, creates clustering of the configuration center, please refer to [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/).
   - High availability: Support to configure multiple etcd addresses in the same cluster.
   - [Dashboard](https://github.com/apache/apisix-dashboard)
   - Version Control: Supports rollbacks of operations.
   - CLI: start\stop\reload APISIX through the command line.
-  - [Stand-Alone](docs/en/latest/deployment-modes.md#stand-alone): Supports to load route rules from local YAML file, it is more friendly such as under the kubernetes(k8s).
+  - [Standalone](docs/en/latest/deployment-modes.md#standalone): Supports to load route rules from local YAML file, it is more friendly such as under the kubernetes(k8s).
   - [Global Rule](docs/en/latest/terminology/global-rule.md): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of fewer than 0.2 milliseconds.
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
@@ -217,6 +217,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - HONOR
 - Horizon Robotics
 - iQIYI
+- Lenovo
 - NASA JPL
 - Nayuki
 - OPPO
@@ -226,6 +227,7 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - Travelsky
 - vivo
 - Sina Weibo
+- WeCity
 - WPS
 - XPENG
 - Zoom

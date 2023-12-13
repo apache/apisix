@@ -56,6 +56,10 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 2. 获取 consumer_name：通过授权认证，即可自然获取到对应的 Consumer name，它是 Consumer 对象的唯一识别标识；
 3. 获取 Consumer 上绑定的 Plugin 或 Upstream 信息：完成对不同 Consumer 做不同配置的效果。
 
+当有不同的使用者请求相同的 API，并且需要根据使用者执行不同的插件和上游配置时，使用 Consumer 是非常合适的。需要与用户身份验证系统结合使用。
+
+目前，可以与 Consumer 配置的身份验证插件包括 `basic-auth` 、`hmac-auth`、`jwt-auth`、`key-auth`、`ldap-auth` 和 `wolf-rbac`。
+
 你可以参考 [key-auth](../plugins/key-auth.md) 认证授权插件的调用逻辑，进一步理解 Consumer 概念和使用。
 
 :::note 注意

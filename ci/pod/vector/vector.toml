@@ -1,0 +1,111 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+[sources.log-from-tcp]
+type = "socket"
+address = "0.0.0.0:3000"
+host_key = "host"
+mode = "tcp"
+port_key = "port"
+shutdown_timeout_secs = 30
+socket_file_mode = 511
+
+[sources.log-from-http]
+type = "http_server"
+address = "0.0.0.0:3001"
+
+[sources.log-from-udp]
+type = "socket"
+address = "0.0.0.0:8127"
+host_key = "host"
+mode = "udp"
+port_key = "port"
+
+[sources.log-from-tls]
+type = "socket"
+address = "0.0.0.0:43000"
+host_key = "host"
+mode = "tcp"
+port_key = "port"
+tls.enabled = true
+tls.verify = true
+tls.ca_file = "/certs/vector_logs_ca.crt"
+tls.crt_file = "/certs/vector_logs_server.crt"
+tls.key_file = "/certs/vector_logs_server.key"
+
+[sources.log-from-syslog-tcp]
+type = "syslog"
+address = "0.0.0.0:5140"
+mode = "tcp"
+
+[sources.log-from-syslog-udp]
+type = "syslog"
+address = "0.0.0.0:5150"
+mode = "udp"
+
+[sources.log-from-splunk]
+type = "splunk_hec"
+address = "0.0.0.0:18088"
+valid_tokens = [
+  "BD274822-96AA-4DA6-90EC-18940FB2414C"
+]
+
+[sinks.log-2-console]
+inputs = [ "log-from-tcp",  "log-from-tls", "log-from-syslog-tcp", "log-from-syslog-udp", "log-from-udp", "log-from-splunk", "log-from-http"]
+type = "console"
+encoding.codec = "json"
+
+[sinks.log-2-tcp-file]
+inputs = [ "log-from-tcp" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/tcp.log"
+
+[sinks.log-2-http-file]
+inputs = [ "log-from-http" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/http.log"
+
+[sinks.log-2-udp-file]
+inputs = [ "log-from-udp" ]
+type = "file"
+encoding.codec = "json"
+path = "/etc/vector/udp.log"
+
+[sinks.tls-log-2-file]
+inputs = [ "log-from-tls" ]
+type = "file"
+encoding.codec = "json"
+path = "/etc/vector/tls-datas.log"
+
+[sinks.log-2-syslog-tcp-file]
+inputs = [ "log-from-syslog-tcp" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/syslog-tcp.log"
+
+[sinks.log-2-splunk-file]
+inputs = [ "log-from-splunk" ]
+type = "file"
+encoding.codec = "json"
+path = "/etc/vector/splunk.log"
+
+[sinks.log-2-syslog-udp-file]
+inputs = [ "log-from-syslog-udp" ]
+type = "file"
+encoding.codec = "text"
+path = "/etc/vector/syslog-udp.log"

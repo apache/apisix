@@ -95,7 +95,7 @@ local schema = {
         required_acks = {
             type = "integer",
             default = 1,
-            enum = { 0, 1, -1 },
+            enum = { 1, -1 },
         },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
@@ -134,7 +134,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 

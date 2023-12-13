@@ -36,7 +36,7 @@ description: 本文介绍了关于 Apache APISIX gm 插件的基本信息及使�
 
 ## 启用插件
 
-**该插件要求 Apache APISIX 运行在编译了 Tongsuo 的 APISIX-Base 上。**
+**该插件要求 Apache APISIX 运行在编译了 Tongsuo 的 APISIX-Runtime 上。**
 
 首先，我们需要安装 Tongsuo（此处我们选择编译出 Tongsuo 的动态链接库）：
 
@@ -50,7 +50,7 @@ make -j2
 sudo make install_sw
 ```
 
-其次，我们需要构建 APISIX-Base，让它使用 Tongsuo 作为 SSL 库：
+其次，我们需要构建 APISIX-Runtime，让它使用 Tongsuo 作为 SSL 库：
 
 ```
 export OR_PREFIX=/usr/local/openresty
@@ -60,7 +60,7 @@ export pcre_prefix=$OR_PREFIX/pcre
 
 export cc_opt="-DNGX_LUA_ABORT_AT_PANIC -I${zlib_prefix}/include -I${pcre_prefix}/include -I${openssl_prefix}/include"
 export ld_opt="-L${zlib_prefix}/lib -L${pcre_prefix}/lib -L${openssl_prefix}/lib64 -Wl,-rpath,${zlib_prefix}/lib:${pcre_prefix}/lib:${openssl_prefix}/lib64"
-./build-apisix-base.sh
+./build-apisix-runtime.sh
 ```
 
 该插件默认是禁用状态，你需要将其添加到配置文件（`./conf/config.yaml`）中才可以启用它：
@@ -78,7 +78,7 @@ apisix:
   ...
   ssl:
     ...
-    # 可按实际情况调整。错误的 cipher 会导致 “no shared cipher” 或 “no ciphers available” 报错。
+    # 可按实际情况调整。错误的 cipher 会导致“no shared cipher”或“no ciphers available”报错。
     ssl_ciphers: HIGH:!aNULL:!MD5
 
 ```
@@ -186,6 +186,6 @@ New, NTLSv1.1, Cipher is ECDHE-SM2-SM4-CBC-SM3
 ...
 ```
 
-## 禁用插件
+## 删除插件
 
 如果不再使用此插件，可将 `gm` 插件从 `./conf/config.yaml` 配置文件中移除，然后重启 APISIX 或者通过插件热加载的接口触发插件的卸载。

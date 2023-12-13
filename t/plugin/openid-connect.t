@@ -171,7 +171,7 @@ true
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "realm": "University",
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
@@ -179,7 +179,7 @@ true
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": false,
                                 "set_id_token_header": true,
@@ -276,7 +276,7 @@ x-userinfo: ey.*
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "realm": "University",
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
@@ -284,7 +284,7 @@ x-userinfo: ey.*
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": true,
                                 "set_id_token_header": false,
@@ -731,14 +731,14 @@ jwt signature verification failed
                             "openid-connect": {
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "redirect_uri": "http://localhost:3000",
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "bearer_only": true,
                                 "realm": "University",
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect"
                             }
                         },
                         "upstream": {
@@ -770,7 +770,7 @@ passed
             local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
                     body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
@@ -876,7 +876,7 @@ OIDC introspection failed: invalid token
         }
     }
 --- response_body
-{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"unauth_action":"auth","use_pkce":false}
+{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
 
 
 
@@ -892,7 +892,7 @@ OIDC introspection failed: invalid token
                             "openid-connect": {
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "redirect_uri": "http://localhost:3000",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -900,7 +900,7 @@ OIDC introspection failed: invalid token
                                 "use_jwks": true,
                                 "realm": "University",
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect"
                             }
                         },
                         "upstream": {
@@ -932,7 +932,7 @@ passed
             local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
                     body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
@@ -1023,7 +1023,7 @@ OIDC introspection failed: invalid jwt: invalid jwt string
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "realm": "University",
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
@@ -1031,7 +1031,7 @@ OIDC introspection failed: invalid jwt: invalid jwt string
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": false,
                                 "set_id_token_header": true,
@@ -1102,7 +1102,7 @@ passed
 
             -- Request the location, it's a URL of keycloak and contains the post_logout_redirect_uri
             -- Like:
-            -- http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/logout?post_logout_redirect=http://127.0.0.1:1984/hello
+            -- http://127.0.0.1:8080/realms/University/protocol/openid-connect/logout?post_logout_redirect=http://127.0.0.1:1984/hello
             local location = res.headers["Location"]
             res, err = httpc:request_uri(location, {
                method = "GET"
@@ -1207,7 +1207,7 @@ true
                             "openid-connect": {
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
-                                "discovery": "http://127.0.0.1:8090/auth/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "realm": "University",
                                 "bearer_only": true,
                                 "access_token_in_authorization_header": true,
@@ -1217,7 +1217,7 @@ true
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",
-                                "introspection_endpoint": "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token/introspect"
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect"
                             }
                         },
                         "upstream": {
@@ -1249,7 +1249,7 @@ passed
             local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8090/auth/realms/University/protocol/openid-connect/token"
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
             local res, err = httpc:request_uri(uri, {
                     method = "POST",
                     body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",

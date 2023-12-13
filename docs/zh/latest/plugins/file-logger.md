@@ -50,13 +50,14 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 | path             | string  | 是     | 自定义输出文件路径。例如：`logs/file.log`。        |
 | log_format       | object  | 否     | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_resp_body      | boolean | 否     | 当设置为 `true` 时，生成的文件包含响应体。                                                                                               |
-| include_resp_body_expr | array   | 否     | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。 如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
+| include_resp_body_expr | array   | 否     | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
+| match        | array[] | 否   |  当设置了这个选项后，只有匹配规则的日志才会被记录。`match` 是一个表达式列表，具体请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
 
 ## 插件元数据设置
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 可选   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::note 注意
 
@@ -124,9 +125,49 @@ hello, world
 
 访问成功后，你可以在对应的 `logs` 目录下找到 `file.log` 文件。
 
-## 禁用插件
+## 过滤日志
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "plugins": {
+    "file-logger": {
+      "path": "logs/file.log",
+      "match": {
+        {
+          { "arg_name","==","jack" }
+        }
+      }
+    }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:9001": 1
+    }
+  },
+  "uri": "/hello"
+}'
+```
+
+测试：
+
+```shell
+curl -i http://127.0.0.1:9080/hello?name=jack
+```
+
+在 `logs/file.log` 中可以看到日志记录
+
+```shell
+curl -i http://127.0.0.1:9080/hello?name=rose
+```
+
+在 `logs/file.log` 中看不到日志记录
+
+## 删除插件
+
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

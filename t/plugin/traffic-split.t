@@ -710,11 +710,12 @@ passed
 
 
 === TEST 19: domain name resolved successfully
---- request
-GET /
---- error_code: 200
---- error_log eval
-qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
+--- pipelined_requests eval
+["GET /", "GET /"]
+--- error_code eval
+[200, 200]
+--- error_log_like eval
+qr/(dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+){2}/
 
 
 

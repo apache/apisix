@@ -160,3 +160,72 @@ unhealthy TCP increment (2/2) for '(127.0.0.1:1980'
 curl http://127.0.0.1:9090/v1/healthcheck/upstreams/healthycheck -s | jq .
 
 ```
+
+## 健康检查信息
+
+APISIX 提供了丰富的健康检查信息，其中  `status` 以及 `counter` 的返回对于健康检查是至关重要的。在 APISIX 中，节点有四个状态：`healthy`、`unhealthy`、`mostly_unhealthy`、`mostly_healthy`。`mostly_healthy` 状态表示当前节点状态是健康的，但在健康检查期间，节点健康检测并不是一直是成功的。`mostly_unhealthy` 状态表示当前节点状态是不健康的，但在健康检查期间，节点健康检测并不是一直是失败的。节点的状态转换取决于本次健康检查的成功或失败，以及 `counter` 中记录的 `tcp_failure`、`http_failure`、`success`、`timeout_failure` 四个数据。
+
+获取健康检查信息，通过以下 curl 命令可以获取健康检查信息：
+
+```shell
+curl -i http://127.0.0.1:9090/v1/healthcheck
+```
+
+响应示例：
+
+```json
+[
+  {
+    "nodes": {},
+    "name": "/apisix/routes/1",
+    "type": "http"
+  },
+  {
+    "nodes": [
+      {
+        "port": 1970,
+        "hostname": "127.0.0.1",
+        "status": "healthy",
+        "ip": "127.0.0.1",
+        "counter": {
+          "tcp_failure": 0,
+          "http_failure": 0,
+          "success": 0,
+          "timeout_failure": 0
+        }
+      },
+      {
+        "port": 1980,
+        "hostname": "127.0.0.1",
+        "status": "healthy",
+        "ip": "127.0.0.1",
+        "counter": {
+          "tcp_failure": 0,
+          "http_failure": 0,
+          "success": 0,
+          "timeout_failure": 0
+        }
+      }
+    ],
+    "name": "/apisix/routes/example-hc-route",
+    "type": "http"
+  }
+]
+```
+
+### 状态转换图
+
+![image](../../../assets/images/health_check_node_state_diagram.png)
+
+请注意，所有节点在没有初始探测的情况下都以`healthy`状态启动，计数器仅在状态更改时重置和更新。因此，当节点处于`healthy`状态且所有后续检查都成功时，`success`计数器不会更新，保持为零。
+
+### counter 信息
+
+若健康检查失败，`counter` 中的 `success` 计数将被置零。若健康检查成功，则会将 `tcp_failure`、`http_failure`、`timeout_failure` 数据置零。
+
+| 名称            | 描述                    | 作用                                                                       |
+|----------------|------------------------|----------------------------------------------------------------------------|
+|success         | 健康检查成功的次数         |当 success 大于 healthy.successes 配置值时，节点会变为 healthy 状态               |
+|tcp_failure     | TCP 类型健康检查失败次数   |当 tcp_failure 大于 unhealthy.tcp_failures 配置值时，节点会变为 unhealthy 状态    |
+|http_failure    | HTTP 类型的健康检查失败次数 |当 http_failure 大于 unhealthy.http_failures 配置值时，节点会变为 unhealthy 状态 |
+|timeout_failure | 节点健康检查超时次数       |当 timeout_failure 大于 unhealthy.timeouts 配置值时，节点会变为 unhealthy 状态    |

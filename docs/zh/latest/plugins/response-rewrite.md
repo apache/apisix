@@ -49,7 +49,7 @@ description: 本文介绍了关于 Apache APISIX `response-rewrite` 插件的基
 |-----------------|---------|--------|--------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | status_code     | integer | 否     |        | [200, 598]      | 修改上游返回状态码，默认保留原始响应代码。                                                                                                                                                                                |
 | body            | string  | 否     |        |                 | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉。                                                                                                                               |
-| body_base64     | boolean | 否     | false  |                 | 描述 `body` 字段是否需要 base64 解码之后再返回给客户端，用在某些图片和 Protobuffer 场景。                                                                                                                                 |
+| body_base64     | boolean | 否     | false  |                 | 当设置时，在写给客户端之前，在`body`中传递的主体将被解码，这在一些图像和 Protobuffer 场景中使用。注意，这个字段只允许对插件配置中传递的主体进行解码，并不对上游响应进行解码。                                                                                                                                 |
 | headers         | object  | 否     |        |                 |                                                                                                                                                                                                                           |
 | headers.add     | array   | 否     |        |                 | 添加新的响应头。格式为 `["name: value", ...]`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                              |
 | headers.set     | object  | 否     |        |                 | 改写响应头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
@@ -84,7 +84,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
                 "set": {
                     "X-Server-id": 3,
                     "X-Server-status": "on",
-                    "X-Server-balancer_addr": "$balancer_ip:$balancer_port"
+                    "X-Server-balancer-addr": "$balancer_ip:$balancer_port"
                 }
             },
             "vars":[
@@ -108,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 ```json
 "headers": {
     "add": [
-        "X-Server-balancer_addr: $balancer_ip:$balancer_port"
+        "X-Server-balancer-addr: $balancer_ip:$balancer_port"
     ],
     "remove": [
         "X-TO-BE-REMOVED"
@@ -138,7 +138,7 @@ Transfer-Encoding: chunked
 Connection: keep-alive
 X-Server-id: 3
 X-Server-status: on
-X-Server-balancer_addr: 127.0.0.1:80
+X-Server-balancer-addr: 127.0.0.1:80
 
 {"code":"ok","message":"new json body"}
 ```
@@ -169,7 +169,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
         "set": {
             "X-Server-id":3,
             "X-Server-status":"on",
-            "X-Server-balancer_addr":"$balancer_ip:$balancer_port"
+            "X-Server-balancer-addr":"$balancer_ip:$balancer_port"
         }
       },
       "filters":[
@@ -225,7 +225,7 @@ X-Server-id: 3
 
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `response-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

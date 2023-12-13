@@ -54,8 +54,59 @@ local function tab_is_array(t)
 end
 
 
+local function var_sub(val)
+    local err
+    local var_used = false
+    -- we use '${{var}}' because '$var' and '${var}' are taken
+    -- by Nginx
+    local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
+        local i, j = var:find("%:%=")
+        local default
+        if i and j then
+            default = var:sub(i + 2, #var)
+            default = default:gsub('^%s*(.-)%s*$', '%1')
+            var = var:sub(1, i - 1)
+        end
+
+        local v = getenv(var) or default
+        if v then
+            if not exported_vars then
+                exported_vars = {}
+            end
+
+            exported_vars[var] = v
+            var_used = true
+            return v
+        end
+
+        err = "failed to handle configuration: " ..
+              "can't find environment variable " .. var
+        return ""
+    end)
+    return new_val, var_used, err
+end
+
+
 local function resolve_conf_var(conf)
+    local new_keys = {}
     for key, val in pairs(conf) do
+        -- avoid re-iterating the table for already iterated key
+        if new_keys[key] then
+            goto continue
+        end
+        -- substitute environment variables from conf keys
+        if type(key) == "string" then
+            local new_key, _, err = var_sub(key)
+            if err then
+                return nil, err
+            end
+            if new_key ~= key then
+                new_keys[new_key] = "dummy" -- we only care about checking the key
+                conf.key = nil
+                conf[new_key] = val
+                key = new_key
+            end
+        end
         if type(val) == "table" then
             local ok, err = resolve_conf_var(val)
             if not ok then
@@ -63,34 +114,7 @@ local function resolve_conf_var(conf)
             end
 
         elseif type(val) == "string" then
-            local err
-            local var_used = false
-            -- we use '${{var}}' because '$var' and '${var}' are taken
-            -- by Nginx
-            local new_val = val:gsub("%$%{%{%s*([%w_]+[%:%=]?.-)%s*%}%}", function(var)
-                local i, j = var:find("%:%=")
-                local default
-                if i and j then
-                    default = var:sub(i + 2, #var)
-                    default = default:gsub('^%s*(.-)%s*$', '%1')
-                    var = var:sub(1, i - 1)
-                end
-
-                local v = getenv(var) or default
-                if v then
-                    if not exported_vars then
-                        exported_vars = {}
-                    end
-
-                    exported_vars[var] = v
-                    var_used = true
-                    return v
-                end
-
-                err = "failed to handle configuration: " ..
-                      "can't find environment variable " .. var
-                return ""
-            end)
+            local new_val, var_used, err = var_sub(val)
 
             if err then
                 return nil, err
@@ -108,6 +132,7 @@ local function resolve_conf_var(conf)
 
             conf[key] = new_val
         end
+        ::continue::
     end
 
     return true
@@ -223,7 +248,10 @@ function _M.read_yaml_conf(apisix_home)
         return nil, "invalid config-default.yaml file"
     end
 
-    local_conf_path = profile:yaml_path("config")
+    local_conf_path = profile:customized_yaml_path()
+    if not local_conf_path then
+        local_conf_path = profile:yaml_path("config")
+    end
     local user_conf_yaml, err = util.read_file(local_conf_path)
     if not user_conf_yaml then
         return nil, err
@@ -264,25 +292,13 @@ function _M.read_yaml_conf(apisix_home)
             default_conf.apisix.enable_admin = true
 
         elseif default_conf.deployment.role == "data_plane" then
+            default_conf.etcd = default_conf.deployment.etcd
             if default_conf.deployment.role_data_plane.config_provider == "yaml" then
                 default_conf.deployment.config_provider = "yaml"
             elseif default_conf.deployment.role_data_plane.config_provider == "xds" then
                 default_conf.deployment.config_provider = "xds"
-            else
-                default_conf.etcd = default_conf.deployment.role_data_plane.control_plane
             end
             default_conf.apisix.enable_admin = false
-        end
-
-        if default_conf.etcd and default_conf.deployment.certs then
-            -- copy certs configuration to keep backward compatible
-            local certs = default_conf.deployment.certs
-            local etcd = default_conf.etcd
-            if not etcd.tls then
-                etcd.tls = {}
-            end
-            etcd.tls.cert = certs.cert
-            etcd.tls.key = certs.cert_key
         end
     end
 

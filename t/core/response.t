@@ -188,6 +188,7 @@ aaa:
         }
         body_filter_by_lua_block {
             local core = require("apisix.core")
+            ngx.ctx._plugin_name = "test"
             local final_body = core.response.hold_body_chunk(ngx.ctx)
             if not final_body then
                 return

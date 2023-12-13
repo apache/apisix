@@ -47,12 +47,12 @@ It might take some time to receive the log data. It will be automatically sent a
 | brokers.sasl_config.password   | string  | True     |                  |                     | The password of sasl_config. If sasl_config exists, it's required.                                                                                                                                                                                                                                                                                                 |
 | kafka_topic            | string  | True     |                |                       | Target topic to push the logs for organisation.                                                                                                                                                                                                                                                                                                  |
 | producer_type          | string  | False    | async          | ["async", "sync"]     | Message sending mode of the producer.                                                                                                                                                                                                                                                                                                            |
-| required_acks          | integer | False    | 1              | [0, 1, -1]            | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
+| required_acks          | integer | False    | 1              | [1, -1]            | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. `required_acks` cannot be 0. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
 | key                    | string  | False    |                |                       | Key used for allocating partitions for messages.                                                                                                                                                                                                                                                                                                 |
 | timeout                | integer | False    | 3              | [1,...]               | Timeout for the upstream to send data.                                                                                                                                                                                                                                                                                                           |
 | name                   | string  | False    | "kafka logger" |                       | Unique identifier for the batch processor.                                                                                                                                                                                                                                                                                                       |
 | meta_format            | enum    | False    | "default"      | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.                                                                                                                        |
-| log_format | object | False    |      |               | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |   |               | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | include_req_body       | boolean | False    | false          | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                                                                                                                 |
 | include_req_body_expr  | array   | False    |                |                       | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
 | include_resp_body      | boolean | False    | false          | [false, true]         | When set to `true` includes the response body in the log.                                                                                                                                                                                                                                                                                        |
@@ -136,7 +136,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -164,7 +164,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `kafka-logger` Plugin on a specific Route:
 
@@ -218,9 +218,9 @@ Now, if you make a request to APISIX, it will be logged in your Kafka server:
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `kafka-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `kafka-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

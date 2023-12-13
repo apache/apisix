@@ -82,7 +82,7 @@ local label_value_def = {
     description = "value of label",
     type = "string",
     pattern = [[^\S+$]],
-    maxLength = 64,
+    maxLength = 256,
     minLength = 1
 }
 _M.label_value_def = label_value_def
@@ -283,6 +283,7 @@ local health_checker = {
         {required = {"active"}},
         {required = {"active", "passive"}},
     },
+    additionalProperties = false,
 }
 
 
@@ -324,7 +325,7 @@ local nodes_schema = {
                         type = "object",
                     }
                 },
-                required = {"host", "port", "weight"},
+                required = {"host", "weight"},
             },
         }
     }
@@ -401,16 +402,10 @@ local upstream_schema = {
                 },
             },
             dependencies = {
-                client_cert = {
-                    required = {"client_key"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
-                client_key = {
-                    required = {"client_cert"},
-                    ["not"] = {required = {"client_cert_id"}}
-                },
+                client_cert = {required = {"client_key"}},
+                client_key = {required = {"client_cert"}},
                 client_cert_id = {
-                    ["not"] = {required = {"client_client", "client_key"}}
+                    ["not"] = {required = {"client_cert", "client_key"}}
                 }
             }
         },
@@ -501,14 +496,15 @@ local upstream_schema = {
     oneOf = {
         {required = {"nodes"}},
         {required = {"service_name", "discovery_type"}},
-    }
+    },
+    additionalProperties = false
 }
 
 -- TODO: add more nginx variable support
 _M.upstream_hash_vars_schema = {
     type = "string",
     pattern = [[^((uri|server_name|server_addr|request_uri|remote_port]]
-               .. [[|remote_addr|query_string|host|hostname)]]
+               .. [[|remote_addr|query_string|host|hostname|mqtt_client_id)]]
                .. [[|arg_[0-9a-zA-z_-]+)$]],
 }
 
@@ -662,6 +658,7 @@ _M.route = {
             {required = {"script", "plugin_config_id"}},
         }
     },
+    additionalProperties = false,
 }
 
 
@@ -689,6 +686,7 @@ _M.service = {
             uniqueItems = true,
         },
     },
+    additionalProperties = false,
 }
 
 
@@ -707,6 +705,7 @@ _M.consumer = {
         desc = desc_def,
     },
     required = {"username"},
+    additionalProperties = false,
 }
 
 
@@ -725,8 +724,19 @@ _M.ssl = {
             default = "server",
             enum = {"server", "client"}
         },
-        cert = certificate_scheme,
-        key = private_key_schema,
+        cert = {
+            oneOf = {
+                certificate_scheme,
+                -- TODO: uniformly define the schema of secret_uri
+                { type = "string", pattern = "^\\$(secret|env)://"}
+            }
+        },
+        key = {
+            oneOf = {
+                private_key_schema,
+                { type = "string", pattern = "^\\$(secret|env)://"}
+            }
+        },
         sni = {
             type = "string",
             pattern = host_def_pat,
@@ -756,12 +766,17 @@ _M.ssl = {
                     minimum = 0,
                     default = 1,
                 },
+                skip_mtls_uri_regex = {
+                    type = "array",
+                    minItems = 1,
+                    uniqueItems = true,
+                    items = {
+                        description = "uri regular expression to skip mtls",
+                        type = "string",
+                    }
+                },
             },
             required = {"ca"},
-        },
-        exptime = {
-            type = "integer",
-            minimum = 1588262400,  -- 2020/5/1 0:0:0
         },
         labels = labels_def,
         status = {
@@ -770,8 +785,15 @@ _M.ssl = {
             enum = {1, 0},
             default = 1
         },
-        validity_end = timestamp_def,
-        validity_start = timestamp_def,
+        ssl_protocols = {
+            description = "set ssl protocols",
+            type = "array",
+            maxItems = 3,
+            uniqueItems = true,
+            items = {
+                enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
+            },
+        },
         create_time = timestamp_def,
         update_time = timestamp_def
     },
@@ -788,7 +810,8 @@ _M.ssl = {
             {required = {"snis", "key", "cert"}}
         }
     },
-    ["else"] = {required = {"key", "cert"}}
+    ["else"] = {required = {"key", "cert"}},
+    additionalProperties = false,
 }
 
 
@@ -805,6 +828,7 @@ _M.proto = {
         }
     },
     required = {"content"},
+    additionalProperties = false,
 }
 
 
@@ -816,7 +840,8 @@ _M.global_rule = {
         create_time = timestamp_def,
         update_time = timestamp_def
     },
-    required = {"plugins"},
+    required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 
@@ -850,6 +875,7 @@ local xrpc_protocol_schema = {
                 dependencies = {
                     name = {"conf"},
                 },
+                additionalProperties = false,
             },
         },
 
@@ -866,6 +892,7 @@ _M.stream_route = {
         create_time = timestamp_def,
         update_time = timestamp_def,
         remote_addr = remote_addr_def,
+        labels = labels_def, -- The ingress project need this field
         server_addr = {
             description = "server IP",
             type = "string",
@@ -882,9 +909,11 @@ _M.stream_route = {
         },
         upstream = upstream_schema,
         upstream_id = id_schema,
+        service_id = id_schema,
         plugins = plugins_schema,
         protocol = xrpc_protocol_schema,
-    }
+    },
+    additionalProperties = false,
 }
 
 
@@ -900,6 +929,7 @@ _M.plugins = {
             stream = {
                 type = "boolean"
             },
+            additionalProperties = false,
         },
         required = {"name"}
     }
@@ -909,6 +939,9 @@ _M.plugins = {
 _M.plugin_config = {
     type = "object",
     properties = {
+        name = {
+            type = "string",
+        },
         id = id_schema,
         desc = desc_def,
         plugins = plugins_schema,
@@ -917,6 +950,7 @@ _M.plugin_config = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 
@@ -931,6 +965,7 @@ _M.consumer_group = {
         update_time = timestamp_def
     },
     required = {"id", "plugins"},
+    additionalProperties = false,
 }
 
 

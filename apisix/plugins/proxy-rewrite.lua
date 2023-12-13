@@ -21,6 +21,8 @@ local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
+local re_match    = ngx.re.match
+local req_set_uri = ngx.req.set_uri
 local sub_str     = string.sub
 local str_find    = core.string.find
 
@@ -41,6 +43,10 @@ local lrucache = core.lrucache.new({
     type = "plugin",
 })
 
+core.ctx.register_var("proxy_rewrite_regex_uri_captures", function(ctx)
+    return ctx.proxy_rewrite_regex_uri_captures
+end)
+
 local schema = {
     type = "object",
     properties = {
@@ -60,7 +66,6 @@ local schema = {
             description = "new uri that substitute from client uri " ..
                           "for upstream, lower priority than uri property",
             type        = "array",
-            maxItems    = 2,
             minItems    = 2,
             items       = {
                 description = "regex uri",
@@ -186,11 +191,16 @@ function _M.check_schema(conf)
     end
 
     if conf.regex_uri and #conf.regex_uri > 0 then
-        local _, _, err = re_sub("/fake_uri", conf.regex_uri[1],
-                                   conf.regex_uri[2], "jo")
-        if err then
-            return false, "invalid regex_uri(" .. conf.regex_uri[1] ..
-                            ", " .. conf.regex_uri[2] .. "): " .. err
+        if (#conf.regex_uri % 2 ~= 0) then
+            return false, "The length of regex_uri should be an even number"
+        end
+        for i = 1, #conf.regex_uri, 2 do
+            local _, _, err = re_sub("/fake_uri", conf.regex_uri[i],
+                conf.regex_uri[i + 1], "jo")
+            if err then
+                return false, "invalid regex_uri(" .. conf.regex_uri[i] ..
+                    ", " .. conf.regex_uri[i + 1] .. "): " .. err
+            end
         end
     end
 
@@ -257,6 +267,7 @@ do
         return re_sub(s, [[\?]], "%3F", "jo")
     end
 
+
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -268,24 +279,46 @@ function _M.rewrite(conf, ctx)
     local separator_escaped = false
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
-    elseif conf.uri ~= nil then
+    end
+
+    if conf.uri ~= nil then
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
+
     elseif conf.regex_uri ~= nil then
         if not str_find(upstream_uri, "?") then
             separator_escaped = true
         end
 
-        local uri, _, err = re_sub(upstream_uri, conf.regex_uri[1],
-                                   conf.regex_uri[2], "jo")
-        if uri then
-            upstream_uri = uri
-        else
-            local msg = "failed to substitute the uri " .. ctx.var.uri ..
-                        " (" .. conf.regex_uri[1] .. ") with " ..
-                        conf.regex_uri[2] .. " : " .. err
-            core.log.error(msg)
-            return 500, {message = msg}
+        local error_msg
+        for i = 1, #conf.regex_uri, 2 do
+            local captures, err = re_match(upstream_uri, conf.regex_uri[i], "jo")
+            if err then
+                error_msg = "failed to match the uri " .. ctx.var.uri ..
+                    " (" .. conf.regex_uri[i] .. ") " .. " : " .. err
+                break
+            end
+
+            if captures then
+                ctx.proxy_rewrite_regex_uri_captures = captures
+
+                local uri, _, err = re_sub(upstream_uri,
+                    conf.regex_uri[i], conf.regex_uri[i + 1], "jo")
+                if uri then
+                    upstream_uri = uri
+                else
+                    error_msg = "failed to substitute the uri " .. ngx.var.uri ..
+                        " (" .. conf.regex_uri[i] .. ") with " ..
+                        conf.regex_uri[i + 1] .. " : " .. err
+                end
+
+                break
+            end
+        end
+
+        if error_msg ~= nil then
+            core.log.error(error_msg)
+            return 500, { error_msg = error_msg }
         end
     end
 
@@ -304,6 +337,8 @@ function _M.rewrite(conf, ctx)
             upstream_uri = core.utils.uri_safe_encode(upstream_uri)
         end
 
+        req_set_uri(upstream_uri)
+
         if ctx.var.is_args == "?" then
             if index then
                 ctx.var.upstream_uri = upstream_uri .. "&" .. (ctx.var.args or "")
@@ -313,6 +348,8 @@ function _M.rewrite(conf, ctx)
         else
             ctx.var.upstream_uri = upstream_uri
         end
+    else
+        ctx.var.upstream_uri = upstream_uri
     end
 
     if conf.headers then
@@ -325,20 +362,27 @@ function _M.rewrite(conf, ctx)
 
         local field_cnt = #hdr_op.add
         for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var(hdr_op.add[i + 1], ctx.var)
-            local header = hdr_op.add[i]
-            core.request.add_header(header, val)
+            local val = core.utils.resolve_var_with_captures(hdr_op.add[i + 1],
+                                            ctx.proxy_rewrite_regex_uri_captures)
+            val = core.utils.resolve_var(val, ctx.var)
+            -- A nil or empty table value will cause add_header function to throw an error.
+            if val then
+                local header = hdr_op.add[i]
+                core.request.add_header(ctx, header, val)
+            end
         end
 
         local field_cnt = #hdr_op.set
         for i = 1, field_cnt, 2 do
-            local val = core.utils.resolve_var(hdr_op.set[i + 1], ctx.var)
-            core.request.set_header(hdr_op.set[i], val)
+            local val = core.utils.resolve_var_with_captures(hdr_op.set[i + 1],
+                                            ctx.proxy_rewrite_regex_uri_captures)
+            val = core.utils.resolve_var(val, ctx.var)
+            core.request.set_header(ctx, hdr_op.set[i], val)
         end
 
         local field_cnt = #hdr_op.remove
         for i = 1, field_cnt do
-            core.request.set_header(hdr_op.remove[i], nil)
+            core.request.set_header(ctx, hdr_op.remove[i], nil)
         end
 
     end

@@ -251,7 +251,7 @@ no valid upstream node
 
 
 
-=== TEST 9: additional properties is valid
+=== TEST 9: additional properties is invalid
 --- config
     location /t {
         content_by_lua_block {
@@ -277,8 +277,9 @@ no valid upstream node
     }
 --- request
 GET /t
---- response_body
-passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"invalid configuration: additional properties forbidden, found .*"\}/
 
 
 

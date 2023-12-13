@@ -97,7 +97,7 @@ Server: APISIX web server
 | reading      | 当前正在读取请求头的连接数。                                              |
 | id           | APISIX UID 信息，保存在 `./conf/apisix.uid` 文件中。                |
 
-## 禁用插件
+## 删除插件
 
 如果你不再需要该插件，可以从配置文件 (`./conf/config.yaml`) 中删除它：
 

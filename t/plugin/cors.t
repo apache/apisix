@@ -723,7 +723,7 @@ qr/failed to check the configuration of plugin cors err: you can not/
                             "expose_headers": "ex-headr1,ex-headr2",
                             "max_age": 50,
                             "allow_credential": true,
-                            "allow_origins_by_regex":[".*\\.test.com"]
+                            "allow_origins_by_regex":[".*\\.test.com$"]
                         }
                     },
                     "upstream": {
@@ -802,7 +802,7 @@ Access-Control-Allow-Credentials:
                             "expose_headers": "ex-headr1,ex-headr2",
                             "max_age": 50,
                             "allow_credential": true,
-                            "allow_origins_by_regex":[".*\\.test.com",".*\\.example.org"]
+                            "allow_origins_by_regex":[".*\\.test.com$",".*\\.example.org$"]
                         }
                     },
                     "upstream": {

@@ -89,6 +89,11 @@ __DATA__
                 return item, idx1, idx2
             end
 
+            local function setup_to_false()
+                local item = false
+                return item
+            end
+
             local item, idx1, idx2 = setup()
             util.cancel_clean_handler(item, idx1, true)
             util.cancel_clean_handler(item, idx2, true)
@@ -102,6 +107,9 @@ __DATA__
 
             local item, idx1, idx2 = setup()
             util.cancel_clean_handler(item, idx1)
+            util.fire_all_clean_handlers(item)
+
+            local item = setup_to_false()
             util.fire_all_clean_handlers(item)
         }
     }

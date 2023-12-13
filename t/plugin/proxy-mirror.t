@@ -705,8 +705,8 @@ passed
                     [[{
                         "plugins": {
                             "proxy-mirror": {
-                               "host": "http://httpbin.org",
-                               "path": "/get"
+                               "host": "http://test.com:1980",
+                               "path": "/hello"
                             }
                         },
                         "upstream": {
@@ -736,7 +736,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log_like eval
-qr/http:\/\/httpbin\.org is resolved to: http:\/\/((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})(\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})){3}/
+qr/http:\/\/test\.com is resolved to: http:\/\/((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})(\.((2(5[0-5]|[0-4]\d))|[0-1]?\d{1,2})){3}/
 
 
 
@@ -838,3 +838,75 @@ GET /hello?a=1
 hello world
 --- error_log
 uri: /a/hello?a=1
+
+
+
+=== TEST 30: (grpc) sanity check (normal case grpc)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "grpc://127.0.0.1:1986"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "scheme": "grpc",
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- error_code: 200
+--- response_body
+passed
+
+
+
+=== TEST 31: (grpcs) sanity check (normal case for grpcs)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                        "plugins": {
+                            "proxy-mirror": {
+                               "host": "grpcs://127.0.0.1:1986"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "scheme": "grpc",
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- error_code: 200
+--- response_body
+passed

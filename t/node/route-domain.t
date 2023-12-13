@@ -92,9 +92,9 @@ qr/dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+/
                             },
                             "type": "roundrobin",
                             "pass_host": "rewrite",
-                            "upstream_host": "httpbin.org"
+                            "upstream_host": "test.com"
                         },
-                        "uri": "/uri"
+                        "uri": "/echo"
                 }]]
                 )
 
@@ -113,10 +113,9 @@ passed
 
 === TEST 5: hit route
 --- request
-GET /uri
---- response_body eval
-qr/host: httpbin.org/
---- timeout: 10
+GET /echo
+--- response_headers
+host: test.com
 
 
 
@@ -130,13 +129,13 @@ qr/host: httpbin.org/
                  [[{
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:80": 1
+                                "test.com:1980": 1
                             },
                             "type": "roundrobin",
                             "desc": "new upstream",
                             "pass_host": "node"
                         },
-                        "uri": "/get"
+                        "uri": "/echo"
                 }]]
                 )
 
@@ -155,10 +154,9 @@ passed
 
 === TEST 7: hit route
 --- request
-GET /get
---- response_body eval
-qr/"Host": "httpbin.org"/
---- timeout: 10
+GET /echo
+--- response_headers
+host: test.com:1980
 
 
 

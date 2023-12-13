@@ -41,6 +41,7 @@ local type = type
 local tostring = tostring
 local setmetatable = setmetatable
 local pcall = pcall
+local unpack = unpack
 
 -- api doc https://www.tencentcloud.com/document/product/614/16873
 local MAX_SINGLE_VALUE_SIZE = 1 * 1024 * 1024
@@ -62,13 +63,20 @@ local params_cache = {
 local function get_ip(hostname)
     local _, resolved = socket.dns.toip(hostname)
     local ip_list = {}
-    for _, v in ipairs(resolved.ip) do
-        insert_tab(ip_list, v)
+    if not resolved.ip then
+        -- DNS parsing failure
+        local err = resolved
+        core.log.error("resolve ip failed, hostname: " .. hostname .. ", error: " .. err)
+        return nil, err
+    else
+        for _, v in ipairs(resolved.ip) do
+            insert_tab(ip_list, v)
+        end
     end
     return ip_list
 end
 
-local host_ip = tostring(unpack(get_ip(core_gethostname())))
+local host_ip
 local log_group_list = {}
 local log_group_list_pb = {
     logGroupList = log_group_list,
@@ -273,6 +281,15 @@ function _M.send_to_cls(self, logs)
     -- sums of all value in all LogGroup should be no more than 5MB
     -- so send whenever size exceed max size
     local group_list_start = 1
+
+    if not host_ip then
+        local host_ip_list, err = get_ip(core_gethostname())
+        if not host_ip_list then
+            return false, err
+        end
+        host_ip = tostring(unpack(host_ip_list))
+    end
+
     for i = 1, #logs, 1 do
         local contents, log_size = normalize_log(logs[i])
         if log_size > MAX_LOG_GROUP_VALUE_SIZE then

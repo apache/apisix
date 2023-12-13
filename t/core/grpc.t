@@ -44,7 +44,7 @@ __DATA__
             local core = require "apisix.core"
             local gcli = core.grpc
             assert(gcli.load("t/grpc_server_example/proto/helloworld.proto"))
-            local conn = assert(gcli.connect("127.0.0.1:50051"))
+            local conn = assert(gcli.connect("127.0.0.1:10051"))
             local res, err = conn:call("helloworld.Greeter", "SayHello", {
                                         name = "apisix" })
             conn:close()
@@ -68,7 +68,7 @@ Hello apisix
             local core = require "apisix.core"
             local gcli = core.grpc
             assert(gcli.load("t/grpc_server_example/proto/helloworld.proto"))
-            local conn = assert(gcli.connect("127.0.0.1:50051"))
+            local conn = assert(gcli.connect("127.0.0.1:10051"))
             local st, err = conn:new_server_stream("helloworld.Greeter",
                 "SayHelloServerStream", { name = "apisix" })
             if not st then
@@ -100,7 +100,7 @@ Hello apisix
             local core = require "apisix.core"
             local gcli = core.grpc
             assert(gcli.load("t/grpc_server_example/proto/helloworld.proto"))
-            local conn = assert(gcli.connect("127.0.0.1:50051"))
+            local conn = assert(gcli.connect("127.0.0.1:10051"))
             local st, err = conn:new_client_stream("helloworld.Greeter",
                 "SayHelloClientStream", { name = "apisix" })
             if not st then
@@ -139,7 +139,7 @@ Hello apisix!Hello apisix!Hello apisix!Hello apisix!
             local core = require "apisix.core"
             local gcli = core.grpc
             assert(gcli.load("t/grpc_server_example/proto/helloworld.proto"))
-            local conn = assert(gcli.connect("127.0.0.1:50051"))
+            local conn = assert(gcli.connect("127.0.0.1:10051"))
             local st, err = conn:new_bidirectional_stream("helloworld.Greeter",
                 "SayHelloBidirectionalStream", { name = "apisix" })
             if not st then

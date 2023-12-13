@@ -19,11 +19,7 @@ use t::APISIX;
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 my $version = eval { `$nginx_binary -V 2>&1` };
 
-if ($version =~ m/\/1.19.3/) {
-    plan(skip_all => "require OpenResty version >= 1.19.9.1");
-} else {
-    plan('no_plan');
-}
+plan('no_plan');
 
 repeat_each(1);
 log_level('warn');

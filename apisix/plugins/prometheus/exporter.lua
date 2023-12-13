@@ -17,6 +17,7 @@
 local base_prometheus = require("prometheus")
 local core      = require("apisix.core")
 local plugin    = require("apisix.plugin")
+local control   = require("apisix.control.v1")
 local ipairs    = ipairs
 local pairs     = pairs
 local ngx       = ngx
@@ -33,6 +34,8 @@ local get_ssls   = router.ssls
 local get_services = require("apisix.http.service").services
 local get_consumers = require("apisix.consumer").consumers
 local get_upstreams = require("apisix.upstream").upstreams
+local get_global_rules = require("apisix.global_rules").global_rules
+local get_global_rules_prev_index = require("apisix.global_rules").get_pre_index
 local clear_tab = core.table.clear
 local get_stream_routes = router.stream_routes
 local get_protos = require("apisix.plugins.grpc-transcode.proto").protos
@@ -158,6 +161,10 @@ function _M.http_init(prometheus_enabled_in_stream)
             "The free space of each nginx shared DICT since APISIX start",
             {"name"})
 
+    metrics.upstream_status = prometheus:gauge("upstream_status",
+            "Upstream status from health check",
+            {"name", "ip", "port"})
+
     -- per service
 
     -- The consumer label indicates the name of consumer corresponds to the
@@ -168,10 +175,15 @@ function _M.http_init(prometheus_enabled_in_stream)
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
             unpack(extra_labels("http_status"))})
 
+    local buckets = DEFAULT_BUCKETS
+    if attr and attr.default_buckets then
+        buckets = attr.default_buckets
+    end
+
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
         {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
-        DEFAULT_BUCKETS)
+        buckets)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
@@ -189,7 +201,7 @@ function _M.stream_init()
     end
 
     if not pcall(function() return C.ngx_meta_lua_ffi_shdict_udata_to_zone end) then
-        core.log.error("need to build APISIX-Base to support L4 metrics")
+        core.log.error("need to build APISIX-Runtime to support L4 metrics")
         return
     end
 
@@ -367,14 +379,15 @@ local function etcd_modify_index()
     global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx)
 
     -- global_rules
-    local global_rules = router.global_rules
+    local global_rules, global_rules_ver = get_global_rules()
     if global_rules then
-        global_max_idx = set_modify_index("global_rules", global_rules.values,
-            global_rules.conf_version, global_max_idx)
+        global_max_idx = set_modify_index("global_rules", global_rules,
+            global_rules_ver, global_max_idx)
 
         -- prev_index
         key_values[1] = "prev_index"
-        metrics.etcd_modify_indexes:set(global_rules.prev_index, key_values)
+        local prev_index = get_global_rules_prev_index()
+        metrics.etcd_modify_indexes:set(prev_index, key_values)
 
     else
         global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx)
@@ -457,6 +470,15 @@ local function collect(ctx, stream_only)
     end
 
     metrics.node_info:set(1, gen_arr(hostname))
+
+    -- update upstream_status metrics
+    local stats = control.get_health_checkers()
+    for _, stat in ipairs(stats) do
+        for _, node in ipairs(stat.nodes) do
+            metrics.upstream_status:set((node.status == "healthy") and 1 or 0,
+                gen_arr(stat.name, node.ip, node.port))
+        end
+    end
 
     core.response.set_header("content_type", "text/plain")
     return 200, core.table.concat(prometheus:metric_data())

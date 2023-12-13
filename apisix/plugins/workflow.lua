@@ -52,7 +52,8 @@ local schema = {
                 required = {"case", "actions"}
             }
         }
-    }
+    },
+    required = {"rules"}
 }
 
 local plugin_name = "workflow"
@@ -93,7 +94,7 @@ end
 
 
 local function rate_limit(conf, ctx)
-    return limit_count.rate_limit(conf, ctx)
+    return limit_count.rate_limit(conf, ctx, "limit-count", 1)
 end
 
 

@@ -36,7 +36,10 @@ You can enable the basic debug mode by adding this line to your debug configurat
 ```yaml title="conf/debug.yaml"
 basic:
   enable: true
+#END
 ```
+
+APISIX loads the configurations of `debug.yaml` on startup and then checks if the file is modified on an interval of 1 second. If the file is changed, APISIX automatically applies the configuration changes.
 
 :::note
 
@@ -44,7 +47,7 @@ For APISIX releases prior to v2.10, basic debug mode is enabled by setting `apis
 
 :::
 
-If you have configured two Plgins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn, limit-count` when you enable the basic debug mode.
+If you have configured two Plugins `limit-conn` and `limit-count` on the Route `/hello`, you will receive a response with the header `Apisix-Plugins: limit-conn, limit-count` when you enable the basic debug mode.
 
 ```shell
 curl http://127.0.0.1:1984/hello -i

@@ -21,7 +21,6 @@ local file = require("apisix.cli.file")
 local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local cli_ip = require("apisix.cli.ip")
-local snippet = require("apisix.cli.snippet")
 local profile = require("apisix.core.profile")
 local template = require("resty.template")
 local argparse = require("argparse")
@@ -58,7 +57,7 @@ local function help()
     print([[
 Usage: apisix [action] <argument>
 
-help:       show this message, then exit
+help:       print the apisix cli help message
 init:       initialize the local nginx.conf
 init_etcd:  initialize the data of etcd
 start:      start the apisix server
@@ -185,12 +184,16 @@ local function init(env)
     local checked_admin_key = false
     local allow_admin = yaml_conf.deployment.admin and
         yaml_conf.deployment.admin.allow_admin
-    if yaml_conf.apisix.enable_admin and allow_admin then
-        for _, allow_ip in ipairs(allow_admin) do
-            if allow_ip == "127.0.0.0/24" then
-                checked_admin_key = true
-            end
-        end
+    if yaml_conf.apisix.enable_admin and allow_admin
+       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
+        checked_admin_key = true
+    end
+    -- check if admin_key is required
+    if yaml_conf.deployment.admin.admin_key_required == false then
+        checked_admin_key = true
+        print("Warning! Admin key is bypassed! "
+                .. "If you are deploying APISIX in a production environment, "
+                .. "please disable `admin_key_required` and set a secure admin key!")
     end
 
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
@@ -254,7 +257,7 @@ Please modify "admin_key" in conf/config.yaml .
         util.die("can not find openresty\n")
     end
 
-    local need_ver = "1.19.3"
+    local need_ver = "1.21.4"
     if not version_greater_equal(or_ver, need_ver) then
         util.die("openresty version must >=", need_ver, " current ", or_ver, "\n")
     end
@@ -265,11 +268,24 @@ Please modify "admin_key" in conf/config.yaml .
                  "your openresty, please check it out.\n")
     end
 
+    --- http is enabled by default
     local enable_http = true
-    if not yaml_conf.apisix.enable_admin and yaml_conf.apisix.stream_proxy and
-        yaml_conf.apisix.stream_proxy.only ~= false
-    then
-        enable_http = false
+    --- stream is disabled by default
+    local enable_stream = false
+    if yaml_conf.apisix.proxy_mode then
+        --- check for "http"
+        if yaml_conf.apisix.proxy_mode == "http" then
+            enable_http = true
+            enable_stream = false
+        --- check for "stream"
+        elseif yaml_conf.apisix.proxy_mode == "stream" then
+            enable_stream = true
+            enable_http = false
+        --- check for "http&stream"
+        elseif yaml_conf.apisix.proxy_mode == "http&stream" then
+            enable_stream = true
+            enable_http = true
+        end
     end
 
     local enabled_discoveries = {}
@@ -484,7 +500,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     local tcp_enable_ssl
     -- compatible with the original style which only has the addr
-    if yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
+    if enable_stream and yaml_conf.apisix.stream_proxy and yaml_conf.apisix.stream_proxy.tcp then
         local tcp = yaml_conf.apisix.stream_proxy.tcp
         for i, item in ipairs(tcp) do
             if type(item) ~= "table" then
@@ -516,11 +532,6 @@ Please modify "admin_key" in conf/config.yaml .
         proxy_mirror_timeouts = yaml_conf.plugin_attr["proxy-mirror"].timeout
     end
 
-    local conf_server, err = snippet.generate_conf_server(env, yaml_conf)
-    if err then
-        util.die(err, "\n")
-    end
-
     if yaml_conf.deployment and yaml_conf.deployment.role then
         local role = yaml_conf.deployment.role
         env.deployment_role = role
@@ -529,6 +540,16 @@ Please modify "admin_key" in conf/config.yaml .
             local listen = node_listen[1]
             admin_server_addr = str_format("%s:%s", listen.ip, listen.port)
         end
+    end
+
+    local opentelemetry_set_ngx_var
+    if enabled_plugins["opentelemetry"] and yaml_conf.plugin_attr["opentelemetry"] then
+        opentelemetry_set_ngx_var = yaml_conf.plugin_attr["opentelemetry"].set_ngx_var
+    end
+
+    local zipkin_set_ngx_var
+    if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
+        zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
     end
 
     -- Using template.render
@@ -541,6 +562,7 @@ Please modify "admin_key" in conf/config.yaml .
         use_apisix_base = env.use_apisix_base,
         error_log = {level = "warn"},
         enable_http = enable_http,
+        enable_stream = enable_stream,
         enabled_discoveries = enabled_discoveries,
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
@@ -550,7 +572,8 @@ Please modify "admin_key" in conf/config.yaml .
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
-        conf_server = conf_server,
+        opentelemetry_set_ngx_var = opentelemetry_set_ngx_var,
+        zipkin_set_ngx_var = zipkin_set_ngx_var
     }
 
     if not yaml_conf.apisix then
@@ -735,7 +758,22 @@ local function init_etcd(env, args)
 end
 
 
+local function cleanup(env)
+    if env.apisix_home then
+        profile.apisix_home = env.apisix_home
+    end
+
+    os_remove(profile:customized_yaml_index())
+end
+
+
 local function start(env, ...)
+    cleanup(env)
+
+    if env.apisix_home then
+        profile.apisix_home = env.apisix_home
+    end
+
     -- Because the worker process started by apisix has "nobody" permission,
     -- it cannot access the `/root` directory. Therefore, it is necessary to
     -- prohibit APISIX from running in the /root directory.
@@ -781,39 +819,34 @@ local function start(env, ...)
 
     -- start a new APISIX instance
 
-    local conf_server_sock_path = env.apisix_home .. "/conf/config_listen.sock"
-    if pl_path.exists(conf_server_sock_path) then
-        -- remove stale sock (if exists) so that APISIX can start
-        local ok, err = os_remove(conf_server_sock_path)
-        if not ok then
-            util.die("failed to remove stale conf server sock file, error: ", err)
-        end
-    end
-
     local parser = argparse()
     parser:argument("_", "Placeholder")
     parser:option("-c --config", "location of customized config.yaml")
     -- TODO: more logs for APISIX cli could be added using this feature
-    parser:flag("--verbose", "show init_etcd debug information")
+    parser:flag("-v --verbose", "show init_etcd debug information")
     local args = parser:parse()
 
     local customized_yaml = args["config"]
     if customized_yaml then
-        profile.apisix_home = env.apisix_home .. "/"
-        local local_conf_path = profile:yaml_path("config")
-        local local_conf_path_bak = local_conf_path .. ".bak"
-
-        local ok, err = os_rename(local_conf_path, local_conf_path_bak)
-        if not ok then
-            util.die("failed to backup config, error: ", err)
-        end
-        local ok, err1 = lfs.link(customized_yaml, local_conf_path)
-        if not ok then
-            ok, err = os_rename(local_conf_path_bak,  local_conf_path)
-            if not ok then
-                util.die("failed to recover original config file, error: ", err)
+        local customized_yaml_path
+        local idx = str_find(customized_yaml, "/")
+        if idx and idx == 1 then
+            customized_yaml_path = customized_yaml
+        else
+            local cur_dir, err = lfs.currentdir()
+            if err then
+                util.die("failed to get current directory")
             end
-            util.die("failed to link customized config, error: ", err1)
+            customized_yaml_path = cur_dir .. "/" .. customized_yaml
+        end
+
+        if not util.file_exists(customized_yaml_path) then
+           util.die("customized config file not exists, path: " .. customized_yaml_path)
+        end
+
+        local ok, err = util.write_file(profile:customized_yaml_index(), customized_yaml_path)
+        if not ok then
+            util.die("write customized config index failed, err: " .. err)
         end
 
         print("Use customized yaml: ", customized_yaml)
@@ -826,22 +859,6 @@ local function start(env, ...)
     end
 
     util.execute_cmd(env.openresty_args)
-end
-
-
-local function cleanup()
-    local local_conf_path = profile:yaml_path("config")
-    local local_conf_path_bak = local_conf_path .. ".bak"
-    if pl_path.exists(local_conf_path_bak) then
-        local ok, err = os_remove(local_conf_path)
-        if not ok then
-            print("failed to remove customized config, error: ", err)
-        end
-        ok, err = os_rename(local_conf_path_bak,  local_conf_path)
-        if not ok then
-            util.die("failed to recover original config file, error: ", err)
-        end
-    end
 end
 
 
@@ -884,7 +901,7 @@ end
 
 
 local function quit(env)
-    cleanup()
+    cleanup(env)
 
     local cmd = env.openresty_args .. [[ -s quit]]
     util.execute_cmd(cmd)
@@ -892,7 +909,7 @@ end
 
 
 local function stop(env)
-    cleanup()
+    cleanup(env)
 
     local cmd = env.openresty_args .. [[ -s stop]]
     util.execute_cmd(cmd)

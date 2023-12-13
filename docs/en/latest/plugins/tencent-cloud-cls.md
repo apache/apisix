@@ -44,7 +44,7 @@ The `tencent-cloud-cls` Plugin uses [TencentCloud CLS](https://cloud.tencent.com
 | include_req_body  | boolean | No       | false   | [false, true] | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to NGINX's limitations. |
 | include_resp_body | boolean | No       | false   | [false, true] | When set to `true` includes the response body in the log.                                                                                                        |
 | global_tag        | object  | No       |         |               | kv pairs in JSON，send with each log.                                                                                                                             |
-| log_format       | object  | No    |              |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format       | object  | No    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -56,7 +56,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |   | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -85,7 +85,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the Plugin on a specific Route:
 
@@ -125,7 +125,7 @@ Now, if you make a request to APISIX, it will be logged in your cls topic:
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## Disable Plugin
+## Delete Plugin
 
 To disable this Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 

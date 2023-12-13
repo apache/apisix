@@ -121,6 +121,7 @@ passed: 30
             ngx.say("passed")
         }
     }
+--- timeout: 15
 --- request
 GET /t
 --- response_body

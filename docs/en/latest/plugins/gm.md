@@ -27,5 +27,5 @@ description: This article introduces the basic information and usage of the Apac
 -->
 
 :::info
-The function usage scenarios introduced in this article are mainly in China, so this article only has a Chinese version temporarily. You can cilik [here](https://apisix.apache.org/zh/docs/apisix/plugins/gm/) for more details. If you are interested in this feature, welcome to translate this document.
+The function usage scenarios introduced in this article are mainly in China, so this article only has a Chinese version temporarily. You can click [here](https://apisix.apache.org/zh/docs/apisix/plugins/gm/) for more details. If you are interested in this feature, welcome to translate this document.
 :::

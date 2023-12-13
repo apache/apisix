@@ -364,3 +364,43 @@ location /t {
         t.test('/apisix/admin/ssls/1', ngx.HTTP_DELETE)
     }
 }
+
+
+
+=== TEST 11: set ssl(sni: www.test.com) with long label
+--- yaml_config
+apisix:
+    node_listen: 1984
+    ssl:
+        key_encrypt_salt: null
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("t/certs/apisix.crt")
+        local ssl_key =  t.read_file("t/certs/apisix.key")
+        local data = {cert = ssl_cert, key = ssl_key, sni = "www.test.com",
+                      labels = {secret = "js-design-test-bigdata-data-app-service-router-my-secret-number-123456"}}
+
+        local code, body = t.test('/apisix/admin/ssls/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data),
+            [[{
+                "value": {
+                    "sni": "www.test.com",
+                    "labels": {
+                        "secret": "js-design-test-bigdata-data-app-service-router-my-secret-number-123456"
+                    },
+                },
+                "key": "/apisix/ssls/1"
+            }]]
+            )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- response_body
+passed

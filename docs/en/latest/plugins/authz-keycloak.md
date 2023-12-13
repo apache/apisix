@@ -44,11 +44,11 @@ Refer to [Authorization Services Guide](https://www.keycloak.org/docs/latest/aut
 
 | Name                                         | Type          | Required | Default                                       | Valid values                                                       | Description                                                                                                                                                                                                                                           |
 |----------------------------------------------|---------------|----------|-----------------------------------------------|--------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| discovery                                    | string        | False    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to [discovery document](https://www.keycloak.org/docs/14.0/authorization_services/#_service_authorization_api) of Keycloak Authorization Services.                                                                                                |
+| discovery                                    | string        | False    |                                               | https://host.domain/auth/realms/foo/.well-known/uma2-configuration | URL to [discovery document](https://www.keycloak.org/docs/latest/authorization_services/index.html) of Keycloak Authorization Services.                                                                                                |
 | token_endpoint                               | string        | False    |                                               | https://host.domain/auth/realms/foo/protocol/openid-connect/token  | An OAuth2-compliant token endpoint that supports the `urn:ietf:params:oauth:grant-type:uma-ticket` grant type. If provided, overrides the value from discovery.                                                                                       |
 | resource_registration_endpoint               | string        | False    |                                               | https://host.domain/auth/realms/foo/authz/protection/resource_set  | A UMA-compliant resource registration endpoint. If provided, overrides the value from discovery.                                                                                                                                                      |
 | client_id                                    | string        | True     |                                               |                                                                    | The identifier of the resource server to which the client is seeking access.                                                                                                                                                                         |
-| client_secret                                | string        | False    |                                               |                                                                    | The client secret, if required.                                                                                                                                                                                                                       |
+| client_secret                                | string        | False    |                                               |                                                                    | The client secret, if required. You can use APISIX secret to store and reference this value. APISIX currently supports storing secrets in two ways. [Environment Variables and HashiCorp Vault](../terminology/secret.md)                                                                                                                                                                                                                         |
 | grant_type                                   | string        | False    | "urn:ietf:params:oauth:grant-type:uma-ticket" | ["urn:ietf:params:oauth:grant-type:uma-ticket"]                    |                                                                                                                                                                                                                                                       |
 | policy_enforcement_mode                      | string        | False    | "ENFORCING"                                   | ["ENFORCING", "PERMISSIVE"]                                        |                                                                                                                                                                                                                                                       |
 | permissions                                  | array[string] | False    |                                               |                                                                    | An array of strings, each representing a set of one or more resources and scopes the client is seeking access.                                                                                                                                        |
@@ -143,7 +143,7 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 --data-urlencode 'password=<Password>'
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the `authz-keycloak` Plugin on a specific Route. `${realm}` represents the realm name in Keycloak.
 
@@ -200,9 +200,9 @@ The image below shows how the policies are configured in the Keycloak server:
 
 ![Keycloak policy design](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/authz-keycloak.png)
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `authz-keycloak` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

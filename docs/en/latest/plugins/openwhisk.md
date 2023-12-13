@@ -56,7 +56,7 @@ OpenWhisk supports timeouts in the range 1ms to 60000ms and it is recommended to
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 Before configuring the Plugin, you need to have OpenWhisk running. The example below shows OpenWhisk in standalone mode:
 
@@ -111,9 +111,9 @@ This will give back the response from the action:
 { "ready": true }
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `openwhisk` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `openwhisk` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

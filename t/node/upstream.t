@@ -205,7 +205,7 @@ GET /t
                 ngx.HTTP_PUT,
                 [[{
                     "nodes": {
-                        "httpbin.org:80": 1
+                        "test.com:1980": 1
                     },
                     "type": "roundrobin",
                     "desc": "new upstream",
@@ -234,7 +234,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/get",
+                    "uri": "/echo",
                     "upstream_id": "1"
                 }]]
                 )
@@ -254,9 +254,9 @@ passed
 
 === TEST 12: hit route
 --- request
-GET /get
---- response_body eval
-qr/"Host": "httpbin.org"/
+GET /echo
+--- response_headers
+host: test.com:1980
 
 
 
@@ -274,7 +274,7 @@ qr/"Host": "httpbin.org"/
                     "type": "roundrobin",
                     "desc": "new upstream",
                     "pass_host": "rewrite",
-                    "upstream_host": "httpbin.org"
+                    "upstream_host": "test.com"
                 }]]
                 )
 
@@ -299,7 +299,7 @@ passed
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/uri",
+                    "uri": "/echo",
                     "upstream_id": "1"
                 }]]
                 )
@@ -319,9 +319,9 @@ passed
 
 === TEST 15: hit route
 --- request
-GET /uri
---- response_body eval
-qr/host: httpbin.org/
+GET /echo
+--- response_headers
+host: test.com
 
 
 

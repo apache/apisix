@@ -32,7 +32,7 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 
 :::info 重要
 
-此插件需要 APISIX 在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 环境上运行。更多信息请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
+此插件需要 APISIX 在 [APISIX-Runtime](../FAQ.md#如何构建-apisix-runtime-环境) 环境上运行。更多信息请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
 
 :::
 
@@ -75,9 +75,9 @@ curl -i http://127.0.0.1:9080/upload -d @very_big_file
 
 如果在错误日志中没有找到关于 "a client request body is buffered to a temporary file" 的信息，则说明插件生效。
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

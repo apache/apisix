@@ -154,6 +154,97 @@ fi
 
 echo "pass: missing admin key and show ERROR message"
 
+# missing admin key, only allow 127.0.0.0/24 to access admin api
+
+echo '
+deployment:
+  admin:
+    admin_key: ~
+    allow_admin:
+      - 127.0.0.0/24
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should not show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key: ~
+    allow_admin:
+      - 0.0.0.0/0
+      - 127.0.0.0/24
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo "pass: missing admin key and only allow 127.0.0.0/24 to access admin api"
+
+# allow any IP to access admin api with empty admin_key, when admin_key_required=true
+
+git checkout conf/config.yaml
+
+echo '
+deployment:
+  admin:
+    admin_key_required: true
+    admin_key: ~
+    allow_admin:
+      - 0.0.0.0/0
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key_required: false
+    admin_key: ~
+    allow_admin:
+      - 0.0.0.0/0
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
+    echo "failed: should not show 'ERROR: missing valid Admin API token.'"
+    exit 1
+fi
+
+if ! grep -E "Warning! Admin key is bypassed" output.log > /dev/null; then
+    echo "failed: should show 'Warning! Admin key is bypassed'"
+    exit 1
+fi
+
+echo '
+deployment:
+  admin:
+    admin_key_required: invalid-value
+' > conf/config.yaml
+
+make init > output.log 2>&1 | true
+
+if grep -E "path[deployment->admin->admin_key_required] expect: boolean, but got: string" output.log > /dev/null; then
+    echo "check admin_key_required value failed: should show 'expect: boolean, but got: string'"
+    exit 1
+fi
+
+echo "pass: allow empty admin_key, when admin_key_required=false"
+
 # admin api, allow any IP but use default key
 
 echo '
@@ -340,8 +431,8 @@ fi
 sleep 0.5
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; -o \
-   ! grep -E 'new plugins: {"node-status":true,"public-api":true}' logs/error.log; then
+if ! grep logs/error.log -E -e 'new plugins: {"public-api":true,"node-status":true}' \
+   -e 'new plugins: {"node-status":true,"public-api":true}'; then
     echo "failed: first time load http plugins list failed"
     exit 1
 fi
@@ -369,8 +460,8 @@ if [ ! $code -eq 200 ]; then
 fi
 
 # check http plugins load list
-if ! grep -E 'new plugins: {"public-api":true,"node-status":true}' logs/error.log; -o \
-   ! grep -E 'new plugins: {"node-status":true,"public-api":true}' logs/error.log; then
+if ! grep logs/error.log -E -e 'new plugins: {"public-api":true,"node-status":true}' \
+   -e 'new plugins: {"node-status":true,"public-api":true}'; then
     echo "failed: second time load http plugins list failed"
     exit 1
 fi

@@ -27,7 +27,7 @@ APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。在 ngi
 
 ## 如何开启 Stream 代理
 
-在 `conf/config.yaml` 配置文件设置 `stream_proxy` 选项，指定一组需要进行动态代理的 IP 地址。默认情况不开启 stream 代理。
+要启用该选项，请将 `apisix.proxy_mode` 设置为 `stream` 或 `http&stream`，具体取决于您是只需要流代理还是需要 http 和流。然后在 conf/config.yaml 中添加 apisix.stream_proxy 选项并指定 APISIX 应充当流代理并侦听传入请求的地址列表。
 
 ```yaml
 apisix:
@@ -38,19 +38,6 @@ apisix:
     udp: # UDP proxy address list
       - 9200
       - "127.0.0.1:9211"
-```
-
-如果 `apisix.enable_admin` 为 true，上面的配置会同时启用 HTTP 和 stream 代理。
-
-如果你设置 `enable_admin` 为 false，且需要同时启用 HTTP 和 stream 代理，设置 `only` 为 false：
-
-```yaml
-apisix:
-  enable_admin: false
-  stream_proxy: # TCP/UDP proxy
-    only: false
-    tcp: # TCP proxy address list
-      - 9100
 ```
 
 ## 如何设置 route
@@ -114,7 +101,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 2. 现在运行一个 mysql docker 容器并将端口 3306 暴露给主机
 
    ```shell
-   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql
+   $ docker run --name mysql -e MYSQL_ROOT_PASSWORD=toor -p 3306:3306 -d mysql mysqld --default-authentication-plugin=mysql_native_password
    # check it using a mysql client that it works
    $ mysql --host=127.0.0.1 --port=3306 -u root -p
    Enter password:

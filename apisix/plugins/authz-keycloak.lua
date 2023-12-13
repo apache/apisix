@@ -20,6 +20,7 @@ local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
 local plugin_name = "authz-keycloak"
+local fetch_secrets    = require("apisix.secret").fetch_secrets
 
 local log = core.log
 local pairs = pairs
@@ -757,6 +758,8 @@ local function generate_token_using_password_grant(conf,ctx)
 end
 
 function _M.access(conf, ctx)
+    -- resolve secrets
+    conf = fetch_secrets(conf)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and

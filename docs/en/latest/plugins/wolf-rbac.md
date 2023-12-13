@@ -60,7 +60,7 @@ To use this Plugin, you have to first [install wolf](https://github.com/iGeeky/w
 
 Once you have done that you need to add `application`, `admin`, `normal user`, `permission`, `resource` and user authorize to the [wolf-console](https://github.com/iGeeky/wolf/blob/master/docs/usage.md).
 
-## Enabling the Plugin
+## Enable Plugin
 
 You need to first configure the Plugin on a Consumer:
 
@@ -266,9 +266,9 @@ HTTP/1.1 200 OK
 {"message":"success to change password"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `wolf-rbac` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `wolf-rbac` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

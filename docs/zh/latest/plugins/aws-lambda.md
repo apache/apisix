@@ -42,7 +42,7 @@ description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信�
 | function_uri         | string  | 是       |         |              | 触发 lambda serverless 函数的 AWS API Gateway 端点。        |
 | authorization        | object  | 否       |         |              | 访问云函数的授权凭证。                                       |
 | authorization.apikey | string  | 否       |         |              | 生成的 API 密钥，用于授权对 AWS Gateway 端点的请求。         |
-| authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。 请参考 [IAM 授权方案](#iam-授权方案)。 |
+| authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。请参考 [IAM 授权方案](#iam-授权方案)。 |
 | timeout              | integer | 否       | 3000    | [100,...]    | 代理请求超时（以毫秒为单位）。                                 |
 | ssl_verify           | boolean | 否       | true    | true/false   | 当设置为 `true` 时执行 SSL 验证。                          |
 | keepalive            | boolean | 否       | true    | true/false   | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
@@ -199,9 +199,9 @@ Content-Type: application/json
 "Hello, APISIX!"
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

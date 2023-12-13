@@ -34,16 +34,16 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 
 ## 属性
 
-| 名称                          | 类型            | 必选项 | 默认值   | 有效值             | 描述                                                                                                                                  |
-|-----------------------------|---------------| ----- |-------| ---------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| uri                         | string        | 否    |       |                                                                                                                                        | 转发到上游的新 `uri` 地址。支持 [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) 变量，例如：`$arg_name`。  |
-| method                      | string        | 否    |       | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | 将路由的请求方法代理为该请求方法。 |
-| regex_uri                   | array[string] | 否    |       |                                                                                                                                        | 转发到上游的新 `uri` 地址。使用正则表达式匹配来自客户端的 `uri`，如果匹配成功，则使用模板替换转发到上游的 `uri`，如果没有匹配成功，则将客户端请求的 `uri` 转发至上游。当同时配置 `uri` 和 `regex_uri` 属性时，优先使用 `uri`。例如：["^/iresty/(.*)/(.*)/(.*)","/$1-$2-$3"] 第一个元素代表匹配来自客户端请求的 `uri` 正则表达式，第二个元素代表匹配成功后转发到上游的 `uri` 模板。但是目前 APISIX 仅支持一个 `regex_uri`，所以 `regex_uri` 数组的长度是 `2`。 |
-| host                        | string        | 否    |       |                   | 转发到上游的新 `host` 地址，例如：`iresty.com`。|
-| headers                     | object        | 否    |       |                   |   |
-| headers.add                 | object        | 否     |       |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name: value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                              |
-| headers.set                 | object        | 否     |       |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
-| headers.remove              | array         | 否     |       |                 | 移除请求头。格式为 `["name", ...]`。 |
+| 名称      | 类型          | 必选项 | 默认值 | 有效值             | 描述                                                                                                                                  |
+| --------- | ------------- | ----- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| uri       | string        | 否    |         |                                                                                                                                        | 转发到上游的新 `uri` 地址。支持 [NGINX variables](https://nginx.org/en/docs/http/ngx_http_core_module.html) 变量，例如：`$arg_name`。  |
+| method    | string        | 否    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | 将路由的请求方法代理为该请求方法。 |
+| regex_uri | array[string] | 否    |         |                                                                                                                                        | 使用正则表达式匹配来自客户端的 `uri`，如果匹配成功，则使用模板替换转发到上游的 `uri`，如果没有匹配成功，则将客户端请求的 `uri` 转发至上游。当同时配置 `uri` 和 `regex_uri` 属性时，优先使用 `uri`。当前支持多组正则表达式进行模式匹配，插件将逐一尝试匹配直至成功或全部失败。例如：`["^/iresty/(.*)/(.*)/(.*)", "/$1-$2-$3", ^/theothers/(.*)/(.*)", "/theothers/$1-$2"]`，奇数索引的元素代表匹配来自客户端请求的 `uri` 正则表达式，偶数索引的元素代表匹配成功后转发到上游的 `uri` 模板。请注意该值的长度必须为**偶数值**。 |
+| host      | string        | 否    |         |                   | 转发到上游的新 `host` 地址，例如：`iresty.com`。|
+| headers   | object        | 否    |         |                   |   |
+| headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                              |
+| headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                           |
+| headers.remove  | array   | 否     |        |                 | 移除请求头。格式为 `["name", ...]`。|
 | use_real_request_uri_unsafe | boolean       | 否     | false |                 | 使用 real_request_uri（nginx 中的原始 $request_uri）绕过 URI 规范化。启用它被认为是不安全的，因为它会绕过所有 URI 规范化步骤。|
 
 ## Header 优先级
@@ -104,7 +104,7 @@ curl -X GET http://127.0.0.1:9080/test/index.html
 127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `proxy-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

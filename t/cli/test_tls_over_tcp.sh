@@ -22,8 +22,8 @@
 # check tls over tcp proxy
 echo "
 apisix:
+    proxy_mode: http&stream
     stream_proxy:
-        only: false
         tcp:
             - addr: 9100
               tls: true

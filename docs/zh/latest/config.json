@@ -1,9 +1,16 @@
 {
-  "version": "3.2.0",
+  "version": "3.7.0",
   "sidebar": [
     {
-      "type": "doc",
-      "id": "getting-started"
+      "type": "category",
+      "label": "Getting Started",
+      "items": [
+        "getting-started/README",
+        "getting-started/configure-routes",
+        "getting-started/load-balancing",
+        "getting-started/key-authentication",
+        "getting-started/rate-limiting"
+      ]
     },
     {
       "type": "doc",
@@ -104,7 +111,8 @@
             "plugins/consumer-restriction",
             "plugins/csrf",
             "plugins/public-api",
-            "plugins/gm"
+            "plugins/gm",
+            "plugins/chaitin-waf"
           ]
         },
         {
@@ -166,7 +174,8 @@
                 "plugins/file-logger",
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
-                "plugins/tencent-cloud-cls"
+                "plugins/tencent-cloud-cls",
+                "plugins/loki-logger"
               ]
             }
           ]
@@ -213,6 +222,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "support-fips-in-apisix"
         },
         {
           "type": "doc",
@@ -299,6 +312,10 @@
         {
           "type": "doc",
           "id": "profile"
+        },
+        {
+          "type": "doc",
+          "id": "ssl-protocol"
         }
       ]
     },

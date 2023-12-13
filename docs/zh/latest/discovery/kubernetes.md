@@ -32,13 +32,7 @@ description: 本文将介绍如何在 Apache APISIX 中基于 Kubernetes 进行�
 
 Kubernetes 服务发现以 [_List-Watch_](https://kubernetes.io/docs/reference/using-api/api-concepts) 方式监听 [_Kubernetes_](https://kubernetes.io) 集群 [_Endpoints_](https://kubernetes.io/docs/concepts/services-networking/service) 资源的实时变化，并将其值存储到 ngx.shared.DICT 中。
 
-同时遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供了节点查询接口。
-
-:::note
-
-在四层中使用 Kubernetes 服务发现要求 OpenResty 版本大于等于 1.19.9.1
-
-:::
+同时遵循 [_APISIX Discovery 规范_](../discovery.md) 提供了节点查询接口。
 
 ## Kubernetes 服务发现的使用
 
@@ -122,13 +116,13 @@ discovery:
 
 ### 单集群模式 Kubernetes 服务发现的查询接口
 
-单集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供节点查询接口。
+单集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](../discovery.md) 提供节点查询接口。
 
 **函数：**
 nodes(service_name)
 
 **说明：**
-service_name 必须满足格式: [namespace]/[name]:[portName]
+service_name 必须满足格式：[namespace]/[name]:[portName]
 
 + namespace: Endpoints 所在的命名空间
 
@@ -231,13 +225,13 @@ discovery:
 
 ### 多集群模式 Kubernetes 服务发现的查询接口
 
-多集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](https://github.com/apache/apisix/blob/master/docs/zh/latest/discovery.md) 提供节点查询接口。
+多集群模式 Kubernetes 服务发现遵循 [_APISIX Discovery 规范_](../discovery.md) 提供节点查询接口。
 
 **函数：**
 nodes(service_name)
 
 **说明：**
-service_name 必须满足格式: [id]/[namespace]/[name]:[portName]
+service_name 必须满足格式：[id]/[namespace]/[name]:[portName]
 
 + id: Kubernetes 服务发现配置中定义的集群 id 值
 
@@ -336,7 +330,7 @@ subjects:
 
 **Q: 怎样获取指定 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 的 Token 值？**
 
-A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 资源名为 “kubernetes-discovery“, 命名空间为 “apisix”, 请按如下步骤获取其 Token 值。
+A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 资源名为“kubernetes-discovery“, 命名空间为“apisix”, 请按如下步骤获取其 Token 值。
 
  1. 获取 _Secret_ 资源名。执行以下命令，输出的第一列内容就是目标 _Secret_ 资源名：
 

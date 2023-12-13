@@ -27,6 +27,10 @@ local json         = require("apisix.core.json")
 local etcd_apisix  = require("apisix.core.etcd")
 local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
+local inspect      = require("inspect")
+local errlog       = require("ngx.errlog")
+local log_level    = errlog.get_sys_filter_level()
+local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
@@ -43,9 +47,17 @@ local xpcall       = xpcall
 local debug        = debug
 local string       = string
 local error        = error
+local pairs        = pairs
+local next         = next
+local assert       = assert
 local rand         = math.random
 local constants    = require("apisix.constants")
 local health_check = require("resty.etcd.health_check")
+local semaphore    = require("ngx.semaphore")
+local tablex       = require("pl.tablex")
+local ngx_thread_spawn = ngx.thread.spawn
+local ngx_thread_kill = ngx.thread.kill
+local ngx_thread_wait = ngx.thread.wait
 
 
 local is_http = ngx.config.subsystem == "http"
@@ -58,6 +70,7 @@ if not is_http then
 end
 local created_obj  = {}
 local loaded_configuration = {}
+local watch_ctx
 
 
 local _M = {
@@ -73,6 +86,243 @@ local mt = {
         return " etcd key: " .. self.key
     end
 }
+
+
+local get_etcd
+do
+    local etcd_cli
+
+    function get_etcd()
+        if etcd_cli ~= nil then
+            return etcd_cli
+        end
+
+        local _, err
+        etcd_cli, _, err = etcd_apisix.get_etcd_syncer()
+        return etcd_cli, err
+    end
+end
+
+
+local function cancel_watch(http_cli)
+    local res, err = watch_ctx.cli:watchcancel(http_cli)
+    if res == 1 then
+        log.info("cancel watch connection success")
+    else
+        log.error("cancel watch failed: ", err)
+    end
+end
+
+
+-- append res to the queue and notify pending watchers
+local function produce_res(res, err)
+    if log_level >= NGX_INFO then
+        log.info("append res: ", inspect(res), ", err: ", inspect(err))
+    end
+    insert_tab(watch_ctx.res, {res=res, err=err})
+    for _, sema in pairs(watch_ctx.sema) do
+        sema:post()
+    end
+    table.clear(watch_ctx.sema)
+end
+
+
+local function do_run_watch(premature)
+    if premature then
+        return
+    end
+
+    local local_conf, err = config_local.local_conf()
+    if not local_conf then
+        error("no local conf: " .. err)
+    end
+    watch_ctx.prefix = local_conf.etcd.prefix .. "/"
+
+    watch_ctx.cli, err = get_etcd()
+    if not watch_ctx.cli then
+        error("failed to create etcd instance: " .. string(err))
+    end
+
+    local rev = 0
+    if loaded_configuration then
+        local _, res = next(loaded_configuration)
+        if res then
+            rev = tonumber(res.headers["X-Etcd-Index"])
+            assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
+        end
+    end
+
+    if rev == 0 then
+        while true do
+            local res, err = watch_ctx.cli:get(watch_ctx.prefix)
+            if not res then
+                log.error("etcd get: ", err)
+                ngx_sleep(3)
+            else
+                rev = tonumber(res.body.header.revision)
+                break
+            end
+        end
+    end
+
+    watch_ctx.rev = rev + 1
+    watch_ctx.started = true
+
+    log.info("main etcd watcher started, revision=", watch_ctx.rev)
+
+    if watch_ctx.wait_init then
+        for _, sema in pairs(watch_ctx.wait_init) do
+            sema:post()
+        end
+        watch_ctx.wait_init = nil
+    end
+
+    local opts = {}
+    opts.timeout = 50 -- second
+    opts.need_cancel = true
+    opts.start_revision = watch_ctx.rev
+
+    log.info("restart watchdir: start_revision=", opts.start_revision)
+
+    local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
+    if not res_func then
+        log.error("watchdir err: ", err)
+        ngx_sleep(3)
+        return
+    end
+
+    ::watch_event::
+    while true do
+        local res, err = res_func()
+        if log_level >= NGX_INFO then
+            log.info("res_func: ", inspect(res))
+        end
+
+        if not res then
+            if err ~= "closed" and
+                err ~= "timeout" and
+                err ~= "broken pipe"
+            then
+                log.error("wait watch event: ", err)
+            end
+            cancel_watch(http_cli)
+            break
+        end
+
+        if res.error then
+            log.error("wait watch event: ", inspect(res.error))
+            cancel_watch(http_cli)
+            break
+        end
+
+        if res.result.created then
+            goto watch_event
+        end
+
+        if res.result.canceled then
+            log.warn("watch canceled by etcd, res: ", inspect(res))
+            if res.result.compact_revision then
+                watch_ctx.rev = tonumber(res.result.compact_revision)
+                log.warn("etcd compacted, compact_revision=", watch_ctx.rev)
+                produce_res(nil, "compacted")
+            end
+            cancel_watch(http_cli)
+            break
+        end
+
+        -- cleanup
+        local min_idx = 0
+        for _, idx in pairs(watch_ctx.idx) do
+            if (min_idx == 0) or (idx < min_idx) then
+                min_idx = idx
+            end
+        end
+
+        for i = 1, min_idx - 1 do
+            watch_ctx.res[i] = false
+        end
+
+        if min_idx > 100 then
+            for k, idx in pairs(watch_ctx.idx) do
+                watch_ctx.idx[k] = idx - min_idx + 1
+            end
+            -- trim the res table
+            for i = 1, min_idx - 1 do
+                table.remove(watch_ctx.res, 1)
+            end
+        end
+
+        local rev = tonumber(res.result.header.revision)
+        if rev > watch_ctx.rev then
+            watch_ctx.rev = rev + 1
+        end
+        produce_res(res)
+    end
+end
+
+
+local function run_watch(premature)
+    local run_watch_th, err = ngx_thread_spawn(do_run_watch, premature)
+    if not run_watch_th then
+        log.error("failed to spawn thread do_run_watch: ", err)
+        return
+    end
+
+    local check_worker_th, err = ngx_thread_spawn(function ()
+        while not exiting() do
+            ngx_sleep(0.1)
+        end
+    end)
+    if not check_worker_th then
+        log.error("failed to spawn thread check_worker: ", err)
+        return
+    end
+
+    local ok, err = ngx_thread_wait(run_watch_th, check_worker_th)
+    if not ok then
+        log.error("check_worker thread terminates failed, retart checker, error: " .. err)
+    end
+
+    ngx_thread_kill(run_watch_th)
+    ngx_thread_kill(check_worker_th)
+
+    if not exiting() then
+        ngx_timer_at(0, run_watch)
+    else
+        -- notify child watchers
+        produce_res(nil, "worker exited")
+    end
+end
+
+
+local function init_watch_ctx(key)
+    if not watch_ctx then
+        watch_ctx = {
+            idx = {},
+            res = {},
+            sema = {},
+            wait_init = {},
+            started = false,
+        }
+        ngx_timer_at(0, run_watch)
+    end
+
+    if watch_ctx.started == false then
+        -- wait until the main watcher is started
+        local sema, err = semaphore.new()
+        if not sema then
+            error(err)
+        end
+        watch_ctx.wait_init[key] = sema
+        while true do
+            local ok, err = sema:wait(60)
+            if ok then
+                break
+            end
+            log.error("wait main watcher to start, key: ", key, ", err: ", err)
+        end
+    end
+end
 
 
 local function getkey(etcd_cli, key)
@@ -123,79 +373,67 @@ local function readdir(etcd_cli, key, formatter)
 end
 
 
-local function grpc_waitdir(self, etcd_cli, key, modified_index, timeout)
-    local watching_stream = self.watching_stream
-    if not watching_stream then
-        local attr = {}
-        attr.start_revision = modified_index
-        local opts = {}
-        opts.timeout = timeout
+local function http_waitdir(self, etcd_cli, key, modified_index, timeout)
+    if not watch_ctx.idx[key] then
+        watch_ctx.idx[key] = 1
+    end
 
-        local st, err = etcd_cli:create_grpc_watch_stream(key, attr, opts)
-        if not st then
-            log.error("create watch stream failed: ", err)
-            return nil, err
+    ::iterate_events::
+    for i = watch_ctx.idx[key], #watch_ctx.res do
+        watch_ctx.idx[key] = i + 1
+
+        local item = watch_ctx.res[i]
+        if item == false then
+            goto iterate_events
         end
 
-        log.info("create watch stream for key: ", key, ", modified_index: ", modified_index)
+        local res, err = item.res, item.err
+        if err then
+            return res, err
+        end
 
-        self.watching_stream = st
-        watching_stream = st
-    end
+        -- ignore res with revision smaller then self.prev_index
+        if tonumber(res.result.header.revision) > self.prev_index then
+            local res2
+            for _, evt in ipairs(res.result.events) do
+                if core_str.find(evt.kv.key, key) == 1 then
+                    if not res2 then
+                        res2 = tablex.deepcopy(res)
+                        table.clear(res2.result.events)
+                    end
+                    insert_tab(res2.result.events, evt)
+                end
+            end
 
-    return etcd_cli:read_grpc_watch_stream(watching_stream)
-end
-
-
-local function flush_watching_streams(self)
-    local etcd_cli = self.etcd_cli
-    if not etcd_cli.use_grpc then
-        return
-    end
-
-    self.watching_stream = nil
-end
-
-
-local function http_waitdir(etcd_cli, key, modified_index, timeout)
-    local opts = {}
-    opts.start_revision = modified_index
-    opts.timeout = timeout
-    opts.need_cancel = true
-    local res_func, func_err, http_cli = etcd_cli:watchdir(key, opts)
-    if not res_func then
-        return nil, func_err
-    end
-
-    -- in etcd v3, the 1st res of watch is watch info, useless to us.
-    -- try twice to skip create info
-    local res, err = res_func()
-    if not res or not res.result or not res.result.events then
-        res, err = res_func()
-    end
-
-    if http_cli then
-        local res_cancel, err_cancel = etcd_cli:watchcancel(http_cli)
-        if res_cancel == 1 then
-            log.info("cancel watch connection success")
-        else
-            log.error("cancel watch failed: ", err_cancel)
+            if res2 then
+                if log_level >= NGX_INFO then
+                    log.info("http_waitdir: ", inspect(res2))
+                end
+                return res2
+            end
         end
     end
 
-    if not res then
-        return nil, err
+    -- if no events, wait via semaphore
+    if not self.watch_sema then
+        local sema, err = semaphore.new()
+        if not sema then
+            error(err)
+        end
+        self.watch_sema = sema
     end
 
-    if type(res.result) ~= "table" then
-        err = "failed to wait etcd dir"
-        if res.error and res.error.message then
-            err = err .. ": " .. res.error.message
+    watch_ctx.sema[key] = self.watch_sema
+    local ok, err = self.watch_sema:wait(timeout or 60)
+    watch_ctx.sema[key] = nil
+    if ok then
+        goto iterate_events
+    else
+        if err ~= "timeout" then
+            log.error("wait watch event, key=", key, ", err: ", err)
         end
         return nil, err
     end
-
-    return res, err
 end
 
 
@@ -209,12 +447,7 @@ local function waitdir(self)
         return nil, "not inited"
     end
 
-    local res, err
-    if etcd_cli.use_grpc then
-        res, err = grpc_waitdir(self, etcd_cli, key, modified_index, timeout)
-    else
-        res, err = http_waitdir(etcd_cli, key, modified_index, timeout)
-    end
+    local res, err = http_waitdir(self, etcd_cli, key, modified_index, timeout)
 
     if not res then
         -- log.error("failed to get key from etcd: ", err)
@@ -359,9 +592,9 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if self.need_reload then
-        flush_watching_streams(self)
+    init_watch_ctx(self.key)
 
+    if self.need_reload then
         local res, err = readdir(self.etcd_cli, self.key)
         if not res then
             return false, err
@@ -555,22 +788,6 @@ function _M.getkey(self, key)
 end
 
 
-local get_etcd
-do
-    local etcd_cli
-
-    function get_etcd()
-        if etcd_cli ~= nil then
-            return etcd_cli
-        end
-
-        local _, err
-        etcd_cli, _, err = etcd_apisix.get_etcd_syncer()
-        return etcd_cli, err
-    end
-end
-
-
 local function _automatic_fetch(premature, self)
     if premature then
         return
@@ -629,6 +846,9 @@ local function _automatic_fetch(premature, self)
                                        .. backoff_duration .. "s")
                         end
                     end
+                elseif err == "worker exited" then
+                    log.info("worker exited.")
+                    return
                 elseif err ~= "timeout" and err ~= "Key not found"
                     and self.last_err ~= err then
                     log.error("failed to fetch data from etcd: ", err, ", ",
@@ -664,7 +884,6 @@ local function _automatic_fetch(premature, self)
     end
 
     if not exiting() and self.running then
-        flush_watching_streams(self)
         ngx_timer_at(0, _automatic_fetch, self)
     end
 end
@@ -866,10 +1085,6 @@ function _M.init()
         return true
     end
 
-    if local_conf.etcd.use_grpc then
-        return true
-    end
-
     -- don't go through proxy during start because the proxy is not available
     local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
     if not etcd_cli then
@@ -893,21 +1108,6 @@ function _M.init_worker()
 
     if table.try_read_attr(local_conf, "apisix", "disable_sync_configuration_during_start") then
         return true
-    end
-
-    if not local_conf.etcd.use_grpc then
-        return true
-    end
-
-    -- don't go through proxy during start because the proxy is not available
-    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
-    if not etcd_cli then
-        return nil, "failed to start a etcd instance: " .. err
-    end
-
-    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
-    if not res then
-        return nil, err
     end
 
     return true

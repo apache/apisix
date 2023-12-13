@@ -88,6 +88,12 @@ add_block_preprocessor(sub {
                 end
             }
         }
+
+        location / {
+            content_by_lua_block {
+                ngx.log(ngx.WARN, "test http logger for root path")
+            }
+        }
     }
 _EOC_
 
@@ -305,3 +311,49 @@ test-http-logger-request
 --- error_log
 received Authorization header: [nil]
 --- wait: 1.5
+
+
+
+=== TEST 10: add default path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:12001",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:12001": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/http-logger/test"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: hit
+--- request
+GET /http-logger/test
+--- error_log
+test http logger for root path

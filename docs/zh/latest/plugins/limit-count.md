@@ -44,15 +44,18 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 | policy              | string  | 否        | "local"        | ["local", "redis", "redis-cluster"]    | 用于检索和增加限制计数的策略。当设置为 `local` 时，计数器被以内存方式保存在节点本地；当设置为 `redis` 时，计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速；当设置为 `redis-cluster` 时，使用 Redis 集群而不是单个实例。|
 | allow_degradation   | boolean | 否        | false          |                                         | 当插件功能临时不可用时（例如 Redis 超时），当设置为 `true` 时，则表示可以允许插件降级并进行继续请求的操作。 |
 | show_limit_quota_header | boolean | 否    | true          |                                          | 当设置为 `true` 时，在响应头中显示 `X-RateLimit-Limit`（限制的总请求数）和 `X-RateLimit-Remaining`（剩余还可以发送的请求数）字段。 |
-| group               | string | 否         |               | 非空                                    | 配置相同 group 的路由将共享相同的限流计数器。 |
+| group               | string | 否         |               | 非空                                    | 配置相同 group 的路由将共享相同的限流计数器。请勿使用先前使用过的值进行配置，插件将报错。 |
 | redis_host          | string  | 否        |               |                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**|
 | redis_port          | integer | 否        | 6379          | [1,...]                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。|
+| redis_username      | string  | 否        |               |                                         | 若使用 Redis ACL 进行身份验证（适用于 Redis 版本 >=6.0），则需要提供 Redis 用户名。若使用 Redis legacy 方式 `requirepass` 进行身份验证，则只需将密码配置在 `redis_password`。当 `policy` 设置为 `redis` 时使用。|
 | redis_password      | string  | 否        |               |                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。|
+| redis_ssl           | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis` |
+| redis_ssl_verify    | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性，具体请参考 [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
 | redis_database      | integer | 否        | 0             | redis_database >= 0                     | 当使用 `redis` 限速策略时，Redis 服务节点中使用的 `database`，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。|
 | redis_timeout       | integer | 否        | 1000          | [1,...]                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。|
 | redis_cluster_nodes | array   | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**|
 | redis_cluster_name  | string  | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**|
-| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时， 如果设置为 true，则使用 SSL 连接到 `redis-cluster` |
+| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis-cluster` |
 | redis_cluster_ssl_verify  | boolean  | 否        |     false        |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性 |
 
 ## 启用插件
@@ -296,9 +299,9 @@ Server: APISIX web server
 {"error_msg":"Requests are too frequent, please try again later."}
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

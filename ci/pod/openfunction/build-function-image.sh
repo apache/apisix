@@ -23,6 +23,6 @@ if [ ! -f "./pack" ]; then
 fi
 
 # please update function-example/*/hello.go if you want to update function
-./pack build test-uri-image --path ./ci/pod/openfunction/function-example/test-uri  --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://goproxy.cn"
-./pack build test-body-image --path ./ci/pod/openfunction/function-example/test-body --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://goproxy.cn"
-./pack build test-header-image --path ./ci/pod/openfunction/function-example/test-header  --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://goproxy.cn"
+./pack build test-uri-image --path ./ci/pod/openfunction/function-example/test-uri  --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://proxy.golang.org"
+./pack build test-body-image --path ./ci/pod/openfunction/function-example/test-body --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://proxy.golang.org"
+./pack build test-header-image --path ./ci/pod/openfunction/function-example/test-header  --builder openfunction/builder-go:v2.4.0-1.17 --env FUNC_NAME="HelloWorld"  --env FUNC_CLEAR_SOURCE=true --env FUNC_GOPROXY="https://proxy.golang.org"

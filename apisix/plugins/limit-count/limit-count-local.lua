@@ -14,7 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_local_new = require("resty.limit.count").new
+local limit_count = require("resty.limit.count")
+
 local ngx = ngx
 local ngx_time = ngx.time
 local assert = assert
@@ -55,21 +56,18 @@ function _M.new(plugin_name, limit, window)
     assert(limit > 0 and window > 0)
 
     local self = {
-        limit_count = limit_local_new(plugin_name, limit, window),
-        dict = ngx.shared["plugin-limit-count-reset-header"]
+        limit_count = limit_count.new(plugin_name, limit, window),
+        dict = ngx.shared[plugin_name .. "-reset-header"]
     }
 
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key, commit, conf)
-    local delay, remaining = self.limit_count:incoming(key, commit)
-    local reset = 0
-    if not delay then
-        return delay, remaining, reset
-    end
+function _M.incoming(self, key, commit, conf, cost)
+    local delay, remaining = self.limit_count:incoming(key, commit, cost)
+    local reset
 
-    if remaining == conf.count - 1 then
+    if remaining == conf.count - cost then
         reset = set_endtime(self, key, conf.time_window)
     else
         reset = read_reset(self, key)

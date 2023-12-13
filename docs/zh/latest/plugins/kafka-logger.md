@@ -45,7 +45,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 | brokers.sasl_config.password   | string  | 是     |                  |             | Kafka broker 中 sasl 配置中的 password，如果 sasl_config 存在，则必须填写             |
 | kafka_topic            | string  | 是     |                |                       | 需要推送的 topic。                                 |
 | producer_type          | string  | 否     | async          | ["async", "sync"]     | 生产者发送消息的模式。          |
-| required_acks          | integer | 否     | 1              | [0, 1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。  |
+| required_acks          | integer | 否     | 1              | [1, -1]            | 生产者在确认一个请求发送完成之前需要收到的反馈信息的数量。该参数是为了保证发送请求的可靠性。该属性的配置与 Kafka `acks` 属性相同，具体配置请参考 [Apache Kafka 文档](https://kafka.apache.org/documentation/#producerconfigs_acks)。required_acks 还不支持为 0。  |
 | key                    | string  | 否     |                |                       | 用于消息分区而分配的密钥。                             |
 | timeout                | integer | 否     | 3              | [1,...]               | 发送数据的超时时间。                             |
 | name                   | string  | 否     | "kafka logger" |                       | batch processor 的唯一标识。                     |
@@ -132,7 +132,7 @@ description: API 网关 Apache APISIX 的 kafka-logger 插件用于将日志作�
 
 | 名称             | 类型    | 必选项 | 默认值        |  描述                                             |
 | ---------------- | ------- | ------ | ------------- |------------------------------------------------ |
-| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否   |   | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::note 注意
 
@@ -214,9 +214,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

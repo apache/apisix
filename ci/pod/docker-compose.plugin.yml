@@ -23,36 +23,23 @@ services:
     # The latest image is the latest stable version
     image: redis:latest
     restart: unless-stopped
+    volumes:
+      - ./t/certs:/certs
+    command: "--tls-port 6380 \
+            --tls-cert-file /certs/mtls_server.crt \
+            --tls-key-file /certs/mtls_server.key \
+            --tls-ca-cert-file /certs/mtls_ca.crt \
+            --tls-auth-clients no \
+            --user alice on +@all ~* \\&* \\>somepassword"
     ports:
       - "6379:6379"
+      - "6380:6380"
     networks:
       apisix_net:
-
 
   ## keycloak
   apisix_keycloak:
-    image: sshniro/keycloak-apisix:1.0.0
-    environment:
-      KEYCLOAK_USER: admin
-      KEYCLOAK_PASSWORD: 123456
-    restart: unless-stopped
-    ports:
-      - "8090:8080"
-      - "8443:8443"
-    networks:
-      apisix_net:
-
-  ## keycloak
-  # The keycloak official has two types of docker images:
-  # * legacy WildFly distribution
-  # * new Quarkus based distribution
-  # Here we choose new version, because it's mainstream and
-  # supports kcadm.sh to init the container for test.
-  # The original keycloak service `apisix_keycloak` is
-  # third-party personal customized image and for OIDC test only.
-  # We should unify both containers in future.
-  apisix_keycloak_new:
-    container_name: apisix_keycloak_new
+    container_name: apisix_keycloak
     image: quay.io/keycloak/keycloak:18.0.2
     # use host network because in CAS auth,
     # keycloak needs to send back-channel POST to apisix.
@@ -60,10 +47,16 @@ services:
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin
+      KC_HTTPS_CERTIFICATE_FILE: /opt/keycloak/conf/server.crt.pem
+      KC_HTTPS_CERTIFICATE_KEY_FILE: /opt/keycloak/conf/server.key.pem
     restart: unless-stopped
-    command: ["start-dev", "--http-port 8080"]
+    command: ["start-dev"]
     volumes:
       - /opt/keycloak-protocol-cas-18.0.2.jar:/opt/keycloak/providers/keycloak-protocol-cas-18.0.2.jar
+      - ./ci/pod/keycloak/server.crt.pem:/opt/keycloak/conf/server.crt.pem
+      - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
+      - ./ci/pod/keycloak/kcadm_configure_cas.sh:/tmp/kcadm_configure_cas.sh
+      - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
 
   ## kafka-cluster
   zookeeper-server1:
@@ -150,6 +143,15 @@ services:
       - ./t/certs:/certs
 
 
+  ## Grafana Loki
+  loki:
+    image: grafana/loki:2.8.0
+    command: -config.file=/etc/loki/local-config.yaml -auth.enabled -querier.multi-tenant-queries-enabled
+    ports:
+      - "3100:3100"
+    networks:
+      - loki_net
+
   rocketmq_namesrv:
     image: apacherocketmq/rocketmq:4.6.0
     container_name: rmqnamesrv
@@ -180,8 +182,11 @@ services:
     restart: unless-stopped
     ports:
       - 8181:8181
-    command: run -s /example.rego /echo.rego /data.json
+    command: run -s /example.rego /echo.rego /data.json /with_route.rego
     volumes:
+      - type: bind
+        source: ./ci/pod/opa/with_route.rego
+        target: /with_route.rego
       - type: bind
         source: ./ci/pod/opa/example.rego
         target: /example.rego
@@ -193,18 +198,6 @@ services:
         target: /data.json
     networks:
       opa_net:
-
-  # Splunk HEC Logging Service
-  splunk:
-    image: splunk/splunk:8.2.3
-    restart: unless-stopped
-    ports:
-      - "18088:8088"
-    environment:
-      SPLUNK_PASSWORD: "ApacheAPISIX@666"
-      SPLUNK_START_ARGS: "--accept-license"
-      SPLUNK_HEC_TOKEN: "BD274822-96AA-4DA6-90EC-18940FB2414C"
-      SPLUNK_HEC_SSL: "False"
 
   # Elasticsearch Logger Service
   elasticsearch-noauth:
@@ -319,9 +312,52 @@ services:
     ports:
       - '8888:8080'
 
+  vector:
+    image: timberio/vector:0.29.1-debian
+    container_name: vector
+    volumes:
+      - ./ci/pod/vector:/etc/vector/
+      - ./t/certs:/certs
+    ports:
+      - '3000:3000' #tcp logger
+      - '8127:8127/udp'
+      - '43000:43000'
+      - '5140:5140'
+      - "18088:18088" # For splunk logging tests
+      - '5150:5150/udp'
+      - "3001:3001" #http logger
+    networks:
+      vector_net:
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse
+    ports:
+      - '8123:8123'
+    networks:
+      clickhouse_net:
+
+  clickhouse2:
+    image: clickhouse/clickhouse-server:23.4.2-alpine
+    container_name: clickhouse2
+    ports:
+      - '8124:8123'
+    networks:
+      clickhouse_net:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib
+    volumes:
+    - ./ci/pod/otelcol-contrib:/etc/otelcol-contrib:rw
+    ports:
+      - '4318:4318'
+
+
 networks:
   apisix_net:
   kafka_net:
   skywalk_net:
   rocketmq_net:
   opa_net:
+  vector_net:
+  clickhouse_net:
+  loki_net:

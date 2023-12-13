@@ -34,7 +34,7 @@ The `dubbo-proxy` Plugin allows you to proxy HTTP requests to [Apache Dubbo](htt
 
 :::info IMPORTANT
 
-If you are using OpenResty, you need to build it with Dubbo support. See [How do I build the APISIX base environment](./../FAQ.md#how-do-i-build-the-apisix-base-environment) for details.
+If you are using OpenResty, you need to build it with Dubbo support. See [How do I build the APISIX runtime environment](./../FAQ.md#how-do-i-build-the-apisix-runtime-environment) for details.
 
 :::
 
@@ -52,7 +52,7 @@ If you are using OpenResty, you need to build it with Dubbo support. See [How do
 | ------------------------ | ------ | -------- | ------- | ------------ | --------------------------------------------------------------- |
 | upstream_multiplex_count | number | True | 32      | >= 1         | Maximum number of multiplex requests in an upstream connection. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the `dubbo-proxy` Plugin, you have to add it in your configuration file (`conf/config.yaml`):
 
@@ -118,9 +118,9 @@ header2: value2
 body of the message
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `dubbo-proxy` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `dubbo-proxy` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

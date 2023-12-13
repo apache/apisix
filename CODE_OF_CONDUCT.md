@@ -65,7 +65,7 @@ We strive to:
        * Repeated harassment of others. In general, if someone asks you to stop, then stop.
        * Advocating for, or encouraging, any of the above behaviour.
 
-6. __Be concise.__ Keep in mind that what you write once will be read by hundreds of persons. Writing a short email means people can understand the conversation as efficiently as possible. Short emails should always strive to be empathetic, welcoming, friendly and patient. When a long explanation is necessary, consider adding a summary.</p>
+6. __Be concise.__ Keep in mind that what you write once will be read by hundreds of people. Writing a short email means people can understand the conversation as efficiently as possible. Short emails should always strive to be empathetic, welcoming, friendly and patient. When a long explanation is necessary, consider adding a summary.</p>
 
       Try to bring new ideas to a conversation so that each mail adds something unique to the thread, keeping in mind that the rest of the thread still contains the other messages with arguments that have already been made.
 

@@ -17,10 +17,15 @@
 
 set -ex
 
+export_version_info() {
+    source ./.requirements
+}
+
 export_or_prefix() {
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
-    export APISIX_MAIN="https://raw.githubusercontent.com/apache/incubator-apisix/master/rockspec/apisix-master-0.rockspec"
+    export OPENRESTY_PREFIX="/usr/local/openresty"
+    export APISIX_MAIN="https://raw.githubusercontent.com/apache/apisix/master/apisix-master-0.rockspec"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/luajit/bin:$OPENRESTY_PREFIX/bin:$PATH
+    export OPENSSL111_BIN=$OPENRESTY_PREFIX/openssl111/bin/openssl
 }
 
 create_lua_deps() {
@@ -56,6 +61,20 @@ rerun_flaky_tests() {
     FLUSH_ETCD=1 prove --timer -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
+install_curl () {
+    CURL_VERSION="7.88.0"
+    wget -q https://curl.se/download/curl-${CURL_VERSION}.tar.gz
+    tar -xzf curl-${CURL_VERSION}.tar.gz
+    cd curl-${CURL_VERSION}
+    ./configure --prefix=/usr/local --with-openssl --with-nghttp2
+    make
+    sudo make install
+    sudo ldconfig
+    cd ..
+    rm -rf curl-${CURL_VERSION}
+    curl -V
+}
+
 install_grpcurl () {
     # For more versions, visit https://github.com/fullstorydev/grpcurl/releases
     GRPCURL_VERSION="1.8.5"
@@ -75,7 +94,7 @@ install_nodejs () {
     NODEJS_PREFIX="/usr/local/node"
     NODEJS_VERSION="16.13.1"
     wget -q https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    tar -xvf node-v${NODEJS_VERSION}-linux-x64.tar.xz
+    tar -xf node-v${NODEJS_VERSION}-linux-x64.tar.xz
     rm -f /usr/local/bin/node
     rm -f /usr/local/bin/npm
     mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
@@ -83,6 +102,23 @@ install_nodejs () {
     ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
 
     npm config set registry https://registry.npmjs.org/
+}
+
+install_brotli () {
+    local BORTLI_VERSION="1.1.0"
+    wget -q https://github.com/google/brotli/archive/refs/tags/v${BORTLI_VERSION}.zip
+    unzip v${BORTLI_VERSION}.zip && cd ./brotli-${BORTLI_VERSION} && mkdir build && cd build
+    local CMAKE=$(command -v cmake3 > /dev/null 2>&1 && echo cmake3 || echo cmake)
+    ${CMAKE} -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=/usr/local/brotli ..
+    sudo ${CMAKE} --build . --config Release --target install
+    if [ -d "/usr/local/brotli/lib64" ]; then
+        echo /usr/local/brotli/lib64 | sudo tee /etc/ld.so.conf.d/brotli.conf
+    else
+        echo /usr/local/brotli/lib | sudo tee /etc/ld.so.conf.d/brotli.conf
+    fi
+    sudo ldconfig
+    cd ../..
+    rm -rf brotli-${BORTLI_VERSION}
 }
 
 set_coredns() {
@@ -125,6 +161,9 @@ set_coredns() {
     pushd t/coredns || exit 1
     ../../build-cache/coredns -dns.port=1053 &
     popd || exit 1
+
+    touch build-cache/test_resolve.conf
+    echo "nameserver 127.0.0.1:1053" > build-cache/test_resolve.conf
 }
 
 GRPC_SERVER_EXAMPLE_VER=20210819
@@ -132,4 +171,25 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 linux_get_dependencies () {
     apt update
     apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
+}
+
+function start_grpc_server_example() {
+    ./t/grpc_server_example/grpc_server_example \
+        -grpc-address :10051 -grpcs-address :10052 -grpcs-mtls-address :10053 -grpc-http-address :10054 \
+        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
+        > grpc_server_example.log 2>&1 &
+
+    for (( i = 0; i <= 10; i++ )); do
+        sleep 0.5
+        GRPC_PROC=`ps -ef | grep grpc_server_example | grep -v grep || echo "none"`
+        if [[ $GRPC_PROC == "none" || "$i" -eq 10 ]]; then
+            echo "failed to start grpc_server_example"
+            ss -antp | grep 1005 || echo "no proc listen port 1005x"
+            cat grpc_server_example.log
+
+            exit 1
+        fi
+
+        ss -lntp | grep 10051 | grep grpc_server && break
+    done
 }

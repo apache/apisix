@@ -1,5 +1,10 @@
 ---
 title: Mutual TLS Authentication
+keywords:
+  - Apache APISIX
+  - Mutual TLS
+  - mTLS
+description: This document describes how you can secure communication to and within APISIX with mTLS.
 ---
 
 <!--
@@ -68,7 +73,7 @@ curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /
 
 ### How to configure
 
-You need to build [APISIX-Base](./FAQ.md#how-do-i-build-the-apisix-base-environment) and configure `etcd.tls` section if you want APISIX to work on an etcd cluster with mTLS enabled.
+You need to configure `etcd.tls` for APISIX to work on an etcd cluster with mTLS enabled as shown below:
 
 ```yaml title="conf/config.yaml"
 deployment:
@@ -163,7 +168,7 @@ Sometimes the upstream requires mTLS. In this situation, the APISIX acts as the 
 
 When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.client_key` to configure the client certificate APISIX used to communicate with upstreams. Please refer to [Admin API](./admin-api.md#upstream) for details.
 
-This feature requires APISIX to run on [APISIX-Base](./FAQ/#how-do-i-build-the-apisix-base-environment).
+This feature requires APISIX to run on [APISIX-Runtime](./FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
 Here is a similar Python script to patch a existed upstream with mTLS (changes admin API url if needed):
 

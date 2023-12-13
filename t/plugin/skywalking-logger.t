@@ -132,7 +132,8 @@ done
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
                                 "buffer_duration": 2,
-                                "inactive_timeout": 2
+                                "inactive_timeout": 2,
+                                "service_instance_name": "$hostname"
                             }
                         },
                         "upstream": {
@@ -280,4 +281,16 @@ GET /opentracing
 opentracing
 --- error_log eval
 qr/.*\{\\\"json\\\":.*\\\\\\"my_ip\\\\\\":\\\\\\"127\.0\.0\.1\\\\\\".*\}/
+--- wait: 0.5
+
+
+
+=== TEST 12: test serviceInstance $hostname
+--- request
+GET /opentracing
+--- response_body
+opentracing
+--- no_error_log eval
+qr/\\\"serviceInstance\\\":\\\"\$hostname\\\"/
+qr/\\\"serviceInstance\\\":\\\"\\\"/
 --- wait: 0.5

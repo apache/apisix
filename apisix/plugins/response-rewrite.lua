@@ -58,7 +58,7 @@ local schema = {
                             items = {
                                 type = "string",
                                 -- "Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<number>"
-                                pattern = "^[^:]+:[^:]+[^/]$"
+                                pattern = "^[^:]+:[^:]*[^/]$"
                             }
                         },
                         set = {

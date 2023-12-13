@@ -280,11 +280,11 @@ hello: world
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbin.org:80": 1
+                            "test.com:1980": 1
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/get"
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -299,11 +299,11 @@ hello: world
 
 === TEST 12: verify (in cookie) with hiding credentials
 --- request
-GET /get
+GET /hello
 --- more_headers
 Cookie: hello=world; jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs; foo=bar
---- response_body eval
-qr/hello=world; foo=bar/
+--- response_body
+hello world
 
 
 

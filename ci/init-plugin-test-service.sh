@@ -22,8 +22,8 @@ after() {
     docker exec -i apache-apisix_kafka-server2_1 /opt/bitnami/kafka/bin/kafka-topics.sh --create --zookeeper zookeeper-server2:2181 --replication-factor 1 --partitions 1 --topic test4
 
     # prepare openwhisk env
-    docker pull openwhisk/action-nodejs-v14:nightly
-    docker run --rm -d --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:nightly
+    docker pull openwhisk/action-nodejs-v14:1.20.0
+    docker run --rm -d --name openwhisk -p 3233:3233 -p 3232:3232 -v /var/run/docker.sock:/var/run/docker.sock openwhisk/standalone:1.0.0
     docker exec -i openwhisk waitready
     docker exec -i openwhisk bash -c "wsk package create pkg"
     docker exec -i openwhisk bash -c "wsk action update /guest/pkg/testpkg <(echo 'function main(args){return {\"hello\": \"world\"}}') --kind nodejs:14"
@@ -42,8 +42,19 @@ after() {
 
     # wait for keycloak ready
     bash -c 'while true; do curl -s localhost:8080 &>/dev/null; ret=$?; [[ $ret -eq 0 ]] && break; sleep 3; done'
-    docker cp ci/kcadm_configure_cas.sh apisix_keycloak_new:/tmp/
-    docker exec apisix_keycloak_new bash /tmp/kcadm_configure_cas.sh
+
+    # install jq
+    wget https://github.com/stedolan/jq/releases/download/jq-1.6/jq-linux64 -O jq
+    chmod +x jq
+    docker cp jq apisix_keycloak:/usr/bin/
+
+    # configure keycloak
+    docker exec apisix_keycloak bash /tmp/kcadm_configure_cas.sh
+    docker exec apisix_keycloak bash /tmp/kcadm_configure_university.sh
+
+    # configure clickhouse
+    echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8123/' --data-binary @-
+    echo 'CREATE TABLE default.test (`host` String, `client_ip` String, `route_id` String, `service_id` String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' | curl 'http://localhost:8124/' --data-binary @-
 }
 
 before() {

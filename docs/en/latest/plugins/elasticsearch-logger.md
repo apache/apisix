@@ -42,7 +42,7 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 | field         | array   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
-| log_format | object | False    |          | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |                             | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
@@ -53,7 +53,7 @@ NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which 
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## Enabling the Plugin
+## Enable Plugin
 
 ### Full configuration
 
@@ -195,7 +195,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                      | Description                                                  |
 | ---------- | ------ | -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](https://github.com/apache/apisix/blob/master/docs/en/latest/apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -271,9 +271,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `elasticsearch-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `elasticsearch-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

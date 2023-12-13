@@ -105,11 +105,11 @@ Mainland China users can use `luarocks.cn` as the LuaRocks server. You can use t
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
+If this does not solve your problem, you can try getting a detailed log by using the `--verbose` or `-v` flag to diagnose the problem.
 
-## How do I build the APISIX-Base environment?
+## How do I build the APISIX-Runtime environment?
 
-Some functions need to introduce additional NGINX modules, which requires APISIX to run on APISIX-Base. If you need these functions, you can refer to the code in [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) to build your own APISIX-Base environment.
+Some functions need to introduce additional NGINX modules, which requires APISIX to run on APISIX-Runtime. If you need these functions, you can refer to the code in [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) to build your own APISIX-Runtime environment.
 
 ## How can I make a gray release with Apache APISIX?
 
@@ -732,6 +732,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         }
     }
 }'
+```
 
 ## How does APISIX configure ETCD with authentication?
 

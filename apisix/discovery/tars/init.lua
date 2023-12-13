@@ -23,7 +23,7 @@ local local_conf = require("apisix.core.config_local").local_conf()
 local core = require("apisix.core")
 local mysql = require("resty.mysql")
 local is_http = ngx.config.subsystem == "http"
-local support_process, process = pcall(require, "ngx.process")
+local process = require("ngx.process")
 
 local endpoint_dict
 
@@ -343,12 +343,6 @@ local function get_endpoint_dict()
 end
 
 function _M.init_worker()
-    if not support_process then
-        core.log.error("tars discovery not support in subsystem: ", ngx.config.subsystem,
-                       ", please check if your openresty version >= 1.19.9.1 or not")
-        return
-    end
-
     endpoint_dict = get_endpoint_dict()
     if not endpoint_dict then
         error("failed to get lua_shared_dict: tars, please check your APISIX version")

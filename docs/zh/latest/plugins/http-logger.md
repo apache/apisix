@@ -43,7 +43,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 http-logger 插件。�
 | log_format             | object  | 否     |               |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body       | boolean | 否     | false         | [false, true]        | 当设置为 `true` 时，将请求体包含在日志中。如果请求体太大而无法保存在内存中，由于 NGINX 的限制，无法记录。 |
 | include_resp_body      | boolean | 否     | false         | [false, true]        | 当设置为 `true` 时，包含响应体。                                                                                               |
-| include_resp_body_expr | array   | 否     |               |                      | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。 如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
+| include_resp_body_expr | array   | 否     |               |                      | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
 | concat_method          | string  | 否     | "json"        | ["json", "new_line"] | 枚举类型： **json**：对所有待发日志使用 `json.encode` 编码。**new_line**：对每一条待发日志单独使用 `json.encode` 编码并使用 `\n` 连接起来。 |
 | ssl_verify             | boolean | 否     | false          | [false, true]       | 当设置为 `true` 时验证证书。 |
 
@@ -53,7 +53,7 @@ description: 本文介绍了 API 网关 Apache APISIX 的 http-logger 插件。�
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 注意
 
@@ -115,9 +115,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过如下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

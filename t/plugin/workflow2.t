@@ -279,3 +279,40 @@ passed
 ["GET /hello", "GET /hello1", "GET /hello", "GET /hello1"]
 --- error_code eval
 [200, 200, 503, 200]
+
+
+
+=== TEST 8: test no rules
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/*",
+                plugins = {
+                    workflow = {
+                    }
+                },
+                upstream = {
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    },
+                    type = "roundrobin"
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"failed to check the configuration of plugin workflow err: property \"rules\" is required"}

@@ -697,3 +697,46 @@ apisix:
     }
 --- response_body
 [200,200,503]
+
+
+
+=== TEST 12: verify whether print warning log when disable data_encryption
+--- yaml_config
+apisix:
+    data_encryption:
+        enable: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                         "limit-count": {
+                            "count": 2,
+                            "time_window": 60,
+                            "rejected_code": 503,
+                            "key": "remote_addr"
+                        }
+                    }
+                }]]
+            )
+            if code > 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- reponse_body
+passed
+--- no_error_log
+failed to get schema for plugin

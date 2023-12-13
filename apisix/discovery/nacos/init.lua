@@ -39,6 +39,8 @@ local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
 local default_group_name = "DEFAULT_GROUP"
+local access_key
+local secret_key
 
 local events
 local events_list
@@ -52,6 +54,7 @@ local function discovery_nacos_callback(data, event, source, pid)
                "source: ", source, "server pid:", pid,
                ", application: ", core.json.encode(applications, true))
 end
+
 
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
@@ -127,6 +130,7 @@ local function get_token_param(base_uri, username, password)
     return '&accessToken=' .. data.accessToken
 end
 
+
 local function get_namespace_param(namespace_id)
     local param = ''
     if namespace_id then
@@ -136,6 +140,7 @@ local function get_namespace_param(namespace_id)
     return param
 end
 
+
 local function get_group_name_param(group_name)
     local param = ''
     if group_name then
@@ -144,6 +149,22 @@ local function get_group_name_param(group_name)
     end
     return param
 end
+
+
+local function get_signed_param(group_name, service_name)
+    local param = ''
+    if access_key ~= '' and secret_key ~= '' then
+        local str_to_sign = ngx.now() * 1000 .. '@@' .. group_name .. '@@' .. service_name
+        local args = {
+            ak = access_key,
+            data = str_to_sign,
+            signature = ngx.encode_base64(ngx.hmac_sha1(secret_key, str_to_sign))
+        }
+        param = '&' .. ngx.encode_args(args)
+    end
+    return param
+end
+
 
 local function get_base_uri()
     local host = local_conf.discovery.nacos.host
@@ -257,6 +278,7 @@ local function is_grpc(scheme)
     return false
 end
 
+
 local function fetch_full_registry(premature)
     if premature then
         return
@@ -286,8 +308,10 @@ local function fetch_full_registry(premature)
         local scheme = service_info.scheme or ''
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
+        local signature_param = get_signed_param(service_info.group_name, service_info.service_name)
         local query_path = instance_list_path .. service_info.service_name
                            .. token_param .. namespace_param .. group_name_param
+                           .. signature_param
         data, err = get_url(base_uri, query_path)
         if err then
             log.error('get_url:', query_path, ' err:', err)
@@ -333,7 +357,7 @@ local function fetch_full_registry(premature)
         return
     end
     applications = up_apps
-    local ok, err = events.post(events_list._source, events_list.updating,
+    local ok, err = events:post(events_list._source, events_list.updating,
                                 applications)
     if not ok then
         log.error("post_event failure with ", events_list._source,
@@ -361,7 +385,9 @@ function _M.nodes(service_name, discovery_args)
         waiting_time = waiting_time - step
     end
 
-    if not applications[namespace_id] or not applications[namespace_id][group_name] then
+    if not applications or not applications[namespace_id]
+        or not applications[namespace_id][group_name]
+    then
         return nil
     end
     return applications[namespace_id][group_name][service_name]
@@ -369,12 +395,12 @@ end
 
 
 function _M.init_worker()
-    events = require("resty.worker.events")
-    events_list = events.event_list("discovery_nacos_update_application",
+    events = require("apisix.events")
+    events_list = events:event_list("discovery_nacos_update_application",
                                     "updating")
 
     if 0 ~= ngx.worker.id() then
-        events.register(discovery_nacos_callback, events_list._source,
+        events:register(discovery_nacos_callback, events_list._source,
                         events_list.updating)
         return
     end
@@ -383,6 +409,8 @@ function _M.init_worker()
     log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info('fetch_interval:', fetch_interval)
+    access_key = local_conf.discovery.nacos.access_key
+    secret_key = local_conf.discovery.nacos.secret_key
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end

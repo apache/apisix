@@ -59,6 +59,25 @@ plugin_attr:
     export_uri: /apisix/metrics
 ```
 
+### 如何修改延迟指标中的 `default_buckets`
+
+`DEFAULT_BUCKETS` 是 `http_latency` 指标中 bucket 数组的默认值。
+
+你可以通过修改配置文件中的 `default_buckets` 来重新指定 `DEFAULT_BUCKETS`
+
+配置示例如下：
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    default_buckets:
+      - 15
+      - 55
+      - 105
+      - 205
+      - 505
+```
+
 ## API
 
 `prometheus` 插件会增加 `/apisix/prometheus/metrics` 接口或者你自定义的 URI 来暴露其指标信息。
@@ -90,7 +109,7 @@ plugin_attr:
 如果 Prometheus 插件收集的指标数量过多，在通过 URI 获取指标时，会占用 CPU 资源来计算指标数据，可能会影响 APISIX 处理正常请求。为解决此问题，APISIX 在 [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) 中暴露 URI 并且计算指标。
 如果使用 public-api 插件暴露该 URI，那么 APISIX 将在普通的 worker 进程中计算指标数据，这仍可能会影响 APISIX 处理正常请求。
 
-该特性要求 APISIX  运行在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 上。
+该特性要求 APISIX  运行在 [APISIX-Runtime](../FAQ.md#如何构建-apisix-runtime-环境) 上。
 
 :::
 
@@ -208,6 +227,13 @@ scrape_configs:
 
 - Info: 当前 APISIX 节点信息。
 - Shared dict: APISIX 中所有共享内存的容量以及剩余可用空间。
+- `apisix_upstream_status`: 上游健康检查的节点状态，`1` 表示健康，`0` 表示不健康。属性如下所示：
+
+  | 名称         | 描述                                                                                                                   |
+  |--------------|-------------------------------------------------------------------------------------------------------------------------------|
+  | name         | 上游所依附的资源 ID，例如 `/apisix/routes/1`, `/apisix/upstreams/1`.                                                                            |
+  | ip        | 上游节点的 IP 地址。                          |
+  | port  | 上游节点的端口号。                               |
 
 以下是 APISIX 的原始的指标数据集：
 
@@ -297,9 +323,13 @@ apisix_shared_dict_free_space_bytes{name="balancer-ewma-locks"} 10412032
 apisix_shared_dict_free_space_bytes{name="discovery"} 1032192
 apisix_shared_dict_free_space_bytes{name="etcd-cluster-health-check"} 10412032
 ...
+# HELP apisix_upstream_status Upstream status from health check
+# TYPE apisix_upstream_status gauge
+apisix_upstream_status{name="/apisix/routes/1",ip="100.24.156.8",port="80"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="52.86.68.46",port="80"} 1
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `prometheus` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
@@ -321,7 +351,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 :::info IMPORTANT
 
-该功能要求 APISIX 运行在 [APISIX-Base](../FAQ.md#如何构建-APISIX-Base-环境？) 上。
+该功能要求 APISIX 运行在 [APISIX-Runtime](../FAQ.md#如何构建-APISIX-Runtime-环境？) 上。
 
 :::
 

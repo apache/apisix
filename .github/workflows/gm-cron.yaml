@@ -20,7 +20,7 @@ jobs:
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/deployment t/discovery t/error_page t/misc
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
           - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
     runs-on: ${{ matrix.platform }}
@@ -33,12 +33,12 @@ jobs:
     # scripts or a separate action?
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v3
+        uses: actions/setup-go@v5
         with:
           go-version: "1.17"
 
@@ -48,7 +48,7 @@ jobs:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Cache Tongsuo compilation
         id: cache-tongsuo
@@ -80,6 +80,10 @@ jobs:
           if [[ $test_dir =~ ' t/xrpc' ]]; then
             echo "type=last" >>$GITHUB_OUTPUT
           fi
+
+      - name: Free disk space
+        run: |
+          bash ./ci/free_disk_space.sh
 
       - name: Linux launch common services
         run: |
@@ -160,8 +164,6 @@ jobs:
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
         name: Save docker images
         run: |
-          # free disk space
-          bash ./ci/free_disk_space.sh
           echo "start backing up, $(date)"
           bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
           echo "backup done, $(date)"

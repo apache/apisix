@@ -32,6 +32,8 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 
 ## Attributes
 
+### CORS attributes
+
 | Name                      | Type    | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                        |
 |---------------------------|---------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allow_origins             | string  | False    | "*"     | Origins to allow CORS. Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. If `allow_credential` is set to `false`, you can enable CORS for all origins by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all origins by using `**` but it will pose some security issues. |
@@ -40,7 +42,7 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 | expose_headers            | string  | False    | "*"     | Headers in the response allowed when accessing a cross-origin resource. Use `,` to add multiple headers. If `allow_credential` is set to `false`, you can enable CORS for all response headers by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all response headers by using `**` but it will pose some security issues.                                    |
 | max_age                   | integer | False    | 5       | Maximum time in seconds the result is cached. If the time is within this limit, the browser will check the cached result. Set to `-1` to disable caching. Note that the maximum value is browser dependent. See [Access-Control-Max-Age](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for more details.                                            |
 | allow_credential          | boolean | False    | false   | When set to `true`, allows requests to include credentials like cookies. According to CORS specification, if you set this to `true`, you cannot use '*' to allow all for the other attributes.                                                                                                                                                                                                     |
-| allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling CORS. For example, `[".*\.test.com"]` can match all subdomain of `test.com`.                                                                                                                                                                                                                                                                               |
+| allow_origins_by_regex    | array   | False    | nil     | Regex to match origins that allow CORS. For example, `[".*\.test.com$"]` can match all subdomains of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `allow_origins` is.                                                                                                                                                                   |
 | allow_origins_by_metadata | array   | False    | nil     | Origins to enable CORS referenced from `allow_origins` set in the Plugin metadata. For example, if `"allow_origins": {"EXAMPLE": "https://example.com"}` is set in the Plugin metadata, then `["EXAMPLE"]` can be used to allow CORS on the origin `https://example.com`.                                                                                                                          |
 
 :::info IMPORTANT
@@ -50,13 +52,31 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 
 :::
 
+### Resource Timing attributes
+
+| Name                      | Type    | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                        |
+|---------------------------|---------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| timing_allow_origins             | string  | False    | nil     | Origin to allow to access the resource timing information. See [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin). Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. |
+| timing_allow_origins_by_regex    | array   | False    | nil     | Regex to match with origin for enabling access to the resource timing information. For example, `[".*\.test.com"]` can match all subdomain of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `timing_allow_origins` is. |
+
+:::note
+
+The Timing-Allow-Origin header is defined in the Resource Timing API, but it is related to the CORS concept.
+
+Suppose you have 2 domains, `domain-A.com` and `domain-B.com`.
+You are on a page on `domain-A.com`, you have an XHR call to a resource on `domain-B.com` and you need its timing information.
+You can allow the browser to show this timing information only if you have cross-origin permissions on `domain-B.com`.
+So, you have to set the CORS headers first, then access the `domain-B.com` URL, and if you set [Timing-Allow-Origin](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Timing-Allow-Origin), the browser will show the requested timing information.
+
+:::
+
 ## Metadata
 
 | Name          | Type   | Required | Description                                                                                                                                                                                             |
 |---------------|--------|----------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | allow_origins | object | False    | A map with origin reference and allowed origins. The keys in the map are used in the attribute `allow_origins_by_metadata` and the value are equivalent to the `allow_origins` attribute of the Plugin. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a specific Route or Service:
 
@@ -95,9 +115,9 @@ curl http://127.0.0.1:9080/hello -v
 ...
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `cors` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `cors` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

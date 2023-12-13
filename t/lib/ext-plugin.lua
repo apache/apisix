@@ -470,6 +470,19 @@ function _M.go(case)
             local action = http_req_call_rewrite.End(builder)
             build_action(action, http_req_call_action.Rewrite)
 
+        elseif case.rewrite_request_body == true then
+            local len = 4
+            http_req_call_rewrite.StartBodyVector(builder, len)
+            builder:PrependByte(string.byte("\n"))
+            builder:PrependByte(string.byte("c"))
+            builder:PrependByte(string.byte("b"))
+            builder:PrependByte(string.byte("a"))
+            local b = builder:EndVector(len)
+            http_req_call_rewrite.Start(builder)
+            http_req_call_rewrite.AddBody(builder, b)
+            local action = http_req_call_rewrite.End(builder)
+            build_action(action, http_req_call_action.Rewrite)
+
         else
             http_req_call_resp.Start(builder)
         end

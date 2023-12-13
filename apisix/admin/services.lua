@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
+local get_stream_routes = require("apisix.router").stream_routes
 local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
@@ -94,6 +95,21 @@ local function delete_checker(id)
                and tostring(route.value.service_id) == id then
                 return 400, {error_msg = "can not delete this service directly,"
                                          .. " route [" .. route.value.id
+                                         .. "] is still using it now"}
+            end
+        end
+    end
+
+    local stream_routes, stream_routes_ver = get_stream_routes()
+    core.log.info("stream_routes: ", core.json.delay_encode(stream_routes, true))
+    core.log.info("stream_routes_ver: ", stream_routes_ver)
+    if stream_routes_ver and stream_routes then
+        for _, route in ipairs(stream_routes) do
+            if type(route) == "table" and route.value
+               and route.value.service_id
+               and tostring(route.value.service_id) == id then
+                return 400, {error_msg = "can not delete this service directly,"
+                                         .. " stream_route [" .. route.value.id
                                          .. "] is still using it now"}
             end
         end

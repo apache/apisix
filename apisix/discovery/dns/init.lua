@@ -64,14 +64,14 @@ end
 function _M.init_worker()
     local local_conf = config_local.local_conf()
     local servers = local_conf.discovery.dns.servers
-
+    local resolv_conf = local_conf.discovery.dns.resolv_conf
     local default_order = {"last", "SRV", "A", "AAAA", "CNAME"}
     local order = core.table.try_read_attr(local_conf, "discovery", "dns", "order")
     order = order or default_order
 
     local opts = {
         hosts = {},
-        resolvConf = {},
+        resolvConf = resolv_conf,
         nameservers = servers,
         order = order,
     }
