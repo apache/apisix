@@ -295,7 +295,8 @@ function _M.body_filter(conf, ctx)
                 return
             end
         elseif ctx.response_encoding ~= nil then
-            core.log.error("filters may not work as expected due to unsupported compression encoding type: ",
+            core.log.error("filters may not work as expected ",
+                           "due to unsupported compression encoding type: ",
                            ctx.response_encoding)
             return
         end
