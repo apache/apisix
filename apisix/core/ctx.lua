@@ -274,6 +274,11 @@ do
                     end
                 end
 
+            elseif core_str.has_prefix(key, "uri_arg_") then
+                if t._ctx.curr_req_matched then
+                    val = t._ctx.curr_req_matched[(sub_str(key, 9))]
+                end
+
             elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")
