@@ -26,7 +26,7 @@ local schema = {
         max_body_size = {
             type = "integer",
             minimum = 0,
-            description = "Maximum header length in bytes, no check if the value is 0"
+            description = "Maximum message body size in bytes. No restriction when set to 0."
         },
     },
 }
