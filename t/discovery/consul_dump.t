@@ -471,6 +471,7 @@ location /v1/agent {
 --- response_body eval
 --- error_code eval
 [200, 200, 200, 200, 200, 200]
+--- wait: 2
 
 
 
