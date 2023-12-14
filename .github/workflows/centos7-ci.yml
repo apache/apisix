@@ -27,6 +27,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -111,8 +114,9 @@ jobs:
     - name: Run centos7 docker and mapping apisix into container
       env:
         TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        TEST_EVENTS_MODULE: ${{ matrix.events_module }}
       run: |
-        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --env TEST_EVENTS_MODULE="$TEST_EVENTS_MODULE" --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
         # docker exec centos7Instance bash -c "cp -r /tmp/apisix ./"
 
     - name: Cache images
