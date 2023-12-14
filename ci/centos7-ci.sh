@@ -23,10 +23,11 @@ install_dependencies() {
     export_or_prefix
 
     # install build & runtime deps
-    yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which ca-certificates openssl-devel \
+    yum install -y wget tar gcc gcc-c++ automake autoconf libtool make unzip patch \
+        git sudo openldap-devel which ca-certificates \
+        openresty-pcre-devel openresty-zlib-devel \
         epel-release  \
-        cpanminus perl
+        cpanminus perl 
 
     # install newer curl
     yum makecache
@@ -41,11 +42,12 @@ install_dependencies() {
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+    export luajit_xcflags="-DLUAJIT_ASSERT -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -O0"
+    export debug_args=--with-debug
+
     wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
-    wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime-debug-centos7.sh"
-    chmod +x build-apisix-runtime-debug-centos7.sh
     chmod +x build-apisix-runtime.sh
-    ./build-apisix-runtime-debug-centos7.sh
+    ./build-apisix-runtime latest
 
     # install luarocks
     ./utils/linux-install-luarocks.sh

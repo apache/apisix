@@ -23,8 +23,8 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
-    wget tar gcc automake autoconf libtool make unzip git sudo openldap-devel hostname \
-    which ca-certificates openssl-devel
+    wget tar gcc gcc-c++ automake autoconf libtool make unzip git sudo openldap-devel hostname patch \
+    which ca-certificates openresty-pcre-devel openresty-zlib-devel
 
     # install newer curl
     yum makecache
@@ -34,14 +34,15 @@ install_dependencies() {
     # install apisix-runtime to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     rpm --import https://repos.apiseven.com/KEYS
-    yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
+    yum install -y pcre pcre pcre-devel xz
     yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    export luajit_xcflags="-DLUAJIT_ASSERT -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -O0"
+    export debug_args=--with-debug
+
+    wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
-    chmod +x build-apisix-runtime-debug-centos7.sh
-    ./build-apisix-runtime-debug-centos7.sh
+    ./build-apisix-runtime latest
 
     # install luarocks
     ./utils/linux-install-luarocks.sh

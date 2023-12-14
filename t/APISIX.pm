@@ -260,7 +260,7 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
-env OPENSSL111_BIN;
+env OPENSSL3_BIN;
 _EOC_
 
 
