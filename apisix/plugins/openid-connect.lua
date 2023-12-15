@@ -292,6 +292,15 @@ function _M.check_schema(conf)
         return false, err
     end
 
+    local discovery, discovery_err =openidc.get_discovery_doc(conf)
+    if discovery_err then
+        return false, discovery_err
+    end
+    if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
+        -- openidc does not support end_session_endpoint configuration
+        -- using post_logout_redirect_uri for redirection
+        conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
+    end
     return true
 end
 
