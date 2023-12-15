@@ -97,10 +97,78 @@ passed
 
 
 
-=== TEST 3: `uri_arg_path` exist
+=== TEST 3: `uri_arg_path` exist (hello)
 --- request
 GET /hello
 --- response_body
 hello world
 --- error_log
 uri_arg_path: hello
+
+
+
+=== TEST 4: `uri_arg_path` exist (hello1)
+--- request
+GET /hello1
+--- response_body
+hello1 world
+--- error_log
+uri_arg_path: hello1
+
+
+
+=== TEST 5: `uri_arg_path` nonexisting route
+--- request
+GET /not_a_route
+--- error_code: 404
+--- error_log
+uri_arg_path: not_a_route
+
+
+
+=== TEST 6: add route and get unknown `uri_arg_path`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "methods": ["GET"],
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"uri_arg_path: \", ngx.ctx.api_ctx.var.uri_arg_path) end"]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 7: `uri_arg_path` not in uri
+--- request
+GET /hello
+--- response_body
+hello world
+--- error_log
+failed to fetch uri argument: path
+uri_arg_path:
