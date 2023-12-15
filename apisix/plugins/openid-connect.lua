@@ -454,7 +454,8 @@ function _M.rewrite(plugin_conf, ctx)
     if path == (conf.logout_path or "/logout") then
         local discovery, discovery_err =openidc.get_discovery_doc(conf)
         if discovery_err then
-            return false, discovery_err
+            core.log.error("OIDC access discovery url failed : ", discovery_err)
+            return 500
         end
         if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
             -- openidc does not support end_session_endpoint configuration
