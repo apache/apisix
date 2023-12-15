@@ -43,7 +43,7 @@ jobs:
         run: ./ci/performance_test.sh run_performance_test
 
       - name: Upload Performance Test Result
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: perf.txt
           path: |
@@ -51,7 +51,7 @@ jobs:
           retention-days: 3
 
       - name: Upload flamegrpah
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: flamegraph.svg
           path: |
