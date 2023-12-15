@@ -58,7 +58,8 @@ remote_addr: 127.0.0.1
 server_port: 1984
 
 
-=== TEST 1: add route and get `uri_arg_`
+
+=== TEST 2: add route and get `uri_arg_`
 --- config
     location /t {
         content_by_lua_block {
@@ -96,11 +97,10 @@ passed
 
 
 
-=== TEST 8: `uri_arg_path` exist
+=== TEST 3: `uri_arg_path` exist
 --- request
 GET /hello
 --- response_body
 hello world
 --- error_log
 uri_arg_path: hello
-
