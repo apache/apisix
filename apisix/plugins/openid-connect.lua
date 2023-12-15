@@ -292,15 +292,6 @@ function _M.check_schema(conf)
         return false, err
     end
 
-    local discovery, discovery_err =openidc.get_discovery_doc(conf)
-    if discovery_err then
-        return false, discovery_err
-    end
-    if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
-        -- openidc does not support end_session_endpoint configuration
-        -- using post_logout_redirect_uri for redirection
-        conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
-    end
     return true
 end
 
@@ -449,13 +440,27 @@ function _M.rewrite(plugin_conf, ctx)
         conf.timeout = conf.timeout * 1000
     end
 
+    local path = ctx.var.request_uri
+
     if not conf.redirect_uri then
-        conf.redirect_uri = ctx.var.request_uri
+        conf.redirect_uri = path
     end
 
     if not conf.ssl_verify then
         -- openidc use "no" to disable ssl verification
         conf.ssl_verify = "no"
+    end
+
+    if path == (conf.logout_path or "/logout") then
+        local discovery, discovery_err =openidc.get_discovery_doc(conf)
+        if discovery_err then
+            return false, discovery_err
+        end
+        if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
+            -- openidc does not support end_session_endpoint configuration
+            -- using post_logout_redirect_uri for redirection
+            conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
+        end
     end
 
     local response, err, session, _
@@ -513,7 +518,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, path, unauth_action, conf.session)
 
         if err then
             if err == "unauthorized request" then
