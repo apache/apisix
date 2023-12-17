@@ -27,7 +27,8 @@ install_dependencies() {
         git sudo openldap-devel which ca-certificates \
         openresty-pcre-devel openresty-zlib-devel \
         epel-release  \
-        cpanminus perl 
+        cpanminus perl \
+        openssl-devel
 
     # install newer curl
     yum makecache
@@ -47,7 +48,7 @@ install_dependencies() {
 
     wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
-    ./build-apisix-runtime latest
+    ./build-apisix-runtime.sh latest
 
     # install luarocks
     ./utils/linux-install-luarocks.sh

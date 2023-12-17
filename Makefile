@@ -40,7 +40,7 @@ ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
-ENV_OPENSSL_PREFIX     ?= $(addprefix $(ENV_NGINX_PREFIX), openssl)
+ENV_OPENSSL_PREFIX     ?= $(addprefix $(ENV_NGINX_PREFIX), openssl3)
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
@@ -59,9 +59,9 @@ endif
 # Execute only in the presence of ENV_NGINX_EXEC to avoid unexpected error output
 ifneq ($(ENV_NGINX_EXEC), )
 	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
-	# OpenResty 1.17.8 or higher version uses openssl111 as the openssl dirname.
-	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl111) && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl111)
+	# OpenResty 1.17.8 or higher version uses openssl3 as the openssl dirname.
+	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl3) && echo -n yes), yes)
+		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl3)
 	endif
 endif
 
@@ -80,8 +80,8 @@ ifeq ($(ENV_OS_NAME), darwin)
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl
 	endif
-	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111 && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl111
+	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl3 && echo -n yes), yes)
+		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl3
 	endif
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/pcre && echo -n yes), yes)
 		ENV_PCRE_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/pcre
