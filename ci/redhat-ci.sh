@@ -46,6 +46,9 @@ install_dependencies() {
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime.sh latest
 
+    # patch lua-resty-events
+    sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
+
     # install luarocks
     ./utils/linux-install-luarocks.sh
 
@@ -100,7 +103,7 @@ run_case() {
     make init
     set_coredns
     # run test cases
-    FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

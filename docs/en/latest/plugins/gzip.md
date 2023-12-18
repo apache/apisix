@@ -30,6 +30,7 @@ description: This document contains information about the Apache APISIX gzip Plu
 ## Description
 
 The `gzip` Plugin dynamically sets the behavior of [gzip in Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/compression/).
+When the `gzip` plugin is enabled, the client needs to include `Accept-Encoding: gzip` in the request header to indicate support for gzip compression. Upon receiving the request, APISIX dynamically determines whether to compress the response content based on the client's support and server configuration. If the conditions are met, `APISIX` adds the `Content-Encoding: gzip` header to the response, indicating that the response content has been compressed using gzip. Upon receiving the response, the client uses the corresponding decompression algorithm based on the `Content-Encoding` header to decompress the response content and obtain the original response content.
 
 :::info IMPORTANT
 
