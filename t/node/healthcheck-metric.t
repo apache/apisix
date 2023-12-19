@@ -77,7 +77,35 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: should add a new one when remove a node from the upstream
+=== TEST 1: enable metrics uri
+--- timeout: 20
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+
+            -- enable prometheus
+            local metric_data = {
+                uri = "/apisix/prometheus/metrics",
+                plugins = {
+                    ["public-api"] = {}
+                }
+            }
+
+            local code, body = t.test('/apisix/admin/routes/metrics',
+                ngx.HTTP_PUT, core.json.encode(metric_data))
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2: should add a new one when remove a node from the upstream
 --- timeout: 20
 --- config
     location /t {
@@ -102,9 +130,6 @@ __DATA__
             -- create a route
             local data = {
                 uri = "/ping",
-                plugins = {
-                    prometheus = {}
-                },
                 upstream = {
                     nodes = {
                         ["127.0.0.1:8765"] = 1,
@@ -129,22 +154,6 @@ __DATA__
             }
             local code, body = t.test('/apisix/admin/routes/1',
                 ngx.HTTP_PUT, core.json.encode(data))
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            -- enable prometheus
-            local metric_data = {
-                uri = "/apisix/prometheus/metrics",
-                plugins = {
-                    ["public-api"] = {}
-                }
-            }
-
-            local code, body = t.test('/apisix/admin/routes/metrics',
-                ngx.HTTP_PUT, core.json.encode(metric_data))
             if code >= 300 then
                 ngx.status = code
                 ngx.say(body)
@@ -223,7 +232,8 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"
 
 
 
-=== TEST 2: should remove one metric when add a node from the upstream
+=== TEST 3: should add one metric when add a node from the upstream
+--- ONLY
 --- config
     location /t {
         content_by_lua_block {
@@ -347,7 +357,7 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"
 
 
 
-=== TEST 3: delete a route should remove the metric
+=== TEST 4: delete a route should remove the metric
 --- timeout: 20
 --- config
     location /t {

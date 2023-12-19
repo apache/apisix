@@ -523,8 +523,44 @@ function _M.check_upstream_conf(conf)
     return check_upstream_conf(false, conf)
 end
 
+local function compare_and_update(nodes_from_healthcheck, nodes_from_upstream)
+    core.log.info("filter upstream checks compare_and_update nodes_from_healthcheck: ", core.json.delay_encode(nodes_from_healthcheck, true))
+    core.log.info("filter upstream checks compare_and_update nodes_from_upstream: ", core.json.delay_encode(nodes_from_upstream, true))
+    -- add nodes not in nodes_from_healthcheck
+    for _, upstream_node in ipairs(nodes_from_upstream) do
+        local found = false
+        core.log.info("guohao filter upstream checks add upstream_node: ", upstream_node.host, " port: ", upstream_node.port)
+        for _, healthcheck_node in ipairs(nodes_from_healthcheck) do
+            core.log.info("guohao filter upstream checks add healthcheck_node: ", healthcheck_node.ip, " port: ", healthcheck_node.port)
+            if healthcheck_node.ip == upstream_node.host and
+                healthcheck_node.port == upstream_node.port then
+                found = true
+                break
+            end
+        end
+        if not found then
+            core.log.info("guohao action filter upstream checks add node: ", upstream_node.host, " port: ", upstream_node.port)
+        end
+    end
+
+    -- remove nodes not in nodes_from_upstream
+    for _, upstream_node in ipairs(nodes_from_healthcheck) do
+        local found = false
+        for _, healthcheck_node in ipairs(nodes_from_upstream) do
+            if upstream_node.host == healthcheck_node.ip and
+                upstream_node.port == healthcheck_node.port then
+                found = true
+                break
+            end
+        end
+        if not found then
+            core.log.info("guohao action filter upstream checks delete node: ", upstream_node.host, "port: ", upstream_node.port)
+        end
+    end
+end
 
 local function filter_upstream(value, parent)
+    core.log.info("filter upstream: ", core.json.delay_encode(value, true))
     if not value then
         return
     end
@@ -567,6 +603,17 @@ local function filter_upstream(value, parent)
         end
         value.nodes = new_nodes
     end
+    if value.checks then
+        core.log.info("filter upstream checks: ", core.json.delay_encode(value.checks, true))
+        core.log.info("filter upstream checks nodes: ", core.json.delay_encode(value.nodes, true))
+        local name = get_healthchecker_name(value.parent)
+        if healthcheck == nil then
+            healthcheck = require("resty.healthcheck")
+        end
+        local curr_target_node, err = healthcheck.get_target_list(name, "upstream-healthcheck")
+        core.log.info("filter upstream checks curr_target_node: ", core.json.delay_encode(curr_target_node, true))
+        compare_and_update(curr_target_node, value.nodes)
+    end
 end
 _M.filter_upstream = filter_upstream
 
@@ -585,7 +632,7 @@ function _M.init_worker()
 
                 filter_upstream(upstream.value, upstream)
 
-                core.log.info("filter upstream: ", core.json.delay_encode(upstream, true))
+                core.log.info("filter upstream from etcd watch: ", core.json.delay_encode(upstream, true))
             end,
         })
     if not upstreams then
