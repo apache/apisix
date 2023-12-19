@@ -233,7 +233,6 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"
 
 
 === TEST 3: should add one metric when add a node from the upstream
---- ONLY
 --- config
     location /t {
         content_by_lua_block {
@@ -434,8 +433,15 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"
             end
 
             --- delete the route
+            local code, body = t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
             ngx.say("delete route 1")
 
+            --- get metric again after 3.5 seconds
             --- why 3.5? because the checker:delayed_clear(3)
             ngx.sleep(3.5)
             local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
