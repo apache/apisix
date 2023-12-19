@@ -467,3 +467,13 @@ GET /t
 --- response_body
 1
 0
+
+
+
+=== TEST 23: no error in log phase while b3 header invalid
+--- request
+GET /echo
+--- more_headers
+b3: abc
+--- no_error_log
+[error]
