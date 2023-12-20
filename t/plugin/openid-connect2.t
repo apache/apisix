@@ -400,3 +400,4 @@ passed
 --- timeout: 10s
 --- response_body
 true
+--- error_code: 302
