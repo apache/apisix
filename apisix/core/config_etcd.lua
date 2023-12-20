@@ -132,49 +132,52 @@ local function do_run_watch(premature)
         return
     end
 
-    local local_conf, err = config_local.local_conf()
-    if not local_conf then
-        error("no local conf: " .. err)
-    end
-    watch_ctx.prefix = local_conf.etcd.prefix .. "/"
-
-    watch_ctx.cli, err = get_etcd()
-    if not watch_ctx.cli then
-        error("failed to create etcd instance: " .. string(err))
-    end
-
-    local rev = 0
-    if loaded_configuration then
-        local _, res = next(loaded_configuration)
-        if res then
-            rev = tonumber(res.headers["X-Etcd-Index"])
-            assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
+    -- the main watcher first start
+    if watch_ctx.started == false then
+        local local_conf, err = config_local.local_conf()
+        if not local_conf then
+            error("no local conf: " .. err)
         end
-    end
+        watch_ctx.prefix = local_conf.etcd.prefix .. "/"
 
-    if rev == 0 then
-        while true do
-            local res, err = watch_ctx.cli:get(watch_ctx.prefix)
-            if not res then
-                log.error("etcd get: ", err)
-                ngx_sleep(3)
-            else
-                rev = tonumber(res.body.header.revision)
-                break
+        watch_ctx.cli, err = get_etcd()
+        if not watch_ctx.cli then
+            error("failed to create etcd instance: " .. string(err))
+        end
+
+        local rev = 0
+        if loaded_configuration then
+            local _, res = next(loaded_configuration)
+            if res then
+                rev = tonumber(res.headers["X-Etcd-Index"])
+                assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
             end
         end
-    end
 
-    watch_ctx.rev = rev + 1
-    watch_ctx.started = true
-
-    log.info("main etcd watcher started, revision=", watch_ctx.rev)
-
-    if watch_ctx.wait_init then
-        for _, sema in pairs(watch_ctx.wait_init) do
-            sema:post()
+        if rev == 0 then
+            while true do
+                local res, err = watch_ctx.cli:get(watch_ctx.prefix)
+                if not res then
+                    log.error("etcd get: ", err)
+                    ngx_sleep(3)
+                else
+                    rev = tonumber(res.body.header.revision)
+                    break
+                end
+            end
         end
-        watch_ctx.wait_init = nil
+
+        watch_ctx.rev = rev + 1
+        watch_ctx.started = true
+
+        log.info("main etcd watcher started, revision=", watch_ctx.rev)
+
+        if watch_ctx.wait_init then
+            for _, sema in pairs(watch_ctx.wait_init) do
+                sema:post()
+            end
+            watch_ctx.wait_init = nil
+        end
     end
 
     local opts = {}
