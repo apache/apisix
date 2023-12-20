@@ -139,6 +139,7 @@ local function do_run_watch(premature)
             error("no local conf: " .. err)
         end
         watch_ctx.prefix = local_conf.etcd.prefix .. "/"
+        watch_ctx.timeout = local_conf.etcd.watch_timeout
 
         watch_ctx.cli, err = get_etcd()
         if not watch_ctx.cli then
@@ -170,7 +171,7 @@ local function do_run_watch(premature)
         watch_ctx.rev = rev + 1
         watch_ctx.started = true
 
-        log.info("main etcd watcher started, revision=", watch_ctx.rev)
+        log.info("main etcd watcher initialised, revision=", watch_ctx.rev)
 
         if watch_ctx.wait_init then
             for _, sema in pairs(watch_ctx.wait_init) do
@@ -181,7 +182,7 @@ local function do_run_watch(premature)
     end
 
     local opts = {}
-    opts.timeout = 50 -- second
+    opts.timeout = watch_ctx.timeout or 50 -- second
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
