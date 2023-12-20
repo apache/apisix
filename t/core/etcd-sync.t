@@ -22,7 +22,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: using default timeout
 --- config
     location /t {
