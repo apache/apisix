@@ -350,8 +350,11 @@ true
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                 "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
-                                "scope": "openid profile",
-                                "bearer_only": false
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "scope": "apisix",
+                                "unauth_action": "auth",
+                                "use_pkce": false
                             }
                         },
                         "upstream": {
@@ -363,25 +366,33 @@ true
                         "uri": "/hello"
                 }]]
                 )
-            if code == 200 then
-                ngx.say(true)
+            if code >= 300 then
+                ngx.status = code
             end
+            ngx.say(body)
         }
     }
 --- response_body
-true
+passed
 
 
 
-=== TEST 10: OpenID server does not have a corresponding redirect_uri, should return less than 500.
+=== TEST 10: The value of redirect_uri should be appended to `.apisix/redirect` in the original request.
 --- config
     location /t {
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local redirect_uri = uri .. "/.apisix/redirect"
             local res, err = httpc:request_uri(uri, {method = "GET"})
-            if res.status < 500 then
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+                string.find(location, 'scope=apisix') ~= -1 and
+                string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+                string.find(location, 'response_type=code') ~= -1 and
+                string.find(location, 'redirect_uri=' .. redirect_uri) ~= -1 then
                 ngx.say(true)
             end
         }
