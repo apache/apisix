@@ -458,8 +458,8 @@ function _M.rewrite(plugin_conf, ctx)
             return 503
         end
         if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
-            -- If the end_session_endpoint field does not exist in the OpenID Provider Discovery Metadata,
-            -- the redirect_after_logout_uri field is used for redirection.
+            -- If the end_session_endpoint field does not exist in the OpenID Provider Discovery 
+            -- Metadata, the redirect_after_logout_uri field is used for redirection.
             conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
         end
     end
