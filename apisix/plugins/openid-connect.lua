@@ -452,10 +452,10 @@ function _M.rewrite(plugin_conf, ctx)
     end
 
     if path == (conf.logout_path or "/logout") then
-        local discovery, discovery_err =openidc.get_discovery_doc(conf)
+        local discovery, discovery_err = openidc.get_discovery_doc(conf)
         if discovery_err then
             core.log.error("OIDC access discovery url failed : ", discovery_err)
-            return 500
+            return 503
         end
         if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
             -- openidc does not support end_session_endpoint configuration
@@ -519,7 +519,7 @@ function _M.rewrite(plugin_conf, ctx)
         -- provider's authorization endpoint to initiate the Relying Party flow.
         -- This code path also handles when the ID provider then redirects to
         -- the configured redirect URI after successful authentication.
-        response, err, _, session  = openidc.authenticate(conf, path, unauth_action, conf.session)
+        response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
             if err == "unauthorized request" then
