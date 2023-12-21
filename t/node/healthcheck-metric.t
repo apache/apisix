@@ -18,7 +18,7 @@ use t::APISIX 'no_plan';
 
 no_root_location();
 repeat_each(1);
-log_level('info');
+log_level('debug');
 no_root_location();
 no_shuffle();
 
@@ -105,27 +105,41 @@ passed
 
 
 
-=== TEST 2: should add a new one when remove a node from the upstream
+=== TEST 2: to reduce one upstream node, the metric should also be reduced by one.
 --- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+
             local function find_apisix_upstream_status(multiLineStr)
                 local pattern = "(apisix_upstream_status{.-)$"
                 local result = {}
-
                 for line in multiLineStr:gmatch("[^\r\n]+") do
                     local match = line:match(pattern)
                     if match then
                         table.insert(result, match)
                     end
                 end
-
                 return result
             end
 
-            local t = require("lib.test_admin")
-            local core = require("apisix.core")
+            --- get the metrics
+            local function get_metrics()
+                local httpc = http.new()
+                local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+                local metric_res, err = httpc:request_uri(metric_uri, {method = "GET"})
+                if err then
+                    ngx.say("failed to request: ", err)
+                    return
+                end
+                local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
+                for _, match in ipairs(apisix_upstream_status_body) do
+                    ngx.say(match)
+                end
+            end
 
             -- create a route
             local data = {
@@ -160,25 +174,17 @@ passed
                 return
             end
 
-            local http = require("resty.http")
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.sleep(3)
 
-            local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
-            local httpc = http.new()
-            local route_res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
-            local route_json_data = core.json.decode(route_res.body)
-            --- get the metrics
-            local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
-            local metric_res, _ = httpc:request_uri(metric_uri, {method = "GET"})
-            local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
-            for _, match in ipairs(apisix_upstream_status_body) do
-                ngx.say("before: " .. match)
-            end
-            ngx.say("will remove a node for test metric")
+            --- get metrics
+            get_metrics()
 
+            ngx.say("update the upstream")
+
+            --- update the route
             local new_data = {
                 uri = "/ping",
                 upstream = {
@@ -209,49 +215,73 @@ passed
                 ngx.say(body)
                 return
             end
+            ngx.sleep(3.5)
 
-            ngx.sleep(1.5)
-            --- get the metrics again
-            local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
-            local metric_res, _ = httpc:request_uri(metric_uri, {method = "GET"})
-            local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
-            for _, match in ipairs(apisix_upstream_status_body) do
-                ngx.say("after: " .. match)
-            end
+            local http = require("resty.http")
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
+            local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
+            --- get metrics
+            get_metrics()
         }
     }
 --- request
 GET /t
+--- grep_error_log eval
+qr/create new checker: table: 0x|try to release checker: table: 0x|event: target added '127.0.0.1\(127.0.0.1:8767.*/
+--- grep_error_log_out
+create new checker: table: 0x
+event: target added '127.0.0.1(127.0.0.1:8767)'
+try to release checker: table: 0x
+create new checker: table: 0x
 --- response_body
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
-will remove a node for test metric
-after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
+update the upstream
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
 
 
 
-=== TEST 3: should add one metric when add a node from the upstream
+=== TEST 3: add an upstream node, and metric should also be added.
+--- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+
             local function find_apisix_upstream_status(multiLineStr)
                 local pattern = "(apisix_upstream_status{.-)$"
                 local result = {}
-
                 for line in multiLineStr:gmatch("[^\r\n]+") do
                     local match = line:match(pattern)
                     if match then
                         table.insert(result, match)
                     end
                 end
-
                 return result
             end
 
-            local t = require("lib.test_admin")
-            local core = require("apisix.core")
+            --- get the metrics
+            local function get_metrics()
+                local httpc = http.new()
+                local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+                local metric_res, err = httpc:request_uri(metric_uri, {method = "GET"})
+                if err then
+                    ngx.say("failed to request: ", err)
+                    return
+                end
+                local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
+                for _, match in ipairs(apisix_upstream_status_body) do
+                    ngx.say(match)
+                end
+            end
+
+            -- create a route
             local data = {
                 uri = "/ping",
                 upstream = {
@@ -283,25 +313,17 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"
                 return
             end
 
-            local http = require("resty.http")
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.sleep(3)
 
-            local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
-            local httpc = http.new()
-            local route_res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
-            local route_json_data = core.json.decode(route_res.body)
-            --- get the metrics
-            local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
-            local metric_res, _ = httpc:request_uri(metric_uri, {method = "GET"})
-            local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
-            for _, match in ipairs(apisix_upstream_status_body) do
-                ngx.say("before: " .. match)
-            end
-            ngx.say("will add a node for test metric")
+            --- get metrics
+            get_metrics()
 
+            ngx.say("update the upstream")
+
+            --- update the route
             local new_data = {
                 uri = "/ping",
                 upstream = {
@@ -333,50 +355,73 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"
                 ngx.say(body)
                 return
             end
+            ngx.sleep(3.5)
 
-            ngx.sleep(1.5)
-            --- get the metrics again
-            local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
-            local metric_res, _ = httpc:request_uri(metric_uri, {method = "GET"})
-            local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
-            for _, match in ipairs(apisix_upstream_status_body) do
-                ngx.say("after: " .. match)
-            end
+            local http = require("resty.http")
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
+            local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
+            --- get metrics
+            get_metrics()
         }
     }
 --- request
 GET /t
+--- grep_error_log eval
+qr/create new checker: table: 0x|try to release checker: table: 0x|event: target added '127.0.0.1\(127.0.0.1:8767.*/
+--- grep_error_log_out
+create new checker: table: 0x
+try to release checker: table: 0x
+create new checker: table: 0x
+event: target added '127.0.0.1(127.0.0.1:8767)'
 --- response_body
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
-will add a node for test metric
-after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
-after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
+update the upstream
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
 
 
 
-=== TEST 4: delete a route should remove the metric
+=== TEST 4: delete the route
 --- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+            local http = require("resty.http")
+
             local function find_apisix_upstream_status(multiLineStr)
                 local pattern = "(apisix_upstream_status{.-)$"
                 local result = {}
-
                 for line in multiLineStr:gmatch("[^\r\n]+") do
                     local match = line:match(pattern)
                     if match then
                         table.insert(result, match)
                     end
                 end
-
                 return result
             end
 
-            local t = require("lib.test_admin")
-            local core = require("apisix.core")
+            --- get the metrics
+            local function get_metrics()
+                local httpc = http.new()
+                local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+                local metric_res, err = httpc:request_uri(metric_uri, {method = "GET"})
+                if err then
+                    ngx.say("failed to request: ", err)
+                    return
+                end
+                local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
+                for _, match in ipairs(apisix_upstream_status_body) do
+                    ngx.say(match)
+                end
+            end
+
+            -- create a route
             local data = {
                 uri = "/ping",
                 upstream = {
@@ -408,29 +453,13 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"
                 return
             end
 
-            --- active the healthcheck checker
-            local http = require("resty.http")
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
-            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            if not res then
-                ngx.say("failed to request: ", err)
-                return
-            end
-            ngx.sleep(1.5)
+            local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(3)
 
-            --- get the metrics
-            local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
-            local httpc = http.new()
-            local metric_res, err = httpc:request_uri(metric_uri, {method = "GET"})
-            if err then
-                ngx.say("failed to request: ", err)
-                return
-            end
-            local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
-            for _, match in ipairs(apisix_upstream_status_body) do
-                ngx.say("before: " .. match)
-            end
+            --- get metrics
+            get_metrics()
 
             --- delete the route
             local code, body = t.test('/apisix/admin/routes/1', ngx.HTTP_DELETE)
@@ -439,27 +468,26 @@ after: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"
                 ngx.say(body)
                 return
             end
-            ngx.say("delete route 1")
-
-            --- get metric again after 3.5 seconds
-            --- why 3.5? because the checker:delayed_clear(3)
             ngx.sleep(3.5)
-            local metric_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics"
+
+            local http = require("resty.http")
             local httpc = http.new()
-            local metric_res, err = httpc:request_uri(metric_uri, {method = "GET"})
-            if err then
-                ngx.say("failed to request: ", err)
-                return
-            end
-            local apisix_upstream_status_body = find_apisix_upstream_status(metric_res.body)
-            for _, match in ipairs(apisix_upstream_status_body) do
-                ngx.say("after: " .. match)
-            end
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
+            local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
+
+            --- get metrics
+            get_metrics()
         }
     }
 --- request
 GET /t
+--- grep_error_log eval
+qr/create new checker: table: 0x|try to release checker: table: 0x|event: target added '127.0.0.1\(127.0.0.1:876.*/
+--- grep_error_log_out
+create new checker: table: 0x
+event: target added '127.0.0.1(127.0.0.1:8765)'
+event: target added '127.0.0.1(127.0.0.1:8766)'
+try to release checker: table: 0x
 --- response_body
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-before: apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
-delete route 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
