@@ -86,7 +86,7 @@ local schema = {
         },
         redirect_uri = {
             type = "string",
-            description = "auto append '.apisix/redirect' if not configured"
+            description = "auto append '.apisix/redirect' to ngx.var.uri if not configured"
         },
         post_logout_redirect_uri = {
             type = "string",
