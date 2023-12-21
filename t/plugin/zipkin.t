@@ -474,6 +474,11 @@ GET /t
 --- request
 GET /echo
 --- more_headers
-b3: abc
+b3: 80f198ee56343ba864fe8b2a57d3eff7
+--- response_headers
+x-b3-sampled:
+--- error_code: 400
+--- error_log
+invalid b3 header
 --- no_error_log
-[error]
+attempt to index local 'opentracing' (a nil value)
