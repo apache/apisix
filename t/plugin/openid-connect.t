@@ -1303,3 +1303,64 @@ passed
     }
 --- response_body_like
 x-userinfo: ey.*
+
+
+
+=== TEST 34: Update plugin with ID provider public key, so tokens can be validated locally.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "post_logout_redirect_uri": "https://iresty.com",
+                                "scope": "openid profile"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: Access route with valid token.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://iresty.com') ~= -1 and
+                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
