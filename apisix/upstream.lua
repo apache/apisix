@@ -84,7 +84,7 @@ _M.set = set_directly
 local function release_checker(healthcheck_parent)
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
-    checker:clear()
+    checker:delayed_clear(3)
     checker:stop()
 end
 

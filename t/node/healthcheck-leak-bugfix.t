@@ -31,8 +31,8 @@ __DATA__
     local new = healthcheck.new
     healthcheck.new = function(...)
         local obj = new(...)
-        local clear = obj.clear
-        obj.clear = function(...)
+        local clear = obj.delayed_clear
+        obj.delayed_clear = function(...)
             ngx.log(ngx.WARN, "clear checker")
             return clear(...)
         end

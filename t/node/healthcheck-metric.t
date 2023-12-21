@@ -215,7 +215,7 @@ passed
                 ngx.say(body)
                 return
             end
-            ngx.sleep(3.5)
+            ngx.sleep(6)
 
             local http = require("resty.http")
             local httpc = http.new()
@@ -355,7 +355,7 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
                 ngx.say(body)
                 return
             end
-            ngx.sleep(3.5)
+            ngx.sleep(6)
 
             local http = require("resty.http")
             local httpc = http.new()
@@ -468,7 +468,7 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
                 ngx.say(body)
                 return
             end
-            ngx.sleep(3.5)
+            ngx.sleep(6)
 
             local http = require("resty.http")
             local httpc = http.new()
@@ -482,11 +482,9 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
 --- request
 GET /t
 --- grep_error_log eval
-qr/create new checker: table: 0x|try to release checker: table: 0x|event: target added '127.0.0.1\(127.0.0.1:876.*/
+qr/create new checker: table: 0x|try to release checker: table: 0x/
 --- grep_error_log_out
 create new checker: table: 0x
-event: target added '127.0.0.1(127.0.0.1:8765)'
-event: target added '127.0.0.1(127.0.0.1:8766)'
 try to release checker: table: 0x
 --- response_body
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
