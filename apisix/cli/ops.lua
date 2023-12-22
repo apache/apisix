@@ -916,7 +916,7 @@ local function stop(env)
 end
 
 
-function sleep(n)
+local function sleep(n)
   os.execute("sleep " .. tonumber(n))
 end
 
