@@ -467,3 +467,18 @@ GET /t
 --- response_body
 1
 0
+
+
+
+=== TEST 23: no error in log phase while b3 header invalid
+--- request
+GET /echo
+--- more_headers
+b3: 80f198ee56343ba864fe8b2a57d3eff7
+--- response_headers
+x-b3-sampled:
+--- error_code: 400
+--- error_log
+invalid b3 header
+--- no_error_log
+attempt to index local 'opentracing' (a nil value)
