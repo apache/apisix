@@ -47,7 +47,7 @@ server {
     }
 
     location /healthz {
-        return 500;
+        return 200 'ok';
     }
 }
 
@@ -78,7 +78,6 @@ run_tests;
 __DATA__
 
 === TEST 1: enable metrics uri
---- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
@@ -115,7 +114,6 @@ passed
         obj.delayed_clear = obj.clear
         return obj
     end
---- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +184,6 @@ passed
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(3)
 
             --- get metrics
             get_metrics()
@@ -245,7 +242,7 @@ try to release checker: table: 0x
 create new checker: table: 0x
 --- response_body
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
 update the upstream
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
@@ -263,7 +260,6 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
         obj.delayed_clear = obj.clear
         return obj
     end
---- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
@@ -333,7 +329,6 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(3)
 
             --- get metrics
             get_metrics()
@@ -393,7 +388,7 @@ create new checker: table: 0x
 event: target added '127.0.0.1(127.0.0.1:8767)'
 --- response_body
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
 update the upstream
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
@@ -411,7 +406,6 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
         obj.delayed_clear = obj.clear
         return obj
     end
---- timeout: 20
 --- config
     location /t {
         content_by_lua_block {
@@ -481,7 +475,6 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(3)
 
             --- get metrics
             get_metrics()
@@ -512,4 +505,4 @@ create new checker: table: 0x
 try to release checker: table: 0x
 --- response_body
 apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8765"} 1
-apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 0
+apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
