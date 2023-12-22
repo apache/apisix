@@ -805,14 +805,15 @@ local function start(env, ...)
 
         local ok, err, err_no = signal.kill(pid, signone)
         if ok then
-            print("APISIX is running... and now kill ...")
+            print("APISIX is running...")
+            return
         -- no such process
         elseif err_no ~= errno.ESRCH then
             print(err)
             return
         end
 
-        print("nginx.pid exists ", pid,
+        print("nginx.pid exists but there's no corresponding process with pid ", pid,
               ", the file will be overwritten")
     end
 
@@ -915,10 +916,15 @@ local function stop(env)
 end
 
 
+function sleep(n)
+  os.execute("sleep " .. tonumber(n))
+end
+
 local function restart(env)
   -- test configuration
   test(env)
   stop(env)
+  sleep(1)
   start(env)
 end
 
