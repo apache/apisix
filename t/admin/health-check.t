@@ -519,3 +519,41 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 1: active
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            req_data.upstream.checks = json.decode([[{
+                "active": {
+                    "http_path": "/status",
+                    "host": "foo.com",
+                    "healthy": {
+                        "interval": 2,
+                        "successes": 1
+                    },
+                    "unhealthy": {
+                        "interval": 1,
+                        "http_failures": 2
+                    },
+                    "body_match_str": "pass"
+                }
+            }]])
+            exp_data.value.upstream.checks = req_data.upstream.checks
+
+            local code, body, res = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                req_data,
+                exp_data
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
