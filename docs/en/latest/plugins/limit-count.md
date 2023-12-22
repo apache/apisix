@@ -257,6 +257,37 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
+In addition, you can use APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md). For example, in
+case you have environment variables `REDIS_HOST` and `REDIS_PASSWORD` set, you can use them in the plugin configuration as shown below:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "policy": "redis",
+            "redis_host": "$ENV://REDIS_HOST",
+            "redis_port": 6379,
+            "redis_password": "$ENV://REDIS_PASSWORD",
+            "redis_database": 1,
+            "redis_timeout": 1001
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
 ## Example usage
 
 The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining` and `X-RateLimit-Reset`, represents the total number of requests that are limited, the number of requests that can still be sent, and the number of seconds left for the counter to reset:
