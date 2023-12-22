@@ -805,15 +805,14 @@ local function start(env, ...)
 
         local ok, err, err_no = signal.kill(pid, signone)
         if ok then
-            print("APISIX is running...")
-            return
+            print("APISIX is running... and now kill ...")
         -- no such process
         elseif err_no ~= errno.ESRCH then
             print(err)
             return
         end
 
-        print("nginx.pid exists but there's no corresponding process with pid ", pid,
+        print("nginx.pid exists ", pid,
               ", the file will be overwritten")
     end
 
