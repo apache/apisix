@@ -86,7 +86,7 @@ local schema = {
         },
         redirect_uri = {
             type = "string",
-            description = "use ngx.var.request_uri if not configured"
+            description = "auto append '.apisix/redirect' to ngx.var.uri if not configured"
         },
         post_logout_redirect_uri = {
             type = "string",
@@ -441,7 +441,22 @@ function _M.rewrite(plugin_conf, ctx)
     end
 
     if not conf.redirect_uri then
-        conf.redirect_uri = ctx.var.request_uri
+        -- NOTE: 'lua-resty-openidc' requires that 'redirect_uri' be
+        --       different from 'uri'.  So default to append the
+        --       '.apisix/redirect' suffix if not configured.
+        local suffix = "/.apisix/redirect"
+        local uri = ctx.var.uri
+        if core.string.has_suffix(uri, suffix) then
+            -- This is the redirection response from the OIDC provider.
+            conf.redirect_uri = uri
+        else
+            if string.sub(uri, -1, -1) == "/" then
+                conf.redirect_uri = string.sub(uri, 1, -2) .. suffix
+            else
+                conf.redirect_uri = uri .. suffix
+            end
+        end
+        core.log.debug("auto set redirect_uri: ", conf.redirect_uri)
     end
 
     if not conf.ssl_verify then
