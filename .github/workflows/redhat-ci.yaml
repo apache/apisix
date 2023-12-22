@@ -23,6 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -107,8 +110,9 @@ jobs:
     - name: Run redhat docker and mapping apisix into container
       env:
         TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        TEST_EVENTS_MODULE: ${{ matrix.events_module }}
       run: |
-        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name ubiInstance --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
+        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --env TEST_EVENTS_MODULE="$TEST_EVENTS_MODULE" --name ubiInstance --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
 
     - name: Cache images
       id: cache-images

@@ -94,6 +94,8 @@ qr/^.*?\[error\](?!.*process exiting).*/
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(3) -- wait for new workers replacement to complete
+
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"

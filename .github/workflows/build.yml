@@ -28,6 +28,9 @@ jobs:
           - ubuntu-20.04
         os_name:
           - linux_openresty
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -169,6 +172,7 @@ jobs:
       - name: Linux Script
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+          TEST_EVENTS_MODULE: ${{ matrix.events_module }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}

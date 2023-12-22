@@ -139,6 +139,10 @@ apisix:
                                   # with the new key. Removing the old keys directly can render the data
                                   # unrecoverable.
 
+  events:                             # Event distribution module configuration
+    module: lua-resty-events          # Sets the name of the events module used.
+                                      # Supported module: lua-resty-worker-events and lua-resty-events
+
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -668,7 +672,8 @@ deployment:                    # Deployment configurations
     host:                         # Set etcd address(es) in the same etcd cluster.
       - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
     prefix: /apisix               # Set etcd prefix.
-    timeout: 30                   # Set timeout in seconds.
+    timeout: 30                   # The timeout when connect/read/write to etcd, Set timeout in seconds.
+    watch_timeout: 50             # The timeout when watch etcd
     # resync_delay: 5             # Set resync time in seconds after a sync failure.
                                   # The actual resync time would be resync_delay plus 50% random jitter.
     # health_check_timeout: 10    # Set timeout in seconds for etcd health check.
