@@ -106,6 +106,15 @@ passed
 
 
 === TEST 2: to reduce one upstream node, the metric should also be reduced by one.
+--- extra_init_worker_by_lua
+    local healthcheck = require("resty.healthcheck")
+    local new = healthcheck.new
+    healthcheck.new = function(...)
+        local obj = new(...)
+        local clear = obj.delayed_clear
+        obj.delayed_clear = obj.clear
+        return obj
+    end
 --- timeout: 20
 --- config
     location /t {
@@ -215,7 +224,6 @@ passed
                 ngx.say(body)
                 return
             end
-            ngx.sleep(6)
 
             local http = require("resty.http")
             local httpc = http.new()
@@ -246,6 +254,15 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
 
 
 === TEST 3: add an upstream node, and metric should also be added.
+--- extra_init_worker_by_lua
+    local healthcheck = require("resty.healthcheck")
+    local new = healthcheck.new
+    healthcheck.new = function(...)
+        local obj = new(...)
+        local clear = obj.delayed_clear
+        obj.delayed_clear = obj.clear
+        return obj
+    end
 --- timeout: 20
 --- config
     location /t {
@@ -355,7 +372,6 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8766"} 1
                 ngx.say(body)
                 return
             end
-            ngx.sleep(6)
 
             local http = require("resty.http")
             local httpc = http.new()
@@ -386,6 +402,15 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
 
 
 === TEST 4: delete the route
+--- extra_init_worker_by_lua
+    local healthcheck = require("resty.healthcheck")
+    local new = healthcheck.new
+    healthcheck.new = function(...)
+        local obj = new(...)
+        local clear = obj.delayed_clear
+        obj.delayed_clear = obj.clear
+        return obj
+    end
 --- timeout: 20
 --- config
     location /t {
@@ -468,7 +493,6 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="8767"} 1
                 ngx.say(body)
                 return
             end
-            ngx.sleep(6)
 
             local http = require("resty.http")
             local httpc = http.new()
