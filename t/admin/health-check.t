@@ -522,7 +522,7 @@ passed
 
 
 
-=== TEST 1: active
+=== TEST 15: test body_match_str
 --- config
     location /t {
         content_by_lua_block {
