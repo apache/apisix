@@ -1306,7 +1306,7 @@ x-userinfo: ey.*
 
 
 
-=== TEST 34: Update plugin with ID provider public key, so tokens can be validated locally.
+=== TEST 34: Set up new route with plugin matching URI `/*`
 --- config
     location /t {
         content_by_lua_block {
@@ -1344,7 +1344,68 @@ passed
 
 
 
-=== TEST 35: Access route with valid token.
+=== TEST 35: Check whether outh0 can redirect normally using post_logout_redirect_uri configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://iresty.com') ~= -1 and
+                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 36: Set up new route with plugin matching URI `/*`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "942299072001-vhduu1uljmdhhbbp7g22m3qsmo246a75.apps.googleusercontent.com",
+                                "client_secret": "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",
+                                "discovery": "https://accounts.google.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "post_logout_redirect_uri": "https://iresty.com",
+                                "scope": "openid profile"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: Check whether google can redirect normally using post_logout_redirect_uri configuration
 --- config
     location /t {
         content_by_lua_block {
