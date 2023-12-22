@@ -1344,7 +1344,7 @@ passed
 
 
 
-=== TEST 35: Check whether outh0 can redirect normally using post_logout_redirect_uri configuration
+=== TEST 35: Check whether auth0 can redirect normally using post_logout_redirect_uri configuration
 --- config
     location /t {
         content_by_lua_block {
