@@ -174,12 +174,12 @@ Once you have enabled the Plugin on a Route you can use it.
 First, you have to get the JWT token from Keycloak:
 
 ```shell
-curl \
+curl "http://<YOUR_KEYCLOAK_HOST>/realms/<YOUR_REALM>/protocol/openid-connect/token" \
   -d "client_id=<YOUR_CLIENT_ID>" \
-  -d "username=<YOUR_USERNAMED>" \
+  -d "client_secret=<YOUR_CLIENT_SECRET>" \
+  -d "username=<YOUR_USERNAME>" \
   -d "password=<YOUR_PASSWORD>" \
-  -d "grant_type=password" \
-  "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
+  -d "grant_type=password"
 ```
 
 Now you can make requests with the obtained JWT token:

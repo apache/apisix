@@ -159,11 +159,12 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 首先需要从 Keycloak 获取 JWT 令牌：
 
 ```shell
-curl \
+curl "http://<YOUR_KEYCLOAK_HOST>/realms/<YOUR_REALM>/protocol/openid-connect/token" \
   -d "client_id=<YOUR_CLIENT_ID>" \
-  -d "username=<YOUR_USERNAMED>" \
+  -d "client_secret=<YOUR_CLIENT_SECRET>" \
+  -d "username=<YOUR_USERNAME>" \
   -d "password=<YOUR_PASSWORD>" \
-  -d "grant_type=password" "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
+  -d "grant_type=password"
 ```
 
 之后就可以使用获得的 JWT 令牌发起请求：
