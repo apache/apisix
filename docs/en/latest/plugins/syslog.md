@@ -38,7 +38,7 @@ Logs can be set as JSON objects.
 |------------------|---------|----------|--------------|---------------|--------------------------------------------------------------------------------------------------------------------------|
 | host             | string  | True     |              |               | IP address or the hostname of the Syslog server.                                                                         |
 | port             | integer | True     |              |               | Target port of the Syslog server.                                                                                        |
-| name             | string  | False    | "sys logger" |               | Identifier for the server.                                                                                               |
+| name             | string  | False    | "sys logger" |               | Identifier for the server. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                                               |
 | timeout          | integer | False    | 3000         | [1, ...]      | Timeout in ms for the upstream to send data.                                                                             |
 | tls              | boolean | False    | false        |               | When set to `true` performs TLS verification.                                                                            |
 | flush_limit      | integer | False    | 4096         | [1, ...]      | Maximum size of the buffer (KB) and the current message before it is flushed and written to the server.                  |
