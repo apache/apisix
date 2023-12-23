@@ -917,7 +917,7 @@ end
 
 
 local function sleep(n)
-  os.execute("sleep " .. tonumber(n))
+  execute("sleep " .. tonumber(n))
 end
 
 local function restart(env)
