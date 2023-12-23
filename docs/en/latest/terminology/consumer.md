@@ -60,7 +60,7 @@ The process of identifying a Consumer in APISIX is described below:
 
 Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These need to be used in conjunction with the user authentication system.
 
-Authentcation plugins that can be configured with a Consumer include `basic-auth`, `hmac-auth`, `jwt-auth`, `key-auth`, `ldap-auth`, and `wolf-rbac`.
+Authentication plugins that can be configured with a Consumer include `basic-auth`, `hmac-auth`, `jwt-auth`, `key-auth`, `ldap-auth`, and `wolf-rbac`.
 
 Refer to the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
 
