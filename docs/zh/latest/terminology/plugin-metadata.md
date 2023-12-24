@@ -37,7 +37,7 @@ description: APISIX的插件元数据
 
 在APISIX中，配置通用的元数据属性，可以作用于包含该元数据插件的所有路由及服务中。例如为`rocketmq-logger`指定了 `log_format`，则所有绑定 rocketmq-logger 的路由或服务都将使用该日志格式。
 
-下图说明了插件元数据的概念，使用两个不同路由上的 syslog 插件的实例，以及为 syslog 插件设置全局 log_format 的插件元数据对象：
+下图说明了插件元数据的概念，使用两个不同路由上的 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件的实例，以及为 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件设置全局 log_format 的插件元数据对象：
 
 ![plugin_metadata](https://static.apiseven.com/uploads/2023/04/17/Z0OFRQhV_plugin%20metadata.svg)
 
