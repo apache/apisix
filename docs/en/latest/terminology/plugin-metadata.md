@@ -44,7 +44,7 @@ Without otherwise specified, the `log_format` on plugin metadata object should a
 
 Metadata properties set at the plugin level is more granular and has a higher priority over the "global" metadata object.
 
-Plugin metadata objects should only be used for plugins that have metadata fields. For more details on which plugins have metadata fields, please refer to the plugin reference guide.
+Plugin metadata objects should only be used for plugins that have metadata fields. Plugin metadata objects should only be used for plugins that have metadata fields. For more details on which plugins have metadata fields, check out Plugin Details.
 
 ## Example usage
 
