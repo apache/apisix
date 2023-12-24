@@ -52,6 +52,7 @@
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
+        "terminology/plugin-metadata",
         "terminology/route",
         "terminology/router",
         "terminology/script",
