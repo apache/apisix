@@ -36,7 +36,7 @@ Explore additional resources at the end of the document for more information on 
 
 In APISIX, a plugin metadata object is used to configure the common metadata field(s) of all plugin instances sharing the same plugin name. It is useful when a plugin is enabled across multiple objects and requires a universal update to their metadata fields.
 
-The following diagram illustrates the concept of plugin metadata using two instances of syslog plugins on two different routes, as well as a plugin metadata object setting a global `log_format` for the syslog plugin:
+The following diagram illustrates the concept of plugin metadata using two instances of [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/) plugins on two different routes, as well as a plugin metadata object setting a [global](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/) `log_format` for the syslog plugin:
 
 ![plugin_metadata](https://static.apiseven.com/uploads/2023/04/17/Z0OFRQhV_plugin%20metadata.svg)
 
