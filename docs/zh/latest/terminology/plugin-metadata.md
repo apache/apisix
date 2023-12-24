@@ -5,7 +5,7 @@ keywords:
   - Apache APISIX
   - 插件元数据配置
   - Plugin Metadata
-description: APISIX的插件元数据
+description: APISIX 的插件元数据
 ---
 
 <!--
@@ -29,19 +29,19 @@ description: APISIX的插件元数据
 
 ## 摘要
 
-在本文档中，您将了解到 APISIX 中, 插件元数据的基本概念和您可能使用到的场景。
+在本文档中，您将了解到 APISIX 中，插件元数据的基本概念和您可能使用到的场景。
 
 浏览文档末尾的相关资源，获取与此相关的更多信息。
 
 ## 描述
 
-在APISIX中，配置通用的元数据属性，可以作用于包含该元数据插件的所有路由及服务中。例如为`rocketmq-logger`指定了 `log_format`，则所有绑定 rocketmq-logger 的路由或服务都将使用该日志格式。
+在 APISIX 中，配置通用的元数据属性，可以作用于包含该元数据插件的所有路由及服务中。例如为`rocketmq-logger`指定了 `log_format`，则所有绑定 rocketmq-logger 的路由或服务都将使用该日志格式。
 
-下图说明了插件元数据的概念，使用两个不同路由上的 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件的实例，以及为 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件设置全局 log_format 的插件元数据对象：
+下图说明了插件元数据的概念，使用两个不同路由上的 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件的实例，以及为 [syslog](https://apisix.apache.org/zh/docs/apisix/plugins/syslog/)  插件设置全局`log_format`的插件元数据对象：
 
 ![plugin_metadata](https://static.apiseven.com/uploads/2023/04/17/Z0OFRQhV_plugin%20metadata.svg)
 
-如果没有另外指定，插件元数据对象上的`log_format`应将相同的日志格式统一应用于两个`syslog`插件。 但是，由于`/orders`路由上的`syslog`插件具有不同的`log_format`，因此访问该路由的请求将按照路由中插件指定的`log_format`生成日志。
+如果没有另外指定，插件元数据对象上的`log_format`应将相同的日志格式统一应用于两个`syslog`插件。但是，由于`/orders`路由上的`syslog`插件具有不同的`log_format`，因此访问该路由的请求将按照路由中插件指定的`log_format`生成日志。
 
 在插件级别设置的元数据属性更加精细，并且比`全局`元数据对象具有更高的优先级。
 
