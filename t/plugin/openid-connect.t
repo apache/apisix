@@ -876,7 +876,7 @@ OIDC introspection failed: invalid token
         }
     }
 --- response_body
-{"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","introspection_endpoint_auth_method":"client_secret_basic","logout_path":"/logout","realm":"apisix","scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_pkce":false}
+{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
 
 
 
@@ -1303,3 +1303,125 @@ passed
     }
 --- response_body_like
 x-userinfo: ey.*
+
+
+
+=== TEST 34: Set up new route with plugin matching URI `/*`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "post_logout_redirect_uri": "https://iresty.com",
+                                "scope": "openid profile"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 35: Check whether auth0 can redirect normally using post_logout_redirect_uri configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://iresty.com') ~= -1 and
+                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 36: Set up new route with plugin matching URI `/*`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "942299072001-vhduu1uljmdhhbbp7g22m3qsmo246a75.apps.googleusercontent.com",
+                                "client_secret": "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",
+                                "discovery": "https://accounts.google.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "post_logout_redirect_uri": "https://iresty.com",
+                                "scope": "openid profile"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 37: Check whether google can redirect normally using post_logout_redirect_uri configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://iresty.com') ~= -1 and
+                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302

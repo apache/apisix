@@ -37,11 +37,17 @@ install_dependencies() {
     yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
     yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
 
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    # TODO: disabled temporarily, waiting for APISIX 3.8 to be released to synchronize the apisix-runtime version
+    #wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
+    #wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime-debug-centos7.sh"
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     chmod +x build-apisix-runtime-debug-centos7.sh
     ./build-apisix-runtime-debug-centos7.sh
+
+    # patch lua-resty-events
+    sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
@@ -51,6 +57,10 @@ install_dependencies() {
 
     # install vault cli capabilities
     install_vault_cli
+
+    # install brotli
+    yum install -y cmake3
+    install_brotli
 
     # install test::nginx
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
@@ -94,7 +104,7 @@ run_case() {
     make init
     set_coredns
     # run test cases
-    FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

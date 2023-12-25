@@ -60,7 +60,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
+| log_format       | object  | 否   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger \
@@ -83,7 +83,8 @@ docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-serv
 然后在您的 ClickHouse 数据库中创建一个表来存储日志。
 
 ```shell
-echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
+curl -X POST 'http://localhost:8123/' \
+--data-binary 'CREATE TABLE default.test (host String, client_ip String, route_id String, service_id String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' --user default:
 ```
 
 ## 启用插件
@@ -97,7 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
       "plugins": {
             "clickhouse-logger": {
                 "user": "default",
-                "password": "a",
+                "password": "",
                 "database": "default",
                 "logtable": "test",
                 "endpoint_addrs": ["http://127.0.0.1:8123"]

@@ -88,6 +88,9 @@ function _M.access(conf, ctx)
         ["X-Forwarded-Host"] = core.request.get_host(ctx),
         ["X-Forwarded-Uri"] = ctx.var.request_uri,
         ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
+        ["Expect"] = core.request.header(ctx, "expect"),
+        ["Content-Length"] = core.request.header(ctx, "content-length"),
+        ["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
     }
 
     -- append headers that need to be get from the client request header
@@ -106,17 +109,23 @@ function _M.access(conf, ctx)
         method = conf.request_method
     }
 
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
     if params.method == "POST" then
-        params.body = core.request.get_body()
+        local client_body_reader, err = httpc:get_client_body_reader()
+        if client_body_reader then
+            params.body = client_body_reader
+        else
+            core.log.warn("failed to get client_body_reader. err: ", err,
+            " using core.request.get_body() instead")
+            params.body = core.request.get_body()
+        end
     end
 
     if conf.keepalive then
         params.keepalive_timeout = conf.keepalive_timeout
         params.keepalive_pool = conf.keepalive_pool
     end
-
-    local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
 
     local res, err = httpc:request_uri(conf.uri, params)
     if not res and conf.allow_degradation then

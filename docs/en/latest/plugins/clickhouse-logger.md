@@ -44,7 +44,7 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 | timeout       | integer | False    | 3                   | [1,...]      | Time to keep the connection alive for after sending a request. |
 | name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger.                              |
 | ssl_verify    | boolean | False    | true                | [true,false] | When set to `true`, verifies SSL.                              |
-| log_format       | object  | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | include_req_body       | boolean | False    | false          | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                                                                                                                 |
 | include_req_body_expr  | array   | False    |                |                       | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.                                                                                                                          |
 | include_resp_body      | boolean | False    | false          | [false, true]         | When set to `true` includes the response body in the log.                                                                                                                                                                                                                                                                                        |
@@ -60,7 +60,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -90,7 +90,8 @@ docker run -d -p 8123:8123 -p 9000:9000 -p 9009:9009 --name some-clickhouse-serv
 Then create a table in your ClickHouse database to store the logs.
 
 ```shell
-echo "CREATE TABLE default.test (\`host\` String, \`client_ip\` String, \`route_id\` String, \`service_id\` String, \`@timestamp\` String, PRIMARY KEY(\`@timestamp\`)) ENGINE = MergeTree()" | curl 'http://localhost:8123/'
+curl -X POST 'http://localhost:8123/' \
+--data-binary 'CREATE TABLE default.test (host String, client_ip String, route_id String, service_id String, `@timestamp` String, PRIMARY KEY(`@timestamp`)) ENGINE = MergeTree()' --user default:
 ```
 
 ## Enable Plugin
@@ -104,7 +105,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
       "plugins": {
             "clickhouse-logger": {
                 "user": "default",
-                "password": "a",
+                "password": "",
                 "database": "default",
                 "logtable": "test",
                 "endpoint_addrs": ["http://127.0.0.1:8123"]

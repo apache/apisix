@@ -42,8 +42,8 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | realm                                | string  | 否     | "apisix"              |               | bearer token 无效时 [`WWW-Authenticate` 响应头](https://www.rfc-editor.org/rfc/rfc6750#section-3)中会伴随着的 `realm` 讯息。                                                                                |
 | bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将仅检查请求头中的令牌（Token）。                                               |
 | logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                        |
-| post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。                                                                     |
-| redirect_uri                         | string  | 否     | "ngx.var.request_uri" |               | 身份提供者重定向返回的 URI。                                                                       |
+| post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。如果 OIDC 的服务发现端点没有提供 [`end_session_endpoint`](https://openid.net/specs/openid-connect-rpinitiated-1_0.html) ，插件内部会使用 [`redirect_after_logout_uri`](https://github.com/zmartzone/lua-resty-openidc) 进行重定向，否则使用 [`post_logout_redirect_uri`](https://openid.net/specs/openid-connect-rpinitiated-1_0.html) 进行重定向。 |
+| redirect_uri                         | string  | 否     |                       |               | 身份提供者重定向返回的 URI。如果缺失，则 APISIX 将在当前 URI 之后追加 `.apisix/redirect` 作为默认的 `redirect_uri`。注意，OP 也需要适当配置以允许这种形式的 `redirect_uri`。 |
 | timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
 | ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
 | introspection_endpoint               | string  | 否     |                       |               | 用于内省访问令牌的身份提供者的令牌内省端点的 URL。如果未设置，则使用发现文档中提供的内省端点[作为后备](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c)。                                                                    |
@@ -68,7 +68,25 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | proxy_opts.http_proxy_authorization  | string  | 否    |                       | Basic [base64 username:password] | 与 `http_proxy` 一起使用的默认 `Proxy-Authorization` 标头值。可以使用自定义 `Proxy-Authorization` 请求标头覆盖。                                                                 |
 | proxy_opts.https_proxy_authorization | string  | 否    |                       | Basic [base64 username:password] | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 标头值。无法使用自定义 `Proxy-Authorization` 请求标头覆盖，因为使用 HTTPS 时，授权在连接时完成。 |
 | proxy_opts.no_proxy                  | string  | 否    |                       |                                  | 不应被代理的主机的逗号分隔列表。                                                                                               |
-| authorization_params                 | object  | false    |                       |                                  | 在请求中发送到授权端点的附加参数                   |
+| authorization_params                 | object  | 否    |                       |                                  | 在请求中发送到授权端点的附加参数                   |
+| client_rsa_private_key          | string  | 否    |               |             | 用于签署 JWT 的客户端 RSA 私钥。  |
+| client_rsa_private_key_id       | string  | 否    |               |             | 用于计算签名 JWT 的客户端 RSA 私钥 ID。  |
+| client_jwt_assertion_expires_in | integer | 否    | 60            |             | 签名 JWT 的生存期，以秒为单位。 |
+| renew_access_token_on_expiry    | boolean | 否    | true          |             | 如果为 true，在访问令牌过期或存在刷新令牌时，尝试静默更新访问令牌。如果令牌无法更新，则重定向用户进行重新认证。  |
+| access_token_expires_in         | integer | 否    |               |             | 访问令牌的生命周期，以秒为单位，如果令牌终端响应中不存在 `expires_in` 属性。  |
+| refresh_session_interval        | integer | 否    | 900           |             | 刷新用户 ID 令牌而无需重新进行身份验证的时间间隔，以秒为单位。若未设置，则不会检查网关向客户端签发的 ID 令牌（如浏览器中的 session）过期时间。如果设置为 900，意味着在 900 秒后刷新用户的 ID 令牌（如浏览器中的 session），而无需重新进行身份验证。  |
+| iat_slack                       | integer | 否    | 120           |             | 与 ID 令牌中的 `iat` 声明的时钟偏差容忍度，以秒为单位。  |
+| accept_none_alg                 | boolean | 否    | false         |             | 如果 OpenID 提供程序不对其 ID 令牌进行签名将其设置为 true。  |
+| accept_unsupported_alg          | boolean | 否    | true          |             | 如果为 true，忽略 ID 令牌签名以接受不支持的签名算法。 |
+| access_token_expires_leeway     | integer | 否    | 0             |             | 访问令牌续订的过期宽限期，以秒为单位。当设置为大于 0 的值时，令牌续订将在令牌到期之前的一段时间内进行。这样可以避免在到达资源服务器时令牌刚好过期时出现错误。 |
+| force_reauthorize               | boolean | 否    | false         |             | 如果为 true，即使已缓存令牌，也执行授权流程。 |
+| use_nonce                       | boolean | 否    | false         |             | 如果为 true，启用授权请求中的 nonce 参数。|
+| revoke_tokens_on_logout         | boolean | 否    | false         |             | 如果为 true，通知授权服务器不再需要先前获取的刷新令牌或访问令牌，发送到吊销端点。|
+| jwk_expires_in                  | integer | 否    | 86400         |             | JWK 缓存的过期时间，以秒为单位。|
+| jwt_verification_cache_ignore   | boolean | 否    | false         |             | 如果为 true，请强制对持有者令牌进行重新验证，并忽略任何现有的缓存验证结果。 |
+| cache_segment                   | string  | 否    |               |             | 可选的缓存段的名称，用于区分和区分用于令牌内省或 JWT 验证的缓存。 |
+| introspection_interval          | integer | 否    | 0             |             | 以秒为单位的缓存和内省访问令牌的 TTL。   |
+| introspection_expiry_claim      | string  | 否    |               |             | 过期声明的名称，用于控制缓存和内省访问令牌的 TTL。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
@@ -208,3 +226,4 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 - `redirect_uri` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
 - `redirect_uri`（`scheme:host`）的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
+- `redirect_uri`  不应与路由的 URI 相同。这是因为当用户发起访问受保护资源的请求时，请求会直接指向重定向 URI，而请求中没有会话 cookie，从而导致 `no session state found` 错误。

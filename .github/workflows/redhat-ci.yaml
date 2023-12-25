@@ -23,6 +23,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -41,7 +44,7 @@ jobs:
         cache-name: cache-deps
       with:
         path: deps
-        key: ${{ runner.os }}-${{ env.cache-name }}-ubi8.6-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+        key: ${{ runner.os }}-${{ env.cache-name }}-ubi8.6-${{ hashFiles('apisix-master-0.rockspec') }}
 
     - name: Extract branch name
       if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -88,7 +91,7 @@ jobs:
         cd apisix-build-tools
         make package type=rpm app=apisix version=${VERSION} checkout=release/${VERSION} image_base=ubi image_tag=8.6 local_code_path=./apisix
         cd ..
-        rm -rf $(ls -1 --ignore=apisix-build-tools --ignore=t --ignore=utils --ignore=ci --ignore=Makefile --ignore=rockspec)
+        rm -rf $(ls -1 -I apisix-build-tools -I t -I utils -I ci --ignore=Makefile -I "*.rockspec")
 
     - name: Start Dubbo Backend
       run: |
@@ -107,8 +110,9 @@ jobs:
     - name: Run redhat docker and mapping apisix into container
       env:
         TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        TEST_EVENTS_MODULE: ${{ matrix.events_module }}
       run: |
-        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --name ubiInstance --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
+        docker run -itd -v ${{ github.workspace }}:/apisix --env TEST_FILE_SUB_DIR="$TEST_FILE_SUB_DIR" --env TEST_EVENTS_MODULE="$TEST_EVENTS_MODULE" --name ubiInstance --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
 
     - name: Cache images
       id: cache-images

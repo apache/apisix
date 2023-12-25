@@ -19,7 +19,7 @@ use t::APISIX;
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
 my $version = eval { `$nginx_binary -V 2>&1` };
 
-# We put the error page into apisix-base. It is fine since this installation is the default.
+# We put the error page into apisix-runtime. It is fine since this installation is the default.
 if ($version !~ m/\/apisix-nginx-module/) {
     plan(skip_all => "apisix-nginx-module not installed");
 } else {

@@ -201,7 +201,7 @@ function _M.stream_init()
     end
 
     if not pcall(function() return C.ngx_meta_lua_ffi_shdict_udata_to_zone end) then
-        core.log.error("need to build APISIX-Base to support L4 metrics")
+        core.log.error("need to build APISIX-Runtime to support L4 metrics")
         return
     end
 
@@ -475,8 +475,10 @@ local function collect(ctx, stream_only)
     local stats = control.get_health_checkers()
     for _, stat in ipairs(stats) do
         for _, node in ipairs(stat.nodes) do
-            metrics.upstream_status:set((node.status == "healthy") and 1 or 0,
-                gen_arr(stat.name, node.ip, node.port))
+            metrics.upstream_status:set(
+                    (node.status == "healthy" or node.status == "mostly_healthy") and 1 or 0,
+                    gen_arr(stat.name, node.ip, node.port)
+            )
         end
     end
 

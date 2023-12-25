@@ -32,7 +32,7 @@ The `client-control` Plugin can be used to dynamically control the behavior of N
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
+This Plugin requires APISIX to run on APISIX-Runtime. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
 
 :::
 
@@ -40,7 +40,7 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 
 | Name          | Type    | Required | Valid values | Description                                                                                                                          |
 | ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| max_body_size | integer | False    | [0,...]      | Dynamically set the [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
+| max_body_size | integer | False    | [0,...]      | Set the maximum limit for the client request body and dynamically adjust the size of [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size), measured in bytes. If you set the `max_body_size` to 0, then the size of the client's request body will not be checked. |
 
 ## Enable Plugin
 

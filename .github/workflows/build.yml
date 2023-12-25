@@ -28,6 +28,9 @@ jobs:
           - ubuntu-20.04
         os_name:
           - linux_openresty
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -47,7 +50,7 @@ jobs:
           submodules: recursive
 
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: "1.17"
 
@@ -57,7 +60,7 @@ jobs:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Extract branch name
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
@@ -169,6 +172,7 @@ jobs:
       - name: Linux Script
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+          TEST_EVENTS_MODULE: ${{ matrix.events_module }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}

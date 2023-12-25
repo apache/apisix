@@ -16,12 +16,12 @@
 --
 
 package = "apisix"
-version = "2.5-0"
+version = "master-0"
 supported_platforms = {"linux", "macosx"}
 
 source = {
     url = "git://github.com/apache/apisix",
-    branch = "2.5",
+    branch = "master",
 }
 
 description = {
@@ -32,40 +32,56 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "lua-resty-dns-client = 5.2.0",
-    "lua-resty-template = 1.9",
-    "lua-resty-etcd = 1.5.0",
-    "lua-resty-balancer = 0.02rc5",
+    "api7-lua-resty-dns-client = 7.0.1",
+    "lua-resty-template = 2.0",
+    "lua-resty-etcd = 1.10.5",
+    "api7-lua-resty-http = 0.2.2-0",
+    "lua-resty-balancer = 0.04",
     "lua-resty-ngxvar = 0.5.2",
     "lua-resty-jit-uuid = 0.0.7",
-    "lua-resty-healthcheck-api7 = 2.2.0",
-    "lua-resty-jwt = 0.2.0",
-    "lua-resty-hmac-ffi = 0.05",
-    "lua-resty-cookie = 0.1.0",
-    "lua-resty-session = 2.24",
+    "lua-resty-worker-events = 1.0.0",
+    "lua-resty-healthcheck-api7 = 3.2.0",
+    "api7-lua-resty-jwt = 0.2.5",
+    "lua-resty-hmac-ffi = 0.06-1",
+    "lua-resty-cookie = 0.2.0-1",
+    "lua-resty-session = 3.10",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.7.0",
-    "lua-protobuf = 0.3.1",
-    "lua-resty-openidc = 1.7.2-1",
+    "lua-resty-radixtree = 2.8.2",
+    "lua-protobuf = 0.5.0-1",
+    "lua-resty-openidc = 1.7.6-3",
     "luafilesystem = 1.7.0-2",
-    "lua-tinyyaml = 1.0",
-    "nginx-lua-prometheus = 0.20210206",
-    "jsonschema = 0.9.5",
-    "lua-resty-ipmatcher = 0.6",
-    "lua-resty-kafka = 0.07",
-    "lua-resty-logger-socket = 2.0-0",
-    "skywalking-nginx-lua = 0.4-1",
+    "api7-lua-tinyyaml = 0.4.4",
+    "nginx-lua-prometheus = 0.20230607-1",
+    "jsonschema = 0.9.8",
+    "lua-resty-ipmatcher = 0.6.1",
+    "lua-resty-kafka = 0.22-0",
+    "lua-resty-logger-socket = 2.0.1-0",
+    "skywalking-nginx-lua = 0.6.0",
     "base64 = 1.5-2",
     "binaryheap = 0.4",
-    "dkjson = 2.5-2",
-    "resty-redis-cluster = 1.02-4",
-    "lua-resty-expr = 1.2.0",
+    "api7-dkjson = 0.1.1",
+    "resty-redis-cluster = 1.05-1",
+    "lua-resty-expr = 1.3.2",
     "graphql = 0.0.2",
     "argparse = 0.7.1-1",
-    "luasocket = 3.0rc1-2",
+    "luasocket = 3.1.0-1",
     "luasec = 0.9-1",
     "lua-resty-consul = 0.3-2",
-    "penlight = 1.9.2-1",
+    "penlight = 1.13.1",
+    "ext-plugin-proto = 0.6.1",
+    "casbin = 1.41.8-1",
+    "inspect == 3.1.1",
+    "lualdap = 1.2.6-1",
+    "lua-resty-rocketmq = 0.3.0-0",
+    "opentelemetry-lua = 0.2-3",
+    "net-url = 0.9-1",
+    "xml2lua = 1.5-2",
+    "nanoid = 0.1-1",
+    "lua-resty-mediador = 0.1.2-1",
+    "lua-resty-ldap = 0.1.0-0",
+    "lua-resty-t1k = 1.1.0",
+    "brotli-ffi = 0.3-1",
+    "lua-ffi-zlib = 0.6-0"
 }
 
 build = {
@@ -81,10 +97,10 @@ build = {
         OPENSSL_LIBDIR="$(OPENSSL_LIBDIR)",
     },
     install_variables = {
-        INST_PREFIX="$(PREFIX)",
-        INST_BINDIR="$(BINDIR)",
-        INST_LIBDIR="$(LIBDIR)",
-        INST_LUADIR="$(LUADIR)",
-        INST_CONFDIR="$(CONFDIR)",
+        ENV_INST_PREFIX="$(PREFIX)",
+        ENV_INST_BINDIR="$(BINDIR)",
+        ENV_INST_LIBDIR="$(LIBDIR)",
+        ENV_INST_LUADIR="$(LUADIR)",
+        ENV_INST_CONFDIR="$(CONFDIR)",
     },
 }

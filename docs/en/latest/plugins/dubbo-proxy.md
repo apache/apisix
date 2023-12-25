@@ -34,7 +34,7 @@ The `dubbo-proxy` Plugin allows you to proxy HTTP requests to [Apache Dubbo](htt
 
 :::info IMPORTANT
 
-If you are using OpenResty, you need to build it with Dubbo support. See [How do I build the APISIX base environment](./../FAQ.md#how-do-i-build-the-apisix-base-environment) for details.
+If you are using OpenResty, you need to build it with Dubbo support. See [How do I build the APISIX runtime environment](./../FAQ.md#how-do-i-build-the-apisix-runtime-environment) for details.
 
 :::
 
