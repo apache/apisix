@@ -65,11 +65,11 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger \
 
 配置完成后，你将在日志系统中看到如下类似日志：
 
-```shell
+```json
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## 附加资源
+## 相关资源
 
-核心概念 - [Plugins](https://apisix.apache.org/docs/apisix/terminology/plugin/)
+核心概念 - [插件](https://apisix.apache.org/docs/apisix/terminology/plugin/)
