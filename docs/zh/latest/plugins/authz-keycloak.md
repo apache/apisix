@@ -159,18 +159,24 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 首先需要从 Keycloak 获取 JWT 令牌：
 
 ```shell
-curl \
+curl "http://<YOUR_KEYCLOAK_HOST>/realms/<YOUR_REALM>/protocol/openid-connect/token" \
   -d "client_id=<YOUR_CLIENT_ID>" \
-  -d "username=<YOUR_USERNAMED>" \
+  -d "client_secret=<YOUR_CLIENT_SECRET>" \
+  -d "username=<YOUR_USERNAME>" \
   -d "password=<YOUR_PASSWORD>" \
-  -d "grant_type=password" "http://<YOUR_KEYCLOAK_HOST>/auth/realms/${realm}/protocol/openid-connect/token"
+  -d "grant_type=password"
 ```
 
-之后就可以使用获得的 JWT 令牌发起请求：
+你应该收到类似以下的响应：
+
+```text
+{"access_token":"eyJhbGciOiJSUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJoT3ludlBPY2d6Y3VWWnYtTU42bXZKMUczb0dOX2d6MFo3WFl6S2FSa1NBIn0.eyJleHAiOjE3MDMyOTAyNjAsImlhdCI6MTcwMzI4OTk2MCwianRpIjoiMjJhOGFmMzItNDM5Mi00Yzg3LThkM2UtZDkyNDVmZmNiYTNmIiwiaXNzIjoiaHR0cDovLzE5Mi4xNjguMS44Mzo4MDgwL3JlYWxtcy9xdWlja3N0YXJ0LXJlYWxtIiwiYXVkIjoiYWNjb3VudCIsInN1YiI6IjAyZWZlY2VlLTBmYTgtNDg1OS1iYmIwLTgyMGZmZDdjMWRmYSIsInR5cCI6IkJlYXJlciIsImF6cCI6ImFwaXNpeC1xdWlja3N0YXJ0LWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiI1YzIzZjVkZC1hN2ZhLTRlMmItOWQxNC02MmI1YzYyNmU1NDYiLCJhY3IiOiIxIiwicmVhbG1fYWNjZXNzIjp7InJvbGVzIjpbImRlZmF1bHQtcm9sZXMtcXVpY2tzdGFydC1yZWFsbSIsIm9mZmxpbmVfYWNjZXNzIiwidW1hX2F1dGhvcml6YXRpb24iXX0sInJlc291cmNlX2FjY2VzcyI6eyJhY2NvdW50Ijp7InJvbGVzIjpbIm1hbmFnZS1hY2NvdW50IiwibWFuYWdlLWFjY291bnQtbGlua3MiLCJ2aWV3LXByb2ZpbGUiXX19LCJzY29wZSI6ImVtYWlsIHByb2ZpbGUiLCJzaWQiOiI1YzIzZjVkZC1hN2ZhLTRlMmItOWQxNC02MmI1YzYyNmU1NDYiLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsInByZWZlcnJlZF91c2VybmFtZSI6InF1aWNrc3RhcnQtdXNlciJ9.WNZQiLRleqCxw-JS-MHkqXnX_BPA9i6fyVHqF8l-L-2QxcqTAwbIp7AYKX-z90CG6EdRXOizAEkQytB32eVWXaRkLeTYCI7wIrT8XSVTJle4F88ohuBOjDfRR61yFh5k8FXXdAyRzcR7tIeE2YUFkRqw1gCT_VEsUuXPqm2wTKOmZ8fRBf4T-rP4-ZJwPkHAWc_nG21TmLOBCSulzYqoC6Lc-OvX5AHde9cfRuXx-r2HhSYs4cXtvX-ijA715MY634CQdedheoGca5yzPsJWrAlBbCruN2rdb4u5bDxKU62pJoJpmAsR7d5qYpYVA6AsANDxHLk2-W5F7I_IxqR0YQ","expires_in":300,"refresh_expires_in":1800,"refresh_token":"eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJjN2IwYmY4NC1kYjk0LTQ5YzctYWIyZC01NmU3ZDc1MmRkNDkifQ.eyJleHAiOjE3MDMyOTE3NjAsImlhdCI6MTcwMzI4OTk2MCwianRpIjoiYzcyZjAzMzctYmZhNS00MWEzLTlhYjEtZmJlNGY0NmZjMDgxIiwiaXNzIjoiaHR0cDovLzE5Mi4xNjguMS44Mzo4MDgwL3JlYWxtcy9xdWlja3N0YXJ0LXJlYWxtIiwiYXVkIjoiaHR0cDovLzE5Mi4xNjguMS44Mzo4MDgwL3JlYWxtcy9xdWlja3N0YXJ0LXJlYWxtIiwic3ViIjoiMDJlZmVjZWUtMGZhOC00ODU5LWJiYjAtODIwZmZkN2MxZGZhIiwidHlwIjoiUmVmcmVzaCIsImF6cCI6ImFwaXNpeC1xdWlja3N0YXJ0LWNsaWVudCIsInNlc3Npb25fc3RhdGUiOiI1YzIzZjVkZC1hN2ZhLTRlMmItOWQxNC02MmI1YzYyNmU1NDYiLCJzY29wZSI6ImVtYWlsIHByb2ZpbGUiLCJzaWQiOiI1YzIzZjVkZC1hN2ZhLTRlMmItOWQxNC02MmI1YzYyNmU1NDYifQ.7AH7ppbVOlkYc9CoJ7kLSlDUkmFuNga28Amugn2t724","token_type":"Bearer","not-before-policy":0,"session_state":"5c23f5dd-a7fa-4e2b-9d14-62b5c626e546","scope":"email profile"}
+```
+
+之后就可以使用获得的访问令牌发起请求：
 
 ```shell
-curl http://127.0.0.1:9080/get \
--H 'Authorization: Bearer {JWT Token}'
+curl http://127.0.0.1:9080/get -H 'Authorization: Bearer ${ACCESS_TOKEN}'
 ```
 
 ## 删除插件
