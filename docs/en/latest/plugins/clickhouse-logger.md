@@ -42,7 +42,7 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 | user          | string  | True     |                     |              | ClickHouse username.                                           |
 | password      | string  | True     |                     |              | ClickHouse password.                                           |
 | timeout       | integer | False    | 3                   | [1,...]      | Time to keep the connection alive for after sending a request. |
-| name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger.                              |
+| name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                              |
 | ssl_verify    | boolean | False    | true                | [true,false] | When set to `true`, verifies SSL.                              |
 | log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | include_req_body       | boolean | False    | false          | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                                                                                                                 |
