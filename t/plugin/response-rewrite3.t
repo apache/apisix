@@ -433,3 +433,59 @@ Content-Encoding: deflate
 X-Server-id: 3
 X-Server-status: on
 Content-Type:
+
+
+
+=== TEST 9: set route use response-write filter conf, and mock unsupported compression encoding type
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "filters": [
+                                {
+                                    "regex": "hello",
+                                    "replace": "test"
+                                }
+                            ]
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: use filter conf will report unsupported encoding type error
+--- request
+POST /echo
+fake body with mock content encoding header
+--- more_headers
+Content-Encoding: br
+--- response_headers
+Content-Encoding:

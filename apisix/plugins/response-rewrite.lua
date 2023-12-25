@@ -29,6 +29,7 @@ local type        = type
 local pcall       = pcall
 local zlib        = require("ffi-zlib")
 local str_buffer  = require("string.buffer")
+local is_loaded, brotli = pcall(require, "brotli")
 
 
 local lrucache = core.lrucache.new({
@@ -227,6 +228,47 @@ local function inflate_gzip(data)
 end
 
 
+local function brotli_decode(data)
+    local inputs = str_buffer.new():set(data)
+    local outputs = str_buffer.new()
+
+    local read_inputs = function(size)
+        local data = inputs:get(size)
+        if data == "" then
+            return nil
+        end
+        return data
+    end
+
+    local write_outputs = function(data)
+        return outputs:put(data)
+    end
+
+    local read_size = 32 * 1024
+    local decompressor = brotli.decompressor:new()
+
+    local chunk
+    while true do
+        local compressed_chunk = read_inputs(read_size)
+        if not compressed_chunk then
+            ok, chunk = pcall(function()
+                return decompressor:finish()
+            end)
+            if not ok then
+                core.log.error(chunk)
+                return
+            end
+            write_outputs(chunk)
+            break
+        end
+        chunk = decompressor:decompress(compressed_chunk)
+        write_outputs(chunk)
+    end
+
+    return outputs:get()
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -292,6 +334,12 @@ function _M.body_filter(conf, ctx)
             body, err = inflate_gzip(body)
             if err ~= nil then
                 core.log.error("filters may not work as expected, inflate gzip err: ", err)
+                return
+            end
+        elseif ctx.response_encoding == "br" and is_loaded then
+            body, err = brotli_decode(body)
+            if err ~= nil then
+                core.log.error("filters may not work as expected, brotli decode err: ", err)
                 return
             end
         elseif ctx.response_encoding ~= nil then
