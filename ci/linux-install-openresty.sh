@@ -35,7 +35,7 @@ sudo add-apt-repository -y "deb https://openresty.org/package/${arch_path}ubuntu
 sudo add-apt-repository -y "deb http://repos.apiseven.com/packages/${arch_path}debian bullseye main"
 
 sudo apt-get update
-sudo apt-get install -y libldap2-dev openresty-pcre-dev openresty-zlib-dev build-essential gcc g++
+sudo apt-get install -y libldap2-dev openresty-pcre-dev openresty-zlib-dev build-essential gcc g++ cpanminus
 
 SSL_LIB_VERSION=${SSL_LIB_VERSION-openssl}
 ENABLE_FIPS=${ENABLE_FIPS:-"false"}

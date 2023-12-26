@@ -80,8 +80,8 @@ ifeq ($(ENV_OS_NAME), darwin)
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl
 	endif
-	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl3 && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl3
+	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl && echo -n yes), yes)
+		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl
 	endif
 	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/pcre && echo -n yes), yes)
 		ENV_PCRE_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/pcre

@@ -49,9 +49,17 @@ jobs:
         with:
           path: deps
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+  
+      - uses: KengoTODA/actions-setup-docker-compose@v1
+        if: ${{ env.ACT }}
+        name: Install `docker-compose` for local simulations
+        with:
+          version: '2.14.2'
 
       - name: Linux launch common services
         run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake
           project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
       - name: Linux Before install
