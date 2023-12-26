@@ -74,7 +74,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT -d '
 }'
 ```
 
-You will receive an `HTTP/1.1 201 OK` response if the consumer was created successfully.
+You will receive an `HTTP/1.1 201 Created` response if the consumer was created successfully.
 
 ### Enable Authentication
 
