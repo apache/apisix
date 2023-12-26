@@ -1,0 +1,169 @@
+name: CI GM (cron)
+
+on:
+  schedule:
+    # UTC 7:30 every Friday
+    - cron: "30 7 * * 5"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-20.04
+        os_name:
+          - linux_openresty_tongsuo
+        test_dir:
+          - t/plugin/[a-k]*
+          - t/plugin/[l-z]*
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/node t/pubsub t/router t/script t/stream-node t/utils t/wasm t/xds-library t/xrpc
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 90
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+      OPENRESTY_VERSION: default
+
+    # TODO: refactor the workflows to reduce duplicate parts. Maybe we can write them in shell
+    # scripts or a separate action?
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.17"
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+
+      - name: Cache Tongsuo compilation
+        id: cache-tongsuo
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-tongsuo
+        with:
+          path: ./tongsuo
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-tongsuo-ver
+
+      - name: Test SSL Env
+        id: test_ssl_env
+        shell: bash
+        if: steps.cache-tongsuo.outputs.cache-hit != 'true'
+        run: |
+          echo "compile_tongsuo=true" >>$GITHUB_OUTPUT
+
+      - name: Extract test type
+        shell: bash
+        id: test_env
+        run: |
+          test_dir="${{ matrix.test_dir }}"
+          if [[ $test_dir =~ 't/plugin' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/admin ' ]]; then
+            echo "type=first" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ ' t/xrpc' ]]; then
+            echo "type=last" >>$GITHUB_OUTPUT
+          fi
+
+      - name: Free disk space
+        run: |
+          bash ./ci/free_disk_space.sh
+
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
+      - name: Cache images
+        id: cache-images
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-apisix-docker-images
+        with:
+          path: docker-images-backup
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
+
+      - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
+        name: Load saved docker images
+        run: |
+          if [[ -f docker-images-backup/apisix-images.tar ]]; then
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+            docker load --input docker-images-backup/apisix-images.tar
+            rm docker-images-backup/apisix-images.tar
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            echo "loaded docker images"
+            if [[ ${{ steps.test_env.outputs.type }} != first ]]; then
+              sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+            fi
+          fi
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Linux launch services
+        run: |
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+          echo "Linux launch services, done."
+
+      - name: Start Dubbo Backend
+        if: steps.test_env.outputs.type == 'plugin'
+        run: |
+          sudo apt install -y maven
+          cd t/lib/dubbo-backend
+          mvn package
+          cd dubbo-backend-provider/target
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+
+      - name: Build xDS library
+        if: steps.test_env.outputs.type == 'last'
+        run: |
+          cd t/xds-library
+          go build -o libxds.so -buildmode=c-shared main.go export.go
+
+      - name: Build wasm code
+        if: steps.test_env.outputs.type == 'last'
+        run: |
+          export TINYGO_VER=0.20.0
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
+          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
+          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
+
+      - name: Linux Before install
+        env:
+          COMPILE_TONGSUO: ${{ steps.test_ssl_env.outputs.compile_tongsuo }}
+        run: |
+          sudo --preserve-env=COMPILE_TONGSUO \
+          ./ci/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Linux Script
+        env:
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Save docker images
+        run: |
+          echo "start backing up, $(date)"
+          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+          echo "backup done, $(date)"

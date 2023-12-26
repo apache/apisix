@@ -1,0 +1,66 @@
+name: CLI Test
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-20.04
+        job_name:
+          - linux_apisix_current_luarocks
+          - linux_apisix_current_luarocks_in_customed_nginx
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 30
+    env:
+      SERVER_NAME: ${{ matrix.job_name }}
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache deps
+        uses: actions/cache@v3
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+
+      - name: Linux launch common services
+        run: |
+          project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+            sudo --preserve-env=OPENRESTY_VERSION \
+            ./ci/${{ matrix.job_name }}_runner.sh do_install
+
+      - name: Linux Script
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
