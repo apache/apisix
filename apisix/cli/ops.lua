@@ -921,7 +921,6 @@ local function sleep(n)
 end
 
 local function wait_stop_finish(env, n) 
-
     for i = 1, n do
          -- check running
         local pid_path = env.apisix_home .. "/logs/nginx.pid"
@@ -934,7 +933,6 @@ local function wait_stop_finish(env, n)
             sleep(1)
         end
     end
- 
 end
 
 local function restart(env)
