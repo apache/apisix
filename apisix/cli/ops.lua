@@ -805,7 +805,7 @@ local function start(env, ...)
 
         local ok, err, err_no = signal.kill(pid, signone)
         if ok then
-            print("APISIX is running...")
+            print("the old process is still running, the new one won't be started!")
             return
         -- no such process
         elseif err_no ~= errno.ESRCH then
@@ -920,13 +920,31 @@ local function sleep(n)
   execute("sleep " .. tonumber(n))
 end
 
+local function wait_stop_finish(env, n) 
+
+    for i = 1, n do
+         -- check running
+        local pid_path = env.apisix_home .. "/logs/nginx.pid"
+        local pid = util.read_file(pid_path)
+        pid = tonumber(pid)
+        if not pid or pid == 0 then
+            print("old apisix process has stopped")
+            return
+        else
+            sleep(1)
+        end
+    end
+ 
+end
+
 local function restart(env)
   -- test configuration
   test(env)
   stop(env)
-  sleep(1)
+  wait_stop_finish(env,3)
   start(env)
 end
+
 
 
 local function reload(env)
