@@ -43,7 +43,7 @@ This plugin also allows to push logs as a batch to your external UDP server. It 
 | port             | integer | True     |              | [0,...]      | Target upstream port.                                    |
 | timeout          | integer | False    | 3            | [1,...]      | Timeout for the upstream to send data.                   |
 | log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
-| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor.               |
+| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. processor.               |
 | include_req_body | boolean | False    | false        |              | When set to `true` includes the request body in the log. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.

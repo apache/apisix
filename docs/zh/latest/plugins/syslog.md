@@ -39,7 +39,7 @@ description: API 网关 Apache APISIX syslog 插件可用于将日志推送到 S
 | ---------------- | ------- | ------ | ------------ | ------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
 | host             | string  | 是     |              |               | IP 地址或主机名。                                                                                                                      |
 | port             | integer | 是     |              |               | 目标上游端口。                                                                                                                         |
-| name             | string  | 否     | "sys logger" |               | syslog 服务器的标识符。                                                                                                                |
+| name             | string  | 否     | "sys logger" |               | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                                                                                                                |
 | timeout          | integer | 否     | 3000         | [1, ...]      | 上游发送数据超时（以毫秒为单位）。                                                                                                       |
 | tls              | boolean | 否     | false        |               | 当设置为 `true` 时执行 SSL 验证。                                                                                                       |
 | flush_limit      | integer | 否     | 4096         | [1, ...]      | 如果缓冲的消息的大小加上当前消息的大小达到（> =）此限制（以字节为单位），则缓冲的日志消息将被写入日志服务器，默认为 4096（4KB）。              |

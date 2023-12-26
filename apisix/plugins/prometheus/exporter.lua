@@ -473,10 +473,13 @@ local function collect(ctx, stream_only)
 
     -- update upstream_status metrics
     local stats = control.get_health_checkers()
+    metrics.upstream_status:reset()
     for _, stat in ipairs(stats) do
         for _, node in ipairs(stat.nodes) do
-            metrics.upstream_status:set((node.status == "healthy") and 1 or 0,
-                gen_arr(stat.name, node.ip, node.port))
+            metrics.upstream_status:set(
+                    (node.status == "healthy" or node.status == "mostly_healthy") and 1 or 0,
+                    gen_arr(stat.name, node.ip, node.port)
+            )
         end
     end
 

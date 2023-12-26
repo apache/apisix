@@ -80,7 +80,8 @@ dependencies = {
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
     "lua-resty-t1k = 1.1.0",
-    "brotli-ffi = 0.3-1"
+    "brotli-ffi = 0.3-1",
+    "lua-ffi-zlib = 0.6-0"
 }
 
 build = {
