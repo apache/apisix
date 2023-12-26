@@ -52,7 +52,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 }'
 ```
 
-You will receive an `HTTP/1.1 201 OK` response if the route was created successfully.
+You will receive an `HTTP/1.1 201 Created` response if the route was created successfully.
 
 ## Validate
 

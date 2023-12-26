@@ -74,7 +74,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT -d '
 }'
 ```
 
-如果消费者创建成功，你将得到返回 `HTTP/1.1 201 OK`。
+如果消费者创建成功，你将得到返回 `HTTP/1.1 201 Created`。
 
 ### 启用 Authentication
 
