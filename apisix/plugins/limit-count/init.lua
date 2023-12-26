@@ -14,8 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core = require("apisix.core")
 local apisix_plugin = require("apisix.plugin")
+local constants = require("apisix.constants")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
@@ -101,6 +104,11 @@ local policy_to_additional_properties = {
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         count = {type = "integer", exclusiveMinimum = 0},
         time_window = {type = "integer",  exclusiveMinimum = 0},
         group = {type = "string"},

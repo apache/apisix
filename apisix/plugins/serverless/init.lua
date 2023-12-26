@@ -19,6 +19,7 @@ local pcall = pcall
 local loadstring = loadstring
 local require = require
 local type = type
+local constants = require("apisix.constants")
 
 
 local phases = {
@@ -38,6 +39,11 @@ return function(plugin_name, priority)
     local schema = {
         type = "object",
         properties = {
+            category = {
+                type = "string",
+                description = "This field is used for plugin classification",
+                default = constants.PLUGIN_CATEGORY_SERVERLESS
+            },
             phase = {
                 type = "string",
                 default = "access",

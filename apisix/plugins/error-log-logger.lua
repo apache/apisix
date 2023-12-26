@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local require = require
 local core = require("apisix.core")
 local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
@@ -22,6 +23,7 @@ local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
 local http = require("resty.http")
 local producer = require("resty.kafka.producer")
+local constants = require("apisix.constants")
 local plugin_name = "error-log-logger"
 local table = core.table
 local schema_def = core.schema
@@ -152,6 +154,13 @@ local metadata_schema = {
 
 local schema = {
     type = "object",
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
+    }
 }
 
 

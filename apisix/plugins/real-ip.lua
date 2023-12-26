@@ -14,7 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx_re_split = require("ngx.re").split
 local is_apisix_or, client = pcall(require, "resty.apisix.client")
 local str_byte = string.byte
@@ -29,6 +31,11 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
         trusted_addresses = {
             type = "array",
             items = {anyOf = core.schema.ip_def},

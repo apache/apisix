@@ -14,9 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
+local constants = require("apisix.constants")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 
 local math     = math
@@ -32,6 +35,11 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         meta_format = {
             type = "string",
             default = "default",

@@ -205,7 +205,7 @@ Location: https://www.iresty.com
 --- request
 GET /t
 --- response_body
-{"echo":{"before_body":"before the body modification ","headers":{"Location":"https://www.iresty.com"}}}
+{"echo":{"before_body":"before the body modification ","category":"General","headers":{"Location":"https://www.iresty.com"}}}
 
 
 

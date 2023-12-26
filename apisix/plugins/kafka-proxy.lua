@@ -14,12 +14,19 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OTHER_PROTOCOLS
+        },
         sasl = {
             type = "object",
             properties = {

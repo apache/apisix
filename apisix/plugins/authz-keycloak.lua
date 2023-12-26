@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core      = require("apisix.core")
 local http      = require "resty.http"
+local constants = require("apisix.constants")
 local sub_str   = string.sub
 local type      = type
 local ngx       = ngx
@@ -28,6 +30,11 @@ local pairs = pairs
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         discovery = {type = "string", minLength = 1, maxLength = 4096},
         token_endpoint = {type = "string", minLength = 1, maxLength = 4096},
         resource_registration_endpoint = {type = "string", minLength = 1, maxLength = 4096},

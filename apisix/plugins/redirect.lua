@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
+local constants = require("apisix.constants")
 local tab_insert = table.insert
 local tab_concat = table.concat
 local string_format = string.format
@@ -40,6 +42,11 @@ local reg = [[(\\\$[0-9a-zA-Z_]+)|]]         -- \$host
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
         ret_code = {type = "integer", minimum = 200, default = 302},
         uri = {type = "string", minLength = 2, pattern = reg},
         regex_uri = {

@@ -48,7 +48,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"rejected_code":403,"title":"whitelist","type":"consumer_name","whitelist":["jack1","jack2"]}
+{"category":"Security","rejected_code":403,"title":"whitelist","type":"consumer_name","whitelist":["jack1","jack2"]}
 
 
 

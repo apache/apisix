@@ -18,6 +18,7 @@ local ngx  = ngx
 local require = require
 local type = type
 local string = string
+local constants = require("apisix.constants")
 
 return function(plugin_name, version, priority, request_processor, authz_schema, metadata_schema)
     local core = require("apisix.core")
@@ -32,6 +33,11 @@ return function(plugin_name, version, priority, request_processor, authz_schema,
     local schema = {
         type = "object",
         properties = {
+            category = {
+                type = "string",
+                description = "This field is used for plugin classification",
+                default = constants.PLUGIN_CATEGORY_SERVERLESS
+            },
             function_uri = {type = "string"},
             authorization = authz_schema,
             timeout = {type = "integer", minimum = 100, default = 3000},

@@ -14,12 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require         = require
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
+local constants       = require("apisix.constants")
 
 local tostring = tostring
 local ipairs   = ipairs
@@ -30,6 +31,11 @@ local batch_processor_manager = bp_manager_mod.new("http logger")
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         uri = core.schema.uri_def,
         auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},

@@ -102,6 +102,11 @@ local schema = {
             items = {
                 type = "object",
                 properties = {
+                    category = {
+                        type = "string",
+                        description = "This field is used for plugin classification",
+                        default = constants.PLUGIN_CATEGORY_GENERAL
+                    },
                     name = {
                         type = "string",
                         maxLength = 128,

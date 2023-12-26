@@ -15,13 +15,20 @@
 -- limitations under the License.
 --
 local require = require
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ok, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         request_buffering = {
             type = "boolean",
             default = true,

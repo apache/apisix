@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-local log_util = require("apisix.utils.log-util")
-local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+local require           = require
+local core              = require("apisix.core")
+local log_util          = require("apisix.utils.log-util")
+local bp_manager_mod    = require("apisix.utils.batch-processor-manager")
+local cls_sdk           = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
+local constants         = require("apisix.constants")
 local math = math
 local pairs = pairs
 
@@ -28,6 +30,11 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         cls_host = { type = "string" },
         cls_topic = { type = "string" },
         secret_id = { type = "string" },

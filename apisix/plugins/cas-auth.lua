@@ -14,8 +14,10 @@
 ---- See the License for the specific language governing permissions and
 ---- limitations under the License.
 ----
+local require = require
 local core = require("apisix.core")
 local http = require("resty.http")
+local constants = require("apisix.constants")
 local ngx = ngx
 local ngx_re_match = ngx.re.match
 
@@ -32,6 +34,11 @@ local plugin_name = "cas-auth"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         idp_uri = {type = "string"},
         cas_callback_uri = {type = "string"},
         logout_uri = {type = "string"},

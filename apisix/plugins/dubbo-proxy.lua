@@ -14,7 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx_var = ngx.var
 
 
@@ -23,6 +25,11 @@ local plugin_name = "dubbo-proxy"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OTHER_PROTOCOLS
+        },
         service_name = {
             type = "string",
             minLength = 1,

@@ -14,11 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 local new_tab = require ("table.new")
+local constants = require("apisix.constants")
 
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
@@ -35,6 +37,11 @@ local pcall = pcall
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         header = {
             type = "string",
             default = "authorization"

@@ -75,7 +75,7 @@ done
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+{"break_response_code":502,"category":"Traffic","healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 
 
 
@@ -100,7 +100,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+{"break_response_code":502,"category":"Traffic","healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 
 
 
@@ -125,7 +125,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"break_response_code":502,"healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
+{"break_response_code":502,"category":"Traffic","healthy":{"http_statuses":[200],"successes":3},"max_breaker_sec":300,"unhealthy":{"failures":3,"http_statuses":[500]}}
 
 
 

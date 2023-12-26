@@ -15,11 +15,13 @@
 -- limitations under the License.
 --
 
+local require = require
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
+local constants = require("apisix.constants")
 local math_random     = math.random
 
 local tostring = tostring
@@ -30,6 +32,11 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         -- deprecated, use "endpoint_addrs" instead
         endpoint_addr = core.schema.uri_def,
         endpoint_addrs = {items = core.schema.uri_def, type = "array", minItems = 1},

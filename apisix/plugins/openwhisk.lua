@@ -14,9 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core              = require("apisix.core")
 local http              = require("resty.http")
+local constants = require("apisix.constants")
 local ngx_encode_base64 = ngx.encode_base64
 local tostring          = tostring
 
@@ -25,6 +26,11 @@ local name_pattern = [[\A([\w]|[\w][\w@ .-]*[\w@.-]+)\z]]
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_SERVERLESS
+        },
         api_host = {type = "string"},
         ssl_verify = {
             type = "boolean",

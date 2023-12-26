@@ -14,11 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
+local constants = require("apisix.constants")
 local string  = string
 local ngx     = ngx
 local ipairs = ipairs
@@ -32,6 +33,11 @@ local plugin_name = "openid-connect"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         client_id = {type = "string"},
         client_secret = {type = "string"},
         discovery = {type = "string"},

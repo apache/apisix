@@ -14,16 +14,22 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core   = require("apisix.core")
 local http   = require("resty.http")
 local helper = require("apisix.plugins.opa.helper")
+local constants = require("apisix.constants")
 local type   = type
 local ipairs = ipairs
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         host = {type = "string"},
         ssl_verify = {
             type = "boolean",

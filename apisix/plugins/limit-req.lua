@@ -14,8 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local limit_req_new = require("resty.limit.req").new
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin_name = "limit-req"
 local sleep = core.sleep
 
@@ -27,6 +30,11 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         rate = {type = "number", exclusiveMinimum = 0},
         burst = {type = "number",  minimum = 0},
         key = {type = "string"},

@@ -14,16 +14,22 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local casbin          = require("casbin")
 local core            = require("apisix.core")
 local plugin          = require("apisix.plugin")
+local constants = require("apisix.constants")
 
 local plugin_name = "authz-casbin"
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         model_path = { type = "string" },
         policy_path = { type = "string" },
         model = { type = "string" },

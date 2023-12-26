@@ -20,6 +20,7 @@ local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local sw_tracer = require("skywalking.tracer")
 local Span = require("skywalking.span")
+local constants = require("apisix.constants")
 local ngx = ngx
 local math = math
 
@@ -50,6 +51,11 @@ local attr_schema = {
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         sample_ratio = {
             type = "number",
             minimum = 0.00001,

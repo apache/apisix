@@ -54,7 +54,7 @@ __DATA__
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"appid":"unset","category":"Authentication","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
 
 
 

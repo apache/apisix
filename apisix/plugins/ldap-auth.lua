@@ -14,16 +14,23 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer_mod = require("apisix.consumer")
 local ldap = require("resty.ldap")
+local constants = require("apisix.constants")
 
 local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         base_dn = { type = "string" },
         ldap_uri = { type = "string" },
         use_tls = { type = "boolean", default = false },

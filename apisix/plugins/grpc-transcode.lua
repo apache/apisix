@@ -15,11 +15,13 @@
 -- limitations under the License.
 --
 local ngx         = ngx
+local require = require
 local core        = require("apisix.core")
 local schema_def  = require("apisix.schema_def")
 local proto       = require("apisix.plugins.grpc-transcode.proto")
 local request     = require("apisix.plugins.grpc-transcode.request")
 local response    = require("apisix.plugins.grpc-transcode.response")
+local constants   = require("apisix.constants")
 
 
 local plugin_name = "grpc-transcode"
@@ -47,6 +49,11 @@ local pb_option_def = {
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
         proto_id  = schema_def.id_schema,
         service = {
             description = "the grpc service name",

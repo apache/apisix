@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local is_apisix_or, response = pcall(require, "resty.apisix.response")
+local constants = require("apisix.constants")
 local ngx_header = ngx.header
 local req_http_version = ngx.req.http_version
 local str_sub = string.sub
@@ -27,6 +29,11 @@ local type = type
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
         types = {
             anyOf = {
                 {

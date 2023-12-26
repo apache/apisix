@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 
+local require = require
 local core            = require("apisix.core")
 local tostring        = tostring
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local google_oauth    = require("apisix.plugins.google-cloud-logging.oauth")
+local constants = require("apisix.constants")
 
 
 local lrucache = core.lrucache.new({
@@ -32,6 +34,11 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         auth_config = {
             type = "object",
             properties = {

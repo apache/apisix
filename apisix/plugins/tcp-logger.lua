@@ -14,8 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
+local constants = require("apisix.constants")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local plugin_name = "tcp-logger"
 local tostring = tostring
@@ -27,6 +30,11 @@ local batch_processor_manager = bp_manager_mod.new("tcp logger")
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         host = {type = "string"},
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},

@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core      = require("apisix.core")
 local http      = require("resty.http")
 local plugin    = require("apisix.plugin")
+local constants = require("apisix.constants")
 local ngx       = ngx
 local ipairs    = ipairs
 local pairs     = pairs
@@ -41,6 +43,13 @@ local attr_schema = {
 
 local schema = {
     type = "object",
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
+    }
 }
 
 local default_max_body_size = 1024 * 1024 -- 1MiB

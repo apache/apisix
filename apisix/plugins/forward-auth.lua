@@ -14,14 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local ipairs = ipairs
 local core   = require("apisix.core")
 local http   = require("resty.http")
+local constants = require("apisix.constants")
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         uri = {type = "string"},
         allow_degradation = {type = "boolean", default = false},
         ssl_verify = {

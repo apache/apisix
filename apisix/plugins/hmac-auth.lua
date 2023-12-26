@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local ngx        = ngx
 local type       = type
 local abs        = math.abs
@@ -27,6 +28,7 @@ local core       = require("apisix.core")
 local hmac       = require("resty.hmac")
 local consumer   = require("apisix.consumer")
 local plugin     = require("apisix.plugin")
+local constants = require("apisix.constants")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -43,7 +45,13 @@ local MAX_REQ_BODY = 1024 * 512
 local schema = {
     type = "object",
     title = "work with route or service object",
-    properties = {},
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
+    },
 }
 
 local consumer_schema = {

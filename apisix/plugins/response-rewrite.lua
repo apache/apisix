@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core        = require("apisix.core")
 local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
+local constants   = require("apisix.constants")
 local plugin_name = "response-rewrite"
 local ngx         = ngx
 local ngx_header  = ngx.header
@@ -38,6 +40,11 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
         headers = {
             description = "new headers for response",
             anyOf = {

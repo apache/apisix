@@ -15,11 +15,13 @@
 -- limitations under the License.
 --
 
+local require         = require
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local new_tab         = require("table.new")
+local constants       = require("apisix.constants")
 
 local pairs        = pairs
 local ipairs       = ipairs
@@ -35,6 +37,11 @@ local batch_processor_manager = bp_manager_mod.new("loki logger")
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         -- core configurations
         endpoint_addrs = {
             type = "array",

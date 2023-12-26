@@ -15,7 +15,9 @@
 -- limitations under the License.
 --
 
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local plugin_name = "api-breaker"
 local ngx = ngx
 local math = math
@@ -32,6 +34,11 @@ end
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         break_response_code = {
             type = "integer",
             minimum = 200,

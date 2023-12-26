@@ -18,6 +18,7 @@ local require = require
 local core = require("apisix.core")
 local timers = require("apisix.timers")
 local plugin = require("apisix.plugin")
+local constants = require("apisix.constants")
 
 local ngx_time = ngx.time
 local ngx_timer_at = ngx.timer.at
@@ -35,6 +36,11 @@ local schema = {
 local attr_schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
         report_ttl = {
             type = "integer",
             description = "live time for server info in etcd",

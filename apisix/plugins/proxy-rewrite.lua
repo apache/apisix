@@ -14,7 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core        = require("apisix.core")
+local constants   = require("apisix.constants")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
@@ -50,6 +52,11 @@ end)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
         uri = {
             description = "new uri for upstream",
             type        = "string",

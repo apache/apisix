@@ -13,9 +13,10 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
+local constants = require("apisix.constants")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local fetch_log = require("apisix.utils.log-util").get_full_log
 local service_fetch = require("apisix.http.service").get
@@ -37,6 +38,11 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         prefer_name = {type = "boolean", default = true}
     }
 }

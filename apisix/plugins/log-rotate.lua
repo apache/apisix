@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 
+local require = require
 local core = require("apisix.core")
 local timers = require("apisix.timers")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
 local signal = require("resty.signal")
 local shell = require("resty.shell")
+local constants = require("apisix.constants")
 local ipairs = ipairs
 local ngx = ngx
 local ngx_time = ngx.time
@@ -53,7 +55,13 @@ local SLASH_BYTE = str_byte("/")
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
+    },
 }
 
 

@@ -14,11 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core = require("apisix.core")
 local new_tracer = require("opentracing.tracer").new
 local zipkin_codec = require("apisix.plugins.zipkin.codec")
 local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
+local constants = require("apisix.constants")
 local ngx = ngx
 local ngx_var = ngx.var
 local ngx_re = require("ngx.re")
@@ -40,6 +43,11 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         endpoint = {type = "string"},
         sample_ratio = {type = "number", minimum = 0.00001, maximum = 1},
         service_name = {

@@ -24,6 +24,7 @@ local get_request = require("resty.core.base").get_request
 local core = require("apisix.core")
 local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
 local apisix_ssl = require("apisix.ssl")
+local constants = require("apisix.constants")
 local _, ssl = pcall(require, "resty.apisix.ssl")
 local error = error
 
@@ -122,6 +123,11 @@ local plugin_name = "gm"
 local plugin_schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_SECURITY
+        },
     },
 }
 

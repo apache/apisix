@@ -14,8 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core          = require("apisix.core")
 local url           = require("net.url")
+local constants = require("apisix.constants")
 
 local math_random = math.random
 local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
@@ -25,6 +28,11 @@ local plugin_name   = "proxy-mirror"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         host = {
             type = "string",
             pattern = [=[^(http(s)?|grpc(s)?):\/\/([\da-zA-Z.-]+|\[[\da-fA-F:]+\])(:\d+)?$]=],

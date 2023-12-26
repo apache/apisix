@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 
+local require = require
 local core            = require("apisix.core")
 local ngx             = ngx
 local ngx_now         = ngx.now
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
+local constants = require("apisix.constants")
 local table_insert    = core.table.insert
 local table_concat    = core.table.concat
 local ipairs          = ipairs
@@ -37,6 +39,11 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         endpoint = {
             type = "object",
             properties = {

@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local gq_parse = require("graphql").parse
+local constants = require("apisix.constants")
 local req_set_body_data = ngx.req.set_body_data
 local ipairs = ipairs
 local pcall = pcall
@@ -25,6 +27,11 @@ local type = type
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
         query = {
             type = "string",
             minLength = 1,

@@ -13,10 +13,11 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
+local require = require
 local ngx               = ngx
 local ngx_arg           = ngx.arg
 local core              = require("apisix.core")
+local constants         = require("apisix.constants")
 local req_set_uri       = ngx.req.set_uri
 local req_set_body_data = ngx.req.set_body_data
 local decode_base64     = ngx.decode_base64
@@ -37,7 +38,13 @@ local plugin_name = "grpc-web"
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
+    },
 }
 
 local grpc_web_content_encoding = {

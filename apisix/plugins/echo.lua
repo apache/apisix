@@ -14,7 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local pairs       = pairs
 local type        = type
 local ngx         = ngx
@@ -23,6 +25,11 @@ local ngx         = ngx
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
         before_body = {
             description = "body before the filter phase.",
             type = "string"

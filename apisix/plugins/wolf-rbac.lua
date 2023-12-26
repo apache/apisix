@@ -14,10 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local core     = require("apisix.core")
 local consumer = require("apisix.consumer")
 local json     = require("apisix.core.json")
+local constants = require("apisix.constants")
 local sleep    = core.sleep
 local ngx_re = require("ngx.re")
 local http     = require("resty.http")
@@ -36,6 +37,11 @@ local plugin_name = "wolf-rbac"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         appid = {
             type = "string",
             default = "unset"

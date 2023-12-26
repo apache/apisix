@@ -14,12 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
 local require = require
 local core = require("apisix.core")
 local rr_balancer = require("apisix.balancer.roundrobin")
 local plugin = require("apisix.plugin")
 local t1k = require "resty.t1k"
 local expr = require("resty.expr.v1")
+local constants = require("apisix.constants")
 
 local ngx = ngx
 local ngx_now = ngx.now
@@ -50,6 +52,11 @@ local plugin_schema = {
     properties = {
         -- TODO: we should add a configuration "mode" here
         -- It can be one of off, block and monitor
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_SECURITY
+        },
         match = match_schema,
         append_waf_resp_header = {
             type = "boolean",

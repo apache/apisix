@@ -14,13 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-
+local require = require
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
-
+local constants = require("apisix.constants")
 local base64          = require("ngx.base64")
 local ngx_re          = require("ngx.re")
 
@@ -33,6 +33,11 @@ local batch_processor_manager = bp_manager_mod.new("skywalking logger")
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         endpoint_addr = core.schema.uri_def,
         service_name = {type = "string", default = "APISIX"},
         service_instance_name = {type = "string", default = "APISIX Instance Name"},

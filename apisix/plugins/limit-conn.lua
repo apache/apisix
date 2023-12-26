@@ -14,14 +14,22 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core = require("apisix.core")
 local limit_conn = require("apisix.plugins.limit-conn.init")
+local constants = require("apisix.constants")
 
 
 local plugin_name = "limit-conn"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         conn = {type = "integer", exclusiveMinimum = 0},
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},

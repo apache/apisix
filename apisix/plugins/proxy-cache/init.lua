@@ -15,10 +15,12 @@
 -- limitations under the License.
 --
 
+local require = require
 local memory_handler = require("apisix.plugins.proxy-cache.memory_handler")
 local disk_handler = require("apisix.plugins.proxy-cache.disk_handler")
 local util = require("apisix.plugins.proxy-cache.util")
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ipairs = ipairs
 
 local plugin_name = "proxy-cache"
@@ -30,6 +32,11 @@ local DEFAULT_CACHE_ZONE = "disk_cache_one"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         cache_zone = {
             type = "string",
             minLength = 1,

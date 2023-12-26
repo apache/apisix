@@ -14,12 +14,15 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local log_util = require("apisix.utils.log-util")
 local path = require("pl.path")
 local http = require("resty.http")
+local constants = require("apisix.constants")
 local ngx = ngx
 local tostring = tostring
 local pairs = pairs
@@ -54,6 +57,11 @@ end
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         customer_token = {type = "string"},
         severity = {
             type = "string",

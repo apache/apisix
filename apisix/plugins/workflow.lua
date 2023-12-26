@@ -14,14 +14,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core        = require("apisix.core")
 local limit_count = require("apisix.plugins.limit-count.init")
 local expr        = require("resty.expr.v1")
+local constants = require("apisix.constants")
 local ipairs      = ipairs
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
         rules = {
             type = "array",
             items = {

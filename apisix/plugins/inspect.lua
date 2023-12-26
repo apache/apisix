@@ -14,9 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local inspect = require("apisix.inspect")
+local constants = require("apisix.constants")
 
 
 local plugin_name = "inspect"
@@ -24,7 +26,13 @@ local plugin_name = "inspect"
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_GENERAL
+        },
+    },
 }
 
 

@@ -15,9 +15,11 @@
 -- limitations under the License.
 --
 local plugin_name = "opentelemetry"
+local require = require
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local process = require("ngx.process")
+local constants = require("apisix.constants")
 
 local always_off_sampler_new = require("opentelemetry.trace.sampling.always_off_sampler").new
 local always_on_sampler_new = require("opentelemetry.trace.sampling.always_on_sampler").new
@@ -124,6 +126,11 @@ local attr_schema = {
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         sampler = {
             type = "object",
             properties = {

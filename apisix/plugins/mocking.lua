@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local xml2lua = require("xml2lua")
+local constants = require("apisix.constants")
 
 local json = core.json
 local math = math
@@ -37,6 +39,11 @@ local support_content_type = {
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
         -- specify response delay time,default 0ms
         delay = { type = "integer", default = 0 },
         -- specify response status,default 200

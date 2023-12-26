@@ -16,9 +16,11 @@
 --
 
 local ngx = ngx
+local require = require
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local nanoid = require("nanoid")
+local constants = require("apisix.constants")
 local math_random = math.random
 local str_byte = string.byte
 local ffi = require "ffi"
@@ -28,6 +30,11 @@ local plugin_name = "request-id"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRAFFIC
+        },
         header_name = {type = "string", default = "X-Request-Id"},
         include_in_response = {type = "boolean", default = true},
         algorithm = {

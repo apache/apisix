@@ -14,9 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+
+local require = require
 local log_util     =   require("apisix.utils.log-util")
 local core         =   require("apisix.core")
 local expr         =   require("resty.expr.v1")
+local constants = require("apisix.constants")
 local ngx          =   ngx
 local io_open      =   io.open
 local is_apisix_or, process = pcall(require, "resty.apisix.process")
@@ -28,6 +31,11 @@ local plugin_name = "file-logger"
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         path = {
             type = "string"
         },

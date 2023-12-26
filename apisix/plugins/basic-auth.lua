@@ -14,10 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
+local constants = require("apisix.constants")
+
+
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
@@ -26,6 +30,11 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         hide_credentials = {
             type = "boolean",
             default = false,

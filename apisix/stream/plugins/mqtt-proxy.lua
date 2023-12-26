@@ -14,8 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require   = require
 local core      = require("apisix.core")
 local bit       = require("bit")
+local constants = require("apisix.constants")
 local ngx       = ngx
 local str_byte  = string.byte
 local str_sub   = string.sub
@@ -29,6 +31,11 @@ end)
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OTHER_PROTOCOLS
+        },
         protocol_name = {type = "string"},
         protocol_level = {type = "integer"}
     },

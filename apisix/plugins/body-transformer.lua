@@ -14,10 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core              = require("apisix.core")
 local xml2lua           = require("xml2lua")
 local xmlhandler        = require("xmlhandler.tree")
 local template          = require("resty.template")
+local constants = require("apisix.constants")
 local ngx               = ngx
 local decode_base64     = ngx.decode_base64
 local req_set_body_data = ngx.req.set_body_data
@@ -44,6 +46,11 @@ local transform_schema = {
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_TRANSFORMATION
+        },
         request = transform_schema,
         response = transform_schema,
     },

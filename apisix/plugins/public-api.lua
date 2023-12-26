@@ -15,12 +15,19 @@
 -- limitations under the License.
 --
 
+local require = require
 local core   = require("apisix.core")
 local router = require("apisix.router")
+local constants = require("apisix.constants")
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_SECURITY
+        },
         uri = {type = "string"},
     },
 }

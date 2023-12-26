@@ -14,14 +14,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
+local constants = require("apisix.constants")
 local plugin_name = "key-auth"
 
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_AUTHENTICATION
+        },
         header = {
             type = "string",
             default = "apikey",

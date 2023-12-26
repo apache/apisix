@@ -15,16 +15,23 @@
 -- limitations under the License.
 --
 
+local require = require
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
+local constants = require("apisix.constants")
 local plugin_name = "syslog"
 
 local batch_processor_manager = bp_manager_mod.new("sys logger")
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        },
         host = {type = "string"},
         port = {type = "integer"},
         flush_limit = {type = "integer", minimum = 1, default = 4096},

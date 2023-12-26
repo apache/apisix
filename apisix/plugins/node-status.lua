@@ -14,7 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
+local constants = require("apisix.constants")
 local ngx = ngx
 local re_gmatch = ngx.re.gmatch
 local ngx_capture = ngx.location.capture
@@ -25,6 +27,13 @@ local ipairs = ipairs
 
 local schema = {
     type = "object",
+    properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_OBSERVABILITY
+        }
+    }
 }
 
 

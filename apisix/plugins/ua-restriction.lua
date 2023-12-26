@@ -14,10 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local ipairs = ipairs
 local core = require("apisix.core")
 local re_compile = require("resty.core.regex").re_match_compile
 local stringx = require('pl.stringx')
+local constants = require("apisix.constants")
 local type = type
 local str_strip = stringx.strip
 local re_find = ngx.re.find
@@ -28,6 +30,11 @@ local lrucache_deny = core.lrucache.new({ ttl = 300, count = 4096 })
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_SECURITY
+        },
         bypass_missing = {
             type = "boolean",
             default = false,

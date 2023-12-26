@@ -14,14 +14,21 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
 local core = require("apisix.core")
 local re_compile = require("resty.core.regex").re_match_compile
+local constants = require("apisix.constants")
 local re_find = ngx.re.find
 local ipairs = ipairs
 
 local schema = {
     type = "object",
     properties = {
+        category = {
+            type = "string",
+            description = "This field is used for plugin classification",
+            default = constants.PLUGIN_CATEGORY_SECURITY
+        },
         block_rules = {
             type = "array",
             items = {
