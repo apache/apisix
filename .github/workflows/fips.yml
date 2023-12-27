@@ -124,6 +124,7 @@ jobs:
 
       - name: Linux Script
         env:
+          OPENSSL_FIPS: yes
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
 
