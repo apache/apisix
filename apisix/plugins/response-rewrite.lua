@@ -228,6 +228,33 @@ local function inflate_gzip(data)
 end
 
 
+local function brotli_stream_decode(read_inputs, write_outputs)
+    -- read 64k data per times
+    local read_size = 64 * 1024
+    local decompressor = brotli.decompressor:new()
+
+    local chunk, ok, res
+    repeat
+        chunk = read_inputs(read_size)
+        if chunk then
+            ok, res = pcall(function()
+                return decompressor:decompress(chunk)
+            end)
+        else
+            ok, res = pcall(function()
+                return decompressor:finish()
+            end)
+        end
+        if not ok then
+            return false, res
+        end
+        write_outputs(res)
+    until not chunk
+
+    return true, nil
+end
+
+
 local function brotli_decode(data)
     local inputs = str_buffer.new():set(data)
     local outputs = str_buffer.new()
@@ -244,25 +271,9 @@ local function brotli_decode(data)
         return outputs:put(data)
     end
 
-    local read_size = 32 * 1024
-    local decompressor = brotli.decompressor:new()
-
-    local chunk
-    while true do
-        local compressed_chunk = read_inputs(read_size)
-        if not compressed_chunk then
-            ok, chunk = pcall(function()
-                return decompressor:finish()
-            end)
-            if not ok then
-                core.log.error(chunk)
-                return
-            end
-            write_outputs(chunk)
-            break
-        end
-        chunk = decompressor:decompress(compressed_chunk)
-        write_outputs(chunk)
+    local ok, err = brotli_stream_decode(read_inputs, write_outputs)
+    if not ok then
+        return nil, err
     end
 
     return outputs:get()
