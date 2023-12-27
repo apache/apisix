@@ -805,6 +805,7 @@ local function start(env, ...)
 
         local ok, err, err_no = signal.kill(pid, signone)
         if ok then
+            print("APISIX is running...")
             print("the old process is still running, the new one won't be started!")
             return
         -- no such process
