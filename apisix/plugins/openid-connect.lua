@@ -19,6 +19,7 @@ local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
+local jwt = require("resty.jwt")
 local string  = string
 local ngx     = ngx
 local ipairs = ipairs
@@ -91,6 +92,10 @@ local schema = {
         post_logout_redirect_uri = {
             type = "string",
             description = "the URI will be redirect when request logout_path",
+        },
+        symmetric_key = {
+            type = "string",
+            description = "base64url-encoded secret for verifying tokens with symmetric algorithm, such as HS256"
         },
         unauth_action = {
             type = "string",
@@ -277,6 +282,13 @@ function _M.check_schema(conf)
         -- we used to set 'ssl_verify' to "no"
         conf.ssl_verify = false
     end
+    if conf.symmetric_key then
+        -- decode "symmetric_key" for openidc to verify HS??? tokens.
+        conf.symmetric_key = jwt:jwt_decode(conf.symmetric_key)
+        if not conf.symmetric_key then
+            return false, "cannot base64 decode 'symmetric_key'"
+        end
+    end
 
     if not conf.bearer_only and not conf.session then
         core.log.warn("when bearer_only = false, " ..
@@ -354,8 +366,9 @@ local function introspect(ctx, conf)
 
     -- If we get here, token was found in request.
 
-    if conf.public_key or conf.use_jwks then
-        -- Validate token against public key or jwks document of the oidc provider.
+    if conf.public_key or conf.symmetric_key or conf.use_jwks then
+        -- Validate token against public/symmetric key or jwks document of the
+        -- oidc provider.
         -- TODO: In the called method, the openidc module will try to extract
         --  the token by itself again -- from a request header or session cookie.
         --  It is inefficient that we also need to extract it (just from headers)
@@ -371,7 +384,9 @@ local function introspect(ctx, conf)
         end
 
         -- Token successfully validated.
-        local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
+        local method = ((conf.public_key and "public_key") or
+                        (conf.symmetric_key and "symmetric_key") or
+                        (conf.use_jwks and "jwks"))
         core.log.debug("token validate successfully by ", method)
         return res, err, token, res
     else
@@ -481,9 +496,11 @@ function _M.rewrite(plugin_conf, ctx)
 
     local response, err, session, _
 
-    if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
-        -- An introspection endpoint or a public key has been configured. Try to
-        -- validate the access token from the request, if it is present in a
+    if conf.bearer_only or conf.introspection_endpoint or
+       conf.public_key or conf.symmetric_key
+    then
+        -- An introspection endpoint or a public/symmetric key has been configured.
+        -- Try to validate the access token from the request, if it is present in a
         -- request header. Otherwise, return a nil response. See below for
         -- handling of the case where the access token is stored in a session cookie.
         local access_token, userinfo
