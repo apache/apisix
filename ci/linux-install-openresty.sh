@@ -54,5 +54,8 @@ fi
 wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
 chmod +x build-apisix-runtime.sh
 sudo ./build-apisix-runtime.sh latest
-curl -so /usr/local/openresty/openssl3/ssl/openssl.cnf \
+sudo curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
     https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/conf/openssl3/openssl.cnf
+
+# patch lua-resty-events
+sudo sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
