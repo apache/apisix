@@ -45,7 +45,7 @@ install_dependencies() {
     wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime.sh latest
-    curl -so /usr/local/openresty/openssl3/ssl/openssl.cnf \
+    curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
         https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/conf/openssl3/openssl.cnf
 
     # patch lua-resty-events
