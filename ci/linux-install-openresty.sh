@@ -51,11 +51,11 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     fi
 fi
 
-wget "https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/build-apisix-runtime.sh"
+wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
 chmod +x build-apisix-runtime.sh
 ./build-apisix-runtime.sh latest
 curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
-    https://raw.githubusercontent.com/AlinsRan/apisix-build-tools/feat/openssl3/conf/openssl3/openssl.cnf
+    https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
 
 # patch lua-resty-events
 sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
