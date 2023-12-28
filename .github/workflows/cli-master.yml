@@ -6,11 +6,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
-  pull_request:
-    branches: [master]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}

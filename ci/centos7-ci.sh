@@ -23,9 +23,12 @@ install_dependencies() {
     export_or_prefix
 
     # install build & runtime deps
-    yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which ca-certificates openssl-devel \
-        epel-release
+    yum install -y wget tar gcc gcc-c++ automake autoconf libtool make unzip patch \
+        git sudo openldap-devel which ca-certificates \
+        openresty-pcre-devel openresty-zlib-devel \
+        epel-release  \
+        cpanminus perl \
+        openssl-devel
 
     # install newer curl
     yum makecache
@@ -40,12 +43,14 @@ install_dependencies() {
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
+    export luajit_xcflags="-DLUAJIT_ASSERT -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -O0"
+    export debug_args=--with-debug
 
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
-    chmod +x build-apisix-runtime-debug-centos7.sh
     chmod +x build-apisix-runtime.sh
-    ./build-apisix-runtime-debug-centos7.sh
+    ./build-apisix-runtime.sh latest
+    curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
+        https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
 
     # patch lua-resty-events
     sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
