@@ -50,7 +50,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 }'
 ```
 
-如果配置成功，将会返回 `HTTP/1.1 201 OK`。
+如果配置成功，将会返回 `HTTP/1.1 201 Created`。
 
 ## 验证
 

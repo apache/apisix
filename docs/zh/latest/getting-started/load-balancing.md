@@ -41,7 +41,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 }'
 ```
 
-如果路由创建成功，你将会收到返回 `HTTP/1.1 201 OK`。
+如果路由创建成功，你将会收到返回 `HTTP/1.1 201 Created`。
 
 :::info
 
