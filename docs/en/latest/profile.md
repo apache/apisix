@@ -57,6 +57,12 @@ export APISIX_NODE_LISTEN=8132
 export DEPLOYMENT_ADMIN_ADMIN_LISTEN=9232
 ```
 
+:::caution
+
+You should set these variables with `export`. If you do not export, APISIX will fail to resolve for these variables.
+
+:::
+
 Now when you start APISIX, it will listen on port `8132` and expose the Admin API on port `9232`.
 
 To use default values if no environment variables are set, you can add it to your configuration file as shown below:
@@ -72,6 +78,30 @@ deployment:
 ```
 
 Now if you don't specify these environment variables when running APISIX, it will fall back to the default values and expose the Admin API on port `9180` and listen on port `9080`.
+
+Similarly, you can also use environment variables in `apisix.yaml` when deploying APISIX in standalone mode.
+
+For example, you can export the upstream address and port to environment variables:
+
+```shell
+export HOST_ADDR=httpbin.org
+export HOST_PORT=80
+```
+
+Then create a route as such:
+
+```yaml title="apisix.yaml"
+routes:
+  -
+    uri: "/anything"
+    upstream:
+      nodes:
+        "${{HOST_ADDR}}:${{HOST_PORT}}": 1
+      type: roundrobin
+#END
+```
+
+Initialize and start APISIX in standalone mode, requests to `/anything` should now be forwarded to `httpbin.org:80/anything`.
 
 ## Using the `APISIX_PROFILE` environment variable
 
