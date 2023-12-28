@@ -53,6 +53,45 @@ add_block_preprocessor(sub {
             }
         }
     }
+
+    server {
+        listen 11452;
+        location /brotli_hello {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local s = "hello world hello world hello world"
+                ngx.header['Content-Length'] = #s + 1
+                ngx.say(s)
+            }
+            header_filter_by_lua_block {
+                local conf = {
+                    comp_level = 6,
+                    http_version = 1.1,
+                    lgblock = 0,
+                    lgwin = 19,
+                    min_length = 1,
+                    mode = 0,
+                    types = "*",
+                }
+                local brotli = require("apisix.plugins.brotli")
+                brotli.header_filter(conf, ngx.ctx)
+            }
+            body_filter_by_lua_block {
+                local conf = {
+                    comp_level = 6,
+                    http_version = 1.1,
+                    lgblock = 0,
+                    lgwin = 19,
+                    min_length = 1,
+                    mode = 0,
+                    types = "*",
+                }
+                local brotli = require("apisix.plugins.brotli")
+                brotli.body_filter(conf, ngx.ctx)
+            }
+        }
+    }
+
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -238,7 +277,6 @@ Content-Encoding:
 
             if code >= 300 then
                 ngx.status = code
-                return
             end
             ngx.say(body)
         }
@@ -296,7 +334,6 @@ Content-Encoding:
 
             if code >= 300 then
                 ngx.status = code
-                return
             end
             ngx.say(body)
         }
@@ -436,7 +473,7 @@ Content-Type:
 
 
 
-=== TEST 9: set route use response-write filter conf, and mock unsupported compression encoding type
+=== TEST 15: set route use brotli upstream
 --- config
     location /t {
         content_by_lua_block {
@@ -444,10 +481,102 @@ Content-Type:
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/echo",
+                    "uri": "/brotli_hello",
                     "upstream": {
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "127.0.0.1:11452": 1
+                        },
+                        "type": "roundrobin"
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 16: should return brotli body
+--- request
+GET /brotli_hello
+--- more_headers
+Accept-Encoding: br
+--- response_headers
+Content-Encoding: br
+
+
+
+=== TEST 17: set route use brotli upstream and response-rewrite body conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/brotli_hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:11452": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "body": "new body\n"
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 18: should rewrite body and clear Content-Encoding header
+--- request
+GET /brotli_hello
+--- more_headers
+Accept-Encoding: br
+--- response_body
+new body
+--- response_headers
+Content-Encoding:
+
+
+
+=== TEST 19: set route use brotli upstream and response-rewrite filter conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/brotli_hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:11452": 1
                         },
                         "type": "roundrobin"
                     },
@@ -465,11 +594,10 @@ Content-Type:
                         }
                     }
                 }]]
-                )
+            )
 
             if code >= 300 then
                 ngx.status = code
-                return
             end
             ngx.say(body)
         }
@@ -481,11 +609,69 @@ passed
 
 
 
-=== TEST 10: use filter conf will report unsupported encoding type error
+=== TEST 20: brotli decode support, should rewrite body and clear Content-Encoding header
 --- request
-POST /echo
-fake body with mock content encoding header
+GET /brotli_hello
 --- more_headers
-Content-Encoding: br
+Accept-Encoding: br
+--- response_body
+test world hello world hello world
 --- response_headers
 Content-Encoding:
+
+
+
+=== TEST 21: set route use response-write plugin but not use filter conf or body conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/brotli_hello",
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:11452": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "plugins": {
+                        "response-rewrite": {
+                            "vars": [
+                                ["status","==",200]
+                            ],
+                            "headers": {
+                                "set": {
+                                    "X-Server-id": 3,
+                                    "X-Server-status": "on",
+                                    "Content-Type": ""
+                                }
+                            }
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: should keep Content-Encoding
+--- request
+GET /brotli_hello
+--- more_headers
+Accept-Encoding: br
+--- response_headers
+Content-Encoding: br
+X-Server-id: 3
+X-Server-status: on
+Content-Type:
