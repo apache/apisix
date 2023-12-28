@@ -83,8 +83,12 @@ function install_dependencies_with_apt() {
     fi
     sudo apt-get update
 
-    # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
+    # install some compilation tools
+    sudo apt-get install -y git curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
+    # get the APISIX_RUNTIME from .requirements
+    source .requirements
+    # install apisix-runtime
+    curl https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime.sh -sL | version="${APISIX_RUNTIME}" bash -
 }
 
 # Install dependencies on mac osx

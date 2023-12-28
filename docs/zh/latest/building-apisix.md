@@ -44,23 +44,23 @@ import TabItem from '@theme/TabItem';
 
 ## 源码安装 APISIX
 
-首先，你可以通过以下命令安装依赖项：
-
-```shell
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
-```
-
-然后，创建一个目录并设置环境变量 `APISIX_VERSION`：
+首先，我们需要指定需要安装的版本`APISIX_VERSION`:
 
 ```shell
 APISIX_VERSION='3.7.0'
-mkdir apisix-${APISIX_VERSION}
 ```
 
-现在，你可以运行以下命令，从 Github 克隆 APISIX 源码：
+然后，你可以运行以下命令，从 Github 克隆 APISIX 源码：
 
 ```shell
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
+```
+
+现在，切换到 APISIX 源码的目录，你可以通过以下命令安装依赖项：
+
+```shell
+cd apisix-${APISIX_VERSION}
+bash utils/install-dependencies.sh
 ```
 
 你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包缺少测试用例，可能会对你后续操作产生困扰。
@@ -70,7 +70,6 @@ git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.
 然后切换到 APISIX 源码的目录，创建依赖项并安装 APISIX，命令如下所示：
 
 ```shell
-cd apisix-${APISIX_VERSION}
 make deps
 make install
 ```

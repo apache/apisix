@@ -45,22 +45,23 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 
 ## Building APISIX from source
 
-Install dependencies using the script provided by APISIX:
-
-```shell
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
-```
-
-Save the APISIX version to an environment variable to be used next:
+First of all, we need to specify the version `APISIX_ VERSION` to be installed:
 
 ```shell
 APISIX_VERSION='3.7.0'
 ```
 
-Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
+Then, you can run the following command to clone the APISIX source code from Github:
 
 ```shell
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
+```
+
+Now, by changing to the directory of the APISIX source code, you can install the dependencies with the following command:
+
+```shell
+cd apisix-${APISIX_VERSION}
+bash utils/install-dependencies.sh
 ```
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
