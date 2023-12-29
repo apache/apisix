@@ -60,7 +60,6 @@ git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.
 
 ```shell
 cd apisix-${APISIX_VERSION}
-bash utils/install-dependencies.sh
 ```
 
 你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包缺少测试用例，可能会对你后续操作产生困扰。

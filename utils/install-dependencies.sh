@@ -19,6 +19,8 @@
 
 set -ex
 
+source .requirements
+
 function detect_aur_helper() {
     if [[ $(command -v yay) ]]; then
         AUR_HELPER=yay
@@ -44,32 +46,22 @@ function install_dependencies_with_aur() {
 
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
-    sudo yum install -y yum-utils
-
-    local common_dep="curl wget git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
-    if [ "${1}" == "centos" ]; then
-        # add APISIX source
-        local apisix_pkg=apache-apisix-repo-1.0-1.noarch
-        rpm -q --quiet ${apisix_pkg} || sudo yum install -y https://repos.apiseven.com/packages/centos/${apisix_pkg}.rpm
-
-        # install apisix-runtime and some compilation tools
-        # shellcheck disable=SC2086
-        sudo yum install -y apisix-runtime $common_dep
-    else
-        # add OpenResty source
-        sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
-
-        # install OpenResty and some compilation tools
-        # shellcheck disable=SC2086
-        sudo yum install -y openresty $common_dep
-    fi
+    sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
+    sudo yum -y install centos-release-scl
+    sudo yum -y install devtoolset-9 patch wget git make sudo
+    set +eu
+    source scl_source enable devtoolset-9
+    set -eu
+    sudo yum install -y  \
+        curl wget git unzip openldap-devel gnupg perl perl-devel perl-ExtUtils-Embed cpanminus patch \
+        openresty-zlib-devel openresty-pcre-devel
 }
 
 # Install dependencies on ubuntu and debian
 function install_dependencies_with_apt() {
     # add OpenResty source
     sudo apt-get update
-    sudo apt-get -y install software-properties-common wget lsb-release
+    sudo apt-get -y install software-properties-common wget lsb-release gnupg patch
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     arch=$(uname -m | tr '[:upper:]' '[:lower:]')
     arch_path=""
@@ -84,11 +76,8 @@ function install_dependencies_with_apt() {
     sudo apt-get update
 
     # install some compilation tools
-    sudo apt-get install -y git curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
+    sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libldap2-dev unzip openresty-zlib-dev openresty-pcre-dev
     # get the APISIX_RUNTIME from .requirements
-    source .requirements
-    # install apisix-runtime
-    curl https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime.sh -sL | version="${APISIX_RUNTIME}" bash -
 }
 
 # Install dependencies on mac osx
@@ -111,12 +100,33 @@ function multi_distro_installation() {
         install_dependencies_with_aur
     else
         echo "Non-supported operating system version"
+        exit 1
     fi
+    install_apisix_runtime
+}
+
+function multi_distro_uninstallation() {
+    if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
+        yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
+        yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
+        pt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+    elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
+        apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+    else
+        echo "Non-supported operating system version"
+        exit 1
+    fi
+}
+
+function install_apisix_runtime() {
+    curl "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh" | runtime_version=${APISIX_RUNTIME} version=${APISIX_RUNTIME} bash -
 }
 
 # Install LuaRocks
 function install_luarocks() {
-    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
+    ./utils/linux-install-luarocks.sh
 }
 
 # Entry
@@ -138,6 +148,13 @@ function main() {
     case "${case_opt}" in
         "install_luarocks")
             install_luarocks
+        ;;
+        "uninstall")
+            if [[ "${OS_NAME}" == "linux" ]]; then
+                multi_distro_uninstallation
+            else
+                echo "Non-supported distribution"
+            fi
         ;;
         *)
             echo "Unsupported method: ${case_opt}"

@@ -61,7 +61,6 @@ Now, by changing to the directory of the APISIX source code, you can install the
 
 ```shell
 cd apisix-${APISIX_VERSION}
-bash utils/install-dependencies.sh
 ```
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
