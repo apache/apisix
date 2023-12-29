@@ -58,7 +58,7 @@ function install_dependencies_with_yum() {
     sudo yum install -y  \
         gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch \
         perl perl-devel pcre pcre-devel openldap-devel \
-        openresty-zlib-devel openresty-pcre-devel 
+        openresty-zlib-devel openresty-pcre-devel
 }
 
 # Install dependencies on ubuntu and debian

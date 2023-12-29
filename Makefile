@@ -264,7 +264,7 @@ reload: runtime
 install-runtime:
 ifneq ($(ENV_RUNTIME_VER), $(APISIX_RUNTIME))
 	./utils/install-dependencies.sh
-	$(ENV_INSTALL) /usr/local/openresty/bin/openresty $(ENV_INST_BINDIR)/openresty
+	@sudo $(ENV_INSTALL) /usr/local/openresty/bin/openresty $(ENV_INST_BINDIR)/openresty
 endif
 
 .PHONY: uninstall-runtime
