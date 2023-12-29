@@ -102,7 +102,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 1. 应用之间认证授权：将 `bearer_only` 设置为 `true`，并配置 `introspection_endpoint` 或 `public_key` 属性。该场景下，请求头（Header）中没有令牌或无效令牌的请求将被拒绝。
 
-2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户会话将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
+2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户 session 将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
 
 ### 令牌内省
 
@@ -187,9 +187,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 #### 通过 OIDC 依赖方认证流程进行身份验证
 
-当一个请求在请求头或会话 Cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
+当一个请求在请求头或 session  Cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
 
-一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在会话 Cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
+一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在 session  Cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
 
 以下示例是将此操作模式添加到 Route：
 
@@ -228,7 +228,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ### `No Session State Found`
 
-如果您在使用[授权代码流](#authorization-code-flow) 时遇到 500 内部服务器错误并在日志中显示以下消息，则可能有多种原因。
+如果您在使用[授权码流](#authorization-code-flow) 时遇到 500 内部服务器错误并在日志中显示以下消息，则可能有多种原因。
 
 ```text
 the error request to the redirect_uri path, but there's no session state found
@@ -236,17 +236,17 @@ the error request to the redirect_uri path, but there's no session state found
 
 #### 1. 重定向 URI 配置错误
 
-一个常见的错误配置是将 `redirect_uri` 配置为与路由的 URI 相同。当用户发起访问受保护资源的请求时，请求直接命中重定向 URI，且请求中没有会话 cookie，从而导致 no session state found 错误。
+一个常见的错误配置是将 `redirect_uri` 配置为与路由的 URI 相同。当用户发起访问受保护资源的请求时，请求直接命中重定向 URI，且请求中没有 session  cookie，从而导致 no session state found 错误。
 
 要正确配置重定向 URI，请确保 `redirect_uri` 与配置插件的路由匹配，但不要完全相同。例如，正确的配置是将路由的 `uri` 配置为 `/api/v1/*`，并将 `redirect_uri` 的路径部分配置为 `/api/v1/redirect`。
 
 您还应该确保 `redirect_uri` 包含方案，例如 `http` 或 `https` 。
 
-#### 2. 缺少会话秘密
+#### 2. 缺少 Session Secret
 
 如果您在[standalone 模式](/apisix/product/deployment-modes#standalone-mode)下部署 APISIX，请确保配置了 `session.secret`。
 
-用户会话作为 cookie 存储在浏览器中，并使用会话密钥进行加密。如果没有通过 `session.secret` 属性配置机密，则会自动生成机密并将其保存到 etcd。然而，在独立模式下，etcd 不再是配置中心。因此，您应该在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
+用户 session 作为 cookie 存储在浏览器中，并使用 session 密钥进行加密。如果没有通过 `session.secret` 属性配置机密，则会自动生成机密并将其保存到 etcd。然而，在独立模式下，etcd 不再是配置中心。因此，您应该在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
 
 #### 3. Cookie 未发送或不存在
 
@@ -264,4 +264,4 @@ upstream sent too big header while reading response header from upstream
 
 #### 5. 无效的客户端密钥
 
-验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在会话中。
+验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在 session 中。
