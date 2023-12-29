@@ -439,7 +439,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"category":"Transformation","proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"category":"Transformation","uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
 
@@ -474,7 +474,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"category":"Transformation","proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"category":"Transformation","uri":"/","use_real_request_uri_unsafe":false}}}}
 --- request
 GET /t
 
