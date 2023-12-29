@@ -202,7 +202,7 @@ stream {
     {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
-        listen unix:{*apisix_lua_home*}/logs/stream_worker_events.sock;
+        listen unix:{*apisix_lua_home*}/conf/stream_worker_events.sock;
         access_log off;
         content_by_lua_block {
             require("resty.events.compat").run()
@@ -497,7 +497,7 @@ http {
     {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
-        listen unix:{*apisix_lua_home*}/logs/worker_events.sock;
+        listen unix:{*apisix_lua_home*}/conf/worker_events.sock;
         access_log off;
         location / {
             content_by_lua_block {

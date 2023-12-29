@@ -51,7 +51,7 @@ end
 local function init_resty_events()
     _M.events_module = _M.EVENTS_MODULE_LUA_RESTY_EVENTS
 
-    local listening = "unix:" .. ngx.config.prefix() .. "logs/"
+    local listening = "unix:" .. ngx.config.prefix() .. "conf/"
     if ngx.config.subsystem == "http" then
         listening = listening .. "worker_events.sock"
     else
@@ -129,8 +129,10 @@ end
 
 function _M.get_healthcheck_events_modele(self)
     if self.events_module == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
+        ngx.log(ngx.WARN, "resty.events")
         return "resty.events"
     else
+        ngx.log(ngx.WARN, "resty.worker.events")
         return "resty.worker.events"
     end
 end
