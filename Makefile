@@ -50,6 +50,7 @@ ENV_HOMEBREW_PREFIX    ?= /usr/local
 ENV_RUNTIME_VER		   ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
 -include .requirements
+export
 
 ifneq ($(shell whoami), root)
 	ENV_LUAROCKS_FLAG_LOCAL := --local

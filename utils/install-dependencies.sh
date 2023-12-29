@@ -19,8 +19,6 @@
 
 set -ex
 
-source .requirements
-
 function detect_aur_helper() {
     if [[ $(command -v yay) ]]; then
         AUR_HELPER=yay
@@ -81,7 +79,6 @@ function install_dependencies_with_apt() {
 
     # install some compilation tools
     sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libldap2-dev unzip openresty-zlib-dev openresty-pcre-dev
-    # get the APISIX_RUNTIME from .requirements
 }
 
 # Install dependencies on mac osx
@@ -113,15 +110,15 @@ function multi_distro_installation() {
 
 function multi_distro_uninstallation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
-        yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
-        yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
-        yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
-        pt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+        sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
-        apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+        sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
     else
         echo "Non-supported operating system version"
         exit 1
@@ -129,7 +126,7 @@ function multi_distro_uninstallation() {
 }
 
 function install_apisix_runtime() {
-    export runtime_version=${APISIX_RUNTIME}
+    export runtime_version=${APISIX_RUNTIME:?}
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime.sh latest
@@ -138,7 +135,14 @@ function install_apisix_runtime() {
 
 # Install LuaRocks
 function install_luarocks() {
-    ./utils/linux-install-luarocks.sh
+    if [ -f "./utils/linux-install-luarocks.sh" ]; then
+        ./utils/linux-install-luarocks.sh
+    elif [ -f "./linux-install-luarocks.sh" ]; then
+        ./linux-install-luarocks.sh
+    else
+        echo "Installing luarocks from remote master branch"
+        curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
+    fi
 }
 
 # Entry
