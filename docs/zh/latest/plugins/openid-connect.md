@@ -187,9 +187,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 #### 通过 OIDC 依赖方认证流程进行身份验证
 
-当一个请求在请求头或 session  Cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
+当一个请求在请求头或 session cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
 
-一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在 session  Cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
+一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在 session cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
 
 以下示例是将此操作模式添加到 Route：
 
@@ -236,7 +236,7 @@ the error request to the redirect_uri path, but there's no session state found
 
 #### 1. 重定向 URI 配置错误
 
-一个常见的错误配置是将 `redirect_uri` 配置为与路由的 URI 相同。当用户发起访问受保护资源的请求时，请求直接命中重定向 URI，且请求中没有 session  cookie，从而导致 no session state found 错误。
+一个常见的错误配置是将 `redirect_uri` 配置为与路由的 URI 相同。当用户发起访问受保护资源的请求时，请求直接命中重定向 URI，且请求中没有 session cookie，从而导致 no session state found 错误。
 
 要正确配置重定向 URI，请确保 `redirect_uri` 与配置插件的路由匹配，但不要完全相同。例如，正确的配置是将路由的 `uri` 配置为 `/api/v1/*`，并将 `redirect_uri` 的路径部分配置为 `/api/v1/redirect`。
 
