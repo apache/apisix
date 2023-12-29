@@ -240,7 +240,7 @@ the error request to the redirect_uri path, but there's no session state found
 
 要正确配置重定向 URI，请确保 `redirect_uri` 与配置插件的路由匹配，但不要完全相同。例如，正确的配置是将路由的 `uri` 配置为 `/api/v1/*`，并将 `redirect_uri` 的路径部分配置为 `/api/v1/redirect`。
 
-您还应该确保 `redirect_uri` 包含方案，例如 `http` 或 `https` 。
+您还应该确保 `redirect_uri` 包含 scheme，例如 `http` 或 `https` 。
 
 #### 2. 缺少 Session Secret
 
