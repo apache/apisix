@@ -129,10 +129,8 @@ end
 
 function _M.get_healthcheck_events_modele(self)
     if self.events_module == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
-        ngx.log(ngx.WARN, "resty.events")
         return "resty.events"
     else
-        ngx.log(ngx.WARN, "resty.worker.events")
         return "resty.worker.events"
     end
 end
