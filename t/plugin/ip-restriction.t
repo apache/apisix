@@ -57,7 +57,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"message":"Your IP address is not allowed","whitelist":["10.255.254.0/24","192.168.0.0/16"]}
+{"category":"Security","message":"Your IP address is not allowed","whitelist":["10.255.254.0/24","192.168.0.0/16"]}
 
 
 
