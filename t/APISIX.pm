@@ -440,7 +440,7 @@ _EOC_
     $extra_stream_config
 
     server {
-        listen unix:$apisix_home/t/servroot/logs/stream_worker_events.sock;
+        listen unix:$apisix_home/t/servroot/conf/stream_worker_events.sock;
         access_log off;
         content_by_lua_block {
             require("resty.events.compat").run()
@@ -701,7 +701,7 @@ _EOC_
 
     $http_config .= <<_EOC_;
     server {
-        listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
+        listen unix:$apisix_home/t/servroot/conf/worker_events.sock;
         access_log off;
         location / {
             content_by_lua_block {
