@@ -40,7 +40,7 @@ ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
-ENV_OPENSSL_PREFIX     ?= $(addprefix $(ENV_NGINX_PREFIX), openssl3)
+ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
@@ -59,17 +59,11 @@ ifdef ENV_LUAROCKS_SERVER
 	ENV_LUAROCKS_SERVER_OPT := --server $(ENV_LUAROCKS_SERVER)
 endif
 
-# Execute only in the presence of ENV_NGINX_EXEC to avoid unexpected error output
-ifneq ($(ENV_NGINX_EXEC), )
+ifneq ($(shell test -d $(ENV_OPENSSL_PREFIX) && echo -n yes), yes)
 	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
-	# OpenResty 1.17.8 or higher version uses openssl3 as the openssl dirname.
 	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl3) && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl3)
 	endif
-endif
-
-ifeq ($(ENV_OPENSSL_PREFIX), openssl3)
-	ENV_OPENSSL_PREFIX := /usr/local/openresty/openssl3
 endif
 
 # ENV patch for darwin
