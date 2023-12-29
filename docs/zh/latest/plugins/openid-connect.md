@@ -226,7 +226,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 如果 APISIX 无法解析或无法连接到 OpenID 提供商，请仔细检查配置文件 `config.yaml` 中的 DNS 设置并根据需要进行修改。
 
-### 未找到会话状态
+### `No Session State Found`
 
 如果您在使用[授权代码流](#authorization-code-flow) 时遇到 500 内部服务器错误并在日志中显示以下消息，则可能有多种原因。
 
