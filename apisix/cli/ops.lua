@@ -153,6 +153,25 @@ local function get_lua_path(conf)
 end
 
 
+local function cleanup_unix_sockets(env)
+    local events_http_sock_path = env.apisix_home .. "/conf/worker_events.sock"
+    if pl_path.exists(events_http_sock_path) then
+        local ok, err = os_remove(events_http_sock_path)
+        if not ok then
+            util.die("failed to remove stale conf server sock file, error: ", err)
+        end
+    end
+
+    local events_stream_sock_path = env.apisix_home .. "/conf/stream_worker_events.sock"
+    if pl_path.exists(events_stream_sock_path) then
+        local ok, err = os_remove(events_stream_sock_path)
+        if not ok then
+            util.die("failed to remove stale conf server sock file, error: ", err)
+        end
+    end
+end
+
+
 local function init(env)
     if env.is_root_path then
         print('Warning! Running apisix under /root is only suitable for '
@@ -750,6 +769,8 @@ Please modify "admin_key" in conf/config.yaml .
     if not ok then
         util.die("failed to update nginx.conf: ", err, "\n")
     end
+
+    cleanup_unix_sockets(env)
 end
 
 
