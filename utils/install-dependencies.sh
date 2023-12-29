@@ -46,15 +46,19 @@ function install_dependencies_with_aur() {
 
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
+    sudo yum install -y yum-utils
     sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
-    sudo yum -y install centos-release-scl
-    sudo yum -y install devtoolset-9 patch wget git make sudo
-    set +eu
-    source scl_source enable devtoolset-9
-    set -eu
+    if [[ "${1}" == "centos" ]]; then
+        sudo yum -y install centos-release-scl
+        sudo yum -y install devtoolset-9 patch wget
+        set +eu
+        source scl_source enable devtoolset-9
+        set -eu
+    fi
     sudo yum install -y  \
-        curl wget git unzip openldap-devel gnupg perl perl-devel perl-ExtUtils-Embed cpanminus patch \
-        openresty-zlib-devel openresty-pcre-devel
+        gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch \
+        perl perl-devel pcre pcre-devel openldap-devel \
+        openresty-zlib-devel openresty-pcre-devel 
 }
 
 # Install dependencies on ubuntu and debian
@@ -90,6 +94,8 @@ function install_dependencies_on_mac_osx() {
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
         install_dependencies_with_yum "centos"
+    elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
+        install_dependencies_with_yum "rhel"
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
         install_dependencies_with_yum "fedora"
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
@@ -108,6 +114,8 @@ function multi_distro_installation() {
 function multi_distro_uninstallation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
         yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
+        yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
         yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
@@ -121,7 +129,7 @@ function multi_distro_uninstallation() {
 }
 
 function install_apisix_runtime() {
-    curl "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh" | runtime_version=${APISIX_RUNTIME} version=${APISIX_RUNTIME} bash -
+    curl "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh" | luajit_xcflags="-DLUAJIT_ASSERT -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -O0" runtime_version=${APISIX_RUNTIME} version=latest bash -
 }
 
 # Install LuaRocks
