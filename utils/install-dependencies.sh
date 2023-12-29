@@ -129,7 +129,11 @@ function multi_distro_uninstallation() {
 }
 
 function install_apisix_runtime() {
-    curl "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh" | luajit_xcflags="-DLUAJIT_ASSERT -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -O0" runtime_version=${APISIX_RUNTIME} version=latest bash -
+    export runtime_version=${APISIX_RUNTIME}
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    chmod +x build-apisix-runtime.sh
+    ./build-apisix-runtime.sh latest
+    rm build-apisix-runtime.sh
 }
 
 # Install LuaRocks
