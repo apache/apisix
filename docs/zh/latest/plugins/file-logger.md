@@ -46,11 +46,13 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 ## 属性
 
 | 名称             | 类型     | 必选项 | 描述                                             |
-| ---------------- | ------- | ------ | ------------------------------------------------ |
-| path             | string  | 是     | 自定义输出文件路径。例如：`logs/file.log`。        |
-| log_format       | object  | 否     | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| include_resp_body      | boolean | 否     | 当设置为 `true` 时，生成的文件包含响应体。                                                                                               |
-| include_resp_body_expr | array   | 否     | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
+| ---------------- | ------- |-----| ------------------------------------------------ |
+| path             | string  | 是   | 自定义输出文件路径。例如：`logs/file.log`。        |
+| log_format       | object  | 否   | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| include_req_body   | boolean | 否   | 当设置为 `true` 时，日志中将包含请求体。如果请求体太大而无法在内存中保存，则由于 Nginx 的限制，无法记录请求体。|
+| include_req_body_expr | array   | 否   | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。 |
+| include_resp_body      | boolean | 否   | 当设置为 `true` 时，生成的文件包含响应体。                                                                                               |
+| include_resp_body_expr | array   | 否   | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
 | match        | array[] | 否   |  当设置了这个选项后，只有匹配规则的日志才会被记录。`match` 是一个表达式列表，具体请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
 
 ## 插件元数据设置
