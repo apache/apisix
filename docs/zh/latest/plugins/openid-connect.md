@@ -47,8 +47,8 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
 | ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
 | introspection_endpoint               | string  | 否     |                       |               | 用于内省访问令牌的身份提供者的令牌内省端点的 URL。如果未设置，则使用发现文档中提供的内省端点[作为后备](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c)。                                                                    |
-| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               |  令牌内省端点的身份验证方法。该值应是“introspection_endpoint_auth_methods_supported”[授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)中指定的身份验证方法之一，如发现文档中所示，例如 `client_secret_basic`， `client_secret_post`， `private_key_jwt`，或 `client_secret_jwt`。                                                                        |
-| token_endpoint_auth_method           | string  | 否     |                       |               | 令牌端点的身份验证方法。该值应是“token_endpoint_auth_methods_supported”[授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)中指定的身份验证方法之一，如发现文档中所示，例如 `client_secret_basic`， `client_secret_post`， `private_key_jwt`，或 `client_secret_jwt`。如果不支持配置的方法，则回退到`token_endpoint_auth_methods_supported` 数组中的第一个方法。                                  |
+| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               |  令牌内省端点的身份验证方法。该值应是 `introspection_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)中指定的身份验证方法之一，如发现文档中所示，例如 `client_secret_basic`， `client_secret_post`， `private_key_jwt`，或 `client_secret_jwt`。                                                                        |
+| token_endpoint_auth_method           | string  | 否     |                       |               | 令牌端点的身份验证方法。该值应是 `token_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)中指定的身份验证方法之一，如发现文档中所示，例如 `client_secret_basic`， `client_secret_post`， `private_key_jwt`，或 `client_secret_jwt`。如果不支持配置的方法，则回退到`token_endpoint_auth_methods_supported` 数组中的第一个方法。                                  |
 | public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                   |
 | use_jwks                             | boolean | 否     | false                 |               | 当设置为 `true` 时，则会使用身份认证服务器的 JWKS 端点来验证令牌。                                    |
 | use_pkce                             | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，则使用 PKEC（Proof Key for Code Exchange）。                                      |
@@ -102,7 +102,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 1. 应用之间认证授权：将 `bearer_only` 设置为 `true`，并配置 `introspection_endpoint` 或 `public_key` 属性。该场景下，请求头（Header）中没有令牌或无效令牌的请求将被拒绝。
 
-2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户会话将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
+2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户 session 将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
 
 ### 令牌内省
 
@@ -187,9 +187,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 #### 通过 OIDC 依赖方认证流程进行身份验证
 
-当一个请求在请求头或会话 Cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
+当一个请求在请求头或 session cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
 
-一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在会话 Cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
+一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在 session cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
 
 以下示例是将此操作模式添加到 Route：
 
@@ -220,10 +220,48 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## 故障排除
 
-1. 如果 APISIX 无法解析或者连接到身份认证服务（如 Okta、Keycloak、Authing 等），请检查或修改配置文件（`./conf/config.yaml`）中的 DNS 设置。
+本节介绍使用此插件时的一些常见问题，以帮助您排除故障。
 
-2. 如果遇到 `the error request to the redirect_uri path, but there's no session state found` 的错误，请检查 `redirect_uri` 参数配置：APISIX 会向身份认证服务发起身份认证请求，认证服务完成认证、授权后，会携带 ID Token 和 AccessToken 重定向到 `redirect_uri` 所配置的地址（例如 `http://127.0.0.1:9080/callback`），接着再次进入 APISIX 并在 OIDC 逻辑中完成 Token 交换的功能。因此 `redirect_uri` 需要满足以下条件：
+### APISIX 无法连接到 OpenID 提供商
 
-- `redirect_uri` 需要能被当前 APISIX 所在路由捕获，比如当前路由的 `uri` 是 `/api/v1/*`, `redirect_uri` 可以填写为 `/api/v1/callback`；
-- `redirect_uri`（`scheme:host`）的 `scheme` 和 `host` 是身份认证服务视角下访问 APISIX 所需的值。
-- `redirect_uri`  不应与路由的 URI 相同。这是因为当用户发起访问受保护资源的请求时，请求会直接指向重定向 URI，而请求中没有会话 cookie，从而导致 `no session state found` 错误。
+如果 APISIX 无法解析或无法连接到 OpenID 提供商，请仔细检查配置文件 `config.yaml` 中的 DNS 设置并根据需要进行修改。
+
+### `No Session State Found`
+
+如果您在使用[授权码流](#authorization-code-flow) 时遇到 500 内部服务器错误并在日志中显示以下消息，则可能有多种原因。
+
+```text
+the error request to the redirect_uri path, but there's no session state found
+```
+
+#### 1. 重定向 URI 配置错误
+
+一个常见的错误配置是将 `redirect_uri` 配置为与路由的 URI 相同。当用户发起访问受保护资源的请求时，请求直接命中重定向 URI，且请求中没有 session cookie，从而导致 no session state found 错误。
+
+要正确配置重定向 URI，请确保 `redirect_uri` 与配置插件的路由匹配，但不要完全相同。例如，正确的配置是将路由的 `uri` 配置为 `/api/v1/*`，并将 `redirect_uri` 的路径部分配置为 `/api/v1/redirect`。
+
+您还应该确保 `redirect_uri` 包含 scheme，例如 `http` 或 `https` 。
+
+#### 2. 缺少 Session Secret
+
+如果您在[standalone 模式](/apisix/product/deployment-modes#standalone-mode)下部署 APISIX，请确保配置了 `session.secret`。
+
+用户 session 作为 cookie 存储在浏览器中，并使用 session 密钥进行加密。如果没有通过 `session.secret` 属性配置机密，则会自动生成机密并将其保存到 etcd。然而，在独立模式下，etcd 不再是配置中心。因此，您应该在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
+
+#### 3. Cookie 未发送或不存在
+
+检查 [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) cookie 属性是否已正确设置（即您的应用程序是否需要跨站点发送 cookie），看看这是否会成为阻止 cookie 保存到浏览器的 cookie jar 或从浏览器发送的因素。
+
+#### 4. 上游发送的标头太大
+
+如果您有 NGINX 位于 APISIX 前面来代理客户端流量，请查看 NGINX 的 `error.log` 中是否观察到以下错误：
+
+```text
+upstream sent too big header while reading response header from upstream
+```
+
+如果是这样，请尝试将 `proxy_buffers` 、 `proxy_buffer_size` 和 `proxy_busy_buffers_size` 调整为更大的值。
+
+#### 5. 无效的客户端密钥
+
+验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在 session 中。
