@@ -163,6 +163,11 @@ function _M.header_filter(conf, ctx)
         return
     end
 
+    local content_encoded = ngx_header["Content-Encoding"]
+    if content_encoded then
+        -- Don't compress if Content-Encoding is present in upstream data
+        return
+    end
     local types = conf.types
     local content_type = ngx_header["Content-Type"]
     if not content_type then
