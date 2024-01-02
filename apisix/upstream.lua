@@ -221,8 +221,6 @@ local function fill_node_info(up_conf, scheme, is_stream)
         end
     end
 
-    up_conf.original_nodes = nodes
-
     if not need_filled then
         up_conf.nodes_ref = nodes
         return true
