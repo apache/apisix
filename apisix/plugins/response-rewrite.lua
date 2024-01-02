@@ -29,7 +29,7 @@ local type        = type
 local pcall       = pcall
 local zlib        = require("ffi-zlib")
 local str_buffer  = require("string.buffer")
-local is_loaded, brotli = pcall(require, "brotli")
+local is_br_libs_loaded, brotli = pcall(require, "brotli")
 
 
 local lrucache = core.lrucache.new({
@@ -347,7 +347,7 @@ function _M.body_filter(conf, ctx)
                 core.log.error("filters may not work as expected, inflate gzip err: ", err)
                 return
             end
-        elseif ctx.response_encoding == "br" and is_loaded then
+        elseif ctx.response_encoding == "br" and is_br_libs_loaded then
             body, err = brotli_decode(body)
             if err ~= nil then
                 core.log.error("filters may not work as expected, brotli decode err: ", err)
