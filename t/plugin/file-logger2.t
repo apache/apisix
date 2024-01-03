@@ -366,3 +366,151 @@ write file log success
     }
 --- response_body
 not write file log
+
+
+
+=== TEST 11: add plugin with 'include_req_body' setting
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/file-logger', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-with-req-body.log",
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 12: verify plugin for file-logger with request
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello", ngx.HTTP_POST, "body-data")
+            local fd, err = io.open("file-with-req-body.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file-with-req-body.log, error info: ", err)
+                return
+            end
+
+            -- note only for first line
+            msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
+            ngx.status = code
+            if new_msg.request ~= nil and new_msg.request.body == "body-data" then
+                ngx.status = code
+                ngx.say('contain with target')
+            end
+        }
+    }
+--- response_body
+contain with target
+
+
+
+=== TEST 13: check file-logger 'include_req_body' with 'expr'
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "file-logger": {
+                                "path": "file-with-req-expr-body.log",
+                                "include_req_body": true,
+                                "include_req_body_expr": [
+                                    [
+                                      "arg_log_body",
+                                      "==",
+                                      "yes"
+                                    ]
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 14: verify file-logger req with expression of concern
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            local code = t("/hello?log_body=yes",
+                ngx.HTTP_POST,
+                [[{"foo": "bar"}]]
+                )
+            local fd, err = io.open("file-with-req-expr-body.log", 'r')
+            local msg
+
+            if not fd then
+                core.log.error("failed to open file: file-with-req-expr-body.log, error info: ", err)
+                return
+            end
+
+            -- note only for first line
+            msg = fd:read()
+
+            local new_msg = core.json.decode(msg)
+            ngx.status = code
+            if new_msg.request ~= nil and new_msg.request.body ~= nil then
+                ngx.status = code
+                ngx.say('contain target body hits with expr')
+            end
+
+            --- a new request is logged
+            t("/hello?log_body=no", ngx.HTTP_POST, [[{"foo": "b"}]])
+            msg = fd:read("*l")
+            local new_msg = core.json.decode(msg)
+            if new_msg.request.body == nil then
+                ngx.say('skip unconcern body')
+            end
+        }
+    }
+--- response_body
+contain target body hits with expr
+skip unconcern body
