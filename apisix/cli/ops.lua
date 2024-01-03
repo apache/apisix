@@ -767,6 +767,17 @@ local function cleanup(env)
 end
 
 
+local function check_running(env)
+    local pid_path = env.apisix_home .. "/logs/nginx.pid"
+    local pid = util.read_file(pid_path)
+    pid = tonumber(pid)
+    if not pid then
+        return false, -1
+    end
+    return true, pid
+end
+
+
 local function start(env, ...)
     cleanup(env)
 
@@ -792,10 +803,8 @@ local function start(env, ...)
     end
 
     -- check running
-    local pid_path = env.apisix_home .. "/logs/nginx.pid"
-    local pid = util.read_file(pid_path)
-    pid = tonumber(pid)
-    if pid then
+    local running, pid = check_running(env)
+    if running then
         if pid <= 0 then
             print("invalid pid")
             return
@@ -805,7 +814,7 @@ local function start(env, ...)
 
         local ok, err, err_no = signal.kill(pid, signone)
         if ok then
-            print("the old process is still running, the new one won't be started!")
+            print("the old APISIX is still running, the new one will not start")
             return
         -- no such process
         elseif err_no ~= errno.ESRCH then
@@ -924,11 +933,8 @@ end
 local function wait_stop_finish(env, n)
     for i = 1, n do
          -- check running
-        local pid_path = env.apisix_home .. "/logs/nginx.pid"
-        local pid = util.read_file(pid_path)
-        pid = tonumber(pid)
-        if not pid then
-            print("old apisix process has stopped")
+        local running = check_running(env)
+        if not running then
             return
         else
             sleep(1)
