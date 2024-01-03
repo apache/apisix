@@ -32,6 +32,14 @@ local schema = {
             type = "string"
         },
         log_format = {type = "object"},
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
