@@ -25,7 +25,6 @@ install_dependencies() {
     # install build & runtime deps
     yum install -y wget tar gcc gcc-c++ automake autoconf libtool make unzip patch \
         git sudo openldap-devel which ca-certificates \
-        openresty-pcre-devel openresty-zlib-devel \
         epel-release  \
         cpanminus perl \
         openssl-devel
@@ -43,9 +42,9 @@ install_dependencies() {
 
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    export luajit_xcflags="-DLUAJIT_ASSERT -DLUAJIT_NUMMODE=2 -DLUAJIT_ENABLE_LUA52COMPAT -O0"
-    export debug_args=--with-debug
+    yum install -y openresty-pcre-devel openresty-zlib-devel
 
+    export runtime_version=${APISIX_RUNTIME}
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime.sh latest

@@ -45,31 +45,25 @@ function install_dependencies_with_aur() {
 # Install dependencies on centos and fedora
 function install_dependencies_with_yum() {
     sudo yum install -y yum-utils
-
-    local common_dep="curl wget git gcc openresty-openssl111-devel unzip pcre pcre-devel openldap-devel"
-    if [ "${1}" == "centos" ]; then
-        # add APISIX source
-        local apisix_pkg=apache-apisix-repo-1.0-1.noarch
-        rpm -q --quiet ${apisix_pkg} || sudo yum install -y https://repos.apiseven.com/packages/centos/${apisix_pkg}.rpm
-
-        # install apisix-runtime and some compilation tools
-        # shellcheck disable=SC2086
-        sudo yum install -y apisix-runtime $common_dep
-    else
-        # add OpenResty source
-        sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
-
-        # install OpenResty and some compilation tools
-        # shellcheck disable=SC2086
-        sudo yum install -y openresty $common_dep
+    sudo yum-config-manager --add-repo "https://openresty.org/package/${1}/openresty.repo"
+    if [[ "${1}" == "centos" ]]; then
+        sudo yum -y install centos-release-scl
+        sudo yum -y install devtoolset-9 patch wget
+        set +eu
+        source scl_source enable devtoolset-9
+        set -eu
     fi
+    sudo yum install -y  \
+        gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch \
+        perl perl-devel pcre pcre-devel openldap-devel \
+        openresty-zlib-devel openresty-pcre-devel
 }
 
 # Install dependencies on ubuntu and debian
 function install_dependencies_with_apt() {
     # add OpenResty source
     sudo apt-get update
-    sudo apt-get -y install software-properties-common wget lsb-release
+    sudo apt-get -y install software-properties-common wget lsb-release gnupg patch
     wget -qO - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
     arch=$(uname -m | tr '[:upper:]' '[:lower:]')
     arch_path=""
@@ -83,8 +77,8 @@ function install_dependencies_with_apt() {
     fi
     sudo apt-get update
 
-    # install OpenResty and some compilation tools
-    sudo apt-get install -y git openresty curl openresty-openssl111-dev make gcc libpcre3 libpcre3-dev libldap2-dev unzip
+    # install some compilation tools
+    sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libldap2-dev unzip openresty-zlib-dev openresty-pcre-dev
 }
 
 # Install dependencies on mac osx
@@ -97,6 +91,8 @@ function install_dependencies_on_mac_osx() {
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
         install_dependencies_with_yum "centos"
+    elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
+        install_dependencies_with_yum "rhel"
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
         install_dependencies_with_yum "fedora"
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
@@ -107,12 +103,46 @@ function multi_distro_installation() {
         install_dependencies_with_aur
     else
         echo "Non-supported operating system version"
+        exit 1
     fi
+    install_apisix_runtime
+}
+
+function multi_distro_uninstallation() {
+    if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
+        sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+    elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
+        sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
+    else
+        echo "Non-supported operating system version"
+        exit 1
+    fi
+}
+
+function install_apisix_runtime() {
+    export runtime_version=${APISIX_RUNTIME:?}
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    chmod +x build-apisix-runtime.sh
+    ./build-apisix-runtime.sh latest
+    rm build-apisix-runtime.sh
 }
 
 # Install LuaRocks
 function install_luarocks() {
-    curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
+    if [ -f "./utils/linux-install-luarocks.sh" ]; then
+        ./utils/linux-install-luarocks.sh
+    elif [ -f "./linux-install-luarocks.sh" ]; then
+        ./linux-install-luarocks.sh
+    else
+        echo "Installing luarocks from remote master branch"
+        curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
+    fi
 }
 
 # Entry
@@ -134,6 +164,13 @@ function main() {
     case "${case_opt}" in
         "install_luarocks")
             install_luarocks
+        ;;
+        "uninstall")
+            if [[ "${OS_NAME}" == "linux" ]]; then
+                multi_distro_uninstallation
+            else
+                echo "Non-supported distribution"
+            fi
         ;;
         *)
             echo "Unsupported method: ${case_opt}"

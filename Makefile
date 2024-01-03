@@ -40,13 +40,17 @@ ENV_DOCKER             ?= docker
 ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
-ENV_OPENSSL_PREFIX     ?= $(addprefix $(ENV_NGINX_PREFIX), openssl3)
+ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
 ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_HOMEBREW_PREFIX    ?= /usr/local
+ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
+
+-include .requirements
+export
 
 ifneq ($(shell whoami), root)
 	ENV_LUAROCKS_FLAG_LOCAL := --local
@@ -56,10 +60,8 @@ ifdef ENV_LUAROCKS_SERVER
 	ENV_LUAROCKS_SERVER_OPT := --server $(ENV_LUAROCKS_SERVER)
 endif
 
-# Execute only in the presence of ENV_NGINX_EXEC to avoid unexpected error output
-ifneq ($(ENV_NGINX_EXEC), )
+ifneq ($(shell test -d $(ENV_OPENSSL_PREFIX) && echo -n yes), yes)
 	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
-	# OpenResty 1.17.8 or higher version uses openssl3 as the openssl dirname.
 	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl3) && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl3)
 	endif
@@ -126,12 +128,12 @@ endef
 .PHONY: runtime
 runtime:
 ifeq ($(ENV_NGINX_EXEC), )
-ifeq ("$(wildcard /usr/local/openresty-debug/bin/openresty)", "")
+ifeq ("$(wildcard /usr/local/openresty/bin/openresty)", "")
 	@$(call func_echo_warn_status, "WARNING: OpenResty not found. You have to install OpenResty and add the binary file to PATH before install Apache APISIX.")
 	exit 1
 else
-	$(eval ENV_NGINX_EXEC := /usr/local/openresty-debug/bin/openresty)
-	@$(call func_echo_status, "Use openresty-debug as default runtime")
+	$(eval ENV_NGINX_EXEC := /usr/local/openresty/bin/openresty)
+	@$(call func_echo_status, "Use openresty as default runtime")
 endif
 endif
 
@@ -153,7 +155,7 @@ help:
 
 ### deps : Installing dependencies
 .PHONY: deps
-deps: runtime
+deps: install-runtime
 	$(eval ENV_LUAROCKS_VER := $(shell $(ENV_LUAROCKS) --version | grep -E -o "luarocks [0-9]+."))
 	@if [ '$(ENV_LUAROCKS_VER)' = 'luarocks 3.' ]; then \
 		mkdir -p ~/.luarocks; \
@@ -169,7 +171,7 @@ deps: runtime
 
 ### undeps : Uninstalling dependencies
 .PHONY: undeps
-undeps:
+undeps: uninstall-runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_LUAROCKS) purge --tree=deps
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
@@ -253,6 +255,18 @@ reload: runtime
 	$(ENV_APISIX) reload
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
+.PHONY: install-runtime
+install-runtime:
+ifneq ($(ENV_RUNTIME_VER), $(APISIX_RUNTIME))
+	./utils/install-dependencies.sh
+	@sudo $(ENV_INSTALL) /usr/local/openresty/bin/openresty $(ENV_INST_BINDIR)/openresty
+endif
+
+.PHONY: uninstall-runtime
+uninstall-runtime:
+	./utils/install-dependencies.sh uninstall
+	rm -rf /usr/local/openresty
+	rm -f $(ENV_INST_BINDIR)/openresty
 
 ### install : Install the apisix (only for luarocks)
 .PHONY: install
