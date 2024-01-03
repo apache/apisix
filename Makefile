@@ -47,7 +47,7 @@ ENV_INST_PREFIX        ?= /usr
 ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_HOMEBREW_PREFIX    ?= /usr/local
-ENV_RUNTIME_VER		   ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
+ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
 -include .requirements
 export
