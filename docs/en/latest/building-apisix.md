@@ -45,7 +45,7 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 
 ## Building APISIX from source
 
-First of all, we need to specify the version `APISIX_ VERSION` to be installed:
+First of all, we need to specify the version `APISIX_VERSION` to be installed:
 
 ```shell
 APISIX_VERSION='3.7.0'
@@ -55,12 +55,6 @@ Then, you can run the following command to clone the APISIX source code from Git
 
 ```shell
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
-```
-
-Now, by changing to the directory of the APISIX source code, you can install the dependencies with the following command:
-
-```shell
-cd apisix-${APISIX_VERSION}
 ```
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
@@ -73,7 +67,7 @@ make deps
 make install
 ```
 
-This will install the runtime-dependent Lua libraries and the `apisix` CLI tool.
+This will install the runtime-dependent Lua libraries and `apisix-runtime` the `apisix` CLI tool.
 
 :::note
 

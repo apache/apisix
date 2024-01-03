@@ -56,12 +56,6 @@ APISIX_VERSION='3.7.0'
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
 ```
 
-现在，切换到 APISIX 源码的目录，你可以通过以下命令安装依赖项：
-
-```shell
-cd apisix-${APISIX_VERSION}
-```
-
 你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包缺少测试用例，可能会对你后续操作产生困扰。
 
 另外，你也可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
@@ -69,11 +63,12 @@ cd apisix-${APISIX_VERSION}
 然后切换到 APISIX 源码的目录，创建依赖项并安装 APISIX，命令如下所示：
 
 ```shell
+cd apisix-${APISIX_VERSION}
 make deps
 make install
 ```
 
-该命令将安装 APISIX 运行时依赖的 Lua 库和 `apisix` 命令。
+该命令将安装 APISIX 运行时依赖的 Lua 库以及 `apisix-runtime` 和 `apisix` 命令。
 
 :::note
 
