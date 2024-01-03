@@ -142,7 +142,7 @@ nginx_config:
 
 # apisix restart
 out=$(./bin/apisix restart 2>&1 || true)
-if ! (echo "$out" | grep "\[emerg\] unknown directive \"notexist\"") && ! (echo "$out" | grep "APISIX is running"); then
+if ! (echo "$out" | grep "\[emerg\] unknown directive \"notexist\"") && ! (echo "$out" | grep "the old APISIX is still running"); then
     echo "failed: should restart failed when configuration invalid"
     exit 1
 fi
