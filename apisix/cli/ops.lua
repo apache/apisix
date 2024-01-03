@@ -767,12 +767,17 @@ local function cleanup(env)
 end
 
 
+local function sleep(n)
+  execute("sleep " .. tonumber(n))
+end
+
+
 local function check_running(env)
     local pid_path = env.apisix_home .. "/logs/nginx.pid"
     local pid = util.read_file(pid_path)
     pid = tonumber(pid)
     if not pid then
-        return false, -1
+        return false, nil
     end
     return true, pid
 end
@@ -802,9 +807,19 @@ local function start(env, ...)
         util.die(logs_path, " is not directory nor symbol link")
     end
 
-    -- check running
-    local running, pid = check_running(env)
-    if running then
+    -- check running and wait old apisix stop
+    local pid = nil
+    for i = 1, 30 do
+        local running
+        running, pid = check_running(env)
+        if not running then
+            break
+        else
+            sleep(0.1)
+        end
+    end
+
+    if pid then
         if pid <= 0 then
             print("invalid pid")
             return
@@ -925,29 +940,10 @@ local function stop(env)
 end
 
 
-local function sleep(n)
-  execute("sleep " .. tonumber(n))
-end
-
-
-local function wait_stop_finish(env, n)
-    for i = 1, n do
-         -- check running
-        local running = check_running(env)
-        if not running then
-            return
-        else
-            sleep(1)
-        end
-    end
-end
-
-
 local function restart(env)
   -- test configuration
   test(env)
   stop(env)
-  wait_stop_finish(env, 3)
   start(env)
 end
 

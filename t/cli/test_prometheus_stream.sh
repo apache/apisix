@@ -64,8 +64,6 @@ make stop
 
 echo "passed: prometheus works when both http & stream are enabled"
 
-sleep 1 #wait for stop finish
-
 echo "
 apisix:
     proxy_mode: stream
