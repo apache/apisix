@@ -718,3 +718,31 @@ passed
     }
 --- response_body
 ok
+
+
+
+=== TEST 30: hit - skip brotli compression of compressed response, return the same upstream response
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/mock_compressed_upstream_response"
+            local httpc = http.new()
+            local req_body = ("abcdf01234"):rep(1024)
+            local res, err = httpc:request_uri(uri,
+                {method = "POST", headers = {["Accept-Encoding"] = "gzip, br"}, body = req_body})
+            if not res then
+                ngx.say(err)
+                return
+            end
+        }
+    }
+--- request
+GET /t
+--- more_headers
+Accept-Encoding: gzip, br
+Vary: upstream
+Content-Type: text/html
+--- response_headers
+Content-Encoding: gzip
