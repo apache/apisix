@@ -221,33 +221,6 @@ function _M.match_and_set(api_ctx, match_only, alt_sni)
 end
 
 
-local function get_ocsp_resp(ocsp_url, ocsp_req)
-    local http = require("resty.http")
-    local httpc = http.new()
-    local res, err = httpc:request_uri(ocsp_url, {
-        method = "POST",
-        headers = {
-            ["Content-Type"] = "application/ocsp-request",
-        },
-        body = ocsp_req,
-    })
-
-    if not res then
-        core.log.error("OCSP responder query failed:", err, ", url:", ocsp_url)
-        return
-    end
-
-    local http_status = res.status
-    if http_status ~= 200 then
-        core.log.error("OCSP responder returns bad HTTP status code:",
-                       http_status, ", url:", ocsp_url)
-        return
-    end
-
-    return res.body
-end
-
-
 function _M.set(matched_ssl, sni)
     if not matched_ssl then
         return false, "failed to match ssl certificate"
@@ -269,38 +242,6 @@ function _M.set(matched_ssl, sni)
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
         return false, err
-    end
-
-    local is_ocsp_enabled = true
-    if is_ocsp_enabled then
-        local ocsp = require "ngx.ocsp"
-        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(new_ssl_value.value.cert)
-        if not der_cert_chain then
-            core.log.error("failed to convert certificate chain ",
-                           "from PEM to DER: ", err)
-        end
-        local ocsp_url, err = ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
-        if not ocsp_url then
-            core.log.error("failed to get OCSP url:", err)
-        end
-
-        local ocsp_req, err = ocsp.create_ocsp_request(der_cert_chain)
-        if not ocsp_req then
-            core.log.error("failed to create OCSP request:", err)
-        end
-
-        local ocsp_resp = get_ocsp_resp(ocsp_url, ocsp_req)
-        if ocsp_resp and #ocsp_resp > 0 then
-            local ok, err = ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
-            if not ok then
-                core.log.error("failed to validate OCSP response: ", err)
-            end
-            -- set the OCSP stapling
-            ok, err = ocsp.set_ocsp_status_resp(ocsp_resp)
-            if not ok then
-                core.log.error("failed to set ocsp status resp: ", err)
-            end
-        end
     end
 
     if matched_ssl.value.client then
