@@ -721,7 +721,41 @@ ok
 
 
 
-=== TEST 30: hit - skip brotli compression of compressed response, return the same upstream response
+=== TEST 30: mock upstream compressed response
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/mock_compressed_upstream_response",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "brotli": {
+                            "types": "*"
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 31: hit - skip brotli compression of compressed upsteam response
 --- config
     location /t {
         content_by_lua_block {
