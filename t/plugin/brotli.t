@@ -770,7 +770,9 @@ passed
                 ngx.say(err)
                 return
             end
-            ngx.say(res)
+            if res.headers["Content-Encoding"] ~= 'gzip' then
+                ngx.say("ok")
+            end
         }
     }
 --- request
@@ -779,5 +781,5 @@ GET /t
 Accept-Encoding: gzip, br
 Vary: upstream
 Content-Type: text/html
---- response_headers
-Content-Encoding: gzip
+--- response_body
+ok
