@@ -657,7 +657,7 @@ true
 
 
 
-=== TEST 16: add plugin with lazy_load_paths when resource_registration_endpoint is neither in config not in the discovery doc
+=== TEST 16: add plugin with lazy_load_paths when resource_registration_endpoint is neither in config nor in the discovery doc
 --- config
     location /t {
         content_by_lua_block {
