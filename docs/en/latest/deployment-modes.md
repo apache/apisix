@@ -166,6 +166,8 @@ routes:
 
 *WARNING*: When using docker to deploy in standalone mode. New environment variables added in `apisix.yaml` while APISIX is running will only take effect after a reload.
 
+More information about using environment variables can be found [here](./admin-api.md#using-environment-variables).
+
 ### How to configure Route
 
 Single Route：
