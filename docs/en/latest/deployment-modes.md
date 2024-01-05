@@ -151,6 +151,21 @@ routes:
 
 *WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
+Environment variables can also be used like so:
+
+```yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "${{UPSTREAM_ADDR}}": 1
+        type: roundrobin
+#END
+```
+
+*WARNING*: When using docker to deploy in standalone mode. New environment variables added in `apisix.yaml` while APISIX is running will only take effect after a reload.
+
 ### How to configure Route
 
 Single Route：
