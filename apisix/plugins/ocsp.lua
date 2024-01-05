@@ -18,20 +18,19 @@
 --
 
 local require = require
-local http = require("resty.http")
-local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
-
-
 local pcall = pcall
-
 local get_request = require("resty.core.base").get_request
+local http = require("resty.http")
+local ngx_ocsp = require("ngx.ocsp")
+local ngx_ssl = require("ngx.ssl")
+local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
 local core = require("apisix.core")
-
 local apisix_ssl = require("apisix.ssl")
 local _, ssl = pcall(require, "resty.apisix.ssl")
 local error = error
-local plugin_name = "gm"
 
+
+local plugin_name = "ocsp"
 
 local plugin_schema = {
     type = "object",
@@ -39,10 +38,10 @@ local plugin_schema = {
 }
 
 local _M = {
-    version  = 0.1,            -- plugin version
-    priority = -43,
-    name     = plugin_name,    -- plugin name
-    schema   = plugin_schema,  -- plugin schema
+    version  = 0.1,
+    priority = -42,
+    name     = plugin_name,
+    schema   = plugin_schema,
 }
 
 
@@ -62,21 +61,57 @@ local function get_ocsp_resp(ocsp_url, ocsp_req)
     })
 
     if not res then
-        core.log.error("OCSP responder query failed:", err, ", url:", ocsp_url)
-        return
+        return false, "OCSP responder query failed: " .. err
     end
 
     local http_status = res.status
     if http_status ~= 200 then
-        core.log.error("OCSP responder returns bad HTTP status code:",
-                       http_status, ", url:", ocsp_url)
-        return
+        return false, "OCSP responder returns bad HTTP status code: " .. http_status
     end
 
-    return res.body
+    return true, nil, res.body
 end
 
 
+local function get_ocsp_url_and_ocsp_req(pem_cert_chain)
+    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(pem_cert_chain)
+    if not der_cert_chain then
+        return false, "failed to convert certificate chain from PEM to DER: " .. err
+    end
+
+    local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+    if not ocsp_url then
+        return false, "failed to get OCSP url: " .. err
+    end
+
+    local ocsp_req, err = ocsp.create_ocsp_request(der_cert_chain)
+    if not ocsp_req then
+        return false, "failed to create OCSP request: " .. err
+    end
+
+    return true, nil, ocsp_url, ocsp_req
+end
+
+
+local function validate_and_set_ocsp_resp(der_cert_chain, ocsp_resp)
+    if ocsp_resp and #ocsp_resp > 0 then
+        local ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
+        if not ok then
+            return false, "failed to validate OCSP response: " .. err
+        end
+
+        -- set the OCSP stapling
+        ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
+        if not ok then
+            return false, "failed to set ocsp status resp: " .. err
+        end
+    end
+
+    return true
+end
+
+
+-- same as function set_pem_ssl_key() from "apisix.ssl.router.radixtree_sni" 
 local function set_pem_ssl_key(sni, cert, pkey)
     local r = get_request()
     if r == nil then
@@ -104,49 +139,19 @@ local function set_pem_ssl_key(sni, cert, pkey)
     end
 
     return true
-
-    local ocsp = require "ngx.ocsp"
-    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(new_ssl_value.cert)
-    if not der_cert_chain then
-        core.log.error("failed to convert certificate chain ",
-                       "from PEM to DER: ", err)
-    end
-    local ocsp_url, err = ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
-    if not ocsp_url then
-        core.log.error("failed to get OCSP url:", err)
-    end
-
-    local ocsp_req, err = ocsp.create_ocsp_request(der_cert_chain)
-    if not ocsp_req then
-        core.log.error("failed to create OCSP request:", err)
-    end
-
-    local ocsp_resp = get_ocsp_resp(ocsp_url, ocsp_req)
-    if ocsp_resp and #ocsp_resp > 0 then
-        local ok, err = ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
-        if not ok then
-            core.log.error("failed to validate OCSP response: ", err)
-        end
-        -- set the OCSP stapling
-        ok, err = ocsp.set_ocsp_status_resp(ocsp_resp)
-        if not ok then
-            core.log.error("failed to set ocsp status resp: ", err)
-        end
-    end
-
-
-    return true
 end
 
 
 local original_set_cert_and_key
 local function set_cert_and_key(sni, value)
-    if value.gm then
+    -- maybe not run with gm
+    if value.ocsp_stapling then
         local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
         if not ok then
             return false, err
         end
-    
+        local fin_cert = value.cert
+
         -- multiple certificates support.
         if value.certs then
             for i = 1, #value.certs do
@@ -157,53 +162,44 @@ local function set_cert_and_key(sni, value)
                 if not ok then
                     return false, err
                 end
+                fin_cert = cert
             end
         end
-    
+
+        local ok, err, ocsp_url, ocsp_req = get_ocsp_url_and_ocsp_req(fin_cert)
+        if not ok then
+            -- get ocsp url failed, maybe certificates not support
+            core.log.error(err)
+            return true
+        end
+        local ok, err, ocsp_resp = get_ocsp_resp(ocsp_url, ocsp_req)
+        if not ok then
+            -- get ocsp resp failed
+            core.log.error(err)
+            return true
+        end
+        ok, err = validate_and_set_ocsp_resp(ocsp_resp)
+        if not ok then
+            -- validate or set ocsp resp failed
+            core.log.error(err)
+            return true
+        end
+
         return true
-        return set_pem_ssl_key(sni, enc_cert, enc_pkey, sign_cert, sign_pkey)
     end
     return original_set_cert_and_key(sni, value)
-end
-
-
-local original_check_ssl_conf
-local function check_ssl_conf(in_dp, conf)
-    if conf.gm then
-        -- process as GM certificate
-        -- For GM dual certificate, the `cert` and `key` will be encryption cert/key.
-        -- The first item in `certs` and `keys` will be sign cert/key.
-        local ok, err = original_check_ssl_conf(in_dp, conf)
-        -- check cert/key first in the original method
-        if not ok then
-            return nil, err
-        end
-
-        -- Currently, APISIX doesn't check the cert type (ECDSA / RSA). So we skip the
-        -- check for now in this plugin.
-        local num_certs = conf.certs and #conf.certs or 0
-        local num_keys = conf.keys and #conf.keys or 0
-        if num_certs ~= 1 or num_keys ~= 1 then
-            return nil, "sign cert/key are required"
-        end
-        return true
-    end
-    return original_check_ssl_conf(in_dp, conf)
 end
 
 
 function _M.init()
     original_set_cert_and_key = radixtree_sni.set_cert_and_key
     radixtree_sni.set_cert_and_key = set_cert_and_key
-    original_check_ssl_conf = apisix_ssl.check_ssl_conf
-    apisix_ssl.check_ssl_conf = check_ssl_conf
 
-    if core.schema.ssl.properties.gm ~= nil then
-        error("Field 'gm' is occupied")
+    if core.schema.ssl.properties.ocsp_stapling ~= nil then
+        error("Field 'ocsp_stapling' is occupied")
     end
 
-    -- inject a mark to distinguish GM certificate
-    core.schema.ssl.properties.gm = {
+    core.schema.ssl.properties.ocsp_stapling = {
         type = "boolean"
     }
 end
@@ -211,10 +207,8 @@ end
 
 function _M.destroy()
     radixtree_sni.set_cert_and_key = original_set_cert_and_key
-    apisix_ssl.check_ssl_conf = original_check_ssl_conf
-    core.schema.ssl.properties.gm = nil
+    core.schema.ssl.properties.ocsp_stapling = nil
 end
-
 
 
 return _M
