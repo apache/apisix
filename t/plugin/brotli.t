@@ -770,6 +770,7 @@ passed
                 ngx.say(err)
                 return
             end
+            ngx.say(res)
         }
     }
 --- request
