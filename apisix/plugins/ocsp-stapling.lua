@@ -111,7 +111,7 @@ local function validate_and_set_ocsp_resp(der_cert_chain, ocsp_resp)
 end
 
 
--- same as function set_pem_ssl_key() from "apisix.ssl.router.radixtree_sni" 
+-- same as function set_pem_ssl_key() from "apisix.ssl.router.radixtree_sni"
 local function set_pem_ssl_key(sni, cert, pkey)
     local r = get_request()
     if r == nil then
@@ -157,7 +157,6 @@ local function set_cert_and_key(sni, value)
             for i = 1, #value.certs do
                 local cert = value.certs[i]
                 local key = value.keys[i]
-    
                 ok, err = set_pem_ssl_key(sni, cert, key)
                 if not ok then
                     return false, err
