@@ -103,6 +103,8 @@ routes:
 
 Initialize and start APISIX in standalone mode, requests to `/anything` should now be forwarded to `httpbin.org:80/anything`.
 
+*WARNING*: When using docker to deploy in standalone mode. New environment variables added in `apisix.yaml` while APISIX is running will only take effect after a reload.
+
 ## Using the `APISIX_PROFILE` environment variable
 
 If you have multiple configuration changes for multiple environments, it might be better to have a different configuration file for each.
