@@ -741,3 +741,4 @@ GET /t
 true
 --- error_log
 Unable to determine registration endpoint.
+
