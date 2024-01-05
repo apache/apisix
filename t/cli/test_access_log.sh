@@ -138,6 +138,51 @@ make stop
 
 echo "passed: access log with JSON format"
 
+# check conditional access log
+# exclude logging 2xx and 3xx requests
+
+echo '
+nginx_config:
+  http:
+    enable_access_log: true
+    access_log_if_condition: $loggable
+  http_configuration_snippet: |
+    map $status $loggable {
+        ~^[23]  0;
+        default 1;
+    }
+' > conf/config.yaml
+
+make init
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/non-existent
+sleep 2
+tail -n 1 logs/access.log > output.log
+
+if [ `grep -c '404' output.log` -eq '0' ]; then
+    echo "failed: 404 not logged in the access log"
+    exit 1
+fi
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9090/v1/schema)
+sleep 2
+
+if [ ! $code -eq 200 ]; then
+    echo "failed: access control API"
+    exit 1
+fi
+
+tail -n 1 logs/access.log > output.log
+if [ `grep -c '200' output.log` -gt '0' ]; then
+    echo "failed: 200 found in the access log"
+    exit 1
+fi
+
+make stop
+
+echo "pass: conditional access logging"
+
 # check uninitialized variable in access log when access admin
 git checkout conf/config.yaml
 
