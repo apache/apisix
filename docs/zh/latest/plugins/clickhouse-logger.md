@@ -58,42 +58,42 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 ```json
 {
-	"response": {
-		"status": 200,
-		"size": 118,
-		"headers": {
-			"content-type": "text/plain",
-			"connection": "close",
-			"server": "APISIX/3.7.0",
-			"content-length": "12"
-		}
-	},
-	"client_ip": "127.0.0.1",
-	"upstream_latency": 3,
-	"apisix_latency": 98.999998092651,
-	"upstream": "127.0.0.1:1982",
-	"latency": 101.99999809265,
-	"server": {
-		"version": "3.7.0",
-		"hostname": "localhost"
-	},
-	"route_id": "1",
-	"start_time": 1704507612177,
-	"service_id": "",
-	"request": {
-		"method": "POST",
-		"querystring": {
-			"foo": "unknown"
-		},
-		"headers": {
-			"host": "localhost",
-			"connection": "close",
-			"content-length": "18"
-		},
-		"size": 110,
-		"uri": "/hello?foo=unknown",
-		"url": "http://localhost:1984/hello?foo=unknown"
-	}
+    "response": {
+        "status": 200,
+        "size": 118,
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "server": "APISIX/3.7.0",
+            "content-length": "12"
+        }
+    },
+    "client_ip": "127.0.0.1",
+    "upstream_latency": 3,
+    "apisix_latency": 98.999998092651,
+    "upstream": "127.0.0.1:1982",
+    "latency": 101.99999809265,
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "route_id": "1",
+    "start_time": 1704507612177,
+    "service_id": "",
+    "request": {
+        "method": "POST",
+        "querystring": {
+            "foo": "unknown"
+        },
+        "headers": {
+            "host": "localhost",
+            "connection": "close",
+            "content-length": "18"
+        },
+        "size": 110,
+        "uri": "/hello?foo=unknown",
+        "url": "http://localhost:1984/hello?foo=unknown"
+    }
 }
 ```
 

@@ -56,26 +56,26 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 ```json
 {
-	"route_conf": {
-		"host": "100.100.99.135",
-		"buffer_duration": 60,
-		"timeout": 30000,
-		"include_req_body": false,
-		"logstore": "your_logstore",
-		"log_format": {
-			"vip": "$remote_addr"
-		},
-		"project": "your_project",
-		"inactive_timeout": 5,
-		"access_key_id": "your_access_key_id",
-		"access_key_secret": "your_access_key_secret",
-		"batch_max_size": 1000,
-		"max_retry_count": 0,
-		"retry_delay": 1,
-		"port": 10009,
-		"name": "sls-logger"
-	},
-	"data": "<46>1 2024-01-06T03:29:56.457Z localhost apisix 28063 - [logservice project=\"your_project\" logstore=\"your_logstore\" access-key-id=\"your_access_key_id\" access-key-secret=\"your_access_key_secret\"] {\"vip\":\"127.0.0.1\",\"route_id\":\"1\"}\n"
+    "route_conf": {
+        "host": "100.100.99.135",
+        "buffer_duration": 60,
+        "timeout": 30000,
+        "include_req_body": false,
+        "logstore": "your_logstore",
+        "log_format": {
+            "vip": "$remote_addr"
+        },
+        "project": "your_project",
+        "inactive_timeout": 5,
+        "access_key_id": "your_access_key_id",
+        "access_key_secret": "your_access_key_secret",
+        "batch_max_size": 1000,
+        "max_retry_count": 0,
+        "retry_delay": 1,
+        "port": 10009,
+        "name": "sls-logger"
+    },
+    "data": "<46>1 2024-01-06T03:29:56.457Z localhost apisix 28063 - [logservice project=\"your_project\" logstore=\"your_logstore\" access-key-id=\"your_access_key_id\" access-key-secret=\"your_access_key_secret\"] {\"vip\":\"127.0.0.1\",\"route_id\":\"1\"}\n"
 }
 ```
 

@@ -57,29 +57,29 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 ```json
 {
-	"insertId": "0013a6afc9c281ce2e7f413c01892bdc",
-	"labels": {
-		"source": "apache-apisix-google-cloud-logging"
-	},
-	"logName": "projects/apisix/logs/apisix.apache.org%2Flogs",
-	"httpRequest": {
-		"requestMethod": "GET",
-		"requestUrl": "http://localhost:1984/hello",
-		"requestSize": 59,
-		"responseSize": 118,
-		"status": 200,
-		"remoteIp": "127.0.0.1",
-		"serverIp": "127.0.0.1:1980",
-		"latency": "0.103s"
-	},
-	"resource": {
-		"type": "global"
-	},
-	"jsonPayload": {
-		"service_id": "",
-		"route_id": "1"
-	},
-	"timestamp": "2024-01-06T03:34:45.065Z"
+    "insertId": "0013a6afc9c281ce2e7f413c01892bdc",
+    "labels": {
+        "source": "apache-apisix-google-cloud-logging"
+    },
+    "logName": "projects/apisix/logs/apisix.apache.org%2Flogs",
+    "httpRequest": {
+        "requestMethod": "GET",
+        "requestUrl": "http://localhost:1984/hello",
+        "requestSize": 59,
+        "responseSize": 118,
+        "status": 200,
+        "remoteIp": "127.0.0.1",
+        "serverIp": "127.0.0.1:1980",
+        "latency": "0.103s"
+    },
+    "resource": {
+        "type": "global"
+    },
+    "jsonPayload": {
+        "service_id": "",
+        "route_id": "1"
+    },
+    "timestamp": "2024-01-06T03:34:45.065Z"
 }
 ```
 

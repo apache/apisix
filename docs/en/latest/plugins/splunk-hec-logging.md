@@ -52,30 +52,30 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 ```json
 {
-	"sourcetype": "_json",
-	"time": 1704513555.392,
-	"event": {
-		"upstream": "127.0.0.1:1980",
-		"request_url": "http://localhost:1984/hello",
-		"request_query": {},
-		"request_size": 59,
-		"response_headers": {
-			"content-length": "12",
-			"server": "APISIX/3.7.0",
-			"content-type": "text/plain",
-			"connection": "close"
-		},
-		"response_status": 200,
-		"response_size": 118,
-		"latency": 108.00004005432,
-		"request_method": "GET",
-		"request_headers": {
-			"connection": "close",
-			"host": "localhost"
-		}
-	},
-	"source": "apache-apisix-splunk-hec-logging",
-	"host": "localhost"
+    "sourcetype": "_json",
+    "time": 1704513555.392,
+    "event": {
+        "upstream": "127.0.0.1:1980",
+        "request_url": "http://localhost:1984/hello",
+        "request_query": {},
+        "request_size": 59,
+        "response_headers": {
+            "content-length": "12",
+            "server": "APISIX/3.7.0",
+            "content-type": "text/plain",
+            "connection": "close"
+        },
+        "response_status": 200,
+        "response_size": 118,
+        "latency": 108.00004005432,
+        "request_method": "GET",
+        "request_headers": {
+            "connection": "close",
+            "host": "localhost"
+        }
+    },
+    "source": "apache-apisix-splunk-hec-logging",
+    "host": "localhost"
 }
 ```
 
