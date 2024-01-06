@@ -59,43 +59,43 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
   ```json
   {
-	"service_id": "",
-	"apisix_latency": 100.99999809265,
-	"start_time": 1703907485819,
-	"latency": 101.99999809265,
-	"upstream_latency": 1,
-	"client_ip": "127.0.0.1",
-	"route_id": "1",
-	"server": {
-		"version": "3.7.0",
-		"hostname": "localhost"
-	},
-	"request": {
-		"headers": {
-			"host": "127.0.0.1:1984",
-			"content-type": "application/x-www-form-urlencoded",
-			"user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
-			"content-length": "12"
-		},
-		"method": "POST",
-		"size": 194,
-		"url": "http://127.0.0.1:1984/hello?log_body=no",
-		"uri": "/hello?log_body=no",
-		"querystring": {
-			"log_body": "no"
-		}
-	},
-	"response": {
-		"headers": {
-			"content-type": "text/plain",
-			"connection": "close",
-			"content-length": "12",
-			"server": "APISIX/3.7.0"
-		},
-		"status": 200,
-		"size": 123
-	},
-	"upstream": "127.0.0.1:1982"
+    "service_id": "",
+    "apisix_latency": 100.99999809265,
+    "start_time": 1703907485819,
+    "latency": 101.99999809265,
+    "upstream_latency": 1,
+    "client_ip": "127.0.0.1",
+    "route_id": "1",
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "request": {
+        "headers": {
+            "host": "127.0.0.1:1984",
+            "content-type": "application/x-www-form-urlencoded",
+            "user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
+            "content-length": "12"
+        },
+        "method": "POST",
+        "size": 194,
+        "url": "http://127.0.0.1:1984/hello?log_body=no",
+        "uri": "/hello?log_body=no",
+        "querystring": {
+            "log_body": "no"
+        }
+    },
+    "response": {
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "content-length": "12",
+            "server": "APISIX/3.7.0"
+        },
+        "status": 200,
+        "size": 123
+    },
+    "upstream": "127.0.0.1:1982"
  }
   ```
 
