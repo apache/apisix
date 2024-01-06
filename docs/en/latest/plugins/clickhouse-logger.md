@@ -97,7 +97,6 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 }
 ```
 
-
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:

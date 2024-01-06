@@ -64,7 +64,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
     }
   ```
 
-对于body-json数据，它是一个转义后的json字符串，格式化后如下：
+对于 body-json 数据，它是一个转义后的 json 字符串，格式化后如下：
 
   ```json
     {

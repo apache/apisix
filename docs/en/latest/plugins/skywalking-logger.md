@@ -104,7 +104,6 @@ For body-json data, it is an escaped json string
     }
   ```
 
-
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
