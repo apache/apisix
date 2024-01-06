@@ -523,8 +523,8 @@ plugins:                           # plugin list (sorted by priority)
   #- log-rotate                    # priority: 100
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
-  #- ocsp-stapling                 # priority: -42
   #- gm                            # priority: -43
+  #- ocsp-stapling                  # priority: -44
   - aws-lambda                     # priority: -1899
   - azure-functions                # priority: -1900
   - openwhisk                      # priority: -1901

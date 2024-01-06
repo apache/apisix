@@ -26,8 +26,6 @@ local ngx_ssl = require("ngx.ssl")
 local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
 local core = require("apisix.core")
 local apisix_ssl = require("apisix.ssl")
-local _, ssl = pcall(require, "resty.apisix.ssl")
-local error = error
 
 local plugin_name = "ocsp-stapling"
 
@@ -40,7 +38,7 @@ local _M = {
     name = plugin_name,
     schema = plugin_schema,
     version = 0.1,
-    priority = -42,
+    priority = -44,
 }
 
 local ocsp_resp_cache = core.lrucache.new {
@@ -85,8 +83,6 @@ end
 
 
 local function get_remote_ocsp_resp(der_cert_chain)
-    --- debug info
-    core.log.error("start to get_remote_ocsp_resp")
     local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
     if not ocsp_url then
         return nil, "failed to get OCSP url: " .. err
@@ -152,8 +148,7 @@ end
 
 local original_set_cert_and_key
 local function set_cert_and_key(sni, value)
-    -- maybe not run with gm
-    if value.ocsp_stapling then
+    if not value.gm and value.ocsp_stapling then
         local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
         if not ok then
             return false, err
@@ -180,16 +175,22 @@ local function set_cert_and_key(sni, value)
 
         return true
     end
+    -- should not run with gm plugin
+    -- if gm plugin enabled, will not run ocsp-stapling plugin
     return original_set_cert_and_key(sni, value)
 end
 
 
 function _M.init()
+    if core.schema.ssl.properties.gm ~= nil then
+        core.log.error("ocsp-stapling plugin should not run with gm plugin")
+    end
+
     original_set_cert_and_key = radixtree_sni.set_cert_and_key
     radixtree_sni.set_cert_and_key = set_cert_and_key
 
     if core.schema.ssl.properties.ocsp_stapling ~= nil then
-        error("Field 'ocsp_stapling' is occupied")
+        core.log.error("Field 'ocsp_stapling' is occupied")
     end
 
     core.schema.ssl.properties.ocsp_stapling = {
