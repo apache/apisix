@@ -55,6 +55,50 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 | include_resp_body_expr | array   | 否   | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
 | match        | array[] | 否   |  当设置了这个选项后，只有匹配规则的日志才会被记录。`match` 是一个表达式列表，具体请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
 
+### 默认日志格式示例
+
+  ```json
+  {
+	"service_id": "",
+	"apisix_latency": 100.99999809265,
+	"start_time": 1703907485819,
+	"latency": 101.99999809265,
+	"upstream_latency": 1,
+	"client_ip": "127.0.0.1",
+	"route_id": "1",
+	"server": {
+		"version": "3.7.0",
+		"hostname": "localhost"
+	},
+	"request": {
+		"headers": {
+			"host": "127.0.0.1:1984",
+			"content-type": "application/x-www-form-urlencoded",
+			"user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
+			"content-length": "12"
+		},
+		"method": "POST",
+		"size": 194,
+		"url": "http://127.0.0.1:1984/hello?log_body=no",
+		"uri": "/hello?log_body=no",
+		"querystring": {
+			"log_body": "no"
+		}
+	},
+	"response": {
+		"headers": {
+			"content-type": "text/plain",
+			"connection": "close",
+			"content-length": "12",
+			"server": "APISIX/3.7.0"
+		},
+		"status": 200,
+		"size": 123
+	},
+	"upstream": "127.0.0.1:1982"
+ }
+  ```
+
 ## 插件元数据设置
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |

@@ -53,6 +53,50 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
 | match        | array[] | False   | Logs will be recorded when the rule matching is successful if the option is set. See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available expressions.   |
 
+### Example of default log format
+
+  ```json
+  {
+	"service_id": "",
+	"apisix_latency": 100.99999809265,
+	"start_time": 1703907485819,
+	"latency": 101.99999809265,
+	"upstream_latency": 1,
+	"client_ip": "127.0.0.1",
+	"route_id": "1",
+	"server": {
+		"version": "3.7.0",
+		"hostname": "localhost"
+	},
+	"request": {
+		"headers": {
+			"host": "127.0.0.1:1984",
+			"content-type": "application/x-www-form-urlencoded",
+			"user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
+			"content-length": "12"
+		},
+		"method": "POST",
+		"size": 194,
+		"url": "http://127.0.0.1:1984/hello?log_body=no",
+		"uri": "/hello?log_body=no",
+		"querystring": {
+			"log_body": "no"
+		}
+	},
+	"response": {
+		"headers": {
+			"content-type": "text/plain",
+			"connection": "close",
+			"content-length": "12",
+			"server": "APISIX/3.7.0"
+		},
+		"status": 200,
+		"size": 123
+	},
+	"upstream": "127.0.0.1:1982"
+ }
+  ```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:

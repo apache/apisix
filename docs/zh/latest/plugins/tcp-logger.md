@@ -47,6 +47,46 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 tcp-logger �
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
+### 默认日志格式示例
+
+```json
+{
+	"response": {
+		"status": 200,
+		"headers": {
+			"server": "APISIX/3.7.0",
+			"content-type": "text/plain",
+			"content-length": "12",
+			"connection": "close"
+		},
+		"size": 118
+	},
+	"server": {
+		"version": "3.7.0",
+		"hostname": "localhost"
+	},
+	"start_time": 1704527628474,
+	"client_ip": "127.0.0.1",
+	"service_id": "",
+	"latency": 102.9999256134,
+	"apisix_latency": 100.9999256134,
+	"upstream_latency": 2,
+	"request": {
+		"headers": {
+			"connection": "close",
+			"host": "localhost"
+		},
+		"size": 59,
+		"method": "GET",
+		"uri": "/hello",
+		"url": "http://localhost:1984/hello",
+		"querystring": {}
+	},
+	"upstream": "127.0.0.1:1980",
+	"route_id": "1"
+}
+```
+
 ## 插件元数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |

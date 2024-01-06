@@ -53,6 +53,36 @@ NOTE: `encrypt_fields = {"auth_config.private_key"}` is also defined in the sche
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```json
+{
+	"insertId": "0013a6afc9c281ce2e7f413c01892bdc",
+	"labels": {
+		"source": "apache-apisix-google-cloud-logging"
+	},
+	"logName": "projects/apisix/logs/apisix.apache.org%2Flogs",
+	"httpRequest": {
+		"requestMethod": "GET",
+		"requestUrl": "http://localhost:1984/hello",
+		"requestSize": 59,
+		"responseSize": 118,
+		"status": 200,
+		"remoteIp": "127.0.0.1",
+		"serverIp": "127.0.0.1:1980",
+		"latency": "0.103s"
+	},
+	"resource": {
+		"type": "global"
+	},
+	"jsonPayload": {
+		"service_id": "",
+		"route_id": "1"
+	},
+	"timestamp": "2024-01-06T03:34:45.065Z"
+}
+```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:

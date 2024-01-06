@@ -53,6 +53,36 @@ description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于�
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch Processor](../batch-processor.md#配置)。
 
+### 默认日志格式示例
+
+```json
+{
+	"insertId": "0013a6afc9c281ce2e7f413c01892bdc",
+	"labels": {
+		"source": "apache-apisix-google-cloud-logging"
+	},
+	"logName": "projects/apisix/logs/apisix.apache.org%2Flogs",
+	"httpRequest": {
+		"requestMethod": "GET",
+		"requestUrl": "http://localhost:1984/hello",
+		"requestSize": 59,
+		"responseSize": 118,
+		"status": 200,
+		"remoteIp": "127.0.0.1",
+		"serverIp": "127.0.0.1:1980",
+		"latency": "0.103s"
+	},
+	"resource": {
+		"type": "global"
+	},
+	"jsonPayload": {
+		"service_id": "",
+		"route_id": "1"
+	},
+	"timestamp": "2024-01-06T03:34:45.065Z"
+}
+```
+
 ## 插件元数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |

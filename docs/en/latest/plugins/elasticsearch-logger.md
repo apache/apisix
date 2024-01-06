@@ -53,6 +53,46 @@ NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which 
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```json
+{
+	"upstream_latency": 2,
+	"apisix_latency": 100.9999256134,
+	"request": {
+		"size": 59,
+		"url": "http://localhost:1984/hello",
+		"method": "GET",
+		"querystring": {},
+		"headers": {
+			"host": "localhost",
+			"connection": "close"
+		},
+		"uri": "/hello"
+	},
+	"server": {
+		"version": "3.7.0",
+		"hostname": "localhost"
+	},
+	"client_ip": "127.0.0.1",
+	"upstream": "127.0.0.1:1980",
+	"response": {
+		"status": 200,
+		"headers": {
+			"content-length": "12",
+			"connection": "close",
+			"content-type": "text/plain",
+			"server": "APISIX/3.7.0"
+		},
+		"size": 118
+	},
+	"start_time": 1704524807607,
+	"route_id": "1",
+	"service_id": "",
+	"latency": 102.9999256134
+}
+```
+
 ## Enable Plugin
 
 ### Full configuration

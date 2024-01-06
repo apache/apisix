@@ -50,6 +50,46 @@ This plugin also allows to push logs as a batch to your external TCP server. It 
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```json
+{
+	"response": {
+		"status": 200,
+		"headers": {
+			"server": "APISIX/3.7.0",
+			"content-type": "text/plain",
+			"content-length": "12",
+			"connection": "close"
+		},
+		"size": 118
+	},
+	"server": {
+		"version": "3.7.0",
+		"hostname": "localhost"
+	},
+	"start_time": 1704527628474,
+	"client_ip": "127.0.0.1",
+	"service_id": "",
+	"latency": 102.9999256134,
+	"apisix_latency": 100.9999256134,
+	"upstream_latency": 2,
+	"request": {
+		"headers": {
+			"connection": "close",
+			"host": "localhost"
+		},
+		"size": 59,
+		"method": "GET",
+		"uri": "/hello",
+		"url": "http://localhost:1984/hello",
+		"querystring": {}
+	},
+	"upstream": "127.0.0.1:1980",
+	"route_id": "1"
+}
+```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:

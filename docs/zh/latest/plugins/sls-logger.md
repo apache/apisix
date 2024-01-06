@@ -49,6 +49,33 @@ title: sls-logger
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
+### 默认日志格式示例
+
+```json
+{
+	"route_conf": {
+		"host": "100.100.99.135",
+		"buffer_duration": 60,
+		"timeout": 30000,
+		"include_req_body": false,
+		"logstore": "your_logstore",
+		"log_format": {
+			"vip": "$remote_addr"
+		},
+		"project": "your_project",
+		"inactive_timeout": 5,
+		"access_key_id": "your_access_key_id",
+		"access_key_secret": "your_access_key_secret",
+		"batch_max_size": 1000,
+		"max_retry_count": 0,
+		"retry_delay": 1,
+		"port": 10009,
+		"name": "sls-logger"
+	},
+	"data": "<46>1 2024-01-06T03:29:56.457Z localhost apisix 28063 - [logservice project=\"your_project\" logstore=\"your_logstore\" access-key-id=\"your_access_key_id\" access-key-secret=\"your_access_key_secret\"] {\"vip\":\"127.0.0.1\",\"route_id\":\"1\"}\n"
+}
+```
+
 ## 插件元数据设置
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
