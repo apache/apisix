@@ -728,7 +728,7 @@ passed
                 if res.status == 503 then
                     ngx.say(true)
                 else
-                    ngx.say(res.status)
+                    ngx.say(false)
                 end
             else
                 ngx.say(false)
