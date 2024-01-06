@@ -29,8 +29,7 @@ local apisix_ssl = require("apisix.ssl")
 local _, ssl = pcall(require, "resty.apisix.ssl")
 local error = error
 
-
-local plugin_name = "ocsp"
+local plugin_name = "ocsp-stapling"
 
 local plugin_schema = {
     type = "object",
@@ -38,79 +37,19 @@ local plugin_schema = {
 }
 
 local _M = {
-    version  = 0.1,
+    name = plugin_name,
+    schema = plugin_schema,
+    version = 0.1,
     priority = -42,
-    name     = plugin_name,
-    schema   = plugin_schema,
+}
+
+local ocsp_resp_cache = core.lrucache.new {
+    ttl = 3600, count = 1024,
 }
 
 
 function _M.check_schema(conf, schema_type)
     return core.schema.check(plugin_schema, conf)
-end
-
-
-local function get_ocsp_url(der_cert_chain)
-    local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
-    if not ocsp_url then
-        core.log.error("failed to get OCSP url: ", err)
-        return nil
-    end
-    return ocsp_url
-end
-
-
-local function create_ocsp_req(der_cert_chain)
-    local ocsp_req, err = ngx_ocsp.create_ocsp_request(der_cert_chain)
-    if not ocsp_req then
-        core.log.error("failed to create OCSP request: ", err)
-        return nil
-    end
-    return ocsp_req
-end
-
-
-local function fetch_ocsp_resp(ocsp_url, ocsp_req)
-    local httpc = http.new()
-    local res, err = httpc:request_uri(ocsp_url, {
-        method = "POST",
-        headers = {
-            ["Content-Type"] = "application/ocsp-request",
-        },
-        body = ocsp_req
-    })
-
-    if not res then
-        core.log.error("OCSP responder query failed: ", err)
-        return nil
-    end
-
-    local http_status = res.status
-    if http_status ~= 200 then
-        core.log.error("OCSP responder returns bad HTTP status code: ",
-                       http_status)
-        return nil
-    end
-    return res.body
-end
-
-
-local function validate_and_set_ocsp_resp(der_cert_chain, ocsp_resp)
-    if ocsp_resp and #ocsp_resp > 0 then
-        local ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
-        if not ok then
-            core.log.error("failed to validate OCSP response: ", err)
-            return false
-        end
-
-        -- set the OCSP stapling
-        ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
-        if err then
-            core.log.error("failed to set ocsp status resp: ", err)
-        end
-        return ok
-    end
-    return false
 end
 
 
@@ -145,6 +84,72 @@ local function set_pem_ssl_key(sni, cert, pkey)
 end
 
 
+local function get_remote_ocsp_resp(der_cert_chain)
+    --- debug info
+    core.log.error("start to get_remote_ocsp_resp")
+    local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+    if not ocsp_url then
+        return nil, "failed to get OCSP url: " .. err
+    end
+
+    local ocsp_req, err = ngx_ocsp.create_ocsp_request(der_cert_chain)
+    if not ocsp_req then
+        return nil, "failed to create OCSP request: " .. err
+    end
+
+    local httpc = http.new()
+    local res, err = httpc:request_uri(ocsp_url, {
+        method = "POST",
+        headers = {
+            ["Content-Type"] = "application/ocsp-request",
+        },
+        body = ocsp_req
+    })
+
+    if not res then
+        return nil, "OCSP responder query failed: " .. err
+    end
+
+    local http_status = res.status
+    if http_status ~= 200 then
+        return nil, "OCSP responder returns bad HTTP status code: "
+               .. http_status
+    end
+
+    if res.body and #res.body > 0 then
+        return res.body, nil
+    end
+
+    return nil, "OCSP responder returns empty body"
+end
+
+
+local function set_ocsp_resp(full_chain_pem_cert)
+    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(full_chain_pem_cert)
+    if not der_cert_chain then
+        return false, "failed to convert certificate chain from PEM to DER: ", err
+    end
+
+    local ocsp_resp, err = ocsp_resp_cache(full_chain_pem_cert, nil, get_remote_ocsp_resp, der_cert_chain)
+    if not ocsp_resp then
+        return false, err
+    end
+
+    local ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
+    if not ok then
+        return false, "failed to validate OCSP response: " .. err
+    end
+
+    -- set the OCSP stapling
+    ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
+    if not ok or err ~= nil then
+        return false, "failed to set OCSP status response: " .. err
+    end
+
+    return true
+end
+
+
 local original_set_cert_and_key
 local function set_cert_and_key(sni, value)
     -- maybe not run with gm
@@ -153,7 +158,7 @@ local function set_cert_and_key(sni, value)
         if not ok then
             return false, err
         end
-        local fin_cert = value.cert
+        local fin_pem_cert = value.cert
 
         -- multiple certificates support.
         if value.certs then
@@ -164,35 +169,15 @@ local function set_cert_and_key(sni, value)
                 if not ok then
                     return false, err
                 end
-                fin_cert = cert
+                fin_pem_cert = cert
             end
         end
 
-        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(fin_cert)
-        if not der_cert_chain then
-            -- cert convert failed, no ocsp response sent
-            core.log.error("failed to convert certificate chain from PEM to DER: ", err)
-            return true
-        end
-        local ocsp_url = get_ocsp_url(der_cert_chain)
-        if not ocsp_url then
-            -- get ocsp_url failed, maybe cert not support,
-            -- no ocsp response sent
-            return true
-        end
-        local ocsp_req = create_ocsp_req(der_cert_chain)
-        if not ocsp_req then
-            -- create ocsp_req body failed, no ocsp response sent
-            return true
-        end
-        local ocsp_resp = fetch_ocsp_resp(ocsp_url, ocsp_req)
-        local ok = validate_and_set_ocsp_resp(der_cert_chain, ocsp_resp)
+        local ok, err = set_ocsp_resp(fin_pem_cert)
         if not ok then
-            -- validate and set ocsp_resp failed, no ocsp response sent
-            core.log.error("failed to validate and set ocsp_resp")
+            core.log.error("OCSP response will not send, Error info: ", err)
         end
 
-        -- ocsp response send
         return true
     end
     return original_set_cert_and_key(sni, value)
