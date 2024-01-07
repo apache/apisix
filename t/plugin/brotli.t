@@ -770,7 +770,7 @@ passed
                 ngx.say(err)
                 return
             end
-            if res.headers["Content-Encoding"] ~= 'gzip' then
+            if res.headers["Content-Encoding"] == 'gzip' then
                 ngx.say("ok")
             end
         }
