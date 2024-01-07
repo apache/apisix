@@ -108,16 +108,6 @@ apisix:
                                 # Disabled by default because it renders Perfect Forward Secrecy (FPS)
                                 # useless. See https://github.com/mozilla/server-side-tls/issues/135.
 
-    key_encrypt_salt:           # This field is only used to encrypt the private key of SSL.
-      - edd1c9f0985e76a2        # Set the encryption key for AES-128-CBC. It should be a
-                                # hexadecimal string of length 16.
-                                # If not set, APISIX saves the original data into etcd.
-                                # CAUTION: If you would like to update the key, add the new key as the
-                                # first item in the array and keep the older keys below the newly added
-                                # key, so that data can be decrypted with the older keys and encrypted
-                                # with the new key. Removing the old keys directly can render the data
-                                # unrecoverable.
-
     # fallback_sni: "my.default.domain"      # Fallback SNI to be used if the client does not send SNI during
     #                                        # the handshake.
 
@@ -132,7 +122,7 @@ apisix:
     enable: false
     keyring:                      # Set the encryption key for AES-128-CBC. It should be a
       - qeddd145sfvddff3          # hexadecimal string of length 16.
-                                  # If not set, APISIX saves the original data into etcd.
+      - edd1c9f0985e76a2          # If not set, APISIX saves the original data into etcd.
                                   # CAUTION: If you would like to update the key, add the new key as the
                                   # first item in the array and keep the older keys below the newly added
                                   # key, so that data can be decrypted with the older keys and encrypted
