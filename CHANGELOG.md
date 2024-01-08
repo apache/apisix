@@ -79,7 +79,7 @@ title: Changelog
 
 ### Core
 
-- :sunrise: Support the use of lua-resty-events module for better performance: 
+- :sunrise: Support the use of lua-resty-events module for better performance:
   - [#10550](https://github.com/apache/apisix/pull/10550)
   - [#10558](https://github.com/apache/apisix/pull/10558)
 - :sunrise: Upgrade OpenSSL 1.1.1 to OpenSSL 3: [#10724](https://github.com/apache/apisix/pull/10724)
