@@ -51,7 +51,7 @@ end
 local function init_resty_events()
     _M.events_module = _M.EVENTS_MODULE_LUA_RESTY_EVENTS
 
-    local listening = "unix:" .. ngx.config.prefix() .. "conf/"
+    local listening = "unix:" .. ngx.config.prefix() .. "tmp/"
     if ngx.config.subsystem == "http" then
         listening = listening .. "worker_events.sock"
     else
