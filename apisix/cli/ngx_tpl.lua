@@ -64,6 +64,7 @@ env {*name*};
 thread_pool grpc-client-nginx-module threads=1;
 
 lua {
+    lua_shared_dict apisix 1m;
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
@@ -202,7 +203,7 @@ stream {
     {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
-        listen unix:{*apisix_lua_home*}/conf/stream_worker_events.sock;
+        listen unix:{*apisix_lua_home*}/tmp/stream_worker_events.sock;
         access_log off;
         content_by_lua_block {
             require("resty.events.compat").run()
@@ -497,7 +498,7 @@ http {
     {% if (events.module or "") == "lua-resty-events" then %}
     # the server block for lua-resty-events
     server {
-        listen unix:{*apisix_lua_home*}/conf/worker_events.sock;
+        listen unix:{*apisix_lua_home*}/tmp/worker_events.sock;
         access_log off;
         location / {
             content_by_lua_block {
