@@ -26,10 +26,12 @@ local table          = require("apisix.core.table")
 local log            = require("apisix.core.log")
 local string         = require("apisix.core.string")
 local dns_client     = require("apisix.core.dns.client")
+local apisix_home    = require("apisix.core.profile").apisix_home
 local ngx_re         = require("ngx.re")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
+local pl_path        = require("pl.path")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
@@ -43,6 +45,8 @@ local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
+local os_remove      = os.remove
+local apisix_shm     = ngx.shared.apisix
 
 local hostname
 local dns_resolvers
@@ -269,6 +273,44 @@ function _M.gethostname()
     end
 
     return hostname
+end
+
+
+-- Clean up and make sure the tmp folder exists, for code base internal use only 
+function _M.init_tmp_directory()
+    local initialized_flag = "tmp_directory_initialized"
+    -- skip initialize when reload
+    if apisix_shm:get(initialized_flag) then
+        return
+    end
+
+    local tmp_path = apisix_home .. "tmp/"
+
+    -- remove current tmp directory
+    if pl_path.exists(tmp_path) then
+        -- check if the folder is empty
+        for file in pl_path.dir(tmp_path) do
+            if file ~= "." and file ~= ".." then
+                local abs_path = tmp_path..file
+                local ok, err = os_remove(abs_path)
+                if not ok then
+                    ngx.log(ngx.ERR, err)
+                end
+            end
+        end
+
+        local ok, err = pl_path.rmdir(tmp_path)
+        if not ok then
+            log.error("failed to cleanup tmp directory, error: ", err)
+        end
+    end
+
+    -- create new tmp directory
+    local ok, err = pl_path.mkdir(tmp_path)
+    if not ok then
+        log.error("failed to create tmp directory, error: ", err)
+    end
+    apisix_shm:set(initialized_flag, true)
 end
 
 
