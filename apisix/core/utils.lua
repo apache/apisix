@@ -276,7 +276,7 @@ function _M.gethostname()
 end
 
 
--- Clean up and make sure the tmp folder exists, for code base internal use only 
+-- Clean up and make sure the tmp folder exists, for code base internal use only
 function _M.init_tmp_directory()
     local initialized_flag = "tmp_directory_initialized"
     -- skip initialize when reload
@@ -294,7 +294,7 @@ function _M.init_tmp_directory()
                 local abs_path = tmp_path..file
                 local ok, err = os_remove(abs_path)
                 if not ok then
-                    ngx.log(ngx.ERR, err)
+                    log.error("failed to cleanup files in tmp directory, error: ", err)
                 end
             end
         end
