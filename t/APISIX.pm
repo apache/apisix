@@ -271,6 +271,7 @@ _EOC_
 thread_pool grpc-client-nginx-module threads=1;
 
 lua {
+    lua_shared_dict apisix 1m;
     lua_shared_dict prometheus-metrics 15m;
 }
 _EOC_
@@ -440,7 +441,7 @@ _EOC_
     $extra_stream_config
 
     server {
-        listen unix:$apisix_home/t/servroot/conf/stream_worker_events.sock;
+        listen unix:$apisix_home/t/servroot/tmp/stream_worker_events.sock;
         access_log off;
         content_by_lua_block {
             require("resty.events.compat").run()
@@ -701,7 +702,7 @@ _EOC_
 
     $http_config .= <<_EOC_;
     server {
-        listen unix:$apisix_home/t/servroot/conf/worker_events.sock;
+        listen unix:$apisix_home/t/servroot/tmp/worker_events.sock;
         access_log off;
         location / {
             content_by_lua_block {
