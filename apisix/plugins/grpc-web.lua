@@ -197,5 +197,4 @@ function _M.body_filter(conf, ctx)
         ngx_arg[1] = chunk
     end
 end
-
 return _M

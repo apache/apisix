@@ -96,7 +96,7 @@ OPTIONS /grpc/web/a6.RouteService/GetRoute
 --- error_code: 204
 --- response_headers
 Access-Control-Allow-Methods: POST, OPTIONS
-Access-Control-Allow-Headers: content-type,x-grpc-web,x-user-agent
+Access-Control-Allow-Headers: content-type,x-grpc-web,x-user-agent,grpc-accept-encoding
 Access-Control-Allow-Origin: *
 
 
@@ -228,7 +228,7 @@ Content-Type: application/grpc-web
 Access-Control-Allow-Origin: http://test.com
 Content-Type: application/grpc-web
 
-=== TEST 11: grpc-web access control expose headers for non grpc servers that don't implment grpc-web
+=== TEST 11: grpc-web access control expose headers for non grpc servers that don't implement grpc-web
 --- request
 POST /grpc/web/a6.RouteService/GetRoute
 {}
@@ -238,5 +238,5 @@ Content-Type: application/grpc-web
 --- response_headers
 Access-Control-Allow-Origin: http://test.com
 Content-Type: application/grpc-web
-Access-Control-Expose-Headers: grpc-status,grpc-message
+Access-Control-Expose-Headers: grpc-status,grpc-message,
 
