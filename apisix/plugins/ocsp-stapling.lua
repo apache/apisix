@@ -46,7 +46,7 @@ local ocsp_resp_cache = core.lrucache.new {
 }
 
 
-function _M.check_schema(conf, schema_type)
+function _M.check_schema(conf)
     return core.schema.check(plugin_schema, conf)
 end
 
@@ -126,7 +126,8 @@ local function set_ocsp_resp(full_chain_pem_cert)
         return false, "failed to convert certificate chain from PEM to DER: ", err
     end
 
-    local ocsp_resp, err = ocsp_resp_cache(full_chain_pem_cert, nil, get_remote_ocsp_resp, der_cert_chain)
+    local ocsp_resp, err = ocsp_resp_cache(full_chain_pem_cert, nil,
+                                           get_remote_ocsp_resp, der_cert_chain)
     if not ocsp_resp then
         return false, err
     end
