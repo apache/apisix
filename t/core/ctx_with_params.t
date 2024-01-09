@@ -71,7 +71,7 @@ server_port: 1984
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.INFO, \"uri_arg_path: \", ngx.ctx.api_ctx.var.uri_arg_path) end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"uri_param_id: \", ngx.ctx.api_ctx.var.uri_param_id) end"]
                         }
                     },
                     "upstream": {
@@ -80,7 +80,7 @@ server_port: 1984
                             "127.0.0.1:1980": 1
                         }
                     },
-                    "uri": "/:path"
+                    "uri": "/:id"
                 }]]
                 )
 
@@ -97,36 +97,36 @@ passed
 
 
 
-=== TEST 3: `uri_arg_path` exist (hello)
+=== TEST 3: `uri_param_id` exist (hello)
 --- request
 GET /hello
 --- response_body
 hello world
 --- error_log
-uri_arg_path: hello
+uri_param_id: hello
 
 
 
-=== TEST 4: `uri_arg_path` exist (hello1)
+=== TEST 4: `uri_param_id` exist (hello1)
 --- request
 GET /hello1
 --- response_body
 hello1 world
 --- error_log
-uri_arg_path: hello1
+uri_param_id: hello1
 
 
 
-=== TEST 5: `uri_arg_path` nonexisting route
+=== TEST 5: `uri_param_id` nonexisting route
 --- request
 GET /not_a_route
 --- error_code: 404
 --- error_log
-uri_arg_path: not_a_route
+uri_param_id: not_a_route
 
 
 
-=== TEST 6: add route and get unknown `uri_arg_path`
+=== TEST 6: add route and get unknown `uri_param_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +138,7 @@ uri_arg_path: not_a_route
                     "plugins": {
                         "serverless-pre-function": {
                             "phase": "access",
-                            "functions" : ["return function() ngx.log(ngx.INFO, \"uri_arg_path: \", ngx.ctx.api_ctx.var.uri_arg_path) end"]
+                            "functions" : ["return function() ngx.log(ngx.INFO, \"uri_param_id: \", ngx.ctx.api_ctx.var.uri_param_id) end"]
                         }
                     },
                     "upstream": {
@@ -164,11 +164,11 @@ passed
 
 
 
-=== TEST 7: `uri_arg_path` not in uri
+=== TEST 7: `uri_param_id` not in uri
 --- request
 GET /hello
 --- response_body
 hello world
 --- error_log
-failed to fetch uri argument: path
-uri_arg_path:
+failed to fetch uri argument: id
+uri_param_id:
