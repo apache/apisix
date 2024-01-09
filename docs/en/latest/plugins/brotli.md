@@ -49,7 +49,7 @@ sudo ldconfig
 
 :::caution
 
-If the upstream is returning a compressed response, then the Brotli plugin won't be able to compress it. 
+If the upstream is returning a compressed response, then the Brotli plugin won't be able to compress it.
 
 :::
 

@@ -755,7 +755,7 @@ passed
 
 
 
-=== TEST 31: hit - skip brotli compression of compressed upsteam response
+=== TEST 31: hit - skip brotli compression of compressed upstream response
 --- config
     location /t {
         content_by_lua_block {
