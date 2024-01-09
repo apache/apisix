@@ -170,5 +170,4 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-failed to fetch uri argument: id
 uri_param_id:

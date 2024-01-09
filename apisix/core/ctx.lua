@@ -276,11 +276,8 @@ do
 
             elseif core_str.has_prefix(key, "uri_param_") then
                 if t._ctx.curr_req_matched then
-                    local arg_key = (sub_str(key, 11))
+                    local arg_key = sub_str(key, 11)
                     val = t._ctx.curr_req_matched[arg_key]
-                    if val == nil then
-                        log.warn("failed to fetch uri parameter: ", arg_key)
-                    end
                 end
 
             elseif core_str.has_prefix(key, "http_") then
