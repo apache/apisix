@@ -39,27 +39,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local ctx = {}
-            core.ctx.set_vars_meta(ctx)
-
-            ngx.say("remote_addr: ", ctx.var["remote_addr"])
-            ngx.say("server_port: ", ctx.var["server_port"])
-        }
-    }
---- request
-GET /t
---- response_body
-remote_addr: 127.0.0.1
-server_port: 1984
-
-
-
-=== TEST 2: add route and get `uri_arg_`
+=== TEST 1: add route and get `uri_arg_`
 --- config
     location /t {
         content_by_lua_block {
@@ -97,7 +77,7 @@ passed
 
 
 
-=== TEST 3: `uri_param_id` exist (hello)
+=== TEST 2: `uri_param_id` exist (hello)
 --- request
 GET /hello
 --- response_body
@@ -107,7 +87,7 @@ uri_param_id: hello
 
 
 
-=== TEST 4: `uri_param_id` exist (hello1)
+=== TEST 3: `uri_param_id` exist (hello1)
 --- request
 GET /hello1
 --- response_body
@@ -117,7 +97,7 @@ uri_param_id: hello1
 
 
 
-=== TEST 5: `uri_param_id` nonexisting route
+=== TEST 4: `uri_param_id` nonexisting route
 --- request
 GET /not_a_route
 --- error_code: 404
@@ -126,7 +106,7 @@ uri_param_id: not_a_route
 
 
 
-=== TEST 6: add route and get unknown `uri_param_id`
+=== TEST 5: add route and get unknown `uri_param_id`
 --- config
     location /t {
         content_by_lua_block {
@@ -164,7 +144,7 @@ passed
 
 
 
-=== TEST 7: `uri_param_id` not in uri
+=== TEST 6: `uri_param_id` not in uri
 --- request
 GET /hello
 --- response_body
