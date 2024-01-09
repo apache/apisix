@@ -440,6 +440,8 @@ function _M.rewrite(plugin_conf, ctx)
         conf.timeout = conf.timeout * 1000
     end
 
+    local path = ctx.var.request_uri
+
     if not conf.redirect_uri then
         -- NOTE: 'lua-resty-openidc' requires that 'redirect_uri' be
         --       different from 'uri'.  So default to append the
@@ -462,6 +464,19 @@ function _M.rewrite(plugin_conf, ctx)
     if not conf.ssl_verify then
         -- openidc use "no" to disable ssl verification
         conf.ssl_verify = "no"
+    end
+
+    if path == (conf.logout_path or "/logout") then
+        local discovery, discovery_err = openidc.get_discovery_doc(conf)
+        if discovery_err then
+            core.log.error("OIDC access discovery url failed : ", discovery_err)
+            return 503
+        end
+        if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
+            -- If the end_session_endpoint field does not exist in the OpenID Provider Discovery
+            -- Metadata, the redirect_after_logout_uri field is used for redirection.
+            conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
+        end
     end
 
     local response, err, session, _

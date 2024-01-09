@@ -183,3 +183,57 @@ POST /hello
 {"sample_payload":"hello"}
 --- error_log eval
 qr/(.*"response":\{.*"body":"hello world\\n".*|.*\{\\\"sample_payload\\\":\\\"hello\\\"\}.*){0}/
+
+
+
+=== TEST 7: json body with request_body and request_body expression
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+            include_req_body: true
+            include_req_body_expr:
+                - - arg_bar
+                  - ==
+                  - foo
+#END
+--- request
+POST /hello?bar=foo
+{"test":"hello"}
+--- error_log
+"request":{"body":"{\"test\":\"hello\"}"
+
+
+
+=== TEST 8: json body with request_body, expr not hit
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+        http-logger:
+            batch_max_size: 1
+            uri: http://127.0.0.1:1980/log
+            include_resp_body: true
+            include_resp_body_expr:
+                - - arg_bar
+                  - ==
+                  - foo
+#END
+--- request
+POST /hello?bar=bar
+{"sample_payload":"hello"}
+--- no_error_log
+"request":{"body":"{\"test\":\"hello\"}"

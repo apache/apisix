@@ -1400,7 +1400,7 @@ Plugin 资源请求地址：/apisix/admin/plugins/{plugin_name}
 
 你可以使用 `/apisix/admin/plugins?all=true` 接口获取所有插件的所有属性，每个插件包括 `name`，`priority`，`type`，`schema`，`consumer_schema` 和 `version`。
 
-您可以使用“/apisix/admin/plugins?all=true”获取所有插件的所有属性。这个 API 将很快被弃用
+这个 API 将很快被弃用。
 
 :::
 

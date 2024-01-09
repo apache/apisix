@@ -1,5 +1,5 @@
 {
-  "version": "3.7.0",
+  "version": "3.8.0",
   "sidebar": [
     {
       "type": "category",
@@ -41,6 +41,7 @@
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
+        "terminology/plugin-metadata",
         "terminology/route",
         "terminology/router",
         "terminology/script",
