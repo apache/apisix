@@ -71,7 +71,7 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 ### 默认日志格式示例
 
 ```text
-["2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:205: load(): new plugins: {\"error-log-logger\":true}, context: init_worker_by_lua*","\n","2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:255: load_stream(): new plugins: {\"limit-conn\":true,\"ip-restriction\":true,\"syslog\":true,\"mqtt-proxy\":true}, context: init_worker_by_lua*","\n"]
+["2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:205: load(): new plugins: {"error-log-logger":true}, context: init_worker_by_lua*","\n","2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:255: load_stream(): new plugins: {"limit-conn":true,"ip-restriction":true,"syslog":true,"mqtt-proxy":true}, context: init_worker_by_lua*","\n"]
 ```
 
 ## 启用插件

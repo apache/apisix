@@ -53,7 +53,7 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 ### 默认日志格式示例
 
 ```text
-<10>1 2024-01-06T06:50:51.739Z 127.0.0.1 apisix 58525 - [token-1@41058 tag=\"apisix\"] {\"service_id\":\"\",\"server\":{\"version\":\"3.7.0\",\"hostname\":\"localhost\"},\"apisix_latency\":100.99985313416,\"request\":{\"url\":\"http://127.0.0.1:1984/opentracing\",\"headers\":{\"content-type\":\"application/x-www-form-urlencoded\",\"user-agent\":\"lua-resty-http/0.16.1 (Lua) ngx_lua/10025\",\"host\":\"127.0.0.1:1984\"},\"querystring\":{},\"uri\":\"/opentracing\",\"size\":155,\"method\":\"GET\"},\"response\":{\"headers\":{\"content-type\":\"text/plain\",\"server\":\"APISIX/3.7.0\",\"transfer-encoding\":\"chunked\",\"connection\":\"close\"},\"size\":141,\"status\":200},\"route_id\":\"1\",\"latency\":103.99985313416,\"upstream_latency\":3,\"client_ip\":\"127.0.0.1\",\"upstream\":\"127.0.0.1:1982\",\"start_time\":1704523851634}
+<10>1 2024-01-06T06:50:51.739Z 127.0.0.1 apisix 58525 - [token-1@41058 tag="apisix"] {"service_id":"","server":{"version":"3.7.0","hostname":"localhost"},"apisix_latency":100.99985313416,"request":{"url":"http://127.0.0.1:1984/opentracing","headers":{"content-type":"application/x-www-form-urlencoded","user-agent":"lua-resty-http/0.16.1 (Lua) ngx_lua/10025","host":"127.0.0.1:1984"},"querystring":{},"uri":"/opentracing","size":155,"method":"GET"},"response":{"headers":{"content-type":"text/plain","server":"APISIX/3.7.0","transfer-encoding":"chunked","connection":"close"},"size":141,"status":200},"route_id":"1","latency":103.99985313416,"upstream_latency":3,"client_ip":"127.0.0.1","upstream":"127.0.0.1:1982","start_time":1704523851634}
 ```
 
 ## 插件元数据设置
