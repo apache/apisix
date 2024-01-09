@@ -83,14 +83,14 @@ end
 
 
 local function get_remote_ocsp_resp(der_cert_chain)
-    local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+    local ocsp_url = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
     if not ocsp_url then
-        return nil, "failed to get OCSP url: " .. err
+        return nil, "failed to get ocsp url"
     end
 
     local ocsp_req, err = ngx_ocsp.create_ocsp_request(der_cert_chain)
     if not ocsp_req then
-        return nil, "failed to create OCSP request: " .. err
+        return nil, "failed to create ocsp request: " .. err
     end
 
     local httpc = http.new()
@@ -103,12 +103,12 @@ local function get_remote_ocsp_resp(der_cert_chain)
     })
 
     if not res then
-        return nil, "OCSP responder query failed: " .. err
+        return nil, "ocsp responder query failed: " .. err
     end
 
     local http_status = res.status
     if http_status ~= 200 then
-        return nil, "OCSP responder returns bad HTTP status code: "
+        return nil, "ocsp responder returns bad http status code: "
                .. http_status
     end
 
@@ -116,7 +116,7 @@ local function get_remote_ocsp_resp(der_cert_chain)
         return res.body, nil
     end
 
-    return nil, "OCSP responder returns empty body"
+    return nil, "ocsp responder returns empty body"
 end
 
 
@@ -133,13 +133,13 @@ local function set_ocsp_resp(full_chain_pem_cert)
 
     local ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
     if not ok then
-        return false, "failed to validate OCSP response: " .. err
+        return false, "failed to validate ocsp response: " .. err
     end
 
     -- set the OCSP stapling
     ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
     if not ok or err ~= nil then
-        return false, "failed to set OCSP status response: " .. err
+        return false, "failed to set ocsp status response: " .. err
     end
 
     return true
@@ -170,7 +170,7 @@ local function set_cert_and_key(sni, value)
 
         local ok, err = set_ocsp_resp(fin_pem_cert)
         if not ok then
-            core.log.error("OCSP response will not send, Error info: ", err)
+            core.log.error("ocsp response will not send, error info: ", err)
         end
 
         return true
