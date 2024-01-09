@@ -39,7 +39,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add route and get `uri_arg_`
+=== TEST 1: add route and get `uri_param_`
 --- config
     location /t {
         content_by_lua_block {
