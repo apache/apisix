@@ -218,7 +218,7 @@ end
 function _M.before_proxy(conf, ctx)
     local sock = ngx.socket.tcp()
 
-    sock:settimeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)  -- one second timeout
+    sock:settimeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)
     local ok, err = sock:connect(ctx.picked_server.host, ctx.picked_server.port)
     if not ok then
         sock:close()
