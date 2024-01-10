@@ -108,52 +108,69 @@ We provide a [tutorial](./tutorials/client-to-apisix-mtls.md) that explains in d
 
 When configuring `ssl`, use parameter `client.ca` and `client.depth` to configure the root CA that signing client certificates and the max length of certificate chain. Please refer to [Admin API](./admin-api.md#ssl) for details.
 
-Here is an example Python script to create SSL with mTLS (id is `1`, changes admin API url if needed):
+Here is an example shell script to create SSL with mTLS (id is `1`, changes admin API url if needed):
 
-```python title="create-ssl.py"
-#!/usr/bin/env python
-# coding: utf-8
-import sys
-# sudo pip install requests
-import requests
-
-if len(sys.argv) < 4:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[1]) as f:
-    cert = f.read()
-with open(sys.argv[2]) as f:
-    key = f.read()
-sni = sys.argv[3]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # Change it
-
-reqParam = {
-    "cert": cert,
-    "key": key,
-    "snis": [sni],
-}
-if len(sys.argv) >= 5:
-    print("Setting mTLS")
-    reqParam["client"] = {}
-    with open(sys.argv[4]) as f:
-        clientCert = f.read()
-        reqParam["client"]["ca"] = clientCert
-    if len(sys.argv) >= 6:
-        reqParam["client"]["depth"] = int(sys.argv[5])
-resp = requests.put("http://127.0.0.1:9180/apisix/admin/ssls/1", json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
+```shell
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+    "cert": "'"$(cat t/certs/mtls_server.crt)"'",
+    "key": "'"$(cat t/certs/mtls_server.key)"'",
+    "snis": [
+        "admin.apisix.dev"
+    ],
+    "client": {
+        "ca": "'"$(cat t/certs/mtls_ca.crt)"'",
+        "depth": 10
+    }
+}'
 ```
 
-Create SSL:
+Send a request to verify:
 
 ```bash
-./create-ssl.py ./server.pem ./server.key 'mtls.test.com' ./client_ca.pem 10
-
-# test it
 curl --resolve 'mtls.test.com:<APISIX_HTTPS_PORT>:<APISIX_URL>' "https://<APISIX_URL>:<APISIX_HTTPS_PORT>/hello" -k --cert ./client.pem --key ./client.key
+
+* Added admin.apisix.dev:9443:127.0.0.1 to DNS cache
+* Hostname admin.apisix.dev was found in DNS cache
+*   Trying 127.0.0.1:9443...
+* Connected to admin.apisix.dev (127.0.0.1) port 9443 (#0)
+* ALPN: offers h2
+* ALPN: offers http/1.1
+*  CAfile: t/certs/mtls_ca.crt
+*  CApath: none
+* [CONN-0-0][CF-SSL] (304) (OUT), TLS handshake, Client hello (1):
+* [CONN-0-0][CF-SSL] (304) (IN), TLS handshake, Server hello (2):
+* [CONN-0-0][CF-SSL] (304) (IN), TLS handshake, Unknown (8):
+* [CONN-0-0][CF-SSL] (304) (IN), TLS handshake, Request CERT (13):
+* [CONN-0-0][CF-SSL] (304) (IN), TLS handshake, Certificate (11):
+* [CONN-0-0][CF-SSL] (304) (IN), TLS handshake, CERT verify (15):
+* [CONN-0-0][CF-SSL] (304) (IN), TLS handshake, Finished (20):
+* [CONN-0-0][CF-SSL] (304) (OUT), TLS handshake, Certificate (11):
+* [CONN-0-0][CF-SSL] (304) (OUT), TLS handshake, CERT verify (15):
+* [CONN-0-0][CF-SSL] (304) (OUT), TLS handshake, Finished (20):
+* SSL connection using TLSv1.3 / AEAD-AES256-GCM-SHA384
+* ALPN: server accepted h2
+* Server certificate:
+*  subject: C=cn; ST=GuangDong; L=ZhuHai; CN=admin.apisix.dev; OU=ops
+*  start date: Dec  1 10:17:24 2022 GMT
+*  expire date: Aug 18 10:17:24 2042 GMT
+*  subjectAltName: host "admin.apisix.dev" matched cert's "admin.apisix.dev"
+*  issuer: C=cn; ST=GuangDong; L=ZhuHai; CN=ca.apisix.dev; OU=ops
+*  SSL certificate verify ok.
+* Using HTTP2, server supports multiplexing
+* Copying HTTP/2 data in stream buffer to connection buffer after upgrade: len=0
+* h2h3 [:method: GET]
+* h2h3 [:path: /hello]
+* h2h3 [:scheme: https]
+* h2h3 [:authority: admin.apisix.dev:9443]
+* h2h3 [user-agent: curl/7.87.0]
+* h2h3 [accept: */*]
+* Using Stream ID: 1 (easy handle 0x13000bc00)
+> GET /hello HTTP/2
+> Host: admin.apisix.dev:9443
+> user-agent: curl/7.87.0
+> accept: */*
 ```
 
 Please make sure that the SNI fits the certificate domain.
@@ -170,41 +187,15 @@ When configuring `upstreams`, we could use parameter `tls.client_cert` and `tls.
 
 This feature requires APISIX to run on [APISIX-Runtime](./FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
-Here is a similar Python script to patch a existed upstream with mTLS (changes admin API url if needed):
+Here is a similar shell script to patch a existed upstream with mTLS (changes admin API url if needed):
 
-```python title="patch_upstream_mtls.py"
-#!/usr/bin/env python
-# coding: utf-8
-import sys
-# sudo pip install requests
-import requests
-
-if len(sys.argv) < 4:
-    print("bad argument")
-    sys.exit(1)
-with open(sys.argv[2]) as f:
-    cert = f.read()
-with open(sys.argv[3]) as f:
-    key = f.read()
-id = sys.argv[1]
-api_key = "edd1c9f034335f136f87ad84b625c8f1" # Change it
-
-reqParam = {
+```shell
+curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -d '
+{
     "tls": {
-        "client_cert": cert,
-        "client_key": key,
-    },
-}
-
-resp = requests.patch("http://127.0.0.1:9180/apisix/admin/upstreams/"+id, json=reqParam, headers={
-    "X-API-KEY": api_key,
-})
-print(resp.status_code)
-print(resp.text)
-```
-
-Patch existed upstream with id `testmtls`:
-
-```bash
-./patch_upstream_mtls.py testmtls ./client.pem ./client.key
+        "client_cert": "'"$(cat t/certs/mtls_client.crt)"'",
+        "client_key": "'"$(cat t/certs/mtls_client.key)"'"
+    }
+}'
 ```
