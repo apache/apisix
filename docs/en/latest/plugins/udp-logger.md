@@ -48,6 +48,46 @@ This plugin also allows to push logs as a batch to your external UDP server. It 
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```json
+{
+  "apisix_latency": 99.999988555908,
+  "service_id": "",
+  "server": {
+    "version": "3.7.0",
+    "hostname": "localhost"
+  },
+  "request": {
+    "method": "GET",
+    "headers": {
+      "connection": "close",
+      "host": "localhost"
+    },
+    "url": "http://localhost:1984/opentracing",
+    "size": 65,
+    "querystring": {},
+    "uri": "/opentracing"
+  },
+  "start_time": 1704527399740,
+  "client_ip": "127.0.0.1",
+  "response": {
+    "status": 200,
+    "size": 136,
+    "headers": {
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "transfer-encoding": "chunked",
+      "connection": "close"
+    }
+  },
+  "upstream": "127.0.0.1:1982",
+  "route_id": "1",
+  "upstream_latency": 12,
+  "latency": 111.99998855591
+}
+```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
