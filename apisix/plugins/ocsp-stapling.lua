@@ -83,9 +83,14 @@ end
 
 
 local function get_remote_ocsp_resp(der_cert_chain)
-    local ocsp_url = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+    local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+    -- if cert not support ocsp, will not report error
+    if not err then
+        err = "nil"
+    end
+
     if not ocsp_url then
-        return nil, "failed to get ocsp url"
+        return nil, "failed to get ocsp url: " .. err
     end
 
     local ocsp_req, err = ngx_ocsp.create_ocsp_request(der_cert_chain)
