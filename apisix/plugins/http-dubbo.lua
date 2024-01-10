@@ -37,6 +37,7 @@ local schema = {
         service_version = {
             type = "string",
             pattern = [[^\d+\.\d+\.\d+]],
+            default ="0.0.0"
         },
         method = {
             type = "string",
@@ -52,6 +53,18 @@ local schema = {
         serialized = {
             type = "boolean",
             default = false
+        },
+        connect_timeout={
+            type = "number",
+            default = 6000
+        },
+        read_timeout={
+            type = "number",
+            default = 6000
+        },
+        send_timeout={
+            type = "number",
+            default = 6000
         }
     },
     required = { "service_name", "method", "params_type_desc" },
@@ -59,7 +72,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 0,
+    priority = 504,
     name = plugin_name,
     schema = schema,
 }
@@ -144,13 +157,7 @@ local function get_dubbo_request(conf, ctx)
     local version = "\"2.0.2\"\n"
     local service = "\"" .. conf.service_name .. "\"" .. "\n"
 
-    local service_version
-    if not conf.service_version then
-        service_version = "0.0.0"
-    else
-        service_version = conf.service_version
-    end
-    service_version = "\"" .. service_version .. "\"" .. "\n"
+    local service_version = "\"" ..  conf.service_version .. "\"" .. "\n"
     local method_name = "\"" .. conf.method .. "\"" .. "\n"
 
     local params_desc = "\"" .. conf.params_type_desc .. "\"" .. "\n"
@@ -162,8 +169,12 @@ local function get_dubbo_request(conf, ctx)
     end
     if serialized then
         params = core.request.get_body()
-        local end_of_params = core.string.sub(params, -1)
-        if not end_of_params == "\n" then
+        if params then
+            local end_of_params = core.string.sub(params, -1)
+            if not (end_of_params == "\n") then
+                params = params .. "\n"
+            end
+        else
             params = params .. "\n"
         end
     else
@@ -183,9 +194,9 @@ local function get_dubbo_request(conf, ctx)
                 end
             end
         else
-            ngx.say("Failed to get request body data.")
-            return
+            params = params .. "\n"
         end
+
     end
     local attachments = "{}\n"
 
@@ -206,11 +217,13 @@ end
 
 function _M.before_proxy(conf, ctx)
     local sock = ngx.socket.tcp()
-    sock:settimeouts(6000, 6000, 6000)  -- one second timeout
+
+    sock:settimeouts(conf.connect_timeout, conf.send_timeout, conf.read_timeout)  -- one second timeout
     local ok, err = sock:connect(ctx.picked_server.host, ctx.picked_server.port)
     if not ok then
-        ngx.say("failed to connect to upstream ", err)
-        return
+        sock:close()
+        core.log.error("failed to connect to upstream ", err)
+        return 502
     end
     local request = get_dubbo_request(conf, ctx)
     local bytes, err = sock:send(request)
@@ -221,13 +234,14 @@ function _M.before_proxy(conf, ctx)
             if header_info and header_info.status == 20 then
                 local readline = sock:receiveuntil("\n")
                 local body_status, err, partial = readline()
-
                 if body_status then
                     local response_status = core.string.sub(body_status, 1, 1)
                     if response_status == "2" or response_status == "5" then
+                        sock:close()
                         return 200
                     elseif response_status == "1" or response_status == "4" then
                         local body, err, partial = readline()
+                        sock:close()
                         return 200, body
                     end
                 end

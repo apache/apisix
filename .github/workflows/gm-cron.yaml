@@ -124,11 +124,16 @@ jobs:
       - name: Start Dubbo Backend
         if: steps.test_env.outputs.type == 'plugin'
         run: |
+          cur_dir=$(pwd)
           sudo apt install -y maven
           cd t/lib/dubbo-backend
           mvn package
           cd dubbo-backend-provider/target
           java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+          cd $cur_dir/t/lib/dubbo-serialization-backend
+          mvn package
+          cd dubbo-serialization-backend-provider
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
 
       - name: Build xDS library
         if: steps.test_env.outputs.type == 'last'
