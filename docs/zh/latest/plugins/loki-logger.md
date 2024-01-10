@@ -55,6 +55,48 @@ description: 本文件包含关于 Apache APISIX loki-logger 插件的信息。
 
 该插件支持使用批处理器对条目（日志/数据）进行批量聚合和处理，避免了频繁提交数据的需求。批处理器每隔 `5` 秒或当队列中的数据达到 `1000` 时提交数据。有关更多信息或设置自定义配置，请参阅 [批处理器](../batch-processor.md#configuration)。
 
+### 默认日志格式示例
+
+```json
+{
+  "request": {
+    "headers": {
+      "connection": "close",
+      "host": "localhost",
+      "test-header": "only-for-test#1"
+    },
+    "method": "GET",
+    "uri": "/hello",
+    "url": "http://localhost:1984/hello",
+    "size": 89,
+    "querystring": {}
+  },
+  "client_ip": "127.0.0.1",
+  "start_time": 1704525701293,
+  "apisix_latency": 100.99994659424,
+  "response": {
+    "headers": {
+      "content-type": "text/plain",
+      "server": "APISIX/3.7.0",
+      "content-length": "12",
+      "connection": "close"
+    },
+    "status": 200,
+    "size": 118
+  },
+  "route_id": "1",
+  "loki_log_time": "1704525701293000000",
+  "upstream_latency": 5,
+  "latency": 105.99994659424,
+  "upstream": "127.0.0.1:1980",
+  "server": {
+    "hostname": "localhost",
+    "version": "3.7.0"
+  },
+  "service_id": ""
+}
+```
+
 ## 元数据
 
 您还可以通过配置插件元数据来设置日志的格式。以下配置项可供选择：

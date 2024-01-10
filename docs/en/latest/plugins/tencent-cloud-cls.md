@@ -52,6 +52,46 @@ NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which mea
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```json
+{
+    "response": {
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "server": "APISIX/3.7.0",
+            "transfer-encoding": "chunked"
+        },
+        "size": 136,
+        "status": 200
+    },
+    "route_id": "1",
+    "upstream": "127.0.0.1:1982",
+    "client_ip": "127.0.0.1",
+    "apisix_latency": 100.99985313416,
+    "service_id": "",
+    "latency": 103.99985313416,
+    "start_time": 1704525145772,
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "upstream_latency": 3,
+    "request": {
+        "headers": {
+            "connection": "close",
+            "host": "localhost"
+        },
+        "url": "http://localhost:1984/opentracing",
+        "querystring": {},
+        "method": "GET",
+        "size": 65,
+        "uri": "/opentracing"
+    }
+}
+```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:

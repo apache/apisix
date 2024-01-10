@@ -50,6 +50,12 @@ Logs can be set as JSON objects.
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### meta_format example
+
+```text
+"<46>1 2024-01-06T02:30:59.145Z 127.0.0.1 apisix 82324 - - {\"response\":{\"status\":200,\"size\":141,\"headers\":{\"content-type\":\"text/plain\",\"server\":\"APISIX/3.7.0\",\"transfer-encoding\":\"chunked\",\"connection\":\"close\"}},\"route_id\":\"1\",\"server\":{\"hostname\":\"baiyundeMacBook-Pro.local\",\"version\":\"3.7.0\"},\"request\":{\"uri\":\"/opentracing\",\"url\":\"http://127.0.0.1:1984/opentracing\",\"querystring\":{},\"method\":\"GET\",\"size\":155,\"headers\":{\"content-type\":\"application/x-www-form-urlencoded\",\"host\":\"127.0.0.1:1984\",\"user-agent\":\"lua-resty-http/0.16.1 (Lua) ngx_lua/10025\"}},\"upstream\":\"127.0.0.1:1982\",\"apisix_latency\":100.99999809265,\"service_id\":\"\",\"upstream_latency\":1,\"start_time\":1704508259044,\"client_ip\":\"127.0.0.1\",\"latency\":101.99999809265}\n"
+```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
