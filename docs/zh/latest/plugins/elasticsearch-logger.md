@@ -54,6 +54,46 @@ description: 本文介绍了 API 网关 Apache APISIX 的 elasticsearch-logger �
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
+### 默认日志格式示例
+
+```json
+{
+    "upstream_latency": 2,
+    "apisix_latency": 100.9999256134,
+    "request": {
+        "size": 59,
+        "url": "http://localhost:1984/hello",
+        "method": "GET",
+        "querystring": {},
+        "headers": {
+            "host": "localhost",
+            "connection": "close"
+        },
+        "uri": "/hello"
+    },
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "client_ip": "127.0.0.1",
+    "upstream": "127.0.0.1:1980",
+    "response": {
+        "status": 200,
+        "headers": {
+            "content-length": "12",
+            "connection": "close",
+            "content-type": "text/plain",
+            "server": "APISIX/3.7.0"
+        },
+        "size": 118
+    },
+    "start_time": 1704524807607,
+    "route_id": "1",
+    "service_id": "",
+    "latency": 102.9999256134
+}
+```
+
 ## 启用插件
 
 你可以通过如下命令在指定路由上启用 `elasticsearch-logger` 插件：
