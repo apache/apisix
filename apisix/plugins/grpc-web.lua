@@ -13,15 +13,13 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
-
-local ngx               = ngx
-local ngx_arg           = ngx.arg
-local core              = require("apisix.core")
-local req_set_uri       = ngx.req.set_uri
+local ngx = ngx
+local ngx_arg = ngx.arg
+local core = require("apisix.core")
+local req_set_uri = ngx.req.set_uri
 local req_set_body_data = ngx.req.set_body_data
-local decode_base64     = ngx.decode_base64
-local encode_base64     = ngx.encode_base64
-
+local decode_base64 = ngx.decode_base64
+local encode_base64 = ngx.encode_base64
 
 local ALLOW_METHOD_OPTIONS = "OPTIONS"
 local ALLOW_METHOD_POST = "POST"
@@ -47,32 +45,32 @@ local schema = {
     type = "object",
     properties = {
         strip_path = {
-            description = "include prefix matched by path pattern in the path used for "
-                .. "upstream call, appropriate for prefix matching path "
-                .. "patterns with the format <package>.<service>/*",
-            type        = "boolean",
-            default     = false
+            description = "include prefix matched by path pattern in the path used for " ..
+                "upstream call, appropriate for prefix matching path " ..
+                "patterns with the format <package>.<service>/*",
+            type = "boolean",
+            default = false
         },
         enable_in_body_trailers_on_success = {
             description = "append standard grpc-web in-body trailers frame in response body",
-            type        = "boolean",
-            default     = false
-        },
-    },
+            type = "boolean",
+            default = false
+        }
+    }
 }
 
 local grpc_web_content_encoding = {
     ["application/grpc-web"] = CONTENT_ENCODING_BINARY,
     ["application/grpc-web-text"] = CONTENT_ENCODING_BASE64,
     ["application/grpc-web+proto"] = CONTENT_ENCODING_BINARY,
-    ["application/grpc-web-text+proto"] = CONTENT_ENCODING_BASE64,
+    ["application/grpc-web-text+proto"] = CONTENT_ENCODING_BASE64
 }
 
 local _M = {
     version = 0.1,
     priority = 505,
     name = plugin_name,
-    schema = schema,
+    schema = schema
 }
 
 function _M.check_schema(conf)
@@ -108,13 +106,13 @@ function _M.access(conf, ctx)
     -- set grpc path
     if not (ctx.curr_req_matched and ctx.curr_req_matched[":ext"]) then
         core.log.error("routing configuration error, grpc-web plugin only supports ",
-                       "`prefix matching` pattern routing")
+            "`prefix matching` pattern routing")
         return 400
     end
 
     local path
-    if  conf.strip_path and ctx.curr_req_matched._path:byte(-1) == core.string.byte("*")
-     and ctx.curr_req_matched[":ext"]:byte(1) ~= core.string.byte("/")  then
+    if conf.strip_path and ctx.curr_req_matched._path:byte(-1) == core.string.byte("*") and
+        ctx.curr_req_matched[":ext"]:byte(1) ~= core.string.byte("/") then
         path = string.sub(ctx.curr_req_matched._path, 1, -2) .. ctx.curr_req_matched[":ext"]
     else
         path = ctx.curr_req_matched[":ext"]
@@ -179,8 +177,7 @@ function _M.body_filter(conf, ctx)
         if response and string.len(response) ~= 0 then
             local headers = ngx.resp.get_headers()
             local trailers = " "
-            for trailer_key, trailer_default_value in
-             pairs(GRPC_WEB_REQUIRED_TRAILERS_DEFAULT_VALUES) do
+            for trailer_key, trailer_default_value in pairs(GRPC_WEB_REQUIRED_TRAILERS_DEFAULT_VALUES) do
                 local trailer_value = headers[trailer_key]
 
                 if trailer_value == nil then
