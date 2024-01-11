@@ -313,4 +313,40 @@ function _M.check_ssl_conf(in_dp, conf)
 end
 
 
+function _M.get_status_request_ext(clienthello)
+
+    local byte = string.byte
+    local ext = ngx_ssl_client.get_client_hello_ext(5)
+    if not ext then
+        print("failed")
+    end
+    local total_len = string.len(ext)
+    if total_len <= 2 then
+        print("bad SSL Client Hello Extension")
+        ngx.exit(ngx.ERROR)
+    end
+    local len = byte(ext, 1) * 256 + byte(ext, 2)
+    if len + 2 ~= total_len then 
+        print("bad SSL Client Hello Extension")
+        ngx.exit(ngx.ERROR)
+    end
+    if byte(ext, 3) ~= 0 then
+        print("bad SSL Client Hello Extension")
+        ngx.exit(ngx.ERROR)
+    end
+    if total_len <= 5 then
+        print("bad SSL Client Hello Extension")
+        ngx.exit(ngx.ERROR)
+    end
+    len = byte(ext, 4) * 256 + byte(ext, 5)
+    if len + 5 > total_len then
+        print("bad SSL Client Hello Extension")
+        ngx.exit(ngx.ERROR)
+    end
+    local name = string.sub(ext, 6, 6 + len -1)
+
+    print("read SNI name from Lua: ", name)
+end
+
+
 return _M

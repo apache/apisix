@@ -41,9 +41,8 @@ local _M = {
     priority = -44,
 }
 
-local ocsp_resp_cache = core.lrucache.new {
-    ttl = 3600, count = 1024,
-}
+local ocsp_resp_cache = ngx.shared[plugin_name]
+local cache_ttl = 3600
 
 
 function _M.check_schema(conf)
@@ -131,9 +130,12 @@ local function set_ocsp_resp(full_chain_pem_cert)
         return false, "failed to convert certificate chain from PEM to DER: ", err
     end
 
-    local ocsp_resp, err = ocsp_resp_cache(full_chain_pem_cert, nil,
-                                           get_remote_ocsp_resp, der_cert_chain)
-    if not ocsp_resp then
+    local ocsp_resp = ocsp_resp_cache:get(full_chain_pem_cert)
+    if ocsp_resp == nil then
+        ocsp_resp, err = get_remote_ocsp_resp(der_cert_chain)
+    end
+
+    if ocsp_resp == nil then
         return false, err
     end
 
@@ -141,6 +143,7 @@ local function set_ocsp_resp(full_chain_pem_cert)
     if not ok then
         return false, "failed to validate ocsp response: " .. err
     end
+    ocsp_resp_cache:set(full_chain_pem_cert, ocsp_resp, cache_ttl)
 
     -- set the OCSP stapling
     ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
