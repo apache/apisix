@@ -43,10 +43,50 @@ This plugin also allows to push logs as a batch to your external UDP server. It 
 | port             | integer | True     |              | [0,...]      | Target upstream port.                                    |
 | timeout          | integer | False    | 3            | [1,...]      | Timeout for the upstream to send data.                   |
 | log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
-| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor.               |
+| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. processor.               |
 | include_req_body | boolean | False    | false        |              | When set to `true` includes the request body in the log. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+```json
+{
+  "apisix_latency": 99.999988555908,
+  "service_id": "",
+  "server": {
+    "version": "3.7.0",
+    "hostname": "localhost"
+  },
+  "request": {
+    "method": "GET",
+    "headers": {
+      "connection": "close",
+      "host": "localhost"
+    },
+    "url": "http://localhost:1984/opentracing",
+    "size": 65,
+    "querystring": {},
+    "uri": "/opentracing"
+  },
+  "start_time": 1704527399740,
+  "client_ip": "127.0.0.1",
+  "response": {
+    "status": 200,
+    "size": 136,
+    "headers": {
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "transfer-encoding": "chunked",
+      "connection": "close"
+    }
+  },
+  "upstream": "127.0.0.1:1982",
+  "route_id": "1",
+  "upstream_latency": 12,
+  "latency": 111.99998855591
+}
+```
 
 ## Metadata
 

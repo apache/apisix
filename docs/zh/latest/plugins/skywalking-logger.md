@@ -44,10 +44,67 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 | service_instance_name  | string  | 否     |"APISIX Instance Name"|               | SkyWalking 服务的实例名称。当设置为 `$hostname`会直接获取本地主机名。 |
 | log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | timeout                | integer | 否     | 3                    | [1,...]       | 发送请求后保持连接活动的时间。                                       |
-| name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。                                         |
+| name                   | string  | 否     | "skywalking logger"  |               | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                                         |
 | include_req_body       | boolean | 否     | false                | [false, true] | 当设置为 `true` 时，将请求正文包含在日志中。                         |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+### 默认日志格式示例
+
+  ```json
+   {
+      "serviceInstance": "APISIX Instance Name",
+      "body": {
+        "json": {
+          "json": "body-json"
+        }
+      },
+      "endpoint": "/opentracing",
+      "service": "APISIX"
+    }
+  ```
+
+对于 body-json 数据，它是一个转义后的 json 字符串，格式化后如下：
+
+  ```json
+    {
+      "response": {
+        "status": 200,
+        "headers": {
+          "server": "APISIX/3.7.0",
+          "content-type": "text/plain",
+          "transfer-encoding": "chunked",
+          "connection": "close"
+        },
+        "size": 136
+      },
+      "route_id": "1",
+      "upstream": "127.0.0.1:1982",
+      "upstream_latency": 8,
+      "apisix_latency": 101.00020599365,
+      "client_ip": "127.0.0.1",
+      "service_id": "",
+      "server": {
+        "hostname": "localhost",
+        "version": "3.7.0"
+      },
+      "start_time": 1704429712768,
+      "latency": 109.00020599365,
+      "request": {
+        "headers": {
+          "content-length": "9",
+          "host": "localhost",
+          "connection": "close"
+        },
+        "method": "POST",
+        "body": "body-data",
+        "size": 94,
+        "querystring": {},
+        "url": "http://localhost:1984/opentracing",
+        "uri": "/opentracing"
+      }
+    }
+  ```
 
 ## 配置插件元数据
 

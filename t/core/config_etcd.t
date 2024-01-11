@@ -486,3 +486,33 @@ passed
 hello world
 passed
 {"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 13: the main watcher should be initialised once
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    watch_timeout: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/main etcd watcher initialised, revision=/
+--- grep_error_log_out
+main etcd watcher initialised, revision=
+main etcd watcher initialised, revision=

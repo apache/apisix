@@ -65,7 +65,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Send a request to verify:
 
 ```shell
-curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/hello -k -vvv
+curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/get -k -vvv
 
 * Added test.com:9443:127.0.0.1 to DNS cache
 * About to connect() to test.com port 9443 (#0)

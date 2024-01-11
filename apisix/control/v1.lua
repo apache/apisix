@@ -130,7 +130,7 @@ local HTML_TEMPLATE = [[
 {% for _, stat in ipairs(stats) do %}
 {% for _, node in ipairs(stat.nodes) do %}
 {% i = i + 1 %}
-  {% if node.status == "healthy" then %}
+  {% if node.status == "healthy" or node.status == "mostly_healthy" then %}
   <tr>
   {% else %}
   <tr bgcolor="#FF0000">

@@ -24,7 +24,7 @@ git checkout conf/config.yaml
 # check restart with old nginx.pid exist
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
-if echo "$out" | grep "APISIX is running"; then
+if echo "$out" | grep "the old APISIX is still running"; then
     rm logs/nginx.pid
     echo "failed: should reject bad nginx.pid"
     exit 1
@@ -50,7 +50,7 @@ echo "pass: no corresponding process"
 
 # check running when run repeatedly
 out=$(make run; make run || true)
-if ! echo "$out" | grep "APISIX is running"; then
+if ! echo "$out" | grep "the old APISIX is still running"; then
     echo "failed: should find APISIX running"
     exit 1
 fi
@@ -181,7 +181,7 @@ fi
 
 bin/apisix quit
 
-sleep 0.5
+sleep 2
 
 if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
     echo "all workers should exited"
@@ -200,7 +200,7 @@ fi
 
 bin/apisix reload
 
-sleep 0.5
+sleep 3
 
 if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
     echo "old workers should exited"

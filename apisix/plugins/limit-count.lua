@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local fetch_secrets = require("apisix.secret").fetch_secrets
 local limit_count = require("apisix.plugins.limit-count.init")
 
 local plugin_name = "limit-count"
@@ -31,6 +32,7 @@ end
 
 
 function _M.access(conf, ctx)
+    conf = fetch_secrets(conf)
     return limit_count.rate_limit(conf, ctx, plugin_name, 1)
 end
 

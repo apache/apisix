@@ -78,10 +78,12 @@ if ($custom_dns_server) {
 }
 
 
+my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
 my $default_yaml_config = read_file("conf/config-default.yaml");
 # enable example-plugin as some tests require it
 $default_yaml_config =~ s/#- example-plugin/- example-plugin/;
 $default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
+$default_yaml_config =~ s/module: lua-resty-events/module: $events_module/;
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -260,7 +262,7 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
-env OPENSSL111_BIN;
+env OPENSSL_BIN;
 _EOC_
 
 
@@ -436,6 +438,14 @@ _EOC_
     }
 
     $extra_stream_config
+
+    server {
+        listen unix:$apisix_home/t/servroot/logs/stream_worker_events.sock;
+        access_log off;
+        content_by_lua_block {
+            require("resty.events.compat").run()
+        }
+    }
 
     # fake server, only for test
     server {
@@ -687,6 +697,18 @@ _EOC_
         }
     }
 
+_EOC_
+
+    $http_config .= <<_EOC_;
+    server {
+        listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
+        access_log off;
+        location / {
+            content_by_lua_block {
+                require("resty.events.compat").run()
+            }
+        }
+    }
 _EOC_
 
     $block->set_value("http_config", $http_config);

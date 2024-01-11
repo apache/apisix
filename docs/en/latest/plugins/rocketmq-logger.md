@@ -45,7 +45,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | use_tls                | boolean | False    | false                                                                         |                      | When set to `true`, uses TLS.                                                                                                                                                                                                  |
 | access_key             | string  | False    | ""                                                                            |                      | Access key for ACL. Setting to an empty string will disable the ACL.                                                                                                                                                           |
 | secret_key             | string  | False    | ""                                                                            |                      | secret key for ACL.                                                                                                                                                                                                            |
-| name                   | string  | False    | "rocketmq logger"                                                             |                      | Unique identifier for the batch processor.                                                                                                                                                                                     |
+| name                   | string  | False    | "rocketmq logger"                                                             |                      | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. processor.                                                                                                                                                                                     |
 | meta_format            | enum    | False    | "default"                                                                     | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.      |
 | include_req_body       | boolean | False    | false                                                                         | [false, true]        | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                               |
 | include_req_body_expr  | array   | False    |                                                                               |                      | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
@@ -63,6 +63,61 @@ The data is first written to a buffer. When the buffer exceeds the `batch_max_si
 If the process is successful, it will return `true` and if it fails, returns `nil` with a string with the "buffer overflow" error.
 
 :::
+
+### meta_format example
+
+- default:
+
+```json
+    {
+     "upstream": "127.0.0.1:1980",
+     "start_time": 1619414294760,
+     "client_ip": "127.0.0.1",
+     "service_id": "",
+     "route_id": "1",
+     "request": {
+       "querystring": {
+         "ab": "cd"
+       },
+       "size": 90,
+       "uri": "/hello?ab=cd",
+       "url": "http://localhost:1984/hello?ab=cd",
+       "headers": {
+         "host": "localhost",
+         "content-length": "6",
+         "connection": "close"
+       },
+       "method": "GET"
+     },
+     "response": {
+       "headers": {
+         "connection": "close",
+         "content-type": "text/plain; charset=utf-8",
+         "date": "Mon, 26 Apr 2021 05:18:14 GMT",
+         "server": "APISIX/2.5",
+         "transfer-encoding": "chunked"
+       },
+       "size": 190,
+       "status": 200
+     },
+     "server": {
+       "hostname": "localhost",
+       "version": "2.5"
+     },
+     "latency": 0
+    }
+```
+
+- origin:
+
+```http
+    GET /hello?ab=cd HTTP/1.1
+    host: localhost
+    content-length: 6
+    connection: close
+
+    abcdef
+```
 
 ### meta_format example
 

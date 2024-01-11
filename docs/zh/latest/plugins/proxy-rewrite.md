@@ -42,8 +42,9 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | host      | string        | 否    |         |                   | 转发到上游的新 `host` 地址，例如：`iresty.com`。|
 | headers   | object        | 否    |         |                   |   |
 | headers.add     | object   | 否     |        |                 | 添加新的请求头，如果头已经存在，会追加到末尾。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                              |
-| headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。                                                                                           |
-| headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。
+| headers.set     | object  | 否     |        |                 | 改写请求头，如果请求头不存在，则会添加这个请求头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。也支持以变量的形式引用 `regex_uri` 的匹配结果，比如 `$1-$2-$3`。请注意，若想设置 `Host` 请求头，应使用 `host` 属性。                                                                                           |
+| headers.remove  | array   | 否     |        |                 | 移除请求头。格式为 `["name", ...]`。|
+| use_real_request_uri_unsafe | boolean       | 否     | false |                 | 使用 real_request_uri（nginx 中的原始 $request_uri）绕过 URI 规范化。启用它被认为是不安全的，因为它会绕过所有 URI 规范化步骤。|
 
 ## Header 优先级
 
