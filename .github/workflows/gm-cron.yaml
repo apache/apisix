@@ -124,6 +124,7 @@ jobs:
       - name: Start Dubbo Backend
         if: steps.test_env.outputs.type == 'plugin'
         run: |
+          sudo apt update
           sudo apt install -y maven
           cd t/lib/dubbo-backend
           mvn package
