@@ -47,8 +47,9 @@ local schema = {
     type = "object",
     properties = {
         strip_path = {
-            description = "include prefix matched by path pattern in the path used for upstream call,"
-                            .. "appropriate for prefix matching path patterns with the format <package>.<service>/*",
+            description = "include prefix matched by path pattern in the path used for "
+                .. "upstream call, appropriate for prefix matching path "
+                .. "patterns with the format <package>.<service>/*",
             type        = "boolean",
             default     = false
         },
@@ -112,7 +113,8 @@ function _M.access(conf, ctx)
     end
 
     local path
-    if  conf.strip_path and ctx.curr_req_matched._path:byte(-1) == core.string.byte("*") and ctx.curr_req_matched[":ext"]:byte(1) ~= core.string.byte("/")  then
+    if  conf.strip_path and ctx.curr_req_matched._path:byte(-1) == core.string.byte("*")
+     and ctx.curr_req_matched[":ext"]:byte(1) ~= core.string.byte("/")  then
         path = string.sub(ctx.curr_req_matched._path, 1, -2) .. ctx.curr_req_matched[":ext"]
     else
         path = ctx.curr_req_matched[":ext"]
@@ -164,7 +166,8 @@ function _M.body_filter(conf, ctx)
     -- If the MIME extension type description of the gRPC-Web standard is not obtained,
     -- indicating that the request is not based on the gRPC Web specification,
     -- the processing of the request body will be ignored
-    -- If response body is not empty, in-body trailers required by gRPC-Web are added to the end of response body
+    -- If response body is not empty, in-body trailers required by gRPC-Web
+    -- are added to the end of response body
     -- https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md
     -- https://github.com/grpc/grpc-web/blob/master/doc/browser-features.md#cors-support
     if not ctx.grpc_web_mime then
@@ -176,7 +179,8 @@ function _M.body_filter(conf, ctx)
         if response and string.len(response) ~= 0 then
             local headers = ngx.resp.get_headers()
             local trailers = " "
-            for trailer_key, trailer_default_value in pairs(GRPC_WEB_REQUIRED_TRAILERS_DEFAULT_VALUES) do
+            for trailer_key, trailer_default_value in
+             pairs(GRPC_WEB_REQUIRED_TRAILERS_DEFAULT_VALUES) do
                 local trailer_value = headers[trailer_key]
 
                 if trailer_value == nil then
