@@ -250,7 +250,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-此外, 插件中的属性值可以引用 APISIX 中的密钥. APISIX 当前支持两种存储密钥的方式 - [环境变量和 HashiCorp Vault](../terminology/secret.md)。
+此外, 插件中的属性值可以引用 APISIX 中的密钥。 APISIX 当前支持两种存储密钥的方式 - [环境变量和 HashiCorp Vault](../terminology/secret.md)。
 如果您设置了环境变量 `REDIS_HOST` 和 `REDIS_PASSWORD` ， 如下所示，您可以在插件配置中使用它们：
 
 ```shell
