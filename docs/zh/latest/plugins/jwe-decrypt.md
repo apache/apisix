@@ -32,17 +32,17 @@ description: 本文档包含了关于 APISIX jwe-decrypt 插件的相关信息�
 
 `jwe-decrypt` 插件，用于解密 APISIX [Service](../terminology/service.md) 或者 [Route](../terminology/route.md) 请求中的 [JWE](https://datatracker.ietf.org/doc/html/rfc7516) 授权请求头。
 
-插件增加了一个 `/apisix/plugin/jwe/encrypt` 的 内部API，提供给 JWE 加密使用。解密时，秘钥应该配置在 [Consumer](../terminology/consumer.md)。
+插件增加了一个 `/apisix/plugin/jwe/encrypt` 的 内部 API，提供给 JWE 加密使用。解密时，秘钥应该配置在 [Consumer](../terminology/consumer.md)。
 
 ## 属性
 
 Consumer 配置：
 
-| 名称          | 类型      | 必选项   | 默认值   | 有效值 | 描述                                                                   |
-|---------------|---------|-------|-------|-----|----------------------------------------------------------------------|
-| key           | string  | True  |       |     | Consumer 的唯一 key                                                     |
-| secret        | string  | True  |       |     | 解密密钥。 秘钥可以使用 [Secret](../terminology/secret.md) 资源保存在密钥管理服务中。（最小32位） |
-| is_base64_encoded | boolean | False | false |     | 如果密钥是 base64 编码，则需要配置为 true                                          |
+| 名称          | 类型      | 必选项   | 默认值   | 有效值 | 描述                                                                    |
+|---------------|---------|-------|-------|-----|-----------------------------------------------------------------------|
+| key           | string  | True  |       |     | Consumer 的唯一 key                                                      |
+| secret        | string  | True  |       |     | 解密密钥。秘钥可以使用 [Secret](../terminology/secret.md) 资源保存在密钥管理服务中。（最小 32 位） |
+| is_base64_encoded | boolean | False | false |     | 如果密钥是 base64 编码，则需要配置为 true                                           |
 
 Route 配置：
 
@@ -54,7 +54,7 @@ Route 配置：
 
 ## 启用插件
 
-首先，基于 `jwe-decrypt` 插件创建一个 Consumer ，并且配置解密密钥：
+首先，基于 `jwe-decrypt` 插件创建一个 Consumer，并且配置解密密钥：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -90,7 +90,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ### 使用 JWE 加密数据
 
-该插件创建了一个内部的API `/apisix/plugin/jwe/encrypt` 以使用 JWE 进行加密。要公开它，需要创建一个对应的路由，并启用 [public-api](public-api.md) 插件：
+该插件创建了一个内部的 API `/apisix/plugin/jwe/encrypt` 以使用 JWE 进行加密。要公开它，需要创建一个对应的路由，并启用 [public-api](public-api.md) 插件：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/jwenew -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -165,7 +165,7 @@ Apisix-Plugins: jwe-decrypt
 
 ## 删除插件
 
-要删除 `jwe-decrypt` 插件，你可以从插件配置中删除插件对应的 JSON 配置， APISIX 会自动加载，您不需要重新启动即可生效。
+要删除 `jwe-decrypt` 插件，你可以从插件配置中删除插件对应的 JSON 配置，APISIX 会自动加载，您不需要重新启动即可生效。
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
