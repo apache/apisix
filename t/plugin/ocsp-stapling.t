@@ -175,7 +175,7 @@ passed
 
 === TEST 6: hit, get ocsp response:1
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
 openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
 --- response_body_like eval
 qr/CONNECTED/
@@ -184,14 +184,14 @@ qr/CONNECTED/
 
 === TEST 7: hit, get ocsp response:2
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
 openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
 --- response_body_like eval
-qr/OCSP Response Status: successful/
+qr/Cert Status: good/
 
 
 
-=== TEST 8: enable ocsp-stapling plugin, set muilt cert which support ocsp
+=== TEST 8: enable ocsp-stapling plugin, set muilt cert with ocsp support
 --- config
 location /t {
     content_by_lua_block {
@@ -232,54 +232,188 @@ passed
 
 
 
-=== TEST 9: hit rsa cert, get ocsp response:1
+=== TEST 9: hit ecc cert, get ocsp response:1
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
-openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher 
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher ECDHE-ECDSA-AES128-GCM-SHA256
 --- response_body_like eval
 qr/CONNECTED/
 
 
 
-=== TEST 10: hit rsa cert, get ocsp response:2
+=== TEST 10: hit ecc cert, get ocsp response:2
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
-openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher 
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher ECDHE-ECDSA-AES128-GCM-SHA256
 --- response_body_like eval
-qr/OCSP Response Status: successful/
+qr/Peer signature type: ECDSA/
 
 
 
-=== TEST 11: hit rsa cert, get ocsp response:3
+=== TEST 11: hit ecc cert, get ocsp response:3
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
-openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher 
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher ECDHE-ECDSA-AES128-GCM-SHA256
 --- response_body_like eval
-qr/OCSP Response Status: successful/
+qr/Cert Status: good/
 
 
 
-=== TEST 12: hit ecc cert, get ocsp response:1
+=== TEST 12: hit rsa cert, get ocsp response:1
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
-openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher 
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher ECDHE-RSA-AES128-GCM-SHA256
 --- response_body_like eval
 qr/CONNECTED/
 
 
 
-=== TEST 13: hit ecc cert, get ocsp response:2
+=== TEST 13: hit rsa cert, get ocsp response:2
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
-openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher 
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher ECDHE-RSA-AES128-GCM-SHA256
 --- response_body_like eval
-qr/OCSP Response Status: successful/
+qr/Peer signature type: RSA/
 
 
 
 === TEST 14: hit rsa cert, get ocsp response:3
 --- exec
-openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/ca.crt -rkey t/certs/ocsp/ca.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
-openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher 
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com -tls1_2 -cipher ECDHE-RSA-AES128-GCM-SHA256
 --- response_body_like eval
-qr/OCSP Response Status: successful/
+qr/Cert Status: good/
+
+
+
+=== TEST 15: enable ocsp-stapling plugin, set cert which support ocsp and revoked
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("t/certs/ocsp/ocsp_rsa_revoked.crt")
+        local ssl_key =  t.read_file("t/certs/ocsp/ocsp_rsa_revoked.key")
+    
+        local data = {
+            cert = ssl_cert,
+            key = ssl_key,
+            sni = "ocsp.test.com",
+            ocsp_stapling = true
+        }
+
+        local code, body = t.test('/apisix/admin/ssls/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data)
+        )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 16: hit revoked rsa cert, no ocsp response send:1
+--- exec
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
+--- response_body_like eval
+qr/CONNECTED/
+--- error_log
+ocsp response will not send, error info: failed to validate ocsp response: certificate status "revoked" in the OCSP response
+
+
+
+=== TEST 17: hit revoked rsa cert, no ocsp response send:2
+--- exec
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
+--- response_body_like eval
+qr/OCSP response: no response sent/
+--- error_log
+ocsp response will not send, error info: failed to validate ocsp response: certificate status "revoked" in the OCSP response
+
+
+
+=== TEST 18: hit revoked rsa cert, no ocsp response send:3
+--- exec
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
+--- error_log
+ocsp response will not send, error info: failed to validate ocsp response: certificate status "revoked" in the OCSP response
+
+
+
+=== TEST 19: enable ocsp-stapling plugin, set cert which support ocsp and unknown status
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("t/certs/ocsp/ocsp_rsa_unknown.crt")
+        local ssl_key =  t.read_file("t/certs/ocsp/ocsp_rsa_unknown.key")
+    
+        local data = {
+            cert = ssl_cert,
+            key = ssl_key,
+            sni = "ocsp.test.com",
+            ocsp_stapling = true
+        }
+
+        local code, body = t.test('/apisix/admin/ssls/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data)
+        )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 20: hit unknown rsa cert, no ocsp response send:1
+--- exec
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
+--- response_body_like eval
+qr/CONNECTED/
+--- error_log
+ocsp response will not send, error info: failed to validate ocsp response: certificate status "unknown" in the OCSP response
+
+
+
+=== TEST 21: hit unknown rsa cert, no ocsp response send:2
+--- exec
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
+--- response_body_like eval
+qr/OCSP response: no response sent/
+--- error_log
+ocsp response will not send, error info: failed to validate ocsp response: certificate status "unknown" in the OCSP response
+
+
+
+=== TEST 22: hit unknown rsa cert, no ocsp response send:3
+--- exec
+openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/ocsp/ca.crt -text -nrequest 1 -resp_no_certs &
+openssl s_client -status -connect localhost:1994 -servername ocsp.test.com
+--- error_log
+ocsp response will not send, error info: failed to validate ocsp response: certificate status "unknown" in the OCSP response
