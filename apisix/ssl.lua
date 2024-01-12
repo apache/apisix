@@ -23,6 +23,8 @@ local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
 local str_lower = string.lower
+local str_byte = string.byte
+local str_len = string.len
 local assert = assert
 local type = type
 local ipairs = ipairs
@@ -313,39 +315,31 @@ function _M.check_ssl_conf(in_dp, conf)
 end
 
 
-function _M.get_status_request_ext(clienthello)
-
-    local byte = string.byte
+function _M.get_status_request_ext()
+    core.log.debug("parsing status request extension ... ")
     local ext = ngx_ssl_client.get_client_hello_ext(5)
     if not ext then
-        print("failed")
+        return false
     end
-    local total_len = string.len(ext)
-    if total_len <= 2 then
-        print("bad SSL Client Hello Extension")
-        ngx.exit(ngx.ERROR)
+    local total_len = str_len(ext)
+    -- 1-byte for CertificateStatusType
+    -- 2-byte for zero-length "responder_id_list"
+    -- 2-byte for zero-length "request_extensions"
+    if total_len < 5 then
+        core.log.error("bad ssl client hello extension: ",
+                       "extension data error")
+        return false
     end
-    local len = byte(ext, 1) * 256 + byte(ext, 2)
-    if len + 2 ~= total_len then 
-        print("bad SSL Client Hello Extension")
-        ngx.exit(ngx.ERROR)
-    end
-    if byte(ext, 3) ~= 0 then
-        print("bad SSL Client Hello Extension")
-        ngx.exit(ngx.ERROR)
-    end
-    if total_len <= 5 then
-        print("bad SSL Client Hello Extension")
-        ngx.exit(ngx.ERROR)
-    end
-    len = byte(ext, 4) * 256 + byte(ext, 5)
-    if len + 5 > total_len then
-        print("bad SSL Client Hello Extension")
-        ngx.exit(ngx.ERROR)
-    end
-    local name = string.sub(ext, 6, 6 + len -1)
 
-    print("read SNI name from Lua: ", name)
+    -- CertificateStatusType
+    local status_type = str_byte(ext, 1)
+    if status_type == 1 then
+        core.log.debug("parsing status request extension ok: ",
+                       "status_type is ocsp(1)")
+        return true
+    end
+
+    return false
 end
 
 

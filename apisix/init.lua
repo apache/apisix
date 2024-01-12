@@ -191,6 +191,7 @@ function _M.http_ssl_client_hello_phase()
         core.log.error("failed to find SNI: " .. (err or advise))
         ngx_exit(-1)
     end
+    local tls_ext_status_req = apisix_ssl.get_status_request_ext()
 
     local ngx_ctx = ngx.ctx
     local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
@@ -199,8 +200,10 @@ function _M.http_ssl_client_hello_phase()
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
+    api_ctx.tls_ext_status_req = tls_ext_status_req
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
+    ngx_ctx.tls_ext_status_req = tls_ext_status_req
 
     if not ok then
         if err then
