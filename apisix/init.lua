@@ -200,7 +200,6 @@ function _M.http_ssl_client_hello_phase()
     local ok, err = router.router_ssl.match_and_set(api_ctx, true, sni)
 
     ngx_ctx.matched_ssl = api_ctx.matched_ssl
-    api_ctx.tls_ext_status_req = tls_ext_status_req
     core.tablepool.release("api_ctx", api_ctx)
     ngx_ctx.api_ctx = nil
     ngx_ctx.tls_ext_status_req = tls_ext_status_req

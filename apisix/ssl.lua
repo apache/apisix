@@ -319,6 +319,7 @@ function _M.get_status_request_ext()
     core.log.debug("parsing status request extension ... ")
     local ext = ngx_ssl_client.get_client_hello_ext(5)
     if not ext then
+        core.log.debug("no contains status request extension")
         return false
     end
     local total_len = str_len(ext)

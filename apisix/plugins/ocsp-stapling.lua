@@ -21,13 +21,16 @@ local require = require
 local pcall = pcall
 local get_request = require("resty.core.base").get_request
 local http = require("resty.http")
+local ngx_ctx = require("ngx.ctx")
 local ngx_ocsp = require("ngx.ocsp")
 local ngx_ssl = require("ngx.ssl")
 local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
 local core = require("apisix.core")
 local apisix_ssl = require("apisix.ssl")
 
+local cache_ttl = 3600
 local plugin_name = "ocsp-stapling"
+local ocsp_resp_cache = ngx.shared[plugin_name]
 
 local plugin_schema = {
     type = "object",
@@ -40,9 +43,6 @@ local _M = {
     version = 0.1,
     priority = -44,
 }
-
-local ocsp_resp_cache = ngx.shared[plugin_name]
-local cache_ttl = 3600
 
 
 function _M.check_schema(conf)
@@ -82,8 +82,9 @@ end
 
 
 local function get_remote_ocsp_resp(der_cert_chain)
+    core.log.debug("get remote ocsp resp ... ")
     local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
-    -- if cert not support ocsp, will not report error
+    -- if cert not support ocsp, the report error is nil
     if not err then
         err = "nil"
     end
@@ -131,7 +132,10 @@ local function set_ocsp_resp(full_chain_pem_cert)
     end
 
     local ocsp_resp = ocsp_resp_cache:get(full_chain_pem_cert)
+    local resp_from_cache = true
     if ocsp_resp == nil then
+        core.log.debug("not ocsp resp cache found, fetch from ocsp responder")
+        resp_from_cache = false
         ocsp_resp, err = get_remote_ocsp_resp(der_cert_chain)
     end
 
@@ -141,6 +145,10 @@ local function set_ocsp_resp(full_chain_pem_cert)
 
     local ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
     if not ok then
+        -- try delete cache
+        if resp_from_cache then
+            ocsp_resp_cache:delete(full_chain_pem_cert)
+        end
         return false, "failed to validate ocsp response: " .. err
     end
     ocsp_resp_cache:set(full_chain_pem_cert, ocsp_resp, cache_ttl)
@@ -157,7 +165,19 @@ end
 
 local original_set_cert_and_key
 local function set_cert_and_key(sni, value)
-    if not value.gm and value.ocsp_stapling then
+    if value.gm then
+        -- should not run with gm plugin
+        -- if gm plugin enabled, not run with ocsp-stapling plugin
+        core.log.info("gm plugin enabled, no need to run ocsp-stapling plugin")
+        return original_set_cert_and_key(sni, value)
+    end
+
+    if value.ocsp_stapling then
+        if not ngx_ctx.tls_ext_status_req then
+            core.log.info("no status request required, no need to send ocsp response")
+            return original_set_cert_and_key(sni, value)
+        end
+
         local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
         if not ok then
             return false, err
@@ -179,14 +199,11 @@ local function set_cert_and_key(sni, value)
 
         local ok, err = set_ocsp_resp(fin_pem_cert)
         if not ok then
-            core.log.error("ocsp response will not send, error info: ", err)
+            core.log.error("no ocsp response send: ", err)
         end
 
         return true
     end
-    -- should not run with gm plugin
-    -- if gm plugin enabled, will not run ocsp-stapling plugin
-    return original_set_cert_and_key(sni, value)
 end
 
 

@@ -278,6 +278,7 @@ nginx_config:                     # Config for render the template to generate n
       ext-plugin: 1m
       tars: 1m
       cas-auth: 10m
+      ocsp-stapling: 10m
 
 # discovery:                      # Service Discovery
 #  dns:
