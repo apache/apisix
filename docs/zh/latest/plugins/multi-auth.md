@@ -32,7 +32,7 @@ description: 本文档包含有关 Apache APISIX multi-auth 插件的信息。
 
 插件 `multi-auth` 用于向 `Route` 或者 `Service` 中，添加多种身份验证方式。它支持 `auth` 类型的插件。您可以使用 `multi-auth` 插件，来组合不同的身份认证方式。
 
-插件通过迭代 `auth_plugins` 属性指定的插件列表，提供了灵活的身份认证机制。它允许多个 `Consumer` 在使用不同身份验证方式时共享相同的 `Route` ，同时。例如：一个 Consumer 使用 basic 认证 ，而另一个消费者使用 JWT 认证。
+插件通过迭代 `auth_plugins` 属性指定的插件列表，提供了灵活的身份认证机制。它允许多个 `Consumer` 在使用不同身份验证方式时共享相同的 `Route` ，同时。例如：一个 Consumer 使用 basic 认证，而另一个消费者使用 JWT 认证。
 
 ## 属性
 
@@ -40,11 +40,11 @@ For Route:
 
 | 名称           | 类型    | 必选项  | 默认值 | 描述                    |
 |--------------|-------|------|-----|-----------------------|
-| auth_plugins | array | True | -   | 添加需要支持的认证插件。 至少需要2个插件 |
+| auth_plugins | array | True | -   | 添加需要支持的认证插件。至少需要 2 个插件 |
 
 ## 启用插件
 
-要启用插件，您必须创建两个或多个具有不同身份验证插件配置的 Consumer ：
+要启用插件，您必须创建两个或多个具有不同身份验证插件配置的 Consumer：
 
 首先创建一个 Consumer 使用 basic-auth 插件：
 
@@ -131,7 +131,7 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-如果请求未授权, 将会返回如下错误：
+如果请求未授权，将会返回如下错误：
 
 ```shell
 HTTP/1.1 401 Unauthorized
