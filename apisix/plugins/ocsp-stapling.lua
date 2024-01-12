@@ -86,7 +86,7 @@ local function get_remote_ocsp_resp(der_cert_chain)
     local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
     -- if cert not support ocsp, the report error is nil
     if not err then
-        err = "nil"
+        err = "cert not cotains authority_information_access extension"
     end
 
     if not ocsp_url then
@@ -167,7 +167,6 @@ local original_set_cert_and_key
 local function set_cert_and_key(sni, value)
     if value.gm then
         -- should not run with gm plugin
-        -- if gm plugin enabled, not run with ocsp-stapling plugin
         core.log.info("gm plugin enabled, no need to run ocsp-stapling plugin")
         return original_set_cert_and_key(sni, value)
     end
