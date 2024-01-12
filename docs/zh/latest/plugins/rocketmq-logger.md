@@ -86,7 +86,6 @@ description: API 网关 Apache APISIX 的 rocketmq-logger 插件用于将日志�
          "content-length": "6",
          "connection": "close"
        },
-       "body": "abcdef",
        "method": "GET"
      },
      "response": {

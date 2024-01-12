@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.8.0](#380)
 - [3.7.0](#370)
 - [3.6.0](#360)
 - [3.5.0](#350)
@@ -73,6 +74,48 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.8.0
+
+### Core
+
+- :sunrise: Support the use of lua-resty-events module for better performance:
+  - [#10550](https://github.com/apache/apisix/pull/10550)
+  - [#10558](https://github.com/apache/apisix/pull/10558)
+- :sunrise: Upgrade OpenSSL 1.1.1 to OpenSSL 3: [#10724](https://github.com/apache/apisix/pull/10724)
+
+### Plugins
+
+- :sunrise: Add jwe-decrypt plugin: [#10252](https://github.com/apache/apisix/pull/10252)
+- :sunrise: Support brotli when use filters.regex option (response-rewrite): [#10733](https://github.com/apache/apisix/pull/10733)
+- :sunrise: Add multi-auth plugin: [#10482](https://github.com/apache/apisix/pull/10482)
+- :sunrise: Add `required scopes` configuration property to `openid-connect` plugin: [#10493](https://github.com/apache/apisix/pull/10493)
+- :sunrise: Support for the Timing-Allow-Origin header (cors): [#9365](https://github.com/apache/apisix/pull/9365)
+- :sunrise: Add brotli plugin: [#10515](https://github.com/apache/apisix/pull/10515)
+- :sunrise: Body-transformer plugin enhancement(#10472): [#10496](https://github.com/apache/apisix/pull/10496)
+- :sunrise: Set minLength of redis_cluster_nodes to 1 for limit-count plugin: [#10612](https://github.com/apache/apisix/pull/10612)
+- :sunrise: Allow to use environment variables for limit-count plugin settings: [#10607](https://github.com/apache/apisix/pull/10607)
+
+### Bugfixes
+
+- Fix: When the upstream nodes are of array type, the port should be an optional field: [#10477](https://github.com/apache/apisix/pull/10477)
+- Fix: Incorrect variable extraction in fault-injection plugin: [#10485](https://github.com/apache/apisix/pull/10485)
+- Fix: All consumers should share the same counter (limit-count): [#10541](https://github.com/apache/apisix/pull/10541)
+- Fix: Safely remove upstream when sending route to opa plugin: [#10552](https://github.com/apache/apisix/pull/10552)
+- Fix: Missing etcd init_dir and unable to list resource: [#10569](https://github.com/apache/apisix/pull/10569)
+- Fix: Forward-auth request body is too large: [#10589](https://github.com/apache/apisix/pull/10589)
+- Fix: Memory leak caused by timer that never quit: [#10614](https://github.com/apache/apisix/pull/10614)
+- Fix: Do not invoke add_header if value resolved as nil in proxy-rewrite plugin: [#10619](https://github.com/apache/apisix/pull/10619)
+- Fix: Frequent traversal of all keys in etcd leads to high CPU usage: [#10671](https://github.com/apache/apisix/pull/10671)
+- Fix: For prometheus upstream_status metrics, mostly_healthy is healthy: [#10639](https://github.com/apache/apisix/pull/10639)
+- Fix: Avoid getting a nil value in log phase in zipkin: [#10666](https://github.com/apache/apisix/pull/10666)
+- Fix: Enable openid-connect plugin without redirect_uri got 500 error: [#7690](https://github.com/apache/apisix/pull/7690)
+- Fix: Add redirect_after_logout_uri for ODIC that do not have an end_session_endpoint: [#10653](https://github.com/apache/apisix/pull/10653)
+- Fix: Response-rewrite filters.regex does not apply when content-encoding is gzip: [#10637](https://github.com/apache/apisix/pull/10637)
+- Fix: The leak of prometheus metrics: [#10655](https://github.com/apache/apisix/pull/10655)
+- Fix: Authz-keycloak add return detail err: [#10691](https://github.com/apache/apisix/pull/10691)
+- Fix: upstream nodes was not updated correctly by service discover: [#10722](https://github.com/apache/apisix/pull/10722)
+- Fix: apisix restart failed: [#10696](https://github.com/apache/apisix/pull/10696)
 
 ## 3.7.0
 

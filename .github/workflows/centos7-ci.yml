@@ -99,6 +99,7 @@ jobs:
 
     - name: Start Dubbo Backend
       run: |
+        sudo apt update
         sudo apt install -y maven
         cd t/lib/dubbo-backend
         mvn package

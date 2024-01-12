@@ -481,7 +481,7 @@ function _M.rewrite(plugin_conf, ctx)
 
     local response, err, session, _
 
-    if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
+    if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
         -- An introspection endpoint or a public key has been configured. Try to
         -- validate the access token from the request, if it is present in a
         -- request header. Otherwise, return a nil response. See below for
