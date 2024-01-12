@@ -91,6 +91,7 @@
             "plugins/wolf-rbac",
             "plugins/key-auth",
             "plugins/jwt-auth",
+            "plugins/jwe-decrypt",
             "plugins/basic-auth",
             "plugins/openid-connect",
             "plugins/hmac-auth",
