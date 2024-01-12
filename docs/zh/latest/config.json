@@ -98,7 +98,8 @@
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
-            "plugins/forward-auth"
+            "plugins/forward-auth",
+            "plugins/multi-auth"
           ]
         },
         {
