@@ -574,7 +574,7 @@ function _M.rewrite(plugin_conf, ctx)
             end
         end
     end
-    if(session) then
+    if session then
         session:close()
     end
 end
