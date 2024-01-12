@@ -62,7 +62,7 @@ sudo ldconfig
 
 ## 启用插件
 
-如下示例中，在指定的路由上启用 `brotli` 插件
+如下示例中，在指定的路由上启用 `brotli` 插件：
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
@@ -83,7 +83,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 
 ## 使用示例
 
-通过上述命令启用插件后，可以通过以下方法测试插件。
+通过上述命令启用插件后，可以通过以下方法测试插件：
 
 ```shell
 curl http://127.0.0.1:9080/ -i -H "Accept-Encoding: br"
