@@ -72,7 +72,7 @@
         },
         {
           "type": "category",
-          "label": "控制请求",
+          "label": "转换请求",
           "items": [
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
