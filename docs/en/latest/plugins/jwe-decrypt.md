@@ -63,7 +63,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     "plugins": {
         "jwe-decrypt": {
             "key": "user-key",
-            "secret": "key-length-must-be-at-least-32-bytes"
+            "secret": "key-length-must-be-at-least-32-chars"
         }
     }
 }'
