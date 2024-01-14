@@ -38,9 +38,9 @@ __DATA__
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -101,9 +101,9 @@ abc123
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /opentracing
 --- response_body
@@ -121,9 +121,9 @@ clickhouse headers: x-clickhouse-database:default
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -189,9 +189,9 @@ abc123
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -268,9 +268,9 @@ def456
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -345,9 +345,9 @@ abc123
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /opentracing
 --- response_body
@@ -365,9 +365,9 @@ clickhouse headers: x-clickhouse-database:default
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -443,9 +443,9 @@ abc123
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /opentracing
 --- response_body
@@ -463,9 +463,9 @@ clickhouse headers: x-clickhouse-database:default
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -567,9 +567,9 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -645,9 +645,9 @@ vU/ZHVJw7b0XscDJ1Fhtig==
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -704,7 +704,7 @@ apisix:
 --- yaml_config
 apisix:
     data_encryption:
-        enable: false
+        enable_encrypt_fields: false
 --- config
     location /t {
         content_by_lua_block {

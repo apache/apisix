@@ -39,9 +39,9 @@ __DATA__
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -129,9 +129,9 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /hello
 --- more_headers
@@ -145,9 +145,9 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -230,9 +230,9 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /hello
 --- more_headers
@@ -247,9 +247,9 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: false
+        enable_encrypt_fields: false
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -291,9 +291,9 @@ bar
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -344,9 +344,9 @@ failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt s
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -402,9 +402,9 @@ failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt s
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /hello
 --- more_headers
@@ -415,13 +415,13 @@ hello world
 
 
 
-=== TEST 11: keyring rotate, encrypt with edd1c9f0985e76a2
+=== TEST 11: keyring rotate, encrypt with qeddd145sfvddff3
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
@@ -474,14 +474,14 @@ passed
 
 
 
-=== TEST 12: keyring rotate, decrypt with qeddd145sfvddff3 would fail, but encrypt with edd1c9f0985e76a2 would success
+=== TEST 12: keyring rotate, decrypt with qeddd145sfvddff3 would fail, but encrypt with qeddd145sfvddff3 would success
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - qeddd145sfvddff3
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- request
 GET /hello
 --- more_headers
@@ -495,9 +495,9 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {

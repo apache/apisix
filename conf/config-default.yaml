@@ -118,10 +118,12 @@ apisix:
 
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
-  data_encryption:                # Encrypt fields specified in `encrypt_fields` in plugin schema.
-    enable: false
-    keyring:                      # Set the encryption key for AES-128-CBC. It should be a
-      - qeddd145sfvddff3          # hexadecimal string of length 16.
+  data_encryption:                # Data encryption settings.
+    enable_encrypt_fields: false  # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
+                                  # in plugin schema.
+      - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string
+                                  # of length 16.
       - edd1c9f0985e76a2          # If not set, APISIX saves the original data into etcd.
                                   # CAUTION: If you would like to update the key, add the new key as the
                                   # first item in the array and keep the older keys below the newly added

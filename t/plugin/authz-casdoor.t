@@ -448,9 +448,9 @@ failed when accessing token: invalid access_token
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
     location /t {
         content_by_lua_block {
