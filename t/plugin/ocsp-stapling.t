@@ -461,7 +461,7 @@ location /t {
 
         local ssl_cert = t.read_file("t/certs/ocsp/rsa_revoked.crt")
         local ssl_key =  t.read_file("t/certs/ocsp/rsa_revoked.key")
-    
+
         local data = {
             cert = ssl_cert,
             key = ssl_key,
@@ -519,7 +519,7 @@ location /t {
 
         local ssl_cert = t.read_file("t/certs/ocsp/rsa_revoked.crt")
         local ssl_key =  t.read_file("t/certs/ocsp/rsa_revoked.key")
-    
+
         local data = {
             cert = ssl_cert,
             key = ssl_key,
@@ -576,7 +576,7 @@ location /t {
 
         local ssl_cert = t.read_file("t/certs/ocsp/rsa_unknown.crt")
         local ssl_key =  t.read_file("t/certs/ocsp/rsa_unknown.key")
-    
+
         local data = {
             cert = ssl_cert,
             key = ssl_key,
@@ -634,7 +634,7 @@ location /t {
 
         local ssl_cert = t.read_file("t/certs/ocsp/rsa_unknown.crt")
         local ssl_key =  t.read_file("t/certs/ocsp/rsa_unknown.key")
-    
+
         local data = {
             cert = ssl_cert,
             key = ssl_key,
