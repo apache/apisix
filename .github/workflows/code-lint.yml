@@ -22,9 +22,9 @@ jobs:
         export_or_prefix
         export OPENRESTY_VERSION=default
 
-        ./ci/linux-install-openresty.sh
+        sudo -E ./ci/linux-install-openresty.sh
         ./utils/linux-install-luarocks.sh
-        sudo luarocks install luacheck
+        sudo -E luarocks install luacheck
 
     - name: Script
       run: |

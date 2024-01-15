@@ -274,6 +274,14 @@ do
                     end
                 end
 
+            elseif core_str.has_prefix(key, "uri_param_") then
+                -- `uri_param_<name>` provides access to the uri parameters when using
+                -- radixtree_uri_with_parameter
+                if t._ctx.curr_req_matched then
+                    local arg_key = sub_str(key, 11)
+                    val = t._ctx.curr_req_matched[arg_key]
+                end
+
             elseif core_str.has_prefix(key, "http_") then
                 key = key:lower()
                 key = re_gsub(key, "-", "_", "jo")

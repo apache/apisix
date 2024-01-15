@@ -43,7 +43,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes/getting-started-ip" -X PATCH 
 }'
 ```
 
-You will receive an `HTTP/1.1 201 OK` response if the plugin was added successfully. The above configuration limits the incoming requests to a maximum of 2 requests within 10 seconds.
+You will receive an `HTTP/1.1 201 Created` response if the plugin was added successfully. The above configuration limits the incoming requests to a maximum of 2 requests within 10 seconds.
 
 ### Validate
 

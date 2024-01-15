@@ -42,10 +42,67 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 | service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
 | log_format | object | False    |   |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
-| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger.                                                                    |
+| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                    |
 | include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                     |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+  ```json
+   {
+      "serviceInstance": "APISIX Instance Name",
+      "body": {
+        "json": {
+          "json": "body-json"
+        }
+      },
+      "endpoint": "/opentracing",
+      "service": "APISIX"
+    }
+  ```
+
+For body-json data, it is an escaped json string
+
+  ```json
+    {
+      "response": {
+        "status": 200,
+        "headers": {
+          "server": "APISIX/3.7.0",
+          "content-type": "text/plain",
+          "transfer-encoding": "chunked",
+          "connection": "close"
+        },
+        "size": 136
+      },
+      "route_id": "1",
+      "upstream": "127.0.0.1:1982",
+      "upstream_latency": 8,
+      "apisix_latency": 101.00020599365,
+      "client_ip": "127.0.0.1",
+      "service_id": "",
+      "server": {
+        "hostname": "localhost",
+        "version": "3.7.0"
+      },
+      "start_time": 1704429712768,
+      "latency": 109.00020599365,
+      "request": {
+        "headers": {
+          "content-length": "9",
+          "host": "localhost",
+          "connection": "close"
+        },
+        "method": "POST",
+        "body": "body-data",
+        "size": 94,
+        "querystring": {},
+        "url": "http://localhost:1984/opentracing",
+        "uri": "/opentracing"
+      }
+    }
+  ```
 
 ## Metadata
 

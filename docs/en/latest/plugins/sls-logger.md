@@ -46,11 +46,38 @@ It might take some time to receive the log data. It will be automatically sent a
 | access_key_id     | True     | AccessKey ID in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                     |
 | access_key_secret | True     | AccessKey Secret in Alibaba Cloud. See [Authorization](https://www.alibabacloud.com/help/en/log-service/latest/create-a-ram-user-and-authorize-the-ram-user-to-access-log-service) for more details.                                                                 |
 | include_req_body  | True     | When set to `true`, includes the request body in the log.                                                                                                                                                                                       |
-| name              | False    | Unique identifier for the batch processor.                                                                                                                                                                                                      |
+| name              | False    | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                                                                                                                                                      |
 
 NOTE: `encrypt_fields = {"access_key_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+```json
+{
+    "route_conf": {
+        "host": "100.100.99.135",
+        "buffer_duration": 60,
+        "timeout": 30000,
+        "include_req_body": false,
+        "logstore": "your_logstore",
+        "log_format": {
+            "vip": "$remote_addr"
+        },
+        "project": "your_project",
+        "inactive_timeout": 5,
+        "access_key_id": "your_access_key_id",
+        "access_key_secret": "your_access_key_secret",
+        "batch_max_size": 1000,
+        "max_retry_count": 0,
+        "retry_delay": 1,
+        "port": 10009,
+        "name": "sls-logger"
+    },
+    "data": "<46>1 2024-01-06T03:29:56.457Z localhost apisix 28063 - [logservice project=\"your_project\" logstore=\"your_logstore\" access-key-id=\"your_access_key_id\" access-key-secret=\"your_access_key_secret\"] {\"vip\":\"127.0.0.1\",\"route_id\":\"1\"}\n"
+}
+```
 
 ## Metadata
 

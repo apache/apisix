@@ -591,4 +591,11 @@ function _M.clickhouse_logger_server()
 end
 
 
+function _M.mock_compressed_upstream_response()
+    local s = "compressed_response"
+    ngx.header['Content-Encoding'] = 'gzip'
+    ngx.say(s)
+end
+
+
 return _M
