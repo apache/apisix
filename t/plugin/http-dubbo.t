@@ -53,7 +53,7 @@ routes:
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
-            params_type_desc: Lorg/apache/dubbo/backend/DubboSerializationTestService$AllDataTypesPOJO;
+            params_type_desc: Lorg/apache/dubbo/backend/PoJo;
             serialized: true
             method: testPoJo
     upstream_id: 1
@@ -61,9 +61,9 @@ routes:
 
 --- request
 POST /t
-{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","poJoMap":{"key":"value"},"strings":["aa","bb"]}
+{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}
 --- response_body
-{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","poJoMap":{"key":"value"},"strings":["aa","bb"]}
+{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}
 
 === TEST 2:  test_pojos
 --- apisix_yaml
@@ -80,13 +80,13 @@ routes:
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
-            params_type_desc: [Lorg/apache/dubbo/backend/DubboSerializationTestService$AllDataTypesPOJO;
+            params_type_desc: [org/apache/dubbo/backend/PoJo;
             serialized: true
             method: testPoJos
     upstream_id: 1
 #END
 --- request
 POST /t
-{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","poJoMap":{"key":"value"},"strings":["aa","bb"]}
+[{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}]
 --- response_body
 [{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","poJoMap":{"key":"value"},"strings":["aa","bb"]}]

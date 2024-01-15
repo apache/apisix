@@ -17,28 +17,24 @@
 package org.apache.dubbo.backend.provider;
 
 import org.apache.dubbo.backend.DubboSerializationTestService;
+import org.apache.dubbo.backend.PoJo;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.lang.InterruptedException;
 
 public class DubboSerializationTestServiceImpl implements DubboSerializationTestService {
 
     @Override
-    public AllDataTypesPOJO testPoJo(AllDataTypesPOJO input) {
+    public PoJo testPoJo(PoJo input) {
         return input;
     }
 
     @Override
-    public AllDataTypesPOJO[] testPoJos(AllDataTypesPOJO[] input) {
+    public PoJo[] testPoJos(PoJo[] input) {
         return input;
     }
 
     @Override
     public void testVoid() {
-
-
     }
 
     @Override

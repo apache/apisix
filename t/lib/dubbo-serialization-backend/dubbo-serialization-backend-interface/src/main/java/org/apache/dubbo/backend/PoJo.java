@@ -18,7 +18,7 @@ public class PoJo {
 
     private String[] strings;
 
-    private Map<String, String> poJoMap;
+    private Map<String, String> stringMap;
 
     public String getaString() {
         return aString;
@@ -94,12 +94,12 @@ public class PoJo {
 
 
 
-    public Map<String, String> getPoJoMap() {
-        return poJoMap;
+    public Map<String, String> getStringMap() {
+        return stringMap;
     }
 
-    public void setPoJoMap(Map<String, String> poJoMap) {
-        this.poJoMap = poJoMap;
+    public void setStringMap(Map<String, String> stringMap) {
+        this.stringMap = stringMap;
     }
 
     public String[] getStrings() {
@@ -123,13 +123,8 @@ public class PoJo {
         poJo.aString ="aa";
         HashMap<String, String> poJoMap = new HashMap<>();
         poJoMap.put("key","value");
-        poJo.poJoMap = poJoMap;
+        poJo.stringMap = poJoMap;
         poJo.strings = new String[]{"aa","bb"};
         return poJo;
     }
-
-    public static void main(String[] args) {
-
-    }
-
 }

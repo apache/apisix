@@ -35,9 +35,6 @@ public class Provider {
      */
     public static void main(String[] args) throws Exception {
 
-        JSONObject.toJSONString(PoJo.getTestInstance());
-        Method[] declaredMethods = DubboSerializationTestService.class.getDeclaredMethods();
-        ReflectUtils.getDesc(declaredMethods[1].getParameterTypes());
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-provider.xml"});
 
         context.start();
