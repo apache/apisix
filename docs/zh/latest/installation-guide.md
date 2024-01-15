@@ -126,10 +126,10 @@ sudo yum install apisix
 
 :::tip
 
-你也可以安装指定版本的 APISIX（本示例为 APISIX v2.13.1 LTS 版本）：
+你也可以安装指定版本的 APISIX（本示例为 APISIX v3.8.0 版本）：
 
 ```shell
-sudo yum install apisix-2.13.1
+sudo yum install apisix-3.8.0
 ```
 
 :::
@@ -181,14 +181,10 @@ apisix start
 
 ```shell
 # amd64
-echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
-wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
 echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
-echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
-wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
 echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
 ```
@@ -197,7 +193,7 @@ echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo 
 
 ```shell
 sudo apt update
-sudo apt install -y apisix=3.0.0-0
+sudo apt install -y apisix=3.8.0-0
 ```
 
 ### 管理 APISIX 服务
