@@ -26,7 +26,6 @@ local ngx_ssl = require("ngx.ssl")
 local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
 local core = require("apisix.core")
 local apisix_ssl = require("apisix.ssl")
-local plugin = require("apisix.plugin")
 
 local plugin_name = "ocsp-stapling"
 local ocsp_resp_cache = ngx.shared[plugin_name]
@@ -149,7 +148,7 @@ local function set_ocsp_resp(full_chain_pem_cert, skip_verify, cache_ttl)
     end
 
     -- set the OCSP stapling
-    ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
+    local ok, err = ngx_ocsp.set_ocsp_status_resp(ocsp_resp)
     if not ok then
         return false, "failed to set ocsp status response: " .. err
     end
