@@ -491,7 +491,111 @@ qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="a
 
 
 
-=== TEST 11: collect log with log_format
+=== TEST 11: collect request log with include_req_body
+--- log_level: info
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "loggly": {
+                                "customer_token" : "tok",
+                                "batch_max_size": 1,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            local code, _, body = t("/opentracing", "POST", "body-data")
+        }
+    }
+--- error_log
+"request":{"body":"body-data"
+
+
+
+=== TEST 12: collect log with include_req_body_expr
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "loggly": {
+                                "customer_token" : "tok",
+                                "batch_max_size": 1,
+                                "include_req_body": true,
+                                "include_req_body_expr": [
+                                    ["arg_bar", "==", "bar"]
+                                ]
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+            -- this will include resp body
+            local code, _, body = t("/opentracing?bar=bar", "POST", "body-data")
+             if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+
+        }
+    }
+--- error_log
+"request":{"body":"body-data"
+
+
+
+=== TEST 13: collect log with include_req_body_expr mismatch
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/opentracing?foo=bar", "POST", "body-data")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+
+        }
+    }
+--- no_error_log
+"request":{"body":"body-data"
+
+
+
+=== TEST 14: collect log with log_format
 --- config
     location /t {
         content_by_lua_block {
@@ -534,7 +638,7 @@ qr/message received: <14>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="a
 
 
 
-=== TEST 12: loggly http protocol
+=== TEST 15: loggly http protocol
 --- config
     location /t {
         content_by_lua_block {
@@ -576,7 +680,7 @@ loggly tags: "apisix"
 
 
 
-=== TEST 13: test setup for collecting syslog with severity based on http response code
+=== TEST 16: test setup for collecting syslog with severity based on http response code
 --- config
     location /t {
         content_by_lua_block {
@@ -636,7 +740,7 @@ passed
 
 
 
-=== TEST 14: syslog PRIVAL 9 for type severity level ALERT
+=== TEST 17: syslog PRIVAL 9 for type severity level ALERT
 --- config
     location /t {
         content_by_lua_block {
@@ -654,7 +758,7 @@ qr/message received: <9>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="ap
 
 
 
-=== TEST 15: syslog PRIVAL 11 for type severity level ERR
+=== TEST 18: syslog PRIVAL 11 for type severity level ERR
 --- config
     location /t {
         content_by_lua_block {
@@ -672,7 +776,7 @@ qr/message received: <11>1 [\d\-T:.]+Z [\d.]+ apisix [\d]+ - \[tok\@41058 tag="a
 
 
 
-=== TEST 16: log format in plugin
+=== TEST 19: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -729,7 +833,7 @@ passed
 
 
 
-=== TEST 17: hit
+=== TEST 20: hit
 --- request
 GET /opentracing?foo=bar
 --- response_body

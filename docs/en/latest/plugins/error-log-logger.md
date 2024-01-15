@@ -69,6 +69,12 @@ NOTE: `encrypt_fields = {"clickhouse.password"}` is also defined in the schema, 
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```text
+["2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:205: load(): new plugins: {"error-log-logger":true}, context: init_worker_by_lua*","\n","2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:255: load_stream(): new plugins: {"limit-conn":true,"ip-restriction":true,"syslog":true,"mqtt-proxy":true}, context: init_worker_by_lua*","\n"]
+```
+
 ## Enable Plugin
 
 To enable the Plugin, you can add it in your configuration file (`conf/config.yaml`):

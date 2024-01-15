@@ -42,7 +42,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 | user             | string  | 是     |                     |              | ClickHouse 的用户。                                       |
 | password         | string  | 是     |                     |              | ClickHouse 的密码。                                      |
 | timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
-| name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。                                |
+| name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                               |
 | ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |
 | log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
@@ -53,6 +53,49 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 注意：schema 中还定义了 `encrypt_fields = {"password"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+### 默认日志格式示例
+
+```json
+{
+    "response": {
+        "status": 200,
+        "size": 118,
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "server": "APISIX/3.7.0",
+            "content-length": "12"
+        }
+    },
+    "client_ip": "127.0.0.1",
+    "upstream_latency": 3,
+    "apisix_latency": 98.999998092651,
+    "upstream": "127.0.0.1:1982",
+    "latency": 101.99999809265,
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "route_id": "1",
+    "start_time": 1704507612177,
+    "service_id": "",
+    "request": {
+        "method": "POST",
+        "querystring": {
+            "foo": "unknown"
+        },
+        "headers": {
+            "host": "localhost",
+            "connection": "close",
+            "content-length": "18"
+        },
+        "size": 110,
+        "uri": "/hello?foo=unknown",
+        "url": "http://localhost:1984/hello?foo=unknown"
+    }
+}
+```
 
 ## 配置插件元数据
 

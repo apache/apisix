@@ -23,8 +23,11 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
-    wget tar gcc automake autoconf libtool make unzip git sudo openldap-devel hostname \
-    which ca-certificates openssl-devel
+    wget tar gcc gcc-c++ automake autoconf libtool make unzip git sudo openldap-devel hostname patch \
+    which ca-certificates pcre pcre-devel xz \
+    openssl-devel
+
+    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
 
     # install newer curl
     yum makecache
@@ -33,18 +36,14 @@ install_dependencies() {
 
     # install apisix-runtime to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    rpm --import https://repos.apiseven.com/KEYS
-    yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
-    yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+    yum install -y openresty-pcre-devel openresty-zlib-devel
 
-    # TODO: disabled temporarily, waiting for APISIX 3.8 to be released to synchronize the apisix-runtime version
-    #wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
-    #wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime-debug-centos7.sh"
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime.sh"
+    export runtime_version=${APISIX_RUNTIME}
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
-    chmod +x build-apisix-runtime-debug-centos7.sh
-    ./build-apisix-runtime-debug-centos7.sh
+    ./build-apisix-runtime.sh latest
+    curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
+        https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
 
     # patch lua-resty-events
     sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
@@ -63,7 +62,6 @@ install_dependencies() {
     install_brotli
 
     # install test::nginx
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # add go1.15 binary to the path

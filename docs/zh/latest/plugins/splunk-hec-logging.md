@@ -48,6 +48,37 @@ description: API 网关 Apache APISIX 的 splunk-hec-logging 插件可用于将�
 
 本插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免该插件频繁地提交数据。默认情况下每 `5` 秒钟或队列中的数据达到 `1000` 条时，批处理器会自动提交数据，如需了解更多信息或自定义配置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
+### 默认日志格式示例
+
+```json
+{
+  "sourcetype": "_json",
+  "time": 1704513555.392,
+  "event": {
+    "upstream": "127.0.0.1:1980",
+    "request_url": "http://localhost:1984/hello",
+    "request_query": {},
+    "request_size": 59,
+    "response_headers": {
+      "content-length": "12",
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "connection": "close"
+    },
+    "response_status": 200,
+    "response_size": 118,
+    "latency": 108.00004005432,
+    "request_method": "GET",
+    "request_headers": {
+      "connection": "close",
+      "host": "localhost"
+    }
+  },
+  "source": "apache-apisix-splunk-hec-logging",
+  "host": "localhost"
+}
+```
+
 ## 插件元数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |

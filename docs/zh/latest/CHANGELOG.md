@@ -23,6 +23,7 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.8.0](#380)
 - [3.7.0](#370)
 - [3.6.0](#360)
 - [3.5.0](#350)
@@ -73,6 +74,48 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.8.0
+
+### Core
+
+- :sunrise: 支持使用 lua-resty-events 模块以提高性能：
+  - [#10550](https://github.com/apache/apisix/pull/10550)
+  - [#10558](https://github.com/apache/apisix/pull/10558)
+- :sunrise: 将 OpenSSL 1.1.1 升级到 OpenSSL 3：[#10724](https://github.com/apache/apisix/pull/10724)
+
+### Plugins
+
+- :sunrise: 添加 jwe-decryp 插件：[#10252](https://github.com/apache/apisix/pull/10252)
+- :sunrise: response-rewrite 插件使用 filters.regex 选项时支持 brotli：[#10733](https://github.com/apache/apisix/pull/10733)
+- :sunrise: 添加多重认证插件：[#10482](https://github.com/apache/apisix/pull/10482)
+- :sunrise: 在 `openid-connect` 插件中添加 `required scopes` 配置属性：[#10493](https://github.com/apache/apisix/pull/10493)
+- :sunrise: cors 插件支持 Timing-Allow-Origin 头：[#9365](https://github.com/apache/apisix/pull/9365)
+- :sunrise: 添加 brotli 插件：[#10515](https://github.com/apache/apisix/pull/10515)
+- :sunrise: body-transformer 插件增强：[#10496](https://github.com/apache/apisix/pull/10496)
+- :sunrise: limit-count 插件设置 redis_cluster_nodes 的最小长度为 1：[#10612](https://github.com/apache/apisix/pull/10612)
+- :sunrise: 允许通过环境变量配置 limit-count 插件：[#10607](https://github.com/apache/apisix/pull/10607)
+
+### Bugfixes
+
+- 修复：upstream nodes 为数组类型时，port 应为可选字段：[#10477](https://github.com/apache/apisix/pull/10477)
+- 修复：fault-injection 插件中变量提取不正确：[#10485](https://github.com/apache/apisix/pull/10485)
+- 修复：所有消费者应共享同一计数器 (limit-count)：[#10541](https://github.com/apache/apisix/pull/10541)
+- 修复：在向 opa 插件发送路由时安全地删除上游：[#10552](https://github.com/apache/apisix/pull/10552)
+- 修复：缺少 etcd init_dir 和无法列出资源：[#10569](https://github.com/apache/apisix/pull/10569)
+- 修复：Forward-auth 请求体过大：[#10589](https://github.com/apache/apisix/pull/10589)
+- 修复：永不退出的定时器导致的内存泄漏：[#10614](https://github.com/apache/apisix/pull/10614)
+- 修复：如果在 proxy-rewrite 插件中解析的值为 nil，则不调用 add_header：[#10619](https://github.com/apache/apisix/pull/10619)
+- 修复：频繁遍历 etcd 所有的键，导致 cpu 使用率高：[#10671](https://github.com/apache/apisix/pull/10671)
+- 修复：对于 prometheus 的 upstream_status 指标，mostly_healthy 是健康的：[#10639](https://github.com/apache/apisix/pull/10639)
+- 修复：在 zipkin 中避免在日志阶段获取 nil 值：[#10666](https://github.com/apache/apisix/pull/10666)
+- 修复：启用 openid-connect 插件而没有 redirect_uri 导致 500 错误：[#7690](https://github.com/apache/apisix/pull/7690)
+- 修复：为没有 end_session_endpoint 的 ODIC 添加 redirect_after_logout_uri：[#10653](https://github.com/apache/apisix/pull/10653)
+- 修复：当 content-encoding 为 gzip 时，response-rewrite 的 filters.regex 不适用：[#10637](https://github.com/apache/apisix/pull/10637)
+- 修复：prometheus 指标的泄漏：[#10655](https://github.com/apache/apisix/pull/10655)
+- 修复：Authz-keycloak 添加返回详细错误：[#10691](https://github.com/apache/apisix/pull/10691)
+- 修复：服务发现未正确更新上游节点：[#10722](https://github.com/apache/apisix/pull/10722)
+- 修复：apisix 重启失败：[#10696](https://github.com/apache/apisix/pull/10696)
 
 ## 3.7.0
 

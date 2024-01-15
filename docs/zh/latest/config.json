@@ -1,5 +1,5 @@
 {
-  "version": "3.7.0",
+  "version": "3.8.0",
   "sidebar": [
     {
       "type": "category",
@@ -41,6 +41,7 @@
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
+        "terminology/plugin-metadata",
         "terminology/route",
         "terminology/router",
         "terminology/script",
@@ -90,13 +91,15 @@
             "plugins/wolf-rbac",
             "plugins/key-auth",
             "plugins/jwt-auth",
+            "plugins/jwe-decrypt",
             "plugins/basic-auth",
             "plugins/openid-connect",
             "plugins/hmac-auth",
             "plugins/authz-casbin",
             "plugins/ldap-auth",
             "plugins/opa",
-            "plugins/forward-auth"
+            "plugins/forward-auth",
+            "plugins/multi-auth"
           ]
         },
         {

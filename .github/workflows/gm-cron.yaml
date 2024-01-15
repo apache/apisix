@@ -125,6 +125,7 @@ jobs:
         if: steps.test_env.outputs.type == 'plugin'
         run: |
           cur_dir=$(pwd)
+          sudo apt update
           sudo apt install -y maven
           cd t/lib/dubbo-backend
           mvn package

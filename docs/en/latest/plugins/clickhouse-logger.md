@@ -42,7 +42,7 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 | user          | string  | True     |                     |              | ClickHouse username.                                           |
 | password      | string  | True     |                     |              | ClickHouse password.                                           |
 | timeout       | integer | False    | 3                   | [1,...]      | Time to keep the connection alive for after sending a request. |
-| name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger.                              |
+| name          | string  | False    | "clickhouse logger" |              | Unique identifier for the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                              |
 | ssl_verify    | boolean | False    | true                | [true,false] | When set to `true`, verifies SSL.                              |
 | log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | include_req_body       | boolean | False    | false          | [false, true]         | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                                                                                                                                                 |
@@ -53,6 +53,49 @@ The `clickhouse-logger` Plugin is used to push logs to [ClickHouse](https://clic
 NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+```json
+{
+    "response": {
+        "status": 200,
+        "size": 118,
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "server": "APISIX/3.7.0",
+            "content-length": "12"
+        }
+    },
+    "client_ip": "127.0.0.1",
+    "upstream_latency": 3,
+    "apisix_latency": 98.999998092651,
+    "upstream": "127.0.0.1:1982",
+    "latency": 101.99999809265,
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "route_id": "1",
+    "start_time": 1704507612177,
+    "service_id": "",
+    "request": {
+        "method": "POST",
+        "querystring": {
+            "foo": "unknown"
+        },
+        "headers": {
+            "host": "localhost",
+            "connection": "close",
+            "content-length": "18"
+        },
+        "size": 110,
+        "uri": "/hello?foo=unknown",
+        "url": "http://localhost:1984/hello?foo=unknown"
+    }
+}
+```
 
 ## Metadata
 
