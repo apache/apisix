@@ -3,7 +3,7 @@
   "sidebar": [
     {
       "type": "category",
-      "label": "Getting Started",
+      "label": "快速开始",
       "items": [
         "getting-started/README",
         "getting-started/configure-routes",
@@ -22,7 +22,7 @@
     },
     {
       "type": "category",
-      "label": "Tutorials",
+      "label": "教程",
       "items": [
         "tutorials/expose-api",
         "tutorials/protect-api",
@@ -33,7 +33,7 @@
     },
     {
       "type": "category",
-      "label": "Terminology",
+      "label": "APISIX 术语",
       "items": [
         "terminology/api-gateway",
         "terminology/consumer",
@@ -52,16 +52,17 @@
     },
     {
       "type": "category",
-      "label": "Plugins",
+      "label": "插件",
       "items": [
         {
           "type": "category",
-          "label": "General",
+          "label": "普通插件",
           "items": [
             "plugins/batch-requests",
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
+            "plugins/brotli",
             "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
@@ -72,7 +73,7 @@
         },
         {
           "type": "category",
-          "label": "Transformation",
+          "label": "转换请求",
           "items": [
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
@@ -84,7 +85,7 @@
         },
         {
           "type": "category",
-          "label": "Authentication",
+          "label": "身份认证",
           "items": [
             "plugins/authz-keycloak",
             "plugins/authz-casdoor",
@@ -104,7 +105,7 @@
         },
         {
           "type": "category",
-          "label": "Security",
+          "label": "安全防护",
           "items": [
             "plugins/cors",
             "plugins/uri-blocker",
@@ -120,7 +121,7 @@
         },
         {
           "type": "category",
-          "label": "Traffic",
+          "label": "流量控制",
           "items": [
             "plugins/limit-req",
             "plugins/limit-conn",
@@ -137,11 +138,11 @@
         },
         {
           "type": "category",
-          "label": "Observability",
+          "label": "可观测性",
           "items": [
             {
               "type": "category",
-              "label": "Tracers",
+              "label": "数据链路",
               "items": [
                 "plugins/zipkin",
                 "plugins/skywalking",
@@ -150,7 +151,7 @@
             },
             {
               "type": "category",
-              "label": "Metrics",
+              "label": "数据指标",
               "items": [
                 "plugins/prometheus",
                 "plugins/node-status",
@@ -159,7 +160,7 @@
             },
             {
               "type": "category",
-              "label": "Loggers",
+              "label": "日志采集",
               "items": [
                 "plugins/http-logger",
                 "plugins/skywalking-logger",
@@ -185,7 +186,7 @@
         },
         {
           "type": "category",
-          "label": "Serverless",
+          "label": "无服务器架构",
           "items": [
             "plugins/serverless",
             "plugins/azure-functions",
@@ -196,7 +197,7 @@
         },
         {
           "type": "category",
-          "label": "Other protocols",
+          "label": "其它协议",
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy"
@@ -206,7 +207,7 @@
     },
     {
       "type": "category",
-      "label": "API",
+      "label": "相关 API",
       "items": [
         {
           "type": "doc",
@@ -220,7 +221,7 @@
     },
     {
       "type": "category",
-      "label": "Development",
+      "label": "开发者",
       "items": [
         {
           "type": "doc",
@@ -254,11 +255,11 @@
     },
     {
       "type": "category",
-      "label": "Others",
+      "label": "其它",
       "items": [
         {
           "type": "category",
-          "label": "Discovery",
+          "label": "服务发现",
           "items": [
             "discovery",
             "discovery/dns",

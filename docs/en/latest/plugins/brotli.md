@@ -47,6 +47,12 @@ sudo sh -c "echo /usr/local/brotli/lib >> /etc/ld.so.conf.d/brotli.conf"
 sudo ldconfig
 ```
 
+:::caution
+
+If the upstream is returning a compressed response, then the Brotli plugin won't be able to compress it.
+
+:::
+
 ## Attributes
 
 | Name           | Type                 | Required | Default       | Valid values | Description                                                                             |
