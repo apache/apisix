@@ -99,7 +99,7 @@ APISIX dubbo plugin uses `hessian2` as the serialization protocol. It supports o
 
 Your dubbo config should be configured to use `hessian2` as the serialization protocol.
 
-```xml
+```yml
 dubbo:
   ...
   protocol:
@@ -119,7 +119,7 @@ public interface DemoService {
 
 If you need to pass request data, you can add the data to the HTTP request header. The plugin will convert the HTTP request header to the request data of the Dubbo service. Here is a sample HTTP request that passes `user` information:
 
-```curl
+```bash
 curl -i -X POST 'http://localhost:9080/hello' \
                     --header 'user: apisix'
 
