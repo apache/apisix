@@ -48,8 +48,8 @@ Route 配置：
 
 | 名称             | 类型      | 必选项   | 默认值           | 描述                                                                         |
 |----------------|---------|-------|---------------|----------------------------------------------------------------------------|
-| header         | string  | True | Authorization | 指定请求头，用于获取加密令牌                                                             |
-| forward_header | string  | True | Authorization | 传递给 Upstream 的请求头名称                                                        |
+| header         | string  | False | authorization | 指定请求头，用于获取加密令牌                                                             |
+| forward_header | string  | False | authorization | 传递给 Upstream 的请求头名称                                                        |
 | strict         | boolean | False | true          | 如果为配置为 true，请求中缺失 JWE token 则抛出 `403` 异常。如果为 `false`, 在缺失 JWE token 的情况下不会抛出异常 |
 
 ## 启用插件
@@ -77,7 +77,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "methods": ["GET"],
     "uri": "/anything*",
     "plugins": {
-        "jwe-decrypt": {}
+        "jwe-decrypt": {
+            "header": "Authorization",
+            "forward_header": "Authorization"
+        }
     },
     "upstream": {
         "type": "roundrobin",
