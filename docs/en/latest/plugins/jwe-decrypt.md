@@ -48,8 +48,8 @@ For Route:
 
 | Name   | Type   | Required | Default       | Description                                                         |
 |--------|--------|----------|---------------|---------------------------------------------------------------------|
-| header | string | False    | authorization | The header to get the token from.                                   |
-| forward_header | string | False     | authorization  | Set the header name that passes the plaintext to the Upstream.   |
+| header | string | True    | Authorization | The header to get the token from.                                   |
+| forward_header | string | True     | Authorization  | Set the header name that passes the plaintext to the Upstream.   |
 | strict | boolean | False     | true  | If true, throw a 403 error if JWE token is missing from the request. If false, do not throw an error if JWE token cannot be found.  |
 
 ## Example usage
@@ -63,7 +63,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     "plugins": {
         "jwe-decrypt": {
             "key": "user-key",
-            "secret": "key-length-must-be-at-least-32-bytes"
+            "secret": "key-length-must-be-at-least-32-chars"
         }
     }
 }'
