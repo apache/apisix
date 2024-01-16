@@ -74,18 +74,13 @@ location /t {
             core.json.encode(data)
         )
 
-        if code >= 300 then
-            ngx.status = code
-            ngx.say(body)
-            return
-        end
-
-        ngx.say(body)
+        ngx.status = code
+        ngx.print(body)
     }
 }
 --- error_code: 400
---- error_log
-additional properties forbidden, found ocsp_stapling
+--- response_body
+{"error_msg":"invalid configuration: additional properties forbidden, found ocsp_stapling"}
 
 
 
