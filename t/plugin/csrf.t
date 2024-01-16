@@ -334,7 +334,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {

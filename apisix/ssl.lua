@@ -112,7 +112,7 @@ local function encrypt(aes_128_cbc_with_iv, origin)
     return ngx_encode_base64(encrypted)
 end
 
-function _M.aes_encrypt_pkey(origin, field)
+function _M.aes_encrypt_pkey(origin)
     local local_conf = core.config.local_conf()
     local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
     local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
@@ -120,21 +120,12 @@ function _M.aes_encrypt_pkey(origin, field)
     if aes_128_cbc_with_iv_gde == nil then
         return origin
     end
-
-    if not field and core.string.has_prefix(origin, "---") then
-        return encrypt(aes_128_cbc_with_iv_gde, origin)
-    else
-        if field == "data_encrypt" then
-            return encrypt(aes_128_cbc_with_iv_gde, origin)
-        end
-    end
-
-    return origin
+    return encrypt(aes_128_cbc_with_iv_gde, origin)
 end
 
 
-local function aes_decrypt_pkey(origin, field)
-    if not field and core.string.has_prefix(origin, "---") then
+local function aes_decrypt_pkey(origin)
+    if core.string.has_prefix(origin, "---") then
         return origin
     end
 

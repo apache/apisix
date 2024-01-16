@@ -906,7 +906,8 @@ local enable_data_encryption
 local function enable_gde()
     if enable_data_encryption == nil then
         enable_data_encryption =
-            core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable_encrypt_fields")
+            core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+                    "enable_encrypt_fields")
         _M.enable_data_encryption = enable_data_encryption
     end
 
@@ -946,7 +947,7 @@ local function decrypt_conf(name, conf, schema_type)
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
             if conf[key] then
-                local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key], "data_encrypt")
+                local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[key])
                 if not decrypted then
                     core.log.warn("failed to decrypt the conf of plugin [", name,
                                   "] key [", key, "], err: ", err)
@@ -963,8 +964,7 @@ local function decrypt_conf(name, conf, schema_type)
 
                 -- we only support two levels
                 if conf[res[1]] and conf[res[1]][res[2]] then
-                    local decrypted, err = apisix_ssl.aes_decrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
+                    local decrypted, err = apisix_ssl.aes_decrypt_pkey(conf[res[1]][res[2]])
                     if not decrypted then
                         core.log.warn("failed to decrypt the conf of plugin [", name,
                                       "] key [", key, "], err: ", err)
@@ -992,7 +992,7 @@ local function encrypt_conf(name, conf, schema_type)
     if schema.encrypt_fields and not core.table.isempty(schema.encrypt_fields) then
         for _, key in ipairs(schema.encrypt_fields) do
             if conf[key] then
-                local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key], "data_encrypt")
+                local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[key])
                 if not encrypted then
                     core.log.warn("failed to encrypt the conf of plugin [", name,
                                   "] key [", key, "], err: ", err)
@@ -1009,8 +1009,7 @@ local function encrypt_conf(name, conf, schema_type)
 
                 -- we only support two levels
                 if conf[res[1]] and conf[res[1]][res[2]] then
-                    local encrypted, err = apisix_ssl.aes_encrypt_pkey(
-                                           conf[res[1]][res[2]], "data_encrypt")
+                    local encrypted, err = apisix_ssl.aes_encrypt_pkey(conf[res[1]][res[2]])
                     if not encrypted then
                         core.log.warn("failed to encrypt the conf of plugin [", name,
                                       "] key [", key, "], err: ", err)
