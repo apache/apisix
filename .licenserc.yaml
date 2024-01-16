@@ -54,7 +54,7 @@ header:
     - 'docs/**/*.md'
     - '.ignore_words'
     - '.luacheckrc'
-    # Exclude file contains certificate revocation information 
+    # Exclude file contains certificate revocation information
     - 't/certs/ocsp/index.txt'
 
   comment: on-failure
