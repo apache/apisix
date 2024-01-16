@@ -138,7 +138,10 @@ local function send_to_elasticsearch(conf, entries)
     end
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
-    local headers = {["Content-Type"] = "application/x-ndjson"}
+    local headers = {
+        ["Content-Type"] = "application/x-ndjson;compatible-with=7",
+        ["Accept"] = "application/vnd.elasticsearch+json;compatible-with=7"
+    }
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
