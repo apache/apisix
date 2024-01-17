@@ -41,7 +41,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -131,7 +131,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- request
 GET /hello
 --- more_headers
@@ -147,7 +147,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -232,7 +232,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- request
 GET /hello
 --- more_headers
@@ -249,7 +249,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: false
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -293,7 +293,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -346,7 +346,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -404,7 +404,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- request
 GET /hello
 --- more_headers
@@ -415,13 +415,13 @@ hello world
 
 
 
-=== TEST 11: keyring rotate, encrypt with qeddd145sfvddff3
+=== TEST 11: keyring rotate, encrypt with edd1c9f0985e76a2
 --- yaml_config
 apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
@@ -474,14 +474,14 @@ passed
 
 
 
-=== TEST 12: keyring rotate, decrypt with qeddd145sfvddff3 would fail, but encrypt with qeddd145sfvddff3 would success
+=== TEST 12: keyring rotate, decrypt with edd1c9f0985e76a2 would fail, but encrypt with edd1c9f0985e76a2 would success
 --- yaml_config
 apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
             - qeddd145sfvddff3
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- request
 GET /hello
 --- more_headers
@@ -497,7 +497,7 @@ apisix:
     data_encryption:
         enable_encrypt_fields: true
         keyring:
-            - qeddd145sfvddff3
+            - edd1c9f0985e76a2
 --- config
     location /t {
         content_by_lua_block {
