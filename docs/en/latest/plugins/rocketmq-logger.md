@@ -66,6 +66,61 @@ If the process is successful, it will return `true` and if it fails, returns `ni
 
 ### meta_format example
 
+- default:
+
+```json
+    {
+     "upstream": "127.0.0.1:1980",
+     "start_time": 1619414294760,
+     "client_ip": "127.0.0.1",
+     "service_id": "",
+     "route_id": "1",
+     "request": {
+       "querystring": {
+         "ab": "cd"
+       },
+       "size": 90,
+       "uri": "/hello?ab=cd",
+       "url": "http://localhost:1984/hello?ab=cd",
+       "headers": {
+         "host": "localhost",
+         "content-length": "6",
+         "connection": "close"
+       },
+       "method": "GET"
+     },
+     "response": {
+       "headers": {
+         "connection": "close",
+         "content-type": "text/plain; charset=utf-8",
+         "date": "Mon, 26 Apr 2021 05:18:14 GMT",
+         "server": "APISIX/2.5",
+         "transfer-encoding": "chunked"
+       },
+       "size": 190,
+       "status": 200
+     },
+     "server": {
+       "hostname": "localhost",
+       "version": "2.5"
+     },
+     "latency": 0
+    }
+```
+
+- origin:
+
+```http
+    GET /hello?ab=cd HTTP/1.1
+    host: localhost
+    content-length: 6
+    connection: close
+
+    abcdef
+```
+
+### meta_format example
+
 - `default`:
 
   ```json

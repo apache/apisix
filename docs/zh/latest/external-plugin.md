@@ -1,5 +1,5 @@
 ---
-title: External Plugin
+title: 外部插件
 ---
 
 <!--
