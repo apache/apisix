@@ -32,7 +32,7 @@ local DEFAULT_PROXY_CONTENT_TYPE = "application/grpc"
 local DEFAULT_CORS_ALLOW_EXPOSE_HEADERS = "grpc-status,grpc-message"
 
 local GRPC_WEB_TRAILER_FRAME_HEADER = string.char(128, 0, 0, 0)
-local GRPC_WEB_REQUIRED_TRAILERS_DEFAULT_VALUES = {
+local GRPC_WEB_REQ_TRAILERS_DEFAULT = {
     ["grpc-status"] = "0",
     ["grpc-message"] = "OK"
 }
@@ -177,7 +177,7 @@ function _M.body_filter(conf, ctx)
         if response and string.len(response) ~= 0 then
             local headers = ngx.resp.get_headers()
             local trailers = " "
-            for trailer_key, trailer_default_value in pairs(GRPC_WEB_REQUIRED_TRAILERS_DEFAULT_VALUES) do
+            for trailer_key, trailer_default_value in pairs(GRPC_WEB_REQ_TRAILERS_DEFAULT) do
                 local trailer_value = headers[trailer_key]
 
                 if trailer_value == nil then
