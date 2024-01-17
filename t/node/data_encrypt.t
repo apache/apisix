@@ -474,7 +474,7 @@ passed
 
 
 
-=== TEST 12: keyring rotate, decrypt with edd1c9f0985e76a2 would fail, but encrypt with edd1c9f0985e76a2 would success
+=== TEST 12: keyring rotate, decrypt with qeddd145sfvddff3 would fail, but encrypt with edd1c9f0985e76a2 would success
 --- yaml_config
 apisix:
     data_encryption:
