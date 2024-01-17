@@ -647,10 +647,10 @@ local rpc_handlers = {
             if len > 0 then
                 for i = 1, len do
                     local entry = rewrite:Headers(i)
-                    local name = entry:Name()
+                    local name = str_lower(entry:Name())
                     core.request.set_header(ctx, name, entry:Value())
 
-                    if str_lower(name) == "host" then
+                    if name == "host" then
                         var.upstream_host = entry:Value()
                     end
                 end
@@ -809,8 +809,9 @@ local rpc_handlers = {
         else
             -- Filter out origin headeres
             for k, v in pairs(res.headers) do
-                if not exclude_resp_header[str_lower(k)] then
-                    core.response.set_header(k, v)
+                local name = str_lower(k)
+                if not exclude_resp_header[name] then
+                    core.response.set_header(name, v)
                 end
             end
         end
