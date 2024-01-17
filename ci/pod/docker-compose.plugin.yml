@@ -201,7 +201,7 @@ services:
 
   # Elasticsearch Logger Service
   elasticsearch-noauth:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
     restart: unless-stopped
     ports:
       - "9200:9200"
@@ -212,7 +212,7 @@ services:
       xpack.security.enabled: 'false'
 
   elasticsearch-auth:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.3
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.17.1
     restart: unless-stopped
     ports:
       - "9201:9201"
