@@ -101,7 +101,7 @@ end
 
 
 -- fire all clean handlers added by add_clean_handler.
-function _M.fire_all_clean_handlers(item)
+function _M.fire_all_clean_handlers(item, is_compacted)
     -- When the key is deleted, the item will be set to false.
     if not item then
         return
@@ -111,7 +111,7 @@ function _M.fire_all_clean_handlers(item)
     end
 
     for _, clean_handler in ipairs(item.clean_handlers) do
-        clean_handler.f(item)
+        clean_handler.f(item, is_compacted)
     end
 
     item.clean_handlers = {}

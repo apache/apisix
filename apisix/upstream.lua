@@ -81,7 +81,11 @@ end
 _M.set = set_directly
 
 
-local function release_checker(healthcheck_parent)
+local function release_checker(healthcheck_parent, is_compacted)
+    if is_compacted then
+        core.log.info("need not release checker if reload is due to etcd compaction")
+        return
+    end
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
     checker:delayed_clear(3)

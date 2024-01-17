@@ -610,7 +610,7 @@ local function sync_data(self)
 
         if self.values then
             for i, val in ipairs(self.values) do
-                config_util.fire_all_clean_handlers(val)
+                config_util.fire_all_clean_handlers(val, self.compacted)
             end
 
             self.values = nil
@@ -629,6 +629,7 @@ local function sync_data(self)
     if not dir_res then
         if err == "compacted" then
             self.need_reload = true
+            self.compacted = true
             log.warn("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
             return false
