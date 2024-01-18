@@ -48,37 +48,6 @@ function _M.check_schema(conf)
 end
 
 
--- same as function set_pem_ssl_key() from "apisix.ssl.router.radixtree_sni"
-local function set_pem_ssl_key(sni, cert, pkey)
-    local r = get_request()
-    if r == nil then
-        return false, "no request found"
-    end
-
-    local parsed_cert, err = apisix_ssl.fetch_cert(sni, cert)
-    if not parsed_cert then
-        return false, "failed to parse PEM cert: " .. err
-    end
-
-    local ok, err = ngx_ssl.set_cert(parsed_cert)
-    if not ok then
-        return false, "failed to set PEM cert: " .. err
-    end
-
-    local parsed_pkey, err = apisix_ssl.fetch_pkey(sni, pkey)
-    if not parsed_pkey then
-        return false, "failed to parse PEM priv key: " .. err
-    end
-
-    ok, err = ngx_ssl.set_priv_key(parsed_pkey)
-    if not ok then
-        return false, "failed to set PEM priv key: " .. err
-    end
-
-    return true
-end
-
-
 local function fetch_ocsp_resp(der_cert_chain)
     core.log.info("fetch ocsp response from remote")
     local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
@@ -161,7 +130,7 @@ local original_set_cert_and_key
 local function set_cert_and_key(sni, value)
     if value.gm then
         -- should not run with gm plugin
-        core.log.info("gm plugin enabled, no need to run ocsp-stapling plugin")
+        core.log.warn("gm plugin enabled, no need to run ocsp-stapling plugin")
         return original_set_cert_and_key(sni, value)
     end
 
@@ -170,42 +139,42 @@ local function set_cert_and_key(sni, value)
         return original_set_cert_and_key(sni, value)
     end
 
-    if value.ocsp_stapling.enabled then
-        if not ngx.ctx.tls_ext_status_req then
-            core.log.info("no status request required, no need to send ocsp response")
-            return original_set_cert_and_key(sni, value)
-        end
-
-        local ok, err = set_pem_ssl_key(sni, value.cert, value.key)
-        if not ok then
-            return false, err
-        end
-        local fin_pem_cert = value.cert
-
-        -- multiple certificates support.
-        if value.certs then
-            for i = 1, #value.certs do
-                local cert = value.certs[i]
-                local key = value.keys[i]
-                ok, err = set_pem_ssl_key(sni, cert, key)
-                if not ok then
-                    return false, err
-                end
-                fin_pem_cert = cert
-            end
-        end
-
-        local ok, err = set_ocsp_resp(fin_pem_cert,
-                                      value.ocsp_stapling.skip_verify,
-                                      value.ocsp_stapling.cache_ttl)
-        if not ok then
-            core.log.error("no ocsp response send: ", err)
-        end
-
-        return true
+    if not value.ocsp_stapling.enabled then
+        return original_set_cert_and_key(sni, value)
     end
 
-    return original_set_cert_and_key(sni, value)
+    if not ngx.ctx.tls_ext_status_req then
+        core.log.info("no status request required, no need to send ocsp response")
+        return original_set_cert_and_key(sni, value)
+    end
+
+    local ok, err = radixtree_sni.set_pem_ssl_key(sni, value.cert, value.key)
+    if not ok then
+        return false, err
+    end
+    local fin_pem_cert = value.cert
+
+    -- multiple certificates support.
+    if value.certs then
+        for i = 1, #value.certs do
+            local cert = value.certs[i]
+            local key = value.keys[i]
+            ok, err = radixtree_sni.set_pem_ssl_key(sni, cert, key)
+            if not ok then
+                return false, err
+            end
+            fin_pem_cert = cert
+        end
+    end
+
+    local ok, err = set_ocsp_resp(fin_pem_cert,
+                                  value.ocsp_stapling.skip_verify,
+                                  value.ocsp_stapling.cache_ttl)
+    if not ok then
+        core.log.error("no ocsp response send: ", err)
+    end
+
+    return true
 end
 
 
