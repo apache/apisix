@@ -277,7 +277,7 @@ no ocsp response send: failed to get ocsp url: cert not contains authority_infor
 
 
 
-=== TEST 11: run ocsp responseder, will exit when test finished
+=== TEST 11: run ocsp responder, will exit when test finished
 --- config
 location /t {
     content_by_lua_block {
