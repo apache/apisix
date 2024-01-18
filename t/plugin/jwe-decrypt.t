@@ -211,8 +211,10 @@ passed
     }
 --- response_body
 hello world
---- response_header
+--- response_headers
 Authorization: hello
+
+
 
 === TEST 8: test for unsupported method
 --- request
