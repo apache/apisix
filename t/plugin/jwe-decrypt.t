@@ -507,6 +507,7 @@ hello world
 passed
 
 
+
 === TEST 23:  verify in upstream header
 --- config
     location /t {
