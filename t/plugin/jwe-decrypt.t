@@ -494,7 +494,7 @@ hello world
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/get"
+                    "uri": "/headers"
                 }]]
                 )
             if code >= 300 then
