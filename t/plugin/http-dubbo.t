@@ -36,8 +36,11 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 });
+
 run_tests;
+
 __DATA__
+
 === TEST 1:  test_pojo
 --- apisix_yaml
 upstreams:
