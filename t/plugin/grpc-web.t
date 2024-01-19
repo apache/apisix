@@ -68,25 +68,33 @@ passed
 
 
 
-=== TEST 2: Proxy unary request using APISIX gRPC-Web plugin
+=== TEST 2: Proxy unary request using APISIX with trailers gRPC-Web plugin
 --- exec
 node ./t/plugin/grpc-web/client.js BIN UNARY
 node ./t/plugin/grpc-web/client.js TEXT UNARY
 --- response_body
+Status: { code: 0, details: '', metadata: {} }
+Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
+Status: { code: 0, details: '', metadata: {} }
+Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
 
 
 
-=== TEST 3: Proxy server-side streaming request using APISIX gRPC-Web plugin
+=== TEST 3: Proxy server-side streaming request using APISIX with trailers gRPC-Web plugin
 --- exec
 node ./t/plugin/grpc-web/client.js BIN STREAM
 node ./t/plugin/grpc-web/client.js TEXT STREAM
 --- response_body
 {"name":"hello","path":"/hello"}
 {"name":"world","path":"/world"}
+Status: { code: 0, details: '', metadata: {} }
+Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
 {"name":"world","path":"/world"}
+Status: { code: 0, details: '', metadata: {} }
+Status: { code: 0, details: '', metadata: {} }
 
 
 
@@ -226,4 +234,18 @@ Origin: http://test.com
 Content-Type: application/grpc-web
 --- response_headers
 Access-Control-Allow-Origin: http://test.com
+Content-Type: application/grpc-web
+
+
+
+=== TEST 11: check for Access-Control-Expose-Headers header in response
+--- request
+POST /grpc/web/a6.RouteService/GetRoute
+{}
+--- more_headers
+Origin: http://test.com
+Content-Type: application/grpc-web
+--- response_headers
+Access-Control-Allow-Origin: http://test.com
+Access-Control-Expose-Headers: grpc-message,grpc-status
 Content-Type: application/grpc-web

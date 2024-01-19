@@ -150,38 +150,42 @@ function _M.body_filter(conf, ctx)
     end
 
     --[[
-        upstream_trailer_* available since NGINX version 1.13.10 :
-        https://nginx.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_trailer_
+    upstream_trailer_* available since NGINX version 1.13.10 :
+    https://nginx.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_trailer_
 
-        grpc-web trailer format reference:
-        envoyproxy/envoy/source/extensions/filters/http/grpc_web/grpc_web_filter.cc
+    grpc-web trailer format reference:
+    envoyproxy/envoy/source/extensions/filters/http/grpc_web/grpc_web_filter.cc
+
+    Format for grpc-web trailer
+        1 byte: 0x80
+        4 bytes: length of the trailer
+        n bytes: trailer
+
     --]]
-
     local status = ctx.var.upstream_trailer_grpc_status
     if status ~= "" and status ~= nil then
-        -- format for grpc-web trailer
-        -- 1 byte: 0x80
-        -- 4 bytes: length of the trailer
-        -- n bytes: trailer
-
-        -- 1 byte: 0x80
-        ngx_arg[1] = ngx_arg[1] .. string.char(0x80)
-
         local status_str = "grpc-status:" .. tonumber(status)
         local status_msg = "grpc-message:" .. ctx.var.upstream_trailer_grpc_message
         local grpc_web_trailer = status_str .. "\r\n" .. status_msg .. "\r\n"
-
-        -- 4 bytes: length of the trailer
         local len = #grpc_web_trailer
-        ngx_arg[1] = ngx_arg[1] .. string.char(
+
+        -- 1 byte: 0x80
+        local trailer_buf = string.char(0x80)
+        -- 4 bytes: length of the trailer
+        trailer_buf = trailer_buf .. string.char(
             bit.band(bit.rshift(len, 24), 0xff),
             bit.band(bit.rshift(len, 16), 0xff),
             bit.band(bit.rshift(len, 8), 0xff),
             bit.band(len, 0xff)
         )
-
         -- n bytes: trailer
-        ngx_arg[1] = ngx_arg[1] .. grpc_web_trailer
+        trailer_buf = trailer_buf .. grpc_web_trailer
+
+        if ctx.grpc_web_encoding == CONTENT_ENCODING_BINARY then
+            ngx_arg[1] = ngx_arg[1] .. trailer_buf
+        else
+            ngx_arg[1] = ngx_arg[1] .. encode_base64(trailer_buf)
+        end
 
         -- clear trailer
         ctx.var.upstream_trailer_grpc_status = nil
