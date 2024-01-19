@@ -21,19 +21,15 @@ import java.util.Map;
 
 public class PoJo {
     private String aString;
-
     private Boolean aBoolean;
     private Byte aByte;
     private Character acharacter;
     private Integer aInt;
-
     private Float aFloat;
     private Double aDouble;
     private Long aLong;
     private Short aShort;
-
     private String[] strings;
-
     private Map<String, String> stringMap;
 
     public String getaString() {
@@ -107,8 +103,6 @@ public class PoJo {
     public void setaShort(Short aShort) {
         this.aShort = aShort;
     }
-
-
 
     public Map<String, String> getStringMap() {
         return stringMap;
