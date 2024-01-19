@@ -57,6 +57,7 @@ routes:
             params_type_desc: Lorg/apache/dubbo/backend/PoJo;
             serialized: true
             method: testPoJo
+            service_version: 1.0.0
     upstream_id: 1
 #END
 --- request
@@ -85,6 +86,7 @@ routes:
             params_type_desc: "[org/apache/dubbo/backend/PoJo;"
             serialized: true
             method: testPoJos
+            service_version: 1.0.0
     upstream_id: 1
 #END
 --- request
