@@ -471,3 +471,68 @@ GET /hello
 Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body
 hello world
+
+
+
+=== TEST 22: enable jwt decrypt plugin with test upstream route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "httpbun.com": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/get"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 23:  verify in upstream header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=decrypted_passed',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            ngx.log(ngx.WARN, "dibag: ", token)
+
+            code, err, body = t('/headers',
+                ngx.HTTP_GET,
+                nil,
+                nil,
+                { Authorization = token }
+            )
+
+            ngx.print(body)
+        }
+    }
+--- response_body
+decrypted_passed
