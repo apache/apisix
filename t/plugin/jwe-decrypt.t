@@ -509,31 +509,9 @@ passed
 
 
 === TEST 23:  verify in upstream header
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, token = t('/apisix/plugin/jwe/encrypt?key=user-key&payload=decrypted_passed',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            ngx.log(ngx.WARN, "dibag: ", token)
-
-            code, err, body = t('/headers',
-                ngx.HTTP_GET,
-                nil,
-                nil,
-                { Authorization = token }
-            )
-
-            ngx.print(body)
-        }
-    }
+--- request
+GET /headers
+--- more_headers
+Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body
-decrypted_passed
+hello
