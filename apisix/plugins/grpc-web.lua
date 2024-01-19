@@ -21,6 +21,9 @@ local req_set_uri       = ngx.req.set_uri
 local req_set_body_data = ngx.req.set_body_data
 local decode_base64     = ngx.decode_base64
 local encode_base64     = ngx.encode_base64
+local tonumber          = tonumber
+local bit               = require("bit")
+local string            = string
 
 
 local ALLOW_METHOD_OPTIONS = "OPTIONS"
