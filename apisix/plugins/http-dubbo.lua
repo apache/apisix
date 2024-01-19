@@ -81,12 +81,14 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+
 local function str_int32(int)
     return char(band(rshift(int, 24), 0xff),
             band(rshift(int, 16), 0xff),
             band(rshift(int, 8), 0xff),
             band(int, 0xff))
 end
+
 
 local function parse_dubbo_header(header)
     for i = 1, 16 do
@@ -124,6 +126,7 @@ local function parse_dubbo_header(header)
     }
 end
 
+
 local function string_to_json_string(str)
     local result = "\""
     for i = 1, #str do
@@ -148,6 +151,7 @@ local function string_to_json_string(str)
     end
     return result .. "\""
 end
+
 
 local function get_dubbo_request(conf, ctx)
     -- use dubbo and fastjson
@@ -214,6 +218,7 @@ local function get_dubbo_request(conf, ctx)
         attachments
     }
 end
+
 
 function _M.before_proxy(conf, ctx)
     local sock = ngx.socket.tcp()
