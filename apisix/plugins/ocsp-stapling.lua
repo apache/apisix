@@ -18,14 +18,12 @@
 --
 
 local require = require
-local get_request = require("resty.core.base").get_request
 local http = require("resty.http")
 local ngx = ngx
 local ngx_ocsp = require("ngx.ocsp")
 local ngx_ssl = require("ngx.ssl")
 local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
 local core = require("apisix.core")
-local apisix_ssl = require("apisix.ssl")
 
 local plugin_name = "ocsp-stapling"
 local ocsp_resp_cache = ngx.shared[plugin_name]
