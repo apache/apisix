@@ -22,8 +22,6 @@ no_shuffle();
 no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
-
-
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
@@ -36,8 +34,11 @@ _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
 });
+
 run_tests;
+
 __DATA__
+
 === TEST 1:  test_pojo
 --- apisix_yaml
 upstreams:
@@ -58,12 +59,13 @@ routes:
             method: testPoJo
     upstream_id: 1
 #END
-
 --- request
 POST /t
 {"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}
 --- response_body
 {"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}
+
+
 
 === TEST 2:  test_pojos
 --- apisix_yaml
@@ -80,7 +82,7 @@ routes:
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
-            params_type_desc: [org/apache/dubbo/backend/PoJo;
+            params_type_desc: "[org/apache/dubbo/backend/PoJo;"
             serialized: true
             method: testPoJos
     upstream_id: 1

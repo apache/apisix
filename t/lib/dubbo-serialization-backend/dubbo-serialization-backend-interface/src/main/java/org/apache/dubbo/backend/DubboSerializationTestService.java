@@ -27,8 +27,4 @@ public interface DubboSerializationTestService {
     void testFailure();
 
     void testTimeout();
-
-    // 测试POJO包括所有数据类型
-
-
 }
