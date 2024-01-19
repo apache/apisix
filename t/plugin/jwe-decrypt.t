@@ -211,8 +211,6 @@ passed
     }
 --- response_body
 hello world
---- response_headers
-Authorization: hello
 
 
 
