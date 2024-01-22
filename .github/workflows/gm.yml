@@ -44,7 +44,7 @@ jobs:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-deps
         with:
@@ -53,7 +53,7 @@ jobs:
 
       - name: Cache Tongsuo compilation
         id: cache-tongsuo
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-tongsuo
         with:
