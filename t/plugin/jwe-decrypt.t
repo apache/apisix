@@ -490,7 +490,7 @@ hello world
                     },
                     "upstream": {
                         "nodes": {
-                            "httpbun.com": 1
+                            "httpbin.org": 1
                         },
                         "type": "roundrobin"
                     },
