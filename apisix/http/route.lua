@@ -64,7 +64,7 @@ function _M.create_radixtree_uri_router(routes, uri_routes, with_parameter)
                 if not service then
                     core.log.error("failed to fetch service configuration by ",
                                    "id: ", route.value.service_id)
-                    -- we keep the behavior that missing service won't affect the route matching
+                    -- we keep the behavior that missing service won't affect the route matching.
                 else
                     hosts = service.value.hosts
                 end
