@@ -146,10 +146,11 @@ function main() {
         if [[ "${OS_NAME}" == "linux" ]]; then
             multi_distro_installation
             install_luarocks
+            return
         else
             echo "Non-supported distribution"
+            exit 1
         fi
-        return
     fi
 
     case_opt=$1
