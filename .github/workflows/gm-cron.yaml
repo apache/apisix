@@ -43,7 +43,7 @@ jobs:
           go-version: "1.17"
 
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-deps
         with:
@@ -52,7 +52,7 @@ jobs:
 
       - name: Cache Tongsuo compilation
         id: cache-tongsuo
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-tongsuo
         with:
@@ -92,7 +92,7 @@ jobs:
 
       - name: Cache images
         id: cache-images
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-apisix-docker-images
         with:

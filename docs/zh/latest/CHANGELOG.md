@@ -1,5 +1,5 @@
 ---
-title: CHANGELOG
+title: 版本发布
 ---
 
 <!--
