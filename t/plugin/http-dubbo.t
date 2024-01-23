@@ -83,7 +83,7 @@ routes:
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
-            params_type_desc: "[org/apache/dubbo/backend/PoJo;"
+            params_type_desc: "[Lorg/apache/dubbo/backend/PoJo;"
             serialized: true
             method: testPoJos
             service_version: 1.0.0
