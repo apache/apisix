@@ -63,7 +63,7 @@ routes:
 --- request
 POST /t
 {"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}
---- response_body
+--- response_body chomp
 {"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}
 
 
@@ -92,5 +92,5 @@ routes:
 --- request
 POST /t
 [{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}]
---- response_body
+--- response_body chomp
 [{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}]
