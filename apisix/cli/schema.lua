@@ -248,7 +248,7 @@ local config_schema = {
                             }
                         },
                     }
-                }
+                },
             }
         },
         nginx_config = {
