@@ -36,7 +36,8 @@ public class Provider {
     public static void main(String[] args) throws Exception {
 
         ClassPathXmlApplicationContext context = new ClassPathXmlApplicationContext(new String[]{"META-INF/spring/dubbo-demo-provider.xml"});
-
+        String jsonString = JSONObject.toJSONString(PoJo.getTestInstance());
+        System.out.println(jsonString);
         context.start();
         while (true) {
             try {

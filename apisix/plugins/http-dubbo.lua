@@ -175,7 +175,7 @@ local function get_dubbo_request(conf, ctx)
         params = core.request.get_body()
         if params then
             local end_of_params = core.string.sub(params, -1)
-            if not (end_of_params == "\n") then
+            if end_of_params ~= "\n" then
                 params = params .. "\n"
             end
         else
