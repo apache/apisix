@@ -513,5 +513,5 @@ passed
 GET /headers
 --- more_headers
 Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
---- response_body
-hello
+--- response_body_like
+.*"Authorization": "hello".*
