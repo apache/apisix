@@ -81,12 +81,6 @@ function install_dependencies_with_apt() {
     sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libldap2-dev unzip openresty-zlib-dev openresty-pcre-dev
 }
 
-# Install dependencies on mac osx
-function install_dependencies_on_mac_osx() {
-    # install OpenResty, etcd and some compilation tools
-    brew install openresty/brew/openresty luarocks lua@5.1 wget curl git pcre openldap
-}
-
 # Identify the different distributions and call the corresponding function
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
@@ -152,8 +146,6 @@ function main() {
         if [[ "${OS_NAME}" == "linux" ]]; then
             multi_distro_installation
             install_luarocks
-        elif [[ "${OS_NAME}" == "darwin" ]]; then
-            install_dependencies_on_mac_osx
         else
             echo "Non-supported distribution"
         fi

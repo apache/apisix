@@ -37,7 +37,7 @@ title: 安装依赖
 
 在支持的操作系统上运行以下指令即可安装 Apache APISIX dependencies。
 
-支持的操作系统版本：CentOS 7, Fedora 31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Arch Linux, Mac OSX。
+支持的操作系统版本：CentOS 7, Fedora 31 & 32, Ubuntu 16.04 & 18.04, Debian 9 & 10, Arch Linux。
 
 注意，对于 Arch Linux 来说，我们使用 AUR 源中的 `openresty`，所以需要 AUR Helper 才能正常安装。目前支持 `yay` 和 `pacaur`。
 
