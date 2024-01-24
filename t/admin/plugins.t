@@ -109,6 +109,7 @@ degraphql
 kafka-proxy
 grpc-transcode
 grpc-web
+http-dubbo
 public-api
 prometheus
 datadog
