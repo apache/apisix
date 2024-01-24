@@ -116,7 +116,7 @@ routes:
             serialized: true
             method: testPoJos
             service_version: 1.0.0
-            connect_timeout：100
+            connect_timeout: 100
             read_timeout: 100
             send_timeout: 100
     upstream_id: 1
