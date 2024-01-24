@@ -1096,7 +1096,7 @@ location /demo {
                         },
                         "body-transformer": {
                             "request": {
-                                "input_format": "none",
+                                "input_format": "plain",
                                 "template": "{\"message\": \"{* string.gsub(_body, 'not ', '') *}\"}"
                             }
                         }

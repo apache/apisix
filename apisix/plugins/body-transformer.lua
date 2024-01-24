@@ -34,7 +34,7 @@ local next              = next
 local transform_schema = {
     type = "object",
     properties = {
-        input_format = { type = "string", enum = {"xml", "json", "encoded", "args", "none"} },
+        input_format = { type = "string", enum = {"xml", "json", "encoded", "args", "plain"} },
         template = { type = "string" },
         template_is_base64 = { type = "boolean" },
     },
@@ -129,7 +129,7 @@ end
 local function transform(conf, body, typ, ctx, request_method)
     local out = {}
     local format = conf[typ].input_format
-    if (body or request_method == "GET") and format ~= "none" then
+    if (body or request_method == "GET") and format ~= "plain" then
         local err
         if format then
             out, err = decoders[format](body)
