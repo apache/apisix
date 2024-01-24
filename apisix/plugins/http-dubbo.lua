@@ -199,11 +199,10 @@ local function get_dubbo_request(conf, ctx)
 
     end
     local attachments = "{}\n"
-    local params_len = 0
-    if params then
-        params_len = #params
+    if params == nil then
+        params = ""
     end
-    local payload = #version + #service + #service_version + #method_name + #params_desc + params_len + #attachments
+    local payload = #version + #service + #service_version + #method_name + #params_desc + #params + #attachments
     return {
         first_byte4,
         requestId,
