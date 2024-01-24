@@ -35,6 +35,9 @@ local redis_type_to_additional_properties = {
             redis_password = {
                 type = "string", minLength = 0,
             },
+            redis_prefix = {
+                type = "string", minLength = 0, default = "limit_conn", pattern = "^[0-9a-zA-Z|_]+$"
+            },
             redis_database = {
                 type = "integer", minimum = 0, default = 0,
             },
@@ -61,6 +64,9 @@ local redis_type_to_additional_properties = {
             },
             redis_password = {
                 type = "string", minLength = 0,
+            },
+            redis_prefix = {
+                type = "string", minLength = 0, default = "limit_conn", pattern = "^[0-9a-zA-Z|_]+$"
             },
             redis_timeout = {
                 type = "integer", minimum = 1, default = 1000,

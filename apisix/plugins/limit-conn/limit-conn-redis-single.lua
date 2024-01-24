@@ -86,6 +86,9 @@ function _M.incoming(self, key, commit)
 
     self.committed = false
 
+    prefix = conf.redis_prefix
+    key = prefix .. ":" .. key
+
     local conn, err
     if commit then
         conn, err = red:incrby(key, 1)
@@ -134,6 +137,9 @@ local function leaving_thread(premature, self, key, req_latency)
     if not red then
         return red, err
     end
+
+    prefix = conf.redis_prefix
+    key = prefix .. ":" .. key
 
     local conn, err = red:incrby(key, -1)
     if not conn then
