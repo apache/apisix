@@ -165,9 +165,10 @@ function _M.body_filter(conf, ctx)
 
     --]]
     local status = ctx.var.upstream_trailer_grpc_status
+    local message = ctx.var.upstream_trailer_grpc_message
     if status ~= "" and status ~= nil then
         local status_str = "grpc-status:" .. status
-        local status_msg = "grpc-message:" .. ctx.var.upstream_trailer_grpc_message
+        local status_msg = "grpc-message:" .. ( message or "")
         local grpc_web_trailer = status_str .. "\r\n" .. status_msg .. "\r\n"
         local len = #grpc_web_trailer
 
