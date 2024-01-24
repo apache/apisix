@@ -158,7 +158,6 @@ routes:
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
-            params_type_desc:
             serialized: true
             method: testVoid
             service_version: 1.0.0
@@ -201,7 +200,6 @@ routes:
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
-            params_type_desc:
             serialized: true
             method: testFailure
             service_version: 1.0.0
