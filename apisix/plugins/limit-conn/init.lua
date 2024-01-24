@@ -23,6 +23,16 @@ if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
 end
 
+local redis_single_new
+local redis_cluster_new
+do
+    local redis_src = "apisix.plugins.limit-conn.limit-conn-redis-single"
+    redis_single_new = require(redis_src).new
+
+    local cluster_src = "apisix.plugins.limit-conn.limit-conn-redis-cluster"
+    redis_cluster_new = require(cluster_src).new
+end
+
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -31,9 +41,28 @@ local _M = {}
 
 
 local function create_limit_obj(conf)
-    core.log.info("create new limit-conn plugin instance")
-    return limit_conn_new(shdict_name, conf.conn, conf.burst,
-                          conf.default_conn_delay)
+    if conf.counter_type == "shared-dict" then
+        core.log.info("create new limit-conn plugin instance")
+        return limit_conn_new(shdict_name, conf.conn, conf.burst,
+                              conf.default_conn_delay)
+    elseif conf.counter_type == "redis" then
+
+        core.log.info("create new limit-conn redis plugin instance")
+
+        if conf.redis_type == "redis" then
+            return redis_single_new("plugin-limit-conn", conf, conf.conn, conf.burst,
+                                    conf.default_conn_delay)
+        end
+
+        if conf.redis_type == "redis-cluster" then
+            return redis_cluster_new("plugin-limit-conn", conf, conf.conn, conf.burst,
+                                     conf.default_conn_delay)
+        end
+
+        return nil, "redis_type enum not match"
+    else
+        return nil, "counter_type enum not match"
+    end
 end
 
 

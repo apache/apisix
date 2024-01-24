@@ -19,10 +19,72 @@ local limit_conn = require("apisix.plugins.limit-conn.init")
 
 
 local plugin_name = "limit-conn"
+
+local redis_type_to_additional_properties = {
+    redis = {
+        properties = {
+            redis_host = {
+                type = "string", minLength = 2
+            },
+            redis_port = {
+                type = "integer", minimum = 1, default = 6379,
+            },
+            redis_username = {
+                type = "string", minLength = 1,
+            },
+            redis_password = {
+                type = "string", minLength = 0,
+            },
+            redis_database = {
+                type = "integer", minimum = 0, default = 0,
+            },
+            redis_timeout = {
+                type = "integer", minimum = 1, default = 1000,
+            },
+            redis_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_ssl_verify = {
+                type = "boolean", default = false,
+            },
+        },
+        required = {"redis_host"},
+    },
+    ["redis-cluster"] = {
+        properties = {
+            redis_cluster_nodes = {
+                type = "array",
+                minItems = 2,
+                items = {
+                    type = "string", minLength = 2, maxLength = 100
+                },
+            },
+            redis_password = {
+                type = "string", minLength = 0,
+            },
+            redis_timeout = {
+                type = "integer", minimum = 1, default = 1000,
+            },
+            redis_cluster_name = {
+                type = "string",
+            },
+            redis_cluster_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_cluster_ssl_verify = {
+                type = "boolean", default = false,
+            },
+            dict_name = {
+                type = "string", minLength = 1,
+            },
+        },
+        required = {"redis_cluster_nodes", "redis_cluster_name", "dict_name"},
+    },
+}
 local schema = {
     type = "object",
     properties = {
-        conn = {type = "integer", exclusiveMinimum = 0},
+        conn = {type = "integer", exclusiveMinimum = 0},               -- limit.conn max
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         only_use_default_delay = {type = "boolean", default = false},
@@ -30,6 +92,16 @@ local schema = {
         key_type = {type = "string",
             enum = {"var", "var_combination"},
             default = "var",
+        },
+        redis_type = {
+            type = "string",
+            enum = {"redis", "redis-cluster"},
+            default = "redis",
+        },
+        counter_type = {
+            type = "string",
+            enum = {"redis", "shared-dict"},
+            default = "shared-dict",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -39,7 +111,25 @@ local schema = {
         },
         allow_degradation = {type = "boolean", default = false}
     },
-    required = {"conn", "burst", "default_conn_delay", "key"}
+    required = {"conn", "burst", "default_conn_delay", "key"},
+    ["if"] = {
+        properties = {
+            redis_type = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = redis_type_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                redis_type = {
+                    enum = {"redis-cluster"},
+                },
+            },
+        },
+        ["then"] = redis_type_to_additional_properties["redis-cluster"],
+    }
 }
 
 local _M = {
