@@ -108,7 +108,7 @@ upstreams:
       id: 1
 routes:
   -
-    uri: /testTimeout
+    uri: /t
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
