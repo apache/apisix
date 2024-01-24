@@ -96,7 +96,7 @@ function multi_distro_installation() {
     elif grep -Eqi "Arch" /etc/issue || grep -Eqi "EndeavourOS" /etc/issue || grep -Eq "Arch" /etc/*-release; then
         install_dependencies_with_aur
     else
-        echo "Non-supported operating system version"
+        echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
         exit 1
     fi
     install_apisix_runtime
@@ -114,7 +114,7 @@ function multi_distro_uninstallation() {
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
     else
-        echo "Non-supported operating system version"
+        echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
         exit 1
     fi
 }
@@ -148,7 +148,7 @@ function main() {
             install_luarocks
             return
         else
-            echo "Non-supported distribution"
+            echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
             exit 1
         fi
     fi
@@ -162,7 +162,7 @@ function main() {
             if [[ "${OS_NAME}" == "linux" ]]; then
                 multi_distro_uninstallation
             else
-                echo "Non-supported distribution"
+                echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
             fi
         ;;
         *)
