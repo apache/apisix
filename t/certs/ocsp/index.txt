@@ -1,0 +1,4 @@
+V	340109124821Z		1	unknown	/C=CN/OU=Apache APISIX/CN=ocsp.test.com1
+V	340109125024Z		2	unknown	/C=CN/OU=Apache APISIX/CN=ocsp.test.com2
+R	340109125151Z	240109125151Z	3	unknown	/C=CN/OU=Apache APISIX/CN=ocsp-revoked.test.com
+V	340109125746Z		5	unknown	/C=CN/OU=Apache APISIX/CN=ocsp test CA signer
