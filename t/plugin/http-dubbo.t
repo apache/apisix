@@ -97,7 +97,7 @@ POST /t
 
 
 
-=== TEST 2:  test_timeout
+=== TEST 3:  test_timeout
 --- apisix_yaml
 upstreams:
     - nodes:
@@ -145,7 +145,7 @@ passed
 
 
 
-=== TEST 2:  test_void
+=== TEST 4:  test_void
 --- apisix_yaml
 upstreams:
     - nodes:
@@ -189,7 +189,7 @@ passed
 
 
 
-=== TEST 2:  test_fail
+=== TEST 5:  test_fail
 --- apisix_yaml
 upstreams:
     - nodes:
