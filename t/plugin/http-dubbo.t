@@ -121,27 +121,9 @@ routes:
             send_timeout: 100
     upstream_id: 1
 #END
---- config
-    location /t {
-        content_by_lua_block {
-                local http = require "resty.http"
-                local httpc = http.new()
-                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/testTimeout"
-                local res, err = httpc:request_uri(uri, {method = "GET"})
-                if not res then
-                    ngx.say(err)
-                elseif res.status == 200 then
-                    ngx.say("passed")
-                return
-                else
-                    ngx.say("fail")
-                end
-        }
-    }
 --- request
 GET /t
---- response_body
-passed
+--- error_code: 502
 
 
 
@@ -156,7 +138,7 @@ upstreams:
       id: 1
 routes:
   -
-    uri: /testVoid
+    uri: /t
     plugins:
         http-dubbo:
             service_name: org.apache.dubbo.backend.DubboSerializationTestService
@@ -165,27 +147,8 @@ routes:
             service_version: 1.0.0
     upstream_id: 1
 #END
---- config
-    location /t {
-        content_by_lua_block {
-                local http = require "resty.http"
-                local httpc = http.new()
-                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/testVoid"
-                local res, err = httpc:request_uri(uri, {method = "GET"})
-                if not res then
-                    ngx.say(err)
-                elseif res.status == 200 then
-                    ngx.say("passed")
-                return
-                else
-                    ngx.say("fail")
-                end
-        }
-    }
 --- request
 GET /t
---- response_body
-passed
 
 
 
@@ -209,24 +172,6 @@ routes:
             service_version: 1.0.0
     upstream_id: 1
 #END
---- config
-    location /t {
-        content_by_lua_block {
-                local http = require "resty.http"
-                local httpc = http.new()
-                local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/test_fail"
-                local res, err = httpc:request_uri(uri, {method = "GET"})
-                if not res then
-                    ngx.say(err)
-                elseif res.status == 500 then
-                    ngx.say("passed")
-                return
-                else
-                    ngx.say("fail")
-                end
-        }
-    }
 --- request
 GET /t
---- response_body
-passed
+--- error_code: 500
