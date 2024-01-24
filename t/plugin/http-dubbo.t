@@ -124,6 +124,8 @@ routes:
 --- request
 GET /t
 --- error_code: 502
+--- error_log
+failed to connect to upstream
 
 
 
