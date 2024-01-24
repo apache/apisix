@@ -1071,6 +1071,7 @@ location /demo {
     }
 
 
+
 === TEST 16: test for missing Content-Type and skip body parsing
 --- config
     location /demo {
