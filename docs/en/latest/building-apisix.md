@@ -254,12 +254,6 @@ For the error `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t
   export PATH=/usr/local/openresty/nginx/sbin:$PATH
   ```
 
-- macOS default installation path (view homebrew):
-
-  ```shell
-  export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
-  ```
-
 #### Running a specific test case
 
 To run a specific test case, use the command below:
