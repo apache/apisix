@@ -252,12 +252,6 @@ APISIX 的一些特性需要在 OpenResty 中引入额外的 NGINX 模块。
   export PATH=/usr/local/openresty/nginx/sbin:$PATH
   ```
 
-- macOS 通过 `homebrew` 的默认安装路径：
-
-  ```shell
-  export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
-  ```
-
 ### 运行指定的测试用例
 
 使用以下命令运行指定的测试用例：
