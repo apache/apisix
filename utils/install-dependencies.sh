@@ -81,12 +81,6 @@ function install_dependencies_with_apt() {
     sudo apt-get install -y curl make gcc g++ cpanminus libpcre3 libpcre3-dev libldap2-dev unzip openresty-zlib-dev openresty-pcre-dev
 }
 
-# Install dependencies on mac osx
-function install_dependencies_on_mac_osx() {
-    # install OpenResty, etcd and some compilation tools
-    brew install openresty/brew/openresty luarocks lua@5.1 wget curl git pcre openldap
-}
-
 # Identify the different distributions and call the corresponding function
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
@@ -102,7 +96,7 @@ function multi_distro_installation() {
     elif grep -Eqi "Arch" /etc/issue || grep -Eqi "EndeavourOS" /etc/issue || grep -Eq "Arch" /etc/*-release; then
         install_dependencies_with_aur
     else
-        echo "Non-supported operating system version"
+        echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
         exit 1
     fi
     install_apisix_runtime
@@ -120,7 +114,7 @@ function multi_distro_uninstallation() {
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         sudo apt-get autoremove -y openresty-zlib-dev openresty-pcre-dev
     else
-        echo "Non-supported operating system version"
+        echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
         exit 1
     fi
 }
@@ -152,12 +146,11 @@ function main() {
         if [[ "${OS_NAME}" == "linux" ]]; then
             multi_distro_installation
             install_luarocks
-        elif [[ "${OS_NAME}" == "darwin" ]]; then
-            install_dependencies_on_mac_osx
+            return
         else
-            echo "Non-supported distribution"
+            echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
+            exit 1
         fi
-        return
     fi
 
     case_opt=$1
@@ -169,7 +162,7 @@ function main() {
             if [[ "${OS_NAME}" == "linux" ]]; then
                 multi_distro_uninstallation
             else
-                echo "Non-supported distribution"
+                echo "Non-supported distribution, APISIX is only supported on Linux-based systems"
             fi
         ;;
         *)
