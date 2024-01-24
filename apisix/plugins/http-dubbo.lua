@@ -45,7 +45,7 @@ local schema = {
         },
         params_type_desc = {
             type = "string",
-            minLength = 1,
+            default = ""
         },
         serialization_header_key = {
             type = "string"
@@ -67,7 +67,7 @@ local schema = {
             default = 6000
         }
     },
-    required = { "service_name", "method", "params_type_desc" },
+    required = { "service_name", "method" },
 }
 
 local _M = {
@@ -178,8 +178,6 @@ local function get_dubbo_request(conf, ctx)
             if end_of_params ~= "\n" then
                 params = params .. "\n"
             end
-        else
-            params = params .. "\n"
         end
     else
         local body_data = core.request.get_body()
@@ -197,8 +195,6 @@ local function get_dubbo_request(conf, ctx)
                     params = params .. core.json.encode(v) .. "\n"
                 end
             end
-        else
-            params = params .. "\n"
         end
 
     end

@@ -18,7 +18,10 @@ package org.apache.dubbo.backend.provider;
 
 import org.apache.dubbo.backend.DubboSerializationTestService;
 import org.apache.dubbo.backend.PoJo;
+import org.apache.dubbo.common.utils.ReflectUtils;
 
+import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
 
 public class DubboSerializationTestServiceImpl implements DubboSerializationTestService {
@@ -45,7 +48,7 @@ public class DubboSerializationTestServiceImpl implements DubboSerializationTest
     @Override
     public void testTimeout() {
         try {
-            TimeUnit.MINUTES.sleep(1);
+            TimeUnit.SECONDS.sleep(10);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

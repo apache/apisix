@@ -94,3 +94,135 @@ POST /t
 [{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}]
 --- response_body chomp
 [{"aBoolean":true,"aByte":1,"aDouble":1.1,"aFloat":1.2,"aInt":2,"aLong":3,"aShort":4,"aString":"aa","acharacter":"a","stringMap":{"key":"value"},"strings":["aa","bb"]}]
+
+
+
+=== TEST 2:  test_timeout
+--- apisix_yaml
+upstreams:
+    - nodes:
+        - host: 127.0.0.1
+          port: 30881
+          weight: 1
+      type: roundrobin
+      id: 1
+routes:
+  -
+    uri: /t
+    plugins:
+        http-dubbo:
+            service_name: org.apache.dubbo.backend.DubboSerializationTestService
+            params_type_desc: "[Lorg/apache/dubbo/backend/PoJo;"
+            serialized: true
+            method: testPoJos
+            service_version: 1.0.0
+            connect_timeout：100
+            read_timeout: 100
+            send_timeout: 100
+    upstream_id: 1
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local code, body = t('/t',
+                ngx.HTTP_GET
+            )
+            if code == 502 then
+                ngx.say("passed")
+            else
+                ngx.say("fail")
+            end
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2:  test_void
+--- apisix_yaml
+upstreams:
+    - nodes:
+        - host: 127.0.0.1
+          port: 30880
+          weight: 1
+      type: roundrobin
+      id: 1
+routes:
+  -
+    uri: /t
+    plugins:
+        http-dubbo:
+            service_name: org.apache.dubbo.backend.DubboSerializationTestService
+            params_type_desc:
+            serialized: true
+            method: testVoid
+            service_version: 1.0.0
+    upstream_id: 1
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local code, body = t('/t',
+                ngx.HTTP_GET
+            )
+            if code == 200 then
+                ngx.say("passed")
+            else
+                ngx.say("fail")
+            end
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2:  test_fail
+--- apisix_yaml
+upstreams:
+    - nodes:
+        - host: 127.0.0.1
+          port: 30880
+          weight: 1
+      type: roundrobin
+      id: 1
+routes:
+  -
+    uri: /t
+    plugins:
+        http-dubbo:
+            service_name: org.apache.dubbo.backend.DubboSerializationTestService
+            params_type_desc:
+            serialized: true
+            method: testFailure
+            service_version: 1.0.0
+    upstream_id: 1
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+
+            local code, body = t('/t',
+                ngx.HTTP_GET
+            )
+            if code == 500 then
+                ngx.say("passed")
+            else
+                ngx.say("fail")
+            end
+
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
