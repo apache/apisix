@@ -118,6 +118,7 @@ local function set_pem_ssl_key(sni, cert, pkey)
 
     return true
 end
+_M.set_pem_ssl_key = set_pem_ssl_key
 
 
 -- export the set cert/key process so we can hook it in the other plugins
