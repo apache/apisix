@@ -175,7 +175,7 @@ local function path_is_multi_type(path, type_val)
         return true
     end
 
-    if path == "apisix->ssl->key_encrypt_salt" then
+    if path == "apisix->data_encryption->keyring" then
         return true
     end
 

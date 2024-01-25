@@ -431,8 +431,8 @@ qr/"snis":\["update1.com","update2.com"\]/
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: "edd1c9f0985e76a2"
+    data_encryption:
+        keyring: "qeddd145sfvddff3"
 --- config
     location /t {
         content_by_lua_block {
@@ -468,8 +468,8 @@ false
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: "edd1c9f0985e76a2"
+    data_encryption:
+        keyring: "qeddd145sfvddff3"
 --- config
     location /t {
         content_by_lua_block {
