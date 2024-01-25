@@ -256,7 +256,7 @@ Content-Type: application/grpc-web
 --- exec
 curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
 --header 'Content-Type: application/grpc-web+proto' \
---header ''\''X-Grpc-Web: 1' \
+--header 'X-Grpc-Web: 1' \
 --data-binary '@./t/plugin/grpc-web/req.bin'
 --- response_body eval
 qr/grpc-status:0\x0d\x0agrpc-message:/
