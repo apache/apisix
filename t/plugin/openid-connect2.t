@@ -85,7 +85,7 @@ __DATA__
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
