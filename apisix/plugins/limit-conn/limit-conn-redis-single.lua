@@ -113,7 +113,6 @@ function _M.incoming(self, key, commit)
         conn = (conn_from_red or 0) + 1
     end
 
-    core.log.error("", "redis-conn-limit: ", conn, "connection limit reached")
     if conn > max then
         -- make the excessive connections wait
         return self.unit_delay * floor((conn - 1) / max), conn
