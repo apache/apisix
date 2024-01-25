@@ -337,8 +337,8 @@ GET /t
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: null
+    data_encryption:
+        keyring: null
 --- config
     location /t {
         content_by_lua_block {
