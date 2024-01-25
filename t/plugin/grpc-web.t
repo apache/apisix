@@ -254,12 +254,9 @@ Content-Type: application/grpc-web
 
 === TEST 12: verify trailers in response
 --- exec
-printf '\u0000\u0000\u0000\u0000\u0007\n\u0005world' | curl 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
-                      -H 'Accept: */*' \
-                      -H 'Content-Type: application/grpc-web+proto' \
-                      -H 'X-Grpc-Web: 1' \
-                      -H 'X-User-Agent: grpc-web-javascript/0.1' \
-                      --data-binary '@-' \
-                      --compressed -o -
+curl -iv --location 'http://127.0.0.1:1984/grpc/web/a6.RouteService/GetRoute' \
+--header 'Content-Type: application/grpc-web+proto' \
+--header ''\''X-Grpc-Web: 1' \
+--data-binary '@./t/plugin/grpc-web/req.bin'
 --- response_body eval
 qr/grpc-status:0\x0d\x0agrpc-message:/
