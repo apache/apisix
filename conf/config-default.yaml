@@ -584,22 +584,23 @@ plugin_attr:          # Plugin attributes
       ip: 127.0.0.1                         # Set the IP.
       port: 9091                            # Set the port.
     # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
-    #  http_status:
-    #    extra_labels:
-    #      - upstream_addr: $upstream_addr
-    #      - status: $upstream_status  # The label name does not need to be the same as the variable name.
-    #  http_latency:
-    #    extra_labels:
-    #      - upstream_addr: $upstream_addr
-    #  bandwidth:
-    #    extra_labels:
-    #      - upstream_addr: $upstream_addr
+    #   http_status:
+    #     extra_labels:
+    #       - upstream_addr: $upstream_addr
+    #       - status: $upstream_status  # The label name does not need to be the same as the variable name.
+    #   http_latency:
+    #     extra_labels:
+    #       - upstream_addr: $upstream_addr
+    #   bandwidth:
+    #     extra_labels:
+    #       - upstream_addr: $upstream_addr
     # default_buckets:
     #   - 10
     #   - 50
     #   - 100
     #   - 200
     #   - 500
+    # expire: 86400                         # the expiration time after metrics become inactive, unit: second
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.
