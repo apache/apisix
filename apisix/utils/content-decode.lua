@@ -19,6 +19,7 @@ local zlib = require("ffi-zlib")
 local str_buffer = require("string.buffer")
 local is_br_libs_loaded, brotli = pcall(require, "brotli")
 local content_decode_funcs = {}
+local _M = {}
 
 
 local function inflate_gzip(data)
@@ -99,7 +100,7 @@ local function brotli_decode(data)
 end
 
 if is_br_libs_loaded then
-    content_decode_funcs.brotli = brotli_decode
+    content_decode_funcs.br = brotli_decode
 end
 
 
