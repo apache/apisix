@@ -119,7 +119,7 @@ local schema = {
         },
         allow_degradation = {type = "boolean", default = false}
     },
-    required = {"conn", "burst", "default_conn_delay"},
+    required = {"conn", "burst", "default_conn_delay", "key"},
     ["if"] = {
         properties = {
             counter_type = {
