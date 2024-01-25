@@ -27,9 +27,7 @@ local pairs       = pairs
 local ipairs      = ipairs
 local type        = type
 local pcall       = pcall
-local zlib        = require("ffi-zlib")
-local str_buffer  = require("string.buffer")
-local is_br_libs_loaded, brotli = pcall(require, "brotli")
+local content_decode = require("apisix.utils.content-decode")
 
 
 local lrucache = core.lrucache.new({
@@ -203,83 +201,6 @@ local function check_set_headers(headers)
 end
 
 
-local function inflate_gzip(data)
-    local inputs = str_buffer.new():set(data)
-    local outputs = str_buffer.new()
-
-    local read_inputs = function(size)
-        local data = inputs:get(size)
-        if data == "" then
-            return nil
-        end
-        return data
-    end
-
-    local write_outputs = function(data)
-        return outputs:put(data)
-    end
-
-    local ok, err = zlib.inflateGzip(read_inputs, write_outputs)
-    if not ok then
-        return nil, err
-    end
-
-    return outputs:get()
-end
-
-
-local function brotli_stream_decode(read_inputs, write_outputs)
-    -- read 64k data per times
-    local read_size = 64 * 1024
-    local decompressor = brotli.decompressor:new()
-
-    local chunk, ok, res
-    repeat
-        chunk = read_inputs(read_size)
-        if chunk then
-            ok, res = pcall(function()
-                return decompressor:decompress(chunk)
-            end)
-        else
-            ok, res = pcall(function()
-                return decompressor:finish()
-            end)
-        end
-        if not ok then
-            return false, res
-        end
-        write_outputs(res)
-    until not chunk
-
-    return true, nil
-end
-
-
-local function brotli_decode(data)
-    local inputs = str_buffer.new():set(data)
-    local outputs = str_buffer.new()
-
-    local read_inputs = function(size)
-        local data = inputs:get(size)
-        if data == "" then
-            return nil
-        end
-        return data
-    end
-
-    local write_outputs = function(data)
-        return outputs:put(data)
-    end
-
-    local ok, err = brotli_stream_decode(read_inputs, write_outputs)
-    if not ok then
-        return nil, err
-    end
-
-    return outputs:get()
-end
-
-
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -340,24 +261,19 @@ function _M.body_filter(conf, ctx)
             return
         end
 
-        local err
-        if ctx.response_encoding == "gzip" then
-            body, err = inflate_gzip(body)
-            if err ~= nil then
-                core.log.error("filters may not work as expected, inflate gzip err: ", err)
+        if ctx.response_encoding ~= nil then
+            decoder = content_decode.dispatch_decoder(ctx.response_encoding)
+            if not decoder then
+                core.log.error("filters may not work as expected ",
+                               "due to unsupported compression encoding type: ",
+                               ctx.response_encoding)
                 return
             end
-        elseif ctx.response_encoding == "br" and is_br_libs_loaded then
-            body, err = brotli_decode(body)
+            local body, err = decoder(body)
             if err ~= nil then
-                core.log.error("filters may not work as expected, brotli decode err: ", err)
+                core.log.error("filters may not work as expected: ", err)
                 return
             end
-        elseif ctx.response_encoding ~= nil then
-            core.log.error("filters may not work as expected ",
-                           "due to unsupported compression encoding type: ",
-                           ctx.response_encoding)
-            return
         end
 
         for _, filter in ipairs(conf.filters) do
