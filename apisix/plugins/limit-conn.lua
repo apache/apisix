@@ -20,7 +20,7 @@ local limit_conn = require("apisix.plugins.limit-conn.init")
 
 local plugin_name = "limit-conn"
 
-local redis_type_to_additional_properties = {
+local counter_type_to_additional_properties = {
     redis = {
         properties = {
             redis_host = {
@@ -52,6 +52,10 @@ local redis_type_to_additional_properties = {
             },
         },
         required = {"redis_host"},
+    },
+    ["shared-dict"] = {
+        properties = {
+        },
     },
     ["redis-cluster"] = {
         properties = {
@@ -94,19 +98,17 @@ local schema = {
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         only_use_default_delay = {type = "boolean", default = false},
-        key = {type = "string"},
-        key_type = {type = "string",
+        key_type = {
+            type = "string",
             enum = {"var", "var_combination"},
             default = "var",
         },
-        redis_type = {
-            type = "string",
-            enum = {"redis", "redis-cluster"},
-            default = "redis",
+        key = {
+            type = "string", minLength = 1
         },
         counter_type = {
             type = "string",
-            enum = {"redis", "shared-dict"},
+            enum = {"redis", "redis-cluster", "shared-dict"},
             default = "shared-dict",
         },
         rejected_code = {
@@ -117,24 +119,34 @@ local schema = {
         },
         allow_degradation = {type = "boolean", default = false}
     },
-    required = {"conn", "burst", "default_conn_delay", "key"},
+    required = {"conn", "burst", "default_conn_delay"},
     ["if"] = {
         properties = {
-            redis_type = {
+            counter_type = {
                 enum = {"redis"},
             },
         },
     },
-    ["then"] = redis_type_to_additional_properties.redis,
+    ["then"] = counter_type_to_additional_properties.redis,
     ["else"] = {
         ["if"] = {
             properties = {
-                redis_type = {
-                    enum = {"redis-cluster"},
+                counter_type = {
+                    enum = {"shared-dict"},
                 },
             },
         },
-        ["then"] = redis_type_to_additional_properties["redis-cluster"],
+        ["then"] = counter_type_to_additional_properties["shared-dict"],
+        ["else"] = {
+            ["if"] = {
+                properties = {
+                    counter_type = {
+                        enum = {"redis-cluster"},
+                    },
+                },
+            },
+            ["then"] = counter_type_to_additional_properties["redis-cluster"],
+        }
     }
 }
 

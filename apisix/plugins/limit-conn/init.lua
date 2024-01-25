@@ -49,17 +49,15 @@ local function create_limit_obj(conf)
 
         core.log.info("create new limit-conn redis plugin instance")
 
-        if conf.redis_type == "redis" then
-            return redis_single_new("plugin-limit-conn", conf, conf.conn, conf.burst,
-                                    conf.default_conn_delay)
-        end
+        return redis_single_new("plugin-limit-conn", conf, conf.conn, conf.burst,
+                                conf.default_conn_delay)
 
-        if conf.redis_type == "redis-cluster" then
-            return redis_cluster_new("plugin-limit-conn", conf, conf.conn, conf.burst,
-                                     conf.default_conn_delay)
-        end
+    elseif conf.counter_type == "redis-cluster" then
 
-        return nil, "redis_type enum not match"
+        core.log.info("create new limit-conn redis-cluster plugin instance")
+
+        return redis_cluster_new("plugin-limit-conn", conf, conf.conn, conf.burst,
+                                 conf.default_conn_delay)
     else
         return nil, "counter_type enum not match"
     end
