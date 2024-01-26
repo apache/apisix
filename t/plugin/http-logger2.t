@@ -95,6 +95,60 @@ add_block_preprocessor(sub {
             }
         }
     }
+
+    server {
+        listen 11451;
+        gzip on;
+        gzip_types *;
+        gzip_min_length 1;
+        location /gzip_hello {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local s = "gzip hello world"
+                ngx.header['Content-Length'] = #s + 1
+                ngx.say(s)
+            }
+        }
+    }
+
+    server {
+        listen 11452;
+        location /brotli_hello {
+            content_by_lua_block {
+                ngx.req.read_body()
+                local s = "brotli hello world"
+                ngx.header['Content-Length'] = #s + 1
+                ngx.say(s)
+            }
+            header_filter_by_lua_block {
+                local conf = {
+                    comp_level = 6,
+                    http_version = 1.1,
+                    lgblock = 0,
+                    lgwin = 19,
+                    min_length = 1,
+                    mode = 0,
+                    types = "*",
+                }
+                local brotli = require("apisix.plugins.brotli")
+                brotli.header_filter(conf, ngx.ctx)
+            }
+            body_filter_by_lua_block {
+                local conf = {
+                    comp_level = 6,
+                    http_version = 1.1,
+                    lgblock = 0,
+                    lgwin = 19,
+                    min_length = 1,
+                    mode = 0,
+                    types = "*",
+                }
+                local brotli = require("apisix.plugins.brotli")
+                brotli.body_filter(conf, ngx.ctx)
+            }
+        }
+    }
+
 _EOC_
 
     $block->set_value("http_config", $http_config);
@@ -306,21 +360,6 @@ passed
 
 
 === TEST 9: test fetch request body and response body route
---- http_config
-server {
-    listen 11451;
-    gzip on;
-    gzip_types *;
-    gzip_min_length 1;
-    location /gzip_hello {
-        content_by_lua_block {
-            ngx.req.read_body()
-            local s = "gzip hello world"
-            ngx.header['Content-Length'] = #s + 1
-            ngx.say(s)
-        }
-    }
-}
 --- request
 GET /gzip_hello
 --- more_headers
@@ -372,44 +411,6 @@ passed
 
 
 === TEST 11: test fetch request body and response body route
---- http_config
-server {
-    listen 11452;
-    location /brotli_hello {
-        content_by_lua_block {
-            ngx.req.read_body()
-            local s = "brotli hello world"
-            ngx.header['Content-Length'] = #s + 1
-            ngx.say(s)
-        }
-        header_filter_by_lua_block {
-            local conf = {
-                comp_level = 6,
-                http_version = 1.1,
-                lgblock = 0,
-                lgwin = 19,
-                min_length = 1,
-                mode = 0,
-                types = "*",
-            }
-            local brotli = require("apisix.plugins.brotli")
-            brotli.header_filter(conf, ngx.ctx)
-        }
-        body_filter_by_lua_block {
-            local conf = {
-                comp_level = 6,
-                http_version = 1.1,
-                lgblock = 0,
-                lgwin = 19,
-                min_length = 1,
-                mode = 0,
-                types = "*",
-            }
-            local brotli = require("apisix.plugins.brotli")
-            brotli.body_filter(conf, ngx.ctx)
-        }
-    }
-}
 --- request
 GET /brotli_hello
 --- more_headers
