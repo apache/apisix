@@ -265,7 +265,162 @@ response.body:test-http-logger-response
 
 
 
-=== TEST 8: test default Authorization header sent to the log server
+=== TEST 8: set fetch request body and response body route - gzip
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["POST"],
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:12001/http-logger/center?query[]=response.body",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:11451": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/gzip_hello"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: test fetch request body and response body route
+--- http_config
+server {
+    listen 11451;
+    gzip on;
+    gzip_types *;
+    gzip_min_length 1;
+    location /gzip_hello {
+        content_by_lua_block {
+            ngx.req.read_body()
+            local s = "gzip hello world"
+            ngx.header['Content-Length'] = #s + 1
+            ngx.say(s)
+        }
+    }
+}
+--- request
+GET /gzip_hello
+--- more_headers
+Accept-Encoding: gzip
+--- error_log
+response.body:gzip hello world
+--- wait: 1.5
+
+
+
+=== TEST 10: set fetch request body and response body route - brotli
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["POST"],
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:12001/http-logger/center?query[]=response.body",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:11452": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/brotli_hello"
+                }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: test fetch request body and response body route
+--- http_config
+server {
+    listen 11452;
+    location /brotli_hello {
+        content_by_lua_block {
+            ngx.req.read_body()
+            local s = "brotli hello world"
+            ngx.header['Content-Length'] = #s + 1
+            ngx.say(s)
+        }
+        header_filter_by_lua_block {
+            local conf = {
+                comp_level = 6,
+                http_version = 1.1,
+                lgblock = 0,
+                lgwin = 19,
+                min_length = 1,
+                mode = 0,
+                types = "*",
+            }
+            local brotli = require("apisix.plugins.brotli")
+            brotli.header_filter(conf, ngx.ctx)
+        }
+        body_filter_by_lua_block {
+            local conf = {
+                comp_level = 6,
+                http_version = 1.1,
+                lgblock = 0,
+                lgwin = 19,
+                min_length = 1,
+                mode = 0,
+                types = "*",
+            }
+            local brotli = require("apisix.plugins.brotli")
+            brotli.body_filter(conf, ngx.ctx)
+        }
+    }
+}
+--- request
+GET /brotli_hello
+--- more_headers
+Accept-Encoding: br
+--- error_log
+response.body:brotli hello world
+--- wait: 1.5
+
+
+
+=== TEST 12: test default Authorization header sent to the log server
 --- config
     location /t {
         content_by_lua_block {
@@ -304,7 +459,7 @@ passed
 
 
 
-=== TEST 9: hit
+=== TEST 13: hit
 --- request
 POST /http-logger/test
 test-http-logger-request
@@ -314,7 +469,7 @@ received Authorization header: [nil]
 
 
 
-=== TEST 10: add default path
+=== TEST 14: add default path
 --- config
     location /t {
         content_by_lua_block {
@@ -352,7 +507,7 @@ passed
 
 
 
-=== TEST 11: hit
+=== TEST 15: hit
 --- request
 GET /http-logger/test
 --- error_log
