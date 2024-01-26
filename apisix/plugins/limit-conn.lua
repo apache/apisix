@@ -84,11 +84,8 @@ local counter_type_to_additional_properties = {
             redis_cluster_ssl_verify = {
                 type = "boolean", default = false,
             },
-            dict_name = {
-                type = "string", minLength = 1,
-            },
         },
-        required = {"redis_cluster_nodes", "redis_cluster_name", "dict_name"},
+        required = {"redis_cluster_nodes", "redis_cluster_name"},
     },
 }
 local schema = {
