@@ -216,14 +216,12 @@ services:
     restart: unless-stopped
     ports:
       - "9201:9201"
-      - "9301:9301"
     environment:
       ES_JAVA_OPTS: -Xms512m -Xmx512m
       discovery.type: single-node
       ELASTIC_USERNAME: elastic
       ELASTIC_PASSWORD: 123456
       http.port: 9201
-      transport.tcp.port: 9301
       xpack.security.enabled: 'true'
 
 
