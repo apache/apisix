@@ -391,14 +391,25 @@ POST /hello?name=qwerty
 abcdef
 --- response_body
 hello world
-
 --- error_log eval
 qr/send data to rocketmq: \{.*"body":"hello world\\n"/
 --- wait: 2
 
 
 
-=== TEST 12: set route include_resp_body = true - gzip
+=== TEST 12: hit route, expr eval fail
+--- request
+POST /hello?name=zcxv
+abcdef
+--- response_body
+hello world
+--- no_error_log eval
+qr/send data to rocketmq: \{.*"body":"hello world\\n"/
+--- wait: 2
+
+
+
+=== TEST 13: set route include_resp_body = true - gzip
 --- config
     location /t {
         content_by_lua_block {
@@ -437,7 +448,7 @@ passed
 
 
 
-=== TEST 13: hit
+=== TEST 14: hit
 --- http_config
 server {
     listen 11451;
@@ -463,7 +474,7 @@ qr/send data to rocketmq: \{.*"body":"gzip hello world\\n"/
 
 
 
-=== TEST 14: set route include_resp_body - brotli
+=== TEST 15: set route include_resp_body - brotli
 --- config
     location /t {
         content_by_lua_block {
@@ -502,7 +513,7 @@ passed
 
 
 
-=== TEST 15: hit route, expr eval success
+=== TEST 16: hit route, expr eval success
 --- http_config
 server {
     listen 11452;
@@ -547,18 +558,6 @@ GET /brotli_hello
 Accept-Encoding: br
 --- error_log eval
 qr/send data to rocketmq: \{.*"body":"brotli hello world\\n"/
---- wait: 2
-
-
-
-=== TEST 16: hit route, expr eval fail
---- request
-POST /hello?name=zcxv
-abcdef
---- response_body
-hello world
---- no_error_log eval
-qr/send data to rocketmq: \{.*"body":"hello world\\n"/
 --- wait: 2
 
 

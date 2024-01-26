@@ -273,7 +273,7 @@ response.body:test-http-logger-response
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["POST"],
+                        "methods": ["GET"],
                         "plugins": {
                             "http-logger": {
                                 "uri": "http://127.0.0.1:12001/http-logger/center?query[]=response.body",
@@ -339,7 +339,7 @@ response.body:gzip hello world
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
-                        "methods": ["POST"],
+                        "methods": ["GET"],
                         "plugins": {
                             "http-logger": {
                                 "uri": "http://127.0.0.1:12001/http-logger/center?query[]=response.body",
