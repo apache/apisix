@@ -183,7 +183,7 @@ local function get_dubbo_request(conf, ctx)
         local body_data = core.request.get_body()
         if body_data then
             local lua_object = core.json.decode(body_data);
-            for k, v in pairs(lua_object) do
+            for _, v in pairs(lua_object) do
                 local pt = type(v)
                 if pt == "nil" then
                     params = params .. "null" .. "\n"
@@ -202,7 +202,8 @@ local function get_dubbo_request(conf, ctx)
     if params == nil then
         params = ""
     end
-    local payload = #version + #service + #service_version + #method_name + #params_desc + #params + #attachments
+    local payload = #version + #service + #service_version
+            + #method_name + #params_desc + #params + #attachments
     return {
         first_byte4,
         requestId,
@@ -229,21 +230,21 @@ function _M.before_proxy(conf, ctx)
         return 502
     end
     local request = get_dubbo_request(conf, ctx)
-    local bytes, err = sock:send(request)
+    local bytes, _ = sock:send(request)
     if bytes > 0 then
-        local header, err = sock:receiveany(16);
+        local header, _ = sock:receiveany(16);
         if header then
             local header_info = parse_dubbo_header(header)
             if header_info and header_info.status == 20 then
                 local readline = sock:receiveuntil("\n")
-                local body_status, err, partial = readline()
+                local body_status, _, _ = readline()
                 if body_status then
                     local response_status = core.string.sub(body_status, 1, 1)
                     if response_status == "2" or response_status == "5" then
                         sock:close()
                         return 200
                     elseif response_status == "1" or response_status == "4" then
-                        local body, err, partial = readline()
+                        local body, _, _ = readline()
                         sock:close()
                         return 200, body
                     end
