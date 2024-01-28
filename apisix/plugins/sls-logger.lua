@@ -33,6 +33,21 @@ local schema = {
     type = "object",
     properties = {
         include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         timeout = {type = "integer", minimum = 1, default= 5000},
         log_format = {type = "object"},
         host = {type = "string"},
@@ -81,7 +96,7 @@ local function send_tcp_data(route_conf, log_message)
                       .. "] err: " .. err
     end
 
-    core.log.debug("sls logger send data ", log_message)
+    core.log.warn("sls logger send data ", log_message)
     ok, err = sock:send(log_message)
     if not ok then
         res = false
@@ -125,8 +140,12 @@ local function handle_log(entries)
     if not data then
         return true
     end
-
+    core.log.warn(234)
     return send_tcp_data(entries[1].route_conf, data)
+end
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 -- log phase in APISIX
@@ -146,6 +165,7 @@ function _M.log(conf, ctx)
     }
     local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
                                       ctx.var.pid, json_str, structured_data)
+    core.log.info("collect_data:" .. core.json.encode(rf5424_data))
 
     local process_context = {
         data = rf5424_data,
