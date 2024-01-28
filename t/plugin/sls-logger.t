@@ -432,7 +432,7 @@ hello world
 
 
 
-=== TEST 14: add plugin with 'include_resp_body' setting, collect response log
+=== TEST 15: add plugin with 'include_resp_body' setting, collect response log
 --- config
     location /t {
         content_by_lua_block {

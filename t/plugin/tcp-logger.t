@@ -513,7 +513,95 @@ opentracing
 
 
 
-=== TEST 15: check tls log
+=== TEST 15: add plugin with 'include_req_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/tcp-logger', ngx.HTTP_DELETE)
+            local code, body1 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 43000,
+                                "tls": true,
+                                "batch_max_size": 1,
+                                "include_req_body": true,
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body = t("/opentracing", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- request
+GET /t
+--- error_log
+"body":"{\"sample_payload\":\"hello\"}"
+
+
+
+=== TEST 16: add plugin with 'include_resp_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/tcp-logger', ngx.HTTP_DELETE)
+            local code, body1 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 43000,
+                                "tls": true,
+                                "batch_max_size": 1,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body = t("/opentracing", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- request
+GET /t
+--- error_log
+"body":"opentracing\n"
+
+
+
+=== TEST 17: check tls log
 --- exec
 tail -n 1 ci/pod/vector/tls-datas.log
 --- response_body eval
