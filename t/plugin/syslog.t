@@ -477,7 +477,99 @@ passed
 
 
 
-=== TEST 15: access
+=== TEST 15: add plugin with 'include_req_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/syslog', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5140,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- request
+GET /t
+--- error_log
+"body\":\"{\\\"sample_payload\\\":\\\"hello\\\"}\"
+
+
+
+=== TEST 16: add plugin with 'include_resp_body' setting, collect response log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/syslog', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "flush_limit": 1,
+                                "host" : "127.0.0.1",
+                                "port" : 5140,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- request
+GET /t
+--- error_log
+"body\":\"hello world\\n\"
+
+
+
+=== TEST 17: access
 --- extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
     local json = require("apisix.core.json")
@@ -500,7 +592,7 @@ push_entry is called with data
 
 
 
-=== TEST 16: check log
+=== TEST 18: check log
 --- exec
 tail -n 1 ci/pod/vector/syslog-tcp.log
 --- response_body eval
@@ -508,7 +600,7 @@ qr/.*vip.*/
 
 
 
-=== TEST 17: test udp mode
+=== TEST 19: test udp mode
 --- config
     location /t {
         content_by_lua_block {
@@ -548,13 +640,13 @@ passed
 
 
 
-=== TEST 18: hit
+=== TEST 20: hit
 --- request
 GET /hello
 
 
 
-=== TEST 19: check log
+=== TEST 21: check log
 --- exec
 tail -n 1 ci/pod/vector/syslog-udp.log
 --- response_body eval

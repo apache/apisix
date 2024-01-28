@@ -88,7 +88,7 @@ function _M.push_entry(conf, ctx, entry)
 
     local rfc5424_data = rfc5424.encode("SYSLOG", "INFO", ctx.var.host,
                                 "apisix", ctx.var.pid, json_str)
-
+    core.log.info("collect_data:" .. core.json.encode(rfc5424_data))
     if batch_processor_manager:add_entry(conf, rfc5424_data) then
         return
     end
