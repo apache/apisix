@@ -33,7 +33,10 @@ add_block_preprocessor(sub {
         location /v3/logs {
             content_by_lua_block {
                 local core = require("apisix.core")
-
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.WARN, "skywalking-logger body: ", data)
                 core.log.warn(core.json.encode(core.request.get_body(), true))
             }
         }
@@ -381,3 +384,4 @@ qr/\\\"serviceInstance\\\":\\\"\\\"/
     }
 --- error_log
 \"body\":\"opentracing\\n\"
+

@@ -93,7 +93,7 @@ local function send_http_data(conf, log_message)
     local host = url_decoded.host
     local port = url_decoded.port
 
-    core.log.info("sending a batch logs to ", conf.endpoint_addr, ", log_message: ", log_message)
+    core.log.info("sending a batch logs to ", conf.endpoint_addr)
 
     local httpc = http.new()
     httpc:set_timeout(conf.timeout * 1000)
