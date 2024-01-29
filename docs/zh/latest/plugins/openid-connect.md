@@ -244,7 +244,7 @@ the error request to the redirect_uri path, but there's no session state found
 
 #### 2. 缺少 Session Secret
 
-如果您在[standalone 模式](/apisix/product/deployment-modes#standalone-mode)下部署 APISIX，请确保配置了 `session.secret`。
+如果您在[standalone 模式](../../../en/latest/deployment-modes.md#standalone)下部署 APISIX，请确保配置了 `session.secret`。
 
 用户 session 作为 cookie 存储在浏览器中，并使用 session 密钥进行加密。如果没有通过 `session.secret` 属性配置机密，则会自动生成机密并将其保存到 etcd。然而，在独立模式下，etcd 不再是配置中心。因此，您应该在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
 
