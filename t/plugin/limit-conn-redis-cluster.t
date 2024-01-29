@@ -89,7 +89,7 @@ __DATA__
                 default_conn_delay = 0.1,
                 rejected_code = 503,
                 key = 'remote_addr',
-                counter_type = "redis-cluster",
+                policy = "redis-cluster",
                 redis_cluster_nodes = {
                     "127.0.0.1:5000",
                     "127.0.0.1:5003",
@@ -127,7 +127,7 @@ done
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis-cluster",
+                                "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
                                     "127.0.0.1:5003",
@@ -184,7 +184,7 @@ GET /test_concurrency
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis-cluster",
+                                "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
                                     "127.0.0.1:5002"
@@ -241,7 +241,7 @@ GET /test_concurrency
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis-cluster",
+                                "policy": "redis-cluster",
                                 "redis_prefix": "test",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
@@ -298,7 +298,7 @@ GET /test_concurrency
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis-cluster",
+                                "policy": "redis-cluster",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:7001",
                                     "127.0.0.1:7002",

@@ -20,7 +20,7 @@ local limit_conn = require("apisix.plugins.limit-conn.init")
 
 local plugin_name = "limit-conn"
 
-local counter_type_to_additional_properties = {
+local policy_to_additional_properties = {
     redis = {
         properties = {
             redis_host = {
@@ -103,7 +103,7 @@ local schema = {
             enum = {"var", "var_combination"},
             default = "var",
         },
-        counter_type = {
+        policy = {
             type = "string",
             enum = {"redis", "redis-cluster", "shared-dict"},
             default = "shared-dict",
@@ -119,30 +119,30 @@ local schema = {
     required = {"conn", "burst", "default_conn_delay", "key"},
     ["if"] = {
         properties = {
-            counter_type = {
+            policy = {
                 enum = {"redis"},
             },
         },
     },
-    ["then"] = counter_type_to_additional_properties.redis,
+    ["then"] = policy_to_additional_properties.redis,
     ["else"] = {
         ["if"] = {
             properties = {
-                counter_type = {
+                policy = {
                     enum = {"shared-dict"},
                 },
             },
         },
-        ["then"] = counter_type_to_additional_properties["shared-dict"],
+        ["then"] = policy_to_additional_properties["shared-dict"],
         ["else"] = {
             ["if"] = {
                 properties = {
-                    counter_type = {
+                    policy = {
                         enum = {"redis-cluster"},
                     },
                 },
             },
-            ["then"] = counter_type_to_additional_properties["redis-cluster"],
+            ["then"] = policy_to_additional_properties["redis-cluster"],
         }
     }
 }

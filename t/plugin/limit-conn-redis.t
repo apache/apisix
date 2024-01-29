@@ -89,7 +89,7 @@ __DATA__
                 default_conn_delay = 0.1,
                 rejected_code = 503,
                 key = 'remote_addr',
-                counter_type = "redis",
+                policy = "redis",
                 redis_host = 'localhost',
             })
             if not ok then
@@ -121,7 +121,7 @@ done
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379
                             }
@@ -174,7 +174,7 @@ GET /test_concurrency
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379
                             }
@@ -227,7 +227,7 @@ GET /test_concurrency
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379
                             }
@@ -280,7 +280,7 @@ GET /test_concurrency
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "remote_addr",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379,
                                 "redis_username": "alice",
@@ -336,7 +336,7 @@ GET /test_concurrency
                                 "rejected_code": 503,
                                 "key": "remote_addr",
                                 "conn": 1,
-                                "counter_type": "redis"
+                                "policy": "redis"
                             }
                         },
                         "upstream": {
@@ -461,7 +461,7 @@ passed
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "http_x_real_ip",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1"
                             }
                         },
@@ -554,7 +554,7 @@ limit key: 10.10.10.1route
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
                                 "key": "http_x_forwarded_for",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1"
                             }
                         },
@@ -646,7 +646,7 @@ limit key: 10.10.10.2route
                                 "burst": 50,
                                 "default_conn_delay": 0.1,
                                 "key": "remote_addr",
-                                "counter_type": "redis",
+                                "policy": "redis",
                                 "redis_host": "127.0.0.1"
                             }
                         },
