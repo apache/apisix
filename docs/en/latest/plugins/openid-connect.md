@@ -245,7 +245,7 @@ You should also ensure that the `redirect_uri` include the scheme, such as `http
 
 #### 2. Missing Session Secret
 
-If you deploy APISIX in the [standalone mode](/apisix/production/deployment-modes#standalone-mode), make sure that `session.secret` is configured.
+If you deploy APISIX in the [standalone mode](../deployment-modes#standalone-mode), make sure that `session.secret` is configured.
 
 User sessions are stored in browser as cookies and encrypted with session secret. The secret is automatically generated and saved to etcd if no secret is configured through the `session.secret` attribute. However, in standalone mode, etcd is no longer the configuration center. Therefore, you should explicitly configure `session.secret` for this plugin in the YAML configuration center `apisix.yaml`.
 
