@@ -471,3 +471,47 @@ GET /hello
 Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
 --- response_body
 hello world
+
+
+
+=== TEST 22: enable jwt decrypt plugin with test upstream route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwe-decrypt": {
+                            "header": "Authorization",
+                            "forward_header": "Authorization"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "httpbin.org": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/headers"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23:  verify in upstream header
+--- request
+GET /headers
+--- more_headers
+Authorization: eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ00ifQ..MTIzNDU2Nzg5MDEy._0DrWD0.vl-ydutnNuMpkYskwNqu-Q
+--- response_body_like
+.*"Authorization": "hello".*

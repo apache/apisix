@@ -57,15 +57,9 @@ do
     fi
 done
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    sed  -i "" "s/\- proxy-mirror .*/#\- proxy-mirror/g" conf/config-default.yaml
-    sed  -i "" "s/\- proxy-cache .*/#\- proxy-cache/g" conf/config-default.yaml
-    sed  -i "" "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
-else
-    sed  -i "s/\- proxy-mirror/#\- proxy-mirror/g" conf/config-default.yaml
-    sed  -i "s/\- proxy-cache/#\- proxy-cache/g" conf/config-default.yaml
-    sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
-fi
+sed  -i "s/\- proxy-mirror/#\- proxy-mirror/g" conf/config-default.yaml
+sed  -i "s/\- proxy-cache/#\- proxy-cache/g" conf/config-default.yaml
+sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 
 echo "
 nginx_config:
@@ -144,11 +138,7 @@ echo -e "\n\nfake empty apisix server: $worker_cnt worker"
 
 sleep 1
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    sed  -i "" "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
-else
-    sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
-fi
+sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
 
 sudo ${fake_apisix_cmd} || exit 1
 

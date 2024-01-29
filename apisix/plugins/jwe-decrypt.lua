@@ -110,7 +110,7 @@ local function jwe_decrypt_with_obj(o, consumer)
         secret,
         nil,
         cipher,
-        {iv = o.iv}
+        {iv = dec(o.iv)}
     )
 
     local decrypted = aes_default:decrypt(dec(o.ciphertext), dec(o.tag))

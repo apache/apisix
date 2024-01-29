@@ -334,6 +334,10 @@ http {
     lua_shared_dict access-tokens {* http.lua_shared_dict["access-tokens"] *}; # cache for service account access tokens
     {% end %}
 
+    {% if enabled_plugins["ocsp-stapling"] then %}
+    lua_shared_dict ocsp-stapling {* http.lua_shared_dict["ocsp-stapling"] *}; # cache for ocsp-stapling
+    {% end %}
+
     {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}

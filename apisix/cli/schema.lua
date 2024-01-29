@@ -224,7 +224,12 @@ local config_schema = {
                                 }
                             }
                         },
-                        key_encrypt_salt = {
+                    }
+                },
+                data_encryption = {
+                    type = "object",
+                    properties = {
+                        keyring = {
                             anyOf = {
                                 {
                                     type = "array",
