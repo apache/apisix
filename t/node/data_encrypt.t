@@ -39,7 +39,7 @@ __DATA__
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -129,7 +129,7 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- request
@@ -145,7 +145,7 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -230,7 +230,7 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- request
@@ -247,7 +247,7 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: false
+        enable_encrypt_fields: false
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -291,7 +291,7 @@ bar
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -344,7 +344,7 @@ failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt s
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -402,7 +402,7 @@ failed to decrypt the conf of plugin [basic-auth] key [password], err: decrypt s
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- request
@@ -419,7 +419,7 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -478,7 +478,7 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - qeddd145sfvddff3
             - edd1c9f0985e76a2
@@ -495,7 +495,7 @@ hello world
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config

@@ -110,14 +110,14 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set ssl(sni: www.test.com), encrypt with the first key_encrypt_salt
+=== TEST 1: set ssl(sni: www.test.com), encrypt with the first keyring
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt:
+    data_encryption:
+        keyring:
             - edd1c9f0985e76a1
-            - edd1c9f0985e76a2
+            - qeddd145sfvddff3
 --- config
 location /t {
     content_by_lua_block {
@@ -152,8 +152,8 @@ passed
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: "edd1c9f0985e76a1"
+    data_encryption:
+        keyring: "edd1c9f0985e76a1"
 --- config
     location /t {
         content_by_lua_block {
@@ -182,12 +182,12 @@ passed
 
 
 
-=== TEST 3: client request with the old style key_encrypt_salt
+=== TEST 3: client request with the old style keyring
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: "edd1c9f0985e76a1"
+    data_encryption:
+        keyring: "edd1c9f0985e76a1"
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -207,12 +207,12 @@ server name: "www.test.com"
 
 
 
-=== TEST 4: client request with the new style key_encrypt_salt
+=== TEST 4: client request with the new style keyring
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt:
+    data_encryption:
+        keyring:
             - edd1c9f0985e76a1
 --- response_body eval
 qr{connected: 1
@@ -233,26 +233,26 @@ server name: "www.test.com"
 
 
 
-=== TEST 5: client request failed with the wrong key_encrypt_salt
+=== TEST 5: client request failed with the wrong keyring
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt:
-            - edd1c9f0985e76a2
+    data_encryption:
+        keyring:
+            - qeddd145sfvddff3
 --- error_log
 decrypt ssl key failed
 [alert]
 
 
 
-=== TEST 6: client request successfully, use the two key_encrypt_salt to decrypt in turn
+=== TEST 6: client request successfully, use the two keyring to decrypt in turn
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt:
-            - edd1c9f0985e76a2
+    data_encryption:
+        keyring:
+            - qeddd145sfvddff3
             - edd1c9f0985e76a1
 --- response_body eval
 qr{connected: 1
@@ -273,8 +273,8 @@ close: 1 nil}
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt:
+    data_encryption:
+        keyring:
             - edd1c9f0985e76a1
 --- config
 location /t {
@@ -292,8 +292,8 @@ location /t {
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: null
+    data_encryption:
+        keyring: null
 --- config
 location /t {
     content_by_lua_block {
@@ -324,12 +324,12 @@ passed
 
 
 
-=== TEST 9: client request without key_encrypt_salt
+=== TEST 9: client request without keyring
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: null
+    data_encryption:
+        keyring: null
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -353,8 +353,8 @@ server name: "www.test.com"
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: null
+    data_encryption:
+        keyring: null
 --- config
 location /t {
     content_by_lua_block {
@@ -371,8 +371,8 @@ location /t {
 --- yaml_config
 apisix:
     node_listen: 1984
-    ssl:
-        key_encrypt_salt: null
+    data_encryption:
+        keyring: null
 --- config
 location /t {
     content_by_lua_block {

@@ -108,16 +108,6 @@ apisix:
                                 # Disabled by default because it renders Perfect Forward Secrecy (FPS)
                                 # useless. See https://github.com/mozilla/server-side-tls/issues/135.
 
-    key_encrypt_salt:           # This field is only used to encrypt the private key of SSL.
-      - edd1c9f0985e76a2        # Set the encryption key for AES-128-CBC. It should be a
-                                # hexadecimal string of length 16.
-                                # If not set, APISIX saves the original data into etcd.
-                                # CAUTION: If you would like to update the key, add the new key as the
-                                # first item in the array and keep the older keys below the newly added
-                                # key, so that data can be decrypted with the older keys and encrypted
-                                # with the new key. Removing the old keys directly can render the data
-                                # unrecoverable.
-
     # fallback_sni: "my.default.domain"      # Fallback SNI to be used if the client does not send SNI during
     #                                        # the handshake.
 
@@ -128,11 +118,13 @@ apisix:
 
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
-  data_encryption:                # Encrypt fields specified in `encrypt_fields` in plugin schema.
-    enable: false
-    keyring:                      # Set the encryption key for AES-128-CBC. It should be a
-      - qeddd145sfvddff3          # hexadecimal string of length 16.
-                                  # If not set, APISIX saves the original data into etcd.
+  data_encryption:                # Data encryption settings.
+    enable_encrypt_fields: false  # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
+                                  # in plugin schema.
+      - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string
+                                  # of length 16.
+      - edd1c9f0985e76a2          # If not set, APISIX saves the original data into etcd.
                                   # CAUTION: If you would like to update the key, add the new key as the
                                   # first item in the array and keep the older keys below the newly added
                                   # key, so that data can be decrypted with the older keys and encrypted
@@ -278,6 +270,7 @@ nginx_config:                     # Config for render the template to generate n
       ext-plugin: 1m
       tars: 1m
       cas-auth: 10m
+      ocsp-stapling: 10m
 
 # discovery:                      # Service Discovery
 #  dns:
@@ -524,6 +517,7 @@ plugins:                           # plugin list (sorted by priority)
   # <- recommend to use priority (0, 100) for your custom plugins
   - example-plugin                 # priority: 0
   #- gm                            # priority: -43
+  #- ocsp-stapling                 # priority: -44
   - aws-lambda                     # priority: -1899
   - azure-functions                # priority: -1900
   - openwhisk                      # priority: -1901

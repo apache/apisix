@@ -46,7 +46,6 @@ ENV_LUAROCKS           ?= luarocks
 ENV_INST_PREFIX        ?= /usr
 ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
-ENV_HOMEBREW_PREFIX    ?= /usr/local
 ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
 -include .requirements
@@ -64,29 +63,6 @@ ifneq ($(shell test -d $(ENV_OPENSSL_PREFIX) && echo -n yes), yes)
 	ENV_NGINX_PREFIX := $(shell $(ENV_NGINX_EXEC) -V 2>&1 | grep -Eo 'prefix=(.*)/nginx\s+' | grep -Eo '/.*/')
 	ifeq ($(shell test -d $(addprefix $(ENV_NGINX_PREFIX), openssl3) && echo -n yes), yes)
 		ENV_OPENSSL_PREFIX := $(addprefix $(ENV_NGINX_PREFIX), openssl3)
-	endif
-endif
-
-# ENV patch for darwin
-ifeq ($(ENV_OS_NAME), darwin)
-	ifeq ($(ENV_OS_ARCH), arm64)
-		ENV_HOMEBREW_PREFIX := /opt/homebrew
-		ENV_INST_BINDIR := $(ENV_INST_PREFIX)/local/bin
-		ENV_INST_LUADIR := $(shell which lua | xargs realpath | sed 's/bin\/lua//g')
-	endif
-
-	# OSX archive `._` cache file
-	ENV_TAR      := COPYFILE_DISABLE=1 $(ENV_TAR)
-	ENV_LUAROCKS := $(ENV_LUAROCKS) --lua-dir=$(ENV_HOMEBREW_PREFIX)/opt/lua@5.1
-
-	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl
-	endif
-	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl3 && echo -n yes), yes)
-		ENV_OPENSSL_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/openresty-openssl3
-	endif
-	ifeq ($(shell test -d $(ENV_HOMEBREW_PREFIX)/opt/pcre && echo -n yes), yes)
-		ENV_PCRE_PREFIX := $(ENV_HOMEBREW_PREFIX)/opt/pcre
 	endif
 endif
 
@@ -144,13 +120,7 @@ endif
 .PHONY: help
 help:
 	@$(call func_echo_success_status, "Makefile rules:")
-	@echo
-	@if [ '$(ENV_OS_NAME)' = 'darwin' ]; then \
-		awk '{ if(match($$0, /^#{3}([^:]+):(.*)$$/)){ split($$0, res, ":"); gsub(/^#{3}[ ]*/, "", res[1]); _desc=$$0; gsub(/^#{3}([^:]+):[ \t]*/, "", _desc); printf("    make %-15s : %-10s\n", res[1], _desc) } }' Makefile; \
-	else \
-		awk '{ if(match($$0, /^\s*#{3}\s*([^:]+)\s*:\s*(.*)$$/, res)){ printf("    make %-15s : %-10s\n", res[1], res[2]) } }' Makefile; \
-	fi
-	@echo
+	@awk '{ if(match($$0, /^\s*#{3}\s*([^:]+)\s*:\s*(.*)$$/, res)){ printf("    make %-15s : %-10s\n", res[1], res[2]) } }' Makefile
 
 
 ### deps : Installing dependencies
@@ -161,7 +131,6 @@ deps: install-runtime
 		mkdir -p ~/.luarocks; \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
-		[ '$(ENV_OS_NAME)' == 'darwin' ] && $(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.PCRE_INCDIR $(addprefix $(ENV_PCRE_PREFIX), /include); \
 		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \

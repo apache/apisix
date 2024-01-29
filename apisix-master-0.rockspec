@@ -17,7 +17,7 @@
 
 package = "apisix"
 version = "master-0"
-supported_platforms = {"linux", "macosx"}
+supported_platforms = {"linux"}
 
 source = {
     url = "git://github.com/apache/apisix",
@@ -46,7 +46,7 @@ dependencies = {
     "lua-resty-cookie = 0.2.0-1",
     "lua-resty-session = 3.10",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.8.2",
+    "lua-resty-radixtree = 2.9.1",
     "lua-protobuf = 0.5.0-1",
     "lua-resty-openidc = 1.7.6-3",
     "luafilesystem = 1.7.0-2",
