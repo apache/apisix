@@ -259,6 +259,7 @@ nginx_config:                     # Config for render the template to generate n
       balancer-ewma: 10m
       balancer-ewma-locks: 10m
       balancer-ewma-last-touched-at: 10m
+      plugin-limit-req-redis-cluster-slot-lock: 1m
       plugin-limit-count-redis-cluster-slot-lock: 1m
       tracing_buffer: 10m
       plugin-api-breaker: 10m
