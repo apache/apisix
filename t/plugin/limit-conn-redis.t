@@ -55,10 +55,18 @@ add_block_preprocessor(sub {
             for i = 1, 10 do
                 reqs[i] = { "/access_root_dir" }
             end
+            local status_ok_count = 0
+            local status_err_count = 0
             local resps = { ngx.location.capture_multi(reqs) }
             for i, resp in ipairs(resps) do
-                ngx.say(resp.status)
+                if resp.status == 200 then
+                    status_ok_count = status_ok_count + 1
+                else
+                    status_err_count = status_err_count + 1
+                end
             end
+            ngx.say(status_ok_count)
+            ngx.say(status_err_count)
         }
     }
 _EOC_
@@ -146,16 +154,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-200
-200
-200
-200
+10
+0
 
 
 
@@ -207,16 +207,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-503
-503
-503
-503
-503
-503
-503
+3
+7
 
 
 
@@ -268,20 +260,12 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-503
-503
-503
-503
+6
+4
 
 
 
-=== TEST 8: update plugin with username and password
+=== TEST 8: update plugin with username, redis_prefix and password
 --- config
     location /t {
         content_by_lua_block {
@@ -300,6 +284,7 @@ GET /test_concurrency
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379,
                                 "redis_username": "alice",
+                                "redis_prefix": "test",
                                 "redis_password": "somepassword"
                             }
                         },
@@ -331,16 +316,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-503
-503
-503
-503
+6
+4
 
 
 
@@ -424,16 +401,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-200
-200
-200
-200
+10
+0
 
 
 
@@ -543,10 +512,18 @@ location /test_concurrency {
         for i = 1, 10 do
             reqs[i] = { "/access_root_dir" }
         end
+        local status_ok_count = 0
+        local status_err_count = 0
         local resps = { ngx.location.capture_multi(reqs) }
         for i, resp in ipairs(resps) do
-            ngx.say(resp.status)
+            if resp.status == 200 then
+                status_ok_count = status_ok_count + 1
+            else
+                status_err_count = status_err_count + 1
+            end
         end
+        ngx.say(status_ok_count)
+        ngx.say(status_err_count)
     }
 }
 --- more_headers
@@ -555,16 +532,8 @@ X-Real-IP: 10.0.0.1
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-503
-503
-503
-503
+6
+4
 --- error_log
 limit key: 10.10.10.1route
 
@@ -636,10 +605,18 @@ location /test_concurrency {
         for i = 1, 10 do
             reqs[i] = { "/access_root_dir" }
         end
+        local status_ok_count = 0
+        local status_err_count = 0
         local resps = { ngx.location.capture_multi(reqs) }
         for i, resp in ipairs(resps) do
-            ngx.say(resp.status)
+            if resp.status == 200 then
+                status_ok_count = status_ok_count + 1
+            else
+                status_err_count = status_err_count + 1
+            end
         end
+        ngx.say(status_ok_count)
+        ngx.say(status_err_count)
     }
 }
 --- more_headers
@@ -648,16 +625,8 @@ X-Real-IP: 10.0.0.1
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-503
-503
-503
-503
+6
+4
 --- error_log
 limit key: 10.10.10.2route
 
@@ -741,16 +710,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-503
-503
-503
-503
-503
-503
-503
+3
+7
 
 
 
@@ -781,15 +742,6 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-200
-200
-200
-200
-200
-200
-200
-200
-200
-200
-
+10
+0
 
