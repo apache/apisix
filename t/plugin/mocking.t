@@ -480,7 +480,7 @@ X-Really: yes
                                "mocking": {
                                    "response_example": "hello world",
                                    "response_headers": {
-                                        "X-route-id": "$route_id"
+                                        "X-Route-Id": "$route_id"
                                     }
                                }
                            },
@@ -503,4 +503,4 @@ passed
 --- request
 GET /hello
 --- response_headers
-X-route-id: 1
+X-Route-Id: 1
