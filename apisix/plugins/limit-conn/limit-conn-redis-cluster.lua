@@ -5,6 +5,7 @@ local setmetatable      = setmetatable
 local math              = require "math"
 local floor             = math.floor
 local ipairs            = ipairs
+local ngx_timer_at      = ngx.timer.at
 
 local _M = {version = 0.1}
 
@@ -142,7 +143,7 @@ function _M.leaving(self, key, req_latency)
     assert(key)
 
     -- log_by_lua can't use cosocket
-    local ok, err = ngx.timer.at(0, leaving_thread, self, key, req_latency)
+    local ok, err = ngx_timer_at(0, leaving_thread, self, key, req_latency)
     if not ok then
         core.log.error("failed to create timer: ", err)
         return nil, err
