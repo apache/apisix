@@ -744,4 +744,3 @@ GET /test_concurrency
 --- response_body
 10
 0
-

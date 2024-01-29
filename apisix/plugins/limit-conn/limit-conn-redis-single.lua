@@ -86,7 +86,7 @@ function _M.incoming(self, key, commit)
 
     self.committed = false
 
-    prefix = conf.redis_prefix
+    local prefix = conf.redis_prefix
     local hash_key = prefix .. ":connection_hash"
 
     local conn, err
@@ -106,7 +106,7 @@ function _M.incoming(self, key, commit)
         self.committed = true
 
     else
-        conn_from_red, err = red:hget(hash_key, key)
+        local conn_from_red, err = red:hget(hash_key, key)
         if err then
             return nil, err
         end
@@ -137,7 +137,7 @@ local function leaving_thread(premature, self, key, req_latency)
         return red, err
     end
 
-    prefix = conf.redis_prefix
+    local prefix = conf.redis_prefix
     local hash_key = prefix .. ":connection_hash"
 
     local conn, err = red:hincrby(hash_key, key, -1)
