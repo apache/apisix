@@ -132,10 +132,6 @@ local health_checker = {
                     enum = {"http", "https", "tcp"},
                     default = "http"
                 },
-                body_match_str = {
-                    type = "string",
-                    default = ""
-                },
                 timeout = {type = "number", default = 1},
                 concurrency = {type = "integer", default = 10},
                 host = host_def,
