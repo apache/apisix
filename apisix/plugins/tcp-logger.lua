@@ -123,9 +123,11 @@ local function send_tcp_data(conf, log_message)
     return res, err_msg
 end
 
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
+
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)

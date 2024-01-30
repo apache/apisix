@@ -83,9 +83,11 @@ function _M.check_schema(conf, schema_type)
     return core.schema.check(schema, conf)
 end
 
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
+
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)

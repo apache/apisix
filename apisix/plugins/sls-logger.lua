@@ -144,9 +144,11 @@ local function handle_log(entries)
     return send_tcp_data(entries[1].route_conf, data)
 end
 
+
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
+
 
 -- log phase in APISIX
 function _M.log(conf, ctx)
