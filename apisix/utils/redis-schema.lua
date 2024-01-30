@@ -49,7 +49,7 @@ local policy_to_additional_properties = {
         properties = {
             redis_cluster_nodes = {
                 type = "array",
-                minItems = 2,
+                minItems = 1,
                 items = {
                     type = "string", minLength = 2, maxLength = 100
                 },
