@@ -75,8 +75,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-您也可以使用 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 通过 web UI 来完成操作。
-
 创建 Consumer 之后，您可以配置一个路由或服务来验证请求：
 
 ```shell
@@ -122,7 +120,7 @@ curl -i -ufoo1:bar1 http://127.0.0.1:9080/hello
 请求开启 key-auth 插件的 API
 
 ```shell
-curl http://127.0.0.2:9080/hello -H 'apikey: auth-one' -i
+curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -i
 ```
 
 ```
@@ -131,11 +129,9 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-如果请求未授权，将会返回如下错误：
+如果请求未授权，将会返回 `401 Unauthorized` 错误：
 
-```shell
-HTTP/1.1 401 Unauthorized
-...
+```json
 {"message":"Authorization Failed"}
 ```
 
