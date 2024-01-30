@@ -14,80 +14,18 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local limit_conn = require("apisix.plugins.limit-conn.init")
+local core                              = require("apisix.core")
+local limit_conn                        = require("apisix.plugins.limit-conn.init")
+local redis_schema                      = require("apisix.utils.redis-schema")
+local policy_to_additional_properties   = redis_schema.schema
+local plugin_name                       = "limit-conn"
 
 
-local plugin_name = "limit-conn"
-
-local policy_to_additional_properties = {
-    redis = {
-        properties = {
-            redis_host = {
-                type = "string", minLength = 2
-            },
-            redis_port = {
-                type = "integer", minimum = 1, default = 6379,
-            },
-            redis_username = {
-                type = "string", minLength = 1,
-            },
-            redis_password = {
-                type = "string", minLength = 0,
-            },
-            redis_prefix = {
-                type = "string", minLength = 0, default = "limit_conn", pattern = "^[0-9a-zA-Z|_]+$"
-            },
-            redis_database = {
-                type = "integer", minimum = 0, default = 0,
-            },
-            redis_timeout = {
-                type = "integer", minimum = 1, default = 1000,
-            },
-            redis_ssl = {
-                type = "boolean", default = false,
-            },
-            redis_ssl_verify = {
-                type = "boolean", default = false,
-            },
-        },
-        required = {"redis_host"},
-    },
-    ["shared-dict"] = {
-        properties = {
-        },
-    },
-    ["redis-cluster"] = {
-        properties = {
-            redis_cluster_nodes = {
-                type = "array",
-                minItems = 2,
-                items = {
-                    type = "string", minLength = 2, maxLength = 100
-                },
-            },
-            redis_password = {
-                type = "string", minLength = 0,
-            },
-            redis_prefix = {
-                type = "string", minLength = 0, default = "limit_conn", pattern = "^[0-9a-zA-Z|_]+$"
-            },
-            redis_timeout = {
-                type = "integer", minimum = 1, default = 1000,
-            },
-            redis_cluster_name = {
-                type = "string",
-            },
-            redis_cluster_ssl = {
-                type = "boolean", default = false,
-            },
-            redis_cluster_ssl_verify = {
-                type = "boolean", default = false,
-            },
-        },
-        required = {"redis_cluster_nodes", "redis_cluster_name"},
+policy_to_additional_properties['local'] = {
+    properties = {
     },
 }
+
 local schema = {
     type = "object",
     properties = {
@@ -105,8 +43,11 @@ local schema = {
         },
         policy = {
             type = "string",
-            enum = {"redis", "redis-cluster", "shared-dict"},
-            default = "shared-dict",
+            enum = {"redis", "redis-cluster", "local"},
+            default = "local",
+        },
+        redis_prefix = {
+            type = "string", minLength = 0, default = "limit_conn", pattern = "^[0-9a-zA-Z|_]+$"
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -129,11 +70,11 @@ local schema = {
         ["if"] = {
             properties = {
                 policy = {
-                    enum = {"shared-dict"},
+                    enum = {"local"},
                 },
             },
         },
-        ["then"] = policy_to_additional_properties["shared-dict"],
+        ["then"] = policy_to_additional_properties["local"],
         ["else"] = {
             ["if"] = {
                 properties = {

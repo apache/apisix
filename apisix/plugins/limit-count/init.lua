@@ -19,6 +19,7 @@ local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
+local policy_to_additional_properties   = redis_schema.schema
 
 local limit_redis_cluster_new
 local limit_redis_new
@@ -40,64 +41,6 @@ local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
 
-local policy_to_additional_properties = {
-    redis = {
-        properties = {
-            redis_host = {
-                type = "string", minLength = 2
-            },
-            redis_port = {
-                type = "integer", minimum = 1, default = 6379,
-            },
-            redis_username = {
-                type = "string", minLength = 1,
-            },
-            redis_password = {
-                type = "string", minLength = 0,
-            },
-            redis_database = {
-                type = "integer", minimum = 0, default = 0,
-            },
-            redis_timeout = {
-                type = "integer", minimum = 1, default = 1000,
-            },
-            redis_ssl = {
-                type = "boolean", default = false,
-            },
-            redis_ssl_verify = {
-                type = "boolean", default = false,
-            },
-        },
-        required = {"redis_host"},
-    },
-    ["redis-cluster"] = {
-        properties = {
-            redis_cluster_nodes = {
-                type = "array",
-                minItems = 1,
-                items = {
-                    type = "string", minLength = 2, maxLength = 100
-                },
-            },
-            redis_password = {
-                type = "string", minLength = 0,
-            },
-            redis_timeout = {
-                type = "integer", minimum = 1, default = 1000,
-            },
-            redis_cluster_name = {
-                type = "string",
-            },
-            redis_cluster_ssl = {
-                type = "boolean", default = false,
-            },
-            redis_cluster_ssl_verify = {
-                type = "boolean", default = false,
-            },
-        },
-        required = {"redis_cluster_nodes", "redis_cluster_name"},
-    },
-}
 local schema = {
     type = "object",
     properties = {

@@ -41,7 +41,7 @@ local _M = {}
 
 
 local function create_limit_obj(conf)
-    if conf.policy == "shared-dict" then
+    if conf.policy == "local" then
         core.log.info("create new limit-conn plugin instance")
         return limit_conn_new(shdict_name, conf.conn, conf.burst,
                               conf.default_conn_delay)
