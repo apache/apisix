@@ -113,16 +113,16 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 After you have configured the Plugin as mentioned above, you can make a request to the Route as shown below:
 
-request with basic-auth
+Send a request with `basic-auth` credentials:
 
 ```shell
 curl -i -ufoo1:bar1 http://127.0.0.1:9080/hello
 ```
 
-request with key-auth
+Send a request with `key-auth` credentials:
 
 ```shell
-curl http://127.0.0.2:9080/hello -H 'apikey: auth-one' -i
+curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -i
 ```
 
 ```
@@ -131,11 +131,9 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-If the request is not authorized, an error will be thrown:
+If the request is not authorized, an `401 Unauthorized` error will be thrown:
 
-```shell
-HTTP/1.1 401 Unauthorized
-...
+```json
 {"message":"Authorization Failed"}
 ```
 

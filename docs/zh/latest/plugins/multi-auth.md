@@ -122,7 +122,7 @@ curl -i -ufoo1:bar1 http://127.0.0.1:9080/hello
 请求开启 key-auth 插件的 API
 
 ```shell
-curl http://127.0.0.2:9080/hello -H 'apikey: auth-one' -i
+curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -i
 ```
 
 ```
@@ -131,11 +131,9 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-如果请求未授权，将会返回如下错误：
+如果请求未授权，将会返回 `401 Unauthorized` 错误：
 
-```shell
-HTTP/1.1 401 Unauthorized
-...
+```json
 {"message":"Authorization Failed"}
 ```
 
