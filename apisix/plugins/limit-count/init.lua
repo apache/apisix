@@ -19,7 +19,8 @@ local apisix_plugin = require("apisix.plugin")
 local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
-local policy_to_additional_properties   = redis_schema.schema
+local redis_schema = require("apisix.utils.redis-schema")
+local policy_to_additional_properties = redis_schema.schema
 
 local limit_redis_cluster_new
 local limit_redis_new
