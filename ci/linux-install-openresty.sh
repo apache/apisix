@@ -51,7 +51,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     fi
 fi
 
-install_apisix_runtime()
+install_apisix_runtime
 
 if [ ! "$ENABLE_FIPS" == "true" ]; then
 curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \

@@ -44,7 +44,7 @@ install_dependencies() {
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
     yum install -y openresty-pcre-devel openresty-zlib-devel
 
-    install_apisix_runtime()
+    install_apisix_runtime
     curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
         https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
 
