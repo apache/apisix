@@ -94,6 +94,7 @@ apisix:
 
   ssl:
     enable: true
+    http2: true
     listen:                                       # APISIX listening port for HTTPS traffic.
       - port: 9443
         enable_http2: true

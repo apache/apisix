@@ -633,7 +633,7 @@ http {
         {% for _, item in ipairs(ssl.listen) do %}
         listen {* item.ip *}:{* item.port *} ssl default_server {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
-        {% if item.enable_http2 then %} http2 on {% end %}
+        {% if ssl.http2 then %} http2 on; {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}
         listen {* proxy_protocol.listen_http_port *} default_server proxy_protocol;
