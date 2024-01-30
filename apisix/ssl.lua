@@ -92,17 +92,6 @@ local function init_iv_tbl(ivs)
 end
 
 
-local _aes_128_cbc_with_iv_tbl_ssl
-local function get_aes_128_cbc_with_iv_ssl(local_conf)
-    if _aes_128_cbc_with_iv_tbl_ssl == nil then
-        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
-        _aes_128_cbc_with_iv_tbl_ssl = init_iv_tbl(ivs)
-    end
-
-    return _aes_128_cbc_with_iv_tbl_ssl
-end
-
-
 local _aes_128_cbc_with_iv_tbl_gde
 local function get_aes_128_cbc_with_iv_gde(local_conf)
     if _aes_128_cbc_with_iv_tbl_gde == nil then
@@ -127,43 +116,31 @@ end
 
 function _M.aes_encrypt_pkey(origin, field)
     local local_conf = core.config.local_conf()
+    local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
+    local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
 
     if not field then
-        -- default used by ssl
-        local aes_128_cbc_with_iv_tbl_ssl = get_aes_128_cbc_with_iv_ssl(local_conf)
-        local aes_128_cbc_with_iv_ssl = aes_128_cbc_with_iv_tbl_ssl[1]
-        if aes_128_cbc_with_iv_ssl ~= nil and core.string.has_prefix(origin, "---") then
-            return encrypt(aes_128_cbc_with_iv_ssl, origin)
+        if aes_128_cbc_with_iv_gde ~= nil and core.string.has_prefix(origin, "---") then
+            return encrypt(aes_128_cbc_with_iv_gde, origin)
         end
     else
         if field == "data_encrypt" then
-            local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
-            local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
             if aes_128_cbc_with_iv_gde ~= nil then
                 return encrypt(aes_128_cbc_with_iv_gde, origin)
             end
         end
     end
-
     return origin
 end
 
 
 local function aes_decrypt_pkey(origin, field)
-    local local_conf = core.config.local_conf()
-    local aes_128_cbc_with_iv_tbl
-
-    if not field then
-        if core.string.has_prefix(origin, "---") then
-            return origin
-        end
-        aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_ssl(local_conf)
-    else
-        if field == "data_encrypt" then
-            aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
-        end
+    if not field and core.string.has_prefix(origin, "---") then
+        return origin
     end
 
+    local local_conf = core.config.local_conf()
+    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
     if #aes_128_cbc_with_iv_tbl == 0 then
         return origin
     end
