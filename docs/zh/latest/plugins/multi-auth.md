@@ -75,8 +75,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-您也可以使用 [APISIX Dashboard](/docs/dashboard/USER_GUIDE) 通过 web UI 来完成操作。
-
 创建 Consumer 之后，您可以配置一个路由或服务来验证请求：
 
 ```shell
