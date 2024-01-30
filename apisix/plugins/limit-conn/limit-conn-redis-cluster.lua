@@ -85,6 +85,7 @@ local function leaving_thread(premature, self, key, req_latency)
 
     -- init redis
     local red = self.red_cli
+    local conf = self.conf
 
     local prefix = conf.redis_prefix
     local hash_key = prefix .. ":connection_hash"
