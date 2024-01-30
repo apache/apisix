@@ -85,7 +85,6 @@ local function send_udp_data(conf, log_message)
     sock:settimeout(conf.timeout * 1000)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
-    core.log.info("sending logs:  ", log_message)
 
     local ok, err = sock:setpeername(conf.host, conf.port)
 

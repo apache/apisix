@@ -165,7 +165,6 @@ function _M.log(conf, ctx)
     }
     local rf5424_data = rf5424.encode("SYSLOG", "INFO", ctx.var.host, "apisix",
                                       ctx.var.pid, json_str, structured_data)
-    core.log.info("collect_data:" .. core.json.encode(rf5424_data))
 
     local process_context = {
         data = rf5424_data,
