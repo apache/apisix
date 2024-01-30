@@ -19,6 +19,7 @@
 #
 
 apisix:
+  enable_http2: true
   # node_listen: 9080          # APISIX listening port.
   node_listen:                 # APISIX listening ports.
     - 9080
@@ -94,7 +95,6 @@ apisix:
 
   ssl:
     enable: true
-    http2: true
     listen:                                       # APISIX listening port for HTTPS traffic.
       - port: 9443
         enable_http2: true

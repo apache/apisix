@@ -121,6 +121,7 @@ node_listen: [1985,1986]
 === TEST 6: support listen multiple ports with array table
 --- yaml_config
 apisix:
+  enable_http2: true
   node_listen:
     - port: 1985
       enable_http2: true
