@@ -51,10 +51,7 @@ if [ "$OPENRESTY_VERSION" == "source" ]; then
     fi
 fi
 
-export runtime_version=${APISIX_RUNTIME}
-wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
-chmod +x build-apisix-runtime.sh
-./build-apisix-runtime.sh latest
+install_apisix_runtime()
 
 if [ ! "$ENABLE_FIPS" == "true" ]; then
 curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \

@@ -121,7 +121,8 @@ function multi_distro_uninstallation() {
 
 function install_apisix_runtime() {
     export runtime_version=${APISIX_RUNTIME:?}
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    # wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    wget "https://raw.githubusercontent.com/zll600/apisix-build-tools/upgrade_openresty-1.25.3.1/build-apisix-runtime.sh"
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime.sh latest
     rm build-apisix-runtime.sh
