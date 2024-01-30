@@ -19,7 +19,6 @@ local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local tostring = tostring
-local ipairs = ipairs
 
 local _M = {}
 
