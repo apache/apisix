@@ -52,8 +52,8 @@ local function new_redis_cluster(conf, dict_name)
 end
 
 
-function _M.new(conf)
-     return new_redis_cluster(conf)
+function _M.new(conf, dict_name)
+     return new_redis_cluster(conf, dict_name)
 end
 
 
