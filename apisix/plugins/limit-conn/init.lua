@@ -26,7 +26,7 @@ end
 local redis_single_new
 local redis_cluster_new
 do
-    local redis_src = "apisix.plugins.limit-conn.limit-conn-redis-single"
+    local redis_src = "apisix.plugins.limit-conn.limit-conn-redis"
     redis_single_new = require(redis_src).new
 
     local cluster_src = "apisix.plugins.limit-conn.limit-conn-redis-cluster"

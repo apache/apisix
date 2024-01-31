@@ -21,10 +21,6 @@ local policy_to_additional_properties   = redis_schema.schema
 local plugin_name                       = "limit-conn"
 
 
-policy_to_additional_properties['local'] = {
-    properties = {
-    },
-}
 
 local schema = {
     type = "object",
@@ -70,21 +66,11 @@ local schema = {
         ["if"] = {
             properties = {
                 policy = {
-                    enum = {"local"},
+                    enum = {"redis-cluster"},
                 },
             },
         },
-        ["then"] = policy_to_additional_properties["local"],
-        ["else"] = {
-            ["if"] = {
-                properties = {
-                    policy = {
-                        enum = {"redis-cluster"},
-                    },
-                },
-            },
-            ["then"] = policy_to_additional_properties["redis-cluster"],
-        }
+        ["then"] = policy_to_additional_properties["redis-cluster"],
     }
 }
 
