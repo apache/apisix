@@ -40,7 +40,7 @@ local script = core.string.compress_script([=[
 
 
 function _M.new(plugin_name, limit, window, conf)
-    local red_cli, err = redis_cluster.new(conf)
+    local red_cli, err = redis_cluster.new(conf, "plugin-limit-count-redis-cluster-slot-lock")
     if not red_cli then
         return nil, err
     end

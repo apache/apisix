@@ -20,13 +20,13 @@ local ipairs            = ipairs
 
 local _M = {version = 0.1}
 
-local function new_redis_cluster(conf)
+local function new_redis_cluster(conf, dict_name)
     local config = {
         name = conf.redis_cluster_name,
         serv_list = {},
         read_timeout = conf.redis_timeout,
         auth = conf.redis_password,
-        dict_name = "plugin-limit-conn-redis-cluster-slot-lock",
+        dict_name = dict_name,
         connect_opts = {
             ssl = conf.redis_cluster_ssl,
             ssl_verify = conf.redis_cluster_ssl_verify,

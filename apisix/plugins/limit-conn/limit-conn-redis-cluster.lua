@@ -32,7 +32,7 @@ local mt = {
 
 function _M.new(plugin_name, conf, max, burst, default_conn_delay)
 
-    local red_cli, err = redis_cluster.new(conf)
+    local red_cli, err = redis_cluster.new(conf, "plugin-limit-conn-redis-cluster-slot-lock")
     if not red_cli then
         return nil, err
     end
