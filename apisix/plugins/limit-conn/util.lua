@@ -15,8 +15,6 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-
 local assert            = assert
 local math              = require "math"
 local floor             = math.floor
