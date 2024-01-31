@@ -39,9 +39,6 @@ local schema = {
             enum = {"redis", "redis-cluster", "local"},
             default = "local",
         },
-        redis_prefix = {
-            type = "string", minLength = 0, default = "limit_conn", pattern = "^[0-9a-zA-Z|_]+$"
-        },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
         },

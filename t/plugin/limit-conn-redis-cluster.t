@@ -189,7 +189,6 @@ GET /test_concurrency
                                     "127.0.0.1:5000",
                                     "127.0.0.1:5002"
                                 ],
-                                "redis_prefix": "test",
                                 "redis_cluster_name": "redis-cluster-1"
                             }
                         },
@@ -242,7 +241,6 @@ GET /test_concurrency
                                 "rejected_code": 503,
                                 "key": "remote_addr",
                                 "policy": "redis-cluster",
-                                "redis_prefix": "test",
                                 "redis_cluster_nodes": [
                                     "127.0.0.1:5000",
                                     "127.0.0.1:5002"
@@ -304,7 +302,6 @@ GET /test_concurrency
                                     "127.0.0.1:7002",
                                     "127.0.0.1:7000"
                                 ],
-                                "redis_prefix": "test",
                                 "redis_cluster_name": "redis-cluster-2",
                                 "redis_cluster_ssl": true,
                                 "redis_cluster_ssl_verify": false

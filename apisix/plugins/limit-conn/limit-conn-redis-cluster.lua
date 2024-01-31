@@ -55,8 +55,7 @@ function _M.incoming(self, key, commit)
 
     self.committed = false
 
-    local prefix = conf.redis_prefix
-    local hash_key = prefix .. ":connection_hash"
+    local hash_key = "limit_conn"
 
     local conn, err
     if commit then
@@ -103,8 +102,7 @@ local function leaving_thread(premature, self, key, req_latency)
     local red = self.red_cli
     local conf = self.conf
 
-    local prefix = conf.redis_prefix
-    local hash_key = prefix .. ":connection_hash"
+    local hash_key = "limit_conn"
 
     local conn, err = red:hincrby(hash_key, key, -1)
     if not conn then

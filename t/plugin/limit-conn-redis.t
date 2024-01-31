@@ -265,7 +265,7 @@ GET /test_concurrency
 
 
 
-=== TEST 8: update plugin with username, redis_prefix and password
+=== TEST 8: update plugin with username, password
 --- config
     location /t {
         content_by_lua_block {
@@ -284,7 +284,6 @@ GET /test_concurrency
                                 "redis_host": "127.0.0.1",
                                 "redis_port": 6379,
                                 "redis_username": "alice",
-                                "redis_prefix": "test",
                                 "redis_password": "somepassword"
                             }
                         },
