@@ -47,7 +47,7 @@ local consumer_schema = {
     type = "object",
     properties = {
         key = { type = "string" },
-        secret = { type = "string", minLength = 32 , maxLength = 32 },
+        secret = { type = "string", minLength = 32 },
         is_base64_encoded = { type = "boolean" },
     },
     required = { "key", "secret" },

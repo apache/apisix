@@ -38,11 +38,11 @@ This Plugin adds an endpoint `/apisix/plugin/jwe/encrypt` for JWE encryption. Fo
 
 For Consumer:
 
-| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                              |
-|---------------|---------|-------------------------------------------------------|---------|-----------------------------|------------------------------------------------------------------------------------------------------------------------------------------|
-| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                               |
-| secret        | string  | True                                                 |         |                             | The decryption key. The key could be saved in a secret manager using the [Secret](../terminology/secret.md) resource. (Must be 32 chars) |
-| is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                             |
+| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                  |
+|---------------|---------|-------------------------------------------------------|---------|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                   |
+| secret        | string  | True                                                 |         |                             | The decryption key. Must be 32 characters. The key could be saved in a secret manager using the [Secret](../terminology/secret.md) resource. |
+| is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                 |
 
 For Route:
 
