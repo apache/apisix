@@ -229,6 +229,7 @@ function _M.access(conf, ctx)
 
     if conf.response_headers then
         for key, value in pairs(conf.response_headers) do
+            value = core.utils.resolve_var(value, ctx.var)
             core.response.add_header(key, value)
         end
     end
