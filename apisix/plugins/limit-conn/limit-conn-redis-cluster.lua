@@ -51,7 +51,6 @@ end
 function _M.incoming(self, key, commit)
     local max = self.max
     local red = self.red_cli
-    local conf = self.conf
 
     self.committed = false
 
@@ -98,9 +97,7 @@ end
 
 local function leaving_thread(premature, self, key, req_latency)
 
-    -- init redis
     local red = self.red_cli
-    local conf = self.conf
 
     local hash_key = "limit_conn"
 
