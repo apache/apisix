@@ -49,6 +49,8 @@ class gRPCWebClient {
                 return
             }
             console.log(JSON.stringify(response.toObject()));
+        }).on("status", function (status) {
+            console.log("Status:", status);
         });
     }
 
@@ -61,6 +63,10 @@ class gRPCWebClient {
 
         stream.on('end', function(end) {
             stream.cancel();
+        });
+
+        stream.on("status", function (status) {
+            console.log("Status:", status);
         });
     }
 }

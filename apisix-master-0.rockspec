@@ -17,7 +17,7 @@
 
 package = "apisix"
 version = "master-0"
-supported_platforms = {"linux", "macosx"}
+supported_platforms = {"linux"}
 
 source = {
     url = "git://github.com/apache/apisix",
