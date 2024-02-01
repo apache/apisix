@@ -440,7 +440,15 @@ passed
 
 
 
-=== TEST 12: add plugin with 'include_req_body' setting, collect request log
+=== TEST 12: check log format from logging server
+--- exec
+tail -n 1 ci/pod/vector/udp.log
+--- response_body eval
+qr/.*logger format in plugin.*/
+
+
+
+=== TEST 13: add plugin with 'include_req_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {
@@ -486,7 +494,7 @@ GET /t
 
 
 
-=== TEST 13: add plugin with 'include_resp_body' setting, collect request log
+=== TEST 14: add plugin with 'include_resp_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {
@@ -529,11 +537,3 @@ GET /t
 GET /t
 --- error_log
 "body":"hello world\n"
-
-
-
-=== TEST 14: check log format from logging server
---- exec
-tail -n 1 ci/pod/vector/udp.log
---- response_body eval
-qr/.*logger format in plugin.*/
