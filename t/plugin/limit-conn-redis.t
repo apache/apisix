@@ -419,7 +419,9 @@ GET /test_concurrency
                                 "burst": 50,
                                 "default_conn_delay": 0.1,
                                 "rejected_code": 503,
-                                "key": "server_addr"
+                                "key": "server_addr",
+                                "policy": "redis",
+                                "redis_host": "127.0.0.1"
                             }
                         },
                         "upstream": {
@@ -668,7 +670,17 @@ passed
 
 
 
-=== TEST 19: set global rule with conn = 2
+=== TEST 19: exceeding the burst
+--- request
+GET /test_concurrency
+--- timeout: 10s
+--- response_body
+10
+0
+
+
+
+=== TEST 20: set global rule with conn = 2
 --- config
     location /t {
         content_by_lua_block {
@@ -700,7 +712,7 @@ passed
 
 
 
-=== TEST 20: exceeding the burst of global rule
+=== TEST 21: exceeding the burst of global rule
 --- request
 GET /test_concurrency
 --- timeout: 10s
@@ -710,7 +722,7 @@ GET /test_concurrency
 
 
 
-=== TEST 21: delete global rule
+=== TEST 22: delete global rule
 --- config
     location /t {
         content_by_lua_block {
@@ -732,7 +744,7 @@ passed
 
 
 
-=== TEST 22: not exceeding the burst
+=== TEST 23: not exceeding the burst
 --- request
 GET /test_concurrency
 --- timeout: 10s
