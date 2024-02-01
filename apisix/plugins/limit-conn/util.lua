@@ -28,13 +28,13 @@ function _M.incoming(self, red, key, commit)
 
     local conn, err
     if commit then
-        conn, err = red:hincrby(hash_key, key, 1)
+        conn, err = red:incrby(hash_key .. ":" .. key, 1)
         if not conn then
             return nil, err
         end
 
         if conn > max + self.burst then
-            conn, err = red:hincrby(hash_key, key, -1)
+            conn, err = red:incrby(hash_key .. ":" .. key, -1)
             if not conn then
                 return nil, err
             end
@@ -43,7 +43,7 @@ function _M.incoming(self, red, key, commit)
         self.committed = true
 
     else
-        local conn_from_red, err = red:hget(hash_key, key)
+        local conn_from_red, err = red:get(hash_key .. ":" .. key)
         if err then
             return nil, err
         end
@@ -65,7 +65,7 @@ function _M.leaving(self, red, key, req_latency)
     assert(key)
     local hash_key = "limit_conn"
 
-    local conn, err = red:hincrby(hash_key, key, -1)
+    local conn, err = red:incrby(hash_key .. ":" .. key, -1)
     if not conn then
         return nil, err
     end
