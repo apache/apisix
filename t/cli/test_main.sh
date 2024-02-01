@@ -154,7 +154,7 @@ if [ $count_http_specific_ip -ne 2 ]; then
 fi
 
 count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server" conf/nginx.conf || true`
-if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
+if [ $count_http_specific_ip_and_enable_http2 -ne 2 ]; then
     echo "failed: failed to support specific IP and enable http2 listen in http"
     exit 1
 fi
@@ -166,7 +166,7 @@ if [ $count_https_specific_ip -ne 2 ]; then
 fi
 
 count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server" conf/nginx.conf || true`
-if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
+if [ $count_https_specific_ip_and_enable_http2 -ne 2 ]; then
     echo "failed: failed to support specific IP and enable http2 listen in https"
     exit 1
 fi
