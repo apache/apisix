@@ -492,6 +492,7 @@ plugins:                           # plugin list (sorted by priority)
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - grpc-web                       # priority: 505
+  - http-dubbo                     # priority: 504
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
