@@ -626,8 +626,9 @@ http {
     {% end %}
 
     server {
-        {% if enable_http2 then %} http2 on; {% end %}
-        
+        {% if enable_http2 then %}
+        http2 on;
+        {% end %}
         {% for _, item in ipairs(node_listen) do %}
         listen {* item.ip *}:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
