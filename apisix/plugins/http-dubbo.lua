@@ -19,6 +19,7 @@ local require = require
 local core = require("apisix.core")
 local pairs = pairs
 local str_format = string.format
+local bit = require("bit")
 local rshift = bit.rshift
 local band = bit.band
 local char = string.char
@@ -26,6 +27,7 @@ local tostring = tostring
 local ngx = ngx
 local type = type
 local plugin_name = "http-dubbo"
+
 
 local schema = {
     type = "object",
