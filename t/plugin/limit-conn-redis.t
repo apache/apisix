@@ -52,21 +52,22 @@ add_block_preprocessor(sub {
     location /test_concurrency {
         content_by_lua_block {
             local reqs = {}
+            local status_map = {}
             for i = 1, 10 do
                 reqs[i] = { "/access_root_dir" }
             end
-            local status_ok_count = 0
-            local status_err_count = 0
             local resps = { ngx.location.capture_multi(reqs) }
             for i, resp in ipairs(resps) do
-                if resp.status == 200 then
-                    status_ok_count = status_ok_count + 1
+                local status_key = resp.status
+                if status_map[status_key] then
+                    status_map[status_key] = status_map[status_key] + 1
                 else
-                    status_err_count = status_err_count + 1
+                    status_map[status_key] = 1
                 end
             end
-            ngx.say(status_ok_count)
-            ngx.say(status_err_count)
+            for key, value in pairs(status_map) do
+                ngx.say("status:" .. key .. ", " .. "count:" .. value)
+            end
         }
     }
 _EOC_
@@ -154,8 +155,7 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-10
-0
+status:200, count:10
 
 
 
@@ -207,8 +207,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-3
-7
+status:200, count:3
+status:503, count:7
 
 
 
@@ -260,8 +260,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-6
-4
+status:200, count:6
+status:503, count:4
 
 
 
@@ -315,12 +315,66 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-6
-4
+status:200, count:6
+status:503, count:4
 
 
 
-=== TEST 10: invalid route: missing redis_host
+=== TEST 10: update plugin with username, wrong password
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "limit-conn": {
+                                "conn": 5,
+                                "burst": 1,
+                                "default_conn_delay": 0.1,
+                                "rejected_code": 503,
+                                "key": "remote_addr",
+                                "policy": "redis",
+                                "redis_host": "127.0.0.1",
+                                "redis_port": 6379,
+                                "redis_username": "alice",
+                                "redis_password": "someerrorpassword"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/limit_conn"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: catch wrong pass
+--- request
+GET /access_root_dir
+--- error_code: 500
+--- error_log
+failed to limit conn: WRONGPASS invalid username-password pair or user is disabled.
+
+
+
+=== TEST 12: invalid route: missing redis_host
 --- config
     location /t {
         content_by_lua_block {
@@ -362,7 +416,7 @@ GET /t
 
 
 
-=== TEST 11: disable plugin
+=== TEST 13: disable plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -395,17 +449,16 @@ passed
 
 
 
-=== TEST 12: exceeding the burst
+=== TEST 14: exceeding the burst
 --- request
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-10
-0
+status:200, count:10
 
 
 
-=== TEST 13: set route(key: server_addr)
+=== TEST 15: set route(key: server_addr)
 --- config
     location /t {
         content_by_lua_block {
@@ -447,7 +500,7 @@ passed
 
 
 
-=== TEST 14: key: http_x_real_ip
+=== TEST 16: key: http_x_real_ip
 --- config
     location /t {
         content_by_lua_block {
@@ -489,7 +542,7 @@ passed
 
 
 
-=== TEST 15: exceeding the burst (X-Real-IP)
+=== TEST 17: exceeding the burst (X-Real-IP)
 --- config
 location /access_root_dir {
     content_by_lua_block {
@@ -510,35 +563,36 @@ location /access_root_dir {
 location /test_concurrency {
     content_by_lua_block {
         local reqs = {}
+        local status_map = {}
         for i = 1, 10 do
             reqs[i] = { "/access_root_dir" }
         end
-        local status_ok_count = 0
-        local status_err_count = 0
         local resps = { ngx.location.capture_multi(reqs) }
         for i, resp in ipairs(resps) do
-            if resp.status == 200 then
-                status_ok_count = status_ok_count + 1
+            local status_key = resp.status
+            if status_map[status_key] then
+                status_map[status_key] = status_map[status_key] + 1
             else
-                status_err_count = status_err_count + 1
+                status_map[status_key] = 1
             end
         end
-        ngx.say(status_ok_count)
-        ngx.say(status_err_count)
+        for key, value in pairs(status_map) do
+            ngx.say("status:" .. key .. ", " .. "count:" .. value)
+        end
     }
 }
 --- request
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-6
-4
+status:200, count:6
+status:503, count:4
 --- error_log
 limit key: 10.10.10.1route
 
 
 
-=== TEST 16: key: http_x_forwarded_for
+=== TEST 18: key: http_x_forwarded_for
 --- config
     location /t {
         content_by_lua_block {
@@ -580,7 +634,7 @@ passed
 
 
 
-=== TEST 17: exceeding the burst(X-Forwarded-For)
+=== TEST 19: exceeding the burst(X-Forwarded-For)
 --- config
 location /access_root_dir {
     content_by_lua_block {
@@ -601,35 +655,36 @@ location /access_root_dir {
 location /test_concurrency {
     content_by_lua_block {
         local reqs = {}
+        local status_map = {}
         for i = 1, 10 do
             reqs[i] = { "/access_root_dir" }
         end
-        local status_ok_count = 0
-        local status_err_count = 0
         local resps = { ngx.location.capture_multi(reqs) }
         for i, resp in ipairs(resps) do
-            if resp.status == 200 then
-                status_ok_count = status_ok_count + 1
+            local status_key = resp.status
+            if status_map[status_key] then
+                status_map[status_key] = status_map[status_key] + 1
             else
-                status_err_count = status_err_count + 1
+                status_map[status_key] = 1
             end
         end
-        ngx.say(status_ok_count)
-        ngx.say(status_err_count)
+        for key, value in pairs(status_map) do
+            ngx.say("status:" .. key .. ", " .. "count:" .. value)
+        end
     }
 }
 --- request
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-6
-4
+status:200, count:6
+status:503, count:4
 --- error_log
 limit key: 10.10.10.2route
 
 
 
-=== TEST 18: default rejected_code
+=== TEST 20: default rejected_code
 --- config
     location /t {
         content_by_lua_block {
@@ -670,17 +725,17 @@ passed
 
 
 
-=== TEST 19: exceeding the burst
+=== TEST 21: exceeding the burst
 --- request
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-5
-5
+status:200, count:5
+status:503, count:5
 
 
 
-=== TEST 20: set global rule with conn = 2
+=== TEST 22: set global rule with conn = 2
 --- config
     location /t {
         content_by_lua_block {
@@ -714,17 +769,17 @@ passed
 
 
 
-=== TEST 21: exceeding the burst of global rule
+=== TEST 23: exceeding the burst of global rule
 --- request
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-3
-7
+status:200, count:3
+status:503, count:7
 
 
 
-=== TEST 22: delete global rule
+=== TEST 24: delete global rule
 --- config
     location /t {
         content_by_lua_block {
@@ -746,10 +801,10 @@ passed
 
 
 
-=== TEST 23: not exceeding the burst
+=== TEST 25: not exceeding the burst
 --- request
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-5
-5
+status:200, count:5
+status:503, count:5

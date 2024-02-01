@@ -52,21 +52,22 @@ add_block_preprocessor(sub {
     location /test_concurrency {
         content_by_lua_block {
             local reqs = {}
+            local status_map = {}
             for i = 1, 10 do
                 reqs[i] = { "/access_root_dir" }
             end
-            local status_ok_count = 0
-            local status_err_count = 0
             local resps = { ngx.location.capture_multi(reqs) }
             for i, resp in ipairs(resps) do
-                if resp.status == 200 then
-                    status_ok_count = status_ok_count + 1
+                local status_key = resp.status
+                if status_map[status_key] then
+                    status_map[status_key] = status_map[status_key] + 1
                 else
-                    status_err_count = status_err_count + 1
+                    status_map[status_key] = 1
                 end
             end
-            ngx.say(status_ok_count)
-            ngx.say(status_err_count)
+            for key, value in pairs(status_map) do
+                ngx.say("status:" .. key .. ", " .. "count:" .. value)
+            end
         }
     }
 _EOC_
@@ -164,8 +165,7 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-10
-0
+status:200, count:10
 
 
 
@@ -220,8 +220,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-3
-7
+status:200, count:3
+status:503, count:7
 
 
 
@@ -276,8 +276,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-6
-4
+status:200, count:6
+status:503, count:4
 
 
 
@@ -335,5 +335,5 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-6
-4
+status:200, count:6
+status:503, count:4
