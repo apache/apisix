@@ -639,8 +639,8 @@ limit key: 10.10.10.2route
                  [[{
                         "plugins": {
                             "limit-conn": {
-                                "conn": 100,
-                                "burst": 50,
+                                "conn": 4,
+                                "burst": 1,
                                 "default_conn_delay": 0.1,
                                 "key": "remote_addr",
                                 "policy": "redis",
@@ -675,8 +675,8 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-10
-0
+5
+5
 
 
 
@@ -693,7 +693,9 @@ GET /test_concurrency
                             "conn": 2,
                             "burst": 1,
                             "default_conn_delay": 0.1,
-                            "key": "remote_addr"
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1"
                         }
                     }
                 }]]
@@ -749,5 +751,5 @@ passed
 GET /test_concurrency
 --- timeout: 10s
 --- response_body
-10
-0
+5
+5
