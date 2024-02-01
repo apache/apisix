@@ -428,7 +428,7 @@ hello world
         }
     }
 --- error_log
-\"body\":\"{\\\"sample_payload\\\":\\\"hello\\\"
+"body":"{\"sample_payload\":\"hello\"}
 
 
 
@@ -471,4 +471,4 @@ hello world
         }
     }
 --- error_log
-\"body\":\"hello world\\n\"
+"body":"hello world\n"
