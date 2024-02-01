@@ -320,7 +320,7 @@ GET /test_concurrency
 
 
 
-=== TEST 10: invalid route: missing key
+=== TEST 10: invalid route: missing redis_host
 --- config
     location /t {
         content_by_lua_block {
@@ -525,8 +525,6 @@ location /test_concurrency {
         ngx.say(status_err_count)
     }
 }
---- more_headers
-X-Real-IP: 10.0.0.1
 --- request
 GET /test_concurrency
 --- timeout: 10s
@@ -618,8 +616,6 @@ location /test_concurrency {
         ngx.say(status_err_count)
     }
 }
---- more_headers
-X-Real-IP: 10.0.0.1
 --- request
 GET /test_concurrency
 --- timeout: 10s
