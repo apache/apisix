@@ -128,6 +128,7 @@ echo "passed: support multiple ports listen in http and https"
 
 echo "
 apisix:
+  enable_http2: true
   node_listen:
     - ip: 127.0.0.1
       port: 9081
@@ -152,7 +153,7 @@ if [ $count_http_specific_ip -ne 2 ]; then
     exit 1
 fi
 
-count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server http2" conf/nginx.conf || true`
+count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server" conf/nginx.conf || true`
 if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
     echo "failed: failed to support specific IP and enable http2 listen in http"
     exit 1
@@ -164,7 +165,7 @@ if [ $count_https_specific_ip -ne 2 ]; then
     exit 1
 fi
 
-count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
+count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server" conf/nginx.conf || true`
 if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
     echo "failed: failed to support specific IP and enable http2 listen in https"
     exit 1

@@ -19,7 +19,7 @@
 #
 
 apisix:
-  enable_http2: true
+  enable_http2: true           # only for test.
   # node_listen: 9080          # APISIX listening port.
   node_listen:                 # APISIX listening ports.
     - 9080
