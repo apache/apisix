@@ -968,15 +968,13 @@ local function setup_runner(cmd)
             end
 
             runner = nil
+            -- TODO: fix this correctly.
+            -- local ok, err = events:post(events_list._source, events_list.runner_exit)
+            -- if not ok then
+            --     core.log.error("post event failure with ", events_list._source, ", error: ", err)
+            -- end
 
-            local ok, err = events:post(events_list._source, events_list.runner_exit)
-            if not ok then
-                core.log.error("post event failure with ", events_list._source, ", error: ", err)
-            end
-
-            core.log.warn("respawn runner 3 seconds later with cmd: ", core.json.encode(cmd))
-            core.utils.sleep(3)
-            core.log.warn("respawning new runner...")
+            core.log.warn("respawn runner with cmd: ", core.json.encode(cmd))
             runner = spawn_proc(cmd)
         end
     end)
@@ -1014,6 +1012,12 @@ function _M.exit_worker()
         core.log.notice("terminate runner ", pid, " with SIGTERM")
         local num = resty_signal.signum("TERM")
         runner:kill(num)
+
+        -- TODO: fix this correctly.
+        local ok, err = events:post(events_list._source, events_list.runner_exit)
+        if not ok then
+            core.log.error("post event failure with ", events_list._source, ", error: ", err)
+        end
 
         -- give 1s to clean up the mess
         core.os.waitpid(pid, 1)
