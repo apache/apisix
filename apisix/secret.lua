@@ -58,7 +58,7 @@ local function create_secret_kvs(values)
     local secret_managers = {}
 
     for _, v in ipairs(values) do
-        if v then 
+        if v then
             local path = v.value.id
             local idx = find(path, "/")
             if not idx then
