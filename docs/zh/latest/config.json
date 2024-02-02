@@ -68,7 +68,8 @@
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
-            "plugins/workflow"
+            "plugins/workflow",
+            "plugins/ocsp-stapling"
           ]
         },
         {

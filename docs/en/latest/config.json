@@ -80,7 +80,8 @@
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/workflow"
+            "plugins/workflow",
+            "plugins/ocsp-stapling"
           ]
         },
         {
