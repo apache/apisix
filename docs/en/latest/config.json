@@ -245,6 +245,10 @@
         },
         {
           "type": "doc",
+          "id": "develop-apisix-environment"
+        },
+        {
+          "type": "doc",
           "id": "support-fips-in-apisix"
         },
         {
