@@ -24,7 +24,7 @@ local _M = {version = 0.3}
 function _M.incoming(self, red, key, commit)
     local max = self.max
     self.committed = false
-    key = "limit_conn"
+    key = "limit_conn" .. ":" .. key
 
     local conn, err
     if commit then
