@@ -47,7 +47,7 @@ The Plugin will not add a unique ID if the request already has a header with the
 | algorithm           | string  | False    | "uuid"         | ["uuid", "nanoid", "range_id"] | Algorithm to use for generating the unique request ID.                 |
 | range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| The minimum string length is 6 | Character set for range_id |
 | range_id.length    | integer | False | 16             | Minimum 6 | Id length for range_id algorithm |
-| arg_name            | string  | False    | "req-id"       |                                 | When this parameter is set and get the unique ID from request header fails, use this `arg_name` to get the unique ID from  query string. |
+| arg_name            | string  | False    |       |                                 | When this parameter is set and get the unique ID from request header fails, use this `arg_name` to get the unique ID from  query string. |
 
 ## Enable Plugin
 

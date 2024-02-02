@@ -34,8 +34,8 @@ local schema = {
             type = "string",
             enum = {"uuid", "nanoid", "range_id"},
             default = "uuid",
-            arg_name = {type = "string", default = "req-id"}
         },
+        arg_name = {type = "string"},
         oneOf = {
             {required = {"arg_name"}},
             {required = {"header_name"}}
