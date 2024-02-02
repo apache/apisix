@@ -24,6 +24,7 @@ local schema = {
     properties = {
         uri = {type = "string"},
         allow_degradation = {type = "boolean", default = false},
+        status_on_error = {type = "integer", minimum = 200, maximum = 599, default = 403},
         ssl_verify = {
             type = "boolean",
             default = true,
@@ -131,8 +132,8 @@ function _M.access(conf, ctx)
     if not res and conf.allow_degradation then
         return
     elseif not res then
-        core.log.error("failed to process forward auth, err: ", err)
-        return 403
+        core.log.warn("failed to process forward auth, err: ", err)
+        return conf.status_on_error
     end
 
     if res.status >= 300 then
