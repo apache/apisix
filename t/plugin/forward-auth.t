@@ -285,6 +285,26 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/large-body"
                     }]],
+                },
+                {
+                    url = "/apisix/admin/routes/8",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.39.40.1:9999/auth",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "status_on_error": 503,
+                                "allow_degradation": false
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/onerror"
+                    }]],
                 }
             }
 
@@ -297,7 +317,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 10
+"passed\n" x 11
 
 
 
@@ -408,7 +428,16 @@ Authorization: 111
 
 
 
-=== TEST 13: test large body
+=== TEST 13: Verify status_on_error
+--- request
+GET /onerror
+--- more_headers
+Authorization: 333
+--- error_code: 503
+
+
+
+=== TEST 14: test large body
 --- config
     location /t {
         content_by_lua_block {
