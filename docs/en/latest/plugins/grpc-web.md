@@ -34,9 +34,9 @@ The `grpc-web` Plugin is a proxy Plugin that can process [gRPC Web](https://gith
 
 ## Attributes
 
-| Name                    | Type    | Required | Default | Description                                                                                                                                                                                                                                                                                                                                                                                        |
-|-------------------------|---------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| cors_allow_headers      | string  | False    | "content-type,x-grpc-web,x-user-agent"     | Headers in the request allowed when accessing a cross-origin resource. Use `,` to add multiple headers.                                        |
+| Name                    | Type    | Required | Default                                 | Description                                                                                              |
+|-------------------------|---------|----------|-----------------------------------------|----------------------------------------------------------------------------------------------------------|
+| cors_allow_headers      | string  | False    | "content-type,x-grpc-web,x-user-agent"  | Headers in the request allowed when accessing a cross-origin resource. Use `,` to add multiple headers.  |
 
 ## Enable Plugin
 
