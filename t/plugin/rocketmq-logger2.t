@@ -391,7 +391,6 @@ POST /hello?name=qwerty
 abcdef
 --- response_body
 hello world
-
 --- error_log eval
 qr/send data to rocketmq: \{.*"body":"hello world\\n"/
 --- wait: 2
@@ -410,7 +409,160 @@ qr/send data to rocketmq: \{.*"body":"hello world\\n"/
 
 
 
-=== TEST 13: multi level nested expr conditions
+=== TEST 13: set route include_resp_body = true - gzip
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "rocketmq-logger": {
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "include_resp_body": true,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:11451": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/gzip_hello"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- response_body
+passed
+
+
+
+=== TEST 14: hit
+--- http_config
+server {
+    listen 11451;
+    gzip on;
+    gzip_types *;
+    gzip_min_length 1;
+    location /gzip_hello {
+        content_by_lua_block {
+            ngx.req.read_body()
+            local s = "gzip hello world"
+            ngx.header['Content-Length'] = #s + 1
+            ngx.say(s)
+        }
+    }
+}
+--- request
+GET /gzip_hello
+--- more_headers
+Accept-Encoding: gzip
+--- error_log eval
+qr/send data to rocketmq: \{.*"body":"gzip hello world\\n"/
+--- wait: 2
+
+
+
+=== TEST 15: set route include_resp_body - brotli
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "plugins": {
+                            "rocketmq-logger": {
+                                "nameserver_list" : [ "127.0.0.1:9876" ],
+                                "topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "include_resp_body": true,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:11452": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/brotli_hello"
+                }]=]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route, expr eval success
+--- http_config
+server {
+    listen 11452;
+    location /brotli_hello {
+        content_by_lua_block {
+            ngx.req.read_body()
+            local s = "brotli hello world"
+            ngx.header['Content-Length'] = #s + 1
+            ngx.say(s)
+        }
+        header_filter_by_lua_block {
+            local conf = {
+                comp_level = 6,
+                http_version = 1.1,
+                lgblock = 0,
+                lgwin = 19,
+                min_length = 1,
+                mode = 0,
+                types = "*",
+            }
+            local brotli = require("apisix.plugins.brotli")
+            brotli.header_filter(conf, ngx.ctx)
+        }
+        body_filter_by_lua_block {
+            local conf = {
+                comp_level = 6,
+                http_version = 1.1,
+                lgblock = 0,
+                lgwin = 19,
+                min_length = 1,
+                mode = 0,
+                types = "*",
+            }
+            local brotli = require("apisix.plugins.brotli")
+            brotli.body_filter(conf, ngx.ctx)
+        }
+    }
+}
+--- request
+GET /brotli_hello
+--- more_headers
+Accept-Encoding: br
+--- error_log eval
+qr/send data to rocketmq: \{.*"body":"brotli hello world\\n"/
+--- wait: 2
+
+
+
+=== TEST 17: multi level nested expr conditions
 --- config
     location /t {
         content_by_lua_block {
@@ -443,7 +595,7 @@ done
 
 
 
-=== TEST 14: data encryption for secret_key
+=== TEST 18: data encryption for secret_key
 --- yaml_config
 apisix:
     data_encryption:
