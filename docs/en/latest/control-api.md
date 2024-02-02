@@ -475,3 +475,9 @@ Dumps the metadata with the specified `plugin_name`:
     "id": "file-logger"
 }
 ```
+
+### POST /v1/plugins_reload
+
+Introduced in [v3.9.0](https://github.com/apache/apisix/releases/tag/3.9.0)
+
+Triggers a hot reload of the plugins.

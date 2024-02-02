@@ -400,6 +400,13 @@ function _M.dump_plugin_metadata()
     return 200, metadata.value
 end
 
+function _M.plugins_reload()
+    core.log.info("start to hot reload plugins")
+    plugin.load()
+
+    return 200, "done"
+end
+
 
 return {
     -- /v1/schema
@@ -473,6 +480,12 @@ return {
         methods = {"GET"},
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
+    },
+    -- /v1/plugins_reload
+    {
+        methods = {"POST"},
+        uris = {"/plugins_reload"},
+        handler = _M.plugins_reload,
     },
     get_health_checkers = _get_health_checkers,
 }
