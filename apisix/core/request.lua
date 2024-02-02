@@ -282,6 +282,17 @@ function _M.get_body(max_size, ctx)
         end
     end
 
+    -- TODO: solve this issue correctly.
+    local var = ctx and ctx.var or ngx.var
+    local content_length = tonumber(var.http_content_length) or 0
+    if (var.server_protocol == "HTTP/2.0" or var.server_protocol == "HTTP/3.0")
+        and content_length == 0 then
+        -- Due to the stream processing feature of HTTP/2 or HTTP/3,
+        -- this api could potentially block the entire request. Therefore,
+        -- this api is effective only when HTTP/2 or HTTP/3 requests send content-length header.
+        -- For requests with versions lower than HTTP/2, this api can still be used without any problems.
+        return nil
+    end
     req_read_body()
 
     local req_body = req_get_body_data()
