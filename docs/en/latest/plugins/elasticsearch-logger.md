@@ -48,6 +48,10 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
 | ssl_verify    | boolean | False    | true                        | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
 | timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
+| include_req_body       | boolean       | False    | false   | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                               |
+| include_req_body_expr  | array         | False    |         | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
+| include_resp_body      | boolean       | False    | false   | When set to `true` includes the response body in the log.                                                                                                                                                                      |
+| include_resp_body_expr | array         | False    |         | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
 
 NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 

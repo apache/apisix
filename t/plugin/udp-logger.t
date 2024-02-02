@@ -445,3 +445,95 @@ passed
 tail -n 1 ci/pod/vector/udp.log
 --- response_body eval
 qr/.*logger format in plugin.*/
+
+
+
+=== TEST 13: add plugin with 'include_req_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/udp-logger', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8127,
+                                "tls": false,
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- request
+GET /t
+--- error_log
+"body":"{\"sample_payload\":\"hello\"}"
+
+
+
+=== TEST 14: add plugin with 'include_resp_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/udp-logger', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "udp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 8127,
+                                "tls": false,
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- request
+GET /t
+--- error_log
+"body":"hello world\n"

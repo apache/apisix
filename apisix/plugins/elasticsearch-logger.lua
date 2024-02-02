@@ -75,7 +75,23 @@ local schema = {
         ssl_verify = {
             type = "boolean",
             default = true
-        }
+        },
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     encrypt_fields = {"auth.password"},
     oneOf = {
@@ -168,6 +184,11 @@ local function send_to_elasticsearch(conf, entries)
     end
 
     return true
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

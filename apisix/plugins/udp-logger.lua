@@ -31,7 +31,22 @@ local schema = {
         port = {type = "integer", minimum = 0},
         timeout = {type = "integer", minimum = 1, default = 3},
         log_format = {type = "object"},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     required = {"host", "port"}
 }
@@ -70,6 +85,7 @@ local function send_udp_data(conf, log_message)
     sock:settimeout(conf.timeout * 1000)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
+    core.log.info("sending log_message: ", log_message)
 
     local ok, err = sock:setpeername(conf.host, conf.port)
 
@@ -92,6 +108,11 @@ local function send_udp_data(conf, log_message)
     end
 
     return res, err_msg
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

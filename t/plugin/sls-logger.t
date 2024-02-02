@@ -385,3 +385,90 @@ passed
 GET /hello
 --- response_body
 hello world
+
+
+
+=== TEST 14: add plugin with 'include_req_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/sls-logger', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "sls-logger": {
+                                "host": "127.0.0.1",
+                                "port": 10009,
+                                "project": "your_project",
+                                "logstore": "your_logstore",
+                                "access_key_id": "your_access_key_id",
+                                "access_key_secret": "your_access_key_secret",
+                                "timeout": 30000,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- error_log
+"body":"{\"sample_payload\":\"hello\"}
+
+
+
+=== TEST 15: add plugin with 'include_resp_body' setting, collect response log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/sls-logger', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "sls-logger": {
+                                "host": "127.0.0.1",
+                                "port": 10009,
+                                "project": "your_project",
+                                "logstore": "your_logstore",
+                                "access_key_id": "your_access_key_id",
+                                "access_key_secret": "your_access_key_secret",
+                                "timeout": 30000,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- error_log
+"body":"hello world\n"
