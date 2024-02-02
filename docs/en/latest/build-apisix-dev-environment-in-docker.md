@@ -1,6 +1,6 @@
 ---
-id: develop-apisix-environment
-title: Rapid construction development environment by Docker
+id: build-apisix-dev-environment-in-docker
+title: Build development environment in Docker
 description: This article introduces how to quickly build the development environment of the Apache APISIX API gateway using Docker.
 ---
 
@@ -37,11 +37,11 @@ You can see the specific supported systems [here](install-dependencies.md#instal
 
 ### Implementation Idea
 
-![Develop Apache APISIX Environment](../../assets/images/develop-apisix-dev.png)
+![Build Apache APISIX Development Environment in Docker](../../assets/images/develop-apisix-dev.png)
 
 ### Implementation Steps
 
-First, we need to clone the APISIX source code, build an image that can run test cases, and compile the Apache APISIX.
+First, clone the APISIX source code, build an image that can run test cases, and compile the Apache APISIX.
 
 ```shell
 git clone https://github.com/apache/apisix.git
@@ -49,19 +49,19 @@ cd apisix
 docker build -t apisix-dev-env -f example/build-dev-image.dockerfile .
 ```
 
-Then, we need to start Etcd:
+Next, start Etcd:
 
 ```shell
 docker run -d --name etcd-apisix --net=host pachyderm/etcd:v3.5.2
 ```
 
-Mount the APISIX directory and start the development environment container.
+Mount the APISIX directory and start the development environment container:
 
 ```shell
 docker run -d --name apisix-dev-env --net=host -v $(pwd):/apisix:rw apisix-dev-env:latest
 ```
 
-Finally, enter the container, build the Apache APISIX runtime, and configure the test environment.
+Finally, enter the container, build the Apache APISIX runtime, and configure the test environment:
 
 ```shell
 docker exec -it apisix-dev-env /bin/bash

@@ -245,7 +245,7 @@
         },
         {
           "type": "doc",
-          "id": "develop-apisix-environment"
+          "id": "build-apisix-dev-environment-in-docker"
         },
         {
           "type": "doc",

@@ -1,6 +1,6 @@
 ---
-id: develop-apisix-environment
-title: 通过 Docker 快速构建开发环境
+id: build-apisix-dev-environment-in-docker
+title: 通过 Docker 构建开发环境
 description: 本文介绍了如何用 Docker 的方式快速构建 API 网关 Apache APISIX 开发环境。
 ---
 
@@ -37,7 +37,7 @@ description: 本文介绍了如何用 Docker 的方式快速构建 API 网关 Ap
 
 ### 实现思路
 
-![Develop Apache APISIX Environment](../../assets/images/develop-apisix-dev.png)
+![Build Apache APISIX Development Environment in Docker](../../assets/images/develop-apisix-dev.png)
 
 ### 实现步骤
 
@@ -70,9 +70,7 @@ make deps
 ln -s /usr/bin/openresty /usr/bin/nginx
 ```
 
-### 开始使用
-
-#### 启动和停止 APISIX
+### 启动和停止 APISIX
 
 ```shell
 make run
@@ -91,7 +89,7 @@ make stop
 
 :::
 
-#### 运行指定测试用例
+### 运行指定测试用例
 
 ```shell
 prove t/admin/routes.t
