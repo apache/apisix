@@ -491,15 +491,3 @@ ci-env-down:
 	rm $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) down
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
-
-
-### build-dev-env : Build developer environment image
-.PHONY: build-dev-env
-build-dev-env:
-	$(ENV_DOCKER) build -t apisix-dev-env -f example/build-dev-image.dockerfile .
-
-
-### run-dev-env : Run developer environment image
-.PHONY: run-dev-env
-run-dev-env:
-	$(ENV_DOCKER) run -d --name apisix-dev-env -v $(pwd):/apisix apisix-dev-env:latest
