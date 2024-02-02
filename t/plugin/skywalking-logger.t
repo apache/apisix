@@ -33,7 +33,10 @@ add_block_preprocessor(sub {
         location /v3/logs {
             content_by_lua_block {
                 local core = require("apisix.core")
-
+                ngx.req.read_body()
+                local data = ngx.req.get_body_data()
+                local headers = ngx.req.get_headers()
+                ngx.log(ngx.WARN, "skywalking-logger body: ", data)
                 core.log.warn(core.json.encode(core.request.get_body(), true))
             }
         }
@@ -294,3 +297,90 @@ opentracing
 qr/\\\"serviceInstance\\\":\\\"\$hostname\\\"/
 qr/\\\"serviceInstance\\\":\\\"\\\"/
 --- wait: 0.5
+
+
+
+=== TEST 13: add plugin with 'include_req_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/skywalking-logger', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "skywalking-logger": {
+                                "endpoint_addr": "http://127.0.0.1:1986",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_req_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body = t("/opentracing", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- error_log
+\"body\":\"{\\\"sample_payload\\\":\\\"hello\\\"}\"
+
+
+
+=== TEST 14: add plugin with 'include_resp_body' setting, collect response log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/skywalking-logger', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "skywalking-logger": {
+                                "endpoint_addr": "http://127.0.0.1:1986",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "include_req_body": true,
+                                "include_resp_body": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body = t("/opentracing", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- error_log
+\"body\":\"opentracing\\n\"
