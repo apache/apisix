@@ -21,6 +21,15 @@ no_root_location();
 
 $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+
+});
+
 run_tests;
 
 __DATA__
@@ -51,8 +60,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -82,8 +89,6 @@ passed
             ngx.say(body)
         }
     }
---- request
-GET /t
 --- response_body
 passed
 
@@ -144,8 +149,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -195,13 +198,11 @@ location /t {
         end
     }
 }
---- request
-GET /t
 --- response_body
 connected: 1
 failed to do SSL handshake: handshake failed
 --- error_log
-failed to find any SSL certificate by SNI
+failed to match any SSL certificate by SNI
 
 
 
@@ -231,8 +232,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -293,8 +292,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -340,8 +337,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -402,8 +397,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body eval
 qr{connected: 1
 ssl handshake: true
@@ -449,8 +442,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -489,8 +480,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body_like
 connected: 1
 failed to do SSL handshake: 18: self[- ]signed certificate
@@ -535,8 +524,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 connected: 1
 failed to do SSL handshake: handshake failed
@@ -572,8 +559,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -612,8 +597,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 connected: 1
 failed to do SSL handshake: handshake failed
@@ -648,8 +631,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -688,8 +669,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body_like
 connected: 1
 failed to do SSL handshake: 18: self[- ]signed certificate
@@ -727,8 +706,6 @@ location /t {
         ngx.say(body)
     }
 }
---- request
-GET /t
 --- response_body
 passed
 
@@ -767,8 +744,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body_like
 connected: 1
 failed to do SSL handshake: 18: self[- ]signed certificate
@@ -813,8 +788,6 @@ location /t {
         -- collectgarbage()
     }
 }
---- request
-GET /t
 --- response_body
 connected: 1
 failed to do SSL handshake: handshake failed
@@ -846,8 +819,6 @@ location /t {
         ngx.print(body)
     }
 }
---- request
-GET /t
 --- response_body
 {"error_msg":"failed to decrypt previous encrypted key"}
 --- error_code: 400

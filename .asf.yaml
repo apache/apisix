@@ -53,6 +53,34 @@ github:
           dismiss_stale_reviews: true
           require_code_owner_reviews: true
           required_approving_review_count: 2
+      release/3.8:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.7:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.6:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.5:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.4:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.3:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
+      release/3.2:
+        required_pull_request_reviews:
+          require_code_owner_reviews: true
+          required_approving_review_count: 2
       release/3.1:
         required_pull_request_reviews:
           require_code_owner_reviews: true

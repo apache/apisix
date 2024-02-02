@@ -19,6 +19,7 @@ local require = require
 local pcall = pcall
 local open = io.open
 local popen = io.popen
+local close = io.close
 local exit = os.exit
 local stderr = io.stderr
 local str_format = string.format
@@ -126,5 +127,10 @@ function _M.write_file(file_path, data)
     return true
 end
 
+
+function _M.file_exists(file_path)
+    local f = open(file_path, "r")
+    return f ~= nil and close(f)
+end
 
 return _M

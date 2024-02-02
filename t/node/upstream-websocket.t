@@ -270,7 +270,10 @@ passed
             local client = require "resty.websocket.client"
             local wb = client:new()
             local uri = "wss://127.0.0.1:1994/websocket_handshake"
-            local ok, err = wb:connect(uri)
+            local opts = {
+                server_name = "127.0.0.1"
+            }
+            local ok, err = wb:connect(uri, opts)
             if not ok then
                 ngx.say("failed to connect: " .. err)
                 return

@@ -40,6 +40,14 @@ function _M.init_worker()
 end
 
 
+function _M.plugin_configs()
+    if not plugin_configs then
+        return nil, nil
+    end
+    return plugin_configs.values, plugin_configs.conf_version
+end
+
+
 function _M.get(id)
     return plugin_configs:get(id)
 end
@@ -70,8 +78,7 @@ function _M.merge(route_conf, plugin_config)
         end
     end
 
-    route_conf.update_count = route_conf.update_count + 1
-    route_conf.modifiedIndex = route_conf.orig_modifiedIndex .. "#" .. route_conf.update_count
+    route_conf.modifiedIndex = route_conf.orig_modifiedIndex .. "#" .. plugin_config.modifiedIndex
     route_conf.prev_plugin_config_ver = plugin_config.modifiedIndex
 
     return route_conf

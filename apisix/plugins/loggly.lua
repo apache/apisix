@@ -62,6 +62,13 @@ local schema = {
             description = "base severity log level",
         },
         include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
@@ -85,6 +92,7 @@ local schema = {
             type = "boolean",
             default = true
         },
+        log_format = {type = "object"},
         severity_map = {
             type = "object",
             description = "upstream response code vs syslog severity mapping",

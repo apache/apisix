@@ -20,7 +20,6 @@ local tab_insert = table.insert
 local ipairs = ipairs
 local pairs = pairs
 
-local plugin_name = "limit-count"
 local limit_redis_cluster_new
 local limit_redis_new
 local limit_local_new
@@ -50,6 +49,9 @@ local policy_to_additional_properties = {
             redis_port = {
                 type = "integer", minimum = 1, default = 6379,
             },
+            redis_username = {
+                type = "string", minLength = 1,
+            },
             redis_password = {
                 type = "string", minLength = 0,
             },
@@ -59,6 +61,12 @@ local policy_to_additional_properties = {
             redis_timeout = {
                 type = "integer", minimum = 1, default = 1000,
             },
+            redis_ssl = {
+                type = "boolean", default = false,
+            },
+            redis_ssl_verify = {
+                type = "boolean", default = false,
+            },
         },
         required = {"redis_host"},
     },
@@ -66,7 +74,7 @@ local policy_to_additional_properties = {
         properties = {
             redis_cluster_nodes = {
                 type = "array",
-                minItems = 2,
+                minItems = 1,
                 items = {
                     type = "string", minLength = 2, maxLength = 100
                 },
@@ -191,8 +199,8 @@ function _M.check_schema(conf)
 end
 
 
-local function create_limit_obj(conf)
-    core.log.info("create new limit-count plugin instance")
+local function create_limit_obj(conf, plugin_name)
+    core.log.info("create new " .. plugin_name .. " plugin instance")
 
     if not conf.policy or conf.policy == "local" then
         return limit_local_new("plugin-" .. plugin_name, conf.count,
@@ -222,7 +230,9 @@ local function gen_limit_key(conf, ctx, key)
     -- Here we use plugin-level conf version to prevent the counter from being resetting
     -- because of the change elsewhere.
     -- A route which reuses a previous route's ID will inherits its counter.
-    local new_key = ctx.conf_type .. ctx.conf_id .. ':' .. apisix_plugin.conf_version(conf)
+    local conf_type = ctx.conf_type_without_consumer or ctx.conf_type
+    local conf_id = ctx.conf_id_without_consumer or ctx.conf_id
+    local new_key = conf_type .. conf_id .. ':' .. apisix_plugin.conf_version(conf)
                     .. ':' .. key
     if conf._vid then
         -- conf has _vid means it's from workflow plugin, add _vid to the key
@@ -234,9 +244,9 @@ local function gen_limit_key(conf, ctx, key)
 end
 
 
-local function gen_limit_obj(conf, ctx)
+local function gen_limit_obj(conf, ctx, plugin_name)
     if conf.group then
-        return lrucache(conf.group, "", create_limit_obj, conf)
+        return lrucache(conf.group, "", create_limit_obj, conf, plugin_name)
     end
 
     local extra_key
@@ -246,13 +256,13 @@ local function gen_limit_obj(conf, ctx)
         extra_key = conf.policy
     end
 
-    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf)
+    return core.lrucache.plugin_ctx(lrucache, ctx, extra_key, create_limit_obj, conf, plugin_name)
 end
 
-function _M.rate_limit(conf, ctx)
+function _M.rate_limit(conf, ctx, name, cost)
     core.log.info("ver: ", ctx.conf_version)
 
-    local lim, err = gen_limit_obj(conf, ctx)
+    local lim, err = gen_limit_obj(conf, ctx, name)
 
     if not lim then
         core.log.error("failed to fetch limit.count object: ", err)
@@ -289,7 +299,13 @@ function _M.rate_limit(conf, ctx)
     key = gen_limit_key(conf, ctx, key)
     core.log.info("limit key: ", key)
 
-    local delay, remaining, reset = lim:incoming(key, true, conf)
+    local delay, remaining, reset
+    if not conf.policy or conf.policy == "local" then
+        delay, remaining, reset = lim:incoming(key, true, conf, cost)
+    else
+        delay, remaining, reset = lim:incoming(key, cost)
+    end
+
     if not delay then
         local err = remaining
         if err == "rejected" then

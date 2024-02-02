@@ -137,13 +137,12 @@ end
 
 function _M.init_worker()
     local err
-    local config = core.config.new()
     local cfg = {
         automatic = true,
         item_schema = core.schema.consumer,
         checker = check_consumer,
     }
-    if config.type ~= "etcd" then
+    if core.config.type ~= "etcd" then
         cfg.filter = filter
     end
 

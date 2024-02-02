@@ -1,7 +1,7 @@
 ---
 title: file-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - File Logger
@@ -46,8 +46,56 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 | Name | Type   | Required | Description   |
 | ---- | ------ | -------- | ------------- |
 | path | string | True     | Log file path. |
+| log_format | object | False    | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| include_req_body       | boolean | False    | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
+| include_req_body_expr  | array   | False    | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
 | include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                |
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
+| match        | array[] | False   | Logs will be recorded when the rule matching is successful if the option is set. See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available expressions.   |
+
+### Example of default log format
+
+  ```json
+  {
+    "service_id": "",
+    "apisix_latency": 100.99999809265,
+    "start_time": 1703907485819,
+    "latency": 101.99999809265,
+    "upstream_latency": 1,
+    "client_ip": "127.0.0.1",
+    "route_id": "1",
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "request": {
+        "headers": {
+            "host": "127.0.0.1:1984",
+            "content-type": "application/x-www-form-urlencoded",
+            "user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
+            "content-length": "12"
+        },
+        "method": "POST",
+        "size": 194,
+        "url": "http://127.0.0.1:1984/hello?log_body=no",
+        "uri": "/hello?log_body=no",
+        "querystring": {
+            "log_body": "no"
+        }
+    },
+    "response": {
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "content-length": "12",
+            "server": "APISIX/3.7.0"
+        },
+        "status": 200,
+        "size": 123
+    },
+    "upstream": "127.0.0.1:1982"
+ }
+  ```
 
 ## Metadata
 
@@ -55,7 +103,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 The example below shows how you can configure through the Admin API:
 
@@ -77,7 +125,7 @@ With this configuration, your logs would be formatted as shown below:
 {"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the Plugin on a specific Route:
 
@@ -109,9 +157,49 @@ curl -i http://127.0.0.1:9080/hello
 
 You will be able to find the `file.log` file in the configured `logs` directory.
 
-## Disable Plugin
+## Filter logs
 
-To disable the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+  "plugins": {
+    "file-logger": {
+      "path": "logs/file.log",
+      "match": {
+        {
+          { "arg_name","==","jack" }
+        }
+      }
+    }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "127.0.0.1:9001": 1
+    }
+  },
+  "uri": "/hello"
+}'
+```
+
+Test:
+
+```shell
+curl -i http://127.0.0.1:9080/hello?name=jack
+```
+
+Log records can be seen in `logs/file.log`.
+
+```shell
+curl -i http://127.0.0.1:9080/hello?name=rose
+```
+
+Log records cannot be seen in `logs/file.log`.
+
+## Delete Plugin
+
+To remove the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

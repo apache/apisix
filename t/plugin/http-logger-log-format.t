@@ -63,7 +63,7 @@ passed
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1980/log",
+                                "uri": "http://127.0.0.1:3001",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -85,6 +85,13 @@ passed
             if code >= 300 then
                 ngx.status = code
             end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
             ngx.say(body)
         }
     }
@@ -95,14 +102,11 @@ passed
 
 
 
-=== TEST 3: hit route and report http logger
---- request
-GET /hello
---- response_body
-hello world
---- wait: 0.5
---- error_log eval
-qr/request log: \{.*route_id":"1".*\}/
+=== TEST 3: report http logger
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/.*route_id":"1".*/
 
 
 
@@ -116,7 +120,7 @@ qr/request log: \{.*route_id":"1".*\}/
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1980/log",
+                                "uri": "http://127.0.0.1:3001",
                                 "batch_max_size": 2,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -138,6 +142,13 @@ qr/request log: \{.*route_id":"1".*\}/
             if code >= 300 then
                 ngx.status = code
             end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
             ngx.say(body)
         }
     }
@@ -148,28 +159,11 @@ passed
 
 
 
-=== TEST 5: hit route and report http logger
---- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-
-        for i = 1, 2 do
-            t('/hello', ngx.HTTP_GET)
-        end
-
-        ngx.sleep(3)
-        ngx.say("done")
-    }
-}
---- request
-GET /t
---- error_code: 200
---- grep_error_log eval
+=== TEST 5: report http logger
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
 qr/"\@timestamp":"20/
---- grep_error_log_out
-"@timestamp":"20
-"@timestamp":"20
 
 
 
@@ -183,7 +177,7 @@ qr/"\@timestamp":"20/
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1980/log",
+                                "uri": "http://127.0.0.1:3001",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -205,6 +199,13 @@ qr/"\@timestamp":"20/
             if code >= 300 then
                 ngx.status = code
             end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
             ngx.say(body)
         }
     }
@@ -215,14 +216,11 @@ passed
 
 
 
-=== TEST 7: hit route and report http logger
---- request
-GET /hello
---- response_body
-hello world
---- wait: 0.5
---- error_log eval
-qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","route_id":"1"\}/
+=== TEST 7: report http logger
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/"route_id":"1"/
 
 
 
@@ -236,7 +234,7 @@ qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","r
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1980/log",
+                                "uri": "http://127.0.0.1:3001",
                                 "batch_max_size": 2,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -258,6 +256,20 @@ qr/request log: \{"\@timestamp":.*,"client_ip":"127.0.0.1","host":"localhost","r
             if code >= 300 then
                 ngx.status = code
             end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
             ngx.say(body)
         }
     }
@@ -268,25 +280,11 @@ passed
 
 
 
-=== TEST 9: hit route and report http logger
---- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-
-        for i = 1, 2 do
-            t('/hello', ngx.HTTP_GET)
-        end
-
-        ngx.sleep(3)
-        ngx.say("done")
-    }
-}
---- request
-GET /t
---- error_code: 200
---- error_log eval
-qr/request log: \[\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\},\{"\@timestamp":".*","client_ip":"127.0.0.1","host":"127.0.0.1","route_id":"1"\}\]/
+=== TEST 9: report http logger to confirm two json in array
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/\[\{.*?\},\{.*?\}\]/
 
 
 
@@ -356,7 +354,7 @@ passed
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1982/log",
+                                "uri": "http://127.0.0.1:3001",
                                 "batch_max_size": 1,
                                 "max_retry_count": 1,
                                 "retry_delay": 2,
@@ -378,6 +376,13 @@ passed
             if code >= 300 then
                 ngx.status = code
             end
+
+            local code, _, _ = t("/hello", "GET",null,null,{apikey = "auth-one"})
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
             ngx.say(body)
         }
     }
@@ -388,15 +393,11 @@ passed
 
 
 
-=== TEST 13: hit
---- request
-GET /hello
---- more_headers
-apikey: auth-one
---- grep_error_log eval
-qr/request log: \{.+\}/
---- grep_error_log_out eval
-qr/\Q{"apisix_latency":\E[^,]+\Q,"client_ip":"127.0.0.1","consumer":{"username":"jack"},"latency":\E[^,]+\Q,"request":{"headers":{"apikey":"auth-one","connection":"close","host":"localhost"},"method":"GET","querystring":{},"size":\E\d+\Q,"uri":"\/hello","url":"http:\/\/localhost:1984\/hello"},"response":{"headers":{"connection":"close","content-length":"\E\d+\Q","content-type":"text\/plain","server":"\E[^"]+\Q"},"size":\E\d+\Q,"status":200},"route_id":"1","server":{"hostname":"\E[^"]+\Q","version":"\E[^"]+\Q"},"service_id":"","start_time":\E\d+\Q,"upstream":"127.0.0.1:1982","upstream_latency":\E[^,]+\Q}\E/
+=== TEST 13: check logs
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/"consumer":\{"username":"jack"\}/
 --- wait: 0.5
 
 
@@ -428,6 +429,16 @@ done
 
 
 === TEST 15: use custom variable in the logger
+--- extra_init_by_lua
+    local core = require "apisix.core"
+
+    core.ctx.register_var("a6_route_labels", function(ctx)
+        local route = ctx.matched_route and ctx.matched_route.value
+        if route and route.labels then
+            return route.labels
+        end
+        return nil
+    end)
 --- config
     location /t {
         content_by_lua_block {
@@ -453,10 +464,13 @@ done
                  [[{
                         "plugins": {
                             "http-logger": {
-                                "uri": "http://127.0.0.1:1980/log",
+                                "uri": "http://127.0.0.1:3001",
                                 "batch_max_size": 1,
                                 "concat_method": "json"
                             }
+                        },
+                        "labels":{
+                            "key":"testvalue"
                         },
                         "upstream": {
                             "nodes": {
@@ -464,15 +478,19 @@ done
                             },
                             "type": "roundrobin"
                         },
-                        "labels": {
-                            "k": "v"
-                        },
                         "uri": "/hello"
                 }]]
                 )
 
             if code >= 300 then
                 ngx.status = code
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
             end
             ngx.say(body)
         }
@@ -485,20 +503,67 @@ passed
 
 
 === TEST 16: hit route and report http logger
---- extra_init_by_lua
-    local core = require "apisix.core"
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/.*testvalue.*/
 
-    core.ctx.register_var("a6_route_labels", function(ctx)
-        local route = ctx.matched_route and ctx.matched_route.value
-        if route and route.labels then
-            return route.labels
-        end
-        return nil
-    end)
+
+
+=== TEST 17: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:3001",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "inactive_timeout": 2,
+                                "concat_method": "new_line",
+                                "log_format": {
+                                    "x_ip": "$remote_addr"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
 --- request
-GET /hello
+GET /t
 --- response_body
-hello world
---- wait: 0.5
---- error_log eval
-qr/request log: \{"client_ip":"127.0.0.1","host":"localhost","labels":\{"k":"v"\},"route_id":"1"\}/
+passed
+
+
+
+=== TEST 18: hit route and report http logger
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/"x_ip":"127.0.0.1".*\}/

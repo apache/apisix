@@ -36,6 +36,7 @@ local schema = {
         endpoint_addr = core.schema.uri_def,
         service_name = {type = "string", default = "APISIX"},
         service_instance_name = {type = "string", default = "APISIX Instance Name"},
+        log_format = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
         include_req_body = {type = "boolean", default = false},
     },
@@ -46,7 +47,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -131,6 +134,11 @@ function _M.log(conf, ctx)
         end
     end
 
+    local service_instance_name = conf.service_instance_name
+    if service_instance_name == "$hostname" then
+        service_instance_name = core.utils.gethostname()
+    end
+
     local entry = {
         traceContext = trace_context,
         body = {
@@ -139,7 +147,7 @@ function _M.log(conf, ctx)
             }
         },
         service = conf.service_name,
-        serviceInstance = conf.service_instance_name,
+        serviceInstance = service_instance_name,
         endpoint = ctx.var.uri,
     }
 

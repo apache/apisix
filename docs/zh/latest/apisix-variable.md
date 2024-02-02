@@ -47,6 +47,7 @@ APISIX 除了支持 [NGINX 变量](http://nginx.org/en/docs/varindex.html)外，
 | service_id          | core       | APISIX 服务的 ID。                                                                |                   |
 | service_name        | core       | APISIX 服务的名称。                                                               |                   |
 | redis_cmd_line      | Redis      | Redis 命令的内容。                                                                |                   |
+| resp_body           | core       | 在 logger 插件中，如果部分插件支持记录响应的 body 信息，比如配置 `include_resp_body: true`，那可以在 log format 中使用该变量。|                   |
 | rpc_time            | xRPC       | 在 RPC 请求级别所花费的时间。                                                      |                   |
 
 当然，除上述变量外，你也可以创建自定义[变量](./plugin-develop.md#register-custom-variable)。

@@ -129,12 +129,15 @@ done
                             "endpoint_addr":"]] .. fake_uri .. [[",
                             "client_id":"7ceb9b7fda4a9061ec1c",
                             "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
                         }
                     },
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "httpbin.org:80": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
@@ -445,7 +448,7 @@ failed when accessing token: invalid access_token
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -466,12 +469,15 @@ apisix:
                             "endpoint_addr": "http://127.0.0.1:10420",
                             "client_id":"7ceb9b7fda4a9061ec1c",
                             "client_secret":"3416238e1edf915eac08b8fe345b2b95cdba7e04"
+                        },
+                        "proxy-rewrite": {
+                            "uri": "/echo"
                         }
                     },
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                        "httpbin.org:80": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]

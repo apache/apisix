@@ -106,8 +106,8 @@ __DATA__
 --- response_body_like
 passed
 passed
-property "endpoint_addr" is required
-property "field" is required
+value should match only one schema, but matches none
+value should match only one schema, but matches none
 property "field" validation failed: property "index" is required
 property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
 
@@ -454,7 +454,7 @@ check elasticsearch custom body success
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -515,3 +515,208 @@ apisix:
 --- response_body
 123456
 PTQvJEaPcNOXcOHeErC0XQ==
+
+
+
+=== TEST 13: add plugin on routes using multi elasticsearch-logger
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addrs = {"http://127.0.0.1:9200", "http://127.0.0.1:9201"},
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: to show that different endpoints will be chosen randomly
+--- config
+    location /t {
+        content_by_lua_block {
+            local code_count = {}
+            local t = require("lib.test_admin").test
+            for i = 1, 12 do
+                local code, body = t('/hello', ngx.HTTP_GET)
+                if code ~= 200 then
+                    ngx.say("code: ", code, " body: ", body)
+                end
+                code_count[code] = (code_count[code] or 0) + 1
+            end
+
+            local code_arr = {}
+            for code, count in pairs(code_count) do
+                table.insert(code_arr, {code = code, count = count})
+            end
+
+            ngx.say(require("toolkit.json").encode(code_arr))
+            ngx.exit(200)
+        }
+    }
+--- response_body
+[{"code":200,"count":12}]
+--- error_log
+http://127.0.0.1:9200/_bulk
+http://127.0.0.1:9201/_bulk
+
+
+
+=== TEST 15: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        log_format = {
+                            custom_host = "$host"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route and check custom elasticsearch logger
+--- extra_init_by_lua
+    local core = require("apisix.core")
+    local http = require("resty.http")
+    local ngx_re = require("ngx.re")
+    local log_util = require("apisix.utils.log-util")
+    log_util.inject_get_custom_format_log(function(ctx, format)
+        return {
+            test = "test"
+        }
+    end)
+
+    http.request_uri = function(self, uri, params)
+        if not params.body or type(params.body) ~= "string" then
+            return nil, "invalid params body"
+        end
+
+        local arr = ngx_re.split(params.body, "\n")
+        if not arr or #arr ~= 2 then
+            return nil, "invalid params body"
+        end
+
+        local entry = core.json.decode(arr[2])
+        local origin_entry = log_util.get_custom_format_log(nil, nil)
+        for k, v in pairs(origin_entry) do
+            local vv = entry[k]
+            if not vv or vv ~= v then
+                return nil, "invalid params body"
+            end
+        end
+
+        core.log.error("check elasticsearch custom body success")
+        return {
+            status = 200,
+            body = "success"
+        }, nil
+    end
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 2
+--- error_log
+check elasticsearch custom body success
+
+
+
+=== TEST 17: using unsupported field (type) for elasticsearch v8 should work normally
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services",
+                            type = "collector"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: test route (auth success)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- no_error_log
+Action/metadata line [1] contains an unknown parameter [_type]

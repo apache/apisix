@@ -112,11 +112,17 @@ qr/can not load xDS library/
 --- config
     location /t {
         content_by_lua_block {
-            -- wait for xds library sync data
-            ngx.sleep(1.5)
             local core = require("apisix.core")
-            local version = ngx.shared["xds-config-version"]:get("version")
-            ngx.say(version)
+            local version
+            for i = 1, 5 do
+                version = ngx.shared["xds-config-version"]:get("version")
+                if version then
+                    ngx.say(version)
+                    break
+                end
+                -- wait for xds library sync data
+                ngx.sleep(1.5)
+            end
         }
     }
 --- response_body eval

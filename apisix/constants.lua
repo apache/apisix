@@ -37,6 +37,7 @@ return {
     },
     STREAM_ETCD_DIRECTORY = {
         ["/upstreams"] = true,
+        ["/services"] = true,
         ["/plugins"] = true,
         ["/ssls"] = true,
         ["/stream_routes"] = true,

@@ -62,11 +62,6 @@ local etcd_schema = {
             minimum = 1,
             description = "etcd connection timeout in seconds",
         },
-        use_grpc = {
-            type = "boolean",
-            -- TODO: set true by default in v3.2
-            default = false,
-        },
     },
     required = {"prefix", "host"}
 }
@@ -135,6 +130,10 @@ local config_schema = {
                             uniqueItems = true,
                         }
                     }
+                },
+                proxy_mode = {
+                    type = "string",
+                    enum = {"http", "stream", "http&stream"},
                 },
                 stream_proxy = {
                     type = "object",
@@ -225,7 +224,12 @@ local config_schema = {
                                 }
                             }
                         },
-                        key_encrypt_salt = {
+                    }
+                },
+                data_encryption = {
+                    type = "object",
+                    properties = {
+                        keyring = {
                             anyOf = {
                                 {
                                     type = "array",
@@ -353,6 +357,9 @@ local admin_schema = {
         https_admin = {
             type = "boolean",
         },
+        admin_key_required = {
+            type = "boolean",
+        },
     }
 }
 
@@ -375,64 +382,28 @@ local deployment_schema = {
     control_plane = {
         properties = {
             etcd = etcd_schema,
+            admin = admin_schema,
             role_control_plane = {
                 properties = {
                     config_provider = {
                         enum = {"etcd"}
                     },
-                    conf_server = {
-                        properties = {
-                            listen = {
-                                type = "string",
-                                default = "0.0.0.0:9280",
-                            },
-                            cert = { type = "string" },
-                            cert_key = { type = "string" },
-                            client_ca_cert = { type = "string" },
-                        },
-                        required = {"cert", "cert_key"}
-                    },
                 },
-                required = {"config_provider", "conf_server"}
-            },
-            certs = {
-                properties = {
-                    cert = { type = "string" },
-                    cert_key = { type = "string" },
-                    trusted_ca_cert = { type = "string" },
-                },
-                dependencies = {
-                    cert = {
-                        required = {"cert_key"},
-                    },
-                },
-                default = {},
+                required = {"config_provider"}
             },
         },
         required = {"etcd", "role_control_plane"}
     },
     data_plane = {
         properties = {
+            etcd = etcd_schema,
             role_data_plane = {
                 properties = {
                     config_provider = {
-                        enum = {"control_plane", "yaml", "xds"}
+                        enum = {"etcd", "yaml", "xds"}
                     },
                 },
                 required = {"config_provider"}
-            },
-            certs = {
-                properties = {
-                    cert = { type = "string" },
-                    cert_key = { type = "string" },
-                    trusted_ca_cert = { type = "string" },
-                },
-                dependencies = {
-                    cert = {
-                        required = {"cert_key"},
-                    },
-                },
-                default = {},
             },
         },
         required = {"role_data_plane"}

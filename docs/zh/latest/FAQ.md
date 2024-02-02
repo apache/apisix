@@ -1,7 +1,7 @@
 ---
 title: 常见问题
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - 常见问题
   - FAQ
@@ -109,18 +109,18 @@ luarocks config rocks_servers
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 参数获取详细的日志来诊断问题。
+如果通过上述操作仍然无法解决问题，可以尝试使用 `--verbose` 或 `-v` 参数获取详细的日志来诊断问题。
 
-## 如何构建 APISIX-Base 环境？
+## 如何构建 APISIX-Runtime 环境？
 
-有些功能需要引入额外的 NGINX 模块，这就要求 APISIX 需要运行在 APISIX-Base 上。如果你需要这些功能，你可以参考 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 中的代码，构建自己的 APISIX-Base 环境。
+有些功能需要引入额外的 NGINX 模块，这就要求 APISIX 需要运行在 APISIX-Runtime 上。如果你需要这些功能，你可以参考 [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) 中的代码，构建自己的 APISIX-Runtime 环境。
 
 ## 我该如何使用 Apache APISIX 进行灰度发布？
 
 举个例子，比如：`foo.com/product/index.html?id=204&page=2`，并考虑您需要根据查询字符串中的 `id` 在此条件下进行灰度发布：
 
-1. Group A：`id <= 1000`
-2. Group B：`id > 1000`
+1. Group A:`id <= 1000`
+2. Group B:`id > 1000`
 
 在 Apache APISIX 中有两种不同的方法来实现这一点：
 
@@ -706,6 +706,59 @@ make GOOS=linux GOARCH=amd64
       - "http://127.0.0.1:2379"
     prefix: "/apisix"
 ```
+
+## 为什么 file-logger 记录日志会出现乱码？
+
+如果你使用的是 `file-logger` 插件，但是在日志文件中出现了乱码，那么可能是因为上游服务的响应体被进行了压缩。你可以将请求头带上不接收压缩响应参数（`gzip;q=0,deflate,sdch`）以解决这个问题，你可以使用 [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) 插件将请求头中的 `accept-encoding` 设置为不接收压缩响应：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+    "methods":[
+        "GET"
+    ],
+    "uri":"/test/index.html",
+    "plugins":{
+        "proxy-rewrite":{
+            "headers":{
+                "set":{
+                    "accept-encoding":"gzip;q=0,deflate,sdch"
+                }
+            }
+        }
+    },
+    "upstream":{
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:80":1
+        }
+    }
+}'
+```
+
+## APISIX 如何配置带认证的 ETCD？
+
+假设您有一个启用身份验证的 ETCD 集群。要访问该集群，需要在 `conf/config.yaml` 中为 Apache APISIX 配置正确的用户名和密码：
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
+
+## SSLs 对象与 `upstream` 对象中的 `tls.client_cert` 以及 `config-default.yaml` 中的 `ssl_trusted_certificate` 区别是什么？
+
+Admin API 中 `/apisix/admin/ssls` 用于管理 SSL 对象，如果 APISIX 需要接收来自外网的 HTTPS 请求，那就需要用到存放在这里的证书完成握手。SSL 对象中支持配置多个证书，不同域名的证书 APISIX 将使用 Server Name Indication (SNI) 进行区分。
+
+Upstream 对象中的 `tls.client_cert`、`tls.client_key` 与 `tls.client_cert_id` 用于存放客户端的证书，适用于需要与上游进行 [mTLS 通信](https://apisix.apache.org/zh/docs/apisix/tutorials/client-to-apisix-mtls/)的情况。
+
+`config-default.yaml` 中的 `ssl_trusted_certificate` 用于配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务时，避免提示拒绝对方的 SSL 证书。注意：它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，APISIX 仍然可以与其通信，而无需配置根证书。
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 

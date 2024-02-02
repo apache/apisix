@@ -163,7 +163,7 @@ Origin: http://foo.example.org
 hello world
 --- response_headers
 Access-Control-Allow-Origin:
-Vary:
+Vary: Origin
 Access-Control-Allow-Methods:
 Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:
@@ -254,7 +254,7 @@ Origin: http://foo.example.org
 hello world
 --- response_headers
 Access-Control-Allow-Origin:
-Vary:
+Vary: Origin
 Access-Control-Allow-Methods:
 Access-Control-Allow-Headers:
 Access-Control-Expose-Headers:

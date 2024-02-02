@@ -1,7 +1,8 @@
 ---
 title: opa
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Open Policy Agent
   - opa
@@ -29,7 +30,7 @@ description: This document contains information about the Apache APISIX opa Plug
 
 ## Description
 
-The `opa` Plugin can be used to integrate with [Open Policy Agent](https://www.openpolicyagent.org). This can help you decouple functions such as authentication and access to services and reduce the complexity of your system.
+The `opa` Plugin can be used to integrate with [Open Policy Agent (OPA)](https://www.openpolicyagent.org). OPA is a policy engine that helps defininig and enforcing authorization policies, which determines whether a user or application has the necessary permissions to perform a particular action or access a particular resource. Using OPA with APISIX decouples authorization logics from APISIX.
 
 ## Attributes
 
@@ -297,9 +298,9 @@ curl -X GET 127.0.0.1:9080/get
 }
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `opa` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `opa` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

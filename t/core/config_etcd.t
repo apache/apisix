@@ -84,9 +84,9 @@ end
 --- request
 GET /t
 --- grep_error_log chop
-peer closed connection in SSL handshake while SSL handshaking to upstream
+peer closed connection in SSL handshake
 --- grep_error_log_out eval
-qr/(peer closed connection in SSL handshake while SSL handshaking to upstream){1,}/
+qr/(peer closed connection in SSL handshake){1,}/
 
 
 
@@ -118,42 +118,7 @@ qr/(closed){1,}/
 
 
 
-=== TEST 4: originate TLS connection to etcd cluster and verify TLS certificate (default behavior)
---- yaml_config
-apisix:
-  node_listen: 1984
-  ssl:
-    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "https://127.0.0.1:12379"
---- extra_init_by_lua
-local health_check = require("resty.etcd.health_check")
-health_check.get_target_status = function()
-    return true
-end
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.sleep(4)
-            ngx.say("ok")
-        }
-    }
---- timeout: 5
---- request
-GET /t
---- grep_error_log chop
-10:certificate has expired
---- grep_error_log_out eval
-qr/(10:certificate has expired){1,}/
-
-
-
-=== TEST 5: set route(id: 1) to etcd cluster with TLS
+=== TEST 4: set route(id: 1) to etcd cluster with TLS
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -197,7 +162,7 @@ passed
 
 
 
-=== TEST 6: get route(id: 1) from etcd cluster with TLS
+=== TEST 5: get route(id: 1) from etcd cluster with TLS
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -233,7 +198,7 @@ passed
 
 
 
-=== TEST 7: ensure only one auth request per subsystem for all the etcd sync
+=== TEST 6: ensure only one auth request per subsystem for all the etcd sync
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -266,11 +231,10 @@ qr/etcd auth failed/
 etcd auth failed
 etcd auth failed
 etcd auth failed
-etcd auth failed
 
 
 
-=== TEST 8: ensure add prefix automatically for _M.getkey
+=== TEST 7: ensure add prefix automatically for _M.getkey
 --- config
     location /t {
         content_by_lua_block {
@@ -301,7 +265,7 @@ passed
 
 
 
-=== TEST 9: Test ETCD health check mode switch during APISIX startup
+=== TEST 8: Test ETCD health check mode switch during APISIX startup
 --- config
     location /t {
         content_by_lua_block {
@@ -320,7 +284,7 @@ qr/healthy check use round robin
 
 
 
-=== TEST 10: last_err can be nil when the reconnection is successful
+=== TEST 9: last_err can be nil when the reconnection is successful
 --- config
     location /t {
         content_by_lua_block {
@@ -347,3 +311,208 @@ GET /t
 reconnected to etcd
 --- response_body
 passed
+
+
+
+=== TEST 10: reloaded data may be in res.body.node (special kvs structure)
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    admin:
+        admin_key: null
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_etcd = require("apisix.core.config_etcd")
+            local etcd_cli = {}
+            function etcd_cli.readdir()
+                return {
+                    status = 200,
+                    headers = {},
+                    body = {
+                        header = {revision = 1},
+                        kvs = {{key = "foo", value = "bar"}},
+                    }
+                }
+            end
+            config_etcd.test_sync_data({
+                etcd_cli = etcd_cli,
+                key = "fake",
+                single_item = true,
+                -- need_reload because something wrong happened before
+                need_reload = true,
+                upgrade_version = function() end,
+                conf_version = 1,
+            })
+        }
+    }
+--- request
+GET /t
+--- log_level: debug
+--- grep_error_log eval
+qr/readdir key: fake res: .+/
+--- grep_error_log_out eval
+qr/readdir key: fake res: \[\{("value":"bar","key":"foo"|"key":"foo","value":"bar")\}\]/
+--- wait: 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: reloaded data may be in res.body.node (admin_api_version is v2)
+--- yaml_config
+deployment:
+    role: traditional
+    role_traditional:
+        config_provider: etcd
+    admin:
+        admin_key: null
+        admin_api_version: v2
+--- config
+    location /t {
+        content_by_lua_block {
+            local config_etcd = require("apisix.core.config_etcd")
+            local etcd_cli = {}
+            function etcd_cli.readdir()
+                return {
+                    status = 200,
+                    headers = {},
+                    body = {
+                        header = {revision = 1},
+                        kvs = {
+                            {key = "/foo"},
+                            {key = "/foo/bar", value = {"bar"}}
+                        },
+                    }
+                }
+            end
+            config_etcd.test_sync_data({
+                etcd_cli = etcd_cli,
+                key = "fake",
+                -- need_reload because something wrong happened before
+                need_reload = true,
+                upgrade_version = function() end,
+                conf_version = 1,
+            })
+        }
+    }
+--- request
+GET /t
+--- log_level: debug
+--- grep_error_log eval
+qr/readdir key: fake res: .+/
+--- grep_error_log_out eval
+qr/readdir key: fake res: \{.*"nodes":\[\{.*"value":\["bar"\].*\}\].*\}/
+--- wait: 1
+--- no_error_log
+[error]
+
+
+
+=== TEST 12: test route with special character "-"
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    prefix: "/apisix-test"
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(0.5)
+
+            local http = require "resty.http"
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.say(body)
+
+            -- hit
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET"
+            })
+
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(res.body)
+
+            -- delete route
+            code, body = t('/apisix/admin/routes/1', ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+            -- hit
+            res, err = httpc:request_uri(uri, {
+                method = "GET"
+            })
+
+            if not res then
+                ngx.log(ngx.ERR, err)
+                return
+            end
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+hello world
+passed
+{"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 13: the main watcher should be initialised once
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    watch_timeout: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/main etcd watcher initialised, revision=/
+--- grep_error_log_out
+main etcd watcher initialised, revision=
+main etcd watcher initialised, revision=

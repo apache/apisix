@@ -35,11 +35,11 @@ description: 本文介绍了如何通过 Apache APISIX 发布服务和路由。
 
 ### 插件
 
-[Plugin](./terminology/plugin.md) 也称之为插件，它是扩展 APISIX 应用层能力的关键机制，也是在使用 APISIX 时最常用的资源对象。插件主要是在 HTTP 请求或响应生命周期期间执行的、针对请求的个性化策略。插件可以与路由、服务或消费者绑定。
+[Plugin](../terminology/plugin.md) 也称之为插件，它是扩展 APISIX 应用层能力的关键机制，也是在使用 APISIX 时最常用的资源对象。插件主要是在 HTTP 请求或响应生命周期期间执行的、针对请求的个性化策略。插件可以与路由、服务或消费者绑定。
 
 :::note 注意
 
-如果 [路由](./terminology/route.md)、[服务](./terminology/service.md)、[插件配置](./terminology/plugin-config.md) 或消费者都绑定了相同的插件，则只有一份插件配置会生效，插件配置的优先级由高到低顺序是：消费者 > 路由 > 插件配置 > 服务。同时在插件执行过程中也会涉及 6 个阶段，分别是 `rewrite`、`access`、`before_proxy`、`header_filter`、`body_filter` 和 `log`。
+如果 [路由](../terminology/route.md)、[服务](../terminology/service.md)、[插件配置](../terminology/plugin-config.md) 或消费者都绑定了相同的插件，则只有一份插件配置会生效，插件配置的优先级由高到低顺序是：消费者 > 路由 > 插件配置 > 服务。同时在插件执行过程中也会涉及 6 个阶段，分别是 `rewrite`、`access`、`before_proxy`、`header_filter`、`body_filter` 和 `log`。
 
 :::
 
@@ -57,7 +57,7 @@ description: 本文介绍了如何通过 Apache APISIX 发布服务和路由。
 4. 拒绝客户端请求；
 5. 限制响应数据的速率。
 
-为了实现上述功能，APISIX 提供了多个限流限速的插件，包括 [limit-conn](./plugins/limit-conn.md)、[limit-count](./plugins/limit-count.md) 和 [limit-req](./plugins/limit-req.md)。
+为了实现上述功能，APISIX 提供了多个限流限速的插件，包括 [limit-conn](../plugins/limit-conn.md)、[limit-count](../plugins/limit-count.md) 和 [limit-req](../plugins/limit-req.md)。
 
 - `limit-conn` 插件主要用于限制客户端对服务的并发请求数。
 - `limit-req` 插件使用漏桶算法限制对用户服务的请求速率。
@@ -114,14 +114,14 @@ curl http://127.0.0.1:9080/index.html
 
 APISIX 除了提供限流限速的插件外，还提供了很多其他的关于 **traffic** 插件来满足实际场景的需求：
 
-- [proxy-cache](./plugins/proxy-cache.md)：该插件提供缓存后端响应数据的能力，它可以和其他插件一起使用。该插件支持基于磁盘和内存的缓存。
-- [request-validation](./plugins/request-validation.md)：该插件用于提前验证向上游服务转发的请求。
-- [proxy-mirror](./plugins/proxy-mirror.md)：该插件提供了镜像客户端请求的能力。流量镜像是将线上真实流量拷贝到镜像服务中，以便在不影响线上服务的情况下，对线上流量或请求内容进行具体的分析。
-- [api-breaker](./plugins/api-breaker.md)：该插件实现了 API 熔断功能，从而帮助我们保护上游业务服务。
-- [traffic-split](./plugins/traffic-split.md)：该插件使用户可以逐步引导各个上游之间的流量百分比。，你可以使用该插件实现蓝绿发布，灰度发布。
-- [request-id](./plugins/request-id.md)：该插件通过 APISIX 为每一个请求代理添加 `unique` ID 用于追踪 API 请求。
-- [proxy-control](./plugins/proxy-control.md)：该插件能够动态地控制 NGINX 代理的相关行为。
-- [client-control](./plugins/client-control.md)：该插件能够通过设置客户端请求体大小的上限来动态地控制 NGINX 处理客户端的请求。
+- [proxy-cache](../plugins/proxy-cache.md)：该插件提供缓存后端响应数据的能力，它可以和其他插件一起使用。该插件支持基于磁盘和内存的缓存。
+- [request-validation](../plugins/request-validation.md)：该插件用于提前验证向上游服务转发的请求。
+- [proxy-mirror](../plugins/proxy-mirror.md)：该插件提供了镜像客户端请求的能力。流量镜像是将线上真实流量拷贝到镜像服务中，以便在不影响线上服务的情况下，对线上流量或请求内容进行具体的分析。
+- [api-breaker](../plugins/api-breaker.md)：该插件实现了 API 熔断功能，从而帮助我们保护上游业务服务。
+- [traffic-split](../plugins/traffic-split.md)：该插件使用户可以逐步引导各个上游之间的流量百分比。，你可以使用该插件实现蓝绿发布，灰度发布。
+- [request-id](../plugins/request-id.md)：该插件通过 APISIX 为每一个请求代理添加 `unique` ID 用于追踪 API 请求。
+- [proxy-control](../plugins/proxy-control.md)：该插件能够动态地控制 NGINX 代理的相关行为。
+- [client-control](../plugins/client-control.md)：该插件能够通过设置客户端请求体大小的上限来动态地控制 NGINX 处理客户端的请求。
 
 ## 更多操作
 

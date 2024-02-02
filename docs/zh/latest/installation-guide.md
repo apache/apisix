@@ -31,7 +31,7 @@ import TabItem from '@theme/TabItem';
 
 本文将介绍如何在你的环境中安装并运行 APISIX。
 
-关于如何快速运行 Apache APISIX，请参考[入门指南](./getting-started.md)。
+关于如何快速运行 Apache APISIX，请参考[入门指南](./getting-started/README.md)。
 
 ## 安装 APISIX
 
@@ -44,6 +44,7 @@ import TabItem from '@theme/TabItem';
     {label: 'Docker', value: 'docker'},
     {label: 'Helm', value: 'helm'},
     {label: 'RPM', value: 'rpm'},
+    {label: 'DEB', value: 'deb'},
     {label: 'Source Code', value: 'source code'},
   ]}>
 <TabItem value="docker">
@@ -101,7 +102,7 @@ helm install apisix apisix/apisix --create-namespace  --namespace apisix
 
 <TabItem value="rpm">
 
-该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考[安装 etcd](#安装-etcd)。
+该安装方法适用于 CentOS 7 和 CentOS 8。如果你选择该方法安装 APISIX，需要先安装 etcd。具体安装方法请参考 [安装 etcd](#安装-etcd)。
 
 ### 通过 RPM 仓库安装
 
@@ -125,36 +126,13 @@ sudo yum install apisix
 
 :::tip
 
-你也可以安装指定版本的 APISIX（本示例为 APISIX v2.13.1 LTS 版本）：
+你也可以安装指定版本的 APISIX（本示例为 APISIX v3.8.0 版本）：
 
 ```shell
-sudo yum install apisix-2.13.1
+sudo yum install apisix-3.8.0
 ```
 
 :::
-
-### 通过 DEB 仓库安装
-
-目前 APISIX 支持的 DEB 仓库仅支持 Debian 11（Bullseye），并且支持 amd64 和 arm64 架构。
-
-```shell
-# amd64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
-wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
-echo "deb http://repos.apiseven.com/packages/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
-
-# arm64
-sudo echo "deb http://openresty.org/package/debian bullseye openresty" | tee /etc/apt/sources.list.d/openresty.list
-wget -O - http://repos.apiseven.com/pubkey.gpg | apt-key add -
-echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | tee /etc/apt/sources.list.d/apisix.list
-```
-
-完成上述操作后使用以下命令安装 APISIX：
-
-```shell
-sudo apt update
-sudo apt install -y apisix=3.0.0-0
-```
 
 ### 通过 RPM 包离线安装：
 
@@ -195,9 +173,54 @@ apisix start
 
 </TabItem>
 
+<TabItem value="deb">
+
+### 通过 DEB 仓库安装
+
+目前 APISIX 支持的 DEB 仓库仅支持 Debian 11（Bullseye），并且支持 amd64 和 arm64 架构。
+
+```shell
+# amd64
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+
+# arm64
+wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
+echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
+```
+
+完成上述操作后使用以下命令安装 APISIX：
+
+```shell
+sudo apt update
+sudo apt install -y apisix=3.8.0-0
+```
+
+### 管理 APISIX 服务
+
+APISIX 安装完成后，你可以运行以下命令初始化 NGINX 配置文件和 etcd：
+
+```shell
+sudo apisix init
+```
+
+使用以下命令启动 APISIX：
+
+```shell
+sudo apisix start
+```
+
+:::tip
+
+你可以运行 `apisix help` 命令，通过查看返回结果，获取其他操作的命令及描述。
+
+:::
+
+</TabItem>
+
 <TabItem value="source code">
 
-如果你想要使用源码构建 APISIX，请参考[源码安装 APISIX](./building-apisix.md)。
+如果你想要使用源码构建 APISIX，请参考 [源码安装 APISIX](./building-apisix.md)。
 
 </TabItem>
 </Tabs>
@@ -246,14 +269,14 @@ brew services start etcd
 
 比如将 APISIX 默认监听端口修改为 8000，其他配置保持默认，在 `./conf/config.yaml` 中只需这样配置：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
 apisix:
   node_listen: 8000 # APISIX listening port
 ```
 
 比如指定 APISIX 默认监听端口为 8000，并且设置 etcd 地址为 `http://foo:2379`，其他配置保持默认。在 `./conf/config.yaml` 中只需这样配置：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
 apisix:
   node_listen: 8000 # APISIX listening port
 
@@ -310,4 +333,4 @@ systemctl stop apisix
 
 如果你是通过其他方法安装的 APISIX，可以参考[配置文件模板](https://github.com/api7/apisix-build-tools/blob/master/usr/lib/systemd/system/apisix.service)进行修改，并将其添加在 `/usr/lib/systemd/system/apisix.service` 路径下。
 
-如需了解 APISIX 后续使用，请参考[入门指南](./getting-started.md)获取更多信息。
+如需了解 APISIX 后续使用，请参考[入门指南](./getting-started/README.md)获取更多信息。

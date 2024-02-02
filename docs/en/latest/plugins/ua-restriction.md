@@ -1,7 +1,7 @@
 ---
 title: ua-restriction
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - UA restriction
 description: This document contains information about the Apache APISIX ua-restriction Plugin, which allows you to restrict access to a Route or Service based on the User-Agent header with an allowlist and a denylist.
@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX ua-restr
 
 The `ua-restriction` Plugin allows you to restrict access to a Route or Service based on the `User-Agent` header with an `allowlist` and a `denylist`.
 
-A common scenario is to set crawler rules. `User-Agent` is the identity of the client when sending requests to the server, and the user can whitelist or blacklist some crawler request headers in the `ua-restriction` Plugin.
+A common scenario is to set crawler rules. `User-Agent` is the identity of the client when sending requests to the server, and the user can allow or deny some crawler request headers in the `ua-restriction` Plugin.
 
 ## Attributes
 
@@ -43,11 +43,11 @@ A common scenario is to set crawler rules. `User-Agent` is the identity of the c
 
 :::note
 
-Both `allowlist` and `denylist` can be used on their own. If they are used together, the `allowlist` matches before the `denylist`.
+Both `allowlist` and `denylist` can't be used at the same time.
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route or a Service as shown below:
 
@@ -116,9 +116,9 @@ HTTP/1.1 403 Forbidden
 {"message":"Not allowed"}
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `ua-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `ua-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

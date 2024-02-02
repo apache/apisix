@@ -140,17 +140,17 @@ hello world
 routes:
     -
         id: 1
-        uri: /get
+        uri: /hello
         upstream_id: 1
 upstreams:
     -
         id: 1
         nodes:
-            "httpbin.org:80": 1
+            "test.com:1980": 1
         type: roundrobin
 #END
 --- request
-GET /get
+GET /hello
 --- error_code: 200
 
 
@@ -161,19 +161,19 @@ GET /get
 routes:
     -
         id: 1
-        uri: /get
+        uri: /hello
         upstream_id: 1
 upstreams:
     -
         id: 1
         nodes:
-            "httpbin.org:80": 1
+            "test.com:1980": 1
         type: chash
         hash_on: header
         key: "$aaa"
 #END
 --- request
-GET /get
+GET /hello
 --- error_code: 502
 --- error_log
 invalid configuration: failed to match pattern

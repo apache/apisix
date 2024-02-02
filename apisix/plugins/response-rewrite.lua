@@ -19,6 +19,7 @@ local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
 local plugin_name = "response-rewrite"
 local ngx         = ngx
+local ngx_header  = ngx.header
 local re_match    = ngx.re.match
 local re_sub      = ngx.re.sub
 local re_gsub     = ngx.re.gsub
@@ -26,6 +27,9 @@ local pairs       = pairs
 local ipairs      = ipairs
 local type        = type
 local pcall       = pcall
+local zlib        = require("ffi-zlib")
+local str_buffer  = require("string.buffer")
+local is_br_libs_loaded, brotli = pcall(require, "brotli")
 
 
 local lrucache = core.lrucache.new({
@@ -58,7 +62,7 @@ local schema = {
                             items = {
                                 type = "string",
                                 -- "Set-Cookie: <cookie-name>=<cookie-value>; Max-Age=<number>"
-                                pattern = "^[^:]+:[^:]+[^/]$"
+                                pattern = "^[^:]+:[^:]*[^/]$"
                             }
                         },
                         set = {
@@ -199,6 +203,83 @@ local function check_set_headers(headers)
 end
 
 
+local function inflate_gzip(data)
+    local inputs = str_buffer.new():set(data)
+    local outputs = str_buffer.new()
+
+    local read_inputs = function(size)
+        local data = inputs:get(size)
+        if data == "" then
+            return nil
+        end
+        return data
+    end
+
+    local write_outputs = function(data)
+        return outputs:put(data)
+    end
+
+    local ok, err = zlib.inflateGzip(read_inputs, write_outputs)
+    if not ok then
+        return nil, err
+    end
+
+    return outputs:get()
+end
+
+
+local function brotli_stream_decode(read_inputs, write_outputs)
+    -- read 64k data per times
+    local read_size = 64 * 1024
+    local decompressor = brotli.decompressor:new()
+
+    local chunk, ok, res
+    repeat
+        chunk = read_inputs(read_size)
+        if chunk then
+            ok, res = pcall(function()
+                return decompressor:decompress(chunk)
+            end)
+        else
+            ok, res = pcall(function()
+                return decompressor:finish()
+            end)
+        end
+        if not ok then
+            return false, res
+        end
+        write_outputs(res)
+    until not chunk
+
+    return true, nil
+end
+
+
+local function brotli_decode(data)
+    local inputs = str_buffer.new():set(data)
+    local outputs = str_buffer.new()
+
+    local read_inputs = function(size)
+        local data = inputs:get(size)
+        if data == "" then
+            return nil
+        end
+        return data
+    end
+
+    local write_outputs = function(data)
+        return outputs:put(data)
+    end
+
+    local ok, err = brotli_stream_decode(read_inputs, write_outputs)
+    if not ok then
+        return nil, err
+    end
+
+    return outputs:get()
+end
+
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -260,6 +341,25 @@ function _M.body_filter(conf, ctx)
         end
 
         local err
+        if ctx.response_encoding == "gzip" then
+            body, err = inflate_gzip(body)
+            if err ~= nil then
+                core.log.error("filters may not work as expected, inflate gzip err: ", err)
+                return
+            end
+        elseif ctx.response_encoding == "br" and is_br_libs_loaded then
+            body, err = brotli_decode(body)
+            if err ~= nil then
+                core.log.error("filters may not work as expected, brotli decode err: ", err)
+                return
+            end
+        elseif ctx.response_encoding ~= nil then
+            core.log.error("filters may not work as expected ",
+                           "due to unsupported compression encoding type: ",
+                           ctx.response_encoding)
+            return
+        end
+
         for _, filter in ipairs(conf.filters) do
             if filter.scope == "once" then
                 body, _, err = re_sub(body, filter.regex, filter.replace, filter.options)
@@ -333,7 +433,9 @@ function _M.header_filter(conf, ctx)
 
     -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
+        local response_encoding = ngx_header["Content-Encoding"]
         core.response.clear_header_as_body_modified()
+        ctx.response_encoding = response_encoding
     end
 
     if not conf.headers then

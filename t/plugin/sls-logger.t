@@ -167,22 +167,26 @@ hello world
                 local first_idx = string.find(log_entry, " ") + 1
                 local last_idx2 = string.find(log_entry, " ", first_idx)
                 local rfc3339_date = string.sub(log_entry, first_idx, last_idx2)
-                local rfc3339_len = string.len(rfc3339_date)
+                local rfc3339_len = #rfc3339_date
                 local rfc3339_millisecond = string.sub(rfc3339_date, rfc3339_len - 4, rfc3339_len - 2)
                 return tonumber(rfc3339_millisecond)
             end
 
             math.randomseed(os.time())
-            local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+            local rfc5424 = require("apisix.utils.rfc5424")
             local m = 0
             -- because the millisecond value obtained by `ngx.now` may be `0`
             -- it is executed multiple times to ensure the accuracy of the test
             for i = 1, 5 do
                 ngx.sleep(string.format("%0.3f", math.random()))
+                local structured_data = {
+                    {name = "project", value = "apisix.apache.org"},
+                    {name = "logstore", value = "apisix.apache.org"},
+                    {name = "access-key-id", value = "apisix.sls.logger"},
+                    {name = "access-key-secret", value = "BD274822-96AA-4DA6-90EC-15940FB24444"}
+                }
                 local log_entry = rfc5424.encode("SYSLOG", "INFO", "localhost", "apisix",
-                                                 123456, "apisix.apache.org", "apisix.apache.log",
-                                                 "apisix.sls.logger", "BD274822-96AA-4DA6-90EC-15940FB24444",
-                                                 "hello world")
+                                                 123456, "hello world", structured_data)
                 m = get_syslog_timestamp_millisecond(log_entry) + m
             end
 
@@ -226,15 +230,13 @@ passed
 === TEST 9: access
 --- extra_init_by_lua
     local json = require("toolkit.json")
-    local rfc5424 = require("apisix.plugins.slslog.rfc5424")
+    local rfc5424 = require("apisix.utils.rfc5424")
     local old_f = rfc5424.encode
-    rfc5424.encode = function(facility, severity, hostname, appname, pid, project,
-                   logstore, access_key_id, access_key_secret, msg)
+    rfc5424.encode = function(facility, severity, hostname, appname, pid, msg, structured_data)
         local r = json.decode(msg)
         assert(r.client_ip == "127.0.0.1", r.client_ip)
         assert(r.host == "localhost", r.host)
-        return old_f(facility, severity, hostname, appname, pid, project,
-                     logstore, access_key_id, access_key_secret, msg)
+        return old_f(facility, severity, hostname, appname, pid, msg, structured_data)
     end
 --- request
 GET /hello
@@ -262,7 +264,7 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -323,3 +325,63 @@ apisix:
 --- response_body
 your_access_key_secret
 1T6nR0fz4yhz/zTuRTvt7Xu3c9ASelDXG2//e/A5OiA=
+
+
+
+=== TEST 12: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "sls-logger": {
+                                "host": "100.100.99.135",
+                                "port": 10009,
+                                "project": "your_project",
+                                "logstore": "your_logstore",
+                                "access_key_id": "your_access_key_id",
+                                "access_key_secret": "your_access_key_secret",
+                                "log_format": {
+                                    "vip": "$remote_addr"
+                                },
+                                "timeout": 30000
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: access
+--- extra_init_by_lua
+    local json = require("toolkit.json")
+    local rfc5424 = require("apisix.utils.rfc5424")
+    local old_f = rfc5424.encode
+    rfc5424.encode = function(facility, severity, hostname, appname, pid, msg, structured_data)
+        local r = json.decode(msg)
+        assert(r.vip == "127.0.0.1", r.vip)
+        return old_f(facility, severity, hostname, appname, pid, msg, structured_data)
+    end
+--- request
+GET /hello
+--- response_body
+hello world

@@ -190,6 +190,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
 
+        upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
 
         upstream_cache_zone        = true,
@@ -198,9 +199,9 @@ do
         upstream_cache_key         = true,
         upstream_cache_bypass      = true,
 
-        var_x_forwarded_proto = true,
-        var_x_forwarded_port  = true,
-        var_x_forwarded_host  = true,
+        var_x_forwarded_proto      = true,
+        var_x_forwarded_port       = true,
+        var_x_forwarded_host       = true,
     }
 
     -- sort in alphabetical
@@ -209,6 +210,10 @@ do
         balancer_port = true,
         consumer_group_id = true,
         consumer_name = true,
+        resp_body = function(ctx)
+            -- only for logger and requires the logger to have a special configuration
+            return ctx.resp_body or ''
+        end,
         route_id = true,
         route_name = true,
         service_id = true,
@@ -255,7 +260,9 @@ do
 
             elseif core_str.has_prefix(key, "post_arg_") then
                 -- only match default post form
-                if request.header(nil, "Content-Type") == "application/x-www-form-urlencoded" then
+                local content_type = request.header(nil, "Content-Type")
+                if content_type ~= nil and core_str.has_prefix(content_type,
+                        "application/x-www-form-urlencoded") then
                     local arg_key = sub_str(key, 10)
                     local args = request.get_post_args()[arg_key]
                     if args then
@@ -265,6 +272,14 @@ do
                             val = args
                         end
                     end
+                end
+
+            elseif core_str.has_prefix(key, "uri_param_") then
+                -- `uri_param_<name>` provides access to the uri parameters when using
+                -- radixtree_uri_with_parameter
+                if t._ctx.curr_req_matched then
+                    local arg_key = sub_str(key, 11)
+                    val = t._ctx.curr_req_matched[arg_key]
                 end
 
             elseif core_str.has_prefix(key, "http_") then

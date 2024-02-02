@@ -1,5 +1,5 @@
 ---
-title: CHANGELOG
+title: 版本发布
 ---
 
 <!--
@@ -23,9 +23,19 @@ title: CHANGELOG
 
 ## Table of Contents
 
+- [3.8.0](#380)
+- [3.7.0](#370)
+- [3.6.0](#360)
+- [3.5.0](#350)
+- [3.4.0](#340)
+- [3.3.0](#330)
+- [3.2.1](#321)
+- [3.2.0](#320)
 - [3.1.0](#310)
 - [3.0.0](#300)
 - [3.0.0-beta](#300-beta)
+- [2.15.3](#2153)
+- [2.15.2](#2152)
 - [2.15.1](#2151)
 - [2.15.0](#2150)
 - [2.14.1](#2141)
@@ -64,6 +74,263 @@ title: CHANGELOG
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.8.0
+
+### Core
+
+- :sunrise: 支持使用 lua-resty-events 模块以提高性能：
+  - [#10550](https://github.com/apache/apisix/pull/10550)
+  - [#10558](https://github.com/apache/apisix/pull/10558)
+- :sunrise: 将 OpenSSL 1.1.1 升级到 OpenSSL 3：[#10724](https://github.com/apache/apisix/pull/10724)
+
+### Plugins
+
+- :sunrise: 添加 jwe-decryp 插件：[#10252](https://github.com/apache/apisix/pull/10252)
+- :sunrise: response-rewrite 插件使用 filters.regex 选项时支持 brotli：[#10733](https://github.com/apache/apisix/pull/10733)
+- :sunrise: 添加多重认证插件：[#10482](https://github.com/apache/apisix/pull/10482)
+- :sunrise: 在 `openid-connect` 插件中添加 `required scopes` 配置属性：[#10493](https://github.com/apache/apisix/pull/10493)
+- :sunrise: cors 插件支持 Timing-Allow-Origin 头：[#9365](https://github.com/apache/apisix/pull/9365)
+- :sunrise: 添加 brotli 插件：[#10515](https://github.com/apache/apisix/pull/10515)
+- :sunrise: body-transformer 插件增强：[#10496](https://github.com/apache/apisix/pull/10496)
+- :sunrise: limit-count 插件设置 redis_cluster_nodes 的最小长度为 1：[#10612](https://github.com/apache/apisix/pull/10612)
+- :sunrise: 允许通过环境变量配置 limit-count 插件：[#10607](https://github.com/apache/apisix/pull/10607)
+
+### Bugfixes
+
+- 修复：upstream nodes 为数组类型时，port 应为可选字段：[#10477](https://github.com/apache/apisix/pull/10477)
+- 修复：fault-injection 插件中变量提取不正确：[#10485](https://github.com/apache/apisix/pull/10485)
+- 修复：所有消费者应共享同一计数器 (limit-count)：[#10541](https://github.com/apache/apisix/pull/10541)
+- 修复：在向 opa 插件发送路由时安全地删除上游：[#10552](https://github.com/apache/apisix/pull/10552)
+- 修复：缺少 etcd init_dir 和无法列出资源：[#10569](https://github.com/apache/apisix/pull/10569)
+- 修复：Forward-auth 请求体过大：[#10589](https://github.com/apache/apisix/pull/10589)
+- 修复：永不退出的定时器导致的内存泄漏：[#10614](https://github.com/apache/apisix/pull/10614)
+- 修复：如果在 proxy-rewrite 插件中解析的值为 nil，则不调用 add_header：[#10619](https://github.com/apache/apisix/pull/10619)
+- 修复：频繁遍历 etcd 所有的键，导致 cpu 使用率高：[#10671](https://github.com/apache/apisix/pull/10671)
+- 修复：对于 prometheus 的 upstream_status 指标，mostly_healthy 是健康的：[#10639](https://github.com/apache/apisix/pull/10639)
+- 修复：在 zipkin 中避免在日志阶段获取 nil 值：[#10666](https://github.com/apache/apisix/pull/10666)
+- 修复：启用 openid-connect 插件而没有 redirect_uri 导致 500 错误：[#7690](https://github.com/apache/apisix/pull/7690)
+- 修复：为没有 end_session_endpoint 的 ODIC 添加 redirect_after_logout_uri：[#10653](https://github.com/apache/apisix/pull/10653)
+- 修复：当 content-encoding 为 gzip 时，response-rewrite 的 filters.regex 不适用：[#10637](https://github.com/apache/apisix/pull/10637)
+- 修复：prometheus 指标的泄漏：[#10655](https://github.com/apache/apisix/pull/10655)
+- 修复：Authz-keycloak 添加返回详细错误：[#10691](https://github.com/apache/apisix/pull/10691)
+- 修复：服务发现未正确更新上游节点：[#10722](https://github.com/apache/apisix/pull/10722)
+- 修复：apisix 重启失败：[#10696](https://github.com/apache/apisix/pull/10696)
+
+## 3.7.0
+
+### Change
+
+- :warning: 创建核心资源时不允许传入 `create_time` 和 `update_time`：[#10232](https://github.com/apache/apisix/pull/10232)
+- :warning: 从 SSL schema 中移除自包含的信息字段 `exptime`、`validity_start` 和 `validity_end`：[10323](https://github.com/apache/apisix/pull/10323)
+- :warning: 在 opentelemetry 插件的属性中，将 `route` 替换为 `apisix.route_name`，将 `service` 替换为 `apisix.service_name`，以遵循 span 名称和属性的标准：[#10393](https://github.com/apache/apisix/pull/10393)
+
+### Core
+
+- :sunrise: 添加令牌以支持 Consul 的访问控制：[#10278](https://github.com/apache/apisix/pull/10278)
+- :sunrise: 支持在 stream_route 中配置 `service_id` 引用 service 资源：[#10298](https://github.com/apache/apisix/pull/10298)
+- :sunrise: 使用 `apisix-runtime` 作为 apisix 运行时：
+  - [#10415](https://github.com/apache/apisix/pull/10415)
+  - [#10427](https://github.com/apache/apisix/pull/10427)
+
+### Plugins
+
+- :sunrise: 为 authz-keycloak 添加测试，使用 apisix secrets：[#10353](https://github.com/apache/apisix/pull/10353)
+- :sunrise: 向 openid-connect 插件添加授权参数：[#10058](https://github.com/apache/apisix/pull/10058)
+- :sunrise: 支持在 zipkin 插件中设置变量：[#10361](https://github.com/apache/apisix/pull/10361)
+- :sunrise: 支持 Nacos ak/sk 认证：[#10445](https://github.com/apache/apisix/pull/10445)
+
+### Bugfixes
+
+- 修复：获取健康检查目标状态失败时使用警告日志：
+  - [#10156](https://github.com/apache/apisix/pull/10156)
+- 修复：更新上游时应保留健康检查的状态：
+  - [#10312](https://github.com/apache/apisix/pull/10312)
+  - [#10307](https://github.com/apache/apisix/pull/10307)
+- 修复：在插件配置模式中添加 name 字段以保持一致性：[#10315](https://github.com/apache/apisix/pull/10315)
+- 修复：优化 upstream_schema 中的 tls 定义和错误的变量：[#10269](https://github.com/apache/apisix/pull/10269)
+- 修复（consul）：无法正常退出：[#10342](https://github.com/apache/apisix/pull/10342)
+- 修复：请求头 `Content-Type: application/x-www-form-urlencoded;charset=utf-8` 会导致 var 条件 `post_arg_xxx` 匹配失败：[#10372](https://github.com/apache/apisix/pull/10372)
+- 修复：在 Mac 上安装失败：[#10403](https://github.com/apache/apisix/pull/10403)
+- 修复（log-rotate）：日志压缩超时导致数据丢失：[#8620](https://github.com/apache/apisix/pull/8620)
+- 修复（kafka-logger）：从 required_acks 枚举值中移除 0：[#10469](https://github.com/apache/apisix/pull/10469)
+
+## 3.6.0
+
+### Change
+
+- :warning: 移除 `etcd.use_grpc`，不再支持使用 gRPC 协议与 etcd 进行通信：[#10015](https://github.com/apache/apisix/pull/10015)
+- :warning: 移除 conf server，数据平面不再支持与控制平面进行通信，需要从 `config_provider: control_plane` 调整为 `config_provider: etcd`：[#10012](https://github.com/apache/apisix/pull/10012)
+- :warning: 严格验证核心资源的输入：[#10233](https://github.com/apache/apisix/pull/10233)
+
+### Core
+
+- :sunrise: 支持配置访问日志的缓冲区大小：[#10225](https://github.com/apache/apisix/pull/10225)
+- :sunrise: 支持在 DNS 发现服务中允许配置 `resolv_conf` 来使用本地 DNS 解析器：[#9770](https://github.com/apache/apisix/pull/9770)
+- :sunrise: 安装不再依赖 Rust：[#10121](https://github.com/apache/apisix/pull/10121)
+- :sunrise: 在 xRPC 中添加 Dubbo 协议支持：[#9660](https://github.com/apache/apisix/pull/9660)
+
+### Plugins
+
+- :sunrise: 在 `traffic-split` 插件中支持 HTTPS：[#9115](https://github.com/apache/apisix/pull/9115)
+- :sunrise: 在 `ext-plugin` 插件中支持重写请求体：[#9990](https://github.com/apache/apisix/pull/9990)
+- :sunrise: 在 `opentelemetry` 插件中支持设置 NGINX 变量：[#8871](https://github.com/apache/apisix/pull/8871)
+- :sunrise: 在 `chaitin-waf` 插件中支持 UNIX sock 主机模式：[#10161](https://github.com/apache/apisix/pull/10161)
+
+### Bugfixes
+
+- 修复 GraphQL POST 请求路由匹配异常：[#10198](https://github.com/apache/apisix/pull/10198)
+- 修复 `apisix.yaml` 中多行字符串数组的错误：[#10193](https://github.com/apache/apisix/pull/10193)
+- 修复在 proxy-cache 插件中缺少 cache_zone 时提供错误而不是 nil panic：[#10138](https://github.com/apache/apisix/pull/10138)
+
+## 3.5.0
+
+### Change
+
+- :warning: request-id 插件移除雪花算法：[#9715](https://github.com/apache/apisix/pull/9715)
+- :warning: 不再兼容 OpenResty 1.19 版本，需要将其升级到 1.21+ 版本：[#9913](https://github.com/apache/apisix/pull/9913)
+- :warning: 删除配置项 `apisix.stream_proxy.only`，L4/L7 代理需要通过配置项 `apesix.proxy_mode` 来启用：[#9607](https://github.com/apache/apisix/pull/9607)
+- :warning: admin-api 的 `/apisix/admin/plugins?all=true` 接口标记为弃用：[#9580](https://github.com/apache/apisix/pull/9580)
+- :warning: ua-restriction 插件不允许同时启用黑名单和白名单：[#9841](https://github.com/apache/apisix/pull/9841)
+
+### Core
+
+- :sunrise: 支持根据 host 级别动态设置 TLS 协议版本：[#9903](https://github.com/apache/apisix/pull/9903)
+- :sunrise: 支持强制删除资源：[#9810](https://github.com/apache/apisix/pull/9810)
+- :sunrise: 支持从 yaml 中提取环境变量：[#9855](https://github.com/apache/apisix/pull/9855)
+- :sunrise: admin-api 新增 schema validate API 校验资源配置：[#10065](https://github.com/apache/apisix/pull/10065)
+
+### Plugins
+
+- :sunrise: 新增 chaitin-waf 插件：[#9838](https://github.com/apache/apisix/pull/9838)
+- :sunrise: file-logger 支持设置 var 变量：[#9712](https://github.com/apache/apisix/pull/9712)
+- :sunrise: mock 插件支持添加响应头：[#9720](https://github.com/apache/apisix/pull/9720)
+- :sunrise: proxy-rewrite 插件支持正则匹配 URL 编码：[#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: google-cloud-logging 插件支持 client_email 配置：[#9813](https://github.com/apache/apisix/pull/9813)
+- :sunrise: opa 插件支持向上游发送 OPA server 返回的头：[#9710](https://github.com/apache/apisix/pull/9710)
+- :sunrise: openid-connect 插件支持配置代理服务器：[#9948](https://github.com/apache/apisix/pull/9948)
+
+### Bugfixes
+
+- 修复 log-rotate 插件使用自定义名称时，max_kept 配置不起作用：[#9749](https://github.com/apache/apisix/pull/9749)
+- 修复 limit_conn 在 stream 模式下非法使用 http 变量：[#9816](https://github.com/apache/apisix/pull/9816)
+- 修复 loki-logger 插件在获取 log_labels 时会索引空值：[#9850](https://github.com/apache/apisix/pull/9850)
+- 修复使用 limit-count 插件时，当请求被拒绝后，X-RateLimit-Reset 不应设置为 0：[#9978](https://github.com/apache/apisix/pull/9978)
+- 修复 nacos 插件在运行时索引一个空值：[#9960](https://github.com/apache/apisix/pull/9960)
+- 修复 etcd 在同步数据时，如果密钥有特殊字符，则同步异常：[#9967](https://github.com/apache/apisix/pull/9967)
+- 修复 tencent-cloud-cls 插件 DNS 解析失败：[#9843](https://github.com/apache/apisix/pull/9843)
+- 修复执行 reload 或 quit 命令时 worker 未退出：[#9909](https://github.com/apache/apisix/pull/9909)
+- 修复在 traffic-split 插件中 upstream_id 有效性验证：[#10008](https://github.com/apache/apisix/pull/10008)
+
+## 3.4.0
+
+### Core
+
+- :sunrise: 支持路由级别的 MTLS [#9322](https://github.com/apache/apisix/pull/9322)
+- :sunrise: 支持全局规则的 id schema [#9517](https://github.com/apache/apisix/pull/9517)
+- :sunrise: 支持使用单个长连接来监视 etcd 的所有资源 [#9456](https://github.com/apache/apisix/pull/9456)
+- :sunrise: 支持 ssl 标签的最大长度为 256 [#9301](https://github.com/apache/apisix/pull/9301)
+
+### Plugins
+
+- :sunrise: 支持 proxy_rewrite 插件的多个正则表达式匹配 [#9194](https://github.com/apache/apisix/pull/9194)
+- :sunrise: 添加 loki-logger 插件 [#9399](https://github.com/apache/apisix/pull/9399)
+- :sunrise: 允许用户为 prometheus 插件配置 DEFAULT_BUCKETS [#9673](https://github.com/apache/apisix/pull/9673)
+
+### Bugfixes
+
+- 修复 (body-transformer)：xml2lua 将空表替换为空字符串 [#9669](https://github.com/apache/apisix/pull/9669)
+- 修复：opentelemetry 和 grpc-transcode 插件无法同时启用 [#9606](https://github.com/apache/apisix/pull/9606)
+- 修复 (skywalking-logger, error-log-logger)：支持在 skywalking service_instance_name 中使用 $hostname [#9401](https://github.com/apache/apisix/pull/9401)
+- 修复 (admin)：修复 secrets 不支持通过 PATCH 更新属性 [#9510](https://github.com/apache/apisix/pull/9510)
+- 修复 (http-logger)：默认请求路径应为'/' [#9472](https://github.com/apache/apisix/pull/9472)
+- 修复：syslog 插件不起作用 [#9425](https://github.com/apache/apisix/pull/9425)
+- 修复：splunk-hec-logging 的日志格式错误 [#9478](https://github.com/apache/apisix/pull/9478)
+- 修复：etcd 复用 cli 并启用 keepalive [#9420](https://github.com/apache/apisix/pull/9420)
+- 修复：upstream key 添加 mqtt_client_id 支持 [#9450](https://github.com/apache/apisix/pull/9450)
+- 修复：body-transformer 插件总是返回原始 body [#9446](https://github.com/apache/apisix/pull/9446)
+- 修复：当 consumer 使用 wolf-rbac 插件时，consumer 中的其他插件无效 [#9298](https://github.com/apache/apisix/pull/9298)
+- 修复：当 host 是域名时，总是解析域名 [#9332](https://github.com/apache/apisix/pull/9332)
+- 修复：response-rewrite 插件不能只添加一个字符 [#9372](https://github.com/apache/apisix/pull/9372)
+- 修复：consul 支持只获取 health endpoint [#9204](https://github.com/apache/apisix/pull/9204)
+
+## 3.3.0
+
+### Change
+
+- 默认路由从 `radixtree_uri` 修改为 `radixtree_host_uri`: [#9047](https://github.com/apache/apisix/pull/9047)
+- CORS 插件将会在 `allow_origin` 不为 `*` 时默认添加 `Vary: Origin` 响应头：[#9010](https://github.com/apache/apisix/pull/9010)
+
+### Core
+
+- :sunrise: 支持将路由证书存储在 secrets manager 中：[#9247](https://github.com/apache/apisix/pull/9247)
+- :sunrise: 支持通过配置绕过 Admin API 身份验证：[#9147](https://github.com/apache/apisix/pull/9147)
+
+### Plugins
+
+- :sunrise: fault-injection 插件支持请求头注入：[#9039](https://github.com/apache/apisix/pull/9039)
+- :sunrise: 提供在其他插件中引用 proxy-rewrite 插件中路由改写捕捉到的变量支持：[#9112](https://github.com/apache/apisix/pull/9112)
+- :sunrise: limit-count 插件提供 `username` 与 `ssl` redis 认证方式：[#9185](https://github.com/apache/apisix/pull/9185)
+
+### Bugfixes
+
+- 修复 etcd 数据同步异常：[#8493](https://github.com/apache/apisix/pull/8493)
+- 修复在 `core.request.add_header` 中的无效缓存：[#8824](https://github.com/apache/apisix/pull/8824)
+- 修复由健康检查引起的高 CPU 和内存占用：[#9015](https://github.com/apache/apisix/pull/9015)
+- 仅当 `allow_origins_by_regex` 不为 `nil` 时生效：[#9028](https://github.com/apache/apisix/pull/9028)
+- 在删除 upstream 时，检查 `traffic-split` 插件中的引用：[#9044](https://github.com/apache/apisix/pull/9044)
+- 修复启动时无法连接到 etcd 的问题：[#9077](https://github.com/apache/apisix/pull/9077)
+- 修复域节点的健康检查泄漏问题：[#9090](https://github.com/apache/apisix/pull/9090)
+- 禁止非 `127.0.0.0/24` 的用户在没有 admin_key 的情况下访问 Admin API: [#9146](https://github.com/apache/apisix/pull/9146)
+- 确保 hold_body_chunk 函数对每个插件设置独立缓冲区，避免数据污染：[#9266](https://github.com/apache/apisix/pull/9266)
+- 确保 batch-requests 插件能够在尾部响应头存在时能够正确读取：[#9289](https://github.com/apache/apisix/pull/9289)
+- 确保 `proxy-rewrite` 改写 `ngx.var.uri`: [#9309](https://github.com/apache/apisix/pull/9309)
+
+## 3.2.1
+
+**这是一个 LTS 维护版本，您可以在 `release/3.2` 分支中看到 CHANGELOG。**
+
+## 3.2.0
+
+### Change
+
+- 废弃了 jwt-auth 内单独的 Vault 配置。用户能用密钥来实现同样的功能：[#8660](https://github.com/apache/apisix/pull/8660)
+
+### Core
+
+- :sunrise: 支持通过环境变量来配置密钥的 Vault token：[#8866](https://github.com/apache/apisix/pull/8866)
+- :sunrise: 支持四层上的服务发现：
+    - [#8583](https://github.com/apache/apisix/pull/8583)
+    - [#8593](https://github.com/apache/apisix/pull/8593)
+    - [#8584](https://github.com/apache/apisix/pull/8584)
+    - [#8640](https://github.com/apache/apisix/pull/8640)
+    - [#8633](https://github.com/apache/apisix/pull/8633)
+    - [#8696](https://github.com/apache/apisix/pull/8696)
+    - [#8826](https://github.com/apache/apisix/pull/8826)
+
+### Plugin
+
+- :sunrise: 新增 RESTful 请求转 graphQL 的插件：[#8959](https://github.com/apache/apisix/pull/8959)
+- :sunrise: 支持在每个日志插件上设置日志格式：
+    - [#8806](https://github.com/apache/apisix/pull/8806)
+    - [#8643](https://github.com/apache/apisix/pull/8643)
+- :sunrise: 新增请求体/响应体转换插件：[#8766](https://github.com/apache/apisix/pull/8766)
+- :sunrise: 支持发送错误日志到 Kafka：[#8693](https://github.com/apache/apisix/pull/8693)
+- :sunrise: limit-count 插件支持 X-RateLimit-Reset：[#8578](https://github.com/apache/apisix/pull/8578)
+- :sunrise: limit-count 插件支持设置 TLS 来访问 Redis 集群：[#8558](https://github.com/apache/apisix/pull/8558)
+- :sunrise: consumer-restriction 插件支持通过 consumer_group_id 来做权限控制：[#8567](https://github.com/apache/apisix/pull/8567)
+
+### Bugfix
+
+- 修复 Host 和 SNI 不匹配时，mTLS 失效的问题：[#8967](https://github.com/apache/apisix/pull/8967)
+- 如果 URI 参数部分不来自于用户配置，proxy-rewrite 插件应当对其转义：[#8888](https://github.com/apache/apisix/pull/8888)
+- Admin API PATCH 操作成功后应返回 200 状态码：[#8855](https://github.com/apache/apisix/pull/8855)
+- 修复特定条件下，etcd 同步失败之后的 reload 不生效：[#8736](https://github.com/apache/apisix/pull/8736)
+- 修复 Consul 服务发现得到的节点不全的问题：[#8651](https://github.com/apache/apisix/pull/8651)
+- 修复 grpc-transcode 插件对 Map 数据的转换问题：[#8731](https://github.com/apache/apisix/pull/8731)
+- 外部插件应当可以设置 content-type 响应头：[#8588](https://github.com/apache/apisix/pull/8588)
+- 插件热加载时，如果 request-id 插件中初始化 snowflake 生成器出错，可能遗留多余的计时器：[#8556](https://github.com/apache/apisix/pull/8556)
+- 插件热加载时，关闭 grpc-transcode 的 proto 同步器：[#8557](https://github.com/apache/apisix/pull/8557)
 
 ## 3.1.0
 
@@ -292,6 +559,14 @@ title: CHANGELOG
 - 当代理到上游之前发生 500 错误时，代理到上游之后运行的插件不应被跳过 [#7703](https://github.com/apache/apisix/pull/7703)
 - 当 consumer 上绑定了多个插件且该插件定义了 rewrite 方法时，避免抛出异常 [#7531](https://github.com/apache/apisix/pull/7531)
 - 升级 lua-resty-etcd 到 1.8.3。该版本修复了若干问题。 [#7565](https://github.com/apache/apisix/pull/7565)
+
+## 2.15.3
+
+**这是一个 LTS 维护版本，您可以在 `release/2.15` 分支中看到 CHANGELOG。**
+
+## 2.15.2
+
+**这是一个 LTS 维护版本，您可以在 `release/2.15` 分支中看到 CHANGELOG。**
 
 ## 2.15.1
 
@@ -1108,7 +1383,7 @@ title: CHANGELOG
 - 增加用于校验 nginx.conf 的命令。 [#1112](https://github.com/apache/incubator-apisix/pull/1112)
 - 支持「nginx 最多可以打开文件数」可配置，并增大其默认配置。[#1105](https://github.com/apache/incubator-apisix/pull/1105) [#1098](https://github.com/apache/incubator-apisix/pull/1098)
 - 优化日志模块。 [#1093](https://github.com/apache/incubator-apisix/pull/1093)
-- 支持 SO_REUSEPORT 。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
+- 支持 SO_REUSEPORT。 [#1085](https://github.com/apache/incubator-apisix/pull/1085)
 
 ### Doc
 
@@ -1120,8 +1395,8 @@ title: CHANGELOG
 - 增加文档贡献指引。 [#1086](https://github.com/apache/incubator-apisix/pull/1086)
 - 检查更新「快速上手」文档。 [#1084](https://github.com/apache/incubator-apisix/pull/1084)
 - 检查更新「插件开发指南」。 [#1078](https://github.com/apache/incubator-apisix/pull/1078)
-- 更新 admin-api-cn.md 。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
-- 更新 architecture-design-cn.md 。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
+- 更新 admin-api-cn.md。 [#1067](https://github.com/apache/incubator-apisix/pull/1067)
+- 更新 architecture-design-cn.md。 [#1065](https://github.com/apache/incubator-apisix/pull/1065)
 
 ### CI
 
@@ -1178,9 +1453,9 @@ title: CHANGELOG
 
 ### Plugins
 
-- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**： URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
+- :sunrise: **[Redirect URI](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/redirect.md)**：URI 重定向插件。 [#732](https://github.com/apache/incubator-apisix/pull/732)
 - [Proxy Rewrite](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/proxy-rewrite.md)：支持 `header` 删除功能。 [#658](https://github.com/apache/incubator-apisix/pull/658)
-- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)： 通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
+- [Limit Count](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-count.md)：通过 `Redis Server` 聚合 `APISIX` 节点之间将共享流量限速结果，实现集群流量限速。[#624](https://github.com/apache/incubator-apisix/pull/624)
 
 ### lua-resty-*
 
@@ -1211,15 +1486,15 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[增加单机模式](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//stand-alone-cn.md)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于 kubernetes 更加友好。 [#464](https://github.com/apache/incubator-apisix/pull/464)
-- :sunrise: **[支持 stream 代理](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//stream-proxy-cn.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
-- :sunrise: 支持[在 consumer 上绑定插件](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//architecture-design-cn.md#consumer). [#544](https://github.com/apache/incubator-apisix/pull/544)
+- :sunrise: **[增加单机模式](https://github.com/apache/incubator-apisix/blob/master/docs/en/latest/deployment-modes.md#Standalone)**: 使用 yaml 配置文件来更新 APISIX 的配置，这对于 kubernetes 更加友好。 [#464](https://github.com/apache/incubator-apisix/pull/464)
+- :sunrise: **[支持 stream 代理](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest/stream-proxy.md)**. [#513](https://github.com/apache/incubator-apisix/pull/513)
+- :sunrise: 支持[在 consumer 上绑定插件](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest/terminology/consumer.md). [#544](https://github.com/apache/incubator-apisix/pull/544)
 - 上游增加对域名的支持，而不仅是 IP。[#522](https://github.com/apache/incubator-apisix/pull/522)
 - 当上游节点的权重为 0 时自动忽略。[#536](https://github.com/apache/incubator-apisix/pull/536)
 
 ### Plugins
 
-- :sunrise: **[MQTT 代理](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/mqtt-proxy-cn.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT 3.1 和 5.0 两个协议标准。 [#513](https://github.com/apache/incubator-apisix/pull/513)
+- :sunrise: **[MQTT 代理](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/mqtt-proxy.md)**: 支持用 `client_id` 对 MQTT 进行负载均衡，同时支持 MQTT 3.1 和 5.0 两个协议标准。 [#513](https://github.com/apache/incubator-apisix/pull/513)
 - [proxy-rewrite](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/proxy-rewrite.md): 对代理到上游的请求进行改写，包括 host, uri 和 schema。 [#594](https://github.com/apache/incubator-apisix/pull/594)
 
 ### ARM
@@ -1252,7 +1527,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[gRPC 协议转换](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/grpc-transcoding-cn.md)**: 支持 gRPC 协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API. [#395](https://github.com/apache/incubator-apisix/issues/395)
+- :sunrise: **[gRPC 协议转换](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/grpc-transcode.md)**: 支持 gRPC 协议的转换，这样客户端可以通过 HTTP/JSON 来访问你的 gRPC API. [#395](https://github.com/apache/incubator-apisix/issues/395)
 - :sunrise: **[radix tree 路由](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//router-radixtree.md)**: 默认的路由器更改为 radix tree，支持把 uri、host、cookie、请求头、请求参数、Nginx 内置变量等作为路由的条件，并支持等于、大于、小于等常见操作符，更加强大和灵活。**需要注意的是，这个改动不向下兼容，所有使用历史版本的用户，需要手动修改路由才能正常使用**。[#414](https://github.com/apache/incubator-apisix/issues/414)
 - 动态上游支持更多的参数，可以指定上游的 uri 和 host，以及是否开启 websocket. [#451](https://github.com/apache/incubator-apisix/pull/451)
 - 支持从 `ctx.var` 中直接获取 cookie 中的值。[#449](https://github.com/apache/incubator-apisix/pull/449)
@@ -1260,9 +1535,9 @@ title: CHANGELOG
 
 ### Plugins
 
-- :sunrise: **[serverless](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/serverless-cn.md)**: 支持 serverless，用户可以把任意 Lua 函数动态的在网关节点上运行。用户也可以把这个功能当做是轻量级的插件来使用。[#86](https://github.com/apache/incubator-apisix/pull/86)
+- :sunrise: **[serverless](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/serverless.md)**: 支持 serverless，用户可以把任意 Lua 函数动态的在网关节点上运行。用户也可以把这个功能当做是轻量级的插件来使用。[#86](https://github.com/apache/incubator-apisix/pull/86)
 - :sunrise: **IdP 支持**: 支持外部的身份认证服务，比如 Auth0，okta 等，用户可以借此来对接 Oauth2.0 等认证方式。 [#447](https://github.com/apache/incubator-apisix/pull/447)
-- [限流限速](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-conn-cn.md)支持更多的限制 key，比如 X-Forwarded-For 和 X-Real-IP，并且允许用户把 Nginx 变量、请求头和请求参数作为 key. [#228](https://github.com/apache/incubator-apisix/issues/228)
+- [限流限速](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/limit-conn.md)支持更多的限制 key，比如 X-Forwarded-For 和 X-Real-IP，并且允许用户把 Nginx 变量、请求头和请求参数作为 key. [#228](https://github.com/apache/incubator-apisix/issues/228)
 - [IP 黑白名单](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/ip-restriction.md) 支持 IP 黑白名单，提供更高的安全性。[#398](https://github.com/apache/incubator-apisix/pull/398)
 
 ### CLI
@@ -1288,7 +1563,7 @@ title: CHANGELOG
 
 ### Core
 
-- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest/tutorials/health-check..md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
+- :sunrise: **[健康检查和服务熔断](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest/tutorials/health-check.md)**: 对上游节点开启健康检查，智能判断服务状态进行熔断和连接。[#249](https://github.com/apache/incubator-apisix/pull/249)
 - 阻止 ReDoS(Regular expression Denial of Service). [#252](https://github.com/apache/incubator-apisix/pull/250)
 - 支持 debug 模式。[#319](https://github.com/apache/incubator-apisix/pull/319)
 - 允许自定义路由。[#364](https://github.com/apache/incubator-apisix/pull/364)
@@ -1299,7 +1574,7 @@ title: CHANGELOG
 ### Plugins
 
 - :sunrise: **[分布式追踪 OpenTracing](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/zipkin.md)**: 支持 Zipkin 和 Apache SkyWalking. [#304](https://github.com/apache/incubator-apisix/pull/304)
-- [JWT 认证](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/jwt-auth-cn.md). [#303](https://github.com/apache/incubator-apisix/pull/303)
+- [JWT 认证](https://github.com/apache/incubator-apisix/blob/master/docs/zh/latest//plugins/jwt-auth.md). [#303](https://github.com/apache/incubator-apisix/pull/303)
 
 ### CLI
 

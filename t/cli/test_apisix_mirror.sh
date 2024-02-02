@@ -50,13 +50,13 @@ curl -k -i http://127.0.0.1:9080/get
 sleep 0.1
 
 if ! grep "apisix_mirror_on_demand on;" conf/nginx.conf > /dev/null; then
-    echo "failed: apisix_mirror_on_demand should on when running on apisix-base"
+    echo "failed: apisix_mirror_on_demand should on when running on apisix-runtime"
     exit 1
 fi
 
 if grep -E "invalid URL prefix" logs/error.log > /dev/null; then
-    echo "failed: apisix_mirror_on_demand should on when running on apisix-base"
+    echo "failed: apisix_mirror_on_demand should on when running on apisix-runtime"
     exit 1
 fi
 
-echo "passed: apisix_mirror_on_demand is on when running on apisix-base"
+echo "passed: apisix_mirror_on_demand is on when running on apisix-runtime"

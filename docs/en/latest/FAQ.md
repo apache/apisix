@@ -1,7 +1,7 @@
 ---
 title: FAQ
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - FAQ
 description: This article lists solutions to common problems when using Apache APISIX.
@@ -105,11 +105,11 @@ Mainland China users can use `luarocks.cn` as the LuaRocks server. You can use t
 make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 ```
 
-If this does not solve your problem, you can try getting a detailed log by using the `--verbose` flag to diagnose the problem.
+If this does not solve your problem, you can try getting a detailed log by using the `--verbose` or `-v` flag to diagnose the problem.
 
-## How do I build the APISIX-Base environment?
+## How do I build the APISIX-Runtime environment?
 
-Some functions need to introduce additional NGINX modules, which requires APISIX to run on APISIX-Base. If you need these functions, you can refer to the code in [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) to build your own APISIX-Base environment.
+Some functions need to introduce additional NGINX modules, which requires APISIX to run on APISIX-Runtime. If you need these functions, you can refer to the code in [api7/apisix-build-tools](https://github.com/api7/apisix-build-tools) to build your own APISIX-Runtime environment.
 
 ## How can I make a gray release with Apache APISIX?
 
@@ -703,6 +703,59 @@ Another solution is to switch to an experimental gRPC-based configuration synchr
       - "http://127.0.0.1:2379"
     prefix: "/apisix"
 ```
+
+## Why is the file-logger logging garbled?
+
+If you are using the `file-logger` plugin but getting garbled logs, one possible reason is your upstream response has returned a compressed response body. You can fix this by setting the accept-encoding in the request header to not receive compressed responses using the [proxy-rewirte](https://apisix.apache.org/docs/apisix/plugins/proxy-rewrite/) plugin:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H 'X-API-KEY: YOUR-TOKEN' -X PUT -d '
+{
+    "methods":[
+        "GET"
+    ],
+    "uri":"/test/index.html",
+    "plugins":{
+        "proxy-rewrite":{
+            "headers":{
+                "set":{
+                    "accept-encoding":"gzip;q=0,deflate,sdch"
+                }
+            }
+        }
+    },
+    "upstream":{
+        "type":"roundrobin",
+        "nodes":{
+            "127.0.0.1:80":1
+        }
+    }
+}'
+```
+
+## How does APISIX configure ETCD with authentication?
+
+Suppose you have an ETCD cluster that enables the auth. To access this cluster, you need to configure the correct username and password for Apache APISIX in `conf/config.yaml`:
+
+```yaml
+deployment:
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    user: etcd_user             # username for etcd
+    password: etcd_password     # password for etcd
+```
+
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
+
+## What is the difference between SSLs and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
+
+The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
+
+The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are used for mTLS communication with the upstream.
+
+The `ssl_trusted_certificate` in config-default.yaml configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
 
 ## Where can I find more answers?
 

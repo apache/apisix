@@ -75,7 +75,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 以下示例是将上游信息直接配置在路由中：
 
-    ```shell
+```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
     {
@@ -95,7 +95,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
             }
         }
     }'
-    ```
+```
 
 ## 使用示例
 

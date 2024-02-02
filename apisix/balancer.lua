@@ -79,7 +79,7 @@ local function fetch_health_nodes(upstream, checker)
         if ok then
             up_nodes = transform_node(up_nodes, node)
         elseif err then
-            core.log.error("failed to get health check target status, addr: ",
+            core.log.warn("failed to get health check target status, addr: ",
                 node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
         end
     end

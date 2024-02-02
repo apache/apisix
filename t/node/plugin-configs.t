@@ -113,10 +113,10 @@ __DATA__
 hello
 world
 --- grep_error_log eval
-qr/conf_version: \d+#\d/
+qr/conf_version: \d+#\d+/
 --- grep_error_log_out eval
-qr/conf_version: \d+#1
-conf_version: \d+#2
+qr/conf_version: \d+#\d+
+conf_version: \d+#\d+
 /
 
 

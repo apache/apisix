@@ -105,3 +105,59 @@ hello world
 --- wait: 0.5
 --- error_log eval
 qr/send data to kafka: \{.*"host":"localhost"/
+
+
+
+=== TEST 4: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "log_format": {
+                                    "x_ip": "$remote_addr"
+                                },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 5: hit route and report kafka logger
+--- request
+GET /hello
+--- response_body
+hello world
+--- wait: 0.5
+--- error_log eval
+qr/send data to kafka: \{.*"x_ip":"127.0.0.1".*\}/

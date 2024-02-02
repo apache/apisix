@@ -39,6 +39,14 @@ function _M.init_worker()
 end
 
 
+function _M.consumer_groups()
+    if not consumer_groups then
+        return nil, nil
+    end
+    return consumer_groups.values, consumer_groups.conf_version
+end
+
+
 function _M.get(id)
     return consumer_groups:get(id)
 end

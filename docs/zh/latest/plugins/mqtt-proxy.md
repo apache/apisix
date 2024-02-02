@@ -44,13 +44,12 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 
 为了启用该插件，需要先在配置文件（`./conf/config.yaml`）中加载 `stream_proxy` 相关配置。以下配置代表监听 `9100` TCP 端口：
 
-```yaml title=“./conf/config.yaml”
+```yaml title="./conf/config.yaml"
     ...
     router:
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
     stream_proxy:                 # TCP/UDP proxy
-      only: false                 # 如需 HTTP 与 Stream 代理同时生效，需要增加该键值
       tcp:                        # TCP proxy port list
         - 9100
     dns_resolver:
@@ -155,9 +154,9 @@ curl 127.0.0.1:9180/apisix/admin/stream_routes/1 \
 
 :::
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 \

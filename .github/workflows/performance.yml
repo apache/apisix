@@ -18,17 +18,17 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v4
         with:
           submodules: recursive
 
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('rockspec/apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Install Dependencies
         run: sudo ./ci/performance_test.sh install_dependencies

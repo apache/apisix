@@ -145,10 +145,6 @@ hello world
 
 === TEST 6: route with bad plugin, radixtree_host_uri
 --- yaml_config
-apisix:
-    node_listen: 1984
-    router:
-        http: "radixtree_host_uri"
 deployment:
     role: data_plane
     role_data_plane:
@@ -176,10 +172,6 @@ property "uri" validation failed
 
 === TEST 7: fix route with default value
 --- yaml_config
-apisix:
-    node_listen: 1984
-    router:
-        http: "radixtree_host_uri"
 deployment:
     role: data_plane
     role_data_plane:
@@ -206,10 +198,6 @@ GET /hello
 
 === TEST 8: invalid route, bad vars operator
 --- yaml_config
-apisix:
-    node_listen: 1984
-    router:
-        http: "radixtree_host_uri"
 deployment:
     role: data_plane
     role_data_plane:

@@ -55,6 +55,7 @@ rm logs/error.log || true
 
 echo "
 apisix:
+    proxy_mode: http&stream
     extra_lua_path: "\$prefix/t/lib/?.lua"
     enable_admin: true
     stream_proxy:
@@ -87,6 +88,7 @@ rm logs/error.log || true
 
 echo "
 apisix:
+    proxy_mode: http&stream
     extra_lua_path: "\$prefix/t/lib/?.lua"
     enable_admin: false
     stream_proxy:

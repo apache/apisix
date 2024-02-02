@@ -1,7 +1,7 @@
 ---
 title: Global Rules
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Global Rules
 description: This article describes how to use global rules.
@@ -38,7 +38,7 @@ The example below shows how you can use the `limit-count` Plugin on all requests
 
 ```shell
 curl -X PUT \
-  https://{apisix_listen_address}/apisix/admin/global_rules/1 \
+  http://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
@@ -57,5 +57,5 @@ curl -X PUT \
 You can also list all the Global rules by making this request with the Admin API:
 
 ```shell
-curl https://{apisix_listen_address}/apisix/admin/global_rules
+curl http://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```

@@ -18,6 +18,10 @@
 local core = require("apisix.core")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local logger_socket = require("resty.logger.socket")
+local rfc5424 = require("apisix.utils.rfc5424")
+local ipairs = ipairs
+local table_insert = core.table.insert
+local table_concat = core.table.concat
 
 local batch_processor_manager = bp_manager_mod.new("sys logger")
 
@@ -63,7 +67,8 @@ local function send_syslog_data(conf, log_message, api_ctx)
     end
 
     -- reuse the logger object
-    local ok, err = logger:log(core.json.encode(log_message))
+    local ok, err = logger:log(log_message)
+
     if not ok then
         res = false
         err_msg = "failed to log message" .. err
@@ -75,28 +80,32 @@ end
 
 -- called in log phase of APISIX
 function _M.push_entry(conf, ctx, entry)
-    if batch_processor_manager:add_entry(conf, entry) then
+    local json_str, err = core.json.encode(entry)
+    if not json_str then
+        core.log.error('error occurred while encoding the data: ', err)
+        return
+    end
+
+    local rfc5424_data = rfc5424.encode("SYSLOG", "INFO", ctx.var.host,
+                                "apisix", ctx.var.pid, json_str)
+
+    if batch_processor_manager:add_entry(conf, rfc5424_data) then
         return
     end
 
     -- Generate a function to be executed by the batch processor
     local cp_ctx = core.table.clone(ctx)
-    local func = function(entries, batch_max_size)
-        local data, err
-        if batch_max_size == 1 then
-            data, err = core.json.encode(entries[1]) -- encode as single {}
-        else
-            data, err = core.json.encode(entries) -- encode as array [{}]
+    local func = function(entries)
+        local items = {}
+        for _, e in ipairs(entries) do
+            table_insert(items, e)
+            core.log.debug("buffered logs:", e)
         end
 
-        if not data then
-            return false, 'error occurred while encoding the data: ' .. err
-        end
-
-        return send_syslog_data(conf, data, cp_ctx)
+        return send_syslog_data(conf, table_concat(items), cp_ctx)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(conf, rfc5424_data, ctx, func)
 end
 
 

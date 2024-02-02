@@ -123,6 +123,7 @@ local metadata_schema = {
                 -- in lua-resty-kafka, cluster_name is defined as number
                 -- see https://github.com/doujiang24/lua-resty-kafka#new-1
                 cluster_name = {type = "integer", minimum = 1, default = 1},
+                meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
             },
             required = {"brokers", "kafka_topic"},
         },
@@ -236,10 +237,15 @@ local function send_to_skywalking(log_message)
     httpc:set_timeout(config.timeout * 1000)
 
     local entries = {}
+    local service_instance_name = config.skywalking.service_instance_name
+    if service_instance_name == "$hostname" then
+        service_instance_name = core.utils.gethostname()
+    end
+
     for i = 1, #log_message, 2 do
         local content = {
             service = config.skywalking.service_name,
-            serviceInstance = config.skywalking.service_instance_name,
+            serviceInstance = service_instance_name,
             endpoint = "",
             body = {
                 text = {
@@ -370,6 +376,7 @@ local function send_to_kafka(log_message)
     broker_config["request_timeout"] = config.timeout * 1000
     broker_config["producer_type"] = config.kafka.producer_type
     broker_config["required_acks"] = config.kafka.required_acks
+    broker_config["refresh_interval"] = config.kafka.meta_refresh_interval * 1000
 
     -- reuse producer via kafka_prod_lrucache to avoid unbalanced partitions of messages in kafka
     local prod, err = kafka_prod_lrucache(plugin_name, metadata.modifiedIndex,

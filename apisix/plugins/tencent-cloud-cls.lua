@@ -39,8 +39,23 @@ local schema = {
             default = 1
         },
         include_req_body = { type = "boolean", default = false },
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         global_tag = { type = "object" },
+        log_format = {type = "object"},
     },
     encrypt_fields = {"secret_key"},
     required = { "cls_host", "cls_topic", "secret_id", "secret_key" }
@@ -50,7 +65,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 

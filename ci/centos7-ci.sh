@@ -19,17 +19,40 @@
 . ./ci/common.sh
 
 install_dependencies() {
+    export_version_info
     export_or_prefix
 
     # install build & runtime deps
-    yum install -y wget tar gcc automake autoconf libtool make unzip \
-        git sudo openldap-devel which
+    yum install -y wget tar gcc gcc-c++ automake autoconf libtool make unzip patch \
+        git sudo openldap-devel which ca-certificates \
+        epel-release  \
+        cpanminus perl \
+        openssl-devel
 
-    # curl with http2
-    wget https://github.com/moparisthebest/static-curl/releases/download/v7.79.1/curl-amd64 -O /usr/bin/curl
+    # install newer curl
+    yum makecache
+    yum install -y libnghttp2-devel
+    install_curl
+
+    yum -y install centos-release-scl
+    yum -y install devtoolset-9 patch wget git make sudo
+    set +eu
+    source scl_source enable devtoolset-9
+    set -eu
+
     # install openresty to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    yum install -y openresty openresty-debug openresty-openssl111-debug-devel pcre pcre-devel
+    yum install -y openresty-pcre-devel openresty-zlib-devel
+
+    export runtime_version=${APISIX_RUNTIME}
+    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
+    chmod +x build-apisix-runtime.sh
+    ./build-apisix-runtime.sh latest
+    curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
+        https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
+
+    # patch lua-resty-events
+    sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
@@ -40,6 +63,10 @@ install_dependencies() {
     # install vault cli capabilities
     install_vault_cli
 
+    # install brotli
+    yum install -y cmake3
+    install_brotli
+
     # install test::nginx
     yum install -y cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
@@ -47,21 +74,16 @@ install_dependencies() {
     # add go1.15 binary to the path
     mkdir build-cache
     # centos-7 ci runs on a docker container with the centos image on top of ubuntu host. Go is required inside the container.
-    cd build-cache/ && wget https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
+    cd build-cache/ && wget -q https://golang.org/dl/go1.17.linux-amd64.tar.gz && tar -xf go1.17.linux-amd64.tar.gz
     export PATH=$PATH:$(pwd)/go/bin
     cd ..
     # install and start grpc_server_example
     cd t/grpc_server_example
 
     CGO_ENABLED=0 go build
-    ./grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
-        -crt ../certs/apisix.crt -key ../certs/apisix.key -ca ../certs/mtls_ca.crt \
-        > grpc_server_example.log 2>&1 || (cat grpc_server_example.log && exit 1)&
-
     cd ../../
-    # wait for grpc_server_example to fully start
-    sleep 3
+
+    start_grpc_server_example
 
     # installing grpcurl
     install_grpcurl
@@ -85,7 +107,7 @@ run_case() {
     make init
     set_coredns
     # run test cases
-    FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

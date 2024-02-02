@@ -82,6 +82,7 @@ deployment:
 apisix:
     node_listen: 9080
     enable_admin: true
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - "localhost:9100"
@@ -141,7 +142,7 @@ nginx_config:
 
 # apisix restart
 out=$(./bin/apisix restart 2>&1 || true)
-if ! (echo "$out" | grep "\[emerg\] unknown directive \"notexist\"") && ! (echo "$out" | grep "APISIX is running"); then
+if ! (echo "$out" | grep "\[emerg\] unknown directive \"notexist\"") && ! (echo "$out" | grep "the old APISIX is still running"); then
     echo "failed: should restart failed when configuration invalid"
     exit 1
 fi

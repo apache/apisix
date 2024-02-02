@@ -76,7 +76,7 @@ return _M
 
 #### Eureka 与 APISIX 之间数据转换逻辑
 
-APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？ 假如从 Eureka 获取如下数据：
+APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册中心后，通过注册中心获取服务的所有 node 后，赋值给 `upstream.nodes` 来达到相同的效果。那么 APISIX 是怎么将 Eureka 的数据转成 node 的呢？假如从 Eureka 获取如下数据：
 
 ```json
 {
@@ -118,7 +118,7 @@ APISIX 是通过 `upstream.nodes` 来配置上游服务的，所以使用注册�
 
 解析 instance 数据步骤：
 
-1. 首先要选择状态为 “UP” 的实例： overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
+1. 首先要选择状态为“UP”的实例：overriddenStatus 值不为 "UNKNOWN" 以 overriddenStatus 为准，否则以 status 的值为准；
 2. IP 地址：以 ipAddr 的值为 IP; 并且必须是 IPv4 或 IPv6 格式的；
 3. 端口：端口取值规则是，如果 port["@enabled"] 等于 "true" 那么使用 port["\$"] 的值；如果 securePort["@enabled"] 等于 "true" 那么使用 securePort["$"] 的值；
 4. 权重：权重取值顺序是，先判断 `metadata.weight` 是否有值，如果没有，则取配置中的 `eureka.weight` 的值，如果还没有，则取默认值`100`；
@@ -151,7 +151,7 @@ discovery:
 
 此名称要与 `apisix/discovery/` 目录中实现对应注册中心的文件名保持一致。
 
-现已支持注册中心有：Eureka 。
+现已支持注册中心有：Eureka。
 
 ### Eureka 的配置
 

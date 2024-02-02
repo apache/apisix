@@ -1,5 +1,5 @@
 ---
-title: Debug Mode
+title: 调试模式
 ---
 
 <!--
@@ -28,6 +28,7 @@ title: Debug Mode
 ```
 basic:
   enable: true
+#END
 ```
 
 注意：在 APISIX 2.10 之前，开启基本调试模式曾经是设置 `conf/config.yaml` 中的 `apisix.enable_debug` 为 `true`。
@@ -106,4 +107,4 @@ http_filter:
 curl 127.0.0.1:9090/hello --header 'X-APISIX-Dynamic-Debug: foo'
 ```
 
-注意：动态高级调试模式无法调试 `apisix.http_access_phase`， 模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。
+注意：动态高级调试模式无法调试 `apisix.http_access_phase`，模块（因为请求进入 `apisix.http_access_phase` 模块后，才会判断是否动态开启高级调试模式）。

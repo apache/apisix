@@ -1,7 +1,8 @@
 ---
 title: ip-restriction
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - IP restriction
   - ip-restriction
@@ -47,7 +48,7 @@ Either one of `whitelist` or `blacklist` attribute must be specified. They canno
 
 :::
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route or a Service as shown below:
 
@@ -134,9 +135,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 }'
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `ip-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `ip-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

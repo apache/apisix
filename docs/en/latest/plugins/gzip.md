@@ -1,7 +1,8 @@
 ---
 title: gzip
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - gzip
 description: This document contains information about the Apache APISIX gzip Plugin.
@@ -29,10 +30,11 @@ description: This document contains information about the Apache APISIX gzip Plu
 ## Description
 
 The `gzip` Plugin dynamically sets the behavior of [gzip in Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/compression/).
+When the `gzip` plugin is enabled, the client needs to include `Accept-Encoding: gzip` in the request header to indicate support for gzip compression. Upon receiving the request, APISIX dynamically determines whether to compress the response content based on the client's support and server configuration. If the conditions are met, `APISIX` adds the `Content-Encoding: gzip` header to the response, indicating that the response content has been compressed using gzip. Upon receiving the response, the client uses the corresponding decompression algorithm based on the `Content-Encoding` header to decompress the response content and obtain the original response content.
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the-apisix-base-environment).
+This Plugin requires APISIX to run on [APISIX-Runtime](../FAQ.md#how-do-i-build-the-apisix-runtime-environment).
 
 :::
 
@@ -48,7 +50,7 @@ This Plugin requires APISIX to run on [APISIX-Base](../FAQ.md#how-do-i-build-the
 | buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
 | vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the `gzip` Plugin on the specified Route:
 
@@ -94,9 +96,9 @@ Warning: curl to output it to your terminal anyway, or consider "--output
 Warning: <FILE>" to save to a file.
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `gzip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `gzip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

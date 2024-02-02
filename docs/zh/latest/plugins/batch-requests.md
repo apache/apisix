@@ -1,7 +1,8 @@
 ---
 title: batch-requests
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Batch Requests
 description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本信息及使用方法。
@@ -28,15 +29,17 @@ description: 本文介绍了关于 Apache APISIX `batch-request` 插件的基本
 
 ## 描述
 
-`batch-requests` 插件可以一次接受多个请求并以 [HTTP pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式在网关发起多个 HTTP 请求，合并结果后再返回客户端。
+在启用 `batch-requests` 插件后，用户可以通过将多个请求组装成一个请求的形式，把请求发送给网关，网关会从请求体中解析出对应的请求，再分别封装成独立的请求，以 [HTTP pipeline](https://en.wikipedia.org/wiki/HTTP_pipelining) 的方式代替用户向网关自身再发起多个 HTTP 请求，经历路由匹配，转发到对应上游等多个阶段，合并结果后再返回客户端。
+
+![batch-request](https://static.apiseven.com/uploads/2023/06/27/ATzEuOn4_batch-request.png)
 
 在客户端需要访问多个 API 的情况下，这将显著提高性能。
 
 :::note
 
-外部批处理请求的 HTTP 请求头（除了以 `Content-` 开始的请求头，例如：`Content-Type`）适用于**批处理**中的每个请求。
+用户原始请求中的请求头（除了以 `Content-` 开始的请求头，例如：`Content-Type`）将被赋给 HTTP pipeline 中的每个请求，因此对于网关来说，这些以 HTTP pipeline 方式发送给自身的请求与用户直接发起的外部请求没有什么不同，只能访问已经配置好的路由，并将经历完整的鉴权过程，因此不存在安全问题。
 
-如果在外部请求和单个调用中都指定了相同的 HTTP 请求头，则单个调用的请求头优先。
+如果原始请求的请求头与插件中配置的请求头冲突，则以插件中配置的请求头优先（配置文件中指定的 real_ip_header 除外）。
 
 :::
 
@@ -66,7 +69,7 @@ plugins:
 
 ## 配置插件
 
-默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。 你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
+默认情况下，可以发送到 `/apisix/batch-requests` 的最大请求体不能大于 1 MiB。你可以通过 `apisix/admin/plugin_metadata/batch-requests` 更改插件的此配置：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests \
@@ -211,7 +214,7 @@ curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
 ]
 ```
 
-## 禁用插件
+## 删除插件
 
 如果你想禁用插件，可以将 `batch-requests` 从配置文件中的插件列表删除，重新加载 APISIX 后即可生效。
 

@@ -1,7 +1,8 @@
 ---
 title: fault-injection
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - Fault Injection
   - fault-injection
@@ -37,6 +38,7 @@ description: 本文介绍了关于 Apache APISIX `fault-injection` 插件的基�
 | ----------------- | ------- | ---- |  ---------- | -------------------------- |
 | abort.http_status | integer | 是   |  [200, ...] | 返回给客户端的 HTTP 状态码 |
 | abort.body        | string  | 否   |             | 返回给客户端的响应数据。支持使用 NGINX 变量，如 `client addr: $remote_addr\n`|
+| abort.headers     | object  | 否   |            |  返回给客户端的响应头，可以包含 NGINX 变量，如 `$remote_addr` |
 | abort.percentage  | integer | 否   |  [0, 100]   | 将被中断的请求占比         |
 | abort.vars        | array[] | 否   |             | 执行故障注入的规则，当规则匹配通过后才会执行故障注。`vars` 是一个表达式的列表，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。 |
 | delay.duration    | number  | 是   |             | 延迟时间，可以指定小数     |
@@ -267,7 +269,7 @@ Server: APISIX/2.2
 Fault Injection!
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `fault-injection` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

@@ -141,8 +141,8 @@ sleep 0.1
 
 make stop
 
-if ! grep -E 'self signed certificate' logs/error.log; then
-    echo "failed: should got 'self signed certificate' when ssl_trusted_certificate is wrong ca cert"
+if ! grep -E 'self-signed certificate' logs/error.log; then
+    echo "failed: should got 'self-signed certificate' when ssl_trusted_certificate is wrong ca cert"
     exit 1
 fi
 

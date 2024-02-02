@@ -110,15 +110,17 @@ function _M.rewrite(conf, ctx)
     end
 
     local user, err = extract_auth_header(auth_header)
-    if err then
-        core.log.warn(err)
+    if err or not user then
+        if err then
+          core.log.warn(err)
+        else
+          core.log.warn("nil user")
+        end
         return 401, { message = "Invalid authorization in request" }
     end
 
     -- 2. try authenticate the user against the ldap server
     local ldap_host, ldap_port = core.utils.parse_addr(conf.ldap_uri)
-
-    local userdn =  conf.uid .. "=" .. user.username .. "," .. conf.base_dn
     local ldapconf = {
         timeout = 10000,
         start_tls = false,
@@ -136,6 +138,8 @@ function _M.rewrite(conf, ctx)
         return 401, { message = "Invalid user authorization" }
     end
 
+    local user_dn =  conf.uid .. "=" .. user.username .. "," .. conf.base_dn
+
     -- 3. Retrieve consumer for authorization plugin
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
@@ -143,7 +147,7 @@ function _M.rewrite(conf, ctx)
     end
 
     local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "user_dn")
-    local consumer = consumers[userdn]
+    local consumer = consumers[user_dn]
     if not consumer then
         return 401, {message = "Invalid user authorization"}
     end

@@ -17,6 +17,7 @@
 local require = require
 local router = require("apisix.utils.router")
 local core = require("apisix.core")
+local event = require("apisix.core.event")
 local get_services = require("apisix.http.service").services
 local service_fetch = require("apisix.http.service").get
 local ipairs = ipairs
@@ -104,8 +105,9 @@ local function create_radixtree_router(routes)
     local host_routes = {}
     local only_uri_routes = {}
     host_router = nil
+    routes = routes or {}
 
-    for _, route in ipairs(routes or {}) do
+    for _, route in ipairs(routes) do
         local status = core.table.try_read_attr(route, "value", "status")
         -- check the status
         if not status or status == 1 then
@@ -128,6 +130,9 @@ local function create_radixtree_router(routes)
             end
         })
     end
+
+    event.push(event.CONST.BUILD_ROUTER, routes)
+
     if #host_router_routes > 0 then
         host_router = router.new(host_router_routes)
     end
@@ -137,8 +142,6 @@ local function create_radixtree_router(routes)
     return true
 end
 
-
-    local match_opts = {}
 function _M.match(api_ctx)
     local user_routes = _M.user_routes
     local _, service_version = get_services()
@@ -157,7 +160,7 @@ end
 function _M.matching(api_ctx)
     core.log.info("route match mode: radixtree_host_uri")
 
-    core.table.clear(match_opts)
+    local match_opts = core.tablepool.fetch("route_match_opts", 0, 16)
     match_opts.method = api_ctx.var.request_method
     match_opts.remote_addr = api_ctx.var.remote_addr
     match_opts.vars = api_ctx.var
@@ -176,11 +179,13 @@ function _M.matching(api_ctx)
                 api_ctx.curr_req_matched._host = api_ctx.real_curr_req_matched_host:reverse()
                 api_ctx.real_curr_req_matched_host = nil
             end
+            core.tablepool.release("route_match_opts", match_opts)
             return true
         end
     end
 
     local ok = only_uri_router:dispatch(api_ctx.var.uri, match_opts, api_ctx, match_opts)
+    core.tablepool.release("route_match_opts", match_opts)
     return ok
 end
 

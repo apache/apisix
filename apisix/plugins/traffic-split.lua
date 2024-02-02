@@ -125,7 +125,7 @@ end
 
 
 local function parse_domain_for_node(node)
-    local host = node.host
+    local host = node.domain or node.host
     if not ipmatcher.parse_ipv4(host)
        and not ipmatcher.parse_ipv6(host)
     then
@@ -173,6 +173,7 @@ local function set_upstream(upstream_info, ctx)
         key = upstream_info.key,
         nodes = new_nodes,
         timeout = upstream_info.timeout,
+        scheme = upstream_info.scheme
     }
 
     local ok, err = upstream.check_schema(up_conf)
@@ -190,7 +191,9 @@ local function set_upstream(upstream_info, ctx)
     end
     core.log.info("upstream_key: ", upstream_key)
     upstream.set(ctx, upstream_key, ctx.conf_version, up_conf)
-
+    if upstream_info.scheme == "https" then
+        upstream.set_scheme(ctx, up_conf)
+    end
     return
 end
 
@@ -233,6 +236,20 @@ function _M.access(conf, ctx)
     local match_passed = true
 
     for _, rule in ipairs(conf.rules) do
+        -- check if all upstream_ids are valid
+        if rule.weighted_upstreams then
+            for _, wupstream in ipairs(rule.weighted_upstreams) do
+                local ups_id = wupstream.upstream_id
+                if ups_id then
+                    local ups = upstream.get_by_id(ups_id)
+                    if not ups then
+                        return 500, "failed to fetch upstream info by "
+                                    .. "upstream id: " .. ups_id
+                    end
+                end
+            end
+        end
+
         if not rule.match then
             match_passed = true
             weighted_upstreams = rule.weighted_upstreams

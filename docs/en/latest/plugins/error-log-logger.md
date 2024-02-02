@@ -1,7 +1,7 @@
 ---
 title: error-log-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Error log logger
@@ -60,6 +60,7 @@ It might take some time to receive the log data. It will be automatically sent a
 | kafka.required_acks                    | integer | False    | 1              | [0, 1, -1]            | Number of acknowledgements the leader needs to receive for the producer to consider the request complete. This controls the durability of the sent records. The attribute follows the same configuration as the Kafka `acks` attribute. See [Apache Kafka documentation](https://kafka.apache.org/documentation/#producerconfigs_acks) for more. |
 | kafka.key                              | string  | False    |                |                       | Key used for allocating partitions for messages.                                                                                                                                                                                                                                                                                                 |
 | kafka.cluster_name           | integer | False    | 1              | [0,...]               | Name of the cluster. Used when there are two or more Kafka clusters. Only works if the `producer_type` attribute is set to `async`.                                                                                                                                                                                                              |
+| kafka.meta_refresh_interval | integer | False    | 30              | [1,...]               | `refresh_interval` parameter in [lua-resty-kafka](https://github.com/doujiang24/lua-resty-kafka) specifies the time to auto refresh the metadata, in seconds.|
 | timeout                          | integer | False    | 3                              | [1,...]                                                                                 | Timeout (in seconds) for the upstream to connect and send data.                                              |
 | keepalive                        | integer | False    | 30                             | [1,...]                                                                                 | Time in seconds to keep the connection alive after sending data.                                             |
 | level                            | string  | False    | WARN                           | ["STDERR", "EMERG", "ALERT", "CRIT", "ERR", "ERROR", "WARN", "NOTICE", "INFO", "DEBUG"] | Log level to filter the error logs. `ERR` is same as `ERROR`.                                                |
@@ -68,7 +69,13 @@ NOTE: `encrypt_fields = {"clickhouse.password"}` is also defined in the schema, 
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## Enabling the Plugin
+### Example of default log format
+
+```text
+["2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:205: load(): new plugins: {"error-log-logger":true}, context: init_worker_by_lua*","\n","2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:255: load_stream(): new plugins: {"limit-conn":true,"ip-restriction":true,"syslog":true,"mqtt-proxy":true}, context: init_worker_by_lua*","\n"]
+```
+
+## Enable Plugin
 
 To enable the Plugin, you can add it in your configuration file (`conf/config.yaml`):
 
@@ -152,9 +159,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 }'
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
+To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugins:

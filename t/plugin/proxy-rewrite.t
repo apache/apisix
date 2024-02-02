@@ -1180,7 +1180,7 @@ done
 
 
 
-=== TEST 43: set route(rewrite host with port)
+=== TEST 43: set route(rewrite host with port), ensure ngx.var.uri matched the rewritten version
 --- config
     location /t {
         content_by_lua_block {
@@ -1193,6 +1193,12 @@ done
                             "proxy-rewrite": {
                                 "uri": "/uri",
                                 "host": "test.com:6443"
+                            },
+                            "serverless-post-function": {
+                                "phase": "access",
+                                "functions" : ["return function(conf, ctx)
+                                    assert(ngx.var.uri == \"/uri\", \"proxy-rewrite do not call ngx.req.set_uri\")
+                                end"]
                             }
                         },
                         "upstream": {

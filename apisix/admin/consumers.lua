@@ -16,25 +16,13 @@
 --
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
-local utils   = require("apisix.admin.utils")
+local resource = require("apisix.admin.resource")
 local plugin  = require("apisix.plugin")
 local pairs   = pairs
 
-local _M = {
-    version = 0.1,
-    need_v3_filter = true,
-}
 
-
-local function check_conf(username, conf)
-    -- core.log.error(core.json.encode(conf))
-    if not conf then
-        return nil, {error_msg = "missing configurations"}
-    end
-
-    core.log.info("schema: ", core.json.delay_encode(core.schema.consumer))
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-    local ok, err = core.schema.check(core.schema.consumer, conf)
+local function check_conf(username, conf, need_username, schema)
+    local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
@@ -82,66 +70,10 @@ local function check_conf(username, conf)
 end
 
 
-function _M.put(username, conf)
-    local consumer_name, err = check_conf(username, conf)
-    if not consumer_name then
-        return 400, err
-    end
-
-    local key = "/consumers/" .. consumer_name
-    core.log.info("key: ", key)
-
-    local ok, err = utils.inject_conf_with_prev_conf("consumer", key, conf)
-    if not ok then
-        return 503, {error_msg = err}
-    end
-
-    local res, err = core.etcd.set(key, conf)
-    if not res then
-        core.log.error("failed to put consumer[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-function _M.get(consumer_name)
-    local key = "/consumers"
-    if consumer_name then
-        key = key .. "/" .. consumer_name
-    end
-
-    local res, err = core.etcd.get(key, not consumer_name)
-    if not res then
-        core.log.error("failed to get consumer[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    utils.fix_count(res.body, consumer_name)
-    return res.status, res.body
-end
-
-
-function _M.post(consumer_name, conf)
-    return 405, {error_msg = "not supported `POST` method for consumer"}
-end
-
-
-function _M.delete(consumer_name)
-    if not consumer_name then
-        return 400, {error_msg = "missing consumer name"}
-    end
-
-    local key = "/consumers/" .. consumer_name
-    local res, err = core.etcd.delete(key)
-    if not res then
-        core.log.error("failed to delete consumer[", key, "]: ", err)
-        return 503, {error_msg = err}
-    end
-
-    return res.status, res.body
-end
-
-
-return _M
+return resource.new({
+    name = "consumers",
+    kind = "consumer",
+    schema = core.schema.consumer,
+    checker = check_conf,
+    unsupported_methods = {"post", "patch"}
+})

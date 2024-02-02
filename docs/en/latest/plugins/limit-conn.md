@@ -1,7 +1,7 @@
 ---
 title: limit-conn
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Limit Connection
 description: This document contains information about the Apache APISIX limit-con Plugin, you can use it to limits the number of concurrent requests to your services.
@@ -28,7 +28,7 @@ description: This document contains information about the Apache APISIX limit-co
 
 ## Description
 
-The `limit-con` Plugin limits the number of concurrent requests to your services.
+The `limit-conn` Plugin limits the number of concurrent requests to your services.
 
 ## Attributes
 
@@ -44,7 +44,7 @@ The `limit-con` Plugin limits the number of concurrent requests to your services
 | rejected_msg           | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
 | allow_degradation      | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
 
-## Enabling the Plugin
+## Enable Plugin
 
 You can enable the Plugin on a Route as shown below:
 
@@ -120,9 +120,9 @@ curl -i http://127.0.0.1:9080/index.html?sleep=20
 </html>
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `limit-conn` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

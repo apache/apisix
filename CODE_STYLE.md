@@ -264,7 +264,7 @@ end
 ```lua
 --Yes
 local new_tab = require "table.new"
-local t = new_tab(100, 0)
+local t = new_tab(100000, 0)
 for i = 1, 100000 do
     t[i] = "a"
 end
@@ -322,7 +322,7 @@ end
 
 The function should return `<boolean>`, `err`.
 The first return value means successful or not, if not, the second return value specifies the error message.
-The error message can be ignored in some case.
+The error message can be ignored in some cases.
 
 ```lua
 --No

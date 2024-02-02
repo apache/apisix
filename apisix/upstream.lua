@@ -19,10 +19,12 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
+local events = require("apisix.events")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
+local pcall = pcall
 local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
@@ -35,7 +37,7 @@ if ok then
     set_upstream_tls_client_param = apisix_ngx_upstream.set_cert_and_key
 else
     set_upstream_tls_client_param = function ()
-        return nil, "need to build APISIX-Base to support upstream mTLS"
+        return nil, "need to build APISIX-Runtime to support upstream mTLS"
     end
 end
 
@@ -46,7 +48,7 @@ if not is_http then
         set_stream_upstream_tls = apisix_ngx_stream_upstream.set_tls
     else
         set_stream_upstream_tls = function ()
-            return nil, "need to build APISIX-Base to support TLS over TCP upstream"
+            return nil, "need to build APISIX-Runtime to support TLS over TCP upstream"
         end
     end
 end
@@ -82,7 +84,7 @@ _M.set = set_directly
 local function release_checker(healthcheck_parent)
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
-    checker:clear()
+    checker:delayed_clear(3)
     checker:stop()
 end
 
@@ -103,20 +105,38 @@ local function create_checker(upstream)
         return healthcheck_parent.checker
     end
 
+    if upstream.is_creating_checker then
+        core.log.info("another request is creating new checker")
+        return nil
+    end
+    upstream.is_creating_checker = true
+
+    core.log.debug("events module used by the healthcheck: ", events.events_module,
+                    ", module name: ",events:get_healthcheck_events_modele())
+
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
+        -- the events.init_worker will be executed in the init_worker phase,
+        -- events.healthcheck_events_module is set
+        -- while the healthcheck object is executed in the http access phase,
+        -- so it can be used here
+        events_module = events:get_healthcheck_events_modele(),
     })
 
     if not checker then
         core.log.error("fail to create healthcheck instance: ", err)
+        upstream.is_creating_checker = nil
         return nil
     end
 
     if healthcheck_parent.checker then
-        core.config_util.cancel_clean_handler(healthcheck_parent,
+        local ok, err = pcall(core.config_util.cancel_clean_handler, healthcheck_parent,
                                               healthcheck_parent.checker_idx, true)
+        if not ok then
+            core.log.error("cancel clean handler error: ", err)
+        end
     end
 
     core.log.info("create new checker: ", tostring(checker))
@@ -124,7 +144,7 @@ local function create_checker(upstream)
     local host = upstream.checks and upstream.checks.active and upstream.checks.active.host
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     local up_hdr = upstream.pass_host == "rewrite" and upstream.upstream_host
-    local use_node_hdr = upstream.pass_host == "node"
+    local use_node_hdr = upstream.pass_host == "node" or nil
     for _, node in ipairs(upstream.nodes) do
         local host_hdr = up_hdr or (use_node_hdr and node.domain)
         local ok, err = checker:add_target(node.host, port or node.port, host,
@@ -139,6 +159,8 @@ local function create_checker(upstream)
     healthcheck_parent.checker_upstream = upstream
     healthcheck_parent.checker_idx =
         core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+
+    upstream.is_creating_checker = nil
 
     return checker
 end
@@ -162,7 +184,7 @@ local function set_upstream_scheme(ctx, upstream)
 
     ctx.var["upstream_scheme"] = ctx.upstream_scheme
 end
-
+_M.set_scheme = set_upstream_scheme
 
 local scheme_to_port = {
     http = 80,
@@ -269,6 +291,8 @@ function _M.set_by_route(route, api_ctx)
             end
 
             up_conf.nodes = new_nodes
+            up_conf.original_nodes = up_conf.nodes
+
             local new_up_conf = core.table.clone(up_conf)
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",

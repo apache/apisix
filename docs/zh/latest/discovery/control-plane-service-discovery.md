@@ -67,6 +67,6 @@ Apache APISIX 在早期已经支持了数据面服务发现，现在 APISIX 也�
 
 目前已经支持了 ZooKeeper 和 Nacos，后续还将支持更多的服务注册中心，更多信息请参考：[APISIX Seed](https://github.com/api7/apisix-seed#apisix-seed-for-apache-apisix)。
 
-- 如果你想启用控制面 ZooKeeper 服务发现，请参考：[ZooKeeper 部署教程](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md)。
+- 如果你想启用控制面 ZooKeeper 服务发现，请参考：[ZooKeeper 部署教程](https://github.com/api7/apisix-seed/blob/main/docs/zh/latest/zookeeper.md)。
 
-- 如果你想启用控制面 Nacos 服务发现，请参考：[Nacos 部署教程](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md)。
+- 如果你想启用控制面 Nacos 服务发现，请参考：[Nacos 部署教程](https://github.com/api7/apisix-seed/blob/main/docs/zh/latest/nacos.md)。

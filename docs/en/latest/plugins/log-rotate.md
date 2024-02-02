@@ -1,7 +1,7 @@
 ---
 title: log-rotate
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Log rotate
@@ -42,7 +42,7 @@ You can configure how often the logs are rotated and how many logs to keep. When
 | max_size           | integer | False    | -1      | Max size(Bytes) of log files to be rotated, size check would be skipped with a value less than 0 or time is up specified by interval. |
 | enable_compression | boolean | False    | false   | When set to `true`, compresses the log file (gzip). Requires `tar` to be installed.            |
 
-## Enabling the Plugin
+## Enable Plugin
 
 To enable the Plugin, add it in your configuration file (`conf/config.yaml`):
 
@@ -108,7 +108,7 @@ total 10.5K
 -rw-r--r--. 1 resty resty 1.5K Mar 20 21:31 error.log
 ```
 
-## Disable plugin
+## Delete Plugin
 
 To remove the `log-rotate` Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 

@@ -607,3 +607,47 @@ GET /t
 {"error_msg":"unknown protocol [xxx]"}
 passed
 {"error_msg":"property \"faults\" validation failed: wrong type: expected array, got string"}
+
+
+
+=== TEST 17: set route with remote_addr and server_addr in IPV6
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "::1",
+                    "server_addr": "::1",
+                    "server_port": 1982,
+                    "plugins": {
+                        "mqtt-proxy": {
+                            "protocol_name": "MQTT",
+                            "protocol_level": 4
+                        }
+                    },
+                    "upstream": {
+                        "type": "chash",
+                        "key": "mqtt_client_id",
+                        "nodes": [
+                            {
+                                "host": "127.0.0.1",
+                                "port": 1980,
+                                "weight": 1
+                            }
+                        ]
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

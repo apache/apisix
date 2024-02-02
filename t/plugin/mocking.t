@@ -346,3 +346,161 @@ passed
 GET /hello
 --- response_headers
 Content-Type: application/json
+
+
+
+=== TEST 15: set route(return response example:"remote_addr:127.0.0.1")
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "mocking": {
+                                   "delay": 1,
+                                   "content_type": "text/plain",
+                                   "response_status": 200,
+                                   "response_example": "remote_addr:$remote_addr"
+                               }
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 16: hit route(return response example:"remote_addr:127.0.0.1")
+--- request
+GET /hello
+--- response_body chomp
+remote_addr:127.0.0.1
+
+
+
+=== TEST 17: set route(return response example:"empty_var:")
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "mocking": {
+                                   "delay": 1,
+                                   "content_type": "text/plain",
+                                   "response_status": 200,
+                                   "response_example": "empty_var:$foo"
+                               }
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 18: hit route(return response example:"empty_var:")
+--- request
+GET /hello
+--- response_body chomp
+empty_var:
+
+
+
+=== TEST 19: set route (return headers)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "mocking": {
+                                   "response_example": "hello world",
+                                   "response_headers": {
+                                        "X-Apisix": "is, cool",
+                                        "X-Really": "yes"
+                                    }
+                               }
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 20: hit route
+--- request
+GET /hello
+--- response_headers
+X-Apisix: is, cool
+X-Really: yes
+
+
+
+=== TEST 21: set route (return headers support built-in variables)
+--- config
+       location /t {
+           content_by_lua_block {
+               local t = require("lib.test_admin").test
+               local code, body = t('/apisix/admin/routes/1',
+                    ngx.HTTP_PUT,
+                    [[{
+                           "plugins": {
+                               "mocking": {
+                                   "response_example": "hello world",
+                                   "response_headers": {
+                                        "X-Route-Id": "$route_id"
+                                    }
+                               }
+                           },
+                           "uri": "/hello"
+                   }]]
+                   )
+
+               if code >= 300 then
+                   ngx.status = code
+               end
+               ngx.say(body)
+           }
+       }
+--- response_body
+passed
+
+
+
+=== TEST 22: hit route
+--- request
+GET /hello
+--- response_headers
+X-Route-Id: 1

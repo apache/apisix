@@ -57,13 +57,6 @@ __DATA__
             local code, body = t('/apisix/admin/global_rules/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                    },
                     "plugins": {
                         "wasm_log": {
                             "conf": "blahblah"

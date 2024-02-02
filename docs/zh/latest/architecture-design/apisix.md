@@ -1,5 +1,10 @@
 ---
-title: APISIX
+title: 软件架构
+keywords:
+  - 网关
+  - Apache APISIX
+  - APISIX 架构
+description: 云原生网关 Apache APISIX 的软件架构
 ---
 
 <!--
@@ -21,11 +26,9 @@ title: APISIX
 #
 -->
 
-## 软件架构
+Apache APISIX 是一个动态、实时、高性能的云原生 API 网关。它构建于 NGINX + ngx_lua 的技术基础之上，充分利用了 LuaJIT 所提供的强大性能。 [为什么 Apache APISIX 选择 NGINX+Lua 技术栈？](https://apisix.apache.org/zh/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)。
 
 ![软件架构](../../../assets/images/flow-software-architecture.png)
-
-Apache APISIX 是一个动态、实时、高性能的云原生 API 网关。它构建于 NGINX + ngx_lua 的技术基础之上，充分利用了 LuaJIT 所提供的强大性能。 [为什么 Apache APISIX 选择 NGINX+Lua 技术栈？](https://apisix.apache.org/zh/blog/2021/08/25/why-apache-apisix-chose-nginx-and-lua/)。
 
 APISIX 主要分为两个部分：
 

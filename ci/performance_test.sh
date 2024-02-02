@@ -57,7 +57,7 @@ EOF
 
     # install systemtap
     cd /usr/local/
-    wget http://sourceware.org/systemtap/ftp/releases/systemtap-4.6.tar.gz
+    wget -q http://sourceware.org/systemtap/ftp/releases/systemtap-4.6.tar.gz
     tar -zxf systemtap-4.6.tar.gz
     mv systemtap-4.6 systemtap
     cd systemtap
@@ -78,7 +78,7 @@ run_performance_test() {
     pip3 install -r t/perf/requirements.txt --user
 
     #openresty-debug
-    export OPENRESTY_PREFIX="/usr/local/openresty-debug"
+    export OPENRESTY_PREFIX="/usr/local/openresty"
     export PATH=$OPENRESTY_PREFIX/nginx/sbin:$OPENRESTY_PREFIX/bin:$OPENRESTY_PREFIX/luajit/bin:$PATH
 
     mkdir output

@@ -2,12 +2,12 @@
 id: support-fips-in-apisix
 title: Support FIPS in APISIX
 keywords:
-  - API gateway
+  - API Gateway
   - Apache APISIX
   - Code Contribution
   - Building APISIX
   - OpenSSL 3.0 FIPS
-description: Compile apisix-base with OpenSSL 3.0 (FIPS enabled)
+description: Compile apisix-runtime with OpenSSL 3.0 (FIPS enabled)
 ---
 
 <!--
@@ -29,11 +29,11 @@ description: Compile apisix-base with OpenSSL 3.0 (FIPS enabled)
 #
 -->
 
-OpenSSL 3.0 [supports](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) mode. To support FIPS in APISIX, you can compile apisix-base with OpenSSL 3.0.
+OpenSSL 3.0 [supports](https://www.openssl.org/blog/blog/2022/08/24/FIPS-validation-certificate-issued/) [FIPS](https://en.wikipedia.org/wiki/FIPS_140-2) mode. To support FIPS in APISIX, you can compile apisix-runtime with OpenSSL 3.0.
 
 ## Compilation
 
-To compile apisix-base with OpenSSL 3.0, run the commands below as root user:
+To compile apisix-runtime with OpenSSL 3.0, run the commands below as root user:
 
 ```bash
 cd $(mktemp -d)
@@ -52,9 +52,9 @@ cd ..
 export cc_opt="-I$OPENSSL3_PREFIX/openssl-3.0/include"
 export ld_opt="-L$OPENSSL3_PREFIX/openssl-3.0/lib64 -Wl,-rpath,$OPENSSL3_PREFIX/openssl-3.0/lib64"
 
-wget https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-base.sh
-chmod +x build-apisix-base.sh
-./build-apisix-base.sh latest
+wget --no-check-certificate https://raw.githubusercontent.com/api7/apisix-build-tools/master/build-apisix-runtime.sh
+chmod +x build-apisix-runtime.sh
+./build-apisix-runtime.sh
 ```
 
-This will install apisix-base to `/usr/local/openresty-debug`.
+This will install apisix-runtime to `/usr/local/openresty`.

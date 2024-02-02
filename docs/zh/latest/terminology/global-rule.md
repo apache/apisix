@@ -40,7 +40,7 @@ description: 本文介绍了全局规则的概念以及如何启用全局规则�
 以下示例展示了如何为所有请求启用 `limit-count` 插件：
 
 ```shell
-curl https://127.0.0.1:9180/apisix/admin/global_rules/1 -X PUT \
+curl http://127.0.0.1:9180/apisix/admin/global_rules/1 -X PUT \
   -H 'Content-Type: application/json' \
   -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
   -d '{
@@ -59,5 +59,5 @@ curl https://127.0.0.1:9180/apisix/admin/global_rules/1 -X PUT \
 你也可以通过以下命令查看所有的全局规则：
 
 ```shell
-curl https://127.0.0.1:9180/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl http://127.0.0.1:9180/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
 ```

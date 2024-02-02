@@ -31,7 +31,7 @@ __DATA__
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token"
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token"
                             })
             if not ok then
                 ngx.say(err)
@@ -54,7 +54,7 @@ done
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
+                                discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration"
                             })
             if not ok then
                 ngx.say(err)
@@ -78,8 +78,8 @@ done
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
                                 lazy_load_paths = true,
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set"
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token",
+                                resource_registration_endpoint = "https://host.domain/realms/foo/authz/protection/resource_set"
                             })
             if not ok then
                 ngx.say(err)
@@ -103,7 +103,7 @@ done
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
                                 lazy_load_paths = true,
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"
+                                discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration"
                             })
             if not ok then
                 ngx.say(err)
@@ -125,9 +125,9 @@ done
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
-                                discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration",
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
-                                resource_registration_endpoint = "https://host.domain/auth/realms/foo/authz/protection/resource_set",
+                                discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration",
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token",
+                                resource_registration_endpoint = "https://host.domain/realms/foo/authz/protection/resource_set",
                                 client_id = "University",
                                 client_secret = "secret",
                                 grant_type = "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -187,7 +187,7 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({discovery = "https://host.domain/auth/realms/foo/.well-known/uma2-configuration"})
+            local ok, err = plugin.check_schema({discovery = "https://host.domain/realms/foo/.well-known/uma2-configuration"})
             if not ok then
                 ngx.say(err)
             end
@@ -210,7 +210,7 @@ done
             local plugin = require("apisix.plugins.authz-keycloak")
             local ok, err = plugin.check_schema({
                                 client_id = "foo",
-                                token_endpoint = "https://host.domain/auth/realms/foo/protocol/openid-connect/token",
+                                token_endpoint = "https://host.domain/realms/foo/protocol/openid-connect/token",
                                 lazy_load_paths = true
                             })
             if not ok then
@@ -238,7 +238,7 @@ done
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -296,7 +296,7 @@ GET /t
 --- response_body
 false
 --- error_log
-Error while sending authz request to https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token: 18
+Error while sending authz request to https://127.0.0.1:8443/realms/University/protocol/openid-connect/token: 18
 --- error_code: 503
 
 
@@ -311,7 +311,7 @@ Error while sending authz request to https://127.0.0.1:8443/auth/realms/Universi
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#delete"],
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
@@ -382,7 +382,7 @@ Request denied: HTTP 401 Unauthorized. Body: {"error":"HTTP 401 Unauthorized"}
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "policy_enforcement_mode": "ENFORCING",
@@ -447,7 +447,7 @@ GET /t
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "http://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "http://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "client_id": "course_management",
                                 "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
                                 "policy_enforcement_mode": "ENFORCING",
@@ -515,7 +515,7 @@ Location: http://127.0.0.1/test
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#view"],
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
@@ -587,7 +587,7 @@ true
                  [[{
                         "plugins": {
                             "authz-keycloak": {
-                                "token_endpoint": "https://127.0.0.1:8443/auth/realms/University/protocol/openid-connect/token",
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
                                 "permissions": ["course_resource#view"],
                                 "client_id": "course_management",
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",

@@ -40,16 +40,57 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 | host             | string  | 是     |              |         | UDP 服务的 IP 地址或主机名。                       |
 | port             | integer | 是     |              | [0,...] | 目标端口。                                         |
 | timeout          | integer | 否     | 1000         | [1,...] | 发送数据超时间。                                   |
-| name             | string  | 否     | "udp logger" |         | 用于识别批处理器。                                 |
+| log_format       | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| name             | string  | 否     | "udp logger" |         | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                                 |
 | include_req_body | boolean | 否     |              |         | 当设置为 `true` 时，日志中将包含请求体。           |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+### 默认日志格式数据
+
+```json
+{
+  "apisix_latency": 99.999988555908,
+  "service_id": "",
+  "server": {
+    "version": "3.7.0",
+    "hostname": "localhost"
+  },
+  "request": {
+    "method": "GET",
+    "headers": {
+      "connection": "close",
+      "host": "localhost"
+    },
+    "url": "http://localhost:1984/opentracing",
+    "size": 65,
+    "querystring": {},
+    "uri": "/opentracing"
+  },
+  "start_time": 1704527399740,
+  "client_ip": "127.0.0.1",
+  "response": {
+    "status": 200,
+    "size": 136,
+    "headers": {
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "transfer-encoding": "chunked",
+      "connection": "close"
+    }
+  },
+  "upstream": "127.0.0.1:1982",
+  "route_id": "1",
+  "upstream_latency": 12,
+  "latency": 111.99998855591
+}
+```
 
 ## 插件元数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 注意
 
@@ -117,9 +158,9 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

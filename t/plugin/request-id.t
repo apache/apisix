@@ -378,43 +378,7 @@ X-Request-Id and Custom-Header-Name are different
 
 
 
-=== TEST 12: check for snowflake id
---- yaml_config
-plugins:
-    - request-id
-plugin_attr:
-    request-id:
-        snowflake:
-            enable: true
-            snowflake_epoc: 1609459200000
-            data_machine_bits: 10
-            sequence_bits: 10
-            data_machine_ttl: 30
-            data_machine_interval: 10
---- config
-location /t {
-    content_by_lua_block {
-        ngx.sleep(3)
-        local core = require("apisix.core")
-        local key = "/plugins/request-id/snowflake/1"
-        local res, err = core.etcd.get(key)
-        if err ~= nil then
-            ngx.status = 500
-            ngx.say(err)
-            return
-        end
-        if res.body.node.key ~= "/apisix/plugins/request-id/snowflake/1" then
-            ngx.say(core.json.encode(res.body.node))
-        end
-        ngx.say("ok")
-    }
-}
---- response_body
-ok
-
-
-
-=== TEST 13: wrong type
+=== TEST 12: wrong algorithm type
 --- config
     location /t {
         content_by_lua_block {
@@ -432,176 +396,7 @@ done
 
 
 
-=== TEST 14: add plugin with algorithm snowflake (default uuid)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "request-id": {
-                                "algorithm": "snowflake"
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1982": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/opentracing"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 15: check for snowflake id
---- yaml_config
-plugins:
-    - request-id
-plugin_attr:
-    request-id:
-        snowflake:
-            enable: true
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local t = {}
-            local ids = {}
-            for i = 1, 180 do
-                local th = assert(ngx.thread.spawn(function()
-                    local httpc = http.new()
-                    local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
-                    local res, err = httpc:request_uri(uri,
-                        {
-                            method = "GET",
-                            headers = {
-                                ["Content-Type"] = "application/json",
-                            }
-                        }
-                    )
-                    if not res then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                    local id = res.headers["X-Request-Id"]
-                    if not id then
-                        return -- ignore if the data is not synced yet.
-                    end
-                    if ids[id] == true then
-                        ngx.say("ids not unique")
-                        return
-                    end
-                    ids[id] = true
-                end, i))
-                table.insert(t, th)
-            end
-            for i, th in ipairs(t) do
-                ngx.thread.wait(th)
-            end
-            ngx.say("true")
-        }
-    }
---- wait: 5
---- response_body
-true
-
-
-
-=== TEST 16: check for delta_offset 1000 milliseconds
---- yaml_config
-plugins:
-    - request-id
-plugin_attr:
-    request-id:
-        snowflake:
-            enable: true
-            snowflake_epoc: 1609459200000
-            data_machine_bits: 12
-            sequence_bits: 10
-            data_machine_ttl: 30
-            data_machine_interval: 10
-            delta_offset: 1000
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local t = {}
-            local ids = {}
-            for i = 1, 180 do
-                local th = assert(ngx.thread.spawn(function()
-                    local httpc = http.new()
-                    local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/opentracing"
-                    local res, err = httpc:request_uri(uri,
-                        {
-                            method = "GET",
-                            headers = {
-                                ["Content-Type"] = "application/json",
-                            }
-                        }
-                    )
-                    if not res then
-                        ngx.log(ngx.ERR, err)
-                        return
-                    end
-                    local id = res.headers["X-Request-Id"]
-                    if not id then
-                        return -- ignore if the data is not synced yet.
-                    end
-                    if ids[id] == true then
-                        ngx.say("ids not unique")
-                        return
-                    end
-                    ids[id] = true
-                end, i))
-                table.insert(t, th)
-            end
-            for i, th in ipairs(t) do
-                ngx.thread.wait(th)
-            end
-            ngx.say("true")
-        }
-    }
---- wait: 5
---- response_body
-true
-
-
-
-=== TEST 17: wrong delta_offset
---- yaml_config
-plugins:
-    - request-id
-plugin_attr:
-    request-id:
-        snowflake:
-            enable: true
-            delta_offset: 1001
---- config
-    location /t {
-        content_by_lua_block {
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- error_log
-ailed to check the plugin_attr[request-id]: property "snowflake" validation failed: property "delta_offset" validation failed: matches none of the enum values
-
-
-
-=== TEST 18: add plugin with include_in_response true
+=== TEST 13: add plugin with include_in_response true
 --- config
     location /t {
         content_by_lua_block {
@@ -635,7 +430,7 @@ passed
 
 
 
-=== TEST 19: echo back the client's header if given
+=== TEST 14: echo back the client's header if given
 --- request
 GET /opentracing
 --- more_headers
@@ -645,7 +440,7 @@ X-Request-ID: 123
 
 
 
-=== TEST 20: add plugin with algorithm nanoid (default uuid)
+=== TEST 15: add plugin with algorithm nanoid (default uuid)
 --- config
     location /t {
         content_by_lua_block {

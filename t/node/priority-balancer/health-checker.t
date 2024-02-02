@@ -102,8 +102,8 @@ upstreams:
 GET /t
 --- error_log
 connect() failed
-unhealthy TCP increment (2/2) for '(127.0.0.1:1979)
-unhealthy TCP increment (2/2) for '(127.0.0.2:1979)
+unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1979)
+unhealthy TCP increment (2/2) for '127.0.0.2(127.0.0.2:1979)
 --- grep_error_log eval
 qr/proxy request to \S+/
 --- grep_error_log_out
@@ -177,7 +177,7 @@ passed
 GET /t
 --- error_log
 connect() failed
-unhealthy TCP increment (2/2) for '(127.0.0.1:1979)
+unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1979)
 --- grep_error_log eval
 qr/proxy request to \S+/
 --- grep_error_log_out

@@ -62,31 +62,23 @@ do_install() {
 
     # install vault cli capabilities
     install_vault_cli
+
+    # install brotli
+    install_brotli
 }
 
 script() {
     export_or_prefix
     openresty -V
 
+    make init
+
     set_coredns
 
-    ./t/grpc_server_example/grpc_server_example \
-        -grpc-address :50051 -grpcs-address :50052 -grpcs-mtls-address :50053 -grpc-http-address :50054 \
-        -crt ./t/certs/apisix.crt -key ./t/certs/apisix.key -ca ./t/certs/mtls_ca.crt \
-        &
-
-    # ensure grpc server example is already started
-    for (( i = 0; i <= 100; i++ )); do
-        if [[ "$i" -eq 100 ]]; then
-            echo "failed to start grpc_server_example in time"
-            exit 1
-        fi
-        nc -zv 127.0.0.1 50051 && break
-        sleep 1
-    done
+    start_grpc_server_example
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
-    FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
+    FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

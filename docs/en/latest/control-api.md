@@ -98,71 +98,50 @@ Returns a [health check](./tutorials/health-check.md) of the APISIX instance.
 
 ```json
 [
-    {
-        "healthy_nodes": [
-            {
-                "host": "127.0.0.1",
-                "port": 1980,
-                "priority": 0,
-                "weight": 1
-            }
-        ],
-        "name": "upstream#/upstreams/1",
-        "nodes": [
-            {
-                "host": "127.0.0.1",
-                "port": 1980,
-                "priority": 0,
-                "weight": 1
-            },
-            {
-                "host": "127.0.0.2",
-                "port": 1988,
-                "priority": 0,
-                "weight": 1
-            }
-        ],
-        "src_id": "1",
-        "src_type": "upstreams"
-    },
-    {
-        "healthy_nodes": [
-            {
-                "host": "127.0.0.1",
-                "port": 1980,
-                "priority": 0,
-                "weight": 1
-            }
-        ],
-        "name": "upstream#/routes/1",
-        "nodes": [
-            {
-                "host": "127.0.0.1",
-                "port": 1980,
-                "priority": 0,
-                "weight": 1
-            },
-            {
-                "host": "127.0.0.1",
-                "port": 1988,
-                "priority": 0,
-                "weight": 1
-            }
-        ],
-        "src_id": "1",
-        "src_type": "routes"
-    }
+  {
+    "nodes": [
+      {
+        "ip": "52.86.68.46",
+        "counter": {
+          "http_failure": 0,
+          "success": 0,
+          "timeout_failure": 0,
+          "tcp_failure": 0
+        },
+        "port": 80,
+        "status": "healthy"
+      },
+      {
+        "ip": "100.24.156.8",
+        "counter": {
+          "http_failure": 5,
+          "success": 0,
+          "timeout_failure": 0,
+          "tcp_failure": 0
+        },
+        "port": 80,
+        "status": "unhealthy"
+      }
+    ],
+    "name": "/apisix/routes/1",
+    "type": "http"
+  }
 ]
+
 ```
 
 Each of the returned objects contain the following fields:
 
-* src_type: where the health checker is reporting from. Value is one of  `["routes", "services", "upstreams"]`.
-* src_id: id of the object creating the health checker. For example, if an Upstream
-object with id `1` creates a health checker, the `src_type` is `upstreams` and the `src_id` is `1`.
-* name: name of the health checker.
+* name: resource id, where the health checker is reporting from.
+* type: health check type: `["http", "https", "tcp"]`.
 * nodes: target nodes of the health checker.
-* healthy_nodes: healthy nodes discovered by the health checker.
+* nodes[i].ip: ip address.
+* nodes[i].port: port number.
+* nodes[i].status: health check result: `["healthy", "unhealthy", "mostly_healthy", "mostly_unhealthy"]`.
+* nodes[i].counter.success: success health check count.
+* nodes[i].counter.http_failure: http failures count.
+* nodes[i].counter.tcp_failure: tcp connect/read/write failures count.
+* nodes[i].counter.timeout_failure: timeout count.
 
 You can also use `/v1/healthcheck/$src_type/$src_id` to get the health status of specific nodes.
 
@@ -170,39 +149,49 @@ For example, `GET /v1/healthcheck/upstreams/1` returns:
 
 ```json
 {
-    "healthy_nodes": [
-        {
-            "host": "127.0.0.1",
-            "port": 1980,
-            "priority": 0,
-            "weight": 1
-        }
-    ],
-    "name": "upstream#/upstreams/1",
-    "nodes": [
-        {
-            "host": "127.0.0.1",
-            "port": 1980,
-            "priority": 0,
-            "weight": 1
-        },
-        {
-            "host": "127.0.0.2",
-            "port": 1988,
-            "priority": 0,
-            "weight": 1
-        }
-    ],
-    "src_id": "1",
-    "src_type": "upstreams"
+  "nodes": [
+    {
+      "ip": "52.86.68.46",
+      "counter": {
+        "http_failure": 0,
+        "success": 2,
+        "timeout_failure": 0,
+        "tcp_failure": 0
+      },
+      "port": 80,
+      "status": "healthy"
+    },
+    {
+      "ip": "100.24.156.8",
+      "counter": {
+        "http_failure": 5,
+        "success": 0,
+        "timeout_failure": 0,
+        "tcp_failure": 0
+      },
+      "port": 80,
+      "status": "unhealthy"
+    }
+  ],
+  "type": "http"
+  "name": "/apisix/routes/1"
 }
+
 ```
 
 :::note
 
-As APISIX uses multiple-process architecture, if the process never handles the request of a specific upstream, then the upstream's health check information will not appear on the process. This may result in the health check API can't get all data during testing.
+Only when one upstream is satisfied by the conditions below,
+its status is shown in the result list:
+
+* The upstream is configured with a health checker
+* The upstream has served requests in any worker process
 
 :::
+
+If you use browser to access the control API URL, then you will get the HTML output:
+
+![Health Check Status Page](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/health_check_status_page.png)
 
 ### POST /v1/gc
 
@@ -221,7 +210,6 @@ Returns all configured [Routes](./terminology/route.md):
 ```json
 [
   {
-    "update_count": 0,
     "value": {
       "priority": 0,
       "uris": [
@@ -260,7 +248,6 @@ Returns the Route with the specified `route_id`:
 
 ```json
 {
-  "update_count": 0,
   "value": {
     "priority": 0,
     "uris": [

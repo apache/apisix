@@ -292,7 +292,20 @@ find ctx.req_post_args.test: true
 
 
 
-=== TEST 13: missed (post_arg_test is missing)
+=== TEST 13: hit with charset
+--- request
+POST /hello
+test=test
+--- more_headers
+Content-Type: application/x-www-form-urlencoded;charset=utf-8
+--- response_body
+hello world
+--- error_log
+find ctx.req_post_args.test: true
+
+
+
+=== TEST 14: missed (post_arg_test is missing)
 --- request
 POST /hello
 --- more_headers
@@ -303,7 +316,7 @@ Content-Type: application/x-www-form-urlencoded
 
 
 
-=== TEST 14: missed (post_arg_test is mismatch)
+=== TEST 15: missed (post_arg_test is mismatch)
 --- request
 POST /hello
 test=tesy
@@ -315,7 +328,7 @@ Content-Type: application/x-www-form-urlencoded
 
 
 
-=== TEST 15: register custom variable
+=== TEST 16: register custom variable
 --- config
     location /t {
         content_by_lua_block {
@@ -351,7 +364,7 @@ Content-Type: application/x-www-form-urlencoded
 
 
 
-=== TEST 16: hit
+=== TEST 17: hit
 --- config
     location /t {
         content_by_lua_block {
@@ -375,7 +388,7 @@ find ctx.var.a6_labels_zone: Singapore
 
 
 
-=== TEST 17: register custom variable with no cacheable
+=== TEST 18: register custom variable with no cacheable
 --- config
     location /t {
         content_by_lua_block {
@@ -412,7 +425,7 @@ find ctx.var.a6_labels_zone: Singapore
 
 
 
-=== TEST 18: hit
+=== TEST 19: hit
 --- config
     location /t {
         content_by_lua_block {

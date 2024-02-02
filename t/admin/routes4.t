@@ -611,7 +611,7 @@ failed to read request body: request size 1678025 is greater than the maximum si
                         "methods": ["GET", "GET"],
                         "upstream": {
                             "nodes": {
-                                "httpbin.org:8080": 1,
+                                "apisix.com:8080": 1,
                                 "test.com:8080": 1
                             },
                             "type": "roundrobin",
@@ -790,21 +790,6 @@ passed
             ngx.say(body)
         }
     }
---- response_body
-passed
-
-
-
-=== TEST 23: delete test route(id : 1)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, message = t('/apisix/admin/routes/1',
-                 ngx.HTTP_DELETE
-            )
-            ngx.say("[delete] code: ", code, " message: ", message)
-        }
-    }
---- response_body
-[delete] code: 200 message: passed
+--- error_code: 400
+--- response_body eval
+qr/\{"error_msg":"the property is forbidden:.*"\}/

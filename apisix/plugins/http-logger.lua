@@ -33,7 +33,15 @@ local schema = {
         uri = core.schema.uri_def,
         auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
         include_resp_body = {type = "boolean", default = false},
         include_resp_body_expr = {
             type = "array",
@@ -53,7 +61,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -121,7 +131,7 @@ local function send_http_data(conf, log_message)
 
     local httpc_res, httpc_err = httpc:request({
         method = "POST",
-        path = url_decoded.path,
+        path = #url_decoded.path ~= 0 and url_decoded.path or "/",
         query = url_decoded.query,
         body = log_message,
         headers = {

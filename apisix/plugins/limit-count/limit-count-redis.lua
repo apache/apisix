@@ -30,12 +30,13 @@ local mt = {
 
 
 local script = core.string.compress_script([=[
+    assert(tonumber(ARGV[3]) >= 1, "cost must be at least 1")
     local ttl = redis.call('ttl', KEYS[1])
     if ttl < 0 then
-        redis.call('set', KEYS[1], ARGV[1] - 1, 'EX', ARGV[2])
-        return {ARGV[1] - 1, ARGV[2]}
+        redis.call('set', KEYS[1], ARGV[1] - ARGV[3], 'EX', ARGV[2])
+        return {ARGV[1] - ARGV[3], ARGV[2]}
     end
-    return {redis.call('incrby', KEYS[1], -1), ttl}
+    return {redis.call('incrby', KEYS[1], 0 - ARGV[3]), ttl}
 ]=])
 
 local function redis_cli(conf)
@@ -44,7 +45,12 @@ local function redis_cli(conf)
 
     red:set_timeouts(timeout, timeout, timeout)
 
-    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379)
+    local sock_opts = {
+        ssl = conf.redis_ssl,
+        ssl_verify = conf.redis_ssl_verify
+    }
+
+    local ok, err = red:connect(conf.redis_host, conf.redis_port or 6379, sock_opts)
     if not ok then
         return false, err
     end
@@ -53,7 +59,12 @@ local function redis_cli(conf)
     count, err = red:get_reused_times()
     if 0 == count then
         if conf.redis_password and conf.redis_password ~= '' then
-            local ok, err = red:auth(conf.redis_password)
+            local ok, err
+            if conf.redis_username then
+                ok, err = red:auth(conf.redis_username, conf.redis_password)
+            else
+                ok, err = red:auth(conf.redis_password)
+            end
             if not ok then
                 return nil, err
             end
@@ -85,7 +96,7 @@ function _M.new(plugin_name, limit, window, conf)
     return setmetatable(self, mt)
 end
 
-function _M.incoming(self, key)
+function _M.incoming(self, key, cost)
     local conf = self.conf
     local red, err = redis_cli(conf)
     if not red then
@@ -98,7 +109,7 @@ function _M.incoming(self, key)
     key = self.plugin_name .. tostring(key)
 
     local ttl = 0
-    res, err = red:eval(script, 1, key, limit, window)
+    res, err = red:eval(script, 1, key, limit, window, cost or 1)
 
     if err then
         return nil, err, ttl

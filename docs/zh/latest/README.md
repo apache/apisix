@@ -131,14 +131,14 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - **运维友好**
 
     - OpenTracing 可观测性：支持 [Apache Skywalking](plugins/skywalking.md) 和 [Zipkin](plugins/zipkin.md)。
-    - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md)、[Nacos](discovery/nacos.md)、[Eureka](discovery/eureka.md) 和 [Zookeeper（CP）](../../en/latest/discovery/zookeeper.md)。
+    - 对接外部服务发现：除了内置的 etcd 外，还支持 [Consul](../../en/latest/discovery/consul_kv.md)、[Nacos](discovery/nacos.md)、[Eureka](discovery/eureka.md) 和 [Zookeeper（CP）](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md)。
     - 监控和指标：[Prometheus](plugins/prometheus.md)
     - 集群：APISIX 节点是无状态的，创建配置中心集群请参考 [etcd Clustering Guide](https://etcd.io/docs/v3.5/op-guide/clustering/)。
     - 高可用：支持配置同一个集群内的多个 etcd 地址。
     - [控制台](https://github.com/apache/apisix-dashboard): 操作 APISIX 集群。
     - 版本控制：支持操作的多次回滚。
     - CLI：使用命令行来启动、关闭和重启 APISIX。
-    - [单机模式](stand-alone.md)：支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
+    - [单机模式](../../en/latest/deployment-modes.md#standalone)：支持从本地配置文件中加载路由规则，在 kubernetes(k8s) 等环境下更友好。
     - [全局规则](terminology/global-rule.md)：允许对所有请求执行插件，比如黑白名单、限流限速等。
     - 高性能：在单核上 QPS 可以达到 18k，同时延迟只有 0.2 毫秒。
     - [故障注入](plugins/fault-injection.md)
@@ -156,12 +156,12 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 - Apache APISIX 是一个通过 `RPC` 和 `Wasm` 支持不同语言来进行插件开发的网关。
   ![Multi Language Support into Apache APISIX](../../../docs/assets/images/external-plugin.png)
     - RPC 是当前采用的开发方式。开发者可以使用他们需要的语言来进行 RPC 服务的开发，该 RPC 通过本地通讯来跟 APISIX 进行数据交换。到目前为止，APISIX 已支持[Java](https://github.com/apache/apisix-java-plugin-runner), [Golang](https://github.com/apache/apisix-go-plugin-runner), [Python](https://github.com/apache/apisix-python-plugin-runner) 和 Node.js。
-    - Wasm 或 WebAssembly 是实验性的开发方式。 APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
+    - Wasm 或 WebAssembly 是实验性的开发方式。APISIX 能加载运行使用[Proxy Wasm SDK](https://github.com/proxy-wasm/spec#sdks)编译的 Wasm 字节码。开发者仅需要使用该 SDK 编写代码，然后编译成 Wasm 字节码，即可运行在 APISIX 中的 Wasm 虚拟机中。
 
 - **Serverless**
     - [Lua functions](plugins/serverless.md)：能在 APISIX 每个阶段调用 lua 函数。
-    - [Azure functions](docs/en/latest/plugins/azure-functions.md)：能无缝整合进 Azure Serverless Function 中。作为动态上游，能将特定的 URI 请求全部代理到微软 Azure 云中。
-    - [Apache OpenWhisk](docs/en/latest/plugins/openwhisk.md)：与 Apache OpenWhisk 集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
+    - [Azure functions](./plugins/azure-functions.md)：能无缝整合进 Azure Serverless Function 中。作为动态上游，能将特定的 URI 请求全部代理到微软 Azure 云中。
+    - [Apache OpenWhisk](./plugins/openwhisk.md)：与 Apache OpenWhisk 集成。作为动态上游，能将特定的 URI 请求代理到你自己的 OpenWhisk 集群。
 
 ## 立刻开始
 
@@ -213,8 +213,8 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 ## 用户实际使用案例
 
-- [新浪微博：基于 Apache APISIX，新浪微博 API 网关的定制化开发之路](https://apisix.apache.org/blog/2021/07/14/the-road-to-customization-of-Sina-Weibo-API-gateway-based-on-Apache-APISIX)
-- [欧盟数字工厂平台: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
+- [新浪微博：基于 Apache APISIX，新浪微博 API 网关的定制化开发之路](https://apisix.apache.org/zh/blog/2021/07/06/the-road-to-customization-of-sina-weibo-api-gateway-based-on-apache-apisix/)
+- [欧盟数字工厂平台：API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
 - [贝壳找房：如何基于 Apache APISIX 搭建网关](https://mp.weixin.qq.com/s/yZl9MWPyF1-gOyCp8plflA)
 - [360：Apache APISIX 在基础运维平台项目中的实践](https://mp.weixin.qq.com/s/mF8w8hW4alIMww0MSu9Sjg)
 - [HelloTalk：基于 OpenResty 和 Apache APISIX 的全球化探索之路](https://www.upyun.com/opentalk/447.html)
@@ -229,7 +229,7 @@ A/B 测试、金丝雀发布（灰度发布）、蓝绿部署、限流限速、�
 
 <img src="https://user-images.githubusercontent.com/40708551/109484046-f7c4e280-7aa5-11eb-9d71-aab90830773a.png" width="725" height="1700" />
 
-欢迎用户把自己加入到 [Powered By](https://github.com/apache/apisix/blob/master/powered-by.md) 页面。
+欢迎用户把自己加入到 [Powered By](../../../powered-by.md) 页面。
 
 ## 全景图
 

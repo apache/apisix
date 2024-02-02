@@ -1,7 +1,7 @@
 ---
 title: node-status
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - Node status
@@ -40,7 +40,7 @@ This Plugin will add the endpoint `/apisix/status` to expose the status of APISI
 
 You may need to use the [public-api](public-api.md) Plugin to expose the endpoint.
 
-## Enabling the Plugin
+## Enable Plugin
 
 To configure the `node-status` Plugin, you have to first enable it in your configuration file (`conf/config.yaml`):
 
@@ -99,7 +99,7 @@ The parameters in the response are described below:
 | reading   | Number of connections where APISIX is reading the request header.                                                      |
 | id        | UID of APISIX instance saved in `apisix/conf/apisix.uid`.                                                              |
 
-## Disable Plugin
+## Delete Plugin
 
 To remove the Plugin, you can remove it from your configuration file (`conf/config.yaml`):
 

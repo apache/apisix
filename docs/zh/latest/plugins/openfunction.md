@@ -1,10 +1,10 @@
 ---
 title: openfunction
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - OpenFunction
-  - openfunction
 description: 本文介绍了 API 网关 Apache APISIX 的 openfunction 插件的基本信息及使用方法。
 ---
 
@@ -142,7 +142,7 @@ curl  http://127.0.0.1:9080/hello/123
 Hello, 123!
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用 `openfunction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

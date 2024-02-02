@@ -28,23 +28,13 @@ local clone_tab         = require("table.clone")
 local health_check      = require("resty.etcd.health_check")
 local pl_path           = require("pl.path")
 local ipairs            = ipairs
-local pcall             = pcall
 local setmetatable      = setmetatable
 local string            = string
 local tonumber          = tonumber
-local ngx_config_prefix = ngx.config.prefix()
-local ngx_socket_tcp    = ngx.socket.tcp
 local ngx_get_phase     = ngx.get_phase
 
 
-local is_http = ngx.config.subsystem == "http"
 local _M = {}
-
-
-local function has_mtls_support()
-    local s = ngx_socket_tcp()
-    return s.tlshandshake ~= nil
-end
 
 
 local function _new(etcd_conf)
@@ -69,17 +59,6 @@ local function _new(etcd_conf)
 
         if etcd_conf.tls.sni then
             etcd_conf.sni = etcd_conf.tls.sni
-        end
-    end
-
-    if etcd_conf.use_grpc then
-        if ngx_get_phase() == "init" then
-            etcd_conf.use_grpc = false
-        else
-            local ok = pcall(require, "resty.grpc")
-            if not ok then
-                etcd_conf.use_grpc = false
-            end
         end
     end
 
@@ -129,64 +108,7 @@ local function new()
         etcd_conf.trusted_ca = local_conf.apisix.ssl.ssl_trusted_certificate
     end
 
-    local proxy_by_conf_server = false
-
-    if local_conf.deployment then
-        if local_conf.deployment.role == "traditional"
-            -- we proxy the etcd requests in traditional mode so we can test the CP's behavior in
-            -- daily development. However, a stream proxy can't be the CP.
-            -- Hence, generate a HTTP conf server to proxy etcd requests in stream proxy is
-            -- unnecessary and inefficient.
-            and is_http
-        then
-            local sock_prefix = ngx_config_prefix
-            etcd_conf.unix_socket_proxy =
-                "unix:" .. sock_prefix .. "/conf/config_listen.sock"
-            etcd_conf.host = {"http://127.0.0.1:2379"}
-            proxy_by_conf_server = true
-
-        elseif local_conf.deployment.role == "control_plane" then
-            local addr = local_conf.deployment.role_control_plane.conf_server.listen
-            etcd_conf.host = {"https://" .. addr}
-            etcd_conf.tls = {
-                verify = false,
-            }
-
-            if has_mtls_support() and local_conf.deployment.certs.cert then
-                local cert = local_conf.deployment.certs.cert
-                local cert_key = local_conf.deployment.certs.cert_key
-                etcd_conf.tls.cert = cert
-                etcd_conf.tls.key = cert_key
-            end
-
-            proxy_by_conf_server = true
-
-        elseif local_conf.deployment.role == "data_plane" then
-            if has_mtls_support() and local_conf.deployment.certs.cert then
-                local cert = local_conf.deployment.certs.cert
-                local cert_key = local_conf.deployment.certs.cert_key
-
-                if not etcd_conf.tls then
-                    etcd_conf.tls = {}
-                end
-
-                etcd_conf.tls.cert = cert
-                etcd_conf.tls.key = cert_key
-            end
-        end
-
-        if local_conf.deployment.certs and local_conf.deployment.certs.trusted_ca_cert then
-            etcd_conf.trusted_ca = local_conf.deployment.certs.trusted_ca_cert
-        end
-    end
-
-    -- if an unhealthy etcd node is selected in a single admin read/write etcd operation,
-    -- the retry mechanism for health check can select another healthy etcd node
-    -- to complete the read/write etcd operation.
-    if proxy_by_conf_server then
-        -- health check is done in conf server
-        health_check.disable()
-    elseif not health_check.conf then
+    if not health_check.conf then
         health_check.init({
             max_fails = 1,
             retry = true,
@@ -231,16 +153,6 @@ local function kvs_to_node(kvs)
     return node
 end
 _M.kvs_to_node = kvs_to_node
-
-local function kvs_to_nodes(res)
-    res.body.node.dir = true
-    res.body.node.nodes = setmetatable({}, array_mt)
-    for i=2, #res.body.kvs do
-        res.body.node.nodes[i-1] = kvs_to_node(res.body.kvs[i])
-    end
-    return res
-end
-
 
 local function not_found(res)
     res.body.message = "Key not found"
@@ -289,13 +201,22 @@ function _M.get_format(res, real_key, is_dir, formatter)
     else
         -- In etcd v2, the direct key asked for is `node`, others which under this dir are `nodes`
         -- While in v3, this structure is flatten and all keys related the key asked for are `kvs`
-        res.body.node = kvs_to_node(res.body.kvs[1])
-        if not res.body.kvs[1].value then
-            -- remove last "/" when necessary
-            if string.byte(res.body.node.key, -1) == 47 then
-                res.body.node.key = string.sub(res.body.node.key, 1, #res.body.node.key-1)
+        res.body.node = {
+            key = real_key,
+            dir = true,
+            nodes = setmetatable({}, array_mt)
+        }
+        local kvs = res.body.kvs
+        if #kvs >= 1 and not kvs[1].value then
+            res.body.node.createdIndex = tonumber(kvs[1].create_revision)
+            res.body.node.modifiedIndex = tonumber(kvs[1].mod_revision)
+            for i=2, #kvs do
+                res.body.node.nodes[i-1] = kvs_to_node(kvs[i])
             end
-            res = kvs_to_nodes(res)
+        else
+            for i=1, #kvs do
+                res.body.node.nodes[i] = kvs_to_node(kvs[i])
+            end
         end
     end
 
@@ -349,10 +270,6 @@ do
                     return nil, nil, err
                 end
 
-                if tmp_etcd_cli.use_grpc then
-                    etcd_cli_init_phase = tmp_etcd_cli
-                end
-
                 return tmp_etcd_cli, prefix
             end
 
@@ -372,9 +289,7 @@ do
                 return nil, nil, err
             end
 
-            if tmp_etcd_cli.use_grpc then
-                etcd_cli = tmp_etcd_cli
-            end
+            etcd_cli = tmp_etcd_cli
 
             return tmp_etcd_cli, prefix
         end
@@ -400,7 +315,6 @@ function _M.get(key, is_dir)
     if not res then
         return nil, err
     end
-
     return _M.get_format(res, key, is_dir)
 end
 
@@ -507,7 +421,6 @@ function _M.atomic_set(key, value, ttl, mod_revision)
         key = key,
         value = value,
     }
-    res.status = 201
 
     return res, nil
 end

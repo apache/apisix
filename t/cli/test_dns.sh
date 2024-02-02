@@ -41,6 +41,7 @@ fi
 
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100
@@ -62,6 +63,7 @@ echo "pass: dns_resolver_valid takes effect"
 
 echo '
 apisix:
+  proxy_mode: http&stream
   stream_proxy:
     tcp:
       - 9100
@@ -130,6 +132,7 @@ rm logs/error.log || true
 echo "
 apisix:
     enable_admin: true
+    proxy_mode: http&stream
     stream_proxy:
         tcp:
             - addr: 9100

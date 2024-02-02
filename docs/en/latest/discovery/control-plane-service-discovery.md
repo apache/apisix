@@ -1,12 +1,12 @@
 ---
 title: Control Plane Service Discovery
 keywords:
-  - API Geteway
-  - APISIX
+  - API Gateway
+  - Apache APISIX
   - ZooKeeper
   - Nacos
   - APISIX-Seed
-description: This documentation describes implement service discovery through Nacos and ZooKeeper on the API Gateway APISIX Control Plane.
+description: This documentation describes implementing service discovery through Nacos and ZooKeeper on the API Gateway APISIX Control Plane.
 ---
 
 <!--
@@ -45,7 +45,7 @@ The specific information represented by the figures in the figure is as follows:
 
 :::note
 
-It should be noted that after the introduction of APISIX-Seed, if the service of the registry changes frequently, the data in etcd will also change frequently. So, it is best to set the `--auto-compaction` option when starting etcd to compress the history periodically to avoid etcd eventually exhaust its storage space. Please refer to [revisions](https://etcd.io/docs/v3.5/learning/api/#revisions).
+It should be noted that after the introduction of APISIX-Seed, if the service of the registry changes frequently, the data in etcd will also change frequently. So, it is best to set the `--auto-compaction` option when starting etcd to compress the history periodically to avoid etcd eventually exhausting its storage space. Please refer to [revisions](https://etcd.io/docs/v3.5/learning/api/#revisions).
 
 :::
 
@@ -69,4 +69,4 @@ ZooKeeper and Nacos are currently supported, and more service registries will be
 
 - If you want to enable control plane ZooKeeper service discovery, please refer to: [ZooKeeper Deployment Tutorial](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md).
 
-- If you want to enable control plane Nacos service discovery, please refer to: [Nacos Deployment Tutorial](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/zookeeper.md).
+- If you want to enable control plane Nacos service discovery, please refer to: [Nacos Deployment Tutorial](https://github.com/api7/apisix-seed/blob/main/docs/en/latest/nacos.md).

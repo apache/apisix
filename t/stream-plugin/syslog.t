@@ -346,3 +346,71 @@ qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
 sending a batch logs to 127.0.0.1:5044
 sending a batch logs to 127.0.0.1:5045
+
+
+
+=== TEST 8: log format in plugin
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "syslog": {
+                                "batch_max_size": 1,
+                                "flush_limit": 1,
+                                "log_format": {
+                                    "vip": "$remote_addr"
+                                },
+                                "host" : "127.0.0.1",
+                                "port" : 5050
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1995": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: access
+--- stream_extra_init_by_lua
+    local syslog = require("apisix.plugins.syslog.init")
+    local json = require("apisix.core.json")
+    local log = require("apisix.core.log")
+    local old_f = syslog.push_entry
+    syslog.push_entry = function(conf, ctx, entry)
+        assert(entry.vip == "127.0.0.1")
+        log.info("push_entry is called with data: ", json.encode(entry))
+        return old_f(conf, ctx, entry)
+    end
+--- stream_request
+mmm
+--- stream_response
+hello world
+--- wait: 0.5
+--- no_error_log
+[error]
+--- error_log
+push_entry is called with data

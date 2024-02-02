@@ -132,3 +132,76 @@ start xxxxxx
     }
 --- response_body
 passed
+
+
+
+=== TEST 4: max_kept effective on differently named compression files
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 1
+    max_kept: 1
+    enable_compression: true
+--- yaml_config
+nginx_config:
+    error_log: logs/err1.log
+    http:
+        access_log: logs/acc1.log
+--- config
+    location /t {
+        error_log logs/err1.log info;
+        access_log logs/acc1.log;
+
+        content_by_lua_block {
+            ngx.sleep(3)
+            local lfs = require("lfs")
+            local count = 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, ".tar.gz$") then
+                    count = count + 1
+                end
+            end
+            --- only two compression file
+            ngx.say(count)
+        }
+    }
+--- response_body
+2
+
+
+
+=== TEST 5: check whether new log files were created
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 1
+    max_kept: 0
+    enable_compression: false
+--- yaml_config
+nginx_config:
+    error_log: logs/err2.log
+    http:
+        access_log: logs/acc2.log
+--- config
+    location /t {
+        error_log logs/err2.log info;
+        access_log logs/acc2.log;
+
+        content_by_lua_block {
+            ngx.sleep(3)
+            local lfs = require("lfs")
+            local count = 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "err2.log$") or string.match(file_name, "acc2.log$") then
+                    count = count + 1
+                end
+            end
+            ngx.say(count)
+        }
+    }
+--- response_body
+2

@@ -21,6 +21,8 @@ local openidc = require("resty.openidc")
 local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
+local ipairs = ipairs
+local concat = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -54,6 +56,10 @@ local schema = {
             type = "string",
             default = "client_secret_basic"
         },
+        token_endpoint_auth_method = {
+            type = "string",
+            default = "client_secret_basic"
+        },
         bearer_only = {
             type = "boolean",
             default = false,
@@ -80,7 +86,7 @@ local schema = {
         },
         redirect_uri = {
             type = "string",
-            description = "use ngx.var.request_uri if not configured"
+            description = "auto append '.apisix/redirect' to ngx.var.uri if not configured"
         },
         post_logout_redirect_uri = {
             type = "string",
@@ -130,6 +136,127 @@ local schema = {
                 "header to the request for downstream.",
             type = "boolean",
             default = false
+        },
+        proxy_opts = {
+            description = "HTTP proxy server be used to access identity server.",
+            type = "object",
+            properties = {
+                http_proxy = {
+                    type = "string",
+                    description = "HTTP proxy like: http://proxy-server:80.",
+                },
+                https_proxy = {
+                    type = "string",
+                    description = "HTTPS proxy like: http://proxy-server:80.",
+                },
+                http_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password].",
+                },
+                https_proxy_authorization = {
+                    type = "string",
+                    description = "Basic [base64 username:password].",
+                },
+                no_proxy = {
+                    type = "string",
+                    description = "Comma separated list of hosts that should not be proxied.",
+                }
+            },
+        },
+        authorization_params = {
+            description = "Extra authorization params to the authorize endpoint",
+            type = "object"
+        },
+        client_rsa_private_key = {
+            description = "Client RSA private key used to sign JWT.",
+            type = "string"
+        },
+        client_rsa_private_key_id = {
+            description = "Client RSA private key ID used to compute a signed JWT.",
+            type = "string"
+        },
+        client_jwt_assertion_expires_in = {
+            description = "Life duration of the signed JWT in seconds.",
+            type = "integer",
+            default = 60
+        },
+        renew_access_token_on_expiry = {
+            description = "Whether to attempt silently renewing the access token.",
+            type = "boolean",
+            default = true
+        },
+        access_token_expires_in = {
+            description = "Lifetime of the access token in seconds if expires_in is not present.",
+            type = "integer"
+        },
+        refresh_session_interval = {
+            description = "Time interval to refresh user ID token without re-authentication.",
+            type = "integer"
+        },
+        iat_slack = {
+            description = "Tolerance of clock skew in seconds with the iat claim in an ID token.",
+            type = "integer",
+            default = 120
+        },
+        accept_none_alg = {
+            description = "Set to true if the OpenID provider does not sign its ID token.",
+            type = "boolean",
+            default = false
+        },
+        accept_unsupported_alg = {
+            description = "Ignore ID token signature to accept unsupported signature algorithm.",
+            type = "boolean",
+            default = true
+        },
+        access_token_expires_leeway = {
+            description = "Expiration leeway in seconds for access token renewal.",
+            type = "integer",
+            default = 0
+        },
+        force_reauthorize = {
+            description = "Whether to execute the authorization flow when a token has been cached.",
+            type = "boolean",
+            default = false
+        },
+        use_nonce = {
+            description = "Whether to include nonce parameter in authorization request.",
+            type = "boolean",
+            default = false
+        },
+        revoke_tokens_on_logout = {
+            description = "Notify authorization server a previous token is no longer needed.",
+            type = "boolean",
+            default = false
+        },
+        jwk_expires_in = {
+            description = "Expiration time for JWK cache in seconds.",
+            type = "integer",
+            default = 86400
+        },
+        jwt_verification_cache_ignore = {
+            description = "Whether to ignore cached verification and re-verify.",
+            type = "boolean",
+            default = false
+        },
+        cache_segment = {
+            description = "Name of a cache segment to differentiate caches.",
+            type = "string"
+        },
+        introspection_interval = {
+            description = "TTL of the cached and introspected access token in seconds.",
+            type = "integer",
+            default = 0
+        },
+        introspection_expiry_claim = {
+            description = "Name of the expiry claim that controls the cached access token TTL.",
+            type = "string"
+        },
+        required_scopes = {
+            description = "List of scopes that are required to be granted to the access token",
+            type = "array",
+            items = {
+                type = "string"
+            }
         }
     },
     encrypt_fields = {"client_secret"},
@@ -285,6 +412,24 @@ local function add_access_token_header(ctx, conf, token)
     end
 end
 
+-- Function to split the scope string into a table
+local function split_scopes_by_space(scope_string)
+    local scopes = {}
+    for scope in string.gmatch(scope_string, "%S+") do
+        scopes[scope] = true
+    end
+    return scopes
+end
+
+-- Function to check if all required scopes are present
+local function required_scopes_present(required_scopes, http_scopes)
+    for _, scope in ipairs(required_scopes) do
+        if not http_scopes[scope] then
+            return false
+        end
+    end
+    return true
+end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
@@ -295,8 +440,25 @@ function _M.rewrite(plugin_conf, ctx)
         conf.timeout = conf.timeout * 1000
     end
 
+    local path = ctx.var.request_uri
+
     if not conf.redirect_uri then
-        conf.redirect_uri = ctx.var.request_uri
+        -- NOTE: 'lua-resty-openidc' requires that 'redirect_uri' be
+        --       different from 'uri'.  So default to append the
+        --       '.apisix/redirect' suffix if not configured.
+        local suffix = "/.apisix/redirect"
+        local uri = ctx.var.uri
+        if core.string.has_suffix(uri, suffix) then
+            -- This is the redirection response from the OIDC provider.
+            conf.redirect_uri = uri
+        else
+            if string.sub(uri, -1, -1) == "/" then
+                conf.redirect_uri = string.sub(uri, 1, -2) .. suffix
+            else
+                conf.redirect_uri = uri .. suffix
+            end
+        end
+        core.log.debug("auto set redirect_uri: ", conf.redirect_uri)
     end
 
     if not conf.ssl_verify then
@@ -304,9 +466,22 @@ function _M.rewrite(plugin_conf, ctx)
         conf.ssl_verify = "no"
     end
 
+    if path == (conf.logout_path or "/logout") then
+        local discovery, discovery_err = openidc.get_discovery_doc(conf)
+        if discovery_err then
+            core.log.error("OIDC access discovery url failed : ", discovery_err)
+            return 503
+        end
+        if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
+            -- If the end_session_endpoint field does not exist in the OpenID Provider Discovery
+            -- Metadata, the redirect_after_logout_uri field is used for redirection.
+            conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
+        end
+    end
+
     local response, err, session, _
 
-    if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
+    if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
         -- An introspection endpoint or a public key has been configured. Try to
         -- validate the access token from the request, if it is present in a
         -- request header. Otherwise, return a nil response. See below for
@@ -321,6 +496,18 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            if conf.required_scopes then
+                local http_scopes = response.scope and split_scopes_by_space(response.scope) or {}
+                local is_authorized = required_scopes_present(conf.required_scopes, http_scopes)
+                if not is_authorized then
+                    core.log.error("OIDC introspection failed: ", "required scopes not present")
+                    local error_response = {
+                        error = "required scopes " .. concat(conf.required_scopes, ", ") ..
+                        " not present"
+                    }
+                    return 403, core.json.encode(error_response)
+                end
+            end
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
@@ -386,6 +573,9 @@ function _M.rewrite(plugin_conf, ctx)
                 core.request.set_header(ctx, "X-Refresh-Token", session.data.refresh_token)
             end
         end
+    end
+    if session then
+        session:close()
     end
 end
 

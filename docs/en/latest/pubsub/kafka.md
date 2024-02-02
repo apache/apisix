@@ -1,7 +1,8 @@
 ---
 title: Apache Kafka
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - PubSub
   - Kafka
 description: This document contains information about the Apache APISIX kafka pubsub scenario.

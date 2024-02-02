@@ -102,7 +102,7 @@ end
 
 function _M.header_filter(conf, ctx)
     if not is_apisix_or then
-        core.log.error("need to build APISIX-Base to support setting gzip")
+        core.log.error("need to build APISIX-Runtime to support setting gzip")
         return 501
     end
 
@@ -112,24 +112,24 @@ function _M.header_filter(conf, ctx)
         -- Like Nginx, don't gzip if Content-Type is missing
         return
     end
-    local from = core.string.find(content_type, ";")
-    if from then
-        content_type = str_sub(content_type, 1, from - 1)
-    end
 
-    local matched = false
     if type(types) == "table" then
+        local matched = false
+        local from = core.string.find(content_type, ";")
+        if from then
+            content_type = str_sub(content_type, 1, from - 1)
+        end
+
         for _, ty in ipairs(types) do
             if content_type == ty then
                 matched = true
                 break
             end
         end
-    else
-        matched = true
-    end
-    if not matched then
-        return
+
+        if not matched then
+            return
+        end
     end
 
     local content_length = tonumber(ngx_header["Content-Length"])

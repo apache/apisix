@@ -111,3 +111,489 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 4: prepare upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_PUT, [[{
+                "nodes": {
+                    "127.0.0.1:1980": 1
+                },
+                "type": "roundrobin"
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: prepare route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/routes/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "traffic-split": {
+                        "rules": [
+                            {
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": 1,
+                                        "weight": 1
+                                    },
+                                    {
+                                        "weight": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "upstream": {
+                    "nodes": {
+                        "127.0.0.1:1980": 1
+                    },
+                    "type": "roundrobin"
+                },
+                "uri": "/hello"
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: delete upstream when plugin in route still refer it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this upstream, plugin in route [1] is still using it now"}
+
+
+
+=== TEST 7: delete route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/routes/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: prepare service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/services/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "traffic-split": {
+                        "rules": [
+                            {
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": 1,
+                                        "weight": 1
+                                    },
+                                    {
+                                        "weight": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: delete upstream when plugin in service still refer it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this upstream, plugin in service [1] is still using it now"}
+
+
+
+=== TEST 10: delete service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/services/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 11: prepare global_rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t("/apisix/admin/global_rules/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "traffic-split": {
+                        "rules": [
+                            {
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": 1,
+                                        "weight": 1
+                                    },
+                                    {
+                                        "weight": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: delete upstream when plugin in global_rule still refer it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this upstream, plugin in global_rules [1] is still using it now"}
+
+
+
+=== TEST 13: delete global_rule
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/global_rules/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: prepare plugin_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t("/apisix/admin/plugin_configs/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "traffic-split": {
+                        "rules": [
+                            {
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": 1,
+                                        "weight": 1
+                                    },
+                                    {
+                                        "weight": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: delete upstream when plugin in plugin_config still refer it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this upstream, plugin in plugin_config [1] is still using it now"}
+
+
+
+=== TEST 16: delete plugin_config
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/plugin_configs/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: prepare consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t("/apisix/admin/consumers", ngx.HTTP_PUT, [[{
+                "username": "test",
+                "plugins": {
+                    "key-auth": {
+                        "key": "auth-one"
+                    },
+                    "traffic-split": {
+                        "rules": [
+                            {
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": 1,
+                                        "weight": 1
+                                    },
+                                    {
+                                        "weight": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: delete upstream when plugin in consumer still refer it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this upstream, plugin in consumer [test] is still using it now"}
+
+
+
+=== TEST 19: delete consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/consumers/test", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: prepare consumer_group
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t("/apisix/admin/consumer_groups/1", ngx.HTTP_PUT, [[{
+                "plugins": {
+                    "key-auth": {
+                        "key": "auth-one"
+                    },
+                    "traffic-split": {
+                        "rules": [
+                            {
+                                "weighted_upstreams": [
+                                    {
+                                        "upstream_id": 1,
+                                        "weight": 1
+                                    },
+                                    {
+                                        "weight": 1
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }]])
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 21: delete upstream when plugin in consumer_group still refer it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"can not delete this upstream, plugin in consumer_group [1] is still using it now"}
+
+
+
+=== TEST 22: delete consumer_group
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/consumer_groups/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: delete upstream
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/apisix/admin/upstreams/1", ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed

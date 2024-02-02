@@ -32,15 +32,15 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 
 :::info 重要
 
-此插件需要 APISIX 在 [APISIX-Base](../FAQ.md#如何构建-apisix-base-环境) 环境上运行。更多信息请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
+此插件需要 APISIX 在 [APISIX-Runtime](../FAQ.md#如何构建-apisix-Runtime-环境) 环境上运行。更多信息请参考 [apisix-build-tools](https://github.com/api7/apisix-build-tools)。
 
 :::
 
 ## 属性
 
-| 名称      | 类型          | 必选项 | 有效值                                                                    | 描述                                                                                                                                         |
-| --------- | ------------- | ----------- | ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| max_body_size | integer        | 否    | [0,...] | 动态设置 [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) 的大小。 |
+| 名称      | 类型          | 必选项 | 有效值                                                                    | 描述                                                                                                                                                                                    |
+| --------- | ------------- | ----------- | ------------------------------------------------------------------------ |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| max_body_size | integer        | 否    | [0,...] | 设置客户端请求体的最大上限，动态调整 [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) 的大小，单位为字节。当设置 `max_body_size` 为 0 时，将不会对客户端请求体大小进行检查。 |
 
 ## 启用插件
 
@@ -87,9 +87,9 @@ HTTP/1.1 413 Request Entity Too Large
 </html>
 ```
 
-## 禁用插件
+## 删除插件
 
-当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

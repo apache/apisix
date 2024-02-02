@@ -23,6 +23,7 @@ exit_if_not_customed_nginx
 
 echo "
 apisix:
+    proxy_mode: http&stream
     enable_admin: true
     stream_proxy:
         tcp:
@@ -65,6 +66,7 @@ echo "passed: prometheus works when both http & stream are enabled"
 
 echo "
 apisix:
+    proxy_mode: stream
     enable_admin: false
     stream_proxy:
         tcp:

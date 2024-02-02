@@ -43,6 +43,9 @@ local stream_local_plugins_hash = core.table.new(0, 32)
 local merged_route = core.lrucache.new({
     ttl = 300, count = 512
 })
+local merged_stream_route = core.lrucache.new({
+    ttl = 300, count = 512
+})
 local expr_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
@@ -637,6 +640,49 @@ function _M.merge_service_route(service_conf, route_conf)
 end
 
 
+local function merge_service_stream_route(service_conf, route_conf)
+    -- because many fields in Service are not supported by stream route,
+    -- so we copy the stream route as base object
+    local new_conf = core.table.deepcopy(route_conf)
+    if service_conf.value.plugins then
+        for name, conf in pairs(service_conf.value.plugins) do
+            if not new_conf.value.plugins then
+                new_conf.value.plugins = {}
+            end
+
+            if not new_conf.value.plugins[name] then
+                new_conf.value.plugins[name] = conf
+            end
+        end
+    end
+
+    new_conf.value.service_id = nil
+
+    if not new_conf.value.upstream and service_conf.value.upstream then
+        new_conf.value.upstream = service_conf.value.upstream
+    end
+
+    if not new_conf.value.upstream_id and service_conf.value.upstream_id then
+        new_conf.value.upstream_id = service_conf.value.upstream_id
+    end
+
+    return new_conf
+end
+
+
+function _M.merge_service_stream_route(service_conf, route_conf)
+    core.log.info("service conf: ", core.json.delay_encode(service_conf, true))
+    core.log.info("  stream route conf: ", core.json.delay_encode(route_conf, true))
+
+    local version = route_conf.modifiedIndex .. "#" .. service_conf.modifiedIndex
+    local route_service_key = route_conf.value.id .. "#"
+            .. version
+    return merged_stream_route(route_service_key, version,
+            merge_service_stream_route,
+            service_conf, route_conf)
+end
+
+
 local function merge_consumer_route(route_conf, consumer_conf, consumer_group_conf)
     if not consumer_conf.plugins or
        core.table.nkeys(consumer_conf.plugins) == 0
@@ -691,6 +737,12 @@ function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf,
 
     local new_conf = merged_route(flag, api_ctx.conf_version,
                         merge_consumer_route, route_conf, consumer_conf, consumer_group_conf)
+
+    -- some plugins like limit-count don't care if consumer changes
+    -- all consumers should share the same counter
+    api_ctx.conf_type_without_consumer = api_ctx.conf_type
+    api_ctx.conf_version_without_consumer = api_ctx.conf_version
+    api_ctx.conf_id_without_consumer = api_ctx.conf_id
 
     api_ctx.conf_type = api_ctx.conf_type .. "&consumer"
     api_ctx.conf_version = api_ctx.conf_version .. "&" ..
@@ -775,6 +827,11 @@ function _M.get(name)
 end
 
 
+function _M.get_stream(name)
+    return stream_local_plugins_hash and stream_local_plugins_hash[name]
+end
+
+
 function _M.get_all(attrs)
     local http_plugins = {}
     local stream_plugins = {}
@@ -849,7 +906,8 @@ local enable_data_encryption
 local function enable_gde()
     if enable_data_encryption == nil then
         enable_data_encryption =
-            core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+            core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+                    "enable_encrypt_fields")
         _M.enable_data_encryption = enable_data_encryption
     end
 
@@ -858,10 +916,6 @@ end
 
 
 local function get_plugin_schema_for_gde(name, schema_type)
-    if not enable_gde() then
-        return nil
-    end
-
     local plugin_schema = local_plugins_hash and local_plugins_hash[name]
     if not plugin_schema then
         return nil
@@ -881,6 +935,9 @@ end
 
 
 local function decrypt_conf(name, conf, schema_type)
+    if not enable_gde() then
+        return
+    end
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         core.log.warn("failed to get schema for plugin: ", name)
@@ -924,6 +981,9 @@ _M.decrypt_conf = decrypt_conf
 
 
 local function encrypt_conf(name, conf, schema_type)
+    if not enable_gde() then
+        return
+    end
     local schema = get_plugin_schema_for_gde(name, schema_type)
     if not schema then
         core.log.warn("failed to get schema for plugin: ", name)
@@ -1091,7 +1151,9 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 end
 
                 plugin_run = true
+                api_ctx._plugin_name = plugins[i]["name"]
                 local code, body = phase_func(conf, api_ctx)
+                api_ctx._plugin_name = nil
                 if code or body then
                     if is_http then
                         if code >= 400 then
@@ -1126,7 +1188,9 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
             plugin_run = true
+            api_ctx._plugin_name = plugins[i]["name"]
             phase_func(conf, api_ctx)
+            api_ctx._plugin_name = nil
         end
     end
 
@@ -1135,8 +1199,7 @@ end
 
 
 function _M.run_global_rules(api_ctx, global_rules, phase_name)
-    if global_rules and global_rules.values
-       and #global_rules.values > 0 then
+    if global_rules and #global_rules > 0 then
         local orig_conf_type = api_ctx.conf_type
         local orig_conf_version = api_ctx.conf_version
         local orig_conf_id = api_ctx.conf_id
@@ -1146,7 +1209,7 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         end
 
         local plugins = core.tablepool.fetch("plugins", 32, 0)
-        local values = global_rules.values
+        local values = global_rules
         local route = api_ctx.matched_route
         for _, global_rule in config_util.iterate_values(values) do
             api_ctx.conf_type = "global_rule"

@@ -1,0 +1,118 @@
+name: Source Code Install
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  install-on-multi-platform:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-20.04
+        os_platform:
+          - centos7
+          - ubuntu
+          - redhat
+    services:
+      etcd:
+        image: bitnami/etcd:3.5.4
+        ports:
+          - 2379:2379
+          - 2380:2380
+        env:
+          ALLOW_NONE_AUTHENTICATION: yes
+          ETCD_ADVERTISE_CLIENT_URLS: http://0.0.0.0:2379
+      httpbin:
+        image: kennethreitz/httpbin
+        ports:
+          - 8088:80
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_platform }}-${{ hashFiles('apisix-master-0.rockspec') }}
+
+      - name: Install and start apisix on ${{ matrix.os_platform }}
+        env:
+          INSTALL_PLATFORM: ${{ matrix.os_platform }}
+        run: |
+          if [[ $INSTALL_PLATFORM == "ubuntu" ]]; then
+              sudo apt-get update
+              sudo apt-get install -y git sudo make
+              make deps
+              sudo make install
+              apisix start
+          elif [[ $INSTALL_PLATFORM == "redhat" ]]; then
+              docker run -itd -v ${{ github.workspace }}:/apisix --name ubi8 --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
+              docker exec ubi8 bash -c "yum install -y git sudo make"
+              docker exec ubi8 bash -c "cd apisix && make deps"
+              docker exec ubi8 bash -c "cd apisix && make install"
+              docker exec ubi8 bash -c "cd apisix && apisix start"
+          elif [[ $INSTALL_PLATFORM == "centos7" ]]; then
+              docker run -itd -v ${{ github.workspace }}:/apisix --name centos7Instance --net="host" --dns 8.8.8.8 --dns-search apache.org docker.io/centos:7 /bin/bash
+              docker exec centos7Instance bash -c "yum install -y git sudo make"
+              docker exec centos7Instance bash -c "cd apisix && make deps"
+              docker exec centos7Instance bash -c "cd apisix && make install"
+              docker exec centos7Instance bash -c "cd apisix && apisix start"
+          fi
+          sleep 6
+
+      - name: Test apisix
+        run: |
+          curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+            -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+            {
+              "uri": "/get",
+              "upstream": {
+                  "type": "roundrobin",
+                  "nodes": {
+                      "127.0.0.1:8088": 1
+                  }
+              }
+            }'
+          result_code=`curl -I -m 10 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/get`
+          if [[ $result_code -ne 200 ]]; then
+              printf "result_code: %s\n" "$result_code"
+              echo "===============access.log==============="
+              cat logs/access.log
+              echo "===============error.log==============="
+              cat logs/error.log
+              exit 125
+          fi
+
+      - name: Check error log
+        run: |
+          if grep -q '\[error\]' logs/error.log; then
+              echo "=====found error log====="
+              cat /usr/local/apisix/logs/error.log
+              exit 125
+          fi

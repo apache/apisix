@@ -15,16 +15,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v3.2.0
+    - uses: actions/checkout@v4
     - name: Install
       run: |
         . ./ci/common.sh
         export_or_prefix
         export OPENRESTY_VERSION=default
 
-        ./ci/linux-install-openresty.sh
+        sudo -E ./ci/linux-install-openresty.sh
         ./utils/linux-install-luarocks.sh
-        sudo luarocks install luacheck
+        sudo -E luarocks install luacheck
 
     - name: Script
       run: |
@@ -37,12 +37,12 @@ jobs:
     timeout-minutes: 5
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3.2.0
+        uses: actions/checkout@v4
 
       - name: Shellcheck code
         run: |
           scversion="latest"
-          wget -O- "https://github.com/koalaman/shellcheck/releases/download/${scversion?}/shellcheck-${scversion?}.linux.x86_64.tar.xz" | tar -xJv
+          wget -qO- "https://github.com/koalaman/shellcheck/releases/download/${scversion?}/shellcheck-${scversion?}.linux.x86_64.tar.xz" | tar -xJv
           cp -av "shellcheck-${scversion}/shellcheck" /usr/local/bin/
           shellcheck --version
           git ls-files -- "*.sh" | xargs -t shellcheck

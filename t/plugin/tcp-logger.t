@@ -97,7 +97,7 @@ done
                         "plugins": {
                             "tcp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 5044,
+                                "port": 3000,
                                 "tls": false
                             }
                         },
@@ -134,6 +134,7 @@ hello world
 
 
 === TEST 6: error log
+--- log_level: error
 --- config
     location /t {
         content_by_lua_block {
@@ -192,7 +193,7 @@ failed to connect to TCP server: host[312.0.0.1] port[2000]
                         "plugins": {
                             "tcp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 5044,
+                                "port": 3000,
                                 "tls": false,
                                 "batch_max_size": 1
                             }
@@ -226,7 +227,7 @@ failed to connect to TCP server: host[312.0.0.1] port[2000]
                         "plugins": {
                             "tcp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 5045,
+                                "port": 43000,
                                 "tls": false,
                                 "batch_max_size": 1
                             }
@@ -269,8 +270,8 @@ passedopentracing
 --- grep_error_log eval
 qr/sending a batch logs to 127.0.0.1:(\d+)/
 --- grep_error_log_out
-sending a batch logs to 127.0.0.1:5044
-sending a batch logs to 127.0.0.1:5045
+sending a batch logs to 127.0.0.1:3000
+sending a batch logs to 127.0.0.1:43000
 
 
 
@@ -312,7 +313,7 @@ GET /t
                         "plugins": {
                             "tcp-logger": {
                                 "host": "127.0.0.1",
-                                "port": 8125,
+                                "port": 3000,
                                 "tls": false,
                                 "batch_max_size": 1,
                                 "inactive_timeout": 1
@@ -338,6 +339,7 @@ GET /t
                  ngx.HTTP_PUT,
                  [[{
                         "log_format": {
+                            "case name": "plugin_metadata",
                             "host": "$host",
                             "@timestamp": "$time_iso8601",
                             "client_ip": "$remote_addr"
@@ -349,6 +351,45 @@ GET /t
                 ngx.say(body)
                 return
             end
+
+            local code, _, _ = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: log format in plugin_metadata
+--- exec
+tail -n 1 ci/pod/vector/tcp.log
+--- response_body eval
+qr/.*plugin_metadata.*/
+
+
+
+=== TEST 11: remove tcp logger metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/tcp-logger',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "log_format": {}
+                }]]
+                )
+
             ngx.say(body)
         }
     }
@@ -359,40 +400,121 @@ passed
 
 
 
-=== TEST 10: access
---- stream_conf_enable
---- extra_stream_config
-    server {
-        listen 8125;
+=== TEST 12: log format in plugin
+--- config
+    location /t {
         content_by_lua_block {
-            local decode = require("toolkit.json").decode
-            ngx.log(ngx.WARN, "the mock backend is hit")
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 3000,
+                                "tls": false,
+                                "log_format": {
+                                    "case name": "logger format in plugin",
+                                    "vip": "$remote_addr"
+                                },
+                                "batch_max_size": 1,
+                                "inactive_timeout": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
 
-            local sock, err = ngx.req.socket(true)
-            if not sock then
-                ngx.log(ngx.ERR, "failed to get the request socket: ", err)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
                 return
             end
 
-            local data, err = sock:receive('*a')
-
-            if not data then
-                if err and err ~= "closed" then
-                    ngx.log(ngx.ERR, "socket error, returning: ", err)
-                end
+            local code, _, body2 = t("/hello", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
                 return
             end
 
-            data = decode(data)
-            assert(data.client_ip == "127.0.0.1")
+            ngx.say("passed")
         }
     }
 --- request
-GET /hello
+GET /t
+--- wait: 0.5
 --- response_body
-hello world
---- wait: 2
---- error_log
-the mock backend is hit
---- no_error_log
-[error]
+passed
+
+
+
+=== TEST 13: check tcp log
+--- exec
+tail -n 1 ci/pod/vector/tcp.log
+--- response_body eval
+qr/.*logger format in plugin.*/
+
+
+
+=== TEST 14: true tcp log with tls
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body1 = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 43000,
+                                "tls": true,
+                                "batch_max_size": 1
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            local code, _, body2 = t("/opentracing", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.print(body2)
+        }
+    }
+--- request
+GET /t
+--- wait: 0.5
+--- response_body
+opentracing
+
+
+
+=== TEST 15: check tls log
+--- exec
+tail -n 1 ci/pod/vector/tls-datas.log
+--- response_body eval
+qr/.*route_id.*1.*/

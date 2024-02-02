@@ -20,13 +20,17 @@ local zipkin_codec = require("apisix.plugins.zipkin.codec")
 local new_random_sampler = require("apisix.plugins.zipkin.random_sampler").new
 local new_reporter = require("apisix.plugins.zipkin.reporter").new
 local ngx = ngx
+local ngx_var = ngx.var
 local ngx_re = require("ngx.re")
 local pairs = pairs
 local tonumber = tonumber
+local to_hex = require "resty.string".to_hex
 
 local plugin_name = "zipkin"
 local ZIPKIN_SPAN_VER_1 = 1
 local ZIPKIN_SPAN_VER_2 = 2
+local plugin = require("apisix.plugin")
+local string_format = string.format
 
 
 local lrucache = core.lrucache.new({
@@ -68,6 +72,8 @@ local _M = {
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
+
+local plugin_info  = plugin.plugin_attr(plugin_name) or {}
 
 
 local function create_tracer(conf,ctx)
@@ -205,9 +211,23 @@ function _M.rewrite(plugin_conf, ctx)
     ctx.opentracing_sample = tracer.sampler:sample(per_req_sample_ratio or conf.sample_ratio)
     if not ctx.opentracing_sample then
         request_span:set_baggage_item("x-b3-sampled","0")
+    else
+       request_span:set_baggage_item("x-b3-sampled","1")
+    end
+
+    if plugin_info.set_ngx_var then
+        local span_context = request_span:context()
+        ngx_var.zipkin_context_traceparent = string_format("00-%s-%s-%02x",
+                                             to_hex(span_context.trace_id),
+                                             to_hex(span_context.span_id),
+                                             span_context:get_baggage_item("x-b3-sampled"))
+        ngx_var.zipkin_trace_id = span_context.trace_id
+        ngx_var.zipkin_span_id = span_context.span_id
+    end
+
+    if not ctx.opentracing_sample then
         return
     end
-    request_span:set_baggage_item("x-b3-sampled","1")
 
     local request_span = ctx.opentracing.request_span
     if conf.span_version == ZIPKIN_SPAN_VER_1 then
@@ -263,6 +283,15 @@ end
 
 
 function _M.log(conf, ctx)
+    if ctx.zipkin then
+        core.tablepool.release("zipkin_ctx", ctx.zipkin)
+        ctx.zipkin = nil
+    end
+
+    if not ctx.opentracing_sample then
+        return
+    end
+
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
@@ -282,11 +311,6 @@ function _M.log(conf, ctx)
     opentracing.request_span:set_tag("http.status_code", upstream_status)
 
     opentracing.request_span:finish(log_end_time)
-
-    if ctx.zipkin then
-        core.tablepool.release("zipkin_ctx", ctx.zipkin)
-        ctx.zipkin = nil
-    end
 end
 
 return _M

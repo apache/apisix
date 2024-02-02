@@ -1,7 +1,7 @@
 ---
 title: client-control
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Client Control
 description: This document describes the Apache APISIX client-control Plugin, you can use it to control NGINX behavior to handle a client request dynamically.
@@ -32,7 +32,7 @@ The `client-control` Plugin can be used to dynamically control the behavior of N
 
 :::info IMPORTANT
 
-This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
+This Plugin requires APISIX to run on APISIX-Runtime. See [apisix-build-tools](https://github.com/api7/apisix-build-tools) for more info.
 
 :::
 
@@ -40,9 +40,9 @@ This Plugin requires APISIX to run on APISIX-Base. See [apisix-build-tools](http
 
 | Name          | Type    | Required | Valid values | Description                                                                                                                          |
 | ------------- | ------- | -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| max_body_size | integer | False    | [0,...]      | Dynamically set the [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size) directive. |
+| max_body_size | integer | False    | [0,...]      | Set the maximum limit for the client request body and dynamically adjust the size of [`client_max_body_size`](https://nginx.org/en/docs/http/ngx_http_core_module.html#client_max_body_size), measured in bytes. If you set the `max_body_size` to 0, then the size of the client's request body will not be checked. |
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
 
@@ -85,9 +85,9 @@ HTTP/1.1 413 Request Entity Too Large
 </html>
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `client-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload, and you do not have to restart for this to take effect.
+To remove the `client-control` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload, and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \

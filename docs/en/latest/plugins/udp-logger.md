@@ -1,7 +1,7 @@
 ---
 title: udp-logger
 keywords:
-  - APISIX
+  - Apache APISIX
   - API Gateway
   - Plugin
   - UDP Logger
@@ -42,10 +42,51 @@ This plugin also allows to push logs as a batch to your external UDP server. It 
 | host             | string  | True     |              |              | IP address or the hostname of the UDP server.            |
 | port             | integer | True     |              | [0,...]      | Target upstream port.                                    |
 | timeout          | integer | False    | 3            | [1,...]      | Timeout for the upstream to send data.                   |
-| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor.               |
+| log_format       | object  | False    |  |              | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| name             | string  | False    | "udp logger" |              | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. processor.               |
 | include_req_body | boolean | False    | false        |              | When set to `true` includes the request body in the log. |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+```json
+{
+  "apisix_latency": 99.999988555908,
+  "service_id": "",
+  "server": {
+    "version": "3.7.0",
+    "hostname": "localhost"
+  },
+  "request": {
+    "method": "GET",
+    "headers": {
+      "connection": "close",
+      "host": "localhost"
+    },
+    "url": "http://localhost:1984/opentracing",
+    "size": 65,
+    "querystring": {},
+    "uri": "/opentracing"
+  },
+  "start_time": 1704527399740,
+  "client_ip": "127.0.0.1",
+  "response": {
+    "status": 200,
+    "size": 136,
+    "headers": {
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "transfer-encoding": "chunked",
+      "connection": "close"
+    }
+  },
+  "upstream": "127.0.0.1:1982",
+  "route_id": "1",
+  "upstream_latency": 12,
+  "latency": 111.99998855591
+}
+```
 
 ## Metadata
 
@@ -53,7 +94,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -80,7 +121,7 @@ With this configuration, your logs would be formatted as shown below:
 {"@timestamp":"2023-01-09T14:47:25+08:00","route_id":"1","host":"localhost","client_ip":"127.0.0.1"}
 ```
 
-## Enabling the Plugin
+## Enable Plugin
 
 The example below shows how you can enable the Plugin on a specific Route:
 
@@ -113,9 +154,9 @@ Now, if you make a request to APISIX, it will be logged in your UDP server:
 curl -i http://127.0.0.1:9080/hello
 ```
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `udp-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `udp-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '

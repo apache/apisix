@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local type = type
 local support_wasm, wasm = pcall(require, "resty.proxy-wasm")
 local ngx_var = ngx.var
 
@@ -23,8 +24,10 @@ local schema = {
     type = "object",
     properties = {
         conf = {
-            type = "string",
-            minLength = 1,
+            oneOf = {
+                { type = "object", minProperties = 1},
+                { type = "string", minLength = 1},
+            }
         },
     },
     required = {"conf"}
@@ -51,7 +54,13 @@ local function fetch_plugin_ctx(conf, ctx, plugin)
     local plugin_ctx = ctxs[key]
     local err
     if not plugin_ctx then
-        plugin_ctx, err = wasm.on_configure(plugin, conf.conf)
+        if type(conf.conf) == "table" then
+            plugin_ctx, err = wasm.on_configure(plugin, core.json.encode(conf.conf))
+        elseif type(conf.conf) == "string" then
+            plugin_ctx, err = wasm.on_configure(plugin, conf.conf)
+        else
+            return nil, "invalid conf type"
+        end
         if not plugin_ctx then
             return nil, err
         end
@@ -148,7 +157,7 @@ end
 
 function _M.require(attrs)
     if not support_wasm then
-        return nil, "need to build APISIX-Base to support wasm"
+        return nil, "need to build APISIX-Runtime to support wasm"
     end
 
     local name = attrs.name

@@ -19,6 +19,8 @@
 --
 -- @module core.profile
 
+local util = require("apisix.cli.util")
+
 local _M = {
     version = 0.1,
     profile = os.getenv("APISIX_PROFILE") or "",
@@ -45,6 +47,20 @@ function _M.yaml_path(self, file_name)
     end
 
     return file_path .. ".yaml"
+end
+
+
+function _M.customized_yaml_index(self)
+    return self.apisix_home .. "/conf/.customized_config_path"
+end
+
+
+function _M.customized_yaml_path(self)
+    local customized_config_index = self:customized_yaml_index()
+    if util.file_exists(customized_config_index) then
+        return util.read_file(customized_config_index)
+    end
+    return nil
 end
 
 

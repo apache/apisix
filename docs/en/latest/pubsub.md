@@ -44,7 +44,7 @@ Currently, Apache APISIX supports WebSocket communication with the client, which
 
 ## Supported messaging systems
 
-- [Aapche Kafka](pubsub/kafka.md)
+- [Apache Kafka](pubsub/kafka.md)
 
 ## How to support other messaging systems
 

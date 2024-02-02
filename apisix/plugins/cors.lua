@@ -25,6 +25,8 @@ local re_find = ngx.re.find
 local ipairs = ipairs
 local origins_pattern = [[^(\*|\*\*|null|\w+://[^,]+(,\w+://[^,]+)*)$]]
 
+local TYPE_ACCESS_CONTROL_ALLOW_ORIGIN = "ACAO"
+local TYPE_TIMING_ALLOW_ORIGIN = "TAO"
 
 local lrucache = core.lrucache.new({
     type = "plugin",
@@ -98,7 +100,7 @@ local schema = {
             type = "array",
             description =
                 "you can use regex to allow specific origins when no credentials," ..
-                "for example use [.*\\.test.com] to allow a.test.com and b.test.com",
+                "for example use [.*\\.test.com$] to allow a.test.com and b.test.com",
             items = {
                 type = "string",
                 minLength = 1,
@@ -111,6 +113,28 @@ local schema = {
             type = "array",
             description =
                 "set allowed origins by referencing origins in plugin metadata",
+            items = {
+                type = "string",
+                minLength = 1,
+                maxLength = 4096,
+            },
+            minItems = 1,
+            uniqueItems = true,
+        },
+        timing_allow_origins = {
+            description =
+                "you can use '*' to allow all origins which can view timing information " ..
+                "when no credentials," ..
+                "'**' to allow forcefully (it will bring some security risks, be careful)," ..
+                "multiple origin use ',' to split. default: nil",
+            type = "string",
+            pattern = origins_pattern
+        },
+        timing_allow_origins_by_regex = {
+            type = "array",
+            description =
+                "you can use regex to allow specific origins which can view timing information," ..
+                "for example use [.*\\.test.com] to allow a.test.com and b.test.com",
             items = {
                 type = "string",
                 minLength = 1,
@@ -166,12 +190,22 @@ function _M.check_schema(conf, schema_type)
     end
     if conf.allow_credential then
         if conf.allow_origins == "*" or conf.allow_methods == "*" or
-            conf.allow_headers == "*" or conf.expose_headers == "*" then
+            conf.allow_headers == "*" or conf.expose_headers == "*" or
+            conf.timing_allow_origins == "*" then
             return false, "you can not set '*' for other option when 'allow_credential' is true"
         end
     end
     if conf.allow_origins_by_regex then
         for i, re_rule in ipairs(conf.allow_origins_by_regex) do
+            local ok, err = re_compile(re_rule, "j")
+            if not ok then
+                return false, err
+            end
+        end
+    end
+
+    if conf.timing_allow_origins_by_regex then
+        for i, re_rule in ipairs(conf.timing_allow_origins_by_regex) do
             local ok, err = re_compile(re_rule, "j")
             if not ok then
                 return false, err
@@ -190,10 +224,6 @@ local function set_cors_headers(conf, ctx)
     end
 
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
-    if ctx.cors_allow_origins ~= "*" then
-        core.response.add_header("Vary", "Origin")
-    end
-
     core.response.set_header("Access-Control-Allow-Methods", allow_methods)
     core.response.set_header("Access-Control-Max-Age", conf.max_age)
     core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
@@ -208,7 +238,14 @@ local function set_cors_headers(conf, ctx)
     end
 end
 
-local function process_with_allow_origins(allow_origins, ctx, req_origin,
+local function set_timing_headers(conf, ctx)
+    if ctx.timing_allow_origin then
+        core.response.set_header("Timing-Allow-Origin", ctx.timing_allow_origin)
+    end
+end
+
+
+local function process_with_allow_origins(allow_origin_type, allow_origins, ctx, req_origin,
                                           cache_key, cache_version)
     if allow_origins == "**" then
         allow_origins = req_origin or '*'
@@ -221,7 +258,7 @@ local function process_with_allow_origins(allow_origins, ctx, req_origin,
         )
     else
         multiple_origin, err = core.lrucache.plugin_ctx(
-                lrucache, ctx, nil, create_multiple_origin_cache, allow_origins
+                lrucache, ctx, allow_origin_type, create_multiple_origin_cache, allow_origins
         )
     end
 
@@ -240,22 +277,23 @@ local function process_with_allow_origins(allow_origins, ctx, req_origin,
     return allow_origins
 end
 
-local function process_with_allow_origins_by_regex(conf, ctx, req_origin)
-    if conf.allow_origins_by_regex == nil then
-        return
-    end
+local function process_with_allow_origins_by_regex(allow_origin_type,
+                                                   allow_origins_by_regex, conf, ctx, req_origin)
 
-    if not conf.allow_origins_by_regex_rules_concat then
+    local allow_origins_by_regex_rules_concat_conf_key =
+            "allow_origins_by_regex_rules_concat_" .. allow_origin_type
+
+    if not conf[allow_origins_by_regex_rules_concat_conf_key] then
         local allow_origins_by_regex_rules = {}
-        for i, re_rule in ipairs(conf.allow_origins_by_regex) do
+        for i, re_rule in ipairs(allow_origins_by_regex) do
             allow_origins_by_regex_rules[i] = re_rule
         end
-        conf.allow_origins_by_regex_rules_concat = core.table.concat(
+        conf[allow_origins_by_regex_rules_concat_conf_key] = core.table.concat(
             allow_origins_by_regex_rules, "|")
     end
 
-    -- core.log.warn("regex: ", conf.allow_origins_by_regex_rules_concat, "\n ")
-    local matched = re_find(req_origin, conf.allow_origins_by_regex_rules_concat, "jo")
+    -- core.log.warn("regex: ", conf[allow_origins_by_regex_rules_concat_conf_key], "\n ")
+    local matched = re_find(req_origin, conf[allow_origins_by_regex_rules_concat_conf_key], "jo")
     if matched then
         return req_origin
     end
@@ -266,7 +304,9 @@ local function match_origins(req_origin, allow_origins)
     return req_origin == allow_origins or allow_origins == '*'
 end
 
-local function process_with_allow_origins_by_metadata(allow_origins_by_metadata, ctx, req_origin)
+local function process_with_allow_origins_by_metadata(allow_origin_type, allow_origins_by_metadata,
+                                                      ctx, req_origin)
+
     if allow_origins_by_metadata == nil then
         return
     end
@@ -276,8 +316,10 @@ local function process_with_allow_origins_by_metadata(allow_origins_by_metadata,
         local allow_origins_map = metadata.value.allow_origins
         for _, key in ipairs(allow_origins_by_metadata) do
             local allow_origins_conf = allow_origins_map[key]
-            local allow_origins = process_with_allow_origins(allow_origins_conf, ctx, req_origin,
-                    plugin_name .. "#" .. key, metadata.modifiedIndex)
+            local allow_origins = process_with_allow_origins(
+                allow_origin_type, allow_origins_conf, ctx, req_origin,
+                plugin_name .. "#" .. key, metadata.modifiedIndex
+            )
             if match_origins(req_origin, allow_origins) then
                 return req_origin
             end
@@ -297,21 +339,47 @@ end
 
 function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
-    -- Try allow_origins first, if mismatched, try allow_origins_by_regex.
+    -- If allow_origins_by_regex is not nil, should be matched to it only
     local allow_origins
-    allow_origins = process_with_allow_origins(conf.allow_origins, ctx, req_origin)
-    if not match_origins(req_origin, allow_origins) then
-        allow_origins = process_with_allow_origins_by_regex(conf, ctx, req_origin)
-    end
-    if not allow_origins then
-        allow_origins = process_with_allow_origins_by_metadata(
-                conf.allow_origins_by_metadata, ctx, req_origin
+    if conf.allow_origins_by_regex == nil then
+        allow_origins = process_with_allow_origins(
+            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins, ctx, req_origin
         )
+    else
+        allow_origins = process_with_allow_origins_by_regex(
+            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_regex,
+            conf, ctx, req_origin
+        )
+    end
+    if not match_origins(req_origin, allow_origins) then
+        allow_origins = process_with_allow_origins_by_metadata(
+            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_metadata, ctx, req_origin
+        )
+    end
+    if conf.allow_origins ~= "*" then
+        core.response.add_header("Vary", "Origin")
     end
     if allow_origins then
         ctx.cors_allow_origins = allow_origins
         set_cors_headers(conf, ctx)
     end
+
+    local timing_allow_origins
+    if conf.timing_allow_origins_by_regex == nil and conf.timing_allow_origins then
+        timing_allow_origins = process_with_allow_origins(
+            TYPE_TIMING_ALLOW_ORIGIN, conf.timing_allow_origins, ctx, req_origin
+        )
+    elseif conf.timing_allow_origins_by_regex then
+        timing_allow_origins = process_with_allow_origins_by_regex(
+            TYPE_TIMING_ALLOW_ORIGIN, conf.timing_allow_origins_by_regex,
+            conf, ctx, req_origin
+        )
+    end
+    if timing_allow_origins and match_origins(req_origin, timing_allow_origins) then
+        ctx.timing_allow_origin = timing_allow_origins
+        set_timing_headers(conf, ctx)
+    end
+
 end
 
 return _M

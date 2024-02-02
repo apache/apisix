@@ -14,12 +14,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local ngx_ssl = require("ngx.ssl")
+local core           = require("apisix.core")
+local secret         = require("apisix.secret")
+local ngx_ssl        = require("ngx.ssl")
+local ngx_ssl_client = require("ngx.ssl.clienthello")
+
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
 local str_lower = string.lower
+local str_byte = string.byte
+local str_len = string.len
 local assert = assert
 local type = type
 local ipairs = ipairs
@@ -37,8 +42,13 @@ local pkey_cache = core.lrucache.new {
 local _M = {}
 
 
-function _M.server_name()
-    local sni, err = ngx_ssl.server_name()
+function _M.server_name(clienthello)
+    local sni, err
+    if clienthello then
+        sni, err = ngx_ssl_client.get_client_hello_server_name()
+    else
+        sni, err = ngx_ssl.server_name()
+    end
     if err then
         return nil, err
     end
@@ -53,6 +63,14 @@ function _M.server_name()
 
     sni = str_lower(sni)
     return sni
+end
+
+
+function _M.set_protocols_by_clienthello(ssl_protocols)
+    if ssl_protocols then
+       return ngx_ssl_client.set_protocols(ssl_protocols)
+    end
+    return true
 end
 
 
@@ -71,17 +89,6 @@ local function init_iv_tbl(ivs)
     end
 
     return _aes_128_cbc_with_iv_tbl
-end
-
-
-local _aes_128_cbc_with_iv_tbl_ssl
-local function get_aes_128_cbc_with_iv_ssl(local_conf)
-    if _aes_128_cbc_with_iv_tbl_ssl == nil then
-        local ivs = core.table.try_read_attr(local_conf, "apisix", "ssl", "key_encrypt_salt")
-        _aes_128_cbc_with_iv_tbl_ssl = init_iv_tbl(ivs)
-    end
-
-    return _aes_128_cbc_with_iv_tbl_ssl
 end
 
 
@@ -109,43 +116,31 @@ end
 
 function _M.aes_encrypt_pkey(origin, field)
     local local_conf = core.config.local_conf()
+    local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
+    local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
 
     if not field then
-        -- default used by ssl
-        local aes_128_cbc_with_iv_tbl_ssl = get_aes_128_cbc_with_iv_ssl(local_conf)
-        local aes_128_cbc_with_iv_ssl = aes_128_cbc_with_iv_tbl_ssl[1]
-        if aes_128_cbc_with_iv_ssl ~= nil and core.string.has_prefix(origin, "---") then
-            return encrypt(aes_128_cbc_with_iv_ssl, origin)
+        if aes_128_cbc_with_iv_gde ~= nil and core.string.has_prefix(origin, "---") then
+            return encrypt(aes_128_cbc_with_iv_gde, origin)
         end
     else
         if field == "data_encrypt" then
-            local aes_128_cbc_with_iv_tbl_gde = get_aes_128_cbc_with_iv_gde(local_conf)
-            local aes_128_cbc_with_iv_gde = aes_128_cbc_with_iv_tbl_gde[1]
             if aes_128_cbc_with_iv_gde ~= nil then
                 return encrypt(aes_128_cbc_with_iv_gde, origin)
             end
         end
     end
-
     return origin
 end
 
 
 local function aes_decrypt_pkey(origin, field)
-    local local_conf = core.config.local_conf()
-    local aes_128_cbc_with_iv_tbl
-
-    if not field then
-        if core.string.has_prefix(origin, "---") then
-            return origin
-        end
-        aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_ssl(local_conf)
-    else
-        if field == "data_encrypt" then
-            aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
-        end
+    if not field and core.string.has_prefix(origin, "---") then
+        return origin
     end
 
+    local local_conf = core.config.local_conf()
+    local aes_128_cbc_with_iv_tbl = get_aes_128_cbc_with_iv_gde(local_conf)
     if #aes_128_cbc_with_iv_tbl == 0 then
         return origin
     end
@@ -252,9 +247,13 @@ function _M.check_ssl_conf(in_dp, conf)
         end
     end
 
-    local ok, err = validate(conf.cert, conf.key)
-    if not ok then
-        return nil, err
+    if not secret.check_secret_uri(conf.cert) and
+        not secret.check_secret_uri(conf.key) then
+
+        local ok, err = validate(conf.cert, conf.key)
+        if not ok then
+            return nil, err
+        end
     end
 
     if conf.type == "client" then
@@ -268,9 +267,13 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        local ok, err = validate(conf.certs[i], conf.keys[i])
-        if not ok then
-            return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+        if not secret.check_secret_uri(conf.cert[i]) and
+            not secret.check_secret_uri(conf.key[i]) then
+
+            local ok, err = validate(conf.certs[i], conf.keys[i])
+            if not ok then
+                return nil, "failed to handle cert-key pair[" .. i .. "]: " .. err
+            end
         end
     end
 
@@ -286,6 +289,35 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     return true
+end
+
+
+function _M.get_status_request_ext()
+    core.log.debug("parsing status request extension ... ")
+    local ext = ngx_ssl_client.get_client_hello_ext(5)
+    if not ext then
+        core.log.debug("no contains status request extension")
+        return false
+    end
+    local total_len = str_len(ext)
+    -- 1-byte for CertificateStatusType
+    -- 2-byte for zero-length "responder_id_list"
+    -- 2-byte for zero-length "request_extensions"
+    if total_len < 5 then
+        core.log.error("bad ssl client hello extension: ",
+                       "extension data error")
+        return false
+    end
+
+    -- CertificateStatusType
+    local status_type = str_byte(ext, 1)
+    if status_type == 1 then
+        core.log.debug("parsing status request extension ok: ",
+                       "status_type is ocsp(1)")
+        return true
+    end
+
+    return false
 end
 
 

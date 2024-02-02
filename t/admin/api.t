@@ -138,3 +138,101 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- response_headers
 X-API-VERSION: v2
 --- response_body_like: "/apisix/routes"
+
+
+
+=== TEST 9: Head method support for admin API
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin',
+                ngx.HTTP_HEAD)
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 10: Access with api key, and admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+
+
+
+=== TEST 11: Access with wrong api key, and admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+--- more_headers
+X-API-KEY: wrong-key
+--- request
+GET /apisix/admin/routes
+--- error_code: 401
+
+
+
+=== TEST 12: Access without api key, and admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+--- request
+GET /apisix/admin/routes
+--- error_code: 401
+
+
+
+=== TEST 13: Access with api key, but admin_key_required=false
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: false
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+--- error_log
+Admin key is bypassed!
+
+
+
+=== TEST 14: Access with wrong api key, but admin_key_required=false
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: false
+--- more_headers
+X-API-KEY: wrong-key
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+--- error_log
+Admin key is bypassed!
+
+
+
+=== TEST 15: Access without api key, but admin_key_required=false
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: false
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+--- error_log
+Admin key is bypassed!

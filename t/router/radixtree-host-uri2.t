@@ -34,12 +34,19 @@ deployment:
         config_provider: yaml
 _EOC_
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", $yaml_config);
+    }
+});
+
 run_tests();
 
 __DATA__
 
 === TEST 1: test.com
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -69,7 +76,6 @@ use config_provider: yaml
 
 
 === TEST 2: *.test.com + uri
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -99,7 +105,6 @@ use config_provider: yaml
 
 
 === TEST 3: *.test.com + /*
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -129,7 +134,6 @@ use config_provider: yaml
 
 
 === TEST 4: filter_func(not match)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -160,7 +164,6 @@ use config_provider: yaml
 
 
 === TEST 5: filter_func(match)
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -318,7 +321,6 @@ Host: t.com
 
 
 === TEST 12: request host with uppercase
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -337,7 +339,6 @@ Host: tEst.com
 
 
 === TEST 13: configure host with uppercase
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
   -
@@ -356,7 +357,6 @@ Host: test.com
 
 
 === TEST 14: inherit hosts from services
---- yaml_config eval: $::yaml_config
 --- apisix_yaml
 services:
   - id: 1

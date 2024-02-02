@@ -1,7 +1,7 @@
 ---
 title: api-breaker
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
   - API Breaker
 description: 本文介绍了 Apache APISIX api-breaker 插件的相关操作，你可以使用此插件的 API 熔断机制来保护上游业务服务。
@@ -108,7 +108,7 @@ HTTP/1.1 502 Bad Gateway
 </html>
 ```
 
-## 禁用插件
+## 删除插件
 
 当你需要禁用该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

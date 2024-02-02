@@ -53,6 +53,7 @@ loaded plugin and sort by priority: 3000 name: ip-restriction
 loaded plugin and sort by priority: 2990 name: referer-restriction
 loaded plugin and sort by priority: 2900 name: uri-blocker
 loaded plugin and sort by priority: 2800 name: request-validation
+loaded plugin and sort by priority: 2600 name: multi-auth
 loaded plugin and sort by priority: 2599 name: openid-connect
 loaded plugin and sort by priority: 2555 name: wolf-rbac
 loaded plugin and sort by priority: 2530 name: hmac-auth
@@ -61,8 +62,8 @@ loaded plugin and sort by priority: 2510 name: jwt-auth
 loaded plugin and sort by priority: 2500 name: key-auth
 loaded plugin and sort by priority: 2400 name: consumer-restriction
 loaded plugin and sort by priority: 2000 name: authz-keycloak
+loaded plugin and sort by priority: 1085 name: proxy-cache
 loaded plugin and sort by priority: 1010 name: proxy-mirror
-loaded plugin and sort by priority: 1009 name: proxy-cache
 loaded plugin and sort by priority: 1008 name: proxy-rewrite
 loaded plugin and sort by priority: 1005 name: api-breaker
 loaded plugin and sort by priority: 1003 name: limit-conn

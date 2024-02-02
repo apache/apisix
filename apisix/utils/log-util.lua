@@ -32,14 +32,6 @@ local lru_log_format = core.lrucache.new({
 })
 
 local _M = {}
-_M.metadata_schema_log_format = {
-    type = "object",
-    default = {
-        ["host"] = "$host",
-        ["@timestamp"] = "$time_iso8601",
-        ["client_ip"] = "$remote_addr",
-    },
-}
 
 
 local function gen_log_format(format)
@@ -210,18 +202,39 @@ function _M.inject_get_full_log(f)
 end
 
 
+local function is_match(match, ctx)
+    local match_result
+    for _, m in pairs(match) do
+        local expr, _ = expr.new(m)
+        match_result = expr:eval(ctx.var)
+        if match_result then
+            break
+        end
+    end
+
+    return match_result
+end
+
+
 function _M.get_log_entry(plugin_name, conf, ctx)
+    -- If the "match" configuration is set and the matching conditions are not met,
+    -- then do not log the message.
+    if conf.match and not is_match(conf.match, ctx) then
+        return
+    end
+
     local metadata = plugin.plugin_metadata(plugin_name)
     core.log.info("metadata: ", core.json.delay_encode(metadata))
 
     local entry
     local customized = false
 
-    if metadata and metadata.value.log_format
+    local has_meta_log_format = metadata and metadata.value.log_format
         and core.table.nkeys(metadata.value.log_format) > 0
-    then
+
+    if conf.log_format or has_meta_log_format then
         customized = true
-        entry = get_custom_format_log(ctx, metadata.value.log_format)
+        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
     else
         if is_http then
             entry = get_full_log(ngx, conf)

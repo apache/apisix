@@ -1,7 +1,8 @@
 ---
 title: kafka-proxy
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API Gateway
   - Plugin
   - Kafka proxy
 description: This document contains information about the Apache APISIX kafka-proxy Plugin.
@@ -77,6 +78,6 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
 
 Now, we can test it by connecting to the `/kafka` endpoint via websocket.
 
-## Disable Plugin
+## Delete Plugin
 
-To disable the `kafka-proxy` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `kafka-proxy` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.

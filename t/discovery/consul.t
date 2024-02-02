@@ -112,6 +112,40 @@ discovery:
         max_fails: 1
 _EOC_
 
+our $yaml_config_with_acl = <<_EOC_;
+apisix:
+  node_listen: 1984
+  enable_control: true
+  control:
+    ip: 127.0.0.1
+    port: 9090
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8502"
+    token: "2b778dd9-f5f1-6f29-b4b4-9a5fa948757a"
+    skip_services:
+      - "service_c"
+    timeout:
+      connect: 1000
+      read: 1000
+      wait: 60
+    weight: 1
+    fetch_interval: 1
+    keepalive: true
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+      metadata:
+        fail_timeout: 1
+        weight: 1
+        max_fails: 1
+_EOC_
+
 
 run_tests();
 
@@ -558,6 +592,9 @@ upstreams:
             table.sort(nodes, function(a, b)
                 return a.port < b.port
             end)
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
             ngx.say(json.encode(nodes))
 
             local code, body, res = t.test('/v1/healthcheck/upstreams/1',
@@ -567,12 +604,180 @@ upstreams:
             table.sort(nodes, function(a, b)
                 return a.port < b.port
             end)
+            for _, node in ipairs(nodes) do
+                node.counter = nil
+            end
             ngx.say(json.encode(nodes))
         }
     }
 --- request
 GET /thc
 --- response_body
-[{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
-[{"host":"127.0.0.1","port":30513,"priority":0,"weight":1},{"host":"127.0.0.1","port":30514,"priority":0,"weight":1}]
+[{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30513,"status":"healthy"},{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30514,"status":"healthy"}]
+[{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30513,"status":"healthy"},{"hostname":"127.0.0.1","ip":"127.0.0.1","port":30514,"status":"healthy"}]
+--- ignore_error_log
+
+
+
+=== TEST 13: test consul catalog service change
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:8500"
+    keepalive: false
+    fetch_interval: 3
+    default_service:
+      host: "127.0.0.1"
+      port: 20999
+#END
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: service_a
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "PUT /v1/agent/service/deregister/service_a1",
+    "GET /sleep?sec=3",
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+    "PUT /v1/agent/service/deregister/service_a1",
+    "GET /sleep?sec=5",
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr//,
+    qr/ok\n/,
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/,
+    qr//,
+    qr/ok\n/,
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/,
+]
+--- ignore_error_log
+
+
+
+=== TEST 14: bootstrap acl
+--- config
+location /v1/acl {
+    proxy_pass http://127.0.0.1:8502;
+}
+--- request eval
+"PUT /v1/acl/bootstrap\n" . "{\"BootstrapSecret\": \"2b778dd9-f5f1-6f29-b4b4-9a5fa948757a\"}"
+--- error_code_like: ^(?:200|403)$
+
+
+
+=== TEST 15: test register and unregister nodes with acl
+--- yaml_config eval: $::yaml_config_with_acl
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: service-a
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8502;
+    proxy_set_header X-Consul-Token "2b778dd9-f5f1-6f29-b4b4-9a5fa948757a";
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- pipelined_requests eval
+[
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a1\",\"Name\":\"service-a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a2\",\"Name\":\"service-a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep",
+
+    "GET /hello?random1",
+    "GET /hello?random2",
+    "GET /hello?random3",
+    "GET /hello?random4",
+
+    "PUT /v1/agent/service/deregister/service-a1",
+    "PUT /v1/agent/service/deregister/service-a2",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a1\",\"Name\":\"service-a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a2\",\"Name\":\"service-a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_b_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=5",
+
+    "GET /hello?random1",
+    "GET /hello?random2",
+    "GET /hello?random3",
+    "GET /hello?random4",
+
+    "PUT /v1/agent/service/deregister/service-a1",
+    "PUT /v1/agent/service/deregister/service-a2",
+]
+--- response_body_like eval
+[
+    qr//,
+    qr//,
+    qr/ok\n/,
+
+    qr/server [3-4]\n/,
+    qr/server [3-4]\n/,
+    qr/server [3-4]\n/,
+    qr/server [3-4]\n/,
+
+    qr//,
+    qr//,
+    qr//,
+    qr//,
+    qr/ok\n/,
+
+    qr/server [1-2]\n/,
+    qr/server [1-2]\n/,
+    qr/server [1-2]\n/,
+    qr/server [1-2]\n/,
+
+    qr//,
+    qr//
+]
 --- ignore_error_log

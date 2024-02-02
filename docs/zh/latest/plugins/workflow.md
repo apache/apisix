@@ -1,7 +1,8 @@
 ---
 title: workflow
 keywords:
-  - APISIX
+  - Apache APISIX
+  - API 网关
   - Plugin
   - workflow
   - 流量控制
@@ -146,7 +147,7 @@ curl http://127.0.0.1:0080/hello/fake -i
 HTTP/1.1 200 OK
 ```
 
-## Disable Plugin
+## Delete Plugin
 
 当你需要禁用 `workflow` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 

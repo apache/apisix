@@ -106,7 +106,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 现在，任何对 uri `/hello` 的请求都会生成上述指标，并推送到 Datadog Agent 的 DogStatsD 服务器。
 
-### 禁用插件
+### 删除插件
 
 删除插件配置中相应的 JSON 配置以禁用 `datadog`。
 APISIX 插件是支持热加载的，所以不用重新启动 APISIX，配置就能生效。

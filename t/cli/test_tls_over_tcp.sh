@@ -22,8 +22,8 @@
 # check tls over tcp proxy
 echo "
 apisix:
+    proxy_mode: http&stream
     stream_proxy:
-        only: false
         tcp:
             - addr: 9100
               tls: true
@@ -39,7 +39,13 @@ nginx_config:
 make run
 sleep 0.1
 
- ./utils/create-ssl.py t/certs/mtls_server.crt t/certs/mtls_server.key test.com
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+{
+     "cert" : "'"$(cat t/certs/mtls_server.crt)"'",
+     "key": "'"$(cat t/certs/mtls_server.key)"'",
+     "snis": ["test.com"]
+}'
 
 curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d \
