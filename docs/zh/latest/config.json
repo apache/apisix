@@ -229,6 +229,10 @@
         },
         {
           "type": "doc",
+          "id": "build-apisix-dev-environment-in-docker"
+        },
+        {
+          "type": "doc",
           "id": "support-fips-in-apisix"
         },
         {
