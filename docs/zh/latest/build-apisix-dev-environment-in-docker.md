@@ -81,7 +81,7 @@ make stop
 
 如果你在运行 `make run` 时收到类似 `nginx: [emerg] bind() to unix:/apisix/logs/worker_events.sock failed (95: Operation not supported)` 的错误消息，请使用此解决方案。
 
-更改你的 `Docker-Desktop` 的 `File Sharing` 设置：
+更改你的 Docker-Desktop 的 `File Sharing` 设置：
 
 ![Docker-Desktop File Sharing 设置](../../assets/images/update-docker-desktop-file-sharing.png)
 

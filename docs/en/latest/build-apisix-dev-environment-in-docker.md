@@ -70,9 +70,7 @@ make deps
 ln -s /usr/bin/openresty /usr/bin/nginx
 ```
 
-### Start Using:
-
-#### Run and Stop APISIX
+### Run and Stop APISIX
 
 ```shell
 make run
@@ -83,7 +81,7 @@ make stop
 
 If you encounter an error message like `nginx: [emerg] bind() to unix:/apisix/logs/worker_events.sock failed (95: Operation not supported)` while running `make run`, please use this solution.
 
-Change the `File Sharing` settings of your `Docker-Desktop`:
+Change the `File Sharing` settings of your Docker-Desktop:
 
 ![Docker-Desktop File Sharing Setting](../../assets/images/update-docker-desktop-file-sharing.png)
 
@@ -91,7 +89,7 @@ Changing to either `gRPC FUSE` or `osxfs` can resolve this issue.
 
 :::
 
-#### Run Specific Test Cases
+### Run Specific Test Cases
 
 ```shell
 prove t/admin/routes.t
