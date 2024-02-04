@@ -61,7 +61,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 
 首先您应该创建一个 SSL 资源，并且证书资源中应该包含颁发者的证书。通常情况下，全链路证书就可以正常工作。
 
-如下示例中，生成相关的 SSL 资源:
+如下示例中，生成相关的 SSL 资源：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
