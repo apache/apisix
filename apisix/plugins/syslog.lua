@@ -34,7 +34,22 @@ local schema = {
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
         log_format = {type = "object"},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     required = {"host", "port"}
 }
@@ -66,6 +81,11 @@ function _M.check_schema(conf, schema_type)
         return core.schema.check(metadata_schema, conf)
     end
     return core.schema.check(schema, conf)
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 
