@@ -84,7 +84,7 @@ echo -n "Q" | openssl s_client -status -connect localhost:9443 -servername test.
 ```
 ...
 CONNECTED(00000003)
-OCSP response: 
+OCSP response:
 ======================================
 OCSP Response Data:
     OCSP Response Status: successful (0x0)
