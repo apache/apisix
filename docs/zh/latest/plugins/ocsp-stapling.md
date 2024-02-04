@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API 网关
   - 插件
-  - OCSP stapling
+  - ocsp-stapling
 description: 本文介绍了 API 网关 Apache APISIX ocsp-stapling 插件的相关信息。
 ---
 
