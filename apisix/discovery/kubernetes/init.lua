@@ -55,10 +55,10 @@ local function on_endpoint_slices_modified(handle, endpoint)
             not handle:namespace_selector(endpoint.metadata.namespace) then
         return
     end
-    
+
     core.log.debug(core.json.delay_encode(endpoint))
     core.table.clear(endpoint_buffer)
-    
+
     local endpointslices = endpoint.endpoints
     for _, endpointslice in ipairs(endpointslices or {}) do
         if endpointslice.addresses then
@@ -72,7 +72,7 @@ local function on_endpoint_slices_modified(handle, endpoint)
                 else
                     port_name = tostring(port.port)
                 end
-                
+
                 if endpointslice.conditions and endpointslice.condition.ready then
                     local nodes = endpoint_buffer[port_name]
                     if nodes == nil then
@@ -91,7 +91,7 @@ local function on_endpoint_slices_modified(handle, endpoint)
             end
         end
     end
-    
+
     for _, ports in pairs(endpoint_buffer) do
         for _, nodes in pairs(ports) do
             core.table.sort(nodes, sort_nodes_cmp)
@@ -432,8 +432,8 @@ local function single_mode_init(conf)
     local default_weight = conf.default_weight
     local endpoints_informer, err
     if conf.watch_endpoint_slices_schema then
-	    endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1", "EndpointSlice", "endpointslices", "")
-    else 
+        endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1", "EndpointSlice", "endpointslices", "")
+    else
         endpoints_informer, err = informer_factory.new("", "v1", "Endpoints", "endpoints", "")
     end
     if err then
@@ -447,10 +447,10 @@ local function single_mode_init(conf)
     if conf.watch_endpoint_slices_schema then
         endpoints_informer.on_added = on_endpoint_slices_modified
         endpoints_informer.on_modified = on_endpoint_slices_modified
-    else 
+    else
         endpoints_informer.on_added = on_endpoint_modified
         endpoints_informer.on_modified = on_endpoint_modified
-    end 
+    end
     endpoints_informer.on_deleted = on_endpoint_deleted
     endpoints_informer.pre_list = pre_list
     endpoints_informer.post_list = post_list
@@ -535,10 +535,10 @@ local function multiple_mode_init(confs)
 
         local default_weight = conf.default_weight
 
-        local endpoints_informer, err 
+        local endpoints_informer, err
         if conf.watch_endpoint_slices_schema then
             endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1", "EndpointSlice", "endpointslices", "")
-        else 
+        else
             endpoints_informer, err = informer_factory.new("", "v1", "Endpoints", "endpoints", "")
         end
         if err then
@@ -552,10 +552,10 @@ local function multiple_mode_init(confs)
         if conf.watch_endpoint_slices_schema then
             endpoints_informer.on_added = on_endpoint_slices_modified
             endpoints_informer.on_modified = on_endpoint_slices_modified
-        else 
+        else
             endpoints_informer.on_added = on_endpoint_modified
             endpoints_informer.on_modified = on_endpoint_modified
-        end 
+        end
         endpoints_informer.on_deleted = on_endpoint_deleted
         endpoints_informer.pre_list = pre_list
         endpoints_informer.post_list = post_list
