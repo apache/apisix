@@ -112,7 +112,7 @@ hello apisix_backend
             local ssl_key =  t.read_file("t/certs/apisix.key")
             local data = {
                 cert = ssl_cert, key = ssl_key,
-                snis = { "test.com" },
+                sni = "test.com",
             }
             local code, body = t.test('/apisix/admin/ssls/1',
                 ngx.HTTP_PUT,
