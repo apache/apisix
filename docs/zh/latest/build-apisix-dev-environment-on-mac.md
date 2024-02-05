@@ -64,14 +64,15 @@ docker run -d --name apisix-dev-env --net=host -v $(pwd):/apisix:rw apisix-dev-e
 最后，构建 Apache APISIX 运行时并配置测试环境：
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash -c "make deps && ln -s /usr/bin/openresty /usr/bin/nginx"
+docker exec -it apisix-dev-env make deps
+docker exec -it apisix-dev-env ln -s /usr/bin/openresty /usr/bin/nginx
 ```
 
 ### 启动和停止 APISIX
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash -c "make run"
-docker exec -it apisix-dev-env /bin/bash -c "make stop"
+docker exec -it apisix-dev-env make run
+docker exec -it apisix-dev-env make stop
 ```
 
 :::note
@@ -89,5 +90,5 @@ docker exec -it apisix-dev-env /bin/bash -c "make stop"
 ### 运行指定测试用例
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash -c "prove t/admin/routes.t"
+docker exec -it apisix-dev-env prove t/admin/routes.t
 ```

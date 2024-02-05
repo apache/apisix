@@ -64,14 +64,15 @@ docker run -d --name apisix-dev-env --net=host -v $(pwd):/apisix:rw apisix-dev-e
 Finally, enter the container, build the Apache APISIX runtime, and configure the test environment:
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash -c "make deps && ln -s /usr/bin/openresty /usr/bin/nginx"
+docker exec -it apisix-dev-env make deps
+docker exec -it apisix-dev-env ln -s /usr/bin/openresty /usr/bin/nginx
 ```
 
 ### Run and Stop APISIX
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash -c "make run"
-docker exec -it apisix-dev-env /bin/bash -c "make stop"
+docker exec -it apisix-dev-env make run
+docker exec -it apisix-dev-env make stop
 ```
 
 :::note
@@ -89,5 +90,5 @@ Changing to either `gRPC FUSE` or `osxfs` can resolve this issue.
 ### Run Specific Test Cases
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash -c "prove t/admin/routes.t"
+docker exec -it apisix-dev-env prove t/admin/routes.t
 ```
