@@ -26,10 +26,12 @@ local ipairs = ipairs
 local pcall = pcall
 local str_format = string.format
 local ngx_var = ngx.var
+local events = require("apisix.events")
 
 
 local _M = {}
 
+_M.RELOAD_EVENT = "plugin-reload"
 
 function _M.schema()
     local http_plugins, stream_plugins = plugin.get_all({
@@ -400,13 +402,14 @@ function _M.dump_plugin_metadata()
     return 200, metadata.value
 end
 
-function _M.plugins_reload()
-    core.log.info("start to hot reload plugins")
-    plugin.load()
+function _M.post_reload_plugins()
+    local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
+    if not success then
+        core.response.exit(503, err)
+    end
 
-    return 200, "done"
+    core.response.exit(200, "done")
 end
-
 
 return {
     -- /v1/schema
@@ -485,7 +488,7 @@ return {
     {
         methods = {"POST"},
         uris = {"/plugins_reload"},
-        handler = _M.plugins_reload,
+        handler = _M.post_reload_plugins,
     },
     get_health_checkers = _get_health_checkers,
 }

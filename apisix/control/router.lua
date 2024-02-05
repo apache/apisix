@@ -27,7 +27,7 @@ local pairs = pairs
 local type = type
 local ngx = ngx
 local get_method = ngx.req.get_method
-
+local events = require("apisix.events")
 
 local _M = {}
 
@@ -198,5 +198,17 @@ end
 
 end -- do
 
+local function reload_plugins()
+    core.log.info("start to hot reload plugins")
+    plugin_mod.load()
+
+    return 200, "done"
+end
+
+
+function _M.init_worker()
+    -- register reload plugin handler
+    events:register(reload_plugins, builtin_v1_routes.RELOAD_EVENT, "PUT")
+end
 
 return _M
