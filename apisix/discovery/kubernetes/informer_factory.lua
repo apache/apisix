@@ -355,7 +355,7 @@ function _M.new(group, version, kind, plural, namespace)
     end
 
     if namespace and namespace ~= "" then
-        path = path .. "/namespace/" .. namespace
+        path = path .. "/namespaces/" .. namespace
     end
     path = path .. "/" .. plural
 
