@@ -431,7 +431,7 @@ local function single_mode_init(conf)
 
     local default_weight = conf.default_weight
     local endpoints_informer, err
-	if conf.watch_endpoint_slices_schema then
+    if conf.watch_endpoint_slices_schema then
 	    endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1", "EndpointSlice", "endpointslices", "")
     else 
         endpoints_informer, err = informer_factory.new("", "v1", "Endpoints", "endpoints", "")
