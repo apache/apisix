@@ -32,6 +32,12 @@ description: 本文介绍了关于 Apache APISIX `grpc-web` 插件的基本信�
 
 `grpc-web` 插件是一个代理插件，可以处理从 JavaScript 客户端到 gRPC Service 的 [gRPC Web](https://github.com/grpc/grpc-web) 请求。
 
+## 属性
+
+| 名称                  | 类型    | 必选项 | 默认值                                     | 描述                                                             |
+|---------------------| ------- |----|-----------------------------------------|----------------------------------------------------------------|
+| cors_allow_headers  | string  | 否  | "content-type,x-grpc-web,x-user-agent"  | 允许跨域访问时请求方携带哪些非 `CORS 规范` 以外的 Header。如果你有多个 Header，请使用 `,` 分割。 |
+
 ## 启用插件
 
 你可以通过如下命令在指定路由上启用 `gRPC-web` 插件：
