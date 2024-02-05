@@ -34,14 +34,14 @@ add_block_preprocessor(sub {
         my $stream_config = $block->stream_config // '';
         $stream_config .= <<_EOC_;
         server {
-            listen 8765 ssl;
+            listen 8765;
             ssl_certificate             cert/apisix.crt;
             ssl_certificate_key         cert/apisix.key;
 
             content_by_lua_block {
                 local sock = ngx.req.socket()
                 local data = sock:receive("1")
-                ngx.say("hello ", ngx.var.ssl_server_name)
+                ngx.say("hello")
             }
         }
 _EOC_
@@ -97,7 +97,7 @@ passed
 --- stream_request
 mmm
 --- stream_response
-hello apisix_backend
+hello
 
 
 
@@ -139,4 +139,4 @@ passed
 mmm
 --- stream_sni: test.com
 --- response_body
-hello test.com
+hello

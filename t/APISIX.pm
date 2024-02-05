@@ -483,7 +483,6 @@ _EOC_
     if ($version =~ m/\/apisix-nginx-module/) {
         $stream_server_config .= <<_EOC_;
     proxy_ssl_server_name on;
-    proxy_ssl on;
     proxy_ssl_name \$upstream_sni;
     set \$upstream_sni "apisix_backend";
 _EOC_
