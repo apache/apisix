@@ -1,7 +1,7 @@
 ---
-id: build-apisix-dev-environment-in-docker
-title: 通过 Docker 构建开发环境
-description: 本文介绍了如何用 Docker 的方式快速构建 API 网关 Apache APISIX 开发环境。
+id: build-apisix-dev-environment-on-mac
+title: 在 Mac 上构建开发环境
+description: 本文介绍了如何用 Docker 的方式在 Mac 上快速构建 API 网关 Apache APISIX 的开发环境。
 ---
 
 <!--
@@ -23,21 +23,21 @@ description: 本文介绍了如何用 Docker 的方式快速构建 API 网关 Ap
 #
 -->
 
-如果你希望快速的在你的系统上构建和开发 APISIX，你可以参考本教程。
+如果你希望快速的在你的 Mac 平台上构建和开发 APISIX，你可以参考本教程。
 
 :::note
 
-本教程适合需要快速开始入门阶段开发的情况，如果你想要更进一步，有更好的开发体验，更好的选择是 Linux-based 虚拟机，或是直接使用这类系统作为你的开发环境。
+本教程适合需要在 Mac 平台快速开始入门阶段开发的情况，如果你想要更进一步，有更好的开发体验，更好的选择是 Linux-based 虚拟机，或是直接使用这类系统作为你的开发环境。
 
 你可以在[这里](install-dependencies.md#安装)看到具体支持的系统。
 
 :::
 
-## 快速搭建 Apache APISIX 开发环境
+## 快速构建 Apache APISIX 开发环境
 
 ### 实现思路
 
-![Build Apache APISIX Development Environment in Docker](../../assets/images/develop-apisix-dev.png)
+我们通过 Docker 来构建 Apache APISIX 的测试环境，在容器启动时将 Apache APISIX 的源代码挂载到容器内，就可以做到在容器内构建以及运行测试用例。
 
 ### 实现步骤
 
@@ -61,20 +61,17 @@ docker run -d --name etcd-apisix --net=host pachyderm/etcd:v3.5.2
 docker run -d --name apisix-dev-env --net=host -v $(pwd):/apisix:rw apisix-dev-env:latest
 ```
 
-最后，进入容器，构建 Apache APISIX 运行时并配置测试环境：
+最后，构建 Apache APISIX 运行时并配置测试环境：
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash
-
-make deps
-ln -s /usr/bin/openresty /usr/bin/nginx
+docker exec -it apisix-dev-env /bin/bash -c "make deps && ln -s /usr/bin/openresty /usr/bin/nginx"
 ```
 
 ### 启动和停止 APISIX
 
 ```shell
-make run
-make stop
+docker exec -it apisix-dev-env /bin/bash -c "make run"
+docker exec -it apisix-dev-env /bin/bash -c "make stop"
 ```
 
 :::note
@@ -92,5 +89,5 @@ make stop
 ### 运行指定测试用例
 
 ```shell
-prove t/admin/routes.t
+docker exec -it apisix-dev-env /bin/bash -c "prove t/admin/routes.t"
 ```

@@ -15,14 +15,15 @@
 # limitations under the License.
 #
 
-FROM ubuntu
+FROM ubuntu:20.04
 
 # Install Test::Nginx
 RUN apt update
 RUN apt install -y cpanminus make
 RUN cpanm --notest Test::Nginx
 
-RUN apt install -y sudo git gawk curl
+# Install development utils
+RUN apt install -y sudo git gawk curl nano vim inetutils-ping
 
 WORKDIR /apisix
 

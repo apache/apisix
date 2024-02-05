@@ -1,7 +1,7 @@
 ---
-id: build-apisix-dev-environment-in-docker
-title: Build development environment in Docker
-description: This article introduces how to quickly build the development environment of the Apache APISIX API gateway using Docker.
+id: build-apisix-dev-environment-on-mac
+title: Build development environment on Mac
+description: This paper introduces how to use Docker to quickly build the development environment of API gateway Apache APISIX on Mac.
 ---
 
 <!--
@@ -23,11 +23,11 @@ description: This article introduces how to quickly build the development enviro
 #
 -->
 
-If you wish to quickly build and develop APISIX on your system, you can refer to this tutorial.
+If you want to quickly build and develop APISIX on your Mac platform, you can refer to this tutorial.
 
 :::note
 
-This tutorial is suitable for situations where you need to quickly get started with introductory development. If you want to take further steps for a better development experience, a preferable option is a Linux-based virtual machine or directly using such systems as your development environment.
+This tutorial is suitable for situations where you need to quickly start development on the Mac platform, if you want to go further and have a better development experience, the better choice is the Linux-based virtual machine, or directly use this kind of system as your development environment.
 
 You can see the specific supported systems [here](install-dependencies.md#install).
 
@@ -37,7 +37,7 @@ You can see the specific supported systems [here](install-dependencies.md#instal
 
 ### Implementation Idea
 
-![Build Apache APISIX Development Environment in Docker](../../assets/images/develop-apisix-dev.png)
+We use Docker to build the test environment of Apache APISIX. When the container starts, we can mount the source code of Apache APISIX into the container, and then we can build and run test cases in the container.
 
 ### Implementation Steps
 
@@ -64,17 +64,14 @@ docker run -d --name apisix-dev-env --net=host -v $(pwd):/apisix:rw apisix-dev-e
 Finally, enter the container, build the Apache APISIX runtime, and configure the test environment:
 
 ```shell
-docker exec -it apisix-dev-env /bin/bash
-
-make deps
-ln -s /usr/bin/openresty /usr/bin/nginx
+docker exec -it apisix-dev-env /bin/bash -c "make deps && ln -s /usr/bin/openresty /usr/bin/nginx"
 ```
 
 ### Run and Stop APISIX
 
 ```shell
-make run
-make stop
+docker exec -it apisix-dev-env /bin/bash -c "make run"
+docker exec -it apisix-dev-env /bin/bash -c "make stop"
 ```
 
 :::note
@@ -92,5 +89,5 @@ Changing to either `gRPC FUSE` or `osxfs` can resolve this issue.
 ### Run Specific Test Cases
 
 ```shell
-prove t/admin/routes.t
+docker exec -it apisix-dev-env /bin/bash -c "prove t/admin/routes.t"
 ```
