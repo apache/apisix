@@ -34,7 +34,7 @@ add_block_preprocessor(sub {
         my $stream_config = $block->stream_config // '';
         $stream_config .= <<_EOC_;
         server {
-            listen 8765;
+            listen 8765 ssl;
             ssl_certificate             cert/apisix.crt;
             ssl_certificate_key         cert/apisix.key;
 
