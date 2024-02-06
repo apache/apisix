@@ -935,12 +935,13 @@ end
 
 local runner
 local function setup_runner(cmd)
-    runner = spawn_proc(cmd)
 
     ngx_timer_at(0, function(premature)
         if premature then
             return
         end
+
+        runner = spawn_proc(cmd)
 
         while not exiting() do
             while true do
@@ -969,12 +970,15 @@ local function setup_runner(cmd)
 
             runner = nil
             -- TODO: fix this correctly.
-            -- local ok, err = events:post(events_list._source, events_list.runner_exit)
-            -- if not ok then
-            --     core.log.error("post event failure with ", events_list._source, ", error: ", err)
-            -- end
+            local ok, err = events:post(events_list._source, events_list.runner_exit)
+            if not ok then
+                core.log.error("post event failure with ", events_list._source, ", error: ", err)
+            end
 
-            core.log.warn("respawn runner with cmd: ", core.json.encode(cmd))
+            -- core.log.warn("respawn runner with cmd: ", core.json.encode(cmd))
+            core.log.warn("respawn runner 3 seconds later with cmd: ", core.json.encode(cmd))
+            core.utils.sleep(3)
+            core.log.warn("respawning new runner...")
             runner = spawn_proc(cmd)
         end
     end)
@@ -1013,11 +1017,6 @@ function _M.exit_worker()
         local num = resty_signal.signum("TERM")
         runner:kill(num)
 
-        -- TODO: fix this correctly.
-        local ok, err = events:post(events_list._source, events_list.runner_exit)
-        if not ok then
-            core.log.error("post event failure with ", events_list._source, ", error: ", err)
-        end
 
         -- give 1s to clean up the mess
         core.os.waitpid(pid, 1)
