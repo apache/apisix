@@ -67,7 +67,6 @@ local function redis_cli(conf)
 end
 
 
-
 function _M.new(conf)
     return redis_cli(conf)
 end

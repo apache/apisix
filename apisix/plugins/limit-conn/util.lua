@@ -60,7 +60,6 @@ function _M.incoming(self, red, key, commit)
 end
 
 
-
 function _M.leaving(self, red, key, req_latency)
     assert(key)
     key = "limit_conn" .. ":" .. key
