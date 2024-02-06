@@ -72,6 +72,64 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                expires = {
+                    type = "integer",
+                    description = "it holds the expiration time of the session",
+                    default = 3600
+                },
+                usebefore = {
+                    type = "integer",
+                    description = "it holds the expiration time based on session usgae (expiration time will be generated when the session is saved or started). ",
+                },
+                cookie = {
+                    type = "object",
+                    properties = {
+                        lifetime = {
+                            type = "integer",
+                            description = "it holds the cookie lifetime in seconds in the future",
+                        },
+                        persistent = {
+                            type = "integer",
+                            description = "Default is false, this means that cookies are not persisted between browser sessions",
+                        },
+                        idletime = {
+                            type = "integer",
+                            description = "it holds the cookie idletime in seconds in the future",
+                        },
+                        discard = {
+                            type = "integer",
+                            description = "it holds the time in seconds how of long you want to keep old cookies alive when using regenerate session strategy",
+                        },
+                        renew = {
+                            type = "integer",
+                            description = "it holds the minimun seconds until the cookie expires, and renews cookie automatically",
+                        },
+                        path = {
+                            type = "string",
+                            description = "it holds the value of the cookie path scope",
+                        },
+                        domain = {
+                            type = "string",
+                            description = "it holds the value of the cookie domain",
+                        },
+                        samesite = {
+                            type = "string",
+                            description = "it holds the value of the cookie SameSite flag",
+                        },
+                        secure = {
+                            type = "string",
+                            description = "it holds the value of the cookie Secure flag, on or off.",
+                        },
+                        httponly = {
+                            type = "string",
+                            description = "it holds the value of the cookie HttpOnly flag, on or off.",
+                        },
+                        maxsize = {
+                            type = "integer",
+                            description = "it is used to configure maximum size of a single cookie",
+                        }
+                    }
+                }
             },
             required = {"secret"},
             additionalProperties = false,
