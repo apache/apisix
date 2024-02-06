@@ -27,6 +27,7 @@ local pairs = pairs
 local type = type
 local ngx = ngx
 local get_method = ngx.req.get_method
+local ngx_worker_id = ngx.worker.id
 local events = require("apisix.events")
 
 local _M = {}
@@ -44,6 +45,80 @@ local function format_dismod_uri(mod_name, uri)
     core.table.insert(tmp, uri)
 
     return core.table.concat(tmp, "")
+end
+
+local function plugins_eq(old, new)
+    local old_set = {}
+    for _, p in ipairs(old) do
+        old_set[p.name] = p
+    end
+
+    local new_set = {}
+    for _, p in ipairs(new) do
+        new_set[p.name] = p
+    end
+
+    return core.table.set_eq(old_set, new_set)
+end
+
+local function sync_local_conf_to_etcd(reset)
+    local local_conf = core.config.local_conf()
+
+    local plugins = {}
+    for _, name in ipairs(local_conf.plugins) do
+        core.table.insert(plugins, {
+            name = name,
+        })
+    end
+
+    for _, name in ipairs(local_conf.stream_plugins) do
+        core.table.insert(plugins, {
+            name = name,
+            stream = true,
+        })
+    end
+
+    if reset then
+        local res, err = core.etcd.get("/plugins")
+        if not res then
+            core.log.error("failed to get current plugins: ", err)
+            return
+        end
+
+        if res.status == 404 then
+            -- nothing need to be reset
+            return
+        end
+
+        if res.status ~= 200 then
+            core.log.error("failed to get current plugins, status: ", res.status)
+            return
+        end
+
+        local stored_plugins = res.body.node.value
+        local revision = res.body.node.modifiedIndex
+        if plugins_eq(stored_plugins, plugins) then
+            core.log.info("plugins not changed, don't need to reset")
+            return
+        end
+
+        core.log.warn("sync local conf to etcd")
+
+        local res, err = core.etcd.atomic_set("/plugins", plugins, nil, revision)
+        if not res then
+            core.log.error("failed to set plugins: ", err)
+        end
+
+        return
+    end
+
+    core.log.warn("sync local conf to etcd")
+
+    -- need to store all plugins name into one key so that it can be updated atomically
+    local res, err = core.etcd.set("/plugins", plugins)
+    if not res then
+        core.log.error("failed to set plugins: ", err)
+    end
 end
 
 -- we do not hardcode the discovery module's control api uri
@@ -202,13 +277,22 @@ local function reload_plugins()
     core.log.info("start to hot reload plugins")
     plugin_mod.load()
 
-    return 200, "done"
+    local local_conf = core.config.local_conf()
+    local deployment_role = core.table.try_read_attr(
+                       local_conf, "deployment", "role")
+    if deployment_role ~= "data_plane" then
+        -- data_plane should not write to etcd
+        if ngx_worker_id() == 0 then
+            sync_local_conf_to_etcd()
+        end
+    end
+
 end
 
 
 function _M.init_worker()
     -- register reload plugin handler
-    events:register(reload_plugins, builtin_v1_routes.RELOAD_EVENT, "PUT")
+    events:register(reload_plugins, builtin_v1_routes.reload_event, "PUT")
 end
 
 return _M

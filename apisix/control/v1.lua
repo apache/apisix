@@ -25,13 +25,14 @@ local collectgarbage = collectgarbage
 local ipairs = ipairs
 local pcall = pcall
 local str_format = string.format
+local ngx = ngx
 local ngx_var = ngx.var
 local events = require("apisix.events")
 
 
 local _M = {}
 
-_M.RELOAD_EVENT = "plugin-reload"
+_M.RELOAD_EVENT = 'control-api-plugin-reload'
 
 function _M.schema()
     local http_plugins, stream_plugins = plugin.get_all({
@@ -486,9 +487,10 @@ return {
     },
     -- /v1/plugins_reload
     {
-        methods = {"POST"},
+        methods = {"PUT"},
         uris = {"/plugins_reload"},
         handler = _M.post_reload_plugins,
     },
     get_health_checkers = _get_health_checkers,
+    reload_event = _M.RELOAD_EVENT,
 }
