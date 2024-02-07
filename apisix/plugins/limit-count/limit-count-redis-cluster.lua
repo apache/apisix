@@ -15,11 +15,10 @@
 -- limitations under the License.
 --
 
-local rediscluster = require("resty.rediscluster")
+local redis_cluster = require("apisix.utils.rediscluster")
 local core = require("apisix.core")
 local setmetatable = setmetatable
 local tostring = tostring
-local ipairs = ipairs
 
 local _M = {}
 
@@ -40,41 +39,8 @@ local script = core.string.compress_script([=[
 ]=])
 
 
-local function new_redis_cluster(conf)
-    local config = {
-        -- can set different name for different redis cluster
-        name = conf.redis_cluster_name,
-        serv_list = {},
-        read_timeout = conf.redis_timeout,
-        auth = conf.redis_password,
-        dict_name = "plugin-limit-count-redis-cluster-slot-lock",
-        connect_opts = {
-            ssl = conf.redis_cluster_ssl,
-            ssl_verify = conf.redis_cluster_ssl_verify,
-        }
-    }
-
-    for i, conf_item in ipairs(conf.redis_cluster_nodes) do
-        local host, port, err = core.utils.parse_addr(conf_item)
-        if err then
-            return nil, "failed to parse address: " .. conf_item
-                        .. " err: " .. err
-        end
-
-        config.serv_list[i] = {ip = host, port = port}
-    end
-
-    local red_cli, err = rediscluster:new(config)
-    if not red_cli then
-        return nil, "failed to new redis cluster: " .. err
-    end
-
-    return red_cli
-end
-
-
 function _M.new(plugin_name, limit, window, conf)
-    local red_cli, err = new_redis_cluster(conf)
+    local red_cli, err = redis_cluster.new(conf, "plugin-limit-count-redis-cluster-slot-lock")
     if not red_cli then
         return nil, err
     end
