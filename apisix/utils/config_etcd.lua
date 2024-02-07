@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local ipairs = ipairs
 
 local _M = {}
 
