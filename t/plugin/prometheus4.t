@@ -257,7 +257,7 @@ plugin_attr:
                 return
             end
 
-            ngx.sleep(1)
+            ngx.sleep(2)
 
             local code, pass, body = t('/apisix/prometheus/metrics',
                 ngx.HTTP_GET,
