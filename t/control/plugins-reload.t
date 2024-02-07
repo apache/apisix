@@ -46,7 +46,7 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin")
 
-        local code, body, res = t.test('/v1/plugins_reload',
+        local code, body, res = t.test('/v1/plugins/reload',
             ngx.HTTP_PUT)
         ngx.say(res)
         ngx.sleep(1)
@@ -116,7 +116,7 @@ stream_plugins:
 
         before_reload = false
         local t = require("lib.test_admin").test
-        local code, _, org_body = t('/v1/plugins_reload',
+        local code, _, org_body = t('/v1/plugins/reload',
                                     ngx.HTTP_PUT)
 
         ngx.status = code
@@ -176,7 +176,7 @@ plugin_attr:
         require("lib.test_admin").set_config_yaml(data)
 
         local t = require("lib.test_admin").test
-        local code, _, org_body = t('/v1/plugins_reload',
+        local code, _, org_body = t('/v1/plugins/reload',
                                     ngx.HTTP_PUT)
 
         ngx.status = code
@@ -201,7 +201,7 @@ plugin_attr:
         require("lib.test_admin").set_config_yaml(data)
 
         local t = require("lib.test_admin").test
-        local code, _, org_body = t('/v1/plugins_reload',
+        local code, _, org_body = t('/v1/plugins/reload',
                                     ngx.HTTP_PUT)
         ngx.say(org_body)
         ngx.sleep(0.1)
@@ -282,7 +282,7 @@ plugin_attr:
         ]]
         require("lib.test_admin").set_config_yaml(data)
 
-        local code, _, org_body = t('/v1/plugins_reload',
+        local code, _, org_body = t('/v1/plugins/reload',
                                     ngx.HTTP_PUT)
 
         ngx.say(org_body)
@@ -340,7 +340,7 @@ plugins:
         ]]
         require("lib.test_admin").set_config_yaml(data)
 
-        local code, _, org_body = t('/v1/plugins_reload',
+        local code, _, org_body = t('/v1/plugins/reload',
                                     ngx.HTTP_PUT)
 
         ngx.say(org_body)
@@ -363,14 +363,14 @@ Instance report fails
 
 === TEST 6: wrong method to reload plugins
 --- request
-GET /v1/plugins_reload
+GET /v1/plugins/reload
 --- error_code: 404
 
 
 
 === TEST 7: wrong method to reload plugins
 --- request
-POST /v1/plugins_reload
+POST /v1/plugins/reload
 --- error_code: 404
 
 
@@ -398,7 +398,7 @@ location /t {
     content_by_lua_block {
         local t = require("lib.test_admin")
 
-        local code, body, res = t.test('/v1/plugins_reload',
+        local code, body, res = t.test('/v1/plugins/reload',
             ngx.HTTP_PUT)
         ngx.say(res)
         ngx.sleep(1)

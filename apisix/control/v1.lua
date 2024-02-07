@@ -485,10 +485,10 @@ return {
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
     },
-    -- /v1/plugins_reload
+    -- /v1/plugins/reload
     {
         methods = {"PUT"},
-        uris = {"/plugins_reload"},
+        uris = {"/plugins/reload"},
         handler = _M.post_reload_plugins,
     },
     get_health_checkers = _get_health_checkers,
