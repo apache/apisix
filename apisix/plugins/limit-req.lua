@@ -14,15 +14,17 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_req_new = require("resty.limit.req").new
-local core = require("apisix.core")
-local plugin_name = "limit-req"
+local limit_req_new                     = require("resty.limit.req").new
+local core                              = require("apisix.core")
+local redis_schema                      = require("apisix.utils.redis-schema")
+local policy_to_additional_properties   = redis_schema.schema
+local plugin_name                       = "limit-req"
 local sleep = core.sleep
 
 local redis_single_new
 local redis_cluster_new
 do
-    local redis_src = "apisix.plugins.limit-req.limit-req-redis-single"
+    local redis_src = "apisix.plugins.limit-req.limit-req-redis"
     redis_single_new = require(redis_src).new
 
     local cluster_src = "apisix.plugins.limit-req.limit-req-redis-cluster"
@@ -34,74 +36,7 @@ local lrucache = core.lrucache.new({
     type = "plugin",
 })
 
-local counter_type_to_additional_properties = {
-    redis = {
-        properties = {
-            redis_host = {
-                type = "string", minLength = 2
-            },
-            redis_port = {
-                type = "integer", minimum = 1, default = 6379,
-            },
-            redis_username = {
-                type = "string", minLength = 1,
-            },
-            redis_password = {
-                type = "string", minLength = 0,
-            },
-            redis_prefix = {
-                type = "string", minLength = 0, default = "limit_req", pattern = "^[0-9a-zA-Z|_]+$"
-            },
-            redis_database = {
-                type = "integer", minimum = 0, default = 0,
-            },
-            redis_timeout = {
-                type = "integer", minimum = 1, default = 1000,
-            },
-            redis_ssl = {
-                type = "boolean", default = false,
-            },
-            redis_ssl_verify = {
-                type = "boolean", default = false,
-            },
-        },
-        required = {"redis_host"},
-    },
-    ["shared-dict"] = {
-        properties = {
-        },
-    },
-    ["redis-cluster"] = {
-        properties = {
-            redis_cluster_nodes = {
-                type = "array",
-                minItems = 2,
-                items = {
-                    type = "string", minLength = 2, maxLength = 100
-                },
-            },
-            redis_password = {
-                type = "string", minLength = 0,
-            },
-            redis_prefix = {
-                type = "string", minLength = 0, default = "limit_req", pattern = "^[0-9a-zA-Z|_]+$"
-            },
-            redis_timeout = {
-                type = "integer", minimum = 1, default = 1000,
-            },
-            redis_cluster_name = {
-                type = "string",
-            },
-            redis_cluster_ssl = {
-                type = "boolean", default = false,
-            },
-            redis_cluster_ssl_verify = {
-                type = "boolean", default = false,
-            },
-        },
-        required = {"redis_cluster_nodes", "redis_cluster_name"},
-    },
-}
+
 local schema = {
     type = "object",
     properties = {
@@ -112,10 +47,10 @@ local schema = {
             enum = {"var", "var_combination"},
             default = "var",
         },
-        counter_type = {
+        policy = {
             type = "string",
-            enum = {"redis", "redis-cluster", "shared-dict"},
-            default = "shared-dict",
+            enum = {"redis", "redis-cluster", "local"},
+            default = "local",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -131,31 +66,21 @@ local schema = {
     required = {"rate", "burst", "key"},
     ["if"] = {
         properties = {
-            counter_type = {
+            policy = {
                 enum = {"redis"},
             },
         },
     },
-    ["then"] = counter_type_to_additional_properties.redis,
+    ["then"] = policy_to_additional_properties.redis,
     ["else"] = {
         ["if"] = {
             properties = {
-                counter_type = {
-                    enum = {"shared-dict"},
+                policy = {
+                    enum = {"redis-cluster"},
                 },
             },
         },
-        ["then"] = counter_type_to_additional_properties["shared-dict"],
-        ["else"] = {
-            ["if"] = {
-                properties = {
-                    counter_type = {
-                        enum = {"redis-cluster"},
-                    },
-                },
-            },
-            ["then"] = counter_type_to_additional_properties["redis-cluster"],
-        }
+        ["then"] = policy_to_additional_properties["redis-cluster"],
     }
 }
 
@@ -179,22 +104,22 @@ end
 
 
 local function create_limit_obj(conf)
-    if conf.counter_type == "shared-dict" then
+    if conf.policy == "local" then
         core.log.info("create new limit-req plugin instance")
-        return limit_req_new(shdict_name, conf.rate, conf.burst)
-    elseif conf.counter_type == "redis" then
+        return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
+    elseif conf.policy == "redis" then
 
         core.log.info("create new limit-req redis plugin instance")
 
         return redis_single_new("plugin-limit-req", conf, conf.rate, conf.burst)
 
-    elseif conf.counter_type == "redis-cluster" then
+    elseif conf.policy == "redis-cluster" then
 
         core.log.info("create new limit-req redis-cluster plugin instance")
 
         return redis_cluster_new("plugin-limit-req", conf, conf.rate, conf.burst)
     else
-        return nil, "counter_type enum not match"
+        return nil, "policy enum not match"
     end
 end
 

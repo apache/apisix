@@ -14,9 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local redis_cluster     = require("apisix.utils.rediscluster")
+local redis             = require("apisix.utils.redis")
 local setmetatable      = setmetatable
 local util              = require("apisix.plugins.limit-req.util")
+
+local setmetatable  = setmetatable
+
 
 local _M = {version = 0.1}
 
@@ -27,24 +30,24 @@ local mt = {
 
 
 function _M.new(plugin_name, conf, rate, burst)
-    local red_cli, err = redis_cluster.new(conf, "plugin-limit-req-redis-cluster-slot-lock")
-    if not red_cli then
-        return nil, err
-    end
     local self = {
         conf = conf,
         plugin_name = plugin_name,
         burst = burst * 1000,
         rate = rate * 1000,
-        red_cli = red_cli,
     }
     return setmetatable(self, mt)
 end
 
 
--- the "commit" argument controls whether should we record the event in shm.
 function _M.incoming(self, key, commit)
-    return util.incoming(self, self.red_cli, key, commit)
+    local conf = self.conf
+    local red, err = redis.new(conf)
+    if not red then
+        return red, err
+    end
+
+    return util.incoming(self, red, key, commit)
 end
 
 

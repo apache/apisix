@@ -45,7 +45,7 @@ __DATA__
                 burst = 0,
                 rejected_code = 503,
                 key = 'remote_addr',
-                counter_type = 'redis',
+                policy = 'redis',
                 redis_host = '127.0.0.1'
             })
             if not ok then
@@ -62,7 +62,7 @@ done
 
 
 
-=== TEST 2: add plugin with redis cluster with verify
+=== TEST 2: add plugin with redis cluster with ssl
 --- config
     location /t {
         content_by_lua_block {
@@ -76,7 +76,7 @@ done
                             "burst": 1,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:7000",
@@ -84,7 +84,7 @@ done
                                 "127.0.0.1:7002"
                             ],
                             "redis_cluster_ssl": true,
-                            "redis_cluster_ssl_verify": true
+                            "redis_cluster_ssl_verify": false
                         }
                     },
                         "upstream": {
@@ -127,7 +127,7 @@ passed
 
 
 
-=== TEST 5: update plugin with redis prefix and no verify
+=== TEST 5: update plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -141,7 +141,7 @@ passed
                             "burst": 0.1,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -194,7 +194,7 @@ passed
                             "burst": 0.1,
                             "rejected_code": 503,
                             "key": "remote_addr",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -281,7 +281,7 @@ passed
                             "burst": 2,
                             "rejected_code": 503,
                             "key": "server_addr",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -326,7 +326,7 @@ passed
                             "rate": 4,
                             "burst": 2,
                             "key": "remote_addr",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -376,7 +376,7 @@ passed
                             "burst": 2,
                             "rejected_code": 403,
                             "key": "consumer_name",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -463,7 +463,7 @@ apikey: auth-jack
                             "burst": 0.1,
                             "rejected_code": 403,
                             "key": "consumer_name",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
@@ -508,7 +508,7 @@ apikey: auth-jack
                             "rate": 2,
                             "burst": 1,
                             "key": "consumer_name",
-                            "counter_type": "redis-cluster",
+                            "policy": "redis-cluster",
                             "redis_cluster_name": "test",
                             "redis_cluster_nodes": [
                                 "127.0.0.1:5000",
