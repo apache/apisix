@@ -54,7 +54,7 @@ qr/{"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 
 
 
-=== TEST 2: wrong type of string
+=== TEST 2: wrong type of key
 --- config
     location /t {
         content_by_lua_block {
@@ -74,13 +74,13 @@ done
 
 
 
-=== TEST 3: wrong type of string
+=== TEST 3: wrong type of secret
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local plugin = require("apisix.plugins.jwe-decrypt")
-            local ok, err = plugin.check_schema({key = "123", secret = "123456"}, core.schema.TYPE_CONSUMER)
+            local ok, err = plugin.check_schema({key = "123", secret = 12345678901234567890123456789012}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -89,7 +89,7 @@ done
         }
     }
 --- response_body
-property "secret" validation failed: string too short, expected at least 32, got 6
+property "secret" validation failed: wrong type: expected string, got number
 done
 
 
