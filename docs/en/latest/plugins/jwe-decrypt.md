@@ -46,7 +46,7 @@ For Consumer:
 
 :::note
 
-After enabling `is_base64_encoded`, your `secret` length may exceed 32 chars. You only need to make sure that the length after Decode is still 32 chars.
+After enabling `is_base64_encoded`, your `secret` length may exceed 32 chars. You only need to make sure that the length after decoding is still 32 chars.
 
 :::
 
