@@ -128,7 +128,6 @@ echo "passed: support multiple ports listen in http and https"
 
 echo "
 apisix:
-  enable_http2: true
   node_listen:
     - ip: 127.0.0.1
       port: 9081
