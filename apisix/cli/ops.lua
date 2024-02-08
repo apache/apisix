@@ -428,7 +428,7 @@ Please modify "admin_key" in conf/config.yaml .
                 local ip = value.ip
                 local port = value.port
                 local enable_ipv6 = false
-                local enable_http2 = value.enable_http2         
+                local enable_http2 = value.enable_http2
 
                 if ip == nil then
                     ip = "0.0.0.0"
