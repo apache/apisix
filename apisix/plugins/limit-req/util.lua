@@ -19,6 +19,7 @@ local abs               = math.abs
 local max               = math.max
 local ngx_now           = ngx.now
 local ngx_null          = ngx.null
+local tonumber          = tonumber
 
 
 local _M = {version = 0.1}
