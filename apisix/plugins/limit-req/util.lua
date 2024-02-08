@@ -16,7 +16,6 @@
 --
 local math              = require "math"
 local abs               = math.abs
-local floor             = math.floor
 local max               = math.max
 local ngx_now           = ngx.now
 local ngx_null          = ngx.null
@@ -28,7 +27,6 @@ local _M = {version = 0.1}
 function _M.incoming(self, red, key, commit)
     local rate = self.rate
     local now = ngx_now() * 1000
-    local conf = self.conf
 
     key = "limit_req" .. ":" .. key
     local excess_key = key .. "excess"
