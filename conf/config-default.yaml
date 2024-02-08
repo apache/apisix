@@ -261,6 +261,7 @@ nginx_config:                     # Config for render the template to generate n
       balancer-ewma-last-touched-at: 10m
       plugin-limit-req-redis-cluster-slot-lock: 1m
       plugin-limit-count-redis-cluster-slot-lock: 1m
+      plugin-limit-conn-redis-cluster-slot-lock: 1m
       tracing_buffer: 10m
       plugin-api-breaker: 10m
       etcd-cluster-health-check: 10m
@@ -493,6 +494,7 @@ plugins:                           # plugin list (sorted by priority)
   #- dubbo-proxy                   # priority: 507
   - grpc-transcode                 # priority: 506
   - grpc-web                       # priority: 505
+  - http-dubbo                     # priority: 504
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495

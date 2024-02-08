@@ -14,15 +14,18 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local limit_conn = require("apisix.plugins.limit-conn.init")
+local core                              = require("apisix.core")
+local limit_conn                        = require("apisix.plugins.limit-conn.init")
+local redis_schema                      = require("apisix.utils.redis-schema")
+local policy_to_additional_properties   = redis_schema.schema
+local plugin_name                       = "limit-conn"
 
 
-local plugin_name = "limit-conn"
+
 local schema = {
     type = "object",
     properties = {
-        conn = {type = "integer", exclusiveMinimum = 0},
+        conn = {type = "integer", exclusiveMinimum = 0},               -- limit.conn max
         burst = {type = "integer",  minimum = 0},
         default_conn_delay = {type = "number", exclusiveMinimum = 0},
         only_use_default_delay = {type = "boolean", default = false},
@@ -30,6 +33,11 @@ local schema = {
         key_type = {type = "string",
             enum = {"var", "var_combination"},
             default = "var",
+        },
+        policy = {
+            type = "string",
+            enum = {"redis", "redis-cluster", "local"},
+            default = "local",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -39,7 +47,25 @@ local schema = {
         },
         allow_degradation = {type = "boolean", default = false}
     },
-    required = {"conn", "burst", "default_conn_delay", "key"}
+    required = {"conn", "burst", "default_conn_delay", "key"},
+    ["if"] = {
+        properties = {
+            policy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = {
+                    enum = {"redis-cluster"},
+                },
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
+    }
 }
 
 local _M = {

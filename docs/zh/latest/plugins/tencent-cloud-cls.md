@@ -42,7 +42,9 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 | secret_key        | string  | 是     |       |              | 云 API 密钥的 key。                                                               |
 | sample_ratio      | number  | 否     | 1     | [0.00001, 1] | 采样的比例。设置为 `1` 时，将对所有请求进行采样。                                                  |
 | include_req_body  | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含请求体。                                                     |
+| include_req_body_expr | array | 否 |       |           | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
 | include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
+| include_resp_body_expr | array | 否 |       |           | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 | global_tag        | object  | 否     |       |              | kv 形式的 JSON 数据，可以写入每一条日志，便于在 CLS 中检索。                                        |
 | log_format        | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
