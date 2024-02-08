@@ -44,6 +44,12 @@ For Consumer:
 | secret        | string  | True                                                 |         |                             | The decryption key. Must be 32 characters. The key could be saved in a secret manager using the [Secret](../terminology/secret.md) resource. |
 | is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                 |
 
+:::note
+
+After enabling `is_base64_encoded`, your `secret` length may exceed 32 chars. You only need to make sure that the length after Decode is still 32 chars.
+
+:::
+
 For Route:
 
 | Name   | Type   | Required | Default       | Description                                                         |
