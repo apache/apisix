@@ -245,6 +245,10 @@
         },
         {
           "type": "doc",
+          "id": "build-apisix-dev-environment-on-mac"
+        },
+        {
+          "type": "doc",
           "id": "support-fips-in-apisix"
         },
         {
