@@ -66,6 +66,11 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
+        local ok, err = core.schema.check(consumer_schema, conf)
+        if not ok then
+            return false, err
+        end
+
         -- restrict the length of secret, we use A256GCM for encryption,
         -- so the length should be 32 chars only
         if conf.is_base64_encoded then
@@ -78,7 +83,7 @@ function _M.check_schema(conf, schema_type)
             end
         end
 
-        return core.schema.check(consumer_schema, conf)
+        return true
     end
     return core.schema.check(schema, conf)
 end
