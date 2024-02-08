@@ -63,7 +63,7 @@ local function on_endpoint_slices_modified(handle, endpoint)
     for _, endpointslice in ipairs(endpointslices or {}) do
         if endpointslice.addresses then
             local addresses = endpointslices.addresses
-            for _, port in ipairs(endpointslice.ports or {}) do
+            for _, port in ipairs(endpoint.ports or {}) do
                 local port_name
                 if port.name then
                     port_name = port.name
