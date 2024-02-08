@@ -42,7 +42,6 @@ function _M.new(plugin_name, conf, rate, burst)
 end
 
 
--- the "commit" argument controls whether should we record the event in shm.
 function _M.incoming(self, key, commit)
     return util.incoming(self, self.red_cli, key, commit)
 end

@@ -25,6 +25,7 @@ local tonumber          = tonumber
 local _M = {version = 0.1}
 
 
+-- the "commit" argument controls whether should we record the event in shm.
 function _M.incoming(self, red, key, commit)
     local rate = self.rate
     local now = ngx_now() * 1000
