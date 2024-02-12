@@ -54,7 +54,7 @@ qr/{"key":"123","secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
 
 
 
-=== TEST 2: wrong type of string
+=== TEST 2: wrong type of key
 --- config
     location /t {
         content_by_lua_block {
@@ -74,13 +74,13 @@ done
 
 
 
-=== TEST 3: wrong type of string
+=== TEST 3: wrong type of secret
 --- config
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
             local plugin = require("apisix.plugins.jwe-decrypt")
-            local ok, err = plugin.check_schema({key = "123", secret = "123456"}, core.schema.TYPE_CONSUMER)
+            local ok, err = plugin.check_schema({key = "123", secret = 12345678901234567890123456789012}, core.schema.TYPE_CONSUMER)
             if not ok then
                 ngx.say(err)
             end
@@ -89,12 +89,52 @@ done
         }
     }
 --- response_body
-property "secret" validation failed: string too short, expected at least 32, got 6
+property "secret" validation failed: wrong type: expected string, got number
 done
 
 
 
-=== TEST 4: add consumer with username and plugins
+=== TEST 4: secret length too long
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwe-decrypt")
+            local ok, err = plugin.check_schema({key = "123", secret = "123456789012345678901234567890123"}, core.schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+the secret length should be 32 chars
+done
+
+
+
+=== TEST 5: secret length too long(base64 encode)
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwe-decrypt")
+            local ok, err = plugin.check_schema({key = "123", secret = "YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXphYmNkZWZn", is_base64_encoded = true}, core.schema.TYPE_CONSUMER)
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+the secret length after base64 decode should be 32 chars
+done
+
+
+
+=== TEST 6: add consumer with username and plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -123,7 +163,7 @@ passed
 
 
 
-=== TEST 5: enable jwe-decrypt plugin using admin api
+=== TEST 7: enable jwe-decrypt plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -158,7 +198,7 @@ passed
 
 
 
-=== TEST 6: create public API route (jwe-decrypt sign)
+=== TEST 8: create public API route (jwe-decrypt sign)
 --- config
     location /t {
         content_by_lua_block {
@@ -184,7 +224,7 @@ passed
 
 
 
-=== TEST 7: sign / verify in argument
+=== TEST 9: sign / verify in argument
 --- config
     location /t {
         content_by_lua_block {
@@ -214,14 +254,14 @@ hello world
 
 
 
-=== TEST 8: test for unsupported method
+=== TEST 10: test for unsupported method
 --- request
 PATCH /apisix/plugin/jwe/encrypt?key=user-key
 --- error_code: 404
 
 
 
-=== TEST 9: verify, missing token
+=== TEST 11: verify, missing token
 --- request
 GET /hello
 --- error_code: 403
@@ -230,7 +270,7 @@ GET /hello
 
 
 
-=== TEST 10: verify: invalid JWE token
+=== TEST 12: verify: invalid JWE token
 --- request
 GET /hello
 --- more_headers
@@ -241,7 +281,7 @@ Authorization: invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ
 
 
 
-=== TEST 11: verify (in header)
+=== TEST 13: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -251,7 +291,7 @@ hello world
 
 
 
-=== TEST 12: verify (in header without Bearer)
+=== TEST 14: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -261,7 +301,7 @@ hello world
 
 
 
-=== TEST 13: verify (header with bearer)
+=== TEST 15: verify (header with bearer)
 --- request
 GET /hello
 --- more_headers
@@ -271,7 +311,7 @@ hello world
 
 
 
-=== TEST 14: verify (invalid bearer token)
+=== TEST 16: verify (invalid bearer token)
 --- request
 GET /hello
 --- more_headers
@@ -282,7 +322,7 @@ Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6Ik
 
 
 
-=== TEST 15: delete a exist consumer
+=== TEST 17: delete a exist consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -332,7 +372,7 @@ code: true body: passed
 
 
 
-=== TEST 16: add consumer with username and plugins with base64 secret
+=== TEST 18: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -362,7 +402,7 @@ passed
 
 
 
-=== TEST 17: enable jwt decrypt plugin with base64 secret
+=== TEST 19: enable jwt decrypt plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -396,7 +436,7 @@ passed
 
 
 
-=== TEST 18: create public API route (jwe-decrypt sign)
+=== TEST 20: create public API route (jwe-decrypt sign)
 --- config
     location /t {
         content_by_lua_block {
@@ -422,7 +462,7 @@ passed
 
 
 
-=== TEST 19: sign / verify in argument
+=== TEST 21: sign / verify in argument
 --- config
     location /t {
         content_by_lua_block {
@@ -454,7 +494,7 @@ hello world
 
 
 
-=== TEST 20: verify (in header)
+=== TEST 22: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -464,7 +504,7 @@ hello world
 
 
 
-=== TEST 21: verify (in header without Bearer)
+=== TEST 23: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -474,7 +514,7 @@ hello world
 
 
 
-=== TEST 22: enable jwt decrypt plugin with test upstream route
+=== TEST 24: enable jwt decrypt plugin with test upstream route
 --- config
     location /t {
         content_by_lua_block {
@@ -508,7 +548,7 @@ passed
 
 
 
-=== TEST 23:  verify in upstream header
+=== TEST 25:  verify in upstream header
 --- request
 GET /headers
 --- more_headers
