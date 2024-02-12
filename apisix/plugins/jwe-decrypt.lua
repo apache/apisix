@@ -47,7 +47,7 @@ local consumer_schema = {
     type = "object",
     properties = {
         key = { type = "string" },
-        secret = { type = "string", minLength = 32 },
+        secret = { type = "string" },
         is_base64_encoded = { type = "boolean" },
     },
     required = { "key", "secret" },
@@ -66,7 +66,24 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
-        return core.schema.check(consumer_schema, conf)
+        local ok, err = core.schema.check(consumer_schema, conf)
+        if not ok then
+            return false, err
+        end
+
+        -- restrict the length of secret, we use A256GCM for encryption,
+        -- so the length should be 32 chars only
+        if conf.is_base64_encoded then
+            if #base64.decode_base64url(conf.secret) ~= 32 then
+                 return false, "the secret length after base64 decode should be 32 chars"
+            end
+        else
+            if #conf.secret ~= 32 then
+                return false, "the secret length should be 32 chars"
+            end
+        end
+
+        return true
     end
     return core.schema.check(schema, conf)
 end
