@@ -44,6 +44,12 @@ Consumer 配置：
 | secret        | string  | True  |       |     | 解密密钥，必须为 32 位。秘钥可以使用 [Secret](../terminology/secret.md) 资源保存在密钥管理服务中 |
 | is_base64_encoded | boolean | False | false |     | 如果密钥是 Base64 编码，则需要配置为 `true`                               |
 
+:::note
+
+注意，在启用 `is_base64_encoded` 后，你的 `secret` 长度可能会超过 32 位，你只需要保证在 Decode 后的长度仍然是 32 位即可。
+
+:::
+
 Route 配置：
 
 | 名称             | 类型      | 必选项   | 默认值           | 描述                                                                         |
