@@ -32,9 +32,9 @@ The `ocsp-stapling` Plugin dynamically sets the behavior of [OCSP stapling](http
 
 ## Enable Plugin
 
-This Plugin is default disabled, modify the config file `./conf/config.yaml` to enable it.
+This Plugin is disabled by default. Modify the config file to enable the plugin:
 
-```yaml
+```yaml title="./conf/config.yaml"
 plugins:
   - ...
   - ocsp-stapling
@@ -58,9 +58,9 @@ The attributes of this plugin are stored in specific field `ocsp_stapling` withi
 
 ## Example usage
 
-You should creates a SSL Resource first, and the certificate of the server certificate issuer should be known. Normarly the fullchain certificate is work fine.
+You should create an SSL Resource first, and the certificate of the server certificate issuer should be known. Normally the fullchain certificate works fine.
 
-The SSL Resource Example like this:
+Create an SSL Resource as such:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
@@ -75,7 +75,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-Once you have configured the SSL Resource as shown above, you can make a request as shown below:
+Next, establish a secure connection to the server, request the SSL/TLS session status, and display the output from the server:
 
 ```shell
 echo -n "Q" | openssl s_client -status -connect localhost:9443 -servername test.com 2>&1 | cat
@@ -118,9 +118,9 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-Modify the config file `./conf/config.yaml` to disable it.
+Modify the config file `./conf/config.yaml` to disable the plugin:
 
-```yaml
+```yaml title="./conf/config.yaml"
 plugins:
   - ...
   # - ocsp-stapling
