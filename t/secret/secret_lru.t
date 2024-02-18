@@ -96,4 +96,3 @@ GET /t
     }
 --- response_body
 nil
- 
