@@ -218,7 +218,8 @@ end
 function _M.body_filter(_, ctx)
     local conf = ctx.body_transformer_conf
     if conf.response then
-        local body = core.response.hold_body_chunk(ctx)
+        --local body = core.response.hold_body_chunk(ctx)
+        local body = tostring(ngx.arg[1])
         if ngx.arg[2] == false and not body then
             return
         end
