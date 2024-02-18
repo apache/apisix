@@ -57,6 +57,9 @@ GET /t
 --- response_body
 done
 --- error_log
+load plugin times: 2
+load plugin times: 2
+start to hot reload plugins
 start to hot reload plugins
 
 
@@ -143,24 +146,162 @@ example-plugin get plugin attr val: 0
 example-plugin get plugin attr val: 0
 example-plugin get plugin attr val: 1
 example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
+example-plugin get plugin attr val: 1
 
 
 
-=== TEST 3: wrong method to reload plugins
+=== TEST 3: reload plugins to change prometheus' export uri
+--- yaml_config
+apisix:
+  node_listen: 1984
+plugins:
+  - public-api
+  - prometheus
+plugin_attr:
+  prometheus:
+    export_uri: /metrics
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require "apisix.core"
+        ngx.sleep(0.1)
+        local t = require("lib.test_admin").test
+
+        -- setup public API route
+        local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/metrics"
+                 }]]
+                )
+        ngx.say(code)
+
+        local code, _, org_body = t('/apisix/metrics',
+                                    ngx.HTTP_GET)
+        ngx.say(code)
+
+        local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+  enable_control: true
+  control:
+    ip: "127.0.0.1"
+    port: 9090
+plugins:
+  - public-api
+  - prometheus
+plugin_attr:
+  prometheus:
+    export_uri: /apisix/metrics
+        ]]
+        require("lib.test_admin").set_config_yaml(data)
+
+        local code, _, org_body = t('/v1/plugins/reload',
+                                    ngx.HTTP_PUT)
+
+        ngx.say(org_body)
+
+        ngx.sleep(0.1)
+        local code, _, org_body = t('/apisix/metrics',
+                                    ngx.HTTP_GET)
+        ngx.say(code)
+    }
+}
+--- request
+GET /t
+--- response_body
+201
+404
+done
+200
+
+
+
+=== TEST 4: reload plugins to disable skywalking
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+  control:
+    ip: "127.0.0.1"
+    port: 9090
+plugins:
+  - skywalking
+plugin_attr:
+  skywalking:
+    service_name: APISIX
+    service_instance_name: "APISIX Instance Name"
+    endpoint_addr: http://127.0.0.1:12801
+    report_interval: 1
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require "apisix.core"
+        ngx.sleep(1.2)
+        local t = require("lib.test_admin").test
+
+        local data = [[
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - prometheus
+        ]]
+        require("lib.test_admin").set_config_yaml(data)
+
+        local code, _, org_body = t('/v1/plugins/reload',
+                                    ngx.HTTP_PUT)
+
+        ngx.say(org_body)
+
+        ngx.sleep(2)
+    }
+}
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+[alert]
+--- grep_error_log eval
+qr/Instance report fails/
+--- grep_error_log_out
+Instance report fails
+
+
+
+=== TEST 5: wrong method to reload plugins
 --- request
 GET /v1/plugins/reload
 --- error_code: 404
 
 
 
-=== TEST 4: wrong method to reload plugins
+=== TEST 6: wrong method to reload plugins
 --- request
 POST /v1/plugins/reload
 --- error_code: 404
 
 
 
-=== TEST 5: reload plugin with data_plane deployment
+=== TEST 7: reload plugin with data_plane deployment
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -194,4 +335,7 @@ GET /t
 --- response_body
 done
 --- error_log
+load plugin times: 2
+load plugin times: 2
+start to hot reload plugins
 start to hot reload plugins
