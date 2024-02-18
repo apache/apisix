@@ -27,9 +27,6 @@ local pairs = pairs
 local type = type
 local ngx = ngx
 local get_method = ngx.req.get_method
-local ngx_worker_id = ngx.worker.id
-local events = require("apisix.events")
-local sync_local_conf_to_etcd = require("apisix.utils.config_etcd").sync_local_conf_to_etcd
 
 local _M = {}
 
@@ -47,7 +44,6 @@ local function format_dismod_uri(mod_name, uri)
 
     return core.table.concat(tmp, "")
 end
-
 
 -- we do not hardcode the discovery module's control api uri
 local function format_dismod_control_api_uris(mod_name, api_route)
@@ -200,27 +196,5 @@ function _M.match(uri)
 end
 
 end -- do
-
-local function reload_plugins()
-    core.log.info("start to hot reload plugins")
-    plugin_mod.load()
-
-    local local_conf = core.config.local_conf()
-    local deployment_role = core.table.try_read_attr(
-                       local_conf, "deployment", "role")
-    if deployment_role ~= "data_plane" then
-        -- data_plane should not write to etcd
-        if ngx_worker_id() == 0 then
-            sync_local_conf_to_etcd()
-        end
-    end
-
-end
-
-
-function _M.init_worker()
-    -- register reload plugin handler
-    events:register(reload_plugins, builtin_v1_routes.reload_event, "PUT")
-end
 
 return _M

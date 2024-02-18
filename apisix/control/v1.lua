@@ -403,13 +403,11 @@ function _M.dump_plugin_metadata()
     return 200, metadata.value
 end
 
-function _M.post_reload_plugins()
-    local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
-    if not success then
-        core.response.exit(503, err)
-    end
+function _M.reload_plugins()
+    core.log.info("start to hot reload plugins")
+    plugin.load()
 
-    core.response.exit(200, "done")
+    return 200, "done"
 end
 
 return {
@@ -489,8 +487,7 @@ return {
     {
         methods = {"PUT"},
         uris = {"/plugins/reload"},
-        handler = _M.post_reload_plugins,
+        handler = _M.reload_plugins,
     },
     get_health_checkers = _get_health_checkers,
-    reload_event = _M.RELOAD_EVENT,
 }

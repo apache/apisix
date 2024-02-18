@@ -155,7 +155,6 @@ function _M.http_init_worker()
     apisix_upstream.init_worker()
     require("apisix.plugins.ext-plugin.init").init_worker()
 
-    control_api_router.init_worker()
     local_conf = core.config.local_conf()
 
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
