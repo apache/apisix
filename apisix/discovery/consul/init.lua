@@ -536,8 +536,10 @@ function _M.connect(premature, consul_server, retry_delay)
                 if nodes then
                     if sort_type == "port_sort" then
                         core.table.sort(nodes, port_sort_nodes_cmp)
+
                     elseif sort_type == "host_sort" then
                         core.table.sort(nodes, host_sort_nodes_cmp)
+
                     elseif sort_type == "combine_sort" then
                         core.table.sort(nodes, combine_sort_nodes_cmp)
                     end
