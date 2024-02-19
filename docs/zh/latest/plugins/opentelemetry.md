@@ -45,8 +45,7 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 | sampler.options.root.name             | string        | 否     | always_off                                      | ["always_on", "always_off", "trace_id_ratio"]                | root 采样策略。 |
 | sampler.options.root.options          | object        | 否     | {fraction = 0}                                  |                                                              | root 采样策略参数。 |
 | sampler.options.root.options.fraction | number        | 否     | 0                                               | [0, 1]                                                       | `trace_id_ratio` root 采样策略的百分比 |
-| additional_attributes                 | array[string] | 否     |                                                 |                                                              | 追加到 trace span 的额外属性（变量名为 `key`，变量值为 `value`）。 |
-| additional_attributes[0]              | string        | 是     |                                                 |                                                              | APISIX 或 NGINX 变量，例如：`http_header` 或者 `route_id`。 |
+| additional_attributes                 | array[string] | 否     |                                                 |                                                              | 追加到 trace span 的额外属性，支持内置 NGINX 或 APISIX 变量，例如：`http_header` 或者 `route_id`。 |
 
 ## 如何设置数据上报
 
