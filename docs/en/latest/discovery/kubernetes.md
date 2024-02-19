@@ -91,7 +91,7 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
-    
+
     # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
     watch_endpoint_slices: false #default false
 ```
@@ -223,7 +223,7 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
-    
+
     # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
     watch_endpoint_slices: false #default false
 ```
