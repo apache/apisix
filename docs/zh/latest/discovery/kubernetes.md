@@ -91,6 +91,9 @@ discovery:
 
     # reserved lua shared memory size, 1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+    
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 如果 Kubernetes 服务发现运行在 Pod 内，你可以使用如下最简配置：
@@ -219,6 +222,9 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+    
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 多集群模式 Kubernetes 服务发现没有为 `service` 和 `client` 域填充默认值，你需要根据集群配置情况自行填充。
@@ -310,7 +316,7 @@ metadata:
  name: apisix-test
 rules:
 - apiGroups: [ "" ]
-  resources: [ endpoints ]
+  resources: [ endpoints,endpointslices ]
   verbs: [ get,list,watch ]
 ---
 

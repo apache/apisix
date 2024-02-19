@@ -91,6 +91,9 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+    
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 If the Kubernetes service discovery runs inside a pod, you can use minimal configuration:
@@ -220,6 +223,9 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+    
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 Multi-Kubernetes service discovery does not fill default values for service and client fields, you need to fill them according to the cluster configuration.
@@ -312,7 +318,7 @@ metadata:
  name: apisix-test
 rules:
 - apiGroups: [ "" ]
-  resources: [ endpoints ]
+  resources: [ endpoints,endpointslices ]
   verbs: [ get,list,watch ]
 ---
 
