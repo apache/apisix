@@ -475,3 +475,13 @@ Dumps the metadata with the specified `plugin_name`:
     "id": "file-logger"
 }
 ```
+
+### PUT /v1/plugins/reload
+
+Introduced in [v3.9.0](https://github.com/apache/apisix/releases/tag/3.9.0)
+
+Triggers a hot reload of the plugins.
+
+```shell
+curl "http://127.0.0.1:9090/v1/plugins/reload" -X PUT
+```
