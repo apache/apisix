@@ -107,17 +107,15 @@ local function create_limit_obj(conf)
     if conf.policy == "local" then
         core.log.info("create new limit-req plugin instance")
         return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
+
     elseif conf.policy == "redis" then
-
         core.log.info("create new limit-req redis plugin instance")
-
         return redis_single_new("plugin-limit-req", conf, conf.rate, conf.burst)
 
     elseif conf.policy == "redis-cluster" then
-
         core.log.info("create new limit-req redis-cluster plugin instance")
-
         return redis_cluster_new("plugin-limit-req", conf, conf.rate, conf.burst)
+
     else
         return nil, "policy enum not match"
     end
