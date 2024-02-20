@@ -74,14 +74,12 @@ The `keepalive` has two optional values:
 - `true`, default and recommend value, use the long pull way to query consul servers
 - `false`, not recommend, it would use the short pull way to query consul servers, then you can set the `fetch_interval` for fetch interval
 
-
 The `sort_type` has four optional values:
 
 - `origin`, not sorting
 - `host_sort`, sort by host
 - `port_sort`, sort by port
 - `combine_sort`, with the precondition that hosts are ordered, ports are also ordered.
-
 
 #### Dump Data
 
