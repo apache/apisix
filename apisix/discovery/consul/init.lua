@@ -542,6 +542,7 @@ function _M.connect(premature, consul_server, retry_delay)
 
                     elseif sort_type == "combine_sort" then
                         core.table.sort(nodes, combine_sort_nodes_cmp)
+
                     end
                 end
                 up_services[service_name] = nodes
