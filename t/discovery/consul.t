@@ -781,3 +781,179 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+
+
+=== TEST 16: register duplicate node
+--- config
+location /consul1 {
+    rewrite  ^/consul1/(.*) /v1/agent/service/$1 break;
+    proxy_pass http://127.0.0.1:9500;
+}
+
+location /consul2 {
+    rewrite  ^/consul2/(.*) /v1/agent/service/$1 break;
+    proxy_pass http://127.0.0.1:9501;
+}
+location /consul3 {
+    rewrite  ^/consul3/(.*) /v1/agent/service/$1 break;
+    proxy_pass http://127.0.0.1:9502;
+}
+--- pipelined_requests eval
+[
+    "PUT /consul1/deregister/service_a1",
+    "PUT /consul1/deregister/service_b1",
+    "PUT /consul1/deregister/service_a2",
+    "PUT /consul1/deregister/service_b2",
+    "PUT /consul1/deregister/service_a3",
+    "PUT /consul1/deregister/service_a4",
+    "PUT /consul2/deregister/service_a1",
+    "PUT /consul2/deregister/service_a2",
+    "PUT /consul3/deregister/service_a1",
+    "PUT /consul3/deregister/service_a2",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a3\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"localhost\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_a4\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"localhost\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul2/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul2/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul3/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul3/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+]
+--- error_code eval
+[200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]
+
+
+
+=== TEST 17: show dump services without duplicates
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:9500"
+    dump:
+      path: "consul.dump"
+      load_on_init: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            ngx.sleep(2)
+
+            local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+        }
+    }
+--- timeout: 3
+--- request
+GET /t
+--- response_body
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+
+
+
+=== TEST 18: show dump services with host_sort
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:9500"
+    sort_type: host_sort
+    dump:
+      path: "consul.dump"
+      load_on_init: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            ngx.sleep(2)
+
+            local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+        }
+    }
+--- timeout: 3
+--- request
+GET /t
+--- response_body
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+
+
+
+=== TEST 19: show dump services with port sort
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:9500"
+    sort_type: port_sort
+    dump:
+      path: "consul.dump"
+      load_on_init: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            ngx.sleep(2)
+
+            local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+        }
+    }
+--- timeout: 3
+--- request
+GET /t
+--- response_body
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+
+
+
+=== TEST 20: show dump services with combine sort
+--- yaml_config
+apisix:
+  node_listen: 1984
+  enable_control: true
+discovery:
+  consul:
+    servers:
+      - "http://127.0.0.1:9500"
+    sort_type: combine_sort
+    dump:
+      path: "consul.dump"
+      load_on_init: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            ngx.sleep(2)
+
+            local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
+                ngx.HTTP_GET)
+            local entity = json.decode(res)
+            ngx.say(json.encode(entity.services))
+        }
+    }
+--- timeout: 3
+--- request
+GET /t
+--- response_body
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
