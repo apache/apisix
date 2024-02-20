@@ -389,7 +389,7 @@ passed
 
 
 
-=== TEST 14: origin not match
+=== TEST 14: origin not match because allow_origins * invalid
 --- request
 GET /hello HTTP/1.1
 --- more_headers
