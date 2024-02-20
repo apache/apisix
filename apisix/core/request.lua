@@ -290,7 +290,8 @@ function _M.get_body(max_size, ctx)
         -- Due to the stream processing feature of HTTP/2 or HTTP/3,
         -- this api could potentially block the entire request. Therefore,
         -- this api is effective only when HTTP/2 or HTTP/3 requests send content-length header.
-        -- For requests with versions lower than HTTP/2, this api can still be used without any problems.
+        -- For requests with versions lower than HTTP/2, this api can still be used without
+        --- any problems.
         return nil
     end
     req_read_body()
