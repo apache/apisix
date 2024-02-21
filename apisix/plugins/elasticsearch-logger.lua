@@ -75,7 +75,23 @@ local schema = {
         ssl_verify = {
             type = "boolean",
             default = true
-        }
+        },
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     encrypt_fields = {"auth.password"},
     oneOf = {
@@ -138,7 +154,10 @@ local function send_to_elasticsearch(conf, entries)
     end
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
-    local headers = {["Content-Type"] = "application/x-ndjson"}
+    local headers = {
+        ["Content-Type"] = "application/x-ndjson;compatible-with=7",
+        ["Accept"] = "application/vnd.elasticsearch+json;compatible-with=7"
+    }
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
@@ -165,6 +184,11 @@ local function send_to_elasticsearch(conf, entries)
     end
 
     return true
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

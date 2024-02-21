@@ -80,7 +80,8 @@
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/workflow"
+            "plugins/workflow",
+            "plugins/ocsp-stapling"
           ]
         },
         {
@@ -242,6 +243,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "build-apisix-dev-environment-on-mac"
         },
         {
           "type": "doc",

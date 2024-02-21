@@ -32,6 +32,7 @@ local CONTENT_ENCODING_BINARY = "binary"
 local DEFAULT_CORS_ALLOW_ORIGIN = "*"
 local DEFAULT_CORS_ALLOW_METHODS = ALLOW_METHOD_POST
 local DEFAULT_CORS_ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent"
+local DEFAULT_CORS_EXPOSE_HEADERS = "grpc-message,grpc-status"
 local DEFAULT_PROXY_CONTENT_TYPE = "application/grpc"
 
 
@@ -39,7 +40,14 @@ local plugin_name = "grpc-web"
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        cors_allow_headers = {
+            description =
+                "multiple header use ',' to split. default: content-type,x-grpc-web,x-user-agent.",
+            type = "string",
+            default = DEFAULT_CORS_ALLOW_HEADERS
+        }
+    }
 }
 
 local grpc_web_content_encoding = {
@@ -125,14 +133,14 @@ function _M.header_filter(conf, ctx)
     local method = core.request.get_method()
     if method == ALLOW_METHOD_OPTIONS then
         core.response.set_header("Access-Control-Allow-Methods", DEFAULT_CORS_ALLOW_METHODS)
-        core.response.set_header("Access-Control-Allow-Headers", DEFAULT_CORS_ALLOW_HEADERS)
+        core.response.set_header("Access-Control-Allow-Headers", conf.cors_allow_headers)
     end
 
     if not ctx.cors_allow_origins then
         core.response.set_header("Access-Control-Allow-Origin", DEFAULT_CORS_ALLOW_ORIGIN)
     end
     core.response.set_header("Content-Type", ctx.grpc_web_mime)
-    core.response.set_header("Access-Control-Expose-Headers", "grpc-message,grpc-status")
+    core.response.set_header("Access-Control-Expose-Headers", DEFAULT_CORS_EXPOSE_HEADERS)
 end
 
 function _M.body_filter(conf, ctx)
