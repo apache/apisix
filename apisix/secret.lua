@@ -58,20 +58,22 @@ local function create_secret_kvs(values)
     local secret_managers = {}
 
     for _, v in ipairs(values) do
-        local path = v.value.id
-        local idx = find(path, "/")
-        if not idx then
-            core.log.error("no secret id")
-            return nil
-        end
+        if v then
+            local path = v.value.id
+            local idx = find(path, "/")
+            if not idx then
+                core.log.error("no secret id")
+                return nil
+            end
 
-        local manager = sub(path, 1, idx - 1)
-        local id = sub(path, idx + 1)
+            local manager = sub(path, 1, idx - 1)
+            local id = sub(path, idx + 1)
 
-        if not secret_managers[manager] then
-            secret_managers[manager] = {}
+            if not secret_managers[manager] then
+                secret_managers[manager] = {}
+            end
+            secret_managers[manager][id] = v.value
         end
-        secret_managers[manager][id] = v.value
     end
 
     return secret_managers
