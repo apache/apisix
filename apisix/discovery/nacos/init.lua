@@ -33,14 +33,12 @@ local str_byte           = string.byte
 local str_find           = core.string.find
 local log                = core.log
 
-local default_weight
-local applications
+local applications ={}
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
 local default_group_name = "DEFAULT_GROUP"
-local access_key
-local secret_key
+local default_nacos_name ="default"
 
 local events
 local events_list
@@ -49,7 +47,7 @@ local events_list
 local _M = {}
 
 local function discovery_nacos_callback(data, event, source, pid)
-    applications = data
+    applications[data.name] = data.data
     log.notice("update local variable application, event is: ", event,
                "source: ", source, "server pid:", pid,
                ", application: ", core.json.encode(applications, true))
@@ -151,14 +149,14 @@ local function get_group_name_param(group_name)
 end
 
 
-local function get_signed_param(group_name, service_name)
+local function get_signed_param(group_name, service_name,nacos)
     local param = ''
-    if access_key ~= '' and secret_key ~= '' then
+    if nacos.access_key ~= '' and nacos.secret_key ~= '' then
         local str_to_sign = ngx.now() * 1000 .. '@@' .. group_name .. '@@' .. service_name
         local args = {
-            ak = access_key,
+            ak = nacos.access_key,
             data = str_to_sign,
-            signature = ngx.encode_base64(ngx.hmac_sha1(secret_key, str_to_sign))
+            signature = ngx.encode_base64(ngx.hmac_sha1(nacos.secret_key, str_to_sign))
         }
         param = '&' .. ngx.encode_args(args)
     end
@@ -166,8 +164,8 @@ local function get_signed_param(group_name, service_name)
 end
 
 
-local function get_base_uri()
-    local host = local_conf.discovery.nacos.host
+local function get_base_uri(nacos)
+    local host = nacos.host
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
     local auth_idx = core.string.rfind_char(url, '@')
@@ -185,8 +183,9 @@ local function get_base_uri()
         url = protocol .. other
     end
 
-    if local_conf.discovery.nacos.prefix then
-        url = url .. local_conf.discovery.nacos.prefix
+    local prefix =nacos.prefix
+    if prefix then
+        url = url ..prefix
     end
 
     if str_byte(url, #url) ~= str_byte('/') then
@@ -208,7 +207,7 @@ local function de_duplication(services, namespace_id, group_name, service_name, 
 end
 
 
-local function iter_and_add_service(services, values)
+local function iter_and_add_service(services, values,nacos)
     if not values then
         return
     end
@@ -225,12 +224,18 @@ local function iter_and_add_service(services, values)
         else
             up = conf
         end
+        local nacos_name_form_args = (up.discovery_args and up.discovery_args.name) or default_nacos_name
+        local nacos_name = nacos.name or default_nacos_name
+        if   nacos_name ~= nacos_name_form_args then
+             goto CONTINUE
+        end
 
         local namespace_id = (up.discovery_args and up.discovery_args.namespace_id)
                              or default_namespace_id
 
         local group_name = (up.discovery_args and up.discovery_args.group_name)
                            or default_group_name
+
 
         local dup = de_duplication(services, namespace_id, group_name,
                 up.service_name, up.scheme)
@@ -251,7 +256,7 @@ local function iter_and_add_service(services, values)
 end
 
 
-local function get_nacos_services()
+local function get_nacos_services(nacos)
     local services = {}
 
     -- here we use lazy load to work around circle dependency
@@ -260,13 +265,13 @@ local function get_nacos_services()
     local get_stream_routes = require('apisix.router').stream_routes
     local get_services = require('apisix.http.service').services
     local values = get_upstreams()
-    iter_and_add_service(services, values)
+    iter_and_add_service(services, values,nacos)
     values = get_routes()
-    iter_and_add_service(services, values)
+    iter_and_add_service(services, values,nacos)
     values = get_services()
-    iter_and_add_service(services, values)
+    iter_and_add_service(services, values,nacos)
     values = get_stream_routes()
-    iter_and_add_service(services, values)
+    iter_and_add_service(services, values,nacos)
     return services
 end
 
@@ -279,25 +284,26 @@ local function is_grpc(scheme)
 end
 
 
-local function fetch_full_registry(premature)
-    if premature then
-        return
+local function fetch_from_naocs(nacos)
+    local nacos_name = default_nacos_name
+    if nacos.name then
+        nacos_name = nacos.name
     end
-
     local up_apps = {}
-    local base_uri, username, password = get_base_uri()
+    local base_uri, username, password = get_base_uri(nacos)
     local token_param, err = get_token_param(base_uri, username, password)
     if err then
         log.error('get_token_param error:', err)
-        if not applications then
-            applications = up_apps
+        if not applications[nacos_name] then
+            applications[nacos_name] = up_apps
         end
         return
     end
 
-    local infos = get_nacos_services()
+    local infos = get_nacos_services(nacos)
+
     if #infos == 0 then
-        applications = up_apps
+        applications[nacos_name] = up_apps
         return
     end
 
@@ -308,10 +314,10 @@ local function fetch_full_registry(premature)
         local scheme = service_info.scheme or ''
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
-        local signature_param = get_signed_param(service_info.group_name, service_info.service_name)
+        local signature_param = get_signed_param(service_info.group_name, service_info.service_name,nacos)
         local query_path = instance_list_path .. service_info.service_name
-                           .. token_param .. namespace_param .. group_name_param
-                           .. signature_param
+                .. token_param .. namespace_param .. group_name_param
+                .. signature_param
         data, err = get_url(base_uri, query_path)
         if err then
             log.error('get_url:', query_path, ' err:', err)
@@ -328,17 +334,17 @@ local function fetch_full_registry(premature)
 
         for _, host in ipairs(data.hosts) do
             local nodes = up_apps[namespace_id]
-                [group_name][service_info.service_name]
+            [group_name][service_info.service_name]
             if not nodes then
                 nodes = {}
                 up_apps[namespace_id]
-                    [group_name][service_info.service_name] = nodes
+                [group_name][service_info.service_name] = nodes
             end
 
             local node = {
                 host = host.ip,
                 port = host.port,
-                weight = host.weight or default_weight,
+                weight = host.weight or nacos.weight,
             }
 
             -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
@@ -352,16 +358,35 @@ local function fetch_full_registry(premature)
         ::CONTINUE::
     end
     local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
-    local old_apps_md5sum = ngx.md5(core.json.encode(applications))
+    local old_apps_md5sum = ngx.md5(core.json.encode(applications[nacos_name]))
     if new_apps_md5sum == old_apps_md5sum then
         return
     end
-    applications = up_apps
+    applications[nacos_name] = up_apps
+    local arg = {
+        name = nacos_name,
+        data = up_apps
+    }
     local ok, err = events:post(events_list._source, events_list.updating,
-                                applications)
+            arg)
     if not ok then
         log.error("post_event failure with ", events_list._source,
-                  ", update application error: ", err)
+                ", update application error: ", err)
+    end
+
+
+end
+
+local function fetch_full_registry(premature)
+    if premature then
+        return
+    end
+    fetch_from_naocs(local_conf.discovery.nacos)
+    local others_nacos = local_conf.discovery.nacos.others
+    if others_nacos and #others_nacos>0 then
+        for _, nacos in ipairs(others_nacos) do
+            fetch_from_naocs(nacos)
+        end
     end
 end
 
@@ -371,12 +396,14 @@ function _M.nodes(service_name, discovery_args)
             discovery_args.namespace_id or default_namespace_id
     local group_name = discovery_args
             and discovery_args.group_name or default_group_name
+    local nacos_name = discovery_args
+            and discovery_args.name or default_nacos_name
 
     local logged = false
     -- maximum waiting time: 5 seconds
     local waiting_time = 5
     local step = 0.1
-    while not applications and waiting_time > 0 do
+    while not applications[nacos_name] and waiting_time > 0 do
         if not logged then
             log.warn('wait init')
             logged = true
@@ -385,12 +412,12 @@ function _M.nodes(service_name, discovery_args)
         waiting_time = waiting_time - step
     end
 
-    if not applications or not applications[namespace_id]
-        or not applications[namespace_id][group_name]
+    if not applications or  not applications[nacos_name] or not  applications[nacos_name][namespace_id]
+        or not applications[nacos_name][namespace_id][group_name]
     then
         return nil
     end
-    return applications[namespace_id][group_name][service_name]
+    return applications[nacos_name][namespace_id][group_name][service_name]
 end
 
 
@@ -405,12 +432,12 @@ function _M.init_worker()
         return
     end
 
-    default_weight = local_conf.discovery.nacos.weight
-    log.info('default_weight:', default_weight)
+    --default_weight = local_conf.discovery.nacos.weight
+    --log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info('fetch_interval:', fetch_interval)
-    access_key = local_conf.discovery.nacos.access_key
-    secret_key = local_conf.discovery.nacos.secret_key
+    --access_key = local_conf.discovery.nacos.access_key
+    --secret_key = local_conf.discovery.nacos.secret_key
     ngx_timer_at(0, fetch_full_registry)
     ngx_timer_every(fetch_interval, fetch_full_registry)
 end
