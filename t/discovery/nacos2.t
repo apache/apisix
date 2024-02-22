@@ -237,7 +237,7 @@ discovery:
                  [[{
                     "uri": "/hello",
                     "upstream": {
-                        "service_name": "`APISIX-NACOS`",
+                        "service_name": "APISIX-NACOS",
                         "discovery_type": "nacos",
                         "scheme": "http",
                         "type": "roundrobin",
