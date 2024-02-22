@@ -380,5 +380,8 @@ function _M.patch()
     end
 end
 
+function _M.lua_tcp_socket()
+    return luasocket_tcp()
+end
 
 return _M

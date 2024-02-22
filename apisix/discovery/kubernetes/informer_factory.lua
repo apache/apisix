@@ -22,6 +22,8 @@ local math = math
 local type = type
 local core = require("apisix.core")
 local http = require("resty.http")
+local patch = require("apisix.patch")
+
 
 local function list_query(informer)
     local arguments = {
@@ -45,15 +47,18 @@ end
 
 
 local function list(httpc, apiserver, informer)
+    local headers = {
+        ["Host"] = apiserver.host .. ":" .. apiserver.port,
+        ["Accept"] = "application/json",
+        ["Connection"] = "keep-alive"
+    }
+    if apiserver.token and apiserver.token ~= "" then
+        headers["Authorization"] = "Bearer " .. apiserver.token
+    end
     local response, err = httpc:request({
         path = informer.path,
         query = list_query(informer),
-        headers = {
-            ["Host"] = apiserver.host .. ":" .. apiserver.port,
-            ["Authorization"] = "Bearer " .. apiserver.token,
-            ["Accept"] = "application/json",
-            ["Connection"] = "keep-alive"
-        }
+        headers = headers
     })
 
     core.log.info("--raw=", informer.path, "?", list_query(informer))
@@ -204,15 +209,18 @@ local function watch(httpc, apiserver, informer)
         local http_seconds = watch_seconds + 120
         httpc:set_timeouts(2000, 3000, http_seconds * 1000)
 
+        local headers = {
+            ["Host"] = apiserver.host .. ":" .. apiserver.port,
+            ["Accept"] = "application/json",
+            ["Connection"] = "keep-alive"
+        }
+        if apiserver.token and apiserver.token ~= "" then
+            headers["Authorization"] = "Bearer " .. apiserver.token
+        end
         local response, err = httpc:request({
             path = informer.path,
             query = watch_query(informer),
-            headers = {
-                ["Host"] = apiserver.host .. ":" .. apiserver.port,
-                ["Authorization"] = "Bearer " .. apiserver.token,
-                ["Accept"] = "application/json",
-                ["Connection"] = "keep-alive"
-            }
+            headers = headers
         })
 
         core.log.info("--raw=", informer.path, "?", watch_query(informer))
@@ -269,12 +277,22 @@ local function list_watch(informer, apiserver)
     informer.fetch_state = "connecting"
     core.log.info("begin to connect ", apiserver.host, ":", apiserver.port)
 
-    ok, message = httpc:connect({
+    local opt = {
         scheme = apiserver.schema,
         host = apiserver.host,
         port = apiserver.port,
-        ssl_verify = false
-    })
+        ssl_verify = apiserver.ssl_verify,
+    }
+    if apiserver.schema == "https" and
+            apiserver.cert and apiserver.cert ~= "" and
+            apiserver.key and apiserver.key ~= "" then
+        opt.ssl_cert_path = apiserver.cert
+        opt.ssl_key_path = apiserver.key
+        opt.ssl_server_name = apiserver.host
+        -- replace tcp socket of http client to support mtls
+        httpc.sock = patch.lua_tcp_socket()
+    end
+    ok, message = httpc:connect(opt)
 
     if not ok then
         informer.fetch_state = "connect failed"

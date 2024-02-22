@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,20 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-. ./ci/common.sh
-
-run_case() {
-    export_or_prefix
-    export PERL5LIB=.:$PERL5LIB
-    export KUBERNETES_APISERVER_ADDR=$(kubectl -n kube-system get pod -l component=kube-apiserver -o=jsonpath="{.items[0].metadata.annotations.kubeadm\.kubernetes\.io/kube-apiserver\.advertise-address\.endpoint}" | awk -F: '{print $1}')
-    prove -Itest-nginx/lib -I./ -r t/kubernetes | tee test-result
-    rerun_flaky_tests test-result
-}
-
-case_opt=$1
-case $case_opt in
-    (run_case)
-        run_case
-        ;;
-esac
+apiVersion: certificates.k8s.io/v1
+kind: CertificateSigningRequest
+metadata:
+  name: k8s-mtls-csr
+spec:
+  groups:
+  - system:authenticated
+  request: ${BASE64_CSR}
+  signerName: kubernetes.io/kube-apiserver-client
+  usages:
+  - digital signature
+  - key encipherment
+  - client auth

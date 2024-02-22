@@ -271,15 +271,33 @@ local function get_apiserver(conf)
         if err then
             return nil, err
         end
+    elseif conf.client.cert_file and conf.client.key_file then
+        apiserver.cert, err = read_env(conf.client.cert_file)
+        if err then
+            return nil, err
+        end
+        apiserver.key, err = read_env(conf.client.key_file)
+        if err then
+            return nil, err
+        end
     else
-        return nil, "one of [client.token,client.token_file] should be set but none"
+        return nil, "one of [client.token,client.token_file,(client.cert_file,client.key_file)] "..
+                "should be set but none"
+    end
+
+    apiserver.ssl_verify = false
+    if conf.client.ssl_verify then
+        apiserver.ssl_verify = conf.client.ssl_verify
     end
 
     -- remove possible extra whitespace
     apiserver.token = apiserver.token:gsub("%s+", "")
 
-    if apiserver.schema == "https" and apiserver.token == "" then
-        return nil, "apiserver.token should set to non-empty string when service.schema is https"
+    if apiserver.schema == "https" then
+        if apiserver.token == "" and (apiserver.cert == "" or apiserver.key == "") then
+            return nil, "apiserver.token or (apiserver.cert and apiserver.key) "..
+                    "should set to non-empty string when service.schema is https"
+        end
     end
 
     return apiserver
