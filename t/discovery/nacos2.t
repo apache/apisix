@@ -237,7 +237,7 @@ discovery:
                  [[{
                     "uri": "/hello",
                     "upstream": {
-                        "service_name": "APISIX-NACOS",
+                        "service_name": "`APISIX-NACOS`",
                         "discovery_type": "nacos",
                         "scheme": "http",
                         "type": "roundrobin",
@@ -308,7 +308,7 @@ discovery:
 
             local body = json_decode(res.body)
             local services = body.services
-            local service = services["public"]["DEFAULT_GROUP"]["APISIX-NACOS"]
+            local service = services["default"]["public"]["DEFAULT_GROUP"]["APISIX-NACOS"]
             local number = table.getn(service)
             ngx.say(number)
         }
