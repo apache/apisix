@@ -105,6 +105,11 @@ local shared_size_schema = {
     default = "1m",
 }
 
+local watch_endpoint_slices_schema = {
+    type = "boolean",
+    default = false,
+}
+
 return {
     anyOf = {
         {
@@ -160,6 +165,7 @@ return {
                 label_selector = label_selector_schema,
                 default_weight = default_weight_schema,
                 shared_size = shared_size_schema,
+                watch_endpoint_slices = watch_endpoint_slices_schema,
             },
         },
         {
@@ -202,6 +208,7 @@ return {
                     label_selector = label_selector_schema,
                     default_weight = default_weight_schema,
                     shared_size = shared_size_schema,
+                    watch_endpoint_slices = watch_endpoint_slices_schema,
                 },
                 required = { "id", "service", "client" }
             },
