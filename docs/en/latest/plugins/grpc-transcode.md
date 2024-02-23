@@ -102,7 +102,7 @@ The output binary file, `proto.pb` will contain both `helloworld.proto` and `imp
 
 We can now use the content of `proto.pb` in the `content` field of the API request.
 
-As the content of the proto is binary, we encode it in `base64` using this shell command:
+As the content of the proto is binary, we encode it in `base64` and configure the content in APISIX:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
@@ -112,23 +112,10 @@ curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 }'
 ```
 
-This script will take in a `.pb` file and the `id` to create, encodes the content of the proto to `base64`, and calls the Admin API with this encoded content.
-
-To run the script:
-
-```bash
-chmod +x ./upload_pb.py
-```
+You should see an `HTTP/1.1 201 Created` response with the following:
 
 ```
-./upload_pb.py proto.pb 1
-```
-
-Response:
-
-```
-# 200
-# {"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"}}
+{"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"}}
 ```
 
 Now, we can enable the `grpc-transcode` Plugin to a specific Route:
