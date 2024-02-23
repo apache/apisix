@@ -224,7 +224,8 @@ local function iter_and_add_service(services, values,nacos)
         else
             up = conf
         end
-        local nacos_name_form_args = (up.discovery_args and up.discovery_args.name) or default_nacos_name
+        local nacos_name_form_args = (up.discovery_args and up.discovery_args.name)
+             or default_nacos_name
         local nacos_name = nacos.name or default_nacos_name
         if   nacos_name ~= nacos_name_form_args then
              goto CONTINUE
@@ -314,7 +315,8 @@ local function fetch_from_naocs(nacos)
         local scheme = service_info.scheme or ''
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
-        local signature_param = get_signed_param(service_info.group_name, service_info.service_name,nacos)
+        local signature_param = get_signed_param(service_info.group_name,
+                service_info.service_name,nacos)
         local query_path = instance_list_path .. service_info.service_name
                 .. token_param .. namespace_param .. group_name_param
                 .. signature_param
@@ -412,7 +414,8 @@ function _M.nodes(service_name, discovery_args)
         waiting_time = waiting_time - step
     end
 
-    if not applications or  not applications[nacos_name] or not  applications[nacos_name][namespace_id]
+    if not applications or  not applications[nacos_name]
+        or not  applications[nacos_name][namespace_id]
         or not applications[nacos_name][namespace_id][group_name]
     then
         return nil
