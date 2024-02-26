@@ -1,4 +1,4 @@
-name: CI
+name: QUIC
 
 on:
   push:
@@ -32,10 +32,9 @@ jobs:
           - lua-resty-worker-events
           - lua-resty-events
         test_dir:
-          - t/plugin/[a-k]*
-          - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
-          - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
+          - t/quic/plugin/[a-k]*
+          - t/quic/plugin/[l-z]*
+          - t/quic/admin
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -75,13 +74,13 @@ jobs:
         id: test_env
         run: |
           test_dir="${{ matrix.test_dir }}"
-          if [[ $test_dir =~ 't/plugin' ]]; then
+          if [[ $test_dir =~ 't/quic/plugin' ]]; then
             echo "type=plugin" >>$GITHUB_OUTPUT
           fi
-          if [[ $test_dir =~ 't/admin ' ]]; then
+          if [[ $test_dir =~ 't/quic/admin' ]]; then
             echo "type=first" >>$GITHUB_OUTPUT
           fi
-          if [[ $test_dir =~ ' t/xrpc' ]]; then
+          if [[ $test_dir =~ ' t/quic/xrpc' ]]; then
             echo "type=last" >>$GITHUB_OUTPUT
           fi
 
@@ -174,6 +173,11 @@ jobs:
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \
           ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Linux Install static-curl
+        shell: bash
+        run: |
+          ./ci/linux_install_static_curl.sh
 
       - name: Linux Script
         env:

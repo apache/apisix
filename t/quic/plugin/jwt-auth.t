@@ -155,6 +155,6 @@ passed
 
 === TEST 5: sign / verify in argument
 --- exec
-curl -k -v -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello?jwt=$(curl -k -v -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/apisix/plugin/jwt/sign?key=user-key) 2>&1 | cat 
+curl -k -v -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello?jwt=$(curl -k -v -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/apisix/plugin/jwt/sign?key=user-key) 2>&1 | cat
 --- response_body_like
 hello world

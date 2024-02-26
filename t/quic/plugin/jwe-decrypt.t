@@ -158,6 +158,6 @@ passed
 
 === TEST 5: verify successfully
 --- exec
-curl -k -v -H "Host: test.com" -H "content-length: 0" -H "Authorization: $(curl -k -v -G -H 'Host: test.com' -H 'content-length: 0' --data-urlencode 'payload=hello' --http3-only --resolve 'test.com:1994:127.0.0.1' https://test.com:1994/apisix/plugin/jwe/encrypt?key=user-key)" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat 
+curl -k -v -H "Host: test.com" -H "content-length: 0" -H "Authorization: $(curl -k -v -G -H 'Host: test.com' -H 'content-length: 0' --data-urlencode 'payload=hello' --http3-only --resolve 'test.com:1994:127.0.0.1' https://test.com:1994/apisix/plugin/jwe/encrypt?key=user-key)" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body_like
 hello world
