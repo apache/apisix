@@ -726,7 +726,8 @@ _EOC_
     $config .= <<_EOC_;
         $ipv6_listen_conf
 
-        listen 1994 ssl http2;
+        listen 1994 ssl;
+        http2 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;

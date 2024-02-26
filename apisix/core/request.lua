@@ -282,6 +282,15 @@ function _M.get_body(max_size, ctx)
         end
     end
 
+    -- check content-length header for http2/http3
+    do
+        local var = ctx and ctx.var or ngx.var
+        local content_length = tonumber(var.http_content_length)
+        if (var.server_protocol == "HTTP/2.0" or var.server_protocol == "HTTP/3.0")
+            and not content_length then
+            return nil, "HTTP2/HTTP3 request without a Content-Length header"
+        end
+    end
     req_read_body()
 
     local req_body = req_get_body_data()
