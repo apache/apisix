@@ -637,6 +637,9 @@ http {
         {% if ssl.enable then %}
         {% for _, item in ipairs(ssl.listen) do %}
         listen {* item.ip *}:{* item.port *} ssl default_server {% if enable_reuseport then %} reuseport {% end %};
+        {% if item.enable_quic then %}
+        listen {* item.ip *}:{* item.port *} quic default_server;
+        {% end %}
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}

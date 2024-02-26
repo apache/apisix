@@ -1,0 +1,191 @@
+name: QUIC
+
+on:
+  push:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+  pull_request:
+    branches: [master, 'release/**']
+    paths-ignore:
+      - 'docs/**'
+      - '**/*.md'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-20.04
+        os_name:
+          - linux_openresty
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
+        test_dir:
+          - t/quic/admin
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 90
+    env:
+      SERVER_NAME: ${{ matrix.os_name }}
+      OPENRESTY_VERSION: default
+
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.17"
+
+      - name: Cache deps
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-deps
+        with:
+          path: deps
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+
+      - name: Extract branch name
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        id: branch_env
+        shell: bash
+        run: |
+          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
+          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
+
+      - name: Extract test type
+        shell: bash
+        id: test_env
+        run: |
+          test_dir="${{ matrix.test_dir }}"
+          if [[ $test_dir =~ 't/quic/plugin' ]]; then
+            echo "type=plugin" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ 't/quic/admin' ]]; then
+            echo "type=first" >>$GITHUB_OUTPUT
+          fi
+          if [[ $test_dir =~ ' t/quic/xrpc' ]]; then
+            echo "type=last" >>$GITHUB_OUTPUT
+          fi
+
+      - name: Free disk space
+        run: |
+          bash ./ci/free_disk_space.sh
+
+      - name: Linux launch common services
+        run: |
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
+          sudo ./ci/init-common-test-service.sh
+
+      - name: Create tarball
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
+
+      - name: Remove source code
+        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
+        run: |
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
+          tar zxvf ${{ steps.branch_env.outputs.fullname }}
+
+      - name: Cache images
+        id: cache-images
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-apisix-docker-images
+        with:
+          path: docker-images-backup
+          key: ${{ runner.os }}-${{ env.cache-name }}-${{ steps.test_env.outputs.type }}-${{ hashFiles(format('./ci/pod/docker-compose.{0}.yml', steps.test_env.outputs.type )) }}
+
+      - if: ${{ steps.cache-images.outputs.cache-hit == 'true' }}
+        name: Load saved docker images
+        run: |
+          if [[ -f docker-images-backup/apisix-images.tar ]]; then
+            [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+            docker load --input docker-images-backup/apisix-images.tar
+            echo "loaded docker images"
+
+            # preserve storage space
+            rm docker-images-backup/apisix-images.tar
+
+            make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+            if [[ ${{ steps.test_env.outputs.type }} != first ]]; then
+              sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+            fi
+          fi
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Linux launch services
+        run: |
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh before
+          [[ ${{ steps.test_env.outputs.type }} == plugin ]] && ./ci/pod/openfunction/build-function-image.sh
+          make ci-env-up project_compose_ci=ci/pod/docker-compose.${{ steps.test_env.outputs.type }}.yml
+          [[ ${{ steps.test_env.outputs.type }} != first ]] && sudo ./ci/init-${{ steps.test_env.outputs.type }}-test-service.sh after
+          echo "Linux launch services, done."
+      - name: Start Dubbo Backend
+        if: matrix.os_name == 'linux_openresty' && (steps.test_env.outputs.type == 'plugin' || steps.test_env.outputs.type == 'last')
+        run: |
+          cur_dir=$(pwd)
+          sudo apt update
+          sudo apt install -y maven
+          cd t/lib/dubbo-backend
+          mvn package
+          cd dubbo-backend-provider/target
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+          cd $cur_dir/t/lib/dubbo-serialization-backend
+          mvn package
+          cd dubbo-serialization-backend-provider/target
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+
+      - name: Build xDS library
+        if: steps.test_env.outputs.type == 'last'
+        run: |
+          cd t/xds-library
+          go build -o libxds.so -buildmode=c-shared main.go export.go
+
+      - name: Build wasm code
+        if: matrix.os_name == 'linux_openresty' && steps.test_env.outputs.type == 'last'
+        run: |
+          export TINYGO_VER=0.20.0
+          wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
+          sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
+          cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - name: Linux Install static-curl
+        shell: bash
+        run: |
+          ./ci/linux_install_static_curl.sh
+
+      - name: Linux Script
+        env:
+          TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+          TEST_EVENTS_MODULE: ${{ matrix.events_module }}
+        run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
+
+      - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}
+        name: Save docker images
+        run: |
+          echo "start backing up, $(date)"
+          bash ./ci/backup-docker-images.sh ${{ steps.test_env.outputs.type }}
+          echo "backup done, $(date)"

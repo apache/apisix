@@ -64,5 +64,5 @@ GET /uri
 Host: foo.com:1984
 --- response_body
 uri: /uri
-host: foo.com:1984
+host: foo.com
 x-real-ip: 127.0.0.1
