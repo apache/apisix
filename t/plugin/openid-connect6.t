@@ -78,7 +78,7 @@ done
                                 "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "realm": "University",
                                 "client_id": "course_management",
-                                "client_secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                 "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
                                 "ssl_verify": false,
                                 "bearer_only" : false,
