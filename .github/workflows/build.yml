@@ -36,6 +36,7 @@ jobs:
           - t/plugin/[l-z]*
           - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
           - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
+          - t/quic
 
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 90
@@ -174,6 +175,12 @@ jobs:
         run: |
           sudo --preserve-env=OPENRESTY_VERSION \
           ./ci/${{ matrix.os_name }}_runner.sh do_install
+
+      - if: ${{ matrix.test_dir == 't/quic' }}
+        name: Linux Install static-curl
+        shell: bash
+        run: |
+          ./ci/linux_install_static_curl.sh
 
       - name: Linux Script
         env:
