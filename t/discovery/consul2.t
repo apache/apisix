@@ -117,7 +117,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: sanity
 --- config
 location /consul1 {
