@@ -65,8 +65,6 @@ ext-plugin:
 
 APISIX 将以子进程的方式管理该 Plugin Runner。
 
-注意：在 Mac 上，APISIX `v2.6` 无法管理该 Plugin Runner。
-
 在开发过程中，我们希望单独运行 Plugin Runner，这样就可以重新启动它，而无需先重新启动 APISIX。
 
 通过指定环境变量 `APISIX_LISTEN_ADDRESS`, 我们可以使 Plugin Runner 监听一个固定的地址。
