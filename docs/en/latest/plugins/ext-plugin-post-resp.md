@@ -33,7 +33,7 @@ The `ext-plugin-post-resp` Plugin is for running specific external Plugins in th
 
 The `ext-plugin-post-resp` plugin will be executed after the request gets a response from the upstream.
 
-This plugin uses [lua-resty-http](https://github.com/api7/lua-resty-http) library under the hood to send requests to the upstream, due to which the[proxy-control](./proxy-control.md), [proxy-mirror](./proxy-mirror.md), and [proxy-cache](./proxy-cache.md) plugin are not available to be used alongside this plugin. Also, [mTLS Between APISIX and Upstream](../mtls.md#mtls-between-apisix-and-upstream) is not yet supported.
+This plugin uses [lua-resty-http](https://github.com/api7/lua-resty-http) library under the hood to send requests to the upstream, due to which the[proxy-control](./proxy-control.md), [proxy-mirror](./proxy-mirror.md), and [proxy-cache](./proxy-cache.md) plugins are not available to be used alongside this plugin. Also, [mTLS Between APISIX and Upstream](../mtls.md#mtls-between-apisix-and-upstream) is not yet supported.
 
 See [External Plugin](../external-plugin.md) to learn more.
 
