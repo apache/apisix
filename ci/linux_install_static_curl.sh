@@ -22,7 +22,7 @@ install_static_curl () {
     CURL_VERSION="8.6.0"
     wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-amd64-${CURL_VERSION}.tar.xz
     tar -xf curl-linux-amd64-${CURL_VERSION}.tar.xz
-    apt remove -y curl
+    sudo apt remove -y curl
     sudo cp curl /usr/bin
     curl -V
 }
