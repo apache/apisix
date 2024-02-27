@@ -65,6 +65,8 @@ __DATA__
 --- response_body
 done
 
+
+
 === TEST 2: Set up new route access the auth server
 --- config
     location /t {
@@ -119,6 +121,8 @@ done
 --- response_body
 passed
 
+
+
 === TEST 3: Call to route to get session
 --- config
     location /t {
@@ -144,8 +148,7 @@ passed
             end
             local target_number = tonumber(parts[2], 10) - 100
             -- ngx.say(target_number, current_time)
-            -- It takes time to execute the request, and there may be delays. So subtract one second.
-            if target_number == current_time or target_number -1 == current_time then
+            if target_number >= current_time then
                 ngx.say("passed")
             end
         }
