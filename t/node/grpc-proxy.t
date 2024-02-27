@@ -219,7 +219,7 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
 --- grep_error_log eval
 qr/grpc header: "(:authority|host): [^"]+"/
 --- grep_error_log_out eval
-qr/grpc header: "(:authority|host): 127.0.0.1:1984"/
+qr/grpc header: "(:authority|host): 127.0.0.1"/
 
 
 
