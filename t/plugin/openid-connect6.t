@@ -50,7 +50,7 @@ __DATA__
                     session = {
                         secret = "6S8IO+Pydgb33LIor8T9ClER0T/sglFAjClFeAF3RsY=",
                         cookie = {
-                            lifetime = 100
+                            lifetime = 86400
                         }
                     }
                 },
@@ -97,7 +97,7 @@ done
                                 "session": {
                                     "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK",
                                     "cookie": {
-                                        "lifetime": 100
+                                        "lifetime": 86400
                                     }
                                 }
                             }
@@ -146,7 +146,7 @@ passed
             for part in string.gmatch(cookie_str, "[^|]+") do
                 table.insert(parts, part)
             end
-            local target_number = tonumber(parts[2], 10) - 100
+            local target_number = tonumber(parts[2], 10) - 86400
             -- ngx.say(target_number, current_time)
             if target_number >= current_time then
                 ngx.say("passed")
