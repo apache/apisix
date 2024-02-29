@@ -227,7 +227,7 @@ local function do_run_watch(premature)
             log.warn("watch canceled by etcd, res: ", inspect(res))
             if res.result.compact_revision then
                 watch_ctx.rev = tonumber(res.result.compact_revision)
-                log.warn("etcd compacted, compact_revision=", watch_ctx.rev)
+                log.error("etcd compacted, compact_revision=", watch_ctx.rev)
                 produce_res(nil, "compacted")
             end
             cancel_watch(http_cli)
@@ -629,7 +629,7 @@ local function sync_data(self)
     if not dir_res then
         if err == "compacted" then
             self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err,
+            log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
             return false
         end
