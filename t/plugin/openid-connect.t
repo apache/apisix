@@ -256,7 +256,7 @@ passed
 --- response_body_like
 uri: /uri
 cookie: .*
-host: 127.0.0.1
+host: 127.0.0.1:1984
 user-agent: .*
 x-access-token: ey.*
 x-id-token: ey.*
@@ -361,7 +361,7 @@ passed
 uri: /uri
 authorization: Bearer ey.*
 cookie: .*
-host: 127.0.0.1
+host: 127.0.0.1:1984
 user-agent: .*
 x-real-ip: 127.0.0.1
 

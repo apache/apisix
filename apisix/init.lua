@@ -576,6 +576,13 @@ end
 
 
 function _M.http_access_phase()
+    if ngx.req.http_version() == 3 then
+        local upstream_host = ngx.var.host
+        if ngx.var.server_port then
+            upstream_host = upstream_host .. ":" .. ngx.var.server_port
+        end
+        ngx.var.upstream_host = upstream_host
+    end
     local ngx_ctx = ngx.ctx
 
     -- always fetch table from the table pool, we don't need a reused api_ctx

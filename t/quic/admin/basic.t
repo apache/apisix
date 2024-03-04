@@ -83,7 +83,7 @@ location /t {
                     },
                     "type": "roundrobin"
                 },
-                "uris": ["/hello", "/world"]
+                "uri": "/hello"
             }]]
         )
         if code >= 300 then
@@ -103,6 +103,6 @@ passed
 
 === TEST 4: Successfully access route with QUIC
 --- exec
-curl -k -v -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
+curl -k -v -H ":authority: test.com" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body eval
 qr/hello world/

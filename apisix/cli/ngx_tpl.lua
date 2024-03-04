@@ -724,7 +724,7 @@ http {
             set $upstream_connection         '';
 
             set $upstream_scheme             'http';
-            set $upstream_host               $host;
+            set $upstream_host               $upstream_host;
             set $upstream_uri                '';
             set $ctx_ref                     '';
 
