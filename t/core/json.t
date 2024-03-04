@@ -132,11 +132,14 @@ qr/\{"b":\{"a":\{"b":"table: 0x[\w]+"\}\}\}/
             local core = require("apisix.core")
             local data = core.json.decode('{"arr":[]}')
             ngx.say(core.json.encode(data))
+            local data = { arr = setmetatable({}, core.json.array_mt)}
+            ngx.say(core.json.encode(data))
             local data = core.json.decode('{"obj":{}}')
             ngx.say(core.json.encode(data))
         }
     }
 --- response_body
+{"arr":[]}
 {"arr":[]}
 {"obj":{}}
 
