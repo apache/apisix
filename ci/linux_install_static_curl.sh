@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-set -ex
+. ./ci/common.sh
 
 # use curl which supports http3 to test.
 install_static_curl
