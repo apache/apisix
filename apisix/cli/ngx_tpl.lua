@@ -639,6 +639,8 @@ http {
         {% if item.enable_quic then %}
         listen {* item.ip *}:{* item.port *} quic default_server {% if enable_reuseport then %} reuseport {% end %};
         listen {* item.ip *}:{* item.port *} ssl default_server;
+        {% else %}
+        listen {* item.ip *}:{* item.port *} ssl default_server {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% end %}
         {% end %}
