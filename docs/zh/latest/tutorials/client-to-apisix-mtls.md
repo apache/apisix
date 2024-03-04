@@ -233,7 +233,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
         ]
     }
 }'
-
+```
 
 2. 如果没提供客户端证书，而 URI 又不在白名单内，会得到 HTTP 400 响应。
 
@@ -296,7 +296,7 @@ curl https://admin.apisix.dev:9443/uuid -v \
 <p><em>Powered by <a href="https://apisix.apache.org/">APISIX</a>.</em></p></body>
 </html>
 * Connection #0 to host admin.apisix.dev left intact
-
+```
 
 3. 虽然没提供客户端证书，但是 URI 在白名单内，请求会被成功处理和响应。
 
