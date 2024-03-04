@@ -44,7 +44,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 24: verify the real_payload's value (key & exp) is not overridden by malicious payload
+=== TEST 1: verify the real_payload's value (key & exp) is not overridden by malicious payload
 --- config
     location /t {
         content_by_lua_block {
