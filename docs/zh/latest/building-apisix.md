@@ -70,6 +70,41 @@ make install
 
 该命令将安装 APISIX 运行时依赖的 Lua 库以及 `apisix-runtime` 和 `apisix` 命令。
 
+:::note
+
+如果你在运行 `make deps` 时收到类似 `Could not find header file for LDAP/PCRE/openssl` 的错误消息，请使用此解决方案。
+
+`luarocks` 支持自定义编译时依赖项（请参考：[配置文件格式](https://github.com/luarocks/luarocks/wiki/Config-file-format)）。你可以使用第三方工具安装缺少的软件包并将其安装目录添加到 `luarocks` 变量表中。此方法适用于 macOS、Ubuntu、CentOS 和其他类似操作系统。
+
+此处仅给出 macOS 的具体解决步骤，其他操作系统的解决方案类似（不建议使用macOS）：
+
+1. 安装 `openldap`：
+
+   ```shell
+   brew install openldap
+   ```
+
+2. 使用以下命令命令找到本地安装目录：
+
+   ```shell
+   brew --prefix openldap
+   ```
+
+3. 将路径添加到项目配置文件中（选择两种方法中的一种即可）：
+   1. 你可以使用 `luarocks config` 命令设置 `LDAP_DIR`：
+
+      ```shell
+      luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1
+      ```
+
+   2. 你还可以更改 `luarocks` 的默认配置文件。打开 `~/.luaorcks/config-5.1.lua` 文件并添加以下内容：
+
+      ```shell
+      variables = { LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1", LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include", }
+      ```
+      `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。`/usr/local/opt/openldap/` 是 brew 在 macOS(Intel) 上安装 openldap 的默认位置。
+:::
+
 如果你不再需要 APISIX，可以执行以下命令卸载：
 
 ```shell
