@@ -39,11 +39,11 @@ A common scenario is to set crawler rules. `User-Agent` is the identity of the c
 | bypass_missing | boolean       | False    | false        |                         | When set to `true`, bypasses the check when the `User-Agent` header is missing. |
 | allowlist      | array[string] | False    |              |                         | List of allowed `User-Agent` headers.                                           |
 | denylist       | array[string] | False    |              |                         | List of denied `User-Agent` headers.                                            |
-| message        | string        | False    | "Not allowed" | [1, 1024] | Message with the reason for denial to be added to the response.                 |
+| message        | string        | False    | "Not allowed" |  | Message with the reason for denial to be added to the response.                 |
 
 :::note
 
-Both `allowlist` and `denylist` can't be used at the same time.
+`allowlist` and `denylist` can't be configured at the same time.
 
 :::
 
@@ -64,45 +64,25 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "ua-restriction": {
              "bypass_missing": true,
-             "allowlist": [
-                 "my-bot1",
-                 "(Baiduspider)/(\\d+)\\.(\\d+)"
-             ],
              "denylist": [
                  "my-bot2",
                  "(Twitterspider)/(\\d+)\\.(\\d+)"
-             ]
+             ],
+             "message": "Do you want to do something bad?"
         }
     }
 }'
 ```
 
-You can also configure the Plugin to respond with a custom rejection message:
-
-```json
-"plugins": {
-    "ua-restriction": {
-        "denylist": [
-            "my-bot2",
-            "(Twitterspider)/(\\d+)\\.(\\d+)"
-        ],
-        "message": "Do you want to do something bad?"
-    }
-}
-```
-
 ## Example usage
 
-After you have configured the Plugin as shown above, you can make a normal request which will get accepted:
+Send a request to the route:
 
 ```shell
 curl http://127.0.0.1:9080/index.html -i
 ```
 
-```shell
-HTTP/1.1 200 OK
-...
-```
+You should receive an `HTTP/1.1 200 OK` response.
 
 Now if the `User-Agent` header is in the `denylist` i.e the bot User-Agent:
 
@@ -110,10 +90,10 @@ Now if the `User-Agent` header is in the `denylist` i.e the bot User-Agent:
 curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
 ```
 
-```shell
-HTTP/1.1 403 Forbidden
-...
-{"message":"Not allowed"}
+You should receive an `HTTP/1.1 403 Forbidden` response with the following message:
+
+```text
+{"message":"Do you want to do something bad?"}
 ```
 
 ## Delete Plugin
