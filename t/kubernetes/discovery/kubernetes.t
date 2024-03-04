@@ -128,6 +128,7 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_endpoint_slices": false,
   "shared_size": "1m",
   "default_weight": 50
 }
@@ -162,6 +163,7 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_endpoint_slices": false,
   "shared_size": "1m",
   "default_weight": 50
 }
@@ -198,6 +200,7 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_endpoint_slices": false,
   "shared_size": "2m",
   "default_weight": 50
 }
@@ -232,6 +235,7 @@ GET /compare
   "client": {
     "token": "${KUBERNETES_CLIENT_TOKEN}"
   },
+  "watch_endpoint_slices": false,
   "shared_size": "1m",
   "default_weight": 33
 }
@@ -283,6 +287,7 @@ GET /compare
     "client": {
       "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
+    "watch_endpoint_slices": false,
     "default_weight": 50,
     "shared_size": "1m"
   },
@@ -296,10 +301,47 @@ GET /compare
     "client": {
       "token": "${KUBERNETES_CLIENT_TOKEN}"
     },
+    "watch_endpoint_slices": false,
     "default_weight": 33,
     "shared_size": "2m"
   }
 ]
+--- more_headers
+Content-type: application/json
+--- response_body
+true
+
+
+
+=== TEST 6: set watch_endpoint_slices true and use kubernetes endpointslices api
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+    default_weight: 33
+    watch_endpoint_slices: true
+--- request
+GET /compare
+{
+  "service": {
+    "schema": "https",
+    "host": "${KUBERNETES_SERVICE_HOST}",
+    "port": "${KUBERNETES_SERVICE_PORT}"
+  },
+  "client": {
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
+  },
+  "watch_endpoint_slices": true,
+  "shared_size": "1m",
+  "default_weight": 33
+}
 --- more_headers
 Content-type: application/json
 --- response_body

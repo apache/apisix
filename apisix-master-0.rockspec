@@ -51,7 +51,7 @@ dependencies = {
     "lua-resty-openidc = 1.7.6-3",
     "luafilesystem = 1.7.0-2",
     "api7-lua-tinyyaml = 0.4.4",
-    "nginx-lua-prometheus = 0.20230607-1",
+    "nginx-lua-prometheus-api7 = 0.20240201-1",
     "jsonschema = 0.9.8",
     "lua-resty-ipmatcher = 0.6.1",
     "lua-resty-kafka = 0.22-0",
@@ -79,7 +79,7 @@ dependencies = {
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
-    "lua-resty-t1k = 1.1.0",
+    "lua-resty-t1k = 1.1.1",
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0"
 }

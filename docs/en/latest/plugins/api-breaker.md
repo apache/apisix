@@ -80,7 +80,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" \
             "127.0.0.1:1980": 1
         }
     },
-    "uri": "/hello",
+    "uri": "/hello"
 }'
 ```
 

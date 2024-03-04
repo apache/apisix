@@ -559,6 +559,7 @@ _EOC_
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
     lua_shared_dict balancer-ewma-last-touched-at 1m;
+    lua_shared_dict plugin-limit-req-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-conn-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer 10m;    # plugin skywalking
@@ -725,7 +726,8 @@ _EOC_
     $config .= <<_EOC_;
         $ipv6_listen_conf
 
-        listen 1994 ssl http2;
+        listen 1994 ssl;
+        http2 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;

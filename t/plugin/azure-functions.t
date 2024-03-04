@@ -189,6 +189,8 @@ X-Extra-Header: MUST
 --- http2
 --- request
 GET /azure
+--- more_headers
+Content-Length: 0
 --- response_body
 faas invoked
 
@@ -208,6 +210,8 @@ server: APISIX/2.10.2
 --- http2
 --- request
 HEAD /azure
+--- more_headers
+Content-Length: 0
 --- response_headers
 Connection:
 Upgrade:
@@ -456,3 +460,51 @@ invocation /api/http/trigger successful
     }
 --- response_body
 invocation /api successful
+
+
+
+=== TEST 14: create route with azure-function plugin enabled
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "azure-functions": {
+                                "function_uri": "http://localhost:8765/httptrigger"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/azure"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: http2 failed to check response body and headers
+--- http2
+--- request
+GET /azure
+--- error_code: 400
+--- error_log
+HTTP2/HTTP3 request without a Content-Length header,
