@@ -636,9 +636,9 @@ http {
         {% end %}
         {% if ssl.enable then %}
         {% for _, item in ipairs(ssl.listen) do %}
-        listen {* item.ip *}:{* item.port *} ssl default_server {% if enable_reuseport then %} reuseport {% end %};
         {% if item.enable_quic then %}
-        listen {* item.ip *}:{* item.port *} quic default_server;
+        listen {* item.ip *}:{* item.port *} quic default_server {% if enable_reuseport then %} reuseport {% end %};
+        listen {* item.ip *}:{* item.port *} ssl default_server;
         {% end %}
         {% end %}
         {% end %}
@@ -722,7 +722,7 @@ http {
             set $upstream_connection         '';
 
             set $upstream_scheme             'http';
-            set $upstream_host               $http_host;
+            set $upstream_host               $host;
             set $upstream_uri                '';
             set $ctx_ref                     '';
 
