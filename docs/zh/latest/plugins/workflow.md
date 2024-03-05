@@ -126,17 +126,17 @@ HTTP/1.1 403 Forbidden
 **示例 2: 如果请求的 uri 是 `/hello/v2/appid`，则执行 `limit-count` 插件，限制请求的数量为 2，时间窗口为 60 秒，如果超过限制数量，则返回给客户端状态码 `429`**
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 200 OK
 ```
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 200 OK
 ```
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 429 Too Many Requests
 ```
 

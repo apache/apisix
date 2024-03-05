@@ -341,7 +341,7 @@ If none of the keys in `keyring` can decrypt the data, the original data is used
 Determine which phase to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
-In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.
+Similarly, if you want to modify or process the response body or headers you can do that in the `body_filter` or in the `header_filter` phases respectively.
 
 The following code snippet shows how to implement any logic relevant to the plugin in the OpenResty log phase.
 

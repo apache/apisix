@@ -126,24 +126,24 @@ HTTP/1.1 403 Forbidden
 **Example 2: if the request uri is `/hello/v2/appid`, the `workflow` plugin would execute the `limit-count` plugin**
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 200 OK
 ```
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 200 OK
 ```
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 429 Too Many Requests
 ```
 
 **Example 3: if the request can not match any `case` in the `rules`, the `workflow` plugin would do nothing**
 
 ```shell
-curl http://127.0.0.1:0080/hello/fake -i
+curl http://127.0.0.1:9080/hello/fake -i
 HTTP/1.1 200 OK
 ```
 

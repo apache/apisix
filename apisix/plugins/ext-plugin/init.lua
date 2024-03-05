@@ -935,12 +935,13 @@ end
 
 local runner
 local function setup_runner(cmd)
-    runner = spawn_proc(cmd)
 
     ngx_timer_at(0, function(premature)
         if premature then
             return
         end
+
+        runner = spawn_proc(cmd)
 
         while not exiting() do
             while true do
@@ -968,7 +969,6 @@ local function setup_runner(cmd)
             end
 
             runner = nil
-
             local ok, err = events:post(events_list._source, events_list.runner_exit)
             if not ok then
                 core.log.error("post event failure with ", events_list._source, ", error: ", err)
