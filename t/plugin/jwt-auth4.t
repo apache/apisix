@@ -48,20 +48,36 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.jwt-auth")
-            local auth_conf = {exp = 7200}
-            local bad_payload = {key="letmein", exp = 120}
+	    local core = require("apisix.core")
+            local t = require("lib.test_admin").test
 
-            local final_payload, err = plugin.get_real_payload("prod", auth_conf, bad_payload)
+	    local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key&payload={"key":"letmein","exp":1234567890}',
+	        ngx.HTTP_GET
+	    )
 
-            if not final_payload then
-                ngx.say(err)
-            end
+	    if code > 200 then
+                ngx.status = code
+		ngx.say(err)
+		return
+	    end
 
-            if final_payload.key == "prod" and final_payload.exp ~= 120 then
-                ngx.say("safe")
-            end
+	    local payload = string.match(sign,"^.+%.(.+)%..+$")
+
+	    if not payload then
+	        ngx.say("sign-failed")
+		return
+	    end
+
+	    local res = core.json.decode(ngx.decode_base64(payload))
+
+	    if res.key == 'user-key' and res.exp ~= 1234567890 then
+	       ngx.say("safe-jws")
+	       return
+	    end 
+
+            ngx.say("fake-jws")
         }
     }
 --- response_body
-safe
+safe-jws
+
