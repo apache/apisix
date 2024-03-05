@@ -103,6 +103,6 @@ passed
 
 === TEST 4: Successfully access route with QUIC
 --- exec
-curl -k -v -H "Host: test.com:1995" -H "content-length: 0" --http3-only --resolve "test.com:1995:127.0.0.1" https://test.com:1995/hello 2>&1 | cat
+curl -k -v -H "Host: test.com:1994" -H "content-length: 0" --http3-only --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello 2>&1 | cat
 --- response_body_like
 hello world
