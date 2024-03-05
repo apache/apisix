@@ -76,7 +76,7 @@ make install
 
 `luarocks` 支持自定义编译时依赖项（请参考：[配置文件格式](https://github.com/luarocks/luarocks/wiki/Config-file-format)）。你可以使用第三方工具安装缺少的软件包并将其安装目录添加到 `luarocks` 变量表中。此方法适用于 macOS、Ubuntu、CentOS 和其他类似操作系统。
 
-此处仅给出 macOS 的具体解决步骤，其他操作系统的解决方案类似（不建议使用macOS）：
+此处仅给出 macOS 的具体解决步骤，其他操作系统的解决方案类似（不建议使用 macOS）：
 
 1. 安装 `openldap`：
 
