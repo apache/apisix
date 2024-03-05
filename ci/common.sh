@@ -75,15 +75,6 @@ install_curl () {
     curl -V
 }
 
-install_static_curl () {
-    CURL_VERSION="8.6.0"
-    wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-amd64-${CURL_VERSION}.tar.xz
-    tar -xf curl-linux-amd64-${CURL_VERSION}.tar.xz
-    sudo apt remove -y curl
-    sudo cp curl /usr/bin
-    curl -V
-}
-
 install_apisix_runtime() {
     export runtime_version=${APISIX_RUNTIME}
     wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
