@@ -576,12 +576,10 @@ end
 
 
 function _M.http_access_phase()
+    -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
+    -- to Host header, so we set upstream_host variable here.
     if ngx.req.http_version() == 3 then
-        local upstream_host = ngx.var.host
-        if ngx.var.server_port then
-            upstream_host = upstream_host .. ":" .. ngx.var.server_port
-        end
-        ngx.var.upstream_host = upstream_host
+        ngx.var.upstream_host = ngx.var.host .. ":" .. ngx.var.server_port
     end
     local ngx_ctx = ngx.ctx
 
