@@ -104,6 +104,7 @@ make install
       ```
 
       `/opt/homebrew/cellar/openldap/` 是 `brew` 在 macOS(Apple Silicon) 上安装 `openldap` 的默认位置。`/usr/local/opt/openldap/` 是 brew 在 macOS(Intel) 上安装 openldap 的默认位置。
+
 :::
 
 如果你不再需要 APISIX，可以执行以下命令卸载：
