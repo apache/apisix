@@ -48,30 +48,30 @@ __DATA__
 --- config
     location /t {
         content_by_lua_block {
-	    local core = require("apisix.core")
+            local core = require("apisix.core")
             local t = require("lib.test_admin").test
 
             -- prepare consumer
-	    local csm_code, csm_body = t('/apisix/admin/consumers',
-	        ngx.HTTP_PUT,
-		[[{
-		    "username": "jack",
-		    "plugins": {
-		        "jwt-auth": {
-			    "key": "user-key",
-			    "secret": "my-secret-key"
+            local csm_code, csm_body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
                         }
                     }
-		}]]
-	    ) 
+                }]]
+            )
 
             if csm_code >= 300 then
                 ngx.status = csm_code
-		ngx.say(csm_body)
-	        return
-	    end
+                ngx.say(csm_body)
+                return
+            end
 
-	    -- prepare sign api
+            -- prepare sign api
             local rot_code, rot_body = t('/apisix/admin/routes/2',
                 ngx.HTTP_PUT,
                 [[{
@@ -82,42 +82,41 @@ __DATA__
                 }]]
             )
 
-	    if rot_code >= 300 then
+            if rot_code >= 300 then
                 ngx.status = rot_code
-		ngx.say(rot_body)
-	        return
-	    end
+                ngx.say(rot_body)
+                return
+            end
 
             -- generate jws
-	    local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key&payload={"key":"letmein","exp":1234567890}',
-	        ngx.HTTP_GET
-	    )
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key&payload={"key":"letmein","exp":1234567890}',
+                ngx.HTTP_GET
+            )
 
-	    if code > 200 then
+            if code > 200 then
                 ngx.status = code
-		ngx.say(err)
-		return
-	    end
+                ngx.say(err)
+                return
+            end
 
-	    -- get payload section from jws
-	    local payload = string.match(sign,"^.+%.(.+)%..+$")
+            -- get payload section from jws
+            local payload = string.match(sign,"^.+%.(.+)%..+$")
 
-	    if not payload then
-	        ngx.say("sign-failed")
-		return
-	    end
+            if not payload then
+                ngx.say("sign-failed")
+                return
+            end
 
-	    -- check payload value
-	    local res = core.json.decode(ngx.decode_base64(payload))
+            -- check payload value
+            local res = core.json.decode(ngx.decode_base64(payload))
 
-	    if res.key == 'user-key' and res.exp ~= 1234567890 then
-	       ngx.say("safe-jws")
-	       return
-	    end 
+            if res.key == 'user-key' and res.exp ~= 1234567890 then
+               ngx.say("safe-jws")
+               return
+            end
 
             ngx.say("fake-jws")
         }
     }
 --- response_body
 safe-jws
-
