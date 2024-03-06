@@ -431,7 +431,7 @@ local function single_mode_init(conf)
 
     local default_weight = conf.default_weight
     local endpoints_informer, err
-    if conf.watch_endpoint_slices_schema then
+    if conf.watch_endpoint_slices then
         endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1",
                                                        "EndpointSlice", "endpointslices", "")
     else
@@ -445,7 +445,7 @@ local function single_mode_init(conf)
     setup_namespace_selector(conf, endpoints_informer)
     setup_label_selector(conf, endpoints_informer)
 
-    if conf.watch_endpoint_slices_schema then
+    if conf.watch_endpoint_slices then
         endpoints_informer.on_added = on_endpoint_slices_modified
         endpoints_informer.on_modified = on_endpoint_slices_modified
     else
@@ -537,7 +537,7 @@ local function multiple_mode_init(confs)
         local default_weight = conf.default_weight
 
         local endpoints_informer, err
-        if conf.watch_endpoint_slices_schema then
+        if conf.watch_endpoint_slices then
             endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1",
                                                            "EndpointSlice", "endpointslices", "")
         else
@@ -551,7 +551,7 @@ local function multiple_mode_init(confs)
         setup_namespace_selector(conf, endpoints_informer)
         setup_label_selector(conf, endpoints_informer)
 
-        if conf.watch_endpoint_slices_schema then
+        if conf.watch_endpoint_slices then
             endpoints_informer.on_added = on_endpoint_slices_modified
             endpoints_informer.on_modified = on_endpoint_slices_modified
         else
