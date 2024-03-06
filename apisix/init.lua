@@ -576,6 +576,11 @@ end
 
 
 function _M.http_access_phase()
+    -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
+    -- to Host header, so we set upstream_host variable here.
+    if ngx.req.http_version() == 3 then
+        ngx.var.upstream_host = ngx.var.host .. ":" .. ngx.var.server_port
+    end
     local ngx_ctx = ngx.ctx
 
     -- always fetch table from the table pool, we don't need a reused api_ctx

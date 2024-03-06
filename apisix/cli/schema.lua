@@ -220,7 +220,10 @@ local config_schema = {
                                     },
                                     enable_http2 = {
                                         type = "boolean",
-                                    }
+                                    },
+                                    enable_quic = {
+                                        type = "boolean",
+                                    },
                                 }
                             }
                         },

@@ -671,6 +671,7 @@ _EOC_
     $a6_ngx_directives
 
     server {
+        listen 1983 quic reuseport;
         listen 1983 ssl;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
@@ -726,6 +727,7 @@ _EOC_
     $config .= <<_EOC_;
         $ipv6_listen_conf
 
+        listen 1994 quic reuseport;
         listen 1994 ssl;
         http2 on;
         ssl_certificate             cert/apisix.crt;
