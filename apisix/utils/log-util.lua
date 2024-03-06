@@ -24,6 +24,8 @@ local ngx_now = ngx.now
 local ngx_header = ngx.header
 local os_date = os.date
 local str_byte = string.byte
+local str_len = string.len
+local str_sub = string.sub
 local math_floor = math.floor
 local ngx_update_time = ngx.update_time
 local req_get_body_data = ngx.req.get_body_data
@@ -317,6 +319,9 @@ function _M.collect_body(conf, ctx)
 
             local response_encoding = ngx_header["Content-Encoding"]
             if not response_encoding then
+                if str_len(final_body) > conf.max_body_len then
+                    final_body = str_sub(final_body, 1, conf.max_body_len)
+                end
                 ctx.resp_body = final_body
                 return
             end
@@ -332,10 +337,15 @@ function _M.collect_body(conf, ctx)
             local decoded_body, err = decoder(final_body)
             if err ~= nil then
                 core.log.warn("try decode compressed data err: ", err)
+                if str_len(final_body) > conf.max_body_len then
+                    final_body = str_sub(final_body, 1, conf.max_body_len)
+                end
                 ctx.resp_body = final_body
                 return
             end
-
+            if str_len(decoded_body) > conf.max_body_len then
+                decoded_body = str_sub(decoded_body, 1, conf.max_body_len)
+            end
             ctx.resp_body = decoded_body
         end
     end

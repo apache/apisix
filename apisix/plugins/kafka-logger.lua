@@ -99,6 +99,7 @@ local schema = {
         },
         key = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        max_body_len = {type = "integer", minimum = 1048, default = 1048000},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
