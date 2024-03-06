@@ -6,7 +6,7 @@ require github.com/OpenFunction/functions-framework-go v0.3.0
 
 require (
 	github.com/SkyAPM/go2sky v1.4.1 // indirect
-	github.com/cloudevents/sdk-go/v2 v2.4.1 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.15.2 // indirect
 	github.com/dapr/dapr v1.6.0 // indirect
 	github.com/dapr/go-sdk v1.3.1 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
@@ -25,7 +25,7 @@ require (
 	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
 	google.golang.org/grpc v1.40.0 // indirect
 	google.golang.org/protobuf v1.28.0 // indirect
-	gopkg.in/yaml.v3 v3.0.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	skywalking.apache.org/repo/goapi v0.0.0-20220401015832-2c9eee9481eb // indirect
 )
