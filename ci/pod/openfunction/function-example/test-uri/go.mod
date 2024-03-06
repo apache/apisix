@@ -6,7 +6,7 @@ require github.com/OpenFunction/functions-framework-go v0.4.0
 
 require (
 	github.com/SkyAPM/go2sky v1.4.1 // indirect
-	github.com/cloudevents/sdk-go/v2 v2.4.1 // indirect
+	github.com/cloudevents/sdk-go/v2 v2.15.2 // indirect
 	github.com/dapr/dapr v1.8.3 // indirect
 	github.com/dapr/go-sdk v1.5.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
