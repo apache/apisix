@@ -97,9 +97,11 @@ apisix:
     listen:                                       # APISIX listening port for HTTPS traffic.
       - port: 9443
         enable_http2: true
+        enable_quic: false                        # Enable QUIC or HTTP/3. If not set default to `false`.
       # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
       #   port: 9445
       #   enable_http2: true
+      #   enable_quic: true
     # ssl_trusted_certificate: /path/to/ca-cert   # Set the path to CA certificates used to verify client
                                                   # certificates in the PEM format.
     ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
