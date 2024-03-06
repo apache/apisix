@@ -51,6 +51,44 @@ __DATA__
 	    local core = require("apisix.core")
             local t = require("lib.test_admin").test
 
+            -- prepare consumer
+	    local csm_code, csm_body = t('/apisix/admin/consumers',
+	        ngx.HTTP_PUT,
+		[[{
+		    "username": "jack",
+		    "plugins": {
+		        "jwt-auth": {
+			    "key": "user-key",
+			    "secret": "my-secret-key"
+                        }
+                    }
+		}]]
+	    ) 
+
+            if csm_code >= 300 then
+                ngx.status = csm_code
+		ngx.say(csm_body)
+	        return
+	    end
+
+	    -- prepare sign api
+            local rot_code, rot_body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "public-api": {}
+                    },
+                    "uri": "/apisix/plugin/jwt/sign"
+                }]]
+            )
+
+	    if rot_code >= 300 then
+                ngx.status = rot_code
+		ngx.say(rot_body)
+	        return
+	    end
+
+            -- generate jws
 	    local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key&payload={"key":"letmein","exp":1234567890}',
 	        ngx.HTTP_GET
 	    )
@@ -61,6 +99,7 @@ __DATA__
 		return
 	    end
 
+	    -- get payload section from jws
 	    local payload = string.match(sign,"^.+%.(.+)%..+$")
 
 	    if not payload then
@@ -68,6 +107,7 @@ __DATA__
 		return
 	    end
 
+	    -- check payload value
 	    local res = core.json.decode(ngx.decode_base64(payload))
 
 	    if res.key == 'user-key' and res.exp ~= 1234567890 then
