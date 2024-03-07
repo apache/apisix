@@ -185,9 +185,15 @@ local function get_full_log(ngx, conf)
         if log_request_body then
             local body = req_get_body_data()
             if body then
+                if str_len(body) > conf.max_body_len then
+                    body = str_sub(body, 1, conf.max_body_len)
+                end
                 log.request.body = body
             else
                 local body_file = ngx.req.get_body_file()
+                if str_len(body_file) > conf.max_body_len then
+                    body_file = str_sub(body_file, 1, conf.max_body_len)
+                end
                 if body_file then
                     log.request.body_file = body_file
                 end
@@ -264,6 +270,9 @@ function _M.get_req_original(ctx, conf)
     core.table.insert(headers, "\r\n")
 
     if conf.include_req_body then
+        if str_len(ctx.var.request_body) > conf.max_body_len then
+            ctx.var.request_body = str_sub(ctx.var.request_body, 1, conf.max_body_len)
+        end
         core.table.insert(headers, ctx.var.request_body)
     end
 
