@@ -57,36 +57,24 @@ Header configurations are executed according to the following priorities:
 The example below enables the `proxy-rewrite` Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "proxy-rewrite-route",
     "methods": ["GET"],
-    "uri": "/test/index.html",
+    "uri": "/headers",
     "plugins": {
-        "proxy-rewrite": {
-            "uri": "/test/home.html",
-            "host": "iresty.com",
-            "headers": {
-               "set": {
-                    "X-Api-Version": "v1",
-                    "X-Api-Engine": "apisix",
-                    "X-Api-useless": ""
-                },
-                "add": {
-                    "X-Request-ID": "112233"
-                },
-                "remove":[
-                    "X-test"
-                ]
-            }
-        }
+      "proxy-rewrite": {
+        "host": "myapisix.demo"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:80": 1
+      }
     }
-}'
+  }'
 ```
 
 ## Example usage
@@ -94,13 +82,21 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 Once you have enabled the Plugin as mentioned below, you can test the Route:
 
 ```shell
-curl -X GET http://127.0.0.1:9080/test/index.html
+curl "http://127.0.0.1:9080/headers"
 ```
 
-Once you send the request, you can check the Upstream `access.log` for its output:
+You should see a response similar to the following:
 
 ```
-127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
+{
+  "headers": {
+    "Accept": "*/*",
+    "Host": "myapisix.demo",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fef198-29da0970383150175bd2d76d",
+    "X-Forwarded-Host": "127.0.0.1"
+  }
+}
 ```
 
 ## Delete Plugin
@@ -108,16 +104,18 @@ Once you send the request, you can check the Upstream `access.log` for its outpu
 To remove the `proxy-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "proxy-rewrite-route",
     "methods": ["GET"],
-    "uri": "/test/index.html",
+    "uri": "/headers",
     "plugins": {},
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "127.0.0.1:80": 1
+      }
     }
-}'
+  }'
 ```

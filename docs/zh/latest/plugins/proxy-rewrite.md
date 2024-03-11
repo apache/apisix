@@ -57,37 +57,24 @@ Header 头的相关配置，遵循如下优先级进行执行：
 你可以通过如下命令在指定路由上启用 `proxy-rewrite` 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "proxy-rewrite-route",
     "methods": ["GET"],
-    "uri": "/test/index.html",
+    "uri": "/headers",
     "plugins": {
-        "proxy-rewrite": {
-            "uri": "/test/home.html",
-            "host": "iresty.com",
-            "headers": {
-                "set": {
-                    "X-Api-Version": "v1",
-                    "X-Api-Engine": "apisix",
-                    "X-Api-useless": ""
-                },
-                "add": {
-                    "X-Request-ID": "112233"
-                },
-                "remove":[
-                    "X-test"
-                ]
-            }
-        }
+      "proxy-rewrite": {
+        "host": "myapisix.demo"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
 ## 测试插件
@@ -95,13 +82,21 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 通过上述命令启用插件后，可以使用如下命令测试插件是否启用成功：
 
 ```shell
-curl -X GET http://127.0.0.1:9080/test/index.html
+curl "http://127.0.0.1:9080/headers"
 ```
 
-发送请求，查看上游服务的 `access.log`，如果输出信息与配置一致则表示 `proxy-rewrite` 插件已经生效。示例如下：
+你应该会看到下面这样的输出
 
 ```
-127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
+{
+  "headers": {
+    "Accept": "*/*",
+    "Host": "myapisix.demo",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fef198-29da0970383150175bd2d76d",
+    "X-Forwarded-Host": "127.0.0.1"
+  }
+}
 ```
 
 ## 删除插件
