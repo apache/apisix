@@ -171,7 +171,13 @@ if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
     exit 1
 fi
 
-count_https_specific_ip_and_enable_http3=`grep -c "listen 127.0.0..:944. quic" conf/nginx.conf || true`
+count_https_specific_ip_and_enable_quic=`grep -c "listen 127.0.0..:944. quic" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_quic -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable quic listen in https"
+    exit 1
+fi
+
+count_https_specific_ip_and_enable_http3=`grep -c "http3 on" conf/nginx.conf || true`
 if [ $count_https_specific_ip_and_enable_http3 -ne 1 ]; then
     echo "failed: failed to support specific IP and enable http3 listen in https"
     exit 1

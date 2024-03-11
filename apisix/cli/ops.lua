@@ -466,7 +466,7 @@ Please modify "admin_key" in conf/config.yaml .
     end
     yaml_conf.apisix.node_listen = node_listen
 
-    local enable_http3_global = false
+    local enable_http3_in_server_context = false
     local ssl_listen = {}
     -- listen in https, support multiple ports, support specific IP
     for _, value in ipairs(yaml_conf.apisix.ssl.listen) do
@@ -498,7 +498,7 @@ Please modify "admin_key" in conf/config.yaml .
             enable_http3 = false
         end
         if enable_http3 == true then
-            enable_http3_global = true
+            enable_http3_in_server_context = true
         end
 
         listen_table_insert(ssl_listen, "https", ip, port,
@@ -507,7 +507,7 @@ Please modify "admin_key" in conf/config.yaml .
 
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http2 = enable_http2_global
-    yaml_conf.apisix.enable_http3_global = enable_http3_global
+    yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
 
     if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then

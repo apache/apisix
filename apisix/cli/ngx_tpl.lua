@@ -631,7 +631,7 @@ http {
         {% if enable_http2 then %}
         http2 on;
         {% end %}
-        {% if enable_http3_global then %}
+        {% if enable_http3_in_server_context then %}
         http3 on;
         {% end %}
         {% for _, item in ipairs(node_listen) do %}
