@@ -671,7 +671,6 @@ _EOC_
     $a6_ngx_directives
 
     server {
-        listen 1983 quic reuseport;
         listen 1983 ssl;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
@@ -730,6 +729,7 @@ _EOC_
         listen 1994 quic reuseport;
         listen 1994 ssl;
         http2 on;
+        http3 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate cert/apisix.crt;
