@@ -78,9 +78,8 @@ By default, the APISIX only listens to `9443` for TLS‑encrypted HTTP/2. You ca
 apisix:
     node_listen:
         - port: 9080
-          enable_http2: false
         - port: 9081
-          enable_http2: true
+    enable_http2: true
 ```
 
 Invoking the route created before：

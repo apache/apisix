@@ -123,9 +123,8 @@ node_listen: [1985,1986]
 apisix:
   node_listen:
     - port: 1985
-      enable_http2: true
     - port: 1986
-      enable_http2: true
+  enable_http2: true
 --- config
   location /t {
     content_by_lua_block {
@@ -138,4 +137,4 @@ apisix:
 --- request
 GET /t
 --- response_body
-node_listen: [{"enable_http2":true,"port":1985},{"enable_http2":true,"port":1986}]
+node_listen: [{"port":1985},{"port":1986}]

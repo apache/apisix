@@ -133,16 +133,14 @@ apisix:
       port: 9081
     - ip: 127.0.0.2
       port: 9082
-      enable_http2: true
   ssl:
-    enable_http2: false
     listen:
       - ip: 127.0.0.3
         port: 9444
       - ip: 127.0.0.4
         port: 9445
-        enable_http2: true
         enable_http3: true
+  enable_http2: true
 " > conf/config.yaml
 
 make init
@@ -153,21 +151,15 @@ if [ $count_http_specific_ip -ne 2 ]; then
     exit 1
 fi
 
-count_http_specific_ip_and_enable_http2=`grep -c "http2 on" conf/nginx.conf || true`
-if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP and enable http2 listen in http"
-    exit 1
-fi
-
 count_https_specific_ip=`grep -c "listen 127.0.0..:944. ssl" conf/nginx.conf || true`
 if [ $count_https_specific_ip -ne 2 ]; then
     echo "failed: failed to support specific IP listen in https"
     exit 1
 fi
 
-count_https_specific_ip_and_enable_http2=`grep -c "http2 on" conf/nginx.conf || true`
-if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP and enable http2 listen in https"
+count_enable_http2=`grep -c "http2 on" conf/nginx.conf || true`
+if [ $count_enable_http2 -ne 1 ]; then
+    echo "failed: failed to enable http2"
     exit 1
 fi
 
