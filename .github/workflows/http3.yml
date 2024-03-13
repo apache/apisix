@@ -76,13 +76,13 @@ jobs:
         id: test_env
         run: |
           test_dir="${{ matrix.test_dir }}"
-          if [[ $test_dir =~ 't/plugin' || $test_dir =~ 't/http3/plugin' ]]; then
+          if [[ $test_dir =~ 't/plugin' ]]; then
             echo "type=plugin" >>$GITHUB_OUTPUT
           fi
           if [[ $test_dir =~ 't/admin' || $test_dir =~ 't/http3/admin' ]]; then
             echo "type=first" >>$GITHUB_OUTPUT
           fi
-          if [[ $test_dir =~ ' t/xrpc' || $test_dir =~ ' t/http3/xrpc' ]]; then
+          if [[ $test_dir =~ ' t/xrpc' ]]; then
             echo "type=last" >>$GITHUB_OUTPUT
           fi
 
