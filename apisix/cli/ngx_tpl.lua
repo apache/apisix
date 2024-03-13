@@ -114,6 +114,27 @@ http {
             stub_status;
         }
     }
+
+    {% else %}
+
+    init_by_lua_block {
+    }
+    init_worker_by_lua_block {
+    }
+    server {
+        listen {* prometheus_server_addr *};
+        access_log off;
+
+        location / {
+            return 404;
+        }
+
+        location = /apisix/nginx_status {
+            allow 127.0.0.0/24;
+            deny all;
+            stub_status;
+        }
+    }
     {% end %}
 }
 {% end %}

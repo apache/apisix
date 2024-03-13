@@ -76,6 +76,13 @@ local function slice_batch(batch, n)
     return slice
 end
 
+local function is_prometheus_enabled()
+    local local_conf = core.config.local_conf()
+    return local_conf.apisix and local_conf.apisix.plugins and
+           local_conf.apisix.plugins.prometheus and
+           local_conf.apisix.plugins.prometheus.enable == true
+end
+
 
 function execute_func(premature, self, batch)
     if premature then
@@ -155,6 +162,8 @@ function batch_processor:new(func, config)
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
+    local prometheus_enabled = is_prometheus_enabled()
+
     local processor = {
         func = func,
         buffer_duration = config.buffer_duration,
@@ -170,6 +179,7 @@ function batch_processor:new(func, config)
         last_entry_t = 0,
         route_id = config.route_id,
         server_addr = config.server_addr,
+        prometheus_enabled = prometheus_enabled,
     }
 
     return setmetatable(processor, batch_processor_mt)
@@ -177,6 +187,13 @@ end
 
 
 function batch_processor:push(entry)
+    -- Check if Prometheus plugin is enabled
+    if not self.prometheus_enabled then
+        -- Prometheus plugin is not enabled, skip data collection and metric setting
+        core.log.notice("Prometheus plugin is not enabled, skipping data collection and metric setting")
+        return
+    end
+
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
         local batch = {entries = {entry}, retry_count = 0}

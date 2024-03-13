@@ -23,8 +23,22 @@ local pcall = pcall
 local _M = {}
 local hubs = {}
 
+-- check if prometheus plugin is enabled
+local function is_prometheus_enabled()
+    local local_conf = core.config.local_conf()
+    return local_conf.apisix and local_conf.apisix.plugins and
+           local_conf.apisix.plugins.prometheus and
+           local_conf.apisix.plugins.prometheus.enable == true
+end
+
 
 function _M.store(prometheus, name)
+    -- check if prometheus plugin is enabled
+    if not is_prometheus_enabled() then
+        core.log.notice("Prometheus plugin is not enabled, skipping metric store for protocol ", name)
+        return
+    end
+
     local ok, m = pcall(require, "apisix.stream.xrpc.protocols." .. name .. ".metrics")
     if not ok then
         core.log.notice("no metric for protocol ", name)
