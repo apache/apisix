@@ -80,7 +80,6 @@
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/workflow",
             "plugins/ocsp-stapling"
           ]
         },
@@ -149,7 +148,8 @@
             "plugins/traffic-split",
             "plugins/request-id",
             "plugins/proxy-control",
-            "plugins/client-control"
+            "plugins/client-control",
+            "plugins/workflow"
           ]
         },
         {

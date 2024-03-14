@@ -480,7 +480,6 @@ local function collect(ctx, stream_only)
 
     -- update upstream_status metrics
     local stats = control.get_health_checkers()
-    metrics.upstream_status:reset()
     for _, stat in ipairs(stats) do
         for _, node in ipairs(stat.nodes) do
             metrics.upstream_status:set(

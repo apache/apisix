@@ -312,6 +312,9 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-conn
 	$(ENV_INSTALL) apisix/plugins/limit-conn/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-conn/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-req
+	$(ENV_INSTALL) apisix/plugins/limit-req/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-req/
+
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/
 

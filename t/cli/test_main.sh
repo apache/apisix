@@ -142,6 +142,7 @@ apisix:
       - ip: 127.0.0.4
         port: 9445
         enable_http2: true
+        enable_http3: true
 " > conf/config.yaml
 
 make init
@@ -152,7 +153,7 @@ if [ $count_http_specific_ip -ne 2 ]; then
     exit 1
 fi
 
-count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server http2" conf/nginx.conf || true`
+count_http_specific_ip_and_enable_http2=`grep -c "http2 on" conf/nginx.conf || true`
 if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
     echo "failed: failed to support specific IP and enable http2 listen in http"
     exit 1
@@ -164,9 +165,21 @@ if [ $count_https_specific_ip -ne 2 ]; then
     exit 1
 fi
 
-count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
+count_https_specific_ip_and_enable_http2=`grep -c "http2 on" conf/nginx.conf || true`
 if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
     echo "failed: failed to support specific IP and enable http2 listen in https"
+    exit 1
+fi
+
+count_https_specific_ip_and_enable_quic=`grep -c "listen 127.0.0..:944. quic" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_quic -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable quic listen in https"
+    exit 1
+fi
+
+count_https_specific_ip_and_enable_http3=`grep -c "http3 on" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_http3 -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable http3 listen in https"
     exit 1
 fi
 

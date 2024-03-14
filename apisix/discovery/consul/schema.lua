@@ -44,6 +44,11 @@ return {
                 wait = 60,
             }
         },
+        sort_type = {
+            type = "string",
+            enum = {"origin", "host_sort", "port_sort", "combine_sort"},
+            default = "origin",
+        },
         skip_services = {
             type = "array",
             minItems = 1,
