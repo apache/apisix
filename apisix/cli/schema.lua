@@ -200,7 +200,8 @@ local config_schema = {
                     type = "integer",
                 },
                 enable_http2 = {
-                    type = "boolean"
+                    type = "boolean",
+                    default = true
                 },
                 ssl = {
                     type = "object",
