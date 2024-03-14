@@ -75,6 +75,13 @@ title: Changelog
 - [0.7.0](#070)
 - [0.6.0](#060)
 
+## Next Release Version
+
+### Breaking Changes
+
+- Change the configuration of HTTP/2. The original way is no longer supported: [#11032](https://github.com/apache/apisix/pull/11032)
+
+
 ## 3.8.0
 
 ### Core
