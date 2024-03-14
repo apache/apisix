@@ -451,7 +451,7 @@ Please modify "admin_key" in conf/config.yaml .
 
                 if enable_http2 ~= nil then
                     util.die("ERROR: enable_http2 is deprecated,"
-                            .. " you should apisix.enable_http2.", "\n")
+                            .. " you should use apisix.enable_http2.", "\n")
                 end
 
                 listen_table_insert(node_listen, "http", ip, port,
