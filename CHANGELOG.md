@@ -81,7 +81,6 @@ title: Changelog
 
 - Change the configuration of HTTP/2. The original way is no longer supported: [#11032](https://github.com/apache/apisix/pull/11032)
 
-
 ## 3.8.0
 
 ### Core
