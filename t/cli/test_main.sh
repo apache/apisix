@@ -177,6 +177,46 @@ fi
 
 echo "passed: support specific IP listen in http and https"
 
+# check deprecated enable_http2 in node_listen
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+      enable_http2: true
+" > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'port level enable_http2 in node_listen is deprecated'; then
+    echo "failed: failed to detect deprecated enable_http2 in node_listen"
+    exit 1
+fi
+
+echo "passed: check deprecated enable_http2 in node_listen"
+
+
+# check deprecated enable_http2 in ssl.listen
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+  ssl:
+    enable: true
+    listen:
+      - ip: 127.0.0.1
+        port: 9444
+        enable_http2: true
+" > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'port level enable_http2 in ssl.listen is deprecated'; then
+    echo "failed: failed to detect deprecated enable_http2 in ssl.listen"
+    exit 1
+fi
+
+echo "passed: check deprecated enable_http2 in node_listen"
+
 # check default env
 echo "
 nginx_config:

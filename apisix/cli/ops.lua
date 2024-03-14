@@ -450,8 +450,9 @@ Please modify "admin_key" in conf/config.yaml .
                 end
 
                 if enable_http2 ~= nil then
-                    util.die("ERROR: enable_http2 is deprecated,"
-                            .. " you should use apisix.enable_http2.", "\n")
+                    util.die("ERROR: port level enable_http2 in node_listen is deprecated"
+                            .. "from 3.9 version, and you should use enable_http2 in "
+                            .. "apisix level.", "\n")
                 end
 
                 listen_table_insert(node_listen, "http", ip, port,
@@ -483,7 +484,9 @@ Please modify "admin_key" in conf/config.yaml .
         end
 
         if enable_http2 ~= nil then
-            util.die("ERROR: enable_http2 is deprecated, you should use apisix.enable_http2.", "\n")
+            util.die("ERROR: port level enable_http2 in ssl.listen is deprecated"
+                      .. "from 3.9 version, and you should use enable_http2 in "
+                      .. "apisix level.", "\n")
         end
 
         if enable_http3 == nil then
