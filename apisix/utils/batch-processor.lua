@@ -181,7 +181,6 @@ end
 
 
 function batch_processor:push(entry)
-
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
         local batch = {entries = {entry}, retry_count = 0}
