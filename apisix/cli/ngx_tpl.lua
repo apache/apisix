@@ -77,8 +77,6 @@ http {
                       .. [=[$prefix/deps/lib/lua/5.1/?.so;;]=]
                       .. [=[{*lua_cpath*};";
 
-    {% if enabled_stream_plugins["prometheus"] then %}
-
     init_by_lua_block {
         require "resty.core"
         local process = require("ngx.process")
@@ -87,6 +85,8 @@ http {
             ngx.log(ngx.ERR, "failed to enable privileged_agent: ", err)
         end
     }
+
+    {% if enabled_stream_plugins["prometheus"] then %}
 
     init_worker_by_lua_block {
         require("apisix.plugins.prometheus.exporter").http_init(true)
@@ -117,10 +117,9 @@ http {
 
     {% else %}
 
-    init_by_lua_block {
-    }
     init_worker_by_lua_block {
     }
+
     server {
         listen {* prometheus_server_addr *};
         access_log off;
@@ -563,6 +562,22 @@ http {
                 local prometheus = require("apisix.plugins.prometheus.exporter")
                 prometheus.export_metrics()
             }
+        }
+
+        location = /apisix/nginx_status {
+            allow 127.0.0.0/24;
+            deny all;
+            stub_status;
+        }
+    }
+
+    {% else %}
+    server {
+        listen {* prometheus_server_addr *};
+        access_log off;
+
+        location / {
+            return 404;
         }
 
         location = /apisix/nginx_status {
