@@ -78,7 +78,7 @@ local function create_router(ssl_items)
 
     core.log.info("route items: ", core.json.delay_encode(route_items, true))
     -- for testing
-    if #route_items > 1 then
+    if idx > 1 then
         core.log.info("we have more than 1 ssl certs now")
     end
     local router, err = router_new(route_items)
