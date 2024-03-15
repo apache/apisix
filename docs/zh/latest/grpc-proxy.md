@@ -78,9 +78,8 @@ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  \
 apisix:
     node_listen:
         - port: 9080
-          enable_http2: false
         - port: 9081
-          enable_http2: true
+    enable_http2: true
 ```
 
 访问上面配置的 Route：
