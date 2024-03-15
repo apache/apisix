@@ -181,12 +181,6 @@ end
 
 
 function batch_processor:push(entry)
-    -- Check if Prometheus plugin is enabled
-    if not self.prometheus_enabled then
-        -- Prometheus plugin is not enabled, skip data collection and metric setting
-        core.log.notice("Prometheus plugin is not enabled, skipping data collection and metric setting")
-        return
-    end
 
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
@@ -197,7 +191,8 @@ function batch_processor:push(entry)
 
     if not self.prometheus_enabled then
         -- Prometheus plugin is not enabled, skip data collection and metric setting
-        core.log.notice("Prometheus plugin is not enabled, skipping data collection and metric setting")
+        core.log.notice("Prometheus plugin is not enabled,"
+                        .. "skipping data collection and metric setting")
     elseif prometheus and prometheus.get_prometheus() and not batch_metrics and self.name
        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",

@@ -27,7 +27,8 @@ local hubs = {}
 function _M.store(prometheus, name)
     -- check if prometheus plugin is enabled
     if not utils.is_plugin_enabled("prometheus") then
-        core.log.notice("Prometheus plugin is not enabled, skipping metric store for protocol ", name)
+        core.log.notice("Prometheus plugin is not enabled, " ..
+                "skipping metric store for protocol " .. name)
         return
     end
 
