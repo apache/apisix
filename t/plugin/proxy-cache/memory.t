@@ -506,7 +506,7 @@ GET /hello
 --- response_body chop
 hello world!
 --- response_headers
-Apisix-Cache-Status: MISS
+Apisix-Cache-Status: EXPIRED
 
 
 
