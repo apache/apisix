@@ -18,23 +18,15 @@ local require = require
 local core = require("apisix.core")
 local pairs = pairs
 local pcall = pcall
-
+local utils = require("apisix.core.utils")
 
 local _M = {}
 local hubs = {}
 
--- check if prometheus plugin is enabled
-local function is_prometheus_enabled()
-    local local_conf = core.config.local_conf()
-    return local_conf.apisix and local_conf.apisix.plugins and
-           local_conf.apisix.plugins.prometheus and
-           local_conf.apisix.plugins.prometheus.enable == true
-end
-
 
 function _M.store(prometheus, name)
     -- check if prometheus plugin is enabled
-    if not is_prometheus_enabled() then
+    if not utils.is_plugin_enabled("prometheus") then
         core.log.notice("Prometheus plugin is not enabled, skipping metric store for protocol ", name)
         return
     end

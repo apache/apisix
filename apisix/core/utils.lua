@@ -377,5 +377,17 @@ end
 -- Resolve {$1, $2, ...} in the given string
 _M.resolve_var_with_captures = resolve_var_with_captures
 
+-- check if plugin is enabled
+function _M.is_plugin_enabled(plugin_name)
+    local local_conf = config_local.local_conf()
+    local plugins = local_conf.plugins or {}
+    for _, plugin in ipairs(plugins) do
+        if plugin == plugin_name then
+            return true
+        end
+    end
+    return false
+end
+
 
 return _M
