@@ -108,6 +108,6 @@ curl -k -vvv -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "
 
 ## 已知问题
 
-- 开启HTTP/3时，Tongsuo 相关测试用例会失败，因为 Tongsuo 不支持QUIC TLS。
+- 开启 HTTP/3 时，Tongsuo 相关测试用例会失败，因为 Tongsuo 不支持 QUIC TLS。
 - 对于 HTTP/2 或 HTTP/3 请求，无论您使用哪种 HTTP 方法，请求都应发送 `Content-Length` 头部。
 - APISIX-3.9 基于 NGINX-1.25.3，存在 HTTP/3 漏洞（CVE-2024-24989、CVE-2024-24990）。
