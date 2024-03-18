@@ -43,6 +43,7 @@ local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
+local ipairs         = ipairs
 
 local hostname
 local dns_resolvers
