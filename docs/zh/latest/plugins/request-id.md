@@ -45,6 +45,8 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 | algorithm           | string  | 否 | "uuid"         | ["uuid", "nanoid", "range_id"] | 指定的 unique ID 生成算法。 |
 | range_id.char_set      | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| 字符串长度最小为 6 | range_id 算法的字符集 |
 | range_id.length    | integer | 否 | 16             | 最小值为 6 | range_id 算法的 id 长度 |
+| nanoid.char_set      | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789_-| 字符串长度最小为 6 | nanoid 算法的字符集 |
+| nanoid.length    | integer | 否 | 21             | 最小值为 6 | nanoid 算法的 id 长度 |
 
 ## 启用插件
 
