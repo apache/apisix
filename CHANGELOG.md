@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.9.0](#390)
 - [3.8.0](#380)
 - [3.7.0](#370)
 - [3.6.0](#360)
@@ -75,11 +76,50 @@ title: Changelog
 - [0.7.0](#070)
 - [0.6.0](#060)
 
-## Next Release Version
+## 3.9.0
 
-### Breaking Changes
+### Change
+- change: use apisix.enable_http2 to enable HTTP/2 in APISIX (#11032)
+- change: unify the keyring and key_encrypt_salt fields (#10771)
 
-- Change the configuration of HTTP/2. The original way is no longer supported: [#11032](https://github.com/apache/apisix/pull/11032)
+### Core:
+- :sunrise: Support HTTP3/QUIC
+  - [#10989](https://github.com/apache/apisix/pull/10989)
+  - [#11010](https://github.com/apache/apisix/pull/11010)
+  - [#11027](https://github.com/apache/apisix/pull/11027)
+- :sunrise: add plugins/reload to control api [#10905](https://github.com/apache/apisix/pull/10905)
+
+
+### Plugin:
+- :sunrise: add session.cookie configuration [#10919](https://github.com/apache/apisix/pull/10919)
+- :sunrise: support endpointslices in kubernetes discovery [#10916](https://github.com/apache/apisix/pull/10916)
+- :sunrise: add redis and redis-cluster in limit-req [#10874](https://github.com/apache/apisix/pull/10874)
+- :sunrise: support expire prometheus metrics [#10869](https://github.com/apache/apisix/pull/10869)
+- :sunrise: add redis and redis-cluster in limit-conn [#10866](https://github.com/apache/apisix/pull/10866)
+- :sunrise: allow configuring allow-headers in grpc-web plugin [#10904](https://github.com/apache/apisix/pull/10904)
+- :sunrise: Add forward-auth plugin exception configuration status_on_error [#10898](https://github.com/apache/apisix/pull/10898)
+- :sunrise: add option to include request body and response body in log util [#10888](https://github.com/apache/apisix/pull/10888)
+- :sunrise: support compressed responses in loggers [#10884](https://github.com/apache/apisix/pull/10884)
+- :sunrise: add http-dubbo plugin [#10703](https://github.com/apache/apisix/pull/10703)
+- :sunrise: support built-in variables in response_headers in mocking plugin [#10872](https://github.com/apache/apisix/pull/10872)
+- :sunrise: support other data formats without warnings [#10862](https://github.com/apache/apisix/pull/10862)
+- :sunrise: add ocsp-stapling plugin [#10817](https://github.com/apache/apisix/pull/10817)
+
+
+### Bugfixes:
+- Fix: wrong namespace related endpoint in k8s [#10917](https://github.com/apache/apisix/pull/10917)
+- Fix: when delete the secret cause 500 error [#10902](https://github.com/apache/apisix/pull/10902)
+- Fix: jwe-decrypt secret length restriction [#10928](https://github.com/apache/apisix/pull/10928)
+- Fix: unnecessary YAML Config reloads [#9065](https://github.com/apache/apisix/pull/9065)
+- Fix: real_payload was overridden by malicious payload [#10982](https://github.com/apache/apisix/pull/10982)
+- Fix: all origins could pass when allow_origins_by_metadata is set [#10948](https://github.com/apache/apisix/pull/10948)
+- Fix: add compatibility headers [#10828](https://github.com/apache/apisix/pull/10828)
+- Fix: missing trailers issue [#10851](https://github.com/apache/apisix/pull/10851)
+- Fix: decryption failure [#10843](https://github.com/apache/apisix/pull/10843)
+- Fix: server-side sessions locked by not calling explicit session:close() [#10788](https://github.com/apache/apisix/pull/10788)
+- Fix: skip brotli compression for upstream compressed response [#10740](https://github.com/apache/apisix/pull/10740)
+- Fix: use_jwks breaking authentication header [#10670](https://github.com/apache/apisix/pull/10670)
+- Fix: authz_keycloak plugin giving 500 error [#10763](https://github.com/apache/apisix/pull/10763)
 
 ## 3.8.0
 
