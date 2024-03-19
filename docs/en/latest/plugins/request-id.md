@@ -50,7 +50,6 @@ The Plugin will not add a unique ID if the request already has a header with the
 | nanoid.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789_-| The minimum string length is 6 | Character set for nanoid |
 | nanoid.length    | integer | False | 21             | Minimum 6 | Id length for range_id algorithm |
 
-
 ## Enable Plugin
 
 The example below enables the Plugin on a specific Route:
