@@ -271,3 +271,13 @@ passed
 GET /apisix/prometheus/metrics
 --- response_body eval
 qr/apisix_redis_commands_total\{route="1",command="hmset"\} 1/
+
+
+
+=== TEST 9: fetch the prometheus metric data while prometheus plugin is disabled
+--- yaml_config
+plugins:
+  - limit-count
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 404
