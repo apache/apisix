@@ -69,43 +69,6 @@ make install
 
 This will install the runtime-dependent Lua libraries and `apisix-runtime` the `apisix` CLI tool.
 
-:::note
-
-If you get an error message like `Could not find header file for LDAP/PCRE/openssl` while running `make deps`, use this solution.
-
-`luarocks` supports custom compile-time dependencies (See: [Config file format](https://github.com/luarocks/luarocks/wiki/Config-file-format)). You can use a third-party tool to install the missing packages and add its installation directory to the `luarocks`' variables table. This method works on macOS, Ubuntu, CentOS, and other similar operating systems.
-
-The solution below is for macOS but it works similarly for other operating systems:
-
-1. Install `openldap` by running:
-
-   ```shell
-   brew install openldap
-   ```
-
-2. Locate the installation directory by running:
-
-   ```shell
-   brew --prefix openldap
-   ```
-
-3. Add this path to the project configuration file by any of the two methods shown below:
-   1. You can use the `luarocks config` command to set `LDAP_DIR`:
-
-      ```shell
-      luarocks config variables.LDAP_DIR /opt/homebrew/cellar/openldap/2.6.1
-      ```
-
-   2. You can also change the default configuration file of `luarocks`. Open the file `~/.luaorcks/config-5.1.lua` and add the following:
-
-      ```shell
-      variables = { LDAP_DIR = "/opt/homebrew/cellar/openldap/2.6.1", LDAP_INCDIR = "/opt/homebrew/cellar/openldap/2.6.1/include", }
-      ```
-
-      `/opt/homebrew/cellar/openldap/` is default path `openldap` is installed on Apple Silicon macOS machines. For Intel machines, the default path is  `/usr/local/opt/openldap/`.
-
-:::
-
 To uninstall the APISIX runtime, run:
 
 ```shell
