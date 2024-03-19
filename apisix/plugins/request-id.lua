@@ -51,6 +51,22 @@ local schema = {
                 }
             },
             default = {}
+        },
+        nanoid = {
+            type = "object",
+            properties = {
+                length = {
+                    type = "integer",
+                    minimum = 6,
+                    default = 21
+                },
+                char_set = {
+                    type = "string",
+                    minLength = 6,
+                    default = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789_-"
+                }
+            },
+            default = {}
         }
     }
 }
@@ -79,8 +95,9 @@ local function get_request_id(conf)
     if conf.algorithm == "uuid" then
         return uuid()
     end
+
     if conf.algorithm == "nanoid" then
-        return nanoid.safe_simple()
+        return nanoid.generate(conf.nanoid.length,conf.nanoid.char_set)
     end
 
     if conf.algorithm == "range_id" then

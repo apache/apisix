@@ -47,6 +47,9 @@ The Plugin will not add a unique ID if the request already has a header with the
 | algorithm           | string  | False    | "uuid"         | ["uuid", "nanoid", "range_id"] | Algorithm to use for generating the unique request ID.                 |
 | range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| The minimum string length is 6 | Character set for range_id |
 | range_id.length    | integer | False | 16             | Minimum 6 | Id length for range_id algorithm |
+| nanoid.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789_-| The minimum string length is 6 | Character set for nanoid |
+| nanoid.length    | integer | False | 21             | Minimum 6 | Id length for range_id algorithm |
+
 
 ## Enable Plugin
 
