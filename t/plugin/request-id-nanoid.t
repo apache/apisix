@@ -68,6 +68,8 @@ __DATA__
 --- response_body
 passed
 
+
+
 === TEST 2: add plugin with algorithm nanoid (set automatic default)
 --- config
     location /t {
