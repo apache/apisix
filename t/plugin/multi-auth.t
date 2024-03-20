@@ -656,3 +656,154 @@ hello world
 GET /t
 --- response_body
 hello world
+
+
+
+=== TEST 14: enable multi auth plugin with same header without hide credential
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "basic-auth": {}
+                                },
+                                {
+                                    "key-auth": {
+                                        "query": "apikey",
+                                        "header": "authorization"
+                                    }
+                                },
+                                {
+                                    "jwt-auth": {
+                                        "cookie": "jwt",
+                                        "query": "jwt",
+                                        "header": "authorization"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 15: verify key-auth with same header
+--- request
+GET /hello
+--- more_headers
+Authorization: auth-one
+--- response_body
+hello world
+
+
+
+=== TEST 16: verify multi auth plugin (in header) with hiding credentials
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "basic-auth": {}
+                                },
+                                {
+                                    "key-auth": {
+                                        "query": "apikey",
+                                        "header": "authorization"
+                                    }
+                                },
+                                {
+                                    "jwt-auth": {
+                                        "cookie": "jwt",
+                                        "query": "jwt",
+                                        "header": "authorization"
+                                    }
+                                }
+                            ],
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /hello
+--- more_headers
+Authorization: auth-one
+--- response_headers
+!Authorization
+
+
+
+=== TEST 17: verify jwt-auth with same header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
+                ngx.HTTP_GET
+            )
+
+            if code > 200 then
+                ngx.status = code
+                ngx.say(err)
+                return
+            end
+
+            -- verify JWT token
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {headers={authorization=sign}})
+
+            ngx.status = res.status
+            ngx.print(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world

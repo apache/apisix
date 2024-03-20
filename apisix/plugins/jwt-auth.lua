@@ -17,17 +17,14 @@
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
+local plugin_util = require("apisix.utils.plugin-util")
 local resty_random = require("resty.random")
-local new_tab = require ("table.new")
 
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ngx      = ngx
 local ngx_time = ngx.time
 local sub_str  = string.sub
-local table_insert = table.insert
-local table_concat = table.concat
-local ngx_re_gmatch = ngx.re.gmatch
 local plugin_name = "jwt-auth"
 local pcall = pcall
 
@@ -151,32 +148,6 @@ function _M.check_schema(conf, schema_type)
     return true
 end
 
-local function remove_specified_cookie(src, key)
-    local cookie_key_pattern = "([a-zA-Z0-9-_]*)"
-    local cookie_val_pattern = "([a-zA-Z0-9-._]*)"
-    local t = new_tab(1, 0)
-
-    local it, err = ngx_re_gmatch(src, cookie_key_pattern .. "=" .. cookie_val_pattern, "jo")
-    if not it then
-        core.log.error("match origins failed: ", err)
-        return src
-    end
-    while true do
-        local m, err = it()
-        if err then
-            core.log.error("iterate origins failed: ", err)
-            return src
-        end
-        if not m then
-            break
-        end
-        if m[1] ~= key then
-            table_insert(t, m[0])
-        end
-    end
-
-    return table_concat(t, "; ")
-end
 
 local function fetch_jwt_token(conf, ctx)
     local token = core.request.header(ctx, conf.header)
@@ -213,7 +184,7 @@ local function fetch_jwt_token(conf, ctx)
     if conf.hide_credentials then
         -- hide for cookie
         local src = core.request.header(ctx, "Cookie")
-        local reset_val = remove_specified_cookie(src, conf.cookie)
+        local reset_val = plugin_util.remove_specified_cookie(src, conf.cookie)
         core.request.set_header(ctx, "Cookie", reset_val)
     end
 
