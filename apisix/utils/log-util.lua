@@ -102,6 +102,7 @@ local function get_full_log(ngx, conf)
     local var = ctx.var
     local service_id
     local route_id
+    local route_labels
     local url = var.scheme .. "://" .. var.host .. ":" .. var.server_port
                 .. var.request_uri
     local matched_route = ctx.matched_route and ctx.matched_route.value
@@ -109,6 +110,7 @@ local function get_full_log(ngx, conf)
     if matched_route then
         service_id = matched_route.service_id or ""
         route_id = matched_route.id
+        route_labels = matched_route.labels
     else
         service_id = var.host
     end
@@ -143,6 +145,7 @@ local function get_full_log(ngx, conf)
         upstream = var.upstream_addr,
         service_id = service_id,
         route_id = route_id,
+        route_labels = route_labels,
         consumer = consumer,
         client_ip = core.request.get_remote_client_ip(ngx.ctx.api_ctx),
         start_time = ngx.req.start_time() * 1000,
