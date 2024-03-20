@@ -25,7 +25,7 @@ title: HTTP3 protocol
 
 ## Usage example
 
-1. config.yaml configuration.
+1. To allow for HTTP/3 connections on 9443 port, add the following configurations to the `config.yaml` file:
 
 ```yaml
 apisix:
