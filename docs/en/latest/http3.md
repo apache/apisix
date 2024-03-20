@@ -109,5 +109,5 @@ curl -k -vvv -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "
 ## Known Issues
 
 - When HTTP/3 is turned on, test cases of Tongsuo will fail because the Tongsuo does not support QUIC TLS.
-- For HTTP/2 or HTTP/3 the request should send content-length header no matter what HTTP methods you use.
+- For HTTP/2 or HTTP/3 the request should send `content-length` header no matter what HTTP methods you use.
 - APISIX-3.9 is based on NGINX-1.25.3 with  vulnerabilities in HTTP/3 (CVE-2024-24989, CVE-2024-24990).
