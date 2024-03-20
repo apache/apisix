@@ -1,5 +1,5 @@
 ---
-title: HTTP3 protocol
+title: HTTP/3 protocol
 ---
 
 <!--
