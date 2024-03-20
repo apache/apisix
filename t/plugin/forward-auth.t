@@ -143,6 +143,24 @@ property "request_method" validation failed: matches none of the enum values
                                                end
                                            end
                                         end
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "token-headers-test" then
+                                            if core.request.get_method() == "POST" then
+                                                if core.request.header(ctx, "Content-Length") or core.request.header(ctx, "Transfer-Encoding") or core.request.header(ctx, "Content-Encoding") then
+                                                    core.response.exit(200)
+                                                else
+                                                    core.response.exit(403)
+                                                end
+                                            else
+                                                if core.request.header(ctx, "Content-Length") or core.request.header(ctx, "Transfer-Encoding") or core.request.header(ctx, "Content-Encoding") then
+                                                    core.response.exit(403)
+                                                else
+                                                    core.response.exit(200)
+                                                end
+                                            end
+                                        end
                                     end]]
                                 }
                             }
@@ -305,6 +323,40 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/onerror"
                     }]],
+                },
+                {
+                    url = "/apisix/admin/routes/9",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"],
+                                "request_method": "POST"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/verify-auth-post"
+                    }]],
+                },
+                {
+                    url = "/apisix/admin/routes/10",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_headers": ["Authorization"],
+                                "request_method": "GET"
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/verify-auth-get"
+                    }]],
                 }
             }
 
@@ -317,7 +369,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 11
+"passed\n" x 13
 
 
 
@@ -487,4 +539,42 @@ Authorization: 333
             assert(data2["x-user-id"] == "large-body", "x-user-id: " .. data2["x-user-id"])
         }
     }
+--- error_code: 200
+
+
+
+=== TEST 15: verify auth server forward headers for request_method=GET
+--- request
+GET /verify-auth-get
+--- more_headers
+Authorization: token-headers-test
+--- error_code: 200
+
+
+
+=== TEST 16: verify auth server forward headers for request_method=POST for GET upstream
+--- request
+GET /verify-auth-post
+--- more_headers
+Authorization: token-headers-test
+--- error_code: 200
+
+
+
+=== TEST 17: verify auth server forward headers for request_method=POST
+--- request
+POST /verify-auth-post
+{"authorization": "token-headers-test"}
+--- more_headers
+Authorization: token-headers-test
+--- error_code: 200
+
+
+
+=== TEST 18: verify auth server forward headers for request_method=GET for POST upstream
+--- request
+POST /verify-auth-get
+{"authorization": "token-headers-test"}
+--- more_headers
+Authorization: token-headers-test
 --- error_code: 200
