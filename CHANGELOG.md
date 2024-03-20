@@ -83,7 +83,7 @@ title: Changelog
 - change: use apisix.enable_http2 to enable HTTP/2 in APISIX (#11032)
 - change: unify the keyring and key_encrypt_salt fields (#10771)
 
-### Core:
+### Core
 
 - :sunrise: Support HTTP3/QUIC
   - [#10989](https://github.com/apache/apisix/pull/10989)
@@ -91,7 +91,7 @@ title: Changelog
   - [#11027](https://github.com/apache/apisix/pull/11027)
 - :sunrise: add plugins/reload to control api [#10905](https://github.com/apache/apisix/pull/10905)
 
-### Plugin:
+### Plugin
 
 - :sunrise: add session.cookie configuration [#10919](https://github.com/apache/apisix/pull/10919)
 - :sunrise: support endpointslices in kubernetes discovery [#10916](https://github.com/apache/apisix/pull/10916)
@@ -107,7 +107,7 @@ title: Changelog
 - :sunrise: support other data formats without warnings [#10862](https://github.com/apache/apisix/pull/10862)
 - :sunrise: add ocsp-stapling plugin [#10817](https://github.com/apache/apisix/pull/10817)
 
-### Bugfixes:
+### Bug Fixes
 
 - Fix: wrong namespace related endpoint in k8s [#10917](https://github.com/apache/apisix/pull/10917)
 - Fix: when delete the secret cause 500 error [#10902](https://github.com/apache/apisix/pull/10902)
