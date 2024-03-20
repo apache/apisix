@@ -33,11 +33,12 @@ apisix:
     listen:
       - port: 9443
         enable_http3: true   # enable HTTP/3
+    ssl_protocols: TLSv1.3 # enable TLSv1.3
 ```
 
 **note** `enable_http3` requires `TLSv1.3`
 
-1. Create an SSL object for test.com.
+2. Create an SSL object for test.com.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
@@ -49,7 +50,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-1. Create route
+3. Create route
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -61,17 +62,17 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "localhost:80": 1
+            "httpbin.org": 1
         }
     }
 }'
 ```
 
-3. Access verification
+4. Access verification
 
 Access test.com using HTTP/3:
 
-- curl version 7.88.0+
+- curl version 7.88.0+, requires [http-only](https://github.com/curl/curl/blob/master/docs/cmdline-opts/http3-only.md) option.
 
 ```shell
 curl -k -vvv -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:9443:127.0.0.1" https://test.com:9443/get
@@ -101,13 +102,13 @@ curl -k -vvv -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "
 < content-type: text/plain; charset=utf-8
 < content-length: 28
 < date: Mon, 04 Mar 2024 04:38:42 GMT
-< server: APISIX/3.8.0
+< server: APISIX/3.9.0
 <
 * Connection #0 to host test.com left intact
 ```
 
 ## Known Issues
 
-- When HTTP/3 is turned on, test cases of Tongsuo will fail because the Tongsuo does not support QUIC TLS.
+- For APISIX-3.9, test cases of Tongsuo will fail because the Tongsuo does not support QUIC TLS.
 - For HTTP/2 or HTTP/3 the request should send `content-length` header no matter what HTTP methods you use.
 - APISIX-3.9 is based on NGINX-1.25.3 with  vulnerabilities in HTTP/3 (CVE-2024-24989, CVE-2024-24990).

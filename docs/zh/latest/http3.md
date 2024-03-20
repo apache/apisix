@@ -33,11 +33,12 @@ apisix:
     listen:
       - port: 9443
         enable_http3: true   # enable HTTP/3
+    ssl_protocols: TLSv1.3 # enable TLSv1.3
 ```
 
 **注意** `enable_http3` 需要 `TLSv1.3`
 
-1. 为 test.com 创建 SSL 对象。
+2. 为 test.com 创建 SSL 对象。
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
@@ -49,7 +50,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 ```
 
-1. 创建 route
+3. 创建 route
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -61,17 +62,17 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "upstream": {
         "type": "roundrobin",
         "nodes": {
-            "localhost:80": 1
+            "httpbin.org": 1
         }
     }
 }'
 ```
 
-3. 访问验证
+4. 访问验证
 
 使用 HTTP/3 访问 test.com：
 
-- curl 版本 7.88.0+
+- curl 版本 7.88.0+，需要支持 [http-only](https://github.com/curl/curl/blob/master/docs/cmdline-opts/http3-only.md) 选项。
 
 ```shell
 curl -k -vvv -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "test.com:9443:127.0.0.1" https://test.com:9443/get
@@ -101,13 +102,13 @@ curl -k -vvv -H "Host: test.com" -H "content-length: 0" --http3-only --resolve "
 < content-type: text/plain; charset=utf-8
 < content-length: 28
 < date: Mon, 04 Mar 2024 04:38:42 GMT
-< server: APISIX/3.8.0
+< server: APISIX/3.9.0
 <
 * Connection #0 to host test.com left intact
 ```
 
 ## 已知问题
 
-- 开启 HTTP/3 时，Tongsuo 相关测试用例会失败，因为 Tongsuo 不支持 QUIC TLS。
+- 对于 APISIX-3.9, Tongsuo 相关测试用例会失败，因为 Tongsuo 不支持 QUIC TLS。
 - 对于 HTTP/2 或 HTTP/3 请求，无论您使用哪种 HTTP 方法，请求都应发送 `Content-Length` 头部。
 - APISIX-3.9 基于 NGINX-1.25.3，存在 HTTP/3 漏洞（CVE-2024-24989、CVE-2024-24990）。
