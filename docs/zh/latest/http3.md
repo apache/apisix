@@ -21,7 +21,21 @@ title: HTTP3 协议
 #
 -->
 
-`APISIX` 支持 HTTP3 协议，目前仅支持在 `downstream` 和 `APISIX` 之间的连接中开启 HTTP/3。
+[HTTP/3](https://en.wikipedia.org/wiki/HTTP/3) 是 Hypertext Transfer Protocol(HTTP) 的第三个主要版本。 与依赖 TCP 的前辈不同，HTTP/3 基于 [QUIC (Quick UDP Internet Connections) protocol](https://en.wikipedia.org/wiki/QUIC)。 它带来了多项好处，减少了延迟并提高了性能：
+
+ * 实现不同网络连接之间的无缝过渡，例如从 Wi-Fi 切换到移动数据。
+ * 消除队头阻塞，以便丢失的数据包不会阻塞所有流。
+ * 在 TLS 握手的同时协商 TLS 版本，从而实现更快的连接。
+ * 默认提供加密，确保通过 HTTP/3 连接传输的所有数据都受到保护和保密。
+ * 在与客户端已建立连接的服务器通信时提供零往返时间(0-RTT)。
+
+ APISIX 目前支持下游客户端和 APISIX 之间的 HTTP/3 连接。 尚不支持与上游服务的 HTTP/3 连接。 欢迎贡献。
+
+ :::caution
+
+ 此功能尚未经过大规模测试，因此不建议用于生产使用。
+
+ :::
 
 ## 使用示例
 
