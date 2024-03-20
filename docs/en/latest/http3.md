@@ -21,7 +21,21 @@ title: HTTP3 protocol
 #
 -->
 
-`APISIX` supports HTTP3 protocol. Currently, it only supports opening HTTP/3 connection between downstream and APISIX.
+[HTTP/3](https://en.wikipedia.org/wiki/HTTP/3) is the third major version of the Hypertext Transfer Protocol (HTTP). Unlike its predecessors which rely on TCP, HTTP/3 is based on [QUIC (Quick UDP Internet Connections) protocol](https://en.wikipedia.org/wiki/QUIC). It brings several benefits that collectively result in reduced latency and improved performance:
+
+ * enabling seamless transition between different network connections, such as switching from Wi-Fi to mobile data.
+ * eliminating head-of-line blocking, so that a lost packet does not block all streams.
+ * negotiate TLS versions at the same time as the TLS handshakes, allowing for faster connections.
+ * providing encryption by default, ensuring that all data transmitted over an HTTP/3 connection is protected and confidential.
+ * providing zero round-trip time (0-RTT) when communicating with servers that clients already established connections to.
+
+ APISIX currently supports HTTP/3 connections between downstream clients and APISIX. HTTP/3 connections with upstream services is not yet supported. Contributions are welcomed.
+
+ :::caution
+
+ This feature has not been tested at scale and therefore, is not recommended for production use.
+
+ :::
 
 ## Usage example
 
