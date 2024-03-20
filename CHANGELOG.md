@@ -91,7 +91,7 @@ title: Changelog
   - [#11027](https://github.com/apache/apisix/pull/11027)
 - :sunrise: add plugins/reload to control api [#10905](https://github.com/apache/apisix/pull/10905)
 
-### Plugin
+### Plugins
 
 - :sunrise: add session.cookie configuration [#10919](https://github.com/apache/apisix/pull/10919)
 - :sunrise: support endpointslices in kubernetes discovery [#10916](https://github.com/apache/apisix/pull/10916)
