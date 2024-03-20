@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin_util = require("apisix.utils.plugin-util")
 local require = require
 local pairs = pairs
 
@@ -22,7 +23,11 @@ local schema = {
     type = "object",
     title = "work with route or service object",
     properties = {
-        auth_plugins = { type = "array", minItems = 2 }
+        auth_plugins = { type = "array", minItems = 2 },
+        hide_credentials = {
+            type = "boolean",
+            default = false
+        }
     },
     required = { "auth_plugins" },
 }
@@ -72,18 +77,50 @@ function _M.rewrite(conf, ctx)
             status_code = auth_code
             if auth_code == nil then
                 core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
-                goto authenticated
+                goto hide_credentials
             else
                 core.log.debug(auth_plugin_name .. " failed to authenticate the request, code: "
                         .. auth_code)
             end
         end
     end
+    goto hide_credentials
 
-    :: authenticated ::
-    if status_code ~= nil then
-        return 401, { message = "Authorization Failed" }
-    end
+
+    :: hide_credentials ::
+        if conf.hide_credentials then
+            for k, auth_plugin in pairs(auth_plugins) do
+                for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
+                    -- hide for header
+                    if auth_plugin_conf.header ~= nil then
+                        core.request.set_header(ctx, auth_plugin_conf.header, nil)
+                    end
+                    -- hide for query
+                    if auth_plugin_conf.query ~= nil then
+                        local uri_args = core.request.get_uri_args(ctx) or {}
+                        local token = uri_args[conf.query]
+                        if token then
+                            uri_args[auth_plugin_conf.query] = nil
+                            core.request.set_uri_args(ctx, uri_args)
+
+                        end
+
+                    end
+                    -- hide for cookie
+                    if auth_plugin_conf.cookie ~= nil then
+                        local src = core.request.header(ctx, "Cookie")
+                        local reset_val = plugin_util.remove_specified_cookie(src,
+                                auth_plugin_conf.cookie)
+                        core.request.set_header(ctx, "Cookie", reset_val)
+
+                    end
+                end
+            end
+        end
+        if status_code ~= nil then
+            return 401, { message = "Authorization Failed" }
+        end
+
 end
 
 return _M
