@@ -715,3 +715,76 @@ passed
 --- request
 GET /hello1
 --- wait: 3
+
+
+
+=== TEST 24: check route labels in default log format
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack',
+                 ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "key-auth": {
+                            "key": "auth-one"
+                        }
+                    }
+                }]]
+                )
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "http-logger": {
+                                "uri": "http://127.0.0.1:3001",
+                                "batch_max_size": 1,
+                                "max_retry_count": 1,
+                                "retry_delay": 2,
+                                "buffer_duration": 2,
+                                "concat_method": "json",
+                                "inactive_timeout": 2
+                            },
+                            "key-auth": {}
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "labels": {
+                            "version": "testlabel"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, _ = t("/hello", "GET",null,null,{apikey = "auth-one"})
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 25: check logs for route_labels
+--- exec
+tail -n 1 ci/pod/vector/http.log
+--- response_body eval
+qr/.*testlabel.*/
