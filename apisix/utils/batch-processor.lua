@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local utils = require("apisix.core.utils")
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
 local ipairs = ipairs
@@ -156,8 +155,6 @@ function batch_processor:new(func, config)
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
-    local prometheus_enabled = utils.is_plugin_enabled("prometheus")
-
     local processor = {
         func = func,
         buffer_duration = config.buffer_duration,
@@ -173,7 +170,6 @@ function batch_processor:new(func, config)
         last_entry_t = 0,
         route_id = config.route_id,
         server_addr = config.server_addr,
-        prometheus_enabled = prometheus_enabled,
     }
 
     return setmetatable(processor, batch_processor_mt)
@@ -188,11 +184,7 @@ function batch_processor:push(entry)
         return
     end
 
-    if not self.prometheus_enabled then
-        -- Prometheus plugin is not enabled, skip data collection and metric setting
-        core.log.notice("Prometheus plugin is not enabled,"
-                        .. "skipping data collection and metric setting")
-    elseif prometheus and prometheus.get_prometheus() and not batch_metrics and self.name
+    if prometheus and prometheus.get_prometheus() and not batch_metrics and self.name
        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
                                                           "batch process remaining entries",

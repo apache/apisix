@@ -274,7 +274,27 @@ qr/apisix_redis_commands_total\{route="1",command="hmset"\} 1/
 
 
 
-=== TEST 9: fetch the prometheus metric data while prometheus plugin is disabled
+=== TEST 9: remove public API route and test route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_DELETE
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: fetch the prometheus metric data while prometheus plugin is disabled
 --- yaml_config
 plugins:
   - limit-count
