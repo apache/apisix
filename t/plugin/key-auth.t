@@ -23,6 +23,31 @@ use t::APISIX 'no_plan';
 repeat_each(2);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $user_yaml_config = <<_EOC_;
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+  proxy_mode: http&stream
+  stream_proxy:
+    tcp:
+      - 9100
+  enable_resolv_search_opt: false
+  data_encryption:
+    enable_encrypt_fields: false 
+_EOC_
+    $block->set_value("yaml_config", $user_yaml_config);
+});
+
+
 run_tests;
 
 __DATA__
