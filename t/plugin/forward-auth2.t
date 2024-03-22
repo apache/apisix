@@ -31,6 +31,7 @@ add_block_preprocessor(sub {
 run_tests();
 
 __DATA__
+
 === TEST 1: setup route with plugin
 --- config
     location /t {
@@ -54,15 +55,20 @@ __DATA__
                                 functions =  {
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core");
-                                        if core.request.header(ctx, "Authorization") == "token-headers-test" then
+                                        local token = "token-headers-test";
+                                        if core.request.header(ctx, "Authorization") == token then
                                             if core.request.get_method() == "POST" then
-                                                if core.request.header(ctx, "Content-Length") or core.request.header(ctx, "Transfer-Encoding") or core.request.header(ctx, "Content-Encoding") then
+                                                if core.request.header(ctx, "Content-Length") or
+                                                core.request.header(ctx, "Transfer-Encoding") or
+                                                core.request.header(ctx, "Content-Encoding") then
                                                     core.response.exit(200)
                                                 else
                                                     core.response.exit(403)
                                                 end
                                             else
-                                                if core.request.header(ctx, "Content-Length") or core.request.header(ctx, "Transfer-Encoding") or core.request.header(ctx, "Content-Encoding") then
+                                                if core.request.header(ctx, "Content-Length") or
+                                                core.request.header(ctx, "Transfer-Encoding") or
+                                                core.request.header(ctx, "Content-Encoding") then
                                                     core.response.exit(403)
                                                 else
                                                     core.response.exit(200)
