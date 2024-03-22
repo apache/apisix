@@ -260,6 +260,18 @@ local schema = {
             description = "Name of the expiry claim that controls the cached access token TTL.",
             type = "string"
         },
+        introspection_addon_headers = {
+            description = "",
+            type = "object",
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    oneOf = {
+                        { type = "string" },
+                        { type = "number" }
+                    }
+                }
+            }
+        },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",
@@ -386,6 +398,19 @@ local function introspect(ctx, conf)
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
+        if #conf.introspection_addon_headers > 0 then
+            conf["http_request_decorator"] = function(req)
+                local h = req.headers or {}
+                for i,v in ipairs(conf.introspection_addon_headers) do
+                    if not h[i] then
+                        h[i] = v
+                    end
+                end
+                req.headers = h
+                return req
+            end
+        end
+
         local res, err = openidc.introspect(conf)
 
         if err then
