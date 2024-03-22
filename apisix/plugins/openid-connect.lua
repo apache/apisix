@@ -400,11 +400,13 @@ local function introspect(ctx, conf)
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
         if conf.introspection_addon_headers then
-            conf["http_request_decorator"] = function(req)
+            -- http_request_decorator option provides by lua-resty-openidc
+            conf.http_request_decorator = function(req)
                 local h = req.headers or {}
-                for i,v in ipairs(conf.introspection_addon_headers) do
-                    if not h[i] then
-                        h[i] = v
+                for name, value in pairs(conf.introspection_addon_headers) do
+                    -- never overwrite exist header
+                    if h[name] == nil then
+                        h[name] = value
                     end
                 end
                 req.headers = h
