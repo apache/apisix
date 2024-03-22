@@ -20,7 +20,9 @@
 -- @module core.id
 
 local fetch_local_conf = require("apisix.core.config_local").local_conf
+local util = require("apisix.cli.util")
 local try_read_attr    = require("apisix.core.table").try_read_attr
+local profile = require("apisix.core.profile")
 local log              = require("apisix.core.log")
 local uuid             = require('resty.jit-uuid')
 local smatch           = string.match
@@ -61,19 +63,73 @@ local function write_file(path, data)
     return true
 end
 
+local function generate_yaml(table, indent)
+    indent = indent or 0
+    local yaml = ""
+
+    for key, value in pairs(table) do
+        if type(value) == "table" then
+            if next(value) == nil then -- empty table
+                yaml = yaml .. string.rep(" ", indent) .. key .. ":\n"
+            else
+                yaml = yaml .. string.rep(" ", indent) .. key .. ":\n" .. generate_yaml(value, indent + 2)
+            end
+        else
+            if type(value) == "boolean" then
+                value = tostring(value)
+            end
+            if type(key) == "number" then
+                yaml = yaml .. string.rep(" ", indent) .. "- " .. value .. "\n"
+            else
+                yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. value .. "\n"
+            end
+        end
+    end
+
+    return yaml
+end
+
 
 _M.gen_uuid_v4 = uuid.generate_v4
 
+local function autogenerate_admin_key(default_conf)
+    -- Check if deployment.admin.admin_key is not nil and it's an array
+    local admin_keys = default_conf.deployment and default_conf.deployment.admin and default_conf.deployment.admin.admin_key
+    if admin_keys and type(admin_keys) == "table" then
+        for i, admin_key in ipairs(admin_keys) do
+            -- Check if the current admin_key element has name equal to "admin" and its key is empty or nil
+            if admin_key.name == "admin" and (not admin_key.key or admin_key.key == '') then
+                -- Autogenerate a 32 character alphanumeric key for this admin_key
+                admin_keys[i].key = ''
+                for _ = 1, 32 do
+                    admin_keys[i].key = admin_keys[i].key .. string.char(math.random(65, 90) + math.random(0, 1) * 32) -- Generate random uppercase or lowercase letter
+                end
+                admin_keys[i].role = "admin"
+            end
+        end
+    end
+    return default_conf
+end
 
 function _M.init()
+
+    local local_conf = fetch_local_conf()
+    --Autogenerate admin api key if empty
+    local_conf = autogenerate_admin_key(local_conf)
+    local local_conf_path = profile:yaml_path("config")
+    local yaml_conf = generate_yaml(local_conf)
+    local ok, err = write_file(local_conf_path, yaml_conf)
+    if not ok then
+        log.error(err)
+    end
+    --allow user to specify a meaningful id as apisix instance id
     local uid_file_path = prefix .. "/conf/apisix.uid"
     apisix_uid = read_file(uid_file_path)
     if apisix_uid then
         return
     end
 
-    --allow user to specify a meaningful id as apisix instance id
-    local local_conf = fetch_local_conf()
+
     local id = try_read_attr(local_conf, "apisix", "id")
     if id then
         apisix_uid = local_conf.apisix.id
