@@ -261,7 +261,7 @@ local schema = {
             type = "string"
         },
         introspection_addon_headers = {
-            description = "",
+            description = "Extra http headers in introspection",
             type = "object",
             minProperties = 1,
             patternProperties = {
@@ -404,16 +404,13 @@ local function introspect(ctx, conf)
             conf.http_request_decorator = function(req)
                 local h = req.headers or {}
                 for name, value in pairs(conf.introspection_addon_headers) do
-                    -- never overwrite exist header
-                    if h[name] == nil then
-                        h[name] = value
-                    end
+                    h[name] = value
                 end
                 req.headers = h
                 return req
             end
         end
-
+        ---- conf.http_request_decorator unset
         local res, err = openidc.introspect(conf)
 
         if err then
