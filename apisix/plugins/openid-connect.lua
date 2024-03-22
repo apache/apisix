@@ -263,6 +263,7 @@ local schema = {
         introspection_addon_headers = {
             description = "",
             type = "object",
+            minProperties = 1,
             patternProperties = {
                 ["^[^:]+$"] = {
                     oneOf = {
@@ -398,7 +399,7 @@ local function introspect(ctx, conf)
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
-        if #conf.introspection_addon_headers > 0 then
+        if conf.introspection_addon_headers then
             conf["http_request_decorator"] = function(req)
                 local h = req.headers or {}
                 for i,v in ipairs(conf.introspection_addon_headers) do
