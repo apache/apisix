@@ -42,7 +42,7 @@ apisix:
       - 9100
   enable_resolv_search_opt: false
   data_encryption:
-    enable_encrypt_fields: false 
+    enable_encrypt_fields: false
 _EOC_
     $block->set_value("yaml_config", $user_yaml_config);
 });
