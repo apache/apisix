@@ -74,20 +74,18 @@ local function generate_yaml(table, indent)
             else
                 yaml = yaml .. string.rep(" ", indent) .. key .. ":\n" .. generate_yaml(value, indent + 2)
             end
+        elseif type(value) == "boolean" then
+            yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. tostring(value) .. "\n"
+        elseif type(key) == "number" then
+            yaml = yaml .. string.rep(" ", indent) .. "- " .. tostring(value) .. "\n"
         else
-            if type(value) == "boolean" then
-                value = tostring(value)
-            end
-            if type(key) == "number" then
-                yaml = yaml .. string.rep(" ", indent) .. "- " .. value .. "\n"
-            else
-                yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. value .. "\n"
-            end
+            yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. tostring(value) .. "\n"
         end
     end
 
     return yaml
 end
+
 
 
 _M.gen_uuid_v4 = uuid.generate_v4
