@@ -126,7 +126,7 @@ passed
                         "desc": "new consumer",
                         "plugins": {
                             "key-auth": {
-                                "key": "4y+JvURBE6ZwRbbgaryrhg=="
+                                "key": "auth-one"
                             }
                         }
                     },
