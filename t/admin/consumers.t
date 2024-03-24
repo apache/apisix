@@ -87,7 +87,7 @@ passed
                         "desc": "new consumer",
                         "plugins": {
                             "key-auth": {
-                                "key": "auth-one"
+                                "key": "4y+JvURBE6ZwRbbgaryrhg=="
                             }
                         }
                     },
@@ -126,7 +126,7 @@ passed
                         "desc": "new consumer",
                         "plugins": {
                             "key-auth": {
-                                "key": "auth-one"
+                                "key": "4y+JvURBE6ZwRbbgaryrhg=="
                             }
                         }
                     },
