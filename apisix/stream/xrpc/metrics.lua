@@ -18,13 +18,14 @@ local require = require
 local core = require("apisix.core")
 local pairs = pairs
 local pcall = pcall
-
+local utils = require("apisix.core.utils")
 
 local _M = {}
 local hubs = {}
 
 
 function _M.store(prometheus, name)
+
     local ok, m = pcall(require, "apisix.stream.xrpc.protocols." .. name .. ".metrics")
     if not ok then
         core.log.notice("no metric for protocol ", name)
@@ -32,11 +33,15 @@ function _M.store(prometheus, name)
     end
 
     local hub = {}
-    for metric, conf in pairs(m) do
-        core.log.notice("register metric ", metric, " for protocol ", name)
-        hub[metric] = prometheus[conf.type](prometheus, name .. '_' .. metric,
-                                            conf.help, conf.labels, conf.buckets)
+
+    if utils.is_plugin_enabled("prometheus") then
+        for metric, conf in pairs(m) do
+            core.log.notice("register metric ", metric, " for protocol ", name)
+            hub[metric] = prometheus[conf.type](prometheus, name .. '_' .. metric,
+                                                conf.help, conf.labels, conf.buckets)
+        end
     end
+
 
     hubs[name] = hub
 end
