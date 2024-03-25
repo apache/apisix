@@ -97,6 +97,8 @@ local function check_disable(plugin_conf)
     return plugin_conf._meta.disable
 end
 
+_M.check_disable = check_disable
+
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
 local PLUGIN_TYPE_HTTP_WASM = 3
