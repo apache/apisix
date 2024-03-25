@@ -123,26 +123,6 @@ services:
     networks:
       skywalk_net:
 
-
-  ## OpenLDAP
-  openldap:
-    image: bitnami/openldap:2.5.8
-    environment:
-      - LDAP_ADMIN_USERNAME=amdin
-      - LDAP_ADMIN_PASSWORD=adminpassword
-      - LDAP_USERS=user01,user02
-      - LDAP_PASSWORDS=password1,password2
-      - LDAP_ENABLE_TLS=yes
-      - LDAP_TLS_CERT_FILE=/certs/localhost_slapd_cert.pem
-      - LDAP_TLS_KEY_FILE=/certs/localhost_slapd_key.pem
-      - LDAP_TLS_CA_FILE=/certs/apisix.crt
-    ports:
-      - "1389:1389"
-      - "1636:1636"
-    volumes:
-      - ./t/certs:/certs
-
-
   ## Grafana Loki
   loki:
     image: grafana/loki:2.8.0

@@ -31,7 +31,6 @@ RUN set -x \
     pkgconfig \
     cmake \
     git \
-    openldap-dev \
     pcre-dev \
     sudo \
     && cd apisix \
@@ -51,7 +50,6 @@ RUN set -x \
         bash \
         curl \
         libstdc++ \
-        openldap \
         pcre \
         tzdata
 

@@ -71,7 +71,6 @@ dependencies = {
     "ext-plugin-proto = 0.6.1",
     "casbin = 1.41.8-1",
     "inspect == 3.1.1",
-    "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
     "opentelemetry-lua = 0.2-3",
     "net-url = 0.9-1",
