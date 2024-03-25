@@ -88,8 +88,8 @@ local function generate_tag(entry, const_tags)
         core.table.insert(tags, "service_name:" .. entry.service_id)
     end
 
-    if entry.consumer and entry.consumer ~= "" then
-        core.table.insert(tags, "consumer:" .. entry.consumer)
+    if entry.consumer and entry.consumer.username ~= "" then
+        core.table.insert(tags, "consumer:" .. entry.consumer.username)
     end
     if entry.balancer_ip ~= "" then
         core.table.insert(tags, "balancer_ip:" .. entry.balancer_ip)
