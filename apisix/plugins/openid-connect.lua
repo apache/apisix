@@ -382,7 +382,16 @@ local function introspect(ctx, conf)
         -- Token successfully validated.
         local method = (conf.public_key and "public_key") or (conf.use_jwks and "jwks")
         core.log.debug("token validate successfully by ", method)
+
+        -- Validate audience claim if it exists
+        if res.aud then
+            if res.aud ~= conf.client_id then
+                return ngx.HTTP_UNAUTHORIZED, "Audience does not match the client_id"
+            end
+        end
+
         return res, err, token, res
+
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
@@ -397,6 +406,14 @@ local function introspect(ctx, conf)
         -- Token successfully validated and response from the introspection
         -- endpoint contains the userinfo.
         core.log.debug("token validate successfully by introspection")
+
+        -- Validate audience claim if it exists
+        if res.aud then
+            if res.aud ~= conf.client_id then
+                return ngx.HTTP_UNAUTHORIZED, "Audience does not match the client_id"
+            end
+        end
+
         return res, err, token, res
     end
 end
