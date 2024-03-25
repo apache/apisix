@@ -63,6 +63,16 @@ local function write_file(path, data)
     return true
 end
 
+-- Function to check if a table is an array
+local function is_array(table)
+    local i = 0
+    for _ in pairs(table) do
+        i = i + 1
+        if table[i] == nil then return false end
+    end
+    return true
+end
+
 local function generate_yaml(table, indent)
     indent = indent or 0
     local yaml = ""
@@ -70,14 +80,18 @@ local function generate_yaml(table, indent)
     for key, value in pairs(table) do
         if type(value) == "table" then
             if next(value) == nil then -- empty table
-                yaml = yaml .. string.rep(" ", indent) .. key .. ":\n"
+              yaml = yaml .. string.rep(" ", indent) .. key .. ":\n"
             else
-                yaml = yaml .. string.rep(" ", indent) .. key .. ":\n" .. generate_yaml(value, indent + 2)
+                if is_array(value) then
+                    for _, v in ipairs(value) do
+                        yaml = yaml .. string.rep(" ", indent) .. "- " .. tostring(v) .. "\n"
+                    end
+                else
+                    yaml = yaml .. string.rep(" ", indent) .. key .. ":\n" .. generate_yaml(value, indent + 2)
+                end
             end
         elseif type(value) == "boolean" then
             yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. tostring(value) .. "\n"
-        elseif type(key) == "number" then
-            yaml = yaml .. string.rep(" ", indent) .. "- " .. tostring(value) .. "\n"
         else
             yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. tostring(value) .. "\n"
         end
@@ -85,7 +99,6 @@ local function generate_yaml(table, indent)
 
     return yaml
 end
-
 
 
 _M.gen_uuid_v4 = uuid.generate_v4
