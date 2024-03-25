@@ -410,8 +410,9 @@ local function introspect(ctx, conf)
                 return req
             end
         end
-        ---- conf.http_request_decorator unset
+
         local res, err = openidc.introspect(conf)
+        conf.http_request_decorator = nil
 
         if err then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..

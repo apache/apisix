@@ -158,7 +158,143 @@ passed
 
 
 
-=== TEST 4: Update route with fake Keycloak introspection endpoint and introspection addon headers
+=== TEST 4: Update route with Keycloak introspection endpoint and introspection addon headers.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://localhost:3000",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": true,
+                                "realm": "University",
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
+                                "introspection_addon_headers": {
+                                    "X-Addon-Header-A": "VALUE",
+                                    "X-Addon-Header-B": "value"
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 5: Obtain valid token and access route with it, introspection work as expected when configured extras headers.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- response_body
+true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by introspection
+
+
+
+=== TEST 6: Access route with an invalid token, should work as expected too.
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Access route using a fake access token.
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, {
+                method = "GET",
+                headers = {
+                    ["Authorization"] = "Bearer " .. "fake access token",
+                }
+             })
+
+            if res.status == 200 then
+                ngx.say(true)
+            else
+                ngx.say(false)
+            end
+        }
+    }
+--- response_body
+false
+--- error_log
+OIDC introspection failed: invalid token
+
+
+
+=== TEST 7: Update route with fake Keycloak introspection endpoint and introspection addon headers
 --- config
     location /t {
         content_by_lua_block {
@@ -205,7 +341,7 @@ passed
 
 
 
-=== TEST 5: Check http headers from fake introspection endpoint.
+=== TEST 8: Check http headers from fake introspection endpoint.
 --- config
     location /t {
         content_by_lua_block {
@@ -215,7 +351,7 @@ passed
             local res, err = httpc:request_uri(uri, {
                 method = "GET",
                     headers = {
-                        ["Authorization"] = [[Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhMSI6IkRhdGEgMSIsImlhdCI6MTU4NTEyMjUwMiwiZXhwIjoxOTAwNjk4NTAyLCJhdWQiOiJodHRwOi8vbXlzb2Z0Y29ycC5pbiIsImlzcyI6Ik15c29mdCBjb3JwIiwic3ViIjoic29tZUB1c2VyLmNvbSJ9.Vq_sBN7nH67vMDbiJE01EP4hvJYE_5ju6izjkOX8pF5OS4g2RWKWpL6h6-b0tTkCzG4JD5BEl13LWW-Gxxw0i9vEK0FLg_kC_kZLYB8WuQ6B9B9YwzmZ3OLbgnYzt_VD7D-7psEbwapJl5hbFsIjDgOAEx-UCmjUcl2frZxZavG2LUiEGs9Ri7KqOZmTLgNDMWfeWh1t1LyD0_b-eTInbasVtKQxMlb5kR0Ln_Qg5092L-irJ7dqaZma7HItCnzXJROdqJEsMIBAYRwDGa_w5kIACeMOdU85QKtMHzOenYFkm6zh_s59ndziTctKMz196Y8AL08xuTi6d1gEWpM92A]]
+                        ["Authorization"] = "Bearer " .. "fake access token"
                     }
                 })
             ngx.status = res.status
