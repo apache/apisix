@@ -54,6 +54,49 @@ return {
         },
         access_key = {type = 'string', default = ''},
         secret_key = {type = 'string', default = ''},
+        others = {
+            type = 'array',
+            items = {
+                type = 'object',
+                properties = {
+                    name = {type ="string"},
+                    host = {
+                        type = 'array',
+                        minItems = 1,
+                        items = {
+                            type = 'string',
+                            pattern = host_pattern,
+                            minLength = 2,
+                            maxLength = 100,
+                        },
+                    },
+
+                    prefix = {
+                        type = 'string',
+                        pattern = prefix_pattern,
+                        maxLength = 100,
+                        default = '/nacos/v1/'
+                    },
+                    weight = {type = 'integer', minimum = 1, default = 100},
+                    timeout = {
+                        type = 'object',
+                        properties = {
+                            connect = {type = 'integer', minimum = 1, default = 2000},
+                            send = {type = 'integer', minimum = 1, default = 2000},
+                            read = {type = 'integer', minimum = 1, default = 5000},
+                        },
+                        default = {
+                            connect = 2000,
+                            send = 2000,
+                            read = 5000,
+                        }
+                    },
+                    access_key = {type = 'string', default = ''},
+                    secret_key = {type = 'string', default = ''},
+                }
+
+            }
+        }
     },
     required = {'host'}
 }
