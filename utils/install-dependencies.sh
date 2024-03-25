@@ -85,6 +85,8 @@ function install_dependencies_with_apt() {
 function multi_distro_installation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
         install_dependencies_with_yum "centos"
+    elif grep -Eqi "Rocky" /etc/issue || grep -Eq "Rocky" /etc/*-release; then
+        install_dependencies_with_yum "rocky"
     elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
         install_dependencies_with_yum "rhel"
     elif grep -Eqi "Fedora" /etc/issue || grep -Eq "Fedora" /etc/*-release; then
@@ -104,6 +106,8 @@ function multi_distro_installation() {
 
 function multi_distro_uninstallation() {
     if grep -Eqi "CentOS" /etc/issue || grep -Eq "CentOS" /etc/*-release; then
+        sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
+    elif grep -Eqi "Rocky" /etc/issue || grep -Eq "Rocky" /etc/*-release; then
         sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
     elif grep -Eqi -e "Red Hat" -e "rhel" /etc/*-release; then
         sudo yum autoremove -y openresty-zlib-devel openresty-pcre-devel
