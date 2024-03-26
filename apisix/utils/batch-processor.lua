@@ -185,8 +185,9 @@ function batch_processor:push(entry)
         return
     end
 
-    if not plugin.check_disable_with_metatable(plugin.get("prometheus")) and not batch_metrics and self.name
-       and self.route_id and self.server_addr then
+    if not plugin.check_disable_with_metatable(plugin.get("prometheus"))
+        and not batch_metrics and self.name
+        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
                                                           "batch process remaining entries",
                                                           {"name", "route_id", "server_addr"})
