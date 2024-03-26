@@ -260,6 +260,19 @@ local schema = {
             description = "Name of the expiry claim that controls the cached access token TTL.",
             type = "string"
         },
+        introspection_addon_headers = {
+            description = "Extra http headers in introspection",
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    oneOf = {
+                        { type = "string" },
+                        { type = "number" }
+                    }
+                }
+            }
+        },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",
@@ -386,7 +399,20 @@ local function introspect(ctx, conf)
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
+        if conf.introspection_addon_headers then
+            -- http_request_decorator option provides by lua-resty-openidc
+            conf.http_request_decorator = function(req)
+                local h = req.headers or {}
+                for name, value in pairs(conf.introspection_addon_headers) do
+                    h[name] = value
+                end
+                req.headers = h
+                return req
+            end
+        end
+
         local res, err = openidc.introspect(conf)
+        conf.http_request_decorator = nil
 
         if err then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
