@@ -27,7 +27,7 @@ local log              = require("apisix.core.log")
 local uuid             = require('resty.jit-uuid')
 local smatch           = string.match
 local open             = io.open
-
+local lyaml = require("lyaml")
 
 local prefix = ngx.config.prefix()
 local apisix_uid
@@ -63,6 +63,7 @@ local function write_file(path, data)
     return true
 end
 
+<<<<<<< HEAD
 -- Function to check if a table is an array
 local function is_array(table)
     local i = 0
@@ -98,6 +99,12 @@ local function generate_yaml(table, indent)
     end
 
     return yaml
+=======
+local function generate_yaml(table)
+    local yaml = lyaml.dump({table})
+    local result = yaml:gsub("^%-%-%-\n", "") -- Remove "---\n" from the start that is automatically added by this function.
+    return result
+>>>>>>> cd4160cd1429ce97c5004a92c21d7794aa5b4362
 end
 
 

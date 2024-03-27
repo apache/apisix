@@ -170,7 +170,8 @@ nginx_config:                     # Config for render the template to generate n
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
     access_log: logs/access_stream.log       # Location of the stream access log.
-    access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
+    access_log_format: |
+      "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
     access_log_format_escape: default        # Escape default or json characters in variables.
     lua_shared_dict:                         # Nginx Lua shared memory zone. Size units are m or k.
       etcd-cluster-health-check-stream: 10m
@@ -208,7 +209,8 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
-    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
+    access_log_format: |
+      "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     # Customize log format: http://nginx.org/en/docs/varindex.html
     access_log_format_escape: default   # Escape default or json characters in variables.
     keepalive_timeout: 60s              # Set the maximum time for which TCP connection keeps alive.
