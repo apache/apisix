@@ -65,7 +65,7 @@ end
 local function generate_yaml(table)
     local yaml = lyaml.dump({table})
     -- Remove "---\n" from the start that is automatically added by this function.
-    local result = yaml:gsub("^%-%-%-\n", "") 
+    local result = yaml:gsub("^%-%-%-\n", "")
     return result
 end
 
@@ -74,15 +74,16 @@ _M.gen_uuid_v4 = uuid.generate_v4
 
 local function autogenerate_admin_key(default_conf)
     -- Check if deployment.admin.admin_key is not nil and it's an array
-    local admin_keys = default_conf.deployment and default_conf.deployment.admin and default_conf.deployment.admin.admin_key
+    local admin_keys = default_conf.deployment and
+    default_conf.deployment.admin and
+    default_conf.deployment.admin.admin_key
     if admin_keys and type(admin_keys) == "table" then
         for i, admin_key in ipairs(admin_keys) do
-            -- Check if the current admin_key element has name equal to "admin" and its key is empty or nil
             if admin_key.name == "admin" and (not admin_key.key or admin_key.key == '') then
-                -- Autogenerate a 32 character alphanumeric key for this admin_key
                 admin_keys[i].key = ''
                 for _ = 1, 32 do
-                    admin_keys[i].key = admin_keys[i].key .. string.char(math.random(65, 90) + math.random(0, 1) * 32) -- Generate random uppercase or lowercase letter
+                    admin_keys[i].key = admin_keys[i].key ..
+                    string.char(math.random(65, 90) + math.random(0, 1) * 32)
                 end
                 admin_keys[i].role = "admin"
             end
