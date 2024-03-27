@@ -82,8 +82,7 @@ local aws_authz_schema = {
             },
             required = {"accesskey", "secretkey"}
         }
-    },
-    encrypt_fields = {"apikey", "iam.accesskey", "iam.secretkey"}
+    }
 }
 
 local function request_processor(conf, ctx, params)
