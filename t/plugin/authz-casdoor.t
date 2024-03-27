@@ -137,7 +137,7 @@ done
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
@@ -477,7 +477,7 @@ apisix:
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "127.0.0.1:1980": 1
+                            "test.com:1980": 1
                         }
                     }
                 }]]
@@ -506,8 +506,6 @@ apisix:
             -- get plugin conf from etcd, password is encrypted
             local etcd = require("apisix.core.etcd")
             local res = assert(etcd.get('/routes/1'))
-            local core = require("apisix.core")
-            core.log.warn("dibag", core.json.encode(res.body.node.value.plugins["authz-casdoor"].client_secret))
             ngx.say(res.body.node.value.plugins["authz-casdoor"].client_secret)
         }
     }
