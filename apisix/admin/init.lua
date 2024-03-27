@@ -75,6 +75,7 @@ local function check_token(ctx)
     end
 
     local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
+    core.log.warn("THE API KEY IS: ", core.json.delay_encode(admin_key))
     if not admin_key then
         return true
     end
