@@ -20,7 +20,6 @@
 -- @module core.id
 
 local fetch_local_conf = require("apisix.core.config_local").local_conf
-local util = require("apisix.cli.util")
 local try_read_attr    = require("apisix.core.table").try_read_attr
 local profile = require("apisix.core.profile")
 local log              = require("apisix.core.log")
