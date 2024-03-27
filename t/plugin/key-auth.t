@@ -23,6 +23,19 @@ use t::APISIX 'no_plan';
 repeat_each(2);
 no_long_string();
 no_root_location();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    my $user_yaml_config = <<_EOC_;
+apisix:
+  data_encryption:
+    enable_encrypt_fields: false
+_EOC_
+    $block->set_value("yaml_config", $user_yaml_config);
+});
+
+
 run_tests;
 
 __DATA__

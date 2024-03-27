@@ -118,7 +118,7 @@ apisix:
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
   data_encryption:                # Data encryption settings.
-    enable_encrypt_fields: false  # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
                                   # in plugin schema.
       - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string
