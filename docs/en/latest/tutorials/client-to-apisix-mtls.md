@@ -210,7 +210,7 @@ instead of alert error in the SSL handshake phase, if the client certificate is 
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/*",
     "upstream": {
@@ -221,7 +221,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert": "'"$(<t/certs/mtls_server.crt)"'",
     "key": "'"$(<t/certs/mtls_server.key)"'",

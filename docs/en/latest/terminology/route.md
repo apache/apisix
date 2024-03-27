@@ -52,7 +52,7 @@ The Route example shown below proxies the request with the URL `/index.html` to 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/index.html",
     "upstream": {

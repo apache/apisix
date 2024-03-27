@@ -34,7 +34,7 @@ In the response header of the request, through the response header of `X-APISIX-
 >Example 1: `502` response status code comes from `Upstream` (IP address is not available)
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "upstream": {
@@ -75,7 +75,7 @@ It has a response header of `X-APISIX-Upstream-Status: 502`.
 >Example 2: `502` response status code comes from `APISIX`
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "fault-injection": {
@@ -109,7 +109,7 @@ There is no response header for `X-APISIX-Upstream-Status`.
 >Example 3: `Upstream` has multiple nodes, and all nodes are unavailable
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "nodes": {
         "127.0.0.3:1": 1,
@@ -122,7 +122,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034
 ```
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "upstream_id": "1"

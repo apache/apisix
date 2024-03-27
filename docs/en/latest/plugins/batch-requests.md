@@ -72,7 +72,7 @@ plugins:
 By default, the maximum body size that can be sent to `/apisix/batch-requests` can't be larger than 1 MiB. You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/batch-requests`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/batch-requests -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "max_body_size": 4194304
 }'
@@ -129,7 +129,7 @@ You can specify a custom URI with the [public-api](public-api.md) Plugin.
 You can set the URI you want when creating the Route and change the configuration of the public-api Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/br -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/batch-requests",
     "plugins": {
@@ -145,7 +145,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f1
 First, you need to setup a Route to the batch request API. We will use the [public-api](public-api.md) Plugin for this:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/br -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/br -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/apisix/batch-requests",
     "plugins": {

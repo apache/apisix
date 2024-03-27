@@ -99,7 +99,7 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 The example below shows how you can configure through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/sls-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/sls-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -121,7 +121,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows how you can configure the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "sls-logger": {
@@ -161,7 +161,7 @@ Now if you check your Ali Cloud log server, you will be able to see the logs:
 To remove the `sls-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

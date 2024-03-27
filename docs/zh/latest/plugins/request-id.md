@@ -52,7 +52,7 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -92,7 +92,7 @@ X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

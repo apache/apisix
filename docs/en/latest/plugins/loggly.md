@@ -78,7 +78,7 @@ We support [Syslog](https://documentation.solarwinds.com/en/success_center/loggl
 APISIX supports [Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm) and [HTTP/S](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/http-bulk-endpoint.htm) protocols to send data to Loggly. Syslog lets you send RFC5424 compliant syslog events with fine-grained control. But, HTTP/S bulk endpoint is better while sending large batches of logs at a fast transmission speed. You can configure the metadata to update the protocol as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "protocol": "http"
 }'
@@ -93,7 +93,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly -H 'X-API-KEY: ed
 The example below shows a complete configuration of the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "loggly":{
@@ -126,7 +126,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "loggly":{
@@ -160,7 +160,7 @@ You can then view the logs on your Loggly Dashboard:
 To remove the `file-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

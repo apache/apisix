@@ -23,6 +23,13 @@
 
 git checkout conf/config.yaml
 
+get_admin_key() {
+    wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+    local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+    echo "$admin_key"
+}
+export admin_key=$(get_admin_key); echo $admin_key
+
 echo '
 nginx_config:
   http:
@@ -145,7 +152,7 @@ rm logs/error.log
 make init
 make run
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 make stop
 
 if [ ! $code -eq 200 ]; then
@@ -197,7 +204,7 @@ nginx_config:
 make run
 sleep 2
 
-curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d \
+curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"uri":"/apisix/admin/routes/1", "upstream":{"nodes":{"localhost:9180":1},"scheme":"https","type":"roundrobin","pass_host":"node"}}'
 
 curl -i http://127.0.0.1:9080/apisix/admin/routes/1

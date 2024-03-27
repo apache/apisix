@@ -49,7 +49,15 @@ docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 make init && make run
 
 docker stop ${ETCD_NAME_0}
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+
+get_admin_key() {
+wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+echo "$admin_key"
+}
+export admin_key=$(get_admin_key); echo $admin_key
+
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
     exit 1
@@ -57,7 +65,7 @@ fi
 docker start ${ETCD_NAME_0}
 
 docker stop ${ETCD_NAME_1}
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
     exit 1
@@ -75,7 +83,7 @@ docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_N
 
 sleep_till=$(date +%s -d "$DATE + $HEALTH_CHECK_RETRY_TIMEOUT second")
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ $code -eq 200 ]; then
     echo "failed: apisix not got effect when all etcd nodes disconnected"
     exit 1
@@ -90,7 +98,7 @@ if [ "$sleep_seconds" -gt 0 ]; then
     sleep $sleep_seconds
 fi
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix could not recover when etcd node recover"
     docker ps

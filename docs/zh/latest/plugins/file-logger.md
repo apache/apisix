@@ -115,7 +115,7 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -138,7 +138,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/file-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "plugins": {
     "file-logger": {
@@ -175,7 +175,7 @@ hello, world
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "plugins": {
     "file-logger": {
@@ -217,7 +217,7 @@ curl -i http://127.0.0.1:9080/hello?name=rose
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

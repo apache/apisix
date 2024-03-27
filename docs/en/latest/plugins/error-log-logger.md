@@ -94,7 +94,7 @@ Once you have enabled the Plugin, you can configure it through the Plugin metada
 You can set the TCP server address by configuring the Plugin metadata as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "tcp": {
     "host": "127.0.0.1",
@@ -109,7 +109,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-A
 You can configure the SkyWalking OAP server address as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "skywalking": {
     "endpoint_addr":"http://127.0.0.1:12800/v3/logs"
@@ -125,7 +125,7 @@ The Plugin sends the error log as a string to the `data` field of a table in you
 You can configure it as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "clickhouse": {
       "user": "default",
@@ -143,7 +143,7 @@ The Plugin sends the error log to Kafka, you can configure it as shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "kafka":{
       "brokers":[

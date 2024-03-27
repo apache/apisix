@@ -38,7 +38,7 @@ description: 本文介绍了 Apache APISIX Consumer Group 对象的概念及使�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -55,7 +55,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {

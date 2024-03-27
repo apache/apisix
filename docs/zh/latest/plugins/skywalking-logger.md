@@ -127,7 +127,7 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking-lo
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -150,7 +150,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "skywalking-logger": {
@@ -183,7 +183,7 @@ curl -i http://127.0.0.1:9080/hello
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

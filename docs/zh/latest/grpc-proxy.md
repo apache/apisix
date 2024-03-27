@@ -40,7 +40,7 @@ title: gRPC 代理
 * 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/api7/grpc_server_example)。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",
@@ -99,7 +99,7 @@ grpcurl -plaintext -import-path /pathtoprotos  -proto helloworld.proto  \
 如果你的 gRPC 服务使用了自己的 TLS 加密，即所谓的 `gPRCS` (gRPC + TLS)，那么需要修改 scheme 为 `grpcs`。继续上面的例子，50052 端口上跑的是 gPRCS 的服务，这时候应该这么配置：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",

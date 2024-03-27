@@ -67,7 +67,7 @@ description: 本文介绍了关于 Apache APISIX `authz-casbin` 插件的基本�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "authz-casbin": {
@@ -92,7 +92,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "authz-casbin": {
@@ -136,7 +136,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/authz-casbin \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+-H "X-API-KEY: $admin_key" -i -X PUT -d '
 {
 "model": "[request_definition]
 r = sub, obj, act
@@ -163,7 +163,7 @@ g, alice, admin"
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "authz-casbin": {
@@ -247,7 +247,7 @@ curl -i http://127.0.0.1:9080/res -H 'user: alice' -X GET
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",

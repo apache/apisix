@@ -340,7 +340,7 @@ end
 在对应的阶段方法里编写功能的逻辑代码，在阶段方法中具有 `conf` 和 `ctx` 两个参数，以 `limit-conn` 插件配置为例。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

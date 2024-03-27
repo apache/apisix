@@ -101,7 +101,7 @@ plugins:                          # plugin list
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "tcp": {
     "host": "127.0.0.1",
@@ -117,7 +117,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "skywalking": {
     "endpoint_addr": "http://127.0.0.1:12800/v3/logs"
@@ -134,7 +134,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "clickhouse": {
       "user": "default",
@@ -152,7 +152,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "kafka":{
       "brokers":[

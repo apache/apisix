@@ -56,7 +56,7 @@ description: 本文介绍了 public-api 的相关操作，你可以使用 public
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+    -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/apisix/plugin/jwt/sign",
@@ -86,7 +86,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1MzIsImtleSI6InVzZXIta2V
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+    -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/gen_token",
@@ -116,7 +116,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1NjIsImtleSI6InVzZXIta2V
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+    -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/gen_token",
@@ -161,7 +161,7 @@ HTTP/1.1 401 Unauthorized
 当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/hello",
   "upstream": {

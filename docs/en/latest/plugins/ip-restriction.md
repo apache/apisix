@@ -53,7 +53,7 @@ Either one of `whitelist` or `blacklist` attribute must be specified. They canno
 You can enable the Plugin on a Route or a Service as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -115,7 +115,7 @@ HTTP/1.1 403 Forbidden
 To change the whitelisted/blacklisted IPs, you can update the Plugin configuration. The changes are hot reloaded and there is no need to restart the service.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -140,7 +140,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 To remove the `ip-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

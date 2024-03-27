@@ -79,7 +79,7 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -123,7 +123,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -174,7 +174,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -248,7 +248,7 @@ world 1981
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -324,7 +324,7 @@ hello 1980
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -413,7 +413,7 @@ hello 1980
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -531,7 +531,7 @@ hello 1980
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -629,7 +629,7 @@ curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

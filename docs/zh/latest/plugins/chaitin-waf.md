@@ -70,7 +70,7 @@ description: 本文介绍了关于 Apache APISIX `chaitin-waf` 插件的基本�
 一个典型的示例配置如下：
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "nodes":[
      {
@@ -100,7 +100,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H 'X-API-KE
 一个典型的示例配置如下，这里使用 `httpbun.org` 作为示例后端，可以按需替换：
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "uri": "/*",
    "plugins": {
@@ -240,7 +240,7 @@ Set-Cookie: sl-session=UdywdGL+uGS7q8xMfnJlbQ==; Domain=; Path=/; Max-Age=86400
 当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```bash
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "uri": "/*",
    "upstream": {

@@ -47,7 +47,7 @@ To create an Upstream object, you can use the Admin API as shown below.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "type": "chash",
     "key": "remote_addr",
@@ -62,7 +62,7 @@ After creating an Upstream object, it can be referenced by a specific Route or S
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream_id": 1
@@ -73,7 +73,7 @@ For convenience, you can directly bind the upstream address to a Route or Servic
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -99,7 +99,7 @@ The example below shows how you can configure a health check.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -144,7 +144,7 @@ Creating a Consumer object.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -159,7 +159,7 @@ Creating a Route object and enabling the `key-auth` authentication Plugin.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "key-auth": {}
@@ -188,7 +188,7 @@ Creating a Route and an upstream object.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hash_on_cookie",
     "upstream": {
@@ -216,7 +216,7 @@ Creating a Route and an upstream object.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hash_on_header",
     "upstream": {
@@ -235,6 +235,6 @@ The client can now send requests with a header. The example below shows using th
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_header \
- -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+ -H "X-API-KEY: $admin_key" \
  -H "Content-Type: application/json"
 ```

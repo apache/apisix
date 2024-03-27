@@ -64,7 +64,7 @@ Before enabling the Plugin, you have to add the content of your `.proto` or `.pb
 You can use the `/admin/protos/id` endpoint and add the contents of the file to the `content` field:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/protos/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/protos/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -106,7 +106,7 @@ As the content of the proto is binary, we encode it in `base64` and configure th
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "'"$(base64 -w0 /path/to/proto.pb)"'"
 }'
@@ -121,7 +121,7 @@ You should see an `HTTP/1.1 201 Created` response with the following:
 Now, we can enable the `grpc-transcode` Plugin to a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -175,7 +175,7 @@ Proxy-Connection: keep-alive
 You can also configure the `pb_option` as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/23 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
@@ -226,7 +226,7 @@ Upload the proto file：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -248,7 +248,7 @@ Enable the `grpc-transcode` plugin，and set the option `show_status_in_body` to
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -296,7 +296,7 @@ Note that there is an undecoded field in the return body. If you need to decode 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -323,7 +323,7 @@ Also configure the option `status_detail_type` to `helloworld.ErrorDetail`.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -367,7 +367,7 @@ Server: APISIX web server
 To remove the `grpc-transcode` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/grpctest",
     "plugins": {},

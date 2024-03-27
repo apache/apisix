@@ -29,6 +29,13 @@ else
     upstream_cnt=1
 fi
 
+get_admin_key() {
+    wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+    local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+    cat conf/config.yaml
+    echo "$admin_key"
+}
+export admin_key=$(get_admin_key); echo $admin_key
 mkdir -p benchmark/server/logs
 mkdir -p benchmark/fake-apisix/logs
 
@@ -75,7 +82,7 @@ sleep 3
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + no plugin"
 
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -101,7 +108,7 @@ sleep 1
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + 2 plugins (limit-count + prometheus)"
 
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {

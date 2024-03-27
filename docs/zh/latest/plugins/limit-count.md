@@ -64,7 +64,7 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -89,7 +89,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -114,7 +114,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -138,7 +138,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello"
@@ -147,7 +147,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello2"
@@ -158,7 +158,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -193,7 +193,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -223,7 +223,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -255,7 +255,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -336,7 +336,7 @@ Server: APISIX web server
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

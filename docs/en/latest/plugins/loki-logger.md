@@ -114,7 +114,7 @@ Configuring the plugin metadata is global in scope. This means that it will take
 The example below shows how you can configure through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -136,7 +136,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows how you can enable the `loki-logger` plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "loki-logger": {
@@ -166,7 +166,7 @@ curl -i http://127.0.0.1:9080/hello
 When you need to remove the `loki-logger` plugin, you can delete the corresponding JSON configuration with the following command and APISIX will automatically reload the relevant configuration without restarting the service:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

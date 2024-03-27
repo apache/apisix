@@ -49,7 +49,7 @@ For Route:
 首先创建一个 Consumer 使用 basic-auth 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "foo1",
     "plugins": {
@@ -64,7 +64,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 然后再创建一个 Consumer 使用 key-auth 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "foo2",
     "plugins": {
@@ -78,7 +78,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 创建 Consumer 之后，您可以配置一个路由或服务来验证请求：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -140,7 +140,7 @@ hello, world
 要删除 `multi-auth` 插件，您可以从插件配置中删除插件对应的 JSON 配置，APISIX 会自动加载，您不需要重新启动即可生效。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

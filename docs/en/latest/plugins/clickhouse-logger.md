@@ -114,7 +114,7 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 The example below shows how you can configure through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -143,7 +143,7 @@ If multiple endpoints are configured, they will be written randomly.
 The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "clickhouse-logger": {
@@ -184,7 +184,7 @@ curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
 To remove the `clickhouse-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

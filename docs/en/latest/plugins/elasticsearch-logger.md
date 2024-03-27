@@ -105,7 +105,7 @@ The example below shows a complete configuration of the Plugin on a specific Rou
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "elasticsearch-logger":{
@@ -144,7 +144,7 @@ The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "elasticsearch-logger":{
@@ -251,7 +251,7 @@ The example below shows how you can configure through the Admin API:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -312,7 +312,7 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+-H "X-API-KEY: $admin_key" -X DELETE
 ```
 
 ## Delete Plugin
@@ -321,7 +321,7 @@ To remove the `elasticsearch-logger` Plugin, you can delete the corresponding JS
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{},
     "upstream":{

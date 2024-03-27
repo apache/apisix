@@ -79,7 +79,7 @@ To enable the Plugin, you have to create a Consumer object with the JWT token an
 First, you can create a Consumer object through the Admin API:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -96,7 +96,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 The `jwt-auth` Plugin uses the HS256 algorithm by default. To use the RS256 algorithm, you can configure the public key and private key and specify the algorithm:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "kerouac",
     "plugins": {
@@ -115,7 +115,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Once you have created a Consumer object, you can configure a Route to authenticate requests:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -142,7 +142,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 You need to first setup a Route for an API that signs the token using the [public-api](public-api.md) Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jas -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/jas -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/apisix/plugin/jwt/sign",
     "plugins": {
@@ -254,7 +254,7 @@ Accept-Ranges: bytes
 To remove the `jwt-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

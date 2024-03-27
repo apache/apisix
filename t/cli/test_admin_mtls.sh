@@ -20,6 +20,12 @@
 . ./t/cli/common.sh
 
 # The 'admin.apisix.dev' is injected by ci/common.sh@set_coredns
+get_admin_key() {
+    wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+    local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+    echo "$admin_key"
+}
+export admin_key=$(get_admin_key); echo $admin_key
 
 echo '
 deployment:
@@ -39,14 +45,14 @@ make run
 sleep 1
 
 # correct certs
-code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H "X-API-KEY: $admin_key" https://admin.apisix.dev:9180/apisix/admin/routes)
 if [ ! "$code" -eq 200 ]; then
     echo "failed: failed to enabled mTLS for admin"
     exit 1
 fi
 
 # skip
-code=$(curl -i -o /dev/null -s -w %{http_code} -k -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' https://admin.apisix.dev:9180/apisix/admin/routes)
+code=$(curl -i -o /dev/null -s -w %{http_code} -k -H "X-API-KEY: $admin_key" https://admin.apisix.dev:9180/apisix/admin/routes)
 if [ ! "$code" -eq 400 ]; then
     echo "failed: failed to enabled mTLS for admin"
     exit 1

@@ -63,7 +63,7 @@ You can enable the Plugin on a Route as shown below:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -88,7 +88,7 @@ You can also configure the `key_type` to `var_combination` as shown:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -113,7 +113,7 @@ You can also create a group to share the same counter across multiple Routes:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -137,7 +137,7 @@ Now every Route which belongs to group `services_1#1640140620` (or the service w
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello"
@@ -146,7 +146,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello2"
@@ -165,7 +165,7 @@ You can also share the same limit counter for all your requests by setting the `
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -200,7 +200,7 @@ The example below shows how you can use the `redis` policy:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -230,7 +230,7 @@ Similarly you can also configure the `redis-cluster` policy:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -262,7 +262,7 @@ case you have environment variables `REDIS_HOST` and `REDIS_PASSWORD` set, you c
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -341,7 +341,7 @@ To remove the `limit-count` Plugin, you can delete the corresponding JSON config
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

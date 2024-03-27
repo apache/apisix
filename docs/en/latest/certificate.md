@@ -37,7 +37,7 @@ Create an SSL object with the certificate and key valid for the SNI:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat t/certs/apisix.crt)"'",
      "key": "'"$(cat t/certs/apisix.key)"'",
@@ -48,7 +48,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 Create a Router object:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/get",
     "hosts": ["test.com"],
@@ -95,7 +95,7 @@ Create an SSL object with the certificate and key valid for the SNI:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
- -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+ -H "X-API-KEY: $admin_key" -X PUT -d '
  {
       "cert" : "'"$(cat t/certs/apisix.crt)"'",
       "key": "'"$(cat t/certs/apisix.key)"'",
@@ -106,7 +106,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 Create a Router object:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/get",
     "hosts": ["*.test.com"],
@@ -270,7 +270,7 @@ curl -vvv \
     --cert /path/to/foo_client.crt \
     --key /path/to/foo_client.key \
     --cacert /path/to/apisix.ca-bundle \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/get",
     "upstream": {

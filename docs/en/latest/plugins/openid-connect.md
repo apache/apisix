@@ -119,7 +119,7 @@ The image below shows an example token introspection flow via a Gateway:
 The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -162,7 +162,7 @@ You can also provide the public key of the JWT token for verification. If you ha
 The example below shows how you can add public key introspection to a Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -198,7 +198,7 @@ Once the user has authenticated with the identity provider, the Plugin will obta
 The example below adds the Plugin with this mode of operation to the Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {

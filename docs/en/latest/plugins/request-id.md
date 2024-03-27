@@ -54,7 +54,7 @@ The example below enables the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -90,7 +90,7 @@ To remove the `request-id` Plugin, you can delete the corresponding JSON configu
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
