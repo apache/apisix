@@ -33,7 +33,7 @@ get_admin_key() {
     local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
     echo "$admin_key"
 }
-admin_key=$(get_admin_key)
+admin_key=$(get_admin_key); echo $admin_key
 mkdir -p benchmark/server/logs
 mkdir -p benchmark/fake-apisix/logs
 
