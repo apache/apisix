@@ -31,7 +31,7 @@ fi
 
 get_admin_key() {
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-    local admin_key=$(yq eval '.deployment.admin.admin_key[0].key' conf/config.yaml)
+    local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
     echo "$admin_key"
 }
 export admin_key=$(get_admin_key); echo $admin_key

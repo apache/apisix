@@ -35,7 +35,8 @@ make run
 sleep 1
 
 get_admin_key() {
-local admin_key=$(yq eval '.deployment.admin.admin_key[0].key' conf/config.yaml)
+
+local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 echo "$admin_key"
 }
 export admin_key=$(get_admin_key); echo $admin_key
