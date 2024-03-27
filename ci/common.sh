@@ -179,7 +179,7 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 linux_get_dependencies () {
     apt update
     apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev libldap2-dev
-    apt-get install -y libyaml-devel
+    apt-get install -y libyaml-dev
 }
 
 function start_grpc_server_example() {
