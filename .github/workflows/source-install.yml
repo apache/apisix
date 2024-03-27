@@ -67,7 +67,7 @@ jobs:
         run: |
           if [[ $INSTALL_PLATFORM == "ubuntu" ]]; then
               sudo apt-get update
-              sudo apt-get install -y git sudo make
+              sudo apt-get install -y git sudo make yq
               make deps
               sudo make install
               apisix start
@@ -89,7 +89,7 @@ jobs:
       - name: Test apisix
         run: |
             get_admin_key() {
-            local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
+            local admin_key=$(yq eval '.deployment.admin.admin_key[0].key' conf/config.yaml)
             echo "$admin_key"
             }
             export admin_key=$(get_admin_key); echo $admin_key

@@ -51,7 +51,7 @@ fi
 echo "passed: data_plane does not write data to etcd"
 
 get_admin_key() {
-local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
+local admin_key=$(yq eval '.deployment.admin.admin_key[0].key' conf/config.yaml)
 echo "$admin_key"
 }
 export admin_key=$(get_admin_key); echo $admin_key
