@@ -51,6 +51,7 @@ local consumer_schema = {
         is_base64_encoded = { type = "boolean" },
     },
     required = { "key", "secret" },
+    encrypt_fields = { "key", "secret" },
 }
 
 

@@ -49,7 +49,8 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5}
     },
-    required = {"api_host", "service_token", "namespace", "action"}
+    required = {"api_host", "service_token", "namespace", "action"},
+    encrypt_fields = {"service_token"}
 }
 
 

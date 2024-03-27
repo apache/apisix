@@ -268,7 +268,7 @@ local schema = {
             }
         }
     },
-    encrypt_fields = {"client_secret"},
+    encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
