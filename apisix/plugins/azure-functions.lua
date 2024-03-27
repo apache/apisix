@@ -22,7 +22,8 @@ local azure_authz_schema = {
     properties = {
         apikey = {type = "string"},
         clientid = {type = "string"}
-    }
+    },
+    encrypt_fields = {"apikey"},
 }
 
 local metadata_schema = {
@@ -30,7 +31,8 @@ local metadata_schema = {
     properties = {
         master_apikey = {type = "string", default = ""},
         master_clientid = {type = "string", default = ""}
-    }
+    },
+    encrypt_fields = {"master_apikey"}
 }
 
 local function request_processor(conf, ctx, params)
