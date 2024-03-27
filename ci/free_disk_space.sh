@@ -29,7 +29,7 @@ echo "Initial disk usage:"
 df -h
 
 echo "Removing large directories and runtimes..."
-sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
+sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup /usr/share/swift
 
 echo "Removing large packages and performing clean-up..."
 sudo apt-get remove -y '^aspnetcore-.*' '^dotnet-.*' '^llvm-.*' 'php.*' '^mongodb-.*' '^mysql-.*' \
