@@ -87,7 +87,7 @@ Assumed the APISIX is proxying TCP on port `9101`, and the Redis is listening on
 Let's create a Stream Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "type": "none",

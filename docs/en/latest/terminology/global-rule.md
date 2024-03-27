@@ -40,7 +40,7 @@ The example below shows how you can use the `limit-count` Plugin on all requests
 curl -X PUT \
   http://{apisix_listen_address}/apisix/admin/global_rules/1 \
   -H 'Content-Type: application/json' \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+  -H "X-API-KEY: $admin_key" \
   -d '{
         "plugins": {
             "limit-count": {
@@ -57,5 +57,5 @@ curl -X PUT \
 You can also list all the Global rules by making this request with the Admin API:
 
 ```shell
-curl http://{apisix_listen_address}/apisix/admin/global_rules -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl http://{apisix_listen_address}/apisix/admin/global_rules -H "X-API-KEY: $admin_key"
 ```

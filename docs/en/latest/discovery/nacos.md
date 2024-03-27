@@ -63,7 +63,7 @@ discovery:
 Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacos/*",
     "upstream": {
@@ -105,7 +105,7 @@ The formatted response as below:
 Nacos service discovery also supports use in L4, the configuration method is similar to L7.
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "remote_addr": "127.0.0.1",
     "upstream": {
@@ -129,7 +129,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f
 Example of routing a request with an URI of "/nacosWithNamespaceId/*" to a service with name, namespaceId "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns" and use nacos discovery client in the registry:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacosWithNamespaceId/*",
     "upstream": {
@@ -177,7 +177,7 @@ The formatted response as below:
 Example of routing a request with an URI of "/nacosWithGroupName/*" to a service with name, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&groupName=test_group" and use nacos discovery client in the registry:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/3 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/3 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacosWithGroupName/*",
     "upstream": {
@@ -225,7 +225,7 @@ The formatted response as below:
 Example of routing a request with an URI of "/nacosWithNamespaceIdAndGroupName/*" to a service with name, namespaceId, groupName "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS&namespaceId=test_ns&groupName=test_group" and use nacos discovery client in the registry:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/nacosWithNamespaceIdAndGroupName/*",
     "upstream": {

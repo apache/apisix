@@ -36,7 +36,13 @@ deployment:
 make run
 sleep 1
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+get_admin_key() {
+local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
+echo "$admin_key"
+}
+admin_key=$(get_admin_key)
+
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 
 if [ ! $code -eq 200 ]; then
     echo "failed: control_plane should enable Admin API"
@@ -45,7 +51,7 @@ fi
 
 echo "passed: control_plane should enable Admin API"
 
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "nodes": {
@@ -56,7 +62,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     "uri": "/*"
 }'
 
-code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/c -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/c -H "X-API-KEY: $admin_key")
 make stop
 if [ ! $code -eq 404 ]; then
     echo "failed: should disable request proxy"

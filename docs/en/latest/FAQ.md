@@ -123,7 +123,7 @@ There are two different ways to achieve this in Apache APISIX:
 1. Using the `vars` field in a [Route](terminology/route.md):
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -136,7 +136,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -163,7 +163,7 @@ Apache APISIX provides several different ways to achieve this:
 1. Setting `http_to_https` to `true` in the [redirect](plugins/redirect.md) Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -178,7 +178,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. Advanced routing with `vars` in the redirect Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -201,7 +201,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. Using the `serverless` Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -392,7 +392,7 @@ deployment:
 2. Add a proxy Route for the Apache APISIX dashboard:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"apisix_proxy_dashboard",
@@ -416,7 +416,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 You can use the `vars` field in a Route for matching regular expressions:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/*",
     "vars": [
@@ -452,7 +452,7 @@ For more info on using `vars` refer to [lua-resty-expr](https://github.com/api7/
 Yes. The example below shows configuring the FQDN `httpbin.default.svc.cluster.local` (a Kubernetes service):
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "upstream": {
@@ -554,7 +554,7 @@ You can check [this post](https://juejin.cn/post/6965778290619449351) for a more
 To strip a prefix from a path in your route, like to take `/foo/get` and strip it to `/get`, you can use the [proxy-rewrite](plugins/proxy-rewrite.md) Plugin:
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/foo/*",
     "plugins": {

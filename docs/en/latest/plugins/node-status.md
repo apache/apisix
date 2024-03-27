@@ -57,7 +57,7 @@ plugins:
 You have to the setup the Route for the status API and expose it using the [public-api](public-api.md) Plugin.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/ns -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/apisix/status",
     "plugins": {
@@ -115,5 +115,5 @@ plugins:
 You can also remove the Route on `/apisix/status`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/ns -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+curl http://127.0.0.1:9180/apisix/admin/routes/ns -H "X-API-KEY: $admin_key" -X DELETE
 ```

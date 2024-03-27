@@ -46,7 +46,7 @@ to do authentication, from the SP (service provider) perspective.
 You can enable the Plugin on a specific Route as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/cas1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/cas1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET", "POST"],
     "host" : "127.0.0.1",
@@ -93,7 +93,7 @@ For example, if the `uri` of the current route is `/api/v1/*`, `cas_callback_uri
 To remove the `cas-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/cas1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/cas1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET", "POST"],
     "uri": "/anything/*",

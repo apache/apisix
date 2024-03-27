@@ -110,7 +110,7 @@ The example below shows how you can configure through the Admin API:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/tencent-cloud-cls \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -133,7 +133,7 @@ The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "tencent-cloud-cls": {
@@ -173,7 +173,7 @@ To disable this Plugin, you can delete the corresponding JSON configuration from
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

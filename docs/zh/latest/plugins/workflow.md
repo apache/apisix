@@ -67,7 +67,7 @@ description: 本文介绍了关于 Apache APISIX `workflow` 插件的基本信�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri":"/hello/*",
     "plugins":{
@@ -153,7 +153,7 @@ HTTP/1.1 200 OK
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri":"/hello/*",
     "upstream": {

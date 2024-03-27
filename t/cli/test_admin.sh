@@ -44,7 +44,13 @@ fi
 
 make run
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+get_admin_key() {
+local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
+echo "$admin_key"
+}
+admin_key=$(get_admin_key)
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to enable https for admin"
     exit 1
@@ -73,7 +79,7 @@ fi
 
 make run
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9181/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9181/apisix/admin/routes -H "X-API-KEY: $admin_key")
 
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to access admin"
@@ -280,7 +286,7 @@ rm logs/error.log
 make init
 make run
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 make stop
 
 if [ ! $code -eq 200 ]; then

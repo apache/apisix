@@ -41,7 +41,7 @@ The following example creates a Service that enables the `limit-count` Plugin an
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/services/200 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -64,7 +64,7 @@ curl http://127.0.0.1:9180/apisix/admin/services/200 \
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "methods": ["GET"],
         "uri": "/index.html",
@@ -74,7 +74,7 @@ curl http://127.0.0.1:9180/apisix/admin/services/200 \
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/101 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "methods": ["GET"],
         "uri": "/foo/index.html",
@@ -86,7 +86,7 @@ We can also specify different Plugins or Upstream for the Routes than the ones d
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/102 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/bar/index.html",
         "id": "102",

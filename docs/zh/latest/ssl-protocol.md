@@ -83,7 +83,7 @@ apisix:
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
@@ -98,7 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server2.crt)"'",
      "key": "'"$(cat server2.key)"'",
@@ -197,7 +197,7 @@ curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol vers
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
@@ -212,7 +212,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",

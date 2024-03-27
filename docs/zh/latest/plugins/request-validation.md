@@ -51,7 +51,7 @@ description: 本文介绍了 Apache APISIX request-validation 插件的相关操
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/get",
     "plugins": {
@@ -271,7 +271,7 @@ curl --header "Content-Type: application/json" \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/get",
     "plugins": {

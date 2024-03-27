@@ -41,7 +41,7 @@ Here's an example, to proxying gRPC service by specified route:
 * the grpc server example：[grpc_server_example](https://github.com/api7/grpc_server_example)
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",
@@ -98,7 +98,7 @@ This means that the proxying is working.
 If your gRPC service encrypts with TLS by itself (so called `gPRCS`, gPRC + TLS), you need to change the `scheme` to `grpcs`. The example above runs gRPCS service on port 50052, to proxy gRPC request, we need to use the configuration below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",

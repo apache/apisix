@@ -61,7 +61,7 @@ apisix reload
 * 注意：提供的 CA 证书需要与服务端的相同。*
 
 ```shell
-curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H "X-API-KEY: $admin_key"
 ```
 
 ## 保护 ETCD
@@ -107,7 +107,7 @@ apisix:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
     "cert": "'"$(cat t/certs/mtls_server.crt)"'",
     "key": "'"$(cat t/certs/mtls_server.key)"'",
     "snis": [
@@ -185,7 +185,7 @@ curl -vvv --resolve 'admin.apisix.dev:9443:127.0.0.1' https://admin.apisix.dev:9
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -d '
+-H "X-API-KEY: $admin_key" -X PATCH -d '
 {
     "tls": {
         "client_cert": "'"$(cat t/certs/mtls_client.crt)"'",

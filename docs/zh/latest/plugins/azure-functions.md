@@ -70,7 +70,7 @@ description: 本文介绍了关于 API 网关 Apache APISIX azure-functions 插�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/azure-functions \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "master_apikey" : "<Your Azure master access key>"
 }'
@@ -82,7 +82,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/azure-functions \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -154,7 +154,7 @@ Hello, APISIX
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "azure-functions": {
@@ -191,7 +191,7 @@ Hello, APISIX
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/azure",
     "plugins": {},

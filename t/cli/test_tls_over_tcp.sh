@@ -39,8 +39,14 @@ nginx_config:
 make run
 sleep 0.1
 
+get_admin_key() {
+local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
+echo "$admin_key"
+}
+admin_key=$(get_admin_key)
+
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat t/certs/mtls_server.crt)"'",
      "key": "'"$(cat t/certs/mtls_server.key)"'",
@@ -48,7 +54,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 }'
 
 curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d \
+    -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
 
 sleep 0.1

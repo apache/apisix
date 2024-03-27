@@ -29,6 +29,11 @@ else
     upstream_cnt=1
 fi
 
+get_admin_key() {
+    local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
+    echo "$admin_key"
+}
+admin_key=$(get_admin_key)
 mkdir -p benchmark/server/logs
 mkdir -p benchmark/fake-apisix/logs
 
@@ -75,7 +80,7 @@ sleep 3
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + no plugin"
 
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -101,7 +106,7 @@ sleep 1
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + 2 plugins (limit-count + prometheus)"
 
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {

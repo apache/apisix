@@ -38,7 +38,7 @@ The example below illustrates how to create a Plugin Config and bind it to a Rou
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "desc": "blah",
     "plugins": {
@@ -80,7 +80,7 @@ For example, if you configure a Plugin Config as shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
- -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+ -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "desc": "I am plugin_config 1",
     "plugins": {
@@ -103,7 +103,7 @@ to a Route as shown below,
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -132,7 +132,7 @@ the effective configuration will be as the one shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "upstream": {

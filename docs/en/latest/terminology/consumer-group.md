@@ -41,7 +41,7 @@ Create a Consumer Group which shares the same rate limiting quota:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -58,7 +58,7 @@ Create a Consumer within the Consumer Group:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {

@@ -76,7 +76,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "username": "jack",
         "plugins": {
@@ -97,7 +97,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {}
@@ -133,7 +133,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {},

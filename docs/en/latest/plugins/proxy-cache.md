@@ -84,7 +84,7 @@ You can enable the Plugin on a Route as shown below. The Plugin uses the disk-ba
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {
@@ -112,7 +112,7 @@ You can enable the Plugin on a Route with in-memory `cache_strategy` and a corre
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {
@@ -185,7 +185,7 @@ To remove the `proxy-cache` Plugin, you can delete the corresponding JSON config
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {},

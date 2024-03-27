@@ -37,7 +37,7 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat t/certs/apisix.crt)"'",
      "key": "'"$(cat t/certs/apisix.key)"'",
@@ -48,7 +48,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 创建路由：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/get",
     "hosts": ["test.com"],
@@ -95,7 +95,7 @@ curl --resolve 'test.com:9443:127.0.0.1' https://test.com:9443/get -k -vvv
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat t/certs/apisix.crt)"'",
      "key": "'"$(cat t/certs/apisix.key)"'",
@@ -106,7 +106,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 创建路由：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/hello",
     "hosts": ["*.test.com"],
@@ -265,7 +265,7 @@ curl -vvv \
     --cert /path/to/foo_client.crt \
     --key /path/to/foo_client.key \
     --cacert /path/to/apisix.ca-bundle \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/get",
     "upstream": {

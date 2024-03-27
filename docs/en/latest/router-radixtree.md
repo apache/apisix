@@ -78,7 +78,7 @@ Note: In the matching rules, the `priority` field takes precedence over other ru
 Create two routes with different `priority` values ​​(the larger the value, the higher the priority).
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -92,7 +92,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -119,7 +119,7 @@ All requests will only hit the route of port `1980` because it has a priority of
 To understand this, look at the example of setting host matching rules:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -133,7 +133,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f
 ```
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
        "nodes": {
@@ -192,7 +192,7 @@ For more details, see https://github.com/api7/lua-resty-radixtree/#parameters-in
 Nginx provides a variety of built-in variables that can be used to filter routes based on certain criteria. Here is an example of how to filter routes by Nginx built-in variables:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -220,7 +220,7 @@ APISIX supports filtering route by POST form attributes with `Content-Type` = `a
 We can define the following route:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/_post",
@@ -270,7 +270,7 @@ Where
 We can filter such route with:
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/graphql",

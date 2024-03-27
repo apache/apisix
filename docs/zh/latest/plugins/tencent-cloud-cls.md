@@ -108,7 +108,7 @@ description: API 网关 Apache APISIX tencent-cloud-cls 插件可用于将日志
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/tencent-cloud-cls \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -131,7 +131,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/tencent-cloud-cls \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "tencent-cloud-cls": {
@@ -177,7 +177,7 @@ hello, world
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

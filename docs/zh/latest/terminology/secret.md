@@ -101,7 +101,7 @@ export JACK_AUTH_KEY=abc
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -141,7 +141,7 @@ vault kv put apisix/jack auth-key=value
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/secrets/vault/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "https://127.0.0.1:8200"，
     "prefix": "apisix",
@@ -163,7 +163,7 @@ secrets:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
