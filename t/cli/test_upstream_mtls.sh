@@ -54,7 +54,7 @@ get_admin_key() {
 local admin_key=$(grep "key:" -A3 conf/config.yaml | grep "key: *" | awk '{print $2}')
 echo "$admin_key"
 }
-admin_key=$(get_admin_key); echo $admin_key
+export admin_key=$(get_admin_key); echo $admin_key
 
 curl -k -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
