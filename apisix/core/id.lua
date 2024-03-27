@@ -27,7 +27,10 @@ local uuid             = require('resty.jit-uuid')
 local smatch           = string.match
 local open             = io.open
 local lyaml = require("lyaml")
-
+local type = type
+local ipairs = ipairs
+local string = string
+local math = math
 local prefix = ngx.config.prefix()
 local apisix_uid
 
