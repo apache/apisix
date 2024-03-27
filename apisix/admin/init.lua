@@ -85,7 +85,7 @@ local function check_token(ctx)
     if not req_token then
         return false, "missing apikey"
     end
-
+    core.log.warn("THE ACTUAL API KEY IS: ", req_token)
     local admin
     for i, row in ipairs(admin_key) do
         if req_token == row.key then
