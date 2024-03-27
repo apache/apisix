@@ -41,7 +41,7 @@ ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(proj
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
-ENV_LIBYAML_INSTALL_PREFIX ?= /usr/local
+ENV_LIBYAML_INSTALL_PREFIX ?= /usr
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
