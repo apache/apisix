@@ -64,7 +64,8 @@ end
 
 local function generate_yaml(table)
     local yaml = lyaml.dump({table})
-    local result = yaml:gsub("^%-%-%-\n", "") -- Remove "---\n" from the start that is automatically added by this function.
+    -- Remove "---\n" from the start that is automatically added by this function.
+    local result = yaml:gsub("^%-%-%-\n", "") 
     return result
 end
 
