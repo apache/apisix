@@ -17,7 +17,7 @@
 
 package = "apisix"
 version = "master-0"
-supported_platforms = {"linux"}
+supported_platforms = {"linux","macosx","macos"}
 
 source = {
     url = "git://github.com/apache/apisix",
@@ -32,7 +32,6 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
-    "api7-lua-resty-dns-client = 7.0.1",
     "lua-resty-template = 2.0",
     "lua-resty-etcd = 1.10.5",
     "api7-lua-resty-http = 0.2.2-0",
