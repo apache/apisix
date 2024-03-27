@@ -24,11 +24,12 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc gcc-c++ automake autoconf libtool make unzip patch \
-        git sudo openldap-devel which ca-certificates libyaml-devel\
+        git sudo openldap-devel which ca-certificates\
         epel-release  \
         cpanminus perl \
         openssl-devel
 
+    yum install -y --enablerepo=ol8_codeready_builder libyaml-devel
     # install newer curl
     yum makecache
     yum install -y libnghttp2-devel
