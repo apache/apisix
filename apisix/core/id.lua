@@ -27,7 +27,7 @@ local log              = require("apisix.core.log")
 local uuid             = require('resty.jit-uuid')
 local smatch           = string.match
 local open             = io.open
-
+local lyaml = require("lyaml")
 
 local prefix = ngx.config.prefix()
 local apisix_uid
@@ -63,27 +63,10 @@ local function write_file(path, data)
     return true
 end
 
-local function generate_yaml(table, indent)
-    indent = indent or 0
-    local yaml = ""
-
-    for key, value in pairs(table) do
-        if type(value) == "table" then
-            if next(value) == nil then -- empty table
-                yaml = yaml .. string.rep(" ", indent) .. key .. ":\n"
-            else
-                yaml = yaml .. string.rep(" ", indent) .. key .. ":\n" .. generate_yaml(value, indent + 2)
-            end
-        elseif type(value) == "boolean" then
-            yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. tostring(value) .. "\n"
-        elseif type(key) == "number" then
-            yaml = yaml .. string.rep(" ", indent) .. "- " .. tostring(value) .. "\n"
-        else
-            yaml = yaml .. string.rep(" ", indent) .. key .. ": " .. tostring(value) .. "\n"
-        end
-    end
-
-    return yaml
+local function generate_yaml(table)
+    local yaml = lyaml.dump({table})
+    local result = yaml:gsub("^%-%-%-\n", "") -- Remove "---\n" from the start that is automatically added by this function.
+    return result
 end
 
 
