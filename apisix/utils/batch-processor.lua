@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local setmetatable = setmetatable
 local timer_at = ngx.timer.at
 local ipairs = ipairs
@@ -184,8 +185,9 @@ function batch_processor:push(entry)
         return
     end
 
-    if prometheus and prometheus.get_prometheus() and not batch_metrics and self.name
-       and self.route_id and self.server_addr then
+    if not plugin.check_disable_with_metatable(plugin.get("prometheus"))
+        and not batch_metrics and self.name
+        and self.route_id and self.server_addr then
         batch_metrics = prometheus.get_prometheus():gauge("batch_process_entries",
                                                           "batch process remaining entries",
                                                           {"name", "route_id", "server_addr"})

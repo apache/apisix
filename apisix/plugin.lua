@@ -97,6 +97,29 @@ local function check_disable(plugin_conf)
     return plugin_conf._meta.disable
 end
 
+--- check if the plugin is disabled with metatable
+--- if the plugin_conf is nil, return true
+--- if the plugin_conf._meta is nil, return true (enable default)
+--- if the plugin_conf._meta.disable is nil, return false
+--- true means plugin is disabled, false means plugin is enabled
+local function check_disable_with_metatable(plugin_conf)
+    if not plugin_conf then
+        return true
+    end
+
+    if not plugin_conf._meta then
+        return false
+    end
+
+    if type(plugin_conf._meta) ~= "table" then
+        return true
+    end
+
+    return plugin_conf._meta.disable
+end
+
+_M.check_disable_with_metatable = check_disable_with_metatable
+
 local PLUGIN_TYPE_HTTP = 1
 local PLUGIN_TYPE_STREAM = 2
 local PLUGIN_TYPE_HTTP_WASM = 3
