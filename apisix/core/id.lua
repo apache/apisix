@@ -82,7 +82,7 @@ local function autogenerate_admin_key(default_conf)
     default_conf.deployment.admin.admin_key
     if admin_keys and type(admin_keys) == "table" then
         for i, admin_key in ipairs(admin_keys) do
-            if admin_key.name == "admin" and (not admin_key.key or admin_key.key == '') then
+            if admin_key.name == "admin" and admin_key.key == '' then
                 admin_keys[i].key = ''
                 for _ = 1, 32 do
                     admin_keys[i].key = admin_keys[i].key ..
@@ -96,7 +96,6 @@ local function autogenerate_admin_key(default_conf)
 end
 
 function _M.init()
-
     local local_conf = fetch_local_conf()
     --Autogenerate admin api key if empty
     local_conf = autogenerate_admin_key(local_conf)
