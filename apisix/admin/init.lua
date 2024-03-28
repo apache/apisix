@@ -84,7 +84,7 @@ local function check_token(ctx)
     if not req_token then
         return false, "missing apikey"
     end
-
+    core.log.warn("adminkey read: ",core.json.delay_encode(admin_key))
     local admin
     for i, row in ipairs(admin_key) do
         if req_token == row.key then
@@ -94,7 +94,7 @@ local function check_token(ctx)
     end
 
     if not admin then
-        return false, "wrong apikey. expected: ".. admin_key
+        return false, "wrong apikey"
     end
 
     if admin.role == "viewer" and
