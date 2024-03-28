@@ -117,7 +117,7 @@ local function set_ctx_and_check_token()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, { error_msg = "failed to check token" })
+        core.response.exit(401, { error_msg = "failed to check token - "+err })
     end
 end
 
