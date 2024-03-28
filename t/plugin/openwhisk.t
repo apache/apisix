@@ -117,7 +117,27 @@ passed
 
 
 
-=== TEST 5: hit route (with GET request)
+=== TEST 5: verify encrypted field
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+           
+
+            -- get plugin conf from etcd, password is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["openwhisk"].service_token)
+
+        }
+    }
+--- response_body
+pe14btxogtzJ4qPM/W2qj0AQeUK/O5oegLkKJLkkSEsKUIjP+bgyO+qsTXuLrY/h/esLKrRulD2TOtf+Zt/Us+hxZ/svsMwXZqZ9T9/2wWyi8SKALLfTUZDiV69mxCwD2zNBze1jslMlPtdA9JFIOQ==
+
+
+
+=== TEST 6: hit route (with GET request)
 --- request
 GET /hello
 --- response_body chomp
@@ -125,7 +145,7 @@ GET /hello
 
 
 
-=== TEST 6: hit route (with POST method and non-json format request body)
+=== TEST 7: hit route (with POST method and non-json format request body)
 --- request
 POST /hello
 test=test
@@ -137,7 +157,7 @@ qr/"error":"The request content was malformed/
 
 
 
-=== TEST 7: setup route with plugin
+=== TEST 8: setup route with plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -172,7 +192,7 @@ passed
 
 
 
-=== TEST 8: hit route (with POST and correct request body)
+=== TEST 9: hit route (with POST and correct request body)
 --- request
 POST /hello
 {"name": "world"}
@@ -183,7 +203,7 @@ Content-Type: application/json
 
 
 
-=== TEST 9: reset route to non-existent action
+=== TEST 10: reset route to non-existent action
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +238,7 @@ passed
 
 
 
-=== TEST 10: hit route (with non-existent action)
+=== TEST 11: hit route (with non-existent action)
 --- request
 POST /hello
 {"name": "world"}
@@ -230,7 +250,7 @@ qr/"error":"The requested resource does not exist."/
 
 
 
-=== TEST 11: reset route to wrong api_host
+=== TEST 12: reset route to wrong api_host
 --- config
     location /t {
         content_by_lua_block {
@@ -265,7 +285,7 @@ passed
 
 
 
-=== TEST 12: hit route (with wrong api_host)
+=== TEST 13: hit route (with wrong api_host)
 --- request
 POST /hello
 {"name": "world"}
@@ -277,7 +297,7 @@ failed to process openwhisk action, err:
 
 
 
-=== TEST 13: reset route to packaged action
+=== TEST 14: reset route to packaged action
 --- config
     location /t {
         content_by_lua_block {
@@ -313,7 +333,7 @@ passed
 
 
 
-=== TEST 14: hit route (with packaged action)
+=== TEST 15: hit route (with packaged action)
 --- request
 GET /hello
 --- response_body chomp
@@ -321,7 +341,7 @@ GET /hello
 
 
 
-=== TEST 15: reset route to status code action
+=== TEST 16: reset route to status code action
 --- config
     location /t {
         content_by_lua_block {
@@ -356,14 +376,14 @@ passed
 
 
 
-=== TEST 16: hit route (with packaged action)
+=== TEST 17: hit route (with packaged action)
 --- request
 GET /hello
 --- error_code: 407
 
 
 
-=== TEST 17: reset route to headers action
+=== TEST 18: reset route to headers action
 --- config
     location /t {
         content_by_lua_block {
@@ -398,7 +418,7 @@ passed
 
 
 
-=== TEST 18: hit route (with headers action)
+=== TEST 19: hit route (with headers action)
 --- request
 GET /hello
 --- response_headers
@@ -406,7 +426,7 @@ test: header
 
 
 
-=== TEST 19: reset route to body action
+=== TEST 20: reset route to body action
 --- config
     location /t {
         content_by_lua_block {
@@ -441,7 +461,7 @@ passed
 
 
 
-=== TEST 20: hit route (with body action)
+=== TEST 21: hit route (with body action)
 --- request
 GET /hello
 --- response_body
