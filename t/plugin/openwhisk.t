@@ -123,7 +123,7 @@ passed
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
-           
+
 
             -- get plugin conf from etcd, password is encrypted
             local etcd = require("apisix.core.etcd")
