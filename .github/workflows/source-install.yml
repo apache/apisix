@@ -88,7 +88,7 @@ jobs:
 
       - name: Test apisix
         run: |
-            wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+            wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
             get_admin_key() {
             local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
             echo "$admin_key"
