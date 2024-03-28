@@ -82,7 +82,8 @@ local function autogenerate_admin_key(default_conf)
             if admin_key.role == "admin" and admin_key.key == "" then
                 admin_keys[i].key = ""
                 for _ = 1, 32 do
-                    admin_keys[i].key = admin_keys[i].key .. string.char(math.random(65, 90) + math.random(0, 1) * 32)
+                    admin_keys[i].key = admin_keys[i].key ..
+                    string.char(math.random(65, 90) + math.random(0, 1) * 32)
                 end
             end
         end
