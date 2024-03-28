@@ -73,6 +73,7 @@ _M.gen_uuid_v4 = uuid.generate_v4
 
 --- This will autogenerate the admin key if it's passed as an empty string in the configuration.
 local function autogenerate_admin_key(default_conf)
+    local changed = false
     -- Check if deployment.admin.admin_key is not nil and it's an array
     local admin_keys = default_conf.deployment
         and default_conf.deployment.admin
@@ -80,6 +81,7 @@ local function autogenerate_admin_key(default_conf)
     if admin_keys and type(admin_keys) == "table" then
         for i, admin_key in ipairs(admin_keys) do
             if admin_key.role == "admin" and admin_key.key == "" then
+                changed = true
                 admin_keys[i].key = ""
                 for _ = 1, 32 do
                     admin_keys[i].key = admin_keys[i].key ..
@@ -88,18 +90,20 @@ local function autogenerate_admin_key(default_conf)
             end
         end
     end
-    return default_conf
+    return default_conf,changed
 end
 
 function _M.init()
     local local_conf = fetch_local_conf()
 
-    local_conf = autogenerate_admin_key(local_conf)
-    local yaml_conf = generate_yaml(local_conf)
-    local local_conf_path = profile:yaml_path("config")
-    local ok, err = write_file(local_conf_path, yaml_conf)
-    if not ok then
-        log.error(err)
+    local local_conf,changed = autogenerate_admin_key(local_conf)
+    if changed then
+        local yaml_conf = generate_yaml(local_conf)
+        local local_conf_path = profile:yaml_path("config")
+        local ok, err = write_file(local_conf_path, yaml_conf)
+        if not ok then
+            log.error(err)
+        end
     end
 
     --allow user to specify a meaningful id as apisix instance id
