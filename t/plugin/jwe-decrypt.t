@@ -95,6 +95,10 @@ done
 
 
 === TEST 4: secret length too long
+--- yaml_config
+apisix:
+  data_encryption:
+    enable_encrypt_fields: false
 --- config
     location /t {
         content_by_lua_block {
@@ -115,6 +119,10 @@ done
 
 
 === TEST 5: secret length too long(base64 encode)
+--- yaml_config
+apisix:
+  data_encryption:
+    enable_encrypt_fields: false
 --- config
     location /t {
         content_by_lua_block {
