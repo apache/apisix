@@ -20,13 +20,12 @@
 -- @module core.id
 
 local fetch_local_conf = require("apisix.core.config_local").local_conf
-local try_read_attr    = require("apisix.core.table").try_read_attr
+local try_read_attr = require("apisix.core.table").try_read_attr
 local profile = require("apisix.core.profile")
-local log              = require("apisix.core.log")
-local table            = require("apisix.core.table")
-local uuid             = require('resty.jit-uuid')
-local smatch           = string.match
-local open             = io.open
+local log = require("apisix.core.log")
+local uuid = require("resty.jit-uuid")
+local smatch = string.match
+local open = io.open
 local lyaml = require("lyaml")
 local type = type
 local ipairs = ipairs
@@ -35,13 +34,11 @@ local math = math
 local prefix = ngx.config.prefix()
 local apisix_uid
 
-local _M = {version = 0.1}
-
+local _M = { version = 0.1 }
 
 local function rtrim(str)
     return smatch(str, "^(.-)%s*$")
 end
-
 
 local function read_file(path)
     local file = open(path, "rb") -- r read mode and b binary mode
@@ -49,11 +46,10 @@ local function read_file(path)
         return nil
     end
 
-    local content = file:read("*a")  -- *a or *all reads the whole file
+    local content = file:read("*a") -- *a or *all reads the whole file
     file:close()
     return rtrim(content)
 end
-
 
 local function write_file(path, data)
     local file = open(path, "w+")
@@ -67,28 +63,26 @@ local function write_file(path, data)
 end
 
 local function generate_yaml(table)
-    local yaml = lyaml.dump({table})
+    local yaml = lyaml.dump({ table })
     -- Remove "---\n" from the start that is automatically added by this function.
     local result = yaml:gsub("^%-%-%-\n", "")
     return result
 end
-
 
 _M.gen_uuid_v4 = uuid.generate_v4
 
 --- This will autogenerate the admin key if it's passed as an empty string in the configuration.
 local function autogenerate_admin_key(default_conf)
     -- Check if deployment.admin.admin_key is not nil and it's an array
-    local admin_keys = default_conf.deployment and
-    default_conf.deployment.admin and
-    default_conf.deployment.admin.admin_key
+    local admin_keys = default_conf.deployment
+        and default_conf.deployment.admin
+        and default_conf.deployment.admin.admin_key
     if admin_keys and type(admin_keys) == "table" then
         for i, admin_key in ipairs(admin_keys) do
-            if admin_key.role == "admin" and admin_key.key == '' then
-                admin_keys[i].key = ''
+            if admin_key.role == "admin" and admin_key.key == "" then
+                admin_keys[i].key = ""
                 for _ = 1, 32 do
-                    admin_keys[i].key = admin_keys[i].key ..
-                    string.char(math.random(65, 90) + math.random(0, 1) * 32)
+                    admin_keys[i].key = admin_keys[i].key .. string.char(math.random(65, 90) + math.random(0, 1) * 32)
                 end
             end
         end
@@ -113,7 +107,6 @@ function _M.init()
     if apisix_uid then
         return
     end
-
 
     local id = try_read_attr(local_conf, "apisix", "id")
     if id then
@@ -140,6 +133,5 @@ end
 function _M.get()
     return apisix_uid
 end
-
 
 return _M
