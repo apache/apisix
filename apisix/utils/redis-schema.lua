@@ -44,7 +44,6 @@ local policy_to_additional_properties = {
             },
         },
         required = {"redis_host"},
-        encrypt_fields = {"redis_password"}
     },
     ["redis-cluster"] = {
         properties = {
