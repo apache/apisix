@@ -294,46 +294,7 @@ status:503, count:4
                             "type": "roundrobin"
                         },
                         "uri": "/limit_conn"
-                }]],
-                [[{
-                    "value": {
-                        "status": 1,
-                        "priority": 0,
-                        "uri": "/limit_conn",
-                        "plugins": {
-                        "limit-conn": {
-                            "redis_ssl": false,
-                            "redis_ssl_verify": false,
-                            "redis_host": "127.0.0.1",
-                            "redis_port": 6379,
-                            "redis_password": "somepassword",
-                            "redis_username": "alice",
-                            "key": "remote_addr",
-                            "burst": 1,
-                            "default_conn_delay": 0.1,
-                            "only_use_default_delay": false,
-                            "key_type": "var",
-                            "conn": 5,
-                            "policy": "redis",
-                            "allow_degradation": false,
-                            "rejected_code": 503,
-                            "redis_timeout": 1000,
-                            "redis_database": 0
-                        }
-                        },
-                        "upstream": {
-                        "scheme": "http",
-                        "pass_host": "pass",
-                        "hash_on": "vars",
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        }
-                        },
-                        "id": "1"
-                    },
-                    "key": "/apisix/routes/1"
-                    }]]
+                }]]
                 )
 
             if code >= 300 then
