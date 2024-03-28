@@ -94,7 +94,7 @@ local function check_token(ctx)
     end
 
     if not admin then
-        return false, "wrong apikey"
+        return false, "wrong apikey. expected: ".. core.json.delay_encode(admin_key)
     end
 
     if admin.role == "viewer" and
