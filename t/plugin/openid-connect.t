@@ -144,7 +144,7 @@ passed
             local t = require("lib.test_admin").test
 
 
-            -- get plugin conf from etcd, password is encrypted
+            -- get plugin conf from etcd, client_rsa_private_key is encrypted
             local etcd = require("apisix.core.etcd")
             local res = assert(etcd.get('/routes/1'))
             ngx.say(res.body.node.value.plugins["openid-connect"].client_rsa_private_key)
