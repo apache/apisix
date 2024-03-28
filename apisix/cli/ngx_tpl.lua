@@ -667,12 +667,15 @@ http {
         {% if enable_http2 then %}
         http2 on;
         {% end %}
+        {% if enable_http3_in_server_context then %}
+        http3 on;
+        {% end %}
         {% for _, item in ipairs(node_listen) do %}
         listen {* item.ip *}:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, item in ipairs(ssl.listen) do %}
-        {% if item.enable_quic then %}
+        {% if item.enable_http3 then %}
         listen {* item.ip *}:{* item.port *} quic default_server {% if enable_reuseport then %} reuseport {% end %};
         listen {* item.ip *}:{* item.port *} ssl default_server;
         {% else %}

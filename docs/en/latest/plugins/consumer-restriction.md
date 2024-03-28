@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Consumer restriction
-description: The Consumer Restriction Plugin allows users to configure access restrictions on Consumer, Route, Service, or Global Rule.
+description: The Consumer Restriction Plugin allows users to configure access restrictions on Consumer, Route, Service, or Consumer Group.
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: The Consumer Restriction Plugin allows users to configure access re
 
 ## Description
 
-The `consumer-restriction` Plugin allows users to configure access restrictions on Consumer, Route, Service, or Global Rule.
+The `consumer-restriction` Plugin allows users to configure access restrictions on Consumer, Route, Service, or Consumer Group.
 
 ## Attributes
 

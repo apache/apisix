@@ -23,10 +23,8 @@ apisix:
   node_listen:                 # APISIX listening ports.
     - 9080
   #   - port: 9081
-  #     enable_http2: true     # If not set, default to `false`.
   #   - ip: 127.0.0.2          # If not set, default to `0.0.0.0`
   #     port: 9082
-  #     enable_http2: true
   enable_admin: true           # Admin API
   enable_dev_mode: false       # If true, set nginx `worker_processes` to 1.
   enable_reuseport: true       # If true, enable nginx SO_REUSEPORT option.
@@ -35,6 +33,7 @@ apisix:
                                                   # If false, show `X-APISIX-Upstream-Status` only if
                                                   # the upstream response code is 5xx.
   enable_ipv6: true
+  enable_http2: true
 
   # proxy_protocol:                    # PROXY Protocol configuration
   #   listen_http_port: 9181           # APISIX listening port for HTTP traffic with PROXY protocol.
@@ -96,12 +95,10 @@ apisix:
     enable: true
     listen:                                       # APISIX listening port for HTTPS traffic.
       - port: 9443
-        enable_http2: true
-        enable_quic: false                        # Enable QUIC or HTTP/3. If not set default to `false`.
+        enable_http3: false                       # Enable HTTP/3 (with QUIC). If not set default to `false`.
       # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
       #   port: 9445
-      #   enable_http2: true
-      #   enable_quic: true
+      #   enable_http3: true
     # ssl_trusted_certificate: /path/to/ca-cert   # Set the path to CA certificates used to verify client
                                                   # certificates in the PEM format.
     ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
@@ -121,7 +118,7 @@ apisix:
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
   data_encryption:                # Data encryption settings.
-    enable_encrypt_fields: false  # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
                                   # in plugin schema.
       - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string

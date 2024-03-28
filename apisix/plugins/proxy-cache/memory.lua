@@ -52,13 +52,16 @@ function _M:get(key)
     end
 
     -- If the key does not exist or has expired, then res_json will be nil.
-    local res_json, err = self.dict:get(key)
+    local res_json, err, stale = self.dict:get_stale(key)
     if not res_json then
         if not err then
             return nil, "not found"
         else
             return nil, err
         end
+    end
+    if stale then
+        return nil, "expired"
     end
 
     local res_obj, err = core.json.decode(res_json)

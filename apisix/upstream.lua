@@ -451,6 +451,18 @@ local function check_upstream_conf(in_dp, conf)
             return false, "invalid configuration: " .. err
         end
 
+        if conf.nodes and not core.table.isarray(conf.nodes) then
+            local port
+            for addr,_ in pairs(conf.nodes) do
+                _, port = core.utils.parse_addr(addr)
+                if port then
+                    if port < 1 or port > 65535 then
+                        return false, "invalid port " .. tostring(port)
+                    end
+                end
+            end
+        end
+
         local ssl_id = conf.tls and conf.tls.client_cert_id
         if ssl_id then
             local key = "/ssls/" .. ssl_id

@@ -66,6 +66,11 @@ services:
       - "8302:8302"
       - "9600:8600"
     command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-node", "node-1", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8500/"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
     networks:
       consul_cluster_net:
         aliases:
@@ -79,6 +84,9 @@ services:
     ports:
       - "9501:8500"
     command: [ "consul", "agent", "-server", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-retry-join", "consul.cluster", "-node", "node-2", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    depends_on:
+      consul_node_1:
+        condition: service_healthy
     networks:
       consul_cluster_net:
         aliases:
@@ -92,6 +100,9 @@ services:
     ports:
       - "9502:8500"
     command: [ "consul", "agent", "-server", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-retry-join", "consul.cluster", "-node", "node-3", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    depends_on:
+      consul_node_1:
+        condition: service_healthy
     networks:
       consul_cluster_net:
         aliases:
