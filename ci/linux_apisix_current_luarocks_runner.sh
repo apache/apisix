@@ -46,6 +46,8 @@ script() {
     # show install file
     luarocks show apisix
     echo "config before starting apisix"
+    ls
+    ls conf/
     cat conf/config.yaml
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
