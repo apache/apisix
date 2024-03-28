@@ -261,19 +261,19 @@ deployment:
     admin_key:
         -
         name: "admin"
-        key: edd1c9f034335f136f87ad84b625c8f1
+        key: ''
         role: admin
 ' > conf/config.yaml
 
 make init > output.log 2>&1 | true
 
-grep -E "WARNING: using fixed Admin API token has security risk." output.log > /dev/null
+grep -E "WARNING: using empty Admin API. This will trigger APISIX to automatically generate a random Admin API token." output.log > /dev/null
 if [ ! $? -eq 0 ]; then
     echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
     exit 1
 fi
 
-echo "pass: show WARNING message if the user used default token and allow any IP to access"
+echo "pass: show WARNING message if the user uses empty key"
 
 # admin_listen set
 echo '
