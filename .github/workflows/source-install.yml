@@ -71,6 +71,7 @@ jobs:
               make deps
               sudo make install
               apisix start
+              cat conf/config.yaml
           elif [[ $INSTALL_PLATFORM == "redhat" ]]; then
               docker run -itd -v ${{ github.workspace }}:/apisix --name ubi8 --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
               docker exec ubi8 bash -c "yum install -y git sudo make"
@@ -88,7 +89,7 @@ jobs:
 
       - name: Test apisix
         run: |
-            wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && chmod +x /usr/bin/yq
+            wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
             get_admin_key() {
             local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
             echo "$admin_key"
