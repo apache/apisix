@@ -226,7 +226,7 @@ Please modify "admin_key" in conf/config.yaml .
 
             if admin.key == "" then
                 stderr:write(
-                    help:format([[WARNING: using empty Admin API. 
+                    help:format([[WARNING: using empty Admin API.
                     This will trigger APISIX to automatically generate a random Admin API token.]]),
                     "\n"
                 )
