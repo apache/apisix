@@ -224,9 +224,9 @@ Please modify "admin_key" in conf/config.yaml .
                 util.die(help:format("ERROR: missing valid Admin API token."), "\n")
             end
 
-            if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
+            if admin.key == "" then
                 stderr:write(
-                    help:format([[WARNING: using fixed Admin API token has security risk.]]),
+                    help:format([[WARNING: using empty Admin API. This will trigger APISIX to automatically generate a random Admin API token.]]),
                     "\n"
                 )
             end
