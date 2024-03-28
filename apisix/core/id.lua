@@ -101,13 +101,14 @@ function _M.init()
     local admin_key = table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if admin_key == '' then
         local_conf = autogenerate_admin_key(local_conf)
+        local yaml_conf = generate_yaml(local_conf)
+        local local_conf_path = profile:yaml_path("config")
+        local ok, err = write_file(local_conf_path, yaml_conf)
+        if not ok then
+            log.error(err)
+        end
     end
-    local local_conf_path = profile:yaml_path("config")
-    local yaml_conf = generate_yaml(local_conf)
-    local ok, err = write_file(local_conf_path, yaml_conf)
-    if not ok then
-        log.error(err)
-    end
+
     --allow user to specify a meaningful id as apisix instance id
     local uid_file_path = prefix .. "/conf/apisix.uid"
     apisix_uid = read_file(uid_file_path)
