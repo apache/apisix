@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core            = require("apisix.core")
-local plugin          = require("apisix.plugin")
 local consumer_mod    = require("apisix.consumer")
 local base64          = require("ngx.base64")
 local aes             = require("resty.aes")
