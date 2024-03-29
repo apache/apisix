@@ -31,8 +31,7 @@ TOTOL_ROUTES = 50
 
 def get_admin_key_from_yaml(yaml_file_path):
     with open(yaml_file_path, 'r') as file:
-        yaml_data = yaml.safe_load(file)
-        
+        yaml_data = yaml.safe_load(file) 
     try:
         admin_key = yaml_data['deployment']['admin']['admin_key'][0]['key']
         return admin_key
