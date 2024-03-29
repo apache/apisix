@@ -40,7 +40,6 @@ def create_route():
     if key is None:
         print("Key not found in the YAML file.")
         return
-    
     # Construct curl command with the extracted key
     command = f'''curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: {key}" -X PUT -d '
 {{

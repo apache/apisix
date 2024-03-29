@@ -30,7 +30,6 @@ def get_admin_key_from_yaml(yaml_file_path):
         return admin_key
     except KeyError:
         return None
-    
 def create_route():
     key = get_admin_key_from_yaml('conf/config.yaml')
     if key is None:

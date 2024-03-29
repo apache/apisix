@@ -41,7 +41,7 @@ def create_route():
     key = get_admin_key_from_yaml('conf/config.yaml')
     if key is None:
         print("Key not found in the YAML file.")
-        return   
+        return
     for i in range(TOTOL_ROUTES):
         conn = connect_admin()
         scheme = "http" if i % 2 == 0 else "https"
