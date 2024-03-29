@@ -80,6 +80,12 @@ deployment:
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+        admin_key_required: true   # Enable Admin API authentication by default for security.
+        admin_key:
+        -
+            name: admin                             # admin: write access to configurations.
+            key: edd1c9f034335f136f87ad84b625c8f1
+            role: admin
 " > conf/customized_config.yaml
 
 ./bin/apisix start -c conf/customized_config.yaml
@@ -91,9 +97,8 @@ if [ ! -e conf/.customized_config_path ]; then
     exit 1
 fi
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 # check if the custom config is used
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: customized config.yaml not be used"
@@ -120,8 +125,9 @@ fi
 
 # check if apisix can be started use correctly default config. (https://github.com/apache/apisix/issues/9700)
 ./bin/apisix start
-
+sleep 1
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+echo "look here" $admin_key
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
@@ -159,12 +165,17 @@ deployment:
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+        admin_key_required: true   # Enable Admin API authentication by default for security.
+        admin_key:
+        -
+            name: admin                             # admin: write access to configurations.
+            key: edd1c9f034335f136f87ad84b625c8f1
+            role: admin
 " > conf/customized_config.yaml
 
 ./bin/apisix start -c conf/customized_config.yaml
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: should use default config"
