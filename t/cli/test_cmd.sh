@@ -91,7 +91,7 @@ if [ ! -e conf/.customized_config_path ]; then
     exit 1
 fi
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 # check if the custom config is used
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
@@ -121,7 +121,7 @@ fi
 # check if apisix can be started use correctly default config. (https://github.com/apache/apisix/issues/9700)
 ./bin/apisix start
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
@@ -163,7 +163,7 @@ deployment:
 
 ./bin/apisix start -c conf/customized_config.yaml
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml

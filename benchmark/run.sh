@@ -74,7 +74,7 @@ sleep 3
 
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + no plugin"
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
@@ -100,7 +100,7 @@ sleep 1
 
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + 2 plugins (limit-count + prometheus)"
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",

@@ -36,7 +36,7 @@ deployment:
 make run
 sleep 1
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 
 if [ ! $code -eq 200 ]; then
@@ -46,7 +46,7 @@ fi
 
 echo "passed: control_plane should enable Admin API"
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
@@ -58,7 +58,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -
     "uri": "/*"
 }'
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/c -H "X-API-KEY: $admin_key")
 make stop
 if [ ! $code -eq 404 ]; then

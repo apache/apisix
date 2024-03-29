@@ -37,7 +37,7 @@ make run
 
 sleep 1
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 # correct certs
 code=$(curl -i -o /dev/null -s -w %{http_code}  --cacert ./t/certs/mtls_ca.crt --key ./t/certs/mtls_client.key --cert ./t/certs/mtls_client.crt -H "X-API-KEY: $admin_key" https://admin.apisix.dev:9180/apisix/admin/routes)
 if [ ! "$code" -eq 200 ]; then

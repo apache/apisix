@@ -44,7 +44,8 @@ fi
 
 make run
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+echo "admin key is " $admin_key
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: failed to enable https for admin"
@@ -74,7 +75,7 @@ fi
 
 make run
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.2:9181/apisix/admin/routes -H "X-API-KEY: $admin_key")
 
 if [ ! $code -eq 200 ]; then
@@ -282,7 +283,7 @@ rm logs/error.log
 make init
 make run
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 make stop
 
@@ -326,7 +327,7 @@ apisix:
 rm logs/error.log
 make init
 make run
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 
 
 make init
@@ -357,7 +358,7 @@ rm logs/error.log
 make init
 make run
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 # initialize node-status public API routes #1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/node-status \
     -H "X-API-KEY: $admin_key" \
@@ -385,7 +386,7 @@ fi
 make init
 sleep 1
 
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 # initialize node-status public API routes #2
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/node-status \
     -H "X-API-KEY: $admin_key" \
@@ -427,7 +428,7 @@ stream_plugins:
 rm logs/error.log
 make init
 make run
-export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 
 
 # first time check node status api
