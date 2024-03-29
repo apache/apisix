@@ -53,6 +53,7 @@ def create_route():
     if key is None:
         print("Key not found in the YAML file.")
         return
+    key = key.replace('"', '')
     print("the key is",key)
     conn.request("PUT", "/apisix/admin/consumers", conf,
             headers={
