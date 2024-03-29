@@ -22,9 +22,24 @@ import subprocess
 import time
 import threading
 from public import check_leak, run_test
+import yaml
+
+def get_admin_key_from_yaml(yaml_file_path):
+    with open(yaml_file_path, 'r') as file:
+        yaml_data = yaml.safe_load(file)
+        
+    try:
+        admin_key = yaml_data['deployment']['admin']['admin_key'][0]['key']
+        return admin_key
+    except KeyError:
+        return None
 
 def create_route():
-    command = '''curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+    key = get_admin_key_from_yaml('conf/config.yaml')
+    if key is None:
+        print("Key not found in the YAML file.")
+        return
+    command = '''curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY:{key}" -X PUT -d '
 {
     "uri": "/client_abort",
     "upstream": {

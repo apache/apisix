@@ -23,14 +23,26 @@ import json
 import random
 import threading
 from public import check_leak, run_test, connect_admin
-
+import yaml
 
 REQ_PER_THREAD = 50
 THREADS_NUM = 4
 TOTOL_ROUTES = 10
 
-
+def get_admin_key_from_yaml(yaml_file_path):
+    with open(yaml_file_path, 'r') as file:
+        yaml_data = yaml.safe_load(file)
+        
+    try:
+        admin_key = yaml_data['deployment']['admin']['admin_key'][0]['key']
+        return admin_key
+    except KeyError:
+        return None
 def create_route():
+    key = get_admin_key_from_yaml('conf/config.yaml')
+    if key is None:
+        print("Key not found in the YAML file.")
+        return   
     for i in range(TOTOL_ROUTES):
         conn = connect_admin()
         scheme = "http" if i % 2 == 0 else "https"
@@ -53,7 +65,7 @@ def create_route():
 
         conn.request("PUT", "/apisix/admin/routes/" + i, conf,
                 headers={
-                    "X-API-KEY":"edd1c9f034335f136f87ad84b625c8f1",
+                    "X-API-KEY":"{key}",
                 })
         response = conn.getresponse()
         assert response.status <= 300, response.read()
