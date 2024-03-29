@@ -50,13 +50,7 @@ make init && make run
 
 docker stop ${ETCD_NAME_0}
 
-get_admin_key() {
-wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
-echo "$admin_key"
-}
-export admin_key=$(get_admin_key); echo $admin_key
-
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
@@ -65,6 +59,8 @@ fi
 docker start ${ETCD_NAME_0}
 
 docker stop ${ETCD_NAME_1}
+
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix got effect when one etcd node out of a cluster disconnected"
@@ -83,6 +79,7 @@ docker stop ${ETCD_NAME_0} && docker stop ${ETCD_NAME_1} && docker stop ${ETCD_N
 
 sleep_till=$(date +%s -d "$DATE + $HEALTH_CHECK_RETRY_TIMEOUT second")
 
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ $code -eq 200 ]; then
     echo "failed: apisix not got effect when all etcd nodes disconnected"
@@ -98,6 +95,7 @@ if [ "$sleep_seconds" -gt 0 ]; then
     sleep $sleep_seconds
 fi
 
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     echo "failed: apisix could not recover when etcd node recover"

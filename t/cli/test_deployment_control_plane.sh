@@ -36,13 +36,7 @@ deployment:
 make run
 sleep 1
 
-get_admin_key() {
-wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
-echo "$admin_key"
-}
-export admin_key=$(get_admin_key); echo $admin_key
-
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 
 if [ ! $code -eq 200 ]; then
@@ -52,6 +46,7 @@ fi
 
 echo "passed: control_plane should enable Admin API"
 
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
@@ -63,6 +58,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -
     "uri": "/*"
 }'
 
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/c -H "X-API-KEY: $admin_key")
 make stop
 if [ ! $code -eq 404 ]; then

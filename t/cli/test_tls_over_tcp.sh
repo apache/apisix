@@ -39,13 +39,7 @@ nginx_config:
 make run
 sleep 0.1
 
-get_admin_key() {
-wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
-local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
-echo "$admin_key"
-}
-export admin_key=$(get_admin_key); echo $admin_key
-
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
@@ -54,6 +48,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
      "snis": ["test.com"]
 }'
 
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'

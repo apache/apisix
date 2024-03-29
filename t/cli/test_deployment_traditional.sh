@@ -34,13 +34,7 @@ deployment:
 make run
 sleep 1
 
-get_admin_key() {
-
-local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
-echo "$admin_key"
-}
-export admin_key=$(get_admin_key); echo $admin_key
-
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 make stop
 
@@ -70,6 +64,7 @@ deployment:
 make run
 sleep 1
 
+export admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 make stop
 
