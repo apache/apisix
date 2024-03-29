@@ -95,7 +95,7 @@ def create_route():
 
         conn.request("PUT", "/apisix/admin/routes/" + i, conf,
                 headers={
-                    "X-API-KEY":"edd1c9f034335f136f87ad84b625c8f1",
+                    "X-API-KEY":"{key}",
                 })
         response = conn.getresponse()
         assert response.status <= 300, response.read()
