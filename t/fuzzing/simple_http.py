@@ -39,10 +39,6 @@ def get_admin_key_from_yaml(yaml_file_path):
         return None
 
 def create_route():
-    key = get_admin_key_from_yaml('conf/config.yaml')
-    if key is None:
-        print("Key not found in the YAML file.")
-        return
     conf = json.dumps({
         "username": "jack",
         "plugins": {
@@ -53,6 +49,11 @@ def create_route():
         }
     })
     conn = connect_admin()
+    key = get_admin_key_from_yaml('conf/config.yaml')
+    if key is None:
+        print("Key not found in the YAML file.")
+        return
+    print("the key is",key)
     conn.request("PUT", "/apisix/admin/consumers", conf,
             headers={
                 "X-API-KEY":"{key}",
