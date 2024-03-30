@@ -45,8 +45,6 @@ script() {
 
     # show install file
     luarocks show apisix
-    echo "config before starting apisix"
-    ls
     sudo PATH=$PATH apisix help
     sudo PATH=$PATH apisix init
     sudo PATH=$PATH apisix start
@@ -71,7 +69,6 @@ script() {
     ulimit -n 10240
     ulimit -n -S
     ulimit -n -H
-    echo "config before running tests"
     for f in ./t/cli/test_*.sh; do
         PATH="$PATH" "$f"
     done

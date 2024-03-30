@@ -33,6 +33,7 @@ local string = string
 local math = math
 local prefix = ngx.config.prefix()
 local apisix_uid
+local pairs = pairs
 
 local _M = { version = 0.1 }
 
@@ -63,7 +64,8 @@ local function write_file(path, data)
 end
 
 local function generate_yaml(table)
-    -- Function to recursively replace null values with "<PLACEHOLDER>"
+    -- By defauly lyaml will parse null values as [] 
+    -- The following logic is a workaround so that null values are parsed as null
     local function replace_null(tbl)
         for k, v in pairs(tbl) do
             if type(v) == "table" then

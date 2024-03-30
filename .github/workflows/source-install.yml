@@ -71,7 +71,6 @@ jobs:
               make deps
               sudo make install
               apisix start
-              cat conf/config.yaml
           elif [[ $INSTALL_PLATFORM == "redhat" ]]; then
               docker run -itd -v ${{ github.workspace }}:/apisix --name ubi8 --net="host" --dns 8.8.8.8 --dns-search apache.org registry.access.redhat.com/ubi8/ubi:8.6 /bin/bash
               docker exec ubi8 bash -c "yum install -y git sudo make"
