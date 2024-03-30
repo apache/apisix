@@ -64,7 +64,7 @@ local function write_file(path, data)
 end
 
 local function generate_yaml(table)
-    -- By defauly lyaml will parse null values as [] 
+    -- By default lyaml will parse null values as []
     -- The following logic is a workaround so that null values are parsed as null
     local function replace_null(tbl)
         for k, v in pairs(tbl) do
