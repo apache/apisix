@@ -144,18 +144,7 @@ hello world
 === TEST 2: Call to route with locking session storage, no authentication and unauth_action 'deny' should not block subsequent requests on same session
 --- config
     set $session_storage redis;
-    set $session_redis_prefix                   sessions;
-    set $session_redis_database                 0;
-    set $session_redis_connect_timeout          1000; # (in milliseconds)
-    set $session_redis_send_timeout             1000; # (in milliseconds)
-    set $session_redis_read_timeout             1000; # (in milliseconds)
-    set $session_redis_host                     127.0.0.1;
-    set $session_redis_port                     6379;
-    set $session_redis_ssl                      off;
-    set $session_redis_ssl_verify               off;
     set $session_redis_uselocking               on;
-    set $session_redis_spinlockwait             150;  # (in milliseconds)
-    set $session_redis_maxlockwait              30;   # (in seconds)
 
     location /t {
         content_by_lua_block {
