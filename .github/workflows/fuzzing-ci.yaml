@@ -58,6 +58,7 @@ jobs:
         export_or_prefix
         make init
         make run
+        cat conf/config.yaml
 
     - name: run upstream
       run: |
