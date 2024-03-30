@@ -63,11 +63,41 @@ local function write_file(path, data)
 end
 
 local function generate_yaml(table)
-    local yaml = lyaml.dump({ table })
-    -- Remove "---\n" from the start that is automatically added by this function.
-    local result = yaml:gsub("^%-%-%-\n", "")
-    return result
+    -- Function to recursively replace null values with "<PLACEHOLDER>"
+    local function replace_null(tbl)
+        for k, v in pairs(tbl) do
+            if type(v) == "table" then
+                replace_null(v)
+            elseif v == nil then
+                tbl[k] = "<PLACEHOLDER>"
+            end
+        end
+    end
+
+    -- Replace null values with "<PLACEHOLDER>"
+    replace_null(table)
+
+    -- Convert Lua table to YAML string without parsing null values
+    local yaml = lyaml.dump({ table }, { no_nil = true })
+
+    -- Replace "<PLACEHOLDER>" with null except for empty arrays
+    yaml = yaml:gsub("<PLACEHOLDER>", "null"):gsub("%[%s*%]", "null")
+
+    -- Ensure boolean values remain intact
+    yaml = yaml:gsub(":%s*true%s*true", ": true"):gsub(":%s*false%s*true", ": false")
+
+    -- Replace *no_nil with true
+    yaml = yaml:gsub("&no_nil", "true")
+
+    -- Remove any occurrences of *no_nil
+    yaml = yaml:gsub(":%s*%*no_nil", ": true")
+
+    -- Remove duplicates for boolean values
+    yaml = yaml:gsub("true%s*true", "true"):gsub("false%s*false", "false")
+
+    return yaml
 end
+
 
 _M.gen_uuid_v4 = uuid.generate_v4
 
