@@ -55,10 +55,12 @@ def create_route():
         return
     key = key.replace('"', '')
     print("the key is",key)
+    headers = {
+    "X-API-KEY": key,
+    }
+    print("Request headers:", headers)
     conn.request("PUT", "/apisix/admin/consumers", conf,
-            headers={
-                "X-API-KEY":"{key}",
-            })
+            headers=headers)
     response = conn.getresponse()
     assert response.status <= 300, response.read()
 
@@ -94,10 +96,6 @@ def create_route():
                 "type": "roundrobin"
             },
         })
-        headers = {
-            "X-API-KEY": key,
-        }
-        print("Request headers:", headers)
         conn.request("PUT", "/apisix/admin/routes/" + i, conf,
                 headers=headers)
         response = conn.getresponse()
