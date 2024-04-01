@@ -36,6 +36,16 @@ description: 本文介绍了 Apache APISIX Consumer Group 对象的概念及使�
 
 创建一个共享相同限流配额的消费者组：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumer_groups/company_a \
 -H "X-API-KEY: $admin_key" -X PUT -d '

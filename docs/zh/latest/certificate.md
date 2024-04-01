@@ -35,6 +35,16 @@ SNI（Server Name Indication）是用来改善 SSL 和 TLS 的一项特性，它
 
 创建一个包含证书和密钥，单一域名 SNI 的 SSL 对象：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 -H "X-API-KEY: $admin_key" -X PUT -d '

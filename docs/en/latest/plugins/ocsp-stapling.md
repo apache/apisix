@@ -42,6 +42,16 @@ plugins:
 
 After modifying the config file, reload APISIX or send an hot-loaded HTTP request through the Admin API to take effect:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```

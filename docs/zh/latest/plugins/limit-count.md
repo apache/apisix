@@ -62,6 +62,16 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 
 以下示例展示了如何在指定路由上启用 `limit-count` 插件，并设置 `key_type` 为 `"var"`：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H "X-API-KEY: $admin_key" -X PUT -d '

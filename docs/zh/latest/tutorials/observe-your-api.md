@@ -64,6 +64,16 @@ APISIX 中提供了很多具有丰富功能的可观测性插件。你可以通�
 
 以下示例展示了在指定路由上启动 `http-logger` 的示例。
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \

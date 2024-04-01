@@ -63,6 +63,16 @@ APISIX will generate and send the request headers listed below to the authorizat
 
 First, you need to setup your external authorization service. The example below uses Apache APISIX's [serverless](./serverless.md) Plugin to mock the service:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
     -H "X-API-KEY: $admin_key" \

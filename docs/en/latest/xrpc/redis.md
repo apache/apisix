@@ -82,6 +82,16 @@ Fields under an entry of `faults`:
 
 ## Example usage
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 Assumed the APISIX is proxying TCP on port `9101`, and the Redis is listening on port `6379`.
 
 Let's create a Stream Route:

@@ -52,6 +52,16 @@ description: 本文介绍了 Apache APISIX ip-restriction 插件的基本信息�
 
 以下示例展示了如何在特定路由上启用 `ip-restriction` 插件，并配置 `whitelist` 属性：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {

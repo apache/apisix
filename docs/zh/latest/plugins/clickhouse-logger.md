@@ -105,6 +105,16 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
 | log_format       | object  | 否   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger \
 -H "X-API-KEY: $admin_key" -X PUT -d '

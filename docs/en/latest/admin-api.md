@@ -122,6 +122,16 @@ By default, the Admin API checks for references between resources and will refus
 
 You can make a force deletion by adding the request argument `force=true` to the delete request, for example:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```bash
 $ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H "X-API-KEY: $admin_key" -X PUT -d '{
     "nodes": {

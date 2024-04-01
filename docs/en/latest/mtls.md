@@ -65,6 +65,16 @@ Please replace the following certificate paths and domain name with your real on
 
 * Note: The same CA certificate as the server needs to be used *
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H "X-API-KEY: $admin_key"
 ```

@@ -120,6 +120,16 @@ Let's take an example query `foo.com/product/index.html?id=204&page=2` and consi
 
 There are two different ways to achieve this in Apache APISIX:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. Using the `vars` field in a [Route](terminology/route.md):
 
 ```shell

@@ -82,6 +82,16 @@ apisix:
 
 You can enable the Plugin on a Route as shown below. The Plugin uses the disk-based `cache_strategy` and `disk_cache_one` as the `cache_zone` by default:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H "X-API-KEY: $admin_key" -X PUT -d '

@@ -88,6 +88,16 @@ Since unhealthy nodes cannot receive requests, nodes cannot be re-marked as heal
 
 You can enable health checks in routes via the Admin API:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {

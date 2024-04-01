@@ -190,6 +190,16 @@ discovery:
 
 APISIX 是通过 `upstream.discovery_type` 选择使用的服务发现，`upstream.service_name` 与注册中心的服务名进行关联。下面是将 URL 为 "/user/\*" 的请求路由到注册中心名为 "USER-SERVICE" 的服务上例子：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {

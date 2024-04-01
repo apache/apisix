@@ -62,6 +62,16 @@ APISIX 将生成并发送如下所示的请求头到认证服务：
 
 首先，你需要设置一个外部认证服务。以下示例使用的是 Apache APISIX 无服务器插件模拟服务：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
     -H "X-API-KEY: $admin_key" \

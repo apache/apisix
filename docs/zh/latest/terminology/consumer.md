@@ -72,6 +72,16 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
 以下示例介绍了如何对某个 Consumer 开启指定插件：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. 创建 Consumer，指定认证插件 `key-auth`，并开启特定插件 `limit-count`。
 
     ```shell

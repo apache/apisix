@@ -43,6 +43,16 @@ Upstream（也称之为上游）是对虚拟主机抽象，即应用层服务或
 
 APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上游做主被动健康检查、重试等逻辑。更多信息，请参考 [Admin API 中的 Upstream 资源](../admin-api.md#upstream)。
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. 创建上游对象用例。
 
     ```shell

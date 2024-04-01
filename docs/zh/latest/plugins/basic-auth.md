@@ -55,6 +55,16 @@ Route 端：
 
 如果需要启用插件，就必须创建一个具有身份验证配置的 Consumer：
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
 -H "X-API-KEY: $admin_key" -X PUT -d '

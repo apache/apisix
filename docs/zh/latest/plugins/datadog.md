@@ -88,6 +88,16 @@ docker run -d --name dogstatsd-agent -e DD_API_KEY=<Your API Key from step 2> -p
 
 本小节介绍了如何在指定路由上启用 `datadog` 插件。进行以下操作之前请确认您的 Datadog Agent 已经启动并正常运行。
 
+:::note
+
+您可以像这样从 config.yaml 中获取 admin_key 。
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {

@@ -61,6 +61,16 @@ The `limit-count` Plugin limits the number of requests to your service by a give
 
 You can enable the Plugin on a Route as shown below:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 -H "X-API-KEY: $admin_key" -X PUT -d '

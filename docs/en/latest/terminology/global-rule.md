@@ -36,6 +36,16 @@ Compared with the plugin configuration in Route, Service, Plugin Config, and Con
 
 The example below shows how you can use the `limit-count` Plugin on all requests:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -X PUT \
   http://{apisix_listen_address}/apisix/admin/global_rules/1 \

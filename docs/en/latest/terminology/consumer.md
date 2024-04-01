@@ -74,6 +74,16 @@ For more information about the Consumer object, you can refer to the [Admin API 
 
 The example below shows how you can enable a Plugin for a specific Consumer.
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. Create a Consumer, specify the authentication plugin `key-auth`, and enable the specific plugin `limit-count`.
 
     ```shell

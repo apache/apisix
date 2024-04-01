@@ -77,6 +77,16 @@ We support [Syslog](https://documentation.solarwinds.com/en/success_center/loggl
 
 APISIX supports [Syslog](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/streaming-syslog-without-using-files.htm) and [HTTP/S](https://documentation.solarwinds.com/en/success_center/loggly/content/admin/http-bulk-endpoint.htm) protocols to send data to Loggly. Syslog lets you send RFC5424 compliant syslog events with fine-grained control. But, HTTP/S bulk endpoint is better while sending large batches of logs at a fast transmission speed. You can configure the metadata to update the protocol as shown below:
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly -H "X-API-KEY: $admin_key" -X PUT -d '
 {

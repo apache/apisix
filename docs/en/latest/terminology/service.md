@@ -37,6 +37,16 @@ For more information about Service, please refer to [Admin API Service object](.
 
 The following example creates a Service that enables the `limit-count` Plugin and then binds it to the Routes with the ids `100` and `101`.
 
+:::note
+
+You can get the get the admin_key from config.yaml like this.
+
+```bash
+ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. Create a Service.
 
 ```shell
