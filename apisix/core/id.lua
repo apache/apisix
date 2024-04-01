@@ -138,7 +138,7 @@ end
 function _M.init()
     local local_conf = fetch_local_conf()
 
-    local local_conf,changed = autogenerate_admin_key(local_conf)
+    local local_conf, changed = autogenerate_admin_key(local_conf)
     if changed then
         local yaml_conf = generate_yaml(local_conf)
         local local_conf_path = profile:yaml_path("config")
