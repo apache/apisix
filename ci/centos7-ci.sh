@@ -24,7 +24,7 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y wget tar gcc gcc-c++ automake autoconf libtool make unzip patch \
-        git sudo openldap-devel which ca-certificates\
+        git sudo openldap-devel which ca-certificates \
         epel-release  \
         cpanminus perl \
         openssl-devel

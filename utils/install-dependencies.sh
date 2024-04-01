@@ -54,7 +54,7 @@ function install_dependencies_with_yum() {
         set -eu
     fi
     sudo yum install -y  \
-        gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch libyaml-devel\
+        gcc gcc-c++ curl wget unzip xz gnupg perl-ExtUtils-Embed cpanminus patch libyaml-devel \
         perl perl-devel pcre pcre-devel openldap-devel \
         openresty-zlib-devel openresty-pcre-devel
 }

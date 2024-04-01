@@ -24,9 +24,9 @@ local try_read_attr = require("apisix.core.table").try_read_attr
 local profile = require("apisix.core.profile")
 local log = require("apisix.core.log")
 local uuid = require("resty.jit-uuid")
+local lyaml = require("lyaml")
 local smatch = string.match
 local open = io.open
-local lyaml = require("lyaml")
 local type = type
 local ipairs = ipairs
 local string = string
@@ -37,9 +37,11 @@ local pairs = pairs
 
 local _M = { version = 0.1 }
 
+
 local function rtrim(str)
     return smatch(str, "^(.-)%s*$")
 end
+
 
 local function read_file(path)
     local file = open(path, "rb") -- r read mode and b binary mode
@@ -47,10 +49,11 @@ local function read_file(path)
         return nil
     end
 
-    local content = file:read("*a") -- *a or *all reads the whole file
+    local content = file:read("*a")  -- *a or *all reads the whole file
     file:close()
     return rtrim(content)
 end
+
 
 local function write_file(path, data)
     local file = open(path, "w+")
@@ -62,6 +65,7 @@ local function write_file(path, data)
     file:close()
     return true
 end
+
 
 local function generate_yaml(table)
     -- By default lyaml will parse null values as []
@@ -103,27 +107,33 @@ end
 
 _M.gen_uuid_v4 = uuid.generate_v4
 
+
 --- This will autogenerate the admin key if it's passed as an empty string in the configuration.
 local function autogenerate_admin_key(default_conf)
     local changed = false
-    -- Check if deployment.admin.admin_key is not nil and it's an array
-    local admin_keys = default_conf.deployment
-        and default_conf.deployment.admin
-        and default_conf.deployment.admin.admin_key
-    if admin_keys and type(admin_keys) == "table" then
-        for i, admin_key in ipairs(admin_keys) do
-            if admin_key.role == "admin" and admin_key.key == "" then
-                changed = true
-                admin_keys[i].key = ""
-                for _ = 1, 32 do
-                    admin_keys[i].key = admin_keys[i].key ..
-                    string.char(math.random(65, 90) + math.random(0, 1) * 32)
+   -- Check if deployment.role is either traditional or control_plane
+    local deployment_role = default_conf.deployment and default_conf.deployment.role
+    if deployment_role and (deployment_role == "traditional" or deployment_role == "control_plane") then
+        -- Check if deployment.admin.admin_key is not nil and it's an empty string
+        local admin_keys = default_conf.deployment
+            and default_conf.deployment.admin
+            and default_conf.deployment.admin.admin_key
+        if admin_keys and type(admin_keys) == "table" then
+            for i, admin_key in ipairs(admin_keys) do
+                if admin_key.role == "admin" and admin_key.key == "" then
+                    changed = true
+                    admin_keys[i].key = ""
+                    for _ = 1, 32 do
+                        admin_keys[i].key = admin_keys[i].key ..
+                        string.char(math.random(65, 90) + math.random(0, 1) * 32)
+                    end
                 end
             end
         end
     end
     return default_conf,changed
 end
+
 
 function _M.init()
     local local_conf = fetch_local_conf()
@@ -159,6 +169,7 @@ function _M.init()
         log.error(err)
     end
 end
+
 
 ---
 -- Returns the instance id of the running APISIX
