@@ -70,7 +70,7 @@ description: 本文介绍了关于 API 网关 Apache APISIX azure-functions 插�
 
 :::note
 
-您可以像这样从 config.yaml 中获取 admin_key 。
+您可以像这样从 config.yaml 中获取 admin_key。
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

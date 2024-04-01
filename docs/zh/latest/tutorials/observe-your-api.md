@@ -66,7 +66,7 @@ APISIX 中提供了很多具有丰富功能的可观测性插件。你可以通�
 
 :::note
 
-您可以像这样从 config.yaml 中获取 admin_key 。
+您可以像这样从 config.yaml 中获取 admin_key。
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
