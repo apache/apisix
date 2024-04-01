@@ -82,25 +82,8 @@ local function generate_yaml(table)
 
     -- Replace null values with "<PLACEHOLDER>"
     replace_null(table)
-
-    -- Convert Lua table to YAML string without parsing null values
-    local yaml = lyaml.dump({ table }, { no_nil = true })
-
-    -- Replace "<PLACEHOLDER>" with null except for empty arrays
+    local yaml = lyaml.dump({ table })
     yaml = yaml:gsub("<PLACEHOLDER>", "null"):gsub("%[%s*%]", "null")
-
-    -- Ensure boolean values remain intact
-    yaml = yaml:gsub(":%s*true%s*true", ": true"):gsub(":%s*false%s*true", ": false")
-
-    -- Replace *no_nil with true
-    yaml = yaml:gsub("&no_nil", "true")
-
-    -- Remove any occurrences of *no_nil
-    yaml = yaml:gsub(":%s*%*no_nil", ": true")
-
-    -- Remove duplicates for boolean values
-    yaml = yaml:gsub("true%s*true", "true"):gsub("false%s*false", "false")
-
     return yaml
 end
 
