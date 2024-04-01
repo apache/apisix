@@ -21,8 +21,9 @@ local openidc = require("resty.openidc")
 local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
-local ipairs = ipairs
-local concat = table.concat
+local ipairs  = ipairs
+local pairs   = pairs
+local concat  = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
