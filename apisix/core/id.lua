@@ -113,7 +113,8 @@ local function autogenerate_admin_key(default_conf)
     local changed = false
    -- Check if deployment.role is either traditional or control_plane
     local deployment_role = default_conf.deployment and default_conf.deployment.role
-    if deployment_role and (deployment_role == "traditional" or deployment_role == "control_plane") then
+    if deployment_role and (deployment_role == "traditional" or
+       deployment_role == "control_plane") then
         -- Check if deployment.admin.admin_key is not nil and it's an empty string
         local admin_keys = default_conf.deployment
             and default_conf.deployment.admin
