@@ -63,8 +63,7 @@ discovery:
 Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

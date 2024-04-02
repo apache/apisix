@@ -119,8 +119,7 @@ The image below shows an example token introspection flow via a Gateway:
 The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

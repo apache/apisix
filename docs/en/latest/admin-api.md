@@ -123,8 +123,7 @@ By default, the Admin API checks for references between resources and will refus
 You can make a force deletion by adding the request argument `force=true` to the delete request, for example:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

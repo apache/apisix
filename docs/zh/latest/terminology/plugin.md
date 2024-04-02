@@ -296,7 +296,7 @@ APISIX 的插件是热加载的，不管你是新增、删除还是修改插件�
 
 :::note
 
-您可以像这样从 config.yaml 中获取 admin_key。
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

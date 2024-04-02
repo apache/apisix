@@ -83,8 +83,7 @@ apisix:
 You can enable the Plugin on a Route as shown below. The Plugin uses the disk-based `cache_strategy` and `disk_cache_one` as the `cache_zone` by default:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

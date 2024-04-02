@@ -49,8 +49,7 @@ To enable the Plugin, you have to create two or more Consumer objects with diffe
 First create a Consumer using basic authentication:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

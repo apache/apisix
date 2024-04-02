@@ -58,8 +58,7 @@ If `apisix.stream_proxy` is undefined in `conf/config.yaml`, you will encounter 
 You can create a stream route using the Admin API `/stream_routes` endpoint. For example:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

@@ -47,8 +47,7 @@ This Plugin requires APISIX to run on APISIX-Runtime. See [apisix-build-tools](h
 The example below enables the Plugin on a specific Route:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

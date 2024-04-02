@@ -78,8 +78,7 @@ Note: In the matching rules, the `priority` field takes precedence over other ru
 Create two routes with different `priority` values ​​(the larger the value, the higher the priority).
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

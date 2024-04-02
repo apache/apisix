@@ -63,8 +63,7 @@ The example below shows how you can use the `consumer-restriction` Plugin on a R
 You can first create two consumers `jack1` and `jack2`:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

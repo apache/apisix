@@ -41,8 +41,7 @@ Here's an example, to proxying gRPC service by specified route:
 * the grpc server example：[grpc_server_example](https://github.com/api7/grpc_server_example)
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

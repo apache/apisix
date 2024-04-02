@@ -71,8 +71,7 @@ If the upstream is returning a compressed response, then the Brotli plugin won't
 The example below enables the `brotli` Plugin on the specified Route:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

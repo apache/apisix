@@ -37,8 +37,7 @@ While configuring the same plugin, only one copy of the configuration is valid. 
 The example below illustrates how to create a Plugin Config and bind it to a Route:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

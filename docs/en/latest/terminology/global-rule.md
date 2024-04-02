@@ -37,8 +37,7 @@ Compared with the plugin configuration in Route, Service, Plugin Config, and Con
 The example below shows how you can use the `limit-count` Plugin on all requests:
 
 :::note
-
-You can get the get the admin_key from config.yaml like this.
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')

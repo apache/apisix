@@ -90,7 +90,7 @@ docker run -d --name dogstatsd-agent -e DD_API_KEY=<Your API Key from step 2> -p
 
 :::note
 
-您可以像这样从 config.yaml 中获取 admin_key。
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
  admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
