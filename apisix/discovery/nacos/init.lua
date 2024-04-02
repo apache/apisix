@@ -353,6 +353,9 @@ local function fetch_full_registry(premature)
     end
     local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
     local old_apps_md5sum = ngx.md5(core.json.encode(applications))
+    if next(up_apps) == nil then
+        return
+    end
     if new_apps_md5sum == old_apps_md5sum then
         return
     end
