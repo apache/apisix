@@ -649,7 +649,7 @@ function _M.dump_data()
 
         end
     end
-     
+
     return {config = local_conf.discovery.kubernetes, endpoints = eps}
 end
 
