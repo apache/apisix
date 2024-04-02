@@ -127,6 +127,7 @@ function _M.init()
         local local_conf_path = profile:yaml_path("config")
         local ok, err = write_file(local_conf_path, yaml_conf)
         if not ok then
+            log.error("failed to write updated local configuration: ", err)
             ngx_exit(-1)
         end
     end
