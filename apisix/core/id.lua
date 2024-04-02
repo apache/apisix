@@ -34,6 +34,7 @@ local math = math
 local prefix = ngx.config.prefix()
 local apisix_uid
 local pairs = pairs
+local ngx_exit = ngx.exit
 
 local _M = { version = 0.1 }
 
@@ -99,9 +100,7 @@ local function autogenerate_admin_key(default_conf)
     if deployment_role and (deployment_role == "traditional" or
        deployment_role == "control_plane") then
         -- Check if deployment.admin.admin_key is not nil and it's an empty string
-        local admin_keys = default_conf.deployment
-            and default_conf.deployment.admin
-            and default_conf.deployment.admin.admin_key
+        local admin_keys = try_read_attr(default_conf, "deployment", "admin", "admin_key")
         if admin_keys and type(admin_keys) == "table" then
             for i, admin_key in ipairs(admin_keys) do
                 if admin_key.role == "admin" and admin_key.key == "" then
@@ -128,7 +127,7 @@ function _M.init()
         local local_conf_path = profile:yaml_path("config")
         local ok, err = write_file(local_conf_path, yaml_conf)
         if not ok then
-            log.error(err)
+            ngx_exit(-1)
         end
     end
 
