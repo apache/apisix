@@ -615,4 +615,43 @@ function _M.init_worker()
     end
 end
 
+
+function _M.dump_data()
+
+    local eps = {}
+
+    for _, conf in ipairs(local_conf.discovery.kubernetes) do
+
+        local id = conf.id
+        local endpoint_dict = get_endpoint_dict(id)
+        local keys, err = endpoint_dict:get_keys()
+        if keys then
+
+            local k8s = {}
+            for i = 1, #keys do
+
+                local key = keys[i]
+                --skip key with suffix #version
+                if key:sub(-#"#version") ~= "#version" then
+                    local value, flags = endpoint_dict:get(key)
+
+                    core.table.insert(k8s, {
+                        name = key,
+                        value = value
+                    })
+                end
+            end
+
+            core.table.insert(eps, {
+                id = conf.id,
+                endpoints = k8s
+            })
+
+        end
+    end
+     
+    return {config = local_conf.discovery.kubernetes, endpoints = eps}
+end
+
+
 return _M
