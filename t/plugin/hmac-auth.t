@@ -382,7 +382,67 @@ passed
 
 
 
-=== TEST 15: add consumer with 0 clock skew
+=== TEST 15: verify: ok (multiple duplicates X-HMAC-SIGNATURE header)
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local access_key = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "23879fmsldfk"
+
+        local signing_string = {
+            "GET",
+            "/hello",
+            "",
+            access_key,
+            gmt,
+            "x-custom-header-a:" .. custom_header_a,
+            "x-custom-header-b:" .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+        core.log.info("signing_string:", signing_string)
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        local encoded_signature = ngx_encode_base64(signature)
+        headers["X-HMAC-SIGNATURE"] = {encoded_signature, "another-signature"}
+        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
+        headers["Date"] = gmt
+        headers["X-HMAC-ACCESS-KEY"] = access_key
+        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 16: add consumer with 0 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -413,10 +473,11 @@ passed
 
 
 
-=== TEST 16: verify: invalid signature
+=== TEST 17: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
+X-HMAC-SIGNATURE: asdf
 X-HMAC-SIGNATURE: asdf
 X-HMAC-ALGORITHM: hmac-sha256
 Date: Thu, 24 Sep 2020 06:39:52 GMT
@@ -431,7 +492,7 @@ client request can't be validated: Invalid signature
 
 
 
-=== TEST 17: add consumer with 1 clock skew
+=== TEST 18: add consumer with 1 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -463,7 +524,7 @@ passed
 
 
 
-=== TEST 18: verify: Invalid GMT format time
+=== TEST 19: verify: Invalid GMT format time
 --- config
 location /t {
     content_by_lua_block {
@@ -520,7 +581,7 @@ client request can't be validated: Clock skew exceeded
 
 
 
-=== TEST 19: verify: put ok
+=== TEST 20: verify: put ok
 --- config
 location /t {
     content_by_lua_block {
@@ -583,7 +644,7 @@ passed
 
 
 
-=== TEST 20: verify: put ok (pass auth data by header `Authorization`)
+=== TEST 21: verify: put ok (pass auth data by header `Authorization`)
 --- config
 location /t {
     content_by_lua_block {
@@ -645,7 +706,7 @@ passed
 
 
 
-=== TEST 21: hit route without auth info
+=== TEST 22: hit route without auth info
 --- request
 GET /hello
 --- error_code: 401
@@ -658,7 +719,7 @@ client request can't be validated: access key or signature missing
 
 
 
-=== TEST 22: add consumer with signed_headers
+=== TEST 23: add consumer with signed_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -690,7 +751,7 @@ passed
 
 
 
-=== TEST 23: verify with invalid signed header
+=== TEST 24: verify with invalid signed header
 --- config
 location /t {
     content_by_lua_block {
@@ -745,7 +806,7 @@ client request can't be validated: Invalid signed header x-custom-header-c
 
 
 
-=== TEST 24: verify ok with signed headers
+=== TEST 25: verify ok with signed headers
 --- config
 location /t {
     content_by_lua_block {
@@ -800,7 +861,7 @@ passed
 
 
 
-=== TEST 25: add consumer with plugin hmac-auth - empty configuration
+=== TEST 26: add consumer with plugin hmac-auth - empty configuration
 --- config
     location /t {
         content_by_lua_block {
