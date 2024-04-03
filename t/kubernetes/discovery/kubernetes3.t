@@ -187,6 +187,13 @@ _EOC_
                         core.log.err("operator k8s cluster error: ", err)
                         return 500
                     end
+
+                    ngx.sleep(1)
+
+                    local k8s = require("apisix.discovery.kubernetes")
+                    local data = k8s.dump_data()
+                    ngx.say(core.json.encode(data,true))
+
                     if res.status ~= 200 and res.status ~= 201 and res.status ~= 409 then
                         return res.status
                     end
@@ -332,6 +339,8 @@ POST /operators
 ]
 --- more_headers
 Content-type: application/json
+--- response_body_like
+.*"endpoints".*
 
 
 
