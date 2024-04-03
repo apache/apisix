@@ -376,6 +376,8 @@ function _M.exit_worker()
     for name in pairs(stream_local_plugins_hash) do
         unload_plugin(name, PLUGIN_TYPE_STREAM)
     end
+
+    require("apisix.plugins.prometheus.exporter").destroy()
 end
 
 

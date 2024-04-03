@@ -522,6 +522,9 @@ _M.get_api = get_api
 
 
 function _M.export_metrics(stream_only)
+    if not prometheus then
+        core.response.exit(200, "")
+    end
     local api = get_api(false)
     local uri = ngx.var.uri
     local method = ngx.req.get_method()
@@ -544,5 +547,11 @@ end
 function _M.get_prometheus()
     return prometheus
 end
+
+
+function _M.destroy()
+    prometheus = nil
+end
+
 
 return _M
