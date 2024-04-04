@@ -340,7 +340,7 @@ POST /operators
 --- more_headers
 Content-type: application/json
 --- response_body_like
-.*"endpoints".*
+.*"name":"default/kubernetes","value":.*
 
 
 
