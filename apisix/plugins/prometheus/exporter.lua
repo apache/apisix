@@ -231,83 +231,78 @@ end
 
 
 function _M.http_log(conf, ctx)
-    -- only record metrics when prometheus is enabled
-    if prometheus then
-        local vars = ctx.var
+    local vars = ctx.var
 
-        local route_id = ""
-        local balancer_ip = ctx.balancer_ip or ""
-        local service_id = ""
-        local consumer_name = ctx.consumer_name or ""
+    local route_id = ""
+    local balancer_ip = ctx.balancer_ip or ""
+    local service_id = ""
+    local consumer_name = ctx.consumer_name or ""
 
-        local matched_route = ctx.matched_route and ctx.matched_route.value
-        if matched_route then
-            route_id = matched_route.id
-            service_id = matched_route.service_id or ""
-            if conf.prefer_name == true then
-                route_id = matched_route.name or route_id
-                if service_id ~= "" then
-                    local service = service_fetch(service_id)
-                    service_id = service and service.value.name or service_id
-                end
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        service_id = matched_route.service_id or ""
+        if conf.prefer_name == true then
+            route_id = matched_route.name or route_id
+            if service_id ~= "" then
+                local service = service_fetch(service_id)
+                service_id = service and service.value.name or service_id
             end
         end
-
-        local matched_uri = ""
-        local matched_host = ""
-        if ctx.curr_req_matched then
-            matched_uri = ctx.curr_req_matched._path or ""
-            matched_host = ctx.curr_req_matched._host or ""
-        end
-
-        metrics.status:inc(1,
-            gen_arr(vars.status, route_id, matched_uri, matched_host,
-                    service_id, consumer_name, balancer_ip,
-                    unpack(extra_labels("http_status", ctx))))
-
-        local latency, upstream_latency, apisix_latency = latency_details(ctx)
-        local latency_extra_label_values = extra_labels("http_latency", ctx)
-
-        metrics.latency:observe(latency,
-            gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
-            unpack(latency_extra_label_values)))
-
-        if upstream_latency then
-            metrics.latency:observe(upstream_latency,
-                gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
-                unpack(latency_extra_label_values)))
-        end
-
-        metrics.latency:observe(apisix_latency,
-            gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
-            unpack(latency_extra_label_values)))
-
-        local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
-
-        metrics.bandwidth:inc(vars.request_length,
-            gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
-            unpack(bandwidth_extra_label_values)))
-
-        metrics.bandwidth:inc(vars.bytes_sent,
-            gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
-            unpack(bandwidth_extra_label_values)))
     end
+
+    local matched_uri = ""
+    local matched_host = ""
+    if ctx.curr_req_matched then
+        matched_uri = ctx.curr_req_matched._path or ""
+        matched_host = ctx.curr_req_matched._host or ""
+    end
+
+    metrics.status:inc(1,
+        gen_arr(vars.status, route_id, matched_uri, matched_host,
+                service_id, consumer_name, balancer_ip,
+                unpack(extra_labels("http_status", ctx))))
+
+    local latency, upstream_latency, apisix_latency = latency_details(ctx)
+    local latency_extra_label_values = extra_labels("http_latency", ctx)
+
+    metrics.latency:observe(latency,
+        gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
+        unpack(latency_extra_label_values)))
+
+    if upstream_latency then
+        metrics.latency:observe(upstream_latency,
+            gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
+            unpack(latency_extra_label_values)))
+    end
+
+    metrics.latency:observe(apisix_latency,
+        gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
+        unpack(latency_extra_label_values)))
+
+    local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
+
+    metrics.bandwidth:inc(vars.request_length,
+        gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
+        unpack(bandwidth_extra_label_values)))
+
+    metrics.bandwidth:inc(vars.bytes_sent,
+        gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
+        unpack(bandwidth_extra_label_values)))
 end
 
 
 function _M.stream_log(conf, ctx)
-    if prometheus then
-        local route_id = ""
-        local matched_route = ctx.matched_route and ctx.matched_route.value
-        if matched_route then
-            route_id = matched_route.id
-            if conf.prefer_name == true then
-                route_id = matched_route.name or route_id
-            end
+    local route_id = ""
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        if conf.prefer_name == true then
+            route_id = matched_route.name or route_id
         end
-
-        metrics.stream_connection_total:inc(1, gen_arr(route_id))
     end
+
+    metrics.stream_connection_total:inc(1, gen_arr(route_id))
 end
 
 
