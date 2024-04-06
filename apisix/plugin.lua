@@ -350,13 +350,10 @@ function _M.load(config)
             if ngx.config.subsystem == "http" then
                 local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
                 local active  = exporter.get_prometheus() ~= nil
-                core.log.warn("inside subsystem: ", enabled, ". ", active, core.json.encode(http_plugin_names))
                 if not enabled and active then
-                    core.log.warn("disabled and active")
                     exporter.destroy()
                 end
                 if enabled and not active then
-                    core.log.warn("enabled and inactive")
                     exporter.http_init()
                 end
             end
