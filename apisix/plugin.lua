@@ -347,15 +347,13 @@ function _M.load(config)
                 core.log.error("failed to load plugins: ", err)
             end
 
-            if ngx.config.subsystem == "http" then
-                local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
-                local active  = exporter.get_prometheus() ~= nil
-                if not enabled and active then
-                    exporter.destroy()
-                end
-                if enabled and not active then
-                    exporter.http_init()
-                end
+            local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
+            local active  = exporter.get_prometheus() ~= nil
+            if not enabled and active then
+                exporter.destroy()
+            end
+            if enabled and not active then
+                exporter.http_init()
             end
         end
     end
@@ -366,14 +364,6 @@ function _M.load(config)
         local ok, err = load_stream(stream_plugin_names)
         if not ok then
             core.log.error("failed to load stream plugins: ", err)
-        end
-
-        if ngx.config.subsystem == "stream" then
-            if not core.table.array_find(stream_plugin_names, "prometheus") then
-                exporter.destroy()
-            else
-                exporter.stream_init()
-            end
         end
     end
 
