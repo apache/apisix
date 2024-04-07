@@ -463,7 +463,7 @@ function _M.init_worker()
         if local_conf.deployment.admin.admin_key_required == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
-                "please disable `admin_key_required` and set a secure admin key!")
+                "please enable `admin_key_required` and set a secure admin key!")
         end
 
         local ok, err = ngx_timer_at(0, function(premature)
