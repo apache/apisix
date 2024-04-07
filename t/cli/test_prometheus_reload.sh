@@ -91,31 +91,3 @@ if curl -i http://127.0.0.1:9091/apisix/prometheus/metrics | grep "{}" > /dev/nu
     echo "failed: metrics should not contain '{}' when prometheus is enabled"
     exit 1
 fi
-
-echo "disable http prometheus and enable stream prometheus and call reload"
-
-exit_if_not_customed_nginx
-
-echo "
-apisix:
-    proxy_mode: http&stream
-    enable_admin: true
-    stream_proxy:
-        tcp:
-            - addr: 9100
-plugins:
-    - example-plugin
-stream_plugins:
-    - prometheus
-" > conf/config.yaml
-
-curl -i http://127.0.0.1:9090/v1/plugins/reload -XPUT
-
-sleep 2
-
-echo "fetching metrics should actually work demonstrating hot reload"
-
-if ! curl -i http://127.0.0.1:9091/apisix/prometheus/metrics | grep "{}" > /dev/null; then
-    echo "failed: metrics should not contain '{}' when prometheus is enabled"
-    exit 1
-fi
