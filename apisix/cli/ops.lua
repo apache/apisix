@@ -193,7 +193,7 @@ local function init(env)
         checked_admin_key = true
         print("Warning! Admin key is bypassed! "
                 .. "If you are deploying APISIX in a production environment, "
-                .. "please disable `admin_key_required` and set a secure admin key!")
+                .. "please enable `admin_key_required` and set a secure admin key!")
     end
 
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
