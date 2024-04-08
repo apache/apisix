@@ -90,7 +90,7 @@ end
 local function get_addr(conf, ctx)
     if conf.source == "http_x_forwarded_for" then
         -- use the last address from X-Forwarded-For header
-        -- after core.request.header function changed, we need to get orginal header value by using core.request.headers
+        -- after core.request.header function changed, we need to get original header value by using core.request.headers
         local addrs = core.request.headers(ctx)["X-Forwarded-For"]
         if not addrs then
             return nil
