@@ -263,15 +263,11 @@ local schema = {
         },
         introspection_addon_headers = {
             description = "Extra http headers in introspection",
-            type = "object",
-            minProperties = 1,
-            patternProperties = {
-                ["^[^:]+$"] = {
-                    oneOf = {
-                        { type = "string" },
-                        { type = "number" }
-                    }
-                }
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = "^[^:]+$"
             }
         },
         required_scopes = {
@@ -401,11 +397,14 @@ local function introspect(ctx, conf)
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
         if conf.introspection_addon_headers then
-            -- http_request_decorator option provides by lua-resty-openidc
+            -- http_request_decorator option provided by lua-resty-openidc
             conf.http_request_decorator = function(req)
                 local h = req.headers or {}
-                for name, value in pairs(conf.introspection_addon_headers) do
-                    h[name] = value
+                for _, name in ipairs(conf.introspection_addon_headers) do
+                    local value = core.request.header(ctx, name)
+                    if value then
+                        h[name] = value
+                    end
                 end
                 req.headers = h
                 return req

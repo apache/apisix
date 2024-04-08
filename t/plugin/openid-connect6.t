@@ -178,10 +178,7 @@ passed
                                 "realm": "University",
                                 "introspection_endpoint_auth_method": "client_secret_post",
                                 "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
-                                "introspection_addon_headers": {
-                                    "X-Addon-Header-A": "VALUE",
-                                    "X-Addon-Header-B": "value"
-                                }
+                                "introspection_addon_headers": ["X-Addon-Header-A", "X-Addon-Header-B"]
                             }
                         },
                         "upstream": {
@@ -239,7 +236,9 @@ passed
                 local res, err = httpc:request_uri(uri, {
                     method = "GET",
                     headers = {
-                        ["Authorization"] = "Bearer " .. body["access_token"]
+                        ["Authorization"] = "Bearer " .. body["access_token"],
+                        ["X-Addon-Header-A"] = "Value-A",
+                        ["X-Addon-Header-B"] = "Value-b"
                     }
                  })
 
@@ -277,6 +276,8 @@ token validate successfully by introspection
                 method = "GET",
                 headers = {
                     ["Authorization"] = "Bearer " .. "fake access token",
+                    ["X-Addon-Header-A"] = "Value-A",
+                    ["X-Addon-Header-B"] = "Value-b"
                 }
              })
 
@@ -314,10 +315,7 @@ OIDC introspection failed: invalid token
                                 "realm": "University",
                                 "introspection_endpoint_auth_method": "client_secret_post",
                                 "introspection_endpoint": "http://127.0.0.1:1980/log_request",
-                                "introspection_addon_headers": {
-                                    "X-Addon-Header-A": "VALUE",
-                                    "X-Addon-Header-B": "value"
-                                }
+                                "introspection_addon_headers": ["X-Addon-Header-A", "X-Addon-Header-B"]
                             }
                         },
                         "upstream": {
@@ -351,7 +349,9 @@ passed
             local res, err = httpc:request_uri(uri, {
                 method = "GET",
                     headers = {
-                        ["Authorization"] = "Bearer " .. "fake access token"
+                        ["Authorization"] = "Bearer " .. "fake access token",
+                        ["X-Addon-Header-A"] = "Value-A",
+                        ["X-Addon-Header-B"] = "Value-b"
                     }
                 })
             ngx.status = res.status
@@ -361,7 +361,7 @@ passed
 --- error_log
 OIDC introspection failed: JSON decoding failed
 --- grep_error_log eval
-qr/x-addon-header.{9}/
+qr/x-addon-header-.{10}/
 --- grep_error_log_out
-x-addon-header-a: VALUE
-x-addon-header-b: value
+x-addon-header-a: Value-A
+x-addon-header-b: Value-b
