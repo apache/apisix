@@ -21,8 +21,6 @@
 
 git checkout conf/config.yaml
 
-sleep 1
-
 make run
 
 sleep 2
