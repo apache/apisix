@@ -454,10 +454,10 @@ $s
             local h = core.request.header(ctx, "test_header")
             ngx.say(h)
             core.request.add_header(ctx, "test_header", "t2")
-            local h2 = core.request.header(ctx, "test_header")
+            local h2 = core.request.headers(ctx)["test_header"]
             ngx.say(json.encode(h2))
             core.request.add_header(ctx, "test_header", "t3")
-            local h3 = core.request.header(ctx, "test_header")
+            local h3 = core.request.headers(ctx)["test_header"]
             ngx.say(json.encode(h3))
         }
     }

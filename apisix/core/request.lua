@@ -107,7 +107,9 @@ function _M.header(ctx, name)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
-    return _headers(ctx)[name]
+
+    local value = _headers(ctx)[name]
+    return type(value) == "table" and value[1] or value
 end
 
 local function modify_header(ctx, header_name, header_value, override)
