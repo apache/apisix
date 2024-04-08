@@ -340,7 +340,7 @@ passed
             local httpc = http.new()
 
             local t = require("lib.test_admin").test
-                    ngx.sleep(0.1)
+            ngx.sleep(0.1)
             local data = [[
 deployment:
   role: traditional
@@ -364,7 +364,6 @@ plugin_attr:
 
             ngx.status = code
             ngx.say(body)
-
 
             local data = [[
 deployment:

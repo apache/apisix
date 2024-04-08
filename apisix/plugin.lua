@@ -349,7 +349,7 @@ function _M.load(config)
 
             local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
             local active  = exporter.get_prometheus() ~= nil
-            if not enabled and active then
+            if not enabled then
                 exporter.destroy()
             end
             if enabled and not active then

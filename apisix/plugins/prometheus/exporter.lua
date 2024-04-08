@@ -113,7 +113,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
-        if prometheus_bkp ~= nil then
+        if prometheus_bkp then
             prometheus = prometheus_bkp
         end
         return
