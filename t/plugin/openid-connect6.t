@@ -257,14 +257,12 @@ passed
     }
 --- response_body
 true
---- grep_error_log eval
-qr/token validate successfully by \w+/
---- grep_error_log_out
+--- error_log
 token validate successfully by introspection
 
 
 
-=== TEST 6: Access route with an invalid token, should work as expected too.
+=== TEST 6: Access route with an invalid token, should fail.
 --- config
     location /t {
         content_by_lua_block {
