@@ -56,7 +56,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: max_body_bytes is not an integer
 --- config
     location /t {
@@ -83,6 +82,7 @@ __DATA__
 --- response_body
 property "max_req_body_bytes" validation failed: wrong type: expected integer, got string
 done
+
 
 
 === TEST 2: set route(meta_format = origin, include_req_body = true)
@@ -126,6 +126,7 @@ done
 passed
 
 
+
 === TEST 3: hit route(meta_format = origin, include_req_body = true)
 --- request
 GET /hello?ab=cd
@@ -139,6 +140,7 @@ content-length: 6
 connection: close
 abcde
 --- wait: 2
+
 
 
 === TEST 4: set route(meta_format = default, include_req_body = true)
@@ -181,6 +183,7 @@ abcde
 passed
 
 
+
 === TEST 5: hit route(meta_format = default, include_req_body = true)
 --- request
 GET /hello?ab=cd
@@ -190,6 +193,7 @@ hello world
 --- error_log_like eval
 qr/"body": "abcde"/
 --- wait: 2
+
 
 
 === TEST 6: set route(id: 1, meta_format = default, include_resp_body = true)
@@ -232,6 +236,7 @@ qr/"body": "abcde"/
 
 --- response_body
 passed
+
 
 
 === TEST 7: hit route(meta_format = default, include_resp_body = true)
@@ -289,6 +294,7 @@ qr/send data to kafka: \{.*"body":"hello"/
 passed
 
 
+
 === TEST 9: hit route(meta_format = origin, include_resp_body = true)
 --- request
 POST /hello?name=qwerty
@@ -301,6 +307,7 @@ host: localhost
 content-length: 6
 connection: close
 --- wait: 2
+
 
 
 === TEST 10: set route(id: 1, meta_format = default, include_resp_body = true, include_req_body = true)
@@ -346,6 +353,7 @@ connection: close
 
 --- response_body
 passed
+
 
 
 === TEST 11: hit route(meta_format = default, include_resp_body = true, include_req_body = true)
@@ -401,6 +409,7 @@ qr/send data to kafka: \{.*"body":"abcde"/
 
 --- response_body
 passed
+
 
 
 === TEST 13: hit route(meta_format = default, include_resp_body = false, include_req_body = false)
@@ -847,6 +856,7 @@ qr/send data to kafka: \{.*"body":"hello(l{251})".*/
     }
 --- response_body
 passed
+
 
 
 === TEST 25: fail to get body_file with empty request body
