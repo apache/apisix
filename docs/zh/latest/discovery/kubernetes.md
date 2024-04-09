@@ -352,7 +352,7 @@ A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/config
 
 ## 调试 API
 
-它还提供了用于调试的控制api。
+它还提供了用于调试的控制 api。
 
 ### 内存 Dump API
 
