@@ -97,7 +97,7 @@ local function get_request_id(conf)
     end
 
     if conf.algorithm == "nanoid" then
-        return nanoid.generate(conf.nanoid.length,conf.nanoid.char_set)
+        return nanoid.generate(conf.nanoid.length, conf.nanoid.char_set)
     end
 
     if conf.algorithm == "range_id" then
