@@ -54,7 +54,7 @@ def create_route():
         print("Key not found in the YAML file.")
         return
     key = key.replace('"', '')
-    print("the key is",key)
+    print("the key is", key)
     headers = {
     "X-API-KEY": key,
     }
