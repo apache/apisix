@@ -32,6 +32,7 @@ local is_http = ngx.config.subsystem == "http"
 local req_get_body_file = ngx.req.get_body_file
 local MAX_REQ_BODY      = 524288      -- 512 KiB
 local MAX_RESP_BODY     = 524288      -- 512 KiB
+local io                = io
 
 local lru_log_format = core.lrucache.new({
     ttl = 300, count = 512
