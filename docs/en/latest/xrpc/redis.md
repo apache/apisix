@@ -86,7 +86,7 @@ Fields under an entry of `faults`:
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
- admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::

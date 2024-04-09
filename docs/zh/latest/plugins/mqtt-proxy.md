@@ -65,7 +65,7 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
- admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::

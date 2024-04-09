@@ -48,7 +48,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
- admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::

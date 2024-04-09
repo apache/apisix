@@ -210,7 +210,7 @@ APISIX 允许配置 URI 白名单以便绕过 MTLS。如果请求的 URI 在白�
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
- admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
 :::
