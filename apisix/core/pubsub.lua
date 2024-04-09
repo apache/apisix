@@ -66,6 +66,9 @@ end
 -- send generic response to client
 local function send_resp(ws, sequence, data)
     data.sequence = sequence
+    if pb_state ~= pb.state() then
+        pb.state(pb_state)
+    end
     local ok, encoded = pcall(pb.encode, "PubSubResp", data)
     if not ok or not encoded then
         log.error("failed to encode response message, err: ", encoded)
@@ -184,11 +187,11 @@ function _M.wait(self)
             goto continue
         end
 
-        -- recovery of stored pb_store
-        local pb_old_state = pb.state(pb_state)
-
+        -- only recover state if it has changed
+        if pb.state() ~= pb_state then
+            pb.state(pb_state)
+        end
         local data, err = pb.decode("PubSubReq", raw_data)
-        pb.state(pb_old_state)
         if not data then
             log.error("pubsub server receives undecodable data, err: ", err)
             send_error(ws, 0, "wrong command")
