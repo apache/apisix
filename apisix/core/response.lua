@@ -176,7 +176,7 @@ end
 --  final_body = transform(final_body)
 --  ngx.arg[1] = final_body
 --  ...
-function _M.hold_body_chunk(ctx, hold_the_copy)
+function _M.hold_body_chunk(ctx, hold_the_copy, max_resp_body_bytes)
     local body_buffer
     local chunk, eof = arg[1], arg[2]
 
@@ -192,22 +192,35 @@ function _M.hold_body_chunk(ctx, hold_the_copy)
                 n = 1
             }
             ctx._body_buffer[ctx._plugin_name] = body_buffer
+            ctx._resp_body_bytes = #chunk
         else
             local n = body_buffer.n + 1
             body_buffer.n = n
             body_buffer[n] = chunk
+            ctx._resp_body_bytes = ctx._resp_body_bytes + #chunk
+        end
+        if max_resp_body_bytes and ctx._resp_body_bytes >= max_resp_body_bytes then
+            local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
+            body_data = str_sub(body_data, 1, max_resp_body_bytes)
+            return body_data
         end
     end
 
     if eof then
         body_buffer = ctx._body_buffer[ctx._plugin_name]
         if not body_buffer then
+            if max_resp_body_bytes and #chunk >= max_resp_body_bytes then
+                chunk = str_sub(chunk, 1, max_resp_body_bytes)
+            end
             return chunk
         end
 
-        body_buffer = concat_tab(body_buffer, "", 1, body_buffer.n)
+        local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
         ctx._body_buffer[ctx._plugin_name] = nil
-        return body_buffer
+        if max_resp_body_bytes and #body_data >= max_resp_body_bytes then
+            body_data = str_sub(body_data, 1, max_resp_body_bytes)
+        end
+        return body_data
     end
 
     if not hold_the_copy then
