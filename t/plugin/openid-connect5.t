@@ -186,19 +186,38 @@ hello world
             -- Extract cookie which is not authenticated
             local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
 
-            -- Make the call to protected route cookie
+            -- Make the call to protected route with cookie
             local function firstRequest()
                local httpc = http.new()
-               httpc:request_uri(uri, {
+
+               local res, err = httpc:request_uri(uri, {
                         method = "GET",
                         headers = {
                             ["Cookie"] = cookie_str
                         }
                     })
-            end
-            ngx.thread.spawn(firstRequest)
 
-            -- Make second call to protected route and same cookie which should not timeout due ton a blocked session
+                if not res then
+                    ngx.log(ngx.ERR, "request failed with err: ", err)
+                    return
+                end
+                return res
+            end
+
+            local thread = ngx.thread.spawn(firstRequest)
+            ok, res = ngx.thread.wait(thread)
+
+            if not ok then
+                ngx.log(ngx.ERR, "First request did not complete: ", res)
+                return
+            end
+
+            if res.status ~= 401 then
+                ngx.log(ngx.ERR, "Expected status 401 received: ", res.status)
+                return
+            end
+
+            -- Make second call to protected route and same cookie which should not timeout due to a blocked session
             local httpc = http.new()
             httpc:set_timeout(2000)
 
