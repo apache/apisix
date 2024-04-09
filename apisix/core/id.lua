@@ -21,7 +21,7 @@
 
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local try_read_attr    = require("apisix.core.table").try_read_attr
-local profile           = require("apisix.core.profile")
+local profile          = require("apisix.core.profile")
 local log              = require("apisix.core.log")
 local uuid             = require("resty.jit-uuid")
 local lyaml            = require("lyaml")
@@ -31,10 +31,11 @@ local type             = type
 local ipairs           = ipairs
 local string           = string
 local math             = math
-local prefix            = ngx.config.prefix()
+local prefix           = ngx.config.prefix()
 local pairs            = pairs
 local ngx_exit         = ngx.exit
 local apisix_uid
+
 local _M = {version = 0.1}
 
 
