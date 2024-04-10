@@ -55,17 +55,17 @@ local function _headers(ctx)
     end
 
     if not is_apisix_or then
-        return get_headers(0)
+        return get_headers()
     end
 
     if a6_request.is_request_header_set() then
         a6_request.clear_request_header()
-        ctx.headers = get_headers(0)
+        ctx.headers = get_headers()
     end
 
     local headers = ctx.headers
     if not headers then
-        headers = get_headers(0)
+        headers = get_headers()
         ctx.headers = headers
     end
 
