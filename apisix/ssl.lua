@@ -53,6 +53,12 @@ function _M.server_name(clienthello)
     end
 
     if not sni then
+        local port=ngx_ssl.server_port()
+        local local_conf = core.config.local_conf()
+        sni = core.table.try_read_attr(local_conf, "apisix", "ssl","ports_fallback_sni", port)
+    end
+
+    if not sni then
         local local_conf = core.config.local_conf()
         sni = core.table.try_read_attr(local_conf, "apisix", "ssl", "fallback_sni")
         if not sni then
