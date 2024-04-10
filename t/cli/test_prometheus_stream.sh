@@ -35,8 +35,9 @@ stream_plugins:
 make run
 sleep 0.5
 
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 curl -v -k -i -m 20 -o /dev/null -s -X PUT http://127.0.0.1:9180/apisix/admin/stream_routes/1 \
-    -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1" \
+    -H "X-API-KEY: $admin_key" \
     -d '{
         "plugins": {
             "prometheus": {}

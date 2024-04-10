@@ -86,10 +86,19 @@ You can generate a mock HTTP server at [mockbin.com](https://mockbin.org/) to re
 
 The following is an example of how to enable the http-logger for a specific route.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "plugins": {
     "http-logger": {
@@ -136,7 +145,7 @@ Let’s enable prometheus-plugin for our route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {
@@ -205,7 +214,7 @@ Here’s an example to enable the `zipkin` plugin on the specified route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "methods": [
     "GET"

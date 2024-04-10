@@ -116,9 +116,19 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -162,7 +172,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -197,7 +207,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {
