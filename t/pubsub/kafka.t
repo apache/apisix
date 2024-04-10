@@ -159,6 +159,7 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
     # script that prepares the CI environment
     location /t {
         content_by_lua_block {
+            local pb         = require("pb")
             local lib_pubsub = require("lib.pubsub")
             local test_pubsub = lib_pubsub.new_ws("ws://127.0.0.1:1984/kafka")
             local data = {
@@ -235,6 +236,8 @@ failed to initialize pubsub module, err: bad "upgrade" request header: nil
             }
 
             for i = 1, #data do
+                -- force clear state
+                pb.state(nil)
                 local data = test_pubsub:send_recv_ws_binary(data[i])
                 if data.error_resp then
                     ngx.say(data.sequence..data.error_resp.message)
