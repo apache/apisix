@@ -66,6 +66,7 @@ end
 -- send generic response to client
 local function send_resp(ws, sequence, data)
     data.sequence = sequence
+    -- only restore state if it has changed
     if pb_state ~= pb.state() then
         pb.state(pb_state)
     end
