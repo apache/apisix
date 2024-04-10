@@ -99,9 +99,19 @@ plugins:                          # plugin list
 
 你可以通过配置插件元数据来设置 TCP 服务器地址，如下所示：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "tcp": {
     "host": "127.0.0.1",
@@ -117,7 +127,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "skywalking": {
     "endpoint_addr": "http://127.0.0.1:12800/v3/logs"
@@ -134,7 +144,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "clickhouse": {
       "user": "default",
@@ -152,7 +162,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "kafka":{
       "brokers":[

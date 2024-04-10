@@ -40,11 +40,21 @@ Service（也称之为服务）是某类 API 的抽象（也可以理解为一�
 
 以下示例创建了一个启用限流插件的服务，并且将该服务绑定到 ID 为 `100` 和 `101` 的路由上。
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. 创建服务。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/200 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "limit-count": {
@@ -67,7 +77,7 @@ Service（也称之为服务）是某类 API 的抽象（也可以理解为一�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "methods": ["GET"],
         "uri": "/index.html",
@@ -79,7 +89,7 @@ Service（也称之为服务）是某类 API 的抽象（也可以理解为一�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/101 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "methods": ["GET"],
         "uri": "/foo/index.html",
@@ -91,7 +101,7 @@ Service（也称之为服务）是某类 API 的抽象（也可以理解为一�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/102 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/bar/index.html",
     "id": "102",

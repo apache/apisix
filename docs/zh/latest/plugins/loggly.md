@@ -75,9 +75,19 @@ APISIX 支持 [Syslog](https://documentation.solarwinds.com/en/success_center/lo
 
 Syslog 协议允许你发送符合 RFC5424 的 syslog 事件并进行细粒度控制。但是在以快速传输速度发送大量日志时，使用 HTTP/S 批量端点会更好。你可以通过以下方式更新元数据以更新使用的协议：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "protocol": "http"
 }'
@@ -93,7 +103,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "loggly":{
@@ -125,7 +135,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "loggly":{
@@ -160,7 +170,7 @@ curl -i http://127.0.0.1:9080/index.html
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

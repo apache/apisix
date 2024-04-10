@@ -45,9 +45,19 @@ Route（也称为路由）是 APISIX 中最基础和最核心的资源对象，A
 
 你可以在路由中完成所有参数的配置，该方式设置容易设置，每个路由的相对独立自由度比较高。示例如下：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -72,7 +82,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/index.html",
   "plugin_config_id": "123456789apacheapisix",
@@ -98,7 +108,7 @@ APISIX 所有的资源对象的 ID，均使用字符串格式，如果使用的�
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/index.html",
     "upstream": {

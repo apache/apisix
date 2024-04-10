@@ -65,8 +65,17 @@ Please replace the following certificate paths and domain name with your real on
 
 * Note: The same CA certificate as the server needs to be used *
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1'
+curl --cacert /data/certs/mtls_ca.crt --key /data/certs/mtls_client.key --cert /data/certs/mtls_client.crt  https://admin.apisix.dev:9180/apisix/admin/routes -H "X-API-KEY: $admin_key"
 ```
 
 ## etcd with mTLS
@@ -112,7 +121,7 @@ Here is an example shell script to create SSL with mTLS (id is `1`, changes admi
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert": "'"$(cat t/certs/mtls_server.crt)"'",
     "key": "'"$(cat t/certs/mtls_server.key)"'",
@@ -191,7 +200,7 @@ Here is a similar shell script to patch a existed upstream with mTLS (changes ad
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -d '
+-H "X-API-KEY: $admin_key" -X PATCH -d '
 {
     "tls": {
         "client_cert": "'"$(cat t/certs/mtls_client.crt)"'",

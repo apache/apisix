@@ -26,7 +26,7 @@ install_dependencies() {
     wget tar gcc gcc-c++ automake autoconf libtool make unzip git sudo openldap-devel hostname patch \
     which ca-certificates pcre pcre-devel xz \
     openssl-devel
-
+    yum install -y libyaml-devel
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
 
     # install newer curl

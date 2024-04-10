@@ -21,13 +21,19 @@
 
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local try_read_attr    = require("apisix.core.table").try_read_attr
+local profile          = require("apisix.core.profile")
 local log              = require("apisix.core.log")
-local uuid             = require('resty.jit-uuid')
+local uuid             = require("resty.jit-uuid")
+local lyaml            = require("lyaml")
 local smatch           = string.match
 local open             = io.open
-
-
-local prefix = ngx.config.prefix()
+local type             = type
+local ipairs           = ipairs
+local string           = string
+local math             = math
+local prefix           = ngx.config.prefix()
+local pairs            = pairs
+local ngx_exit         = ngx.exit
 local apisix_uid
 
 local _M = {version = 0.1}
@@ -62,18 +68,77 @@ local function write_file(path, data)
 end
 
 
+local function generate_yaml(table)
+    -- By default lyaml will parse null values as []
+    -- The following logic is a workaround so that null values are parsed as null
+    local function replace_null(tbl)
+        for k, v in pairs(tbl) do
+            if type(v) == "table" then
+                replace_null(v)
+            elseif v == nil then
+                tbl[k] = "<PLACEHOLDER>"
+            end
+        end
+    end
+
+    -- Replace null values with "<PLACEHOLDER>"
+    replace_null(table)
+    local yaml = lyaml.dump({ table })
+    yaml = yaml:gsub("<PLACEHOLDER>", "null"):gsub("%[%s*%]", "null")
+    return yaml
+end
+
+
 _M.gen_uuid_v4 = uuid.generate_v4
 
 
+--- This will autogenerate the admin key if it's passed as an empty string in the configuration.
+local function autogenerate_admin_key(default_conf)
+    local changed = false
+   -- Check if deployment.role is either traditional or control_plane
+    local deployment_role = default_conf.deployment and default_conf.deployment.role
+    if deployment_role and (deployment_role == "traditional" or
+       deployment_role == "control_plane") then
+        -- Check if deployment.admin.admin_key is not nil and it's an empty string
+        local admin_keys = try_read_attr(default_conf, "deployment", "admin", "admin_key")
+        if admin_keys and type(admin_keys) == "table" then
+            for i, admin_key in ipairs(admin_keys) do
+                if admin_key.role == "admin" and admin_key.key == "" then
+                    changed = true
+                    admin_keys[i].key = ""
+                    for _ = 1, 32 do
+                        admin_keys[i].key = admin_keys[i].key ..
+                        string.char(math.random(65, 90) + math.random(0, 1) * 32)
+                    end
+                end
+            end
+        end
+    end
+    return default_conf,changed
+end
+
+
 function _M.init()
+    local local_conf = fetch_local_conf()
+
+    local local_conf, changed = autogenerate_admin_key(local_conf)
+    if changed then
+        local yaml_conf = generate_yaml(local_conf)
+        local local_conf_path = profile:yaml_path("config")
+        local ok, err = write_file(local_conf_path, yaml_conf)
+        if not ok then
+            log.error("failed to write updated local configuration: ", err)
+            ngx_exit(-1)
+        end
+    end
+
+    --allow user to specify a meaningful id as apisix instance id
     local uid_file_path = prefix .. "/conf/apisix.uid"
     apisix_uid = read_file(uid_file_path)
     if apisix_uid then
         return
     end
 
-    --allow user to specify a meaningful id as apisix instance id
-    local local_conf = fetch_local_conf()
     local id = try_read_attr(local_conf, "apisix", "id")
     if id then
         apisix_uid = local_conf.apisix.id
@@ -89,6 +154,7 @@ function _M.init()
     end
 end
 
+
 ---
 -- Returns the instance id of the running APISIX
 --
@@ -99,6 +165,5 @@ end
 function _M.get()
     return apisix_uid
 end
-
 
 return _M
