@@ -52,7 +52,7 @@ local function get_request_body(max_bytes)
 
     local file_name = req_get_body_file()
     if not file_name then
-        return nil, "fail to get body_file "
+        return nil
     end
 
     core.log.info("attempt to read body from file: ", file_name)
