@@ -331,6 +331,8 @@ function _M.load(config)
         return local_plugins
     end
 
+    local exporter = require("apisix.plugins.prometheus.exporter")
+
     if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
@@ -343,6 +345,15 @@ function _M.load(config)
             local ok, err = load(http_plugin_names, wasm_plugin_names)
             if not ok then
                 core.log.error("failed to load plugins: ", err)
+            end
+
+            local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
+            local active  = exporter.get_prometheus() ~= nil
+            if not enabled then
+                exporter.destroy()
+            end
+            if enabled and not active then
+                exporter.http_init()
             end
         end
     end
