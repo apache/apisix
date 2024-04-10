@@ -23,7 +23,7 @@ local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local math     = math
 local pairs    = pairs
 local type     = type
-local req_body = ngx.req.read_body
+local req_read_body = ngx.req.read_body
 local plugin_name = "kafka-logger"
 local batch_processor_manager = bp_manager_mod.new("kafka logger")
 
@@ -216,7 +216,7 @@ end
 
 function _M.access(conf, ctx)
     if conf.include_req_body then
-        local read_req_body = true
+        local should_read_body = true
         if conf.include_req_body_expr then
             if not conf.request_expr then
                 local request_expr, err = expr.new(conf.include_req_body_expr)
@@ -230,11 +230,11 @@ function _M.access(conf, ctx)
             local result = conf.request_expr:eval(ctx.var)
 
             if not result then
-                read_req_body = false
+                should_read_body = false
             end
         end
-        if read_req_body then
-            req_body()
+        if should_read_body then
+            req_read_body()
         end
     end
 end
