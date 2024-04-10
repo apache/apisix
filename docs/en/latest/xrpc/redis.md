@@ -82,12 +82,21 @@ Fields under an entry of `faults`:
 
 ## Example usage
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 Assumed the APISIX is proxying TCP on port `9101`, and the Redis is listening on port `6379`.
 
 Let's create a Stream Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "type": "none",

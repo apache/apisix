@@ -66,8 +66,17 @@ See [defining tags](https://docs.datadoghq.com/getting_started/tagging/#defining
 
 By default, the Plugin expects the DogStatsD service to be available at `127.0.0.1:8125`. If you want to change this, you can update the Plugin metadata as shown below:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "host": "172.168.45.29",
     "port": 8126,
@@ -82,7 +91,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: e
 To reset to default configuration, make a PUT request with empty body:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{}'
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/datadog -H "X-API-KEY: $admin_key" -X PUT -d '{}'
 ```
 
 ## Exported metrics
@@ -118,7 +127,7 @@ If there are no suitable values for any particular tag, the tag will be omitted.
 Once you have your Datadog agent running, you can enable the Plugin as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "datadog": {}
@@ -140,7 +149,7 @@ Now, requests to the endpoint `/hello` will generate metrics and push it to the 
 To remove the `datadog` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

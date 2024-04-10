@@ -37,11 +37,20 @@ For more information about Service, please refer to [Admin API Service object](.
 
 The following example creates a Service that enables the `limit-count` Plugin and then binds it to the Routes with the ids `100` and `101`.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. Create a Service.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/services/200 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -64,7 +73,7 @@ curl http://127.0.0.1:9180/apisix/admin/services/200 \
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "methods": ["GET"],
         "uri": "/index.html",
@@ -74,7 +83,7 @@ curl http://127.0.0.1:9180/apisix/admin/services/200 \
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/101 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "methods": ["GET"],
         "uri": "/foo/index.html",
@@ -86,7 +95,7 @@ We can also specify different Plugins or Upstream for the Routes than the ones d
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/102 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/bar/index.html",
         "id": "102",

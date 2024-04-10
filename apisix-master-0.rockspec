@@ -32,6 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
+    "lyaml = 6.2.8",
     "api7-lua-resty-dns-client = 7.0.1",
     "lua-resty-template = 2.0",
     "lua-resty-etcd = 1.10.5",

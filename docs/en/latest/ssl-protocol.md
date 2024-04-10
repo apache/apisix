@@ -79,11 +79,20 @@ apisix:
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-SHA:ECDHE-ECDSA-AES256-SHA:DHE-RSA-AES256-SHA:DHE-DSS-AES256-SHA
 ```
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 2. Specify the TLSv1.1 protocol version for the test.com domain.
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
@@ -98,7 +107,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server2.crt)"'",
      "key": "'"$(cat server2.key)"'",
@@ -197,7 +206,7 @@ Sometimes, we may encounter a situation where a certificate is associated with m
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
@@ -212,7 +221,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
