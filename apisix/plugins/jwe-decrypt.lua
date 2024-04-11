@@ -180,9 +180,7 @@ end
 
 
 local function fetch_jwe_token(conf, ctx)
-    local name = conf.header or schema.properties.header.default
-    core.log.info("get value from header: ", name)
-    local token = core.request.header(ctx, name)
+    local token = core.request.header(ctx, conf.header)
     if token then
         local prefix = sub_str(token, 1, 7)
         if prefix == 'Bearer ' or prefix == 'bearer ' then

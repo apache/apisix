@@ -179,9 +179,7 @@ local function remove_specified_cookie(src, key)
 end
 
 local function fetch_jwt_token(conf, ctx)
-    local name = conf.header or schema.properties.header.default
-    core.log.info("get value from header: ", name)
-    local token = core.request.header(ctx, name)
+    local token = core.request.header(ctx, conf.header)
     if token then
         if conf.hide_credentials then
             -- hide for header
