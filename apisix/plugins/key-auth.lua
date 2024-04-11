@@ -68,7 +68,9 @@ end
 
 function _M.rewrite(conf, ctx)
     local from_header = true
-    local key = core.request.header(ctx, conf.header)
+    local name = conf.header or schema.properties.header.default
+    core.log.info("get value from header: ", name)
+    local key = core.request.header(ctx, name)
 
     if not key then
         local uri_args = core.request.get_uri_args(ctx) or {}
