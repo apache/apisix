@@ -75,10 +75,9 @@ local schema = {
         },
         expose_headers = {
             description =
-                 "you can use 'false' or leave it unset to remove response headers," ..
-                 "multiple header use ',' to split. default: *.",
-            type = "string",
-            default = "*"
+                "multiple header use ',' to split." ..
+                "If not specified, no custom headers are exposed.",
+            type = "string"
         },
         max_age = {
             description =
