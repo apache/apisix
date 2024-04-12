@@ -217,9 +217,6 @@ function _M.hold_body_chunk(ctx, hold_the_copy, max_resp_body_bytes)
 
         local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
         ctx._body_buffer[ctx._plugin_name] = nil
-        if max_resp_body_bytes and #body_data >= max_resp_body_bytes then
-            body_data = str_sub(body_data, 1, max_resp_body_bytes)
-        end
         return body_data
     end
 
