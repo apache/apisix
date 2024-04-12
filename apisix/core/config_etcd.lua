@@ -328,23 +328,23 @@ local function sync_data(self)
     end
 
     ::waitdir::
+    -- get latest uncompacted revision
+    local res, err = self.etcd_cli:get('/nonexisting',{
+        count_only = true,
+        range_end = "\0"
+    })
+    if err then
+        log.error("failed to get latest uncompacted revision: ", err)
+    end
+    local rev
+    if res and res.body and res.body.header and res.body.header.revision then
+        rev = tonumber(res.body.header.revision)
+    end
     local dir_res, err = waitdir(self.etcd_cli, self.key, self.prev_index + 1, self.timeout)
     log.info("waitdir key: ", self.key, " prev_index: ", self.prev_index + 1)
     log.info("res: ", json.delay_encode(dir_res, true))
     if not dir_res then
         if err == "timeout" then
-            -- get latest uncompacted revision
-            local res, err = self.etcd_cli:get('/nonexisting',{
-                count_only = true,
-                range_end = "\0"
-            })
-            if err then
-                log.error("failed to get latest uncompacted revision: ", err)
-            end
-            local rev
-            if res and res.body and res.body.header and res.body.header.revision then
-                rev = tonumber(res.body.header.revision)
-            end
             log.info("updating prev_index from "..self.prev_index.." to "..rev )
             if rev then
                 if rev == self.prev_index then
