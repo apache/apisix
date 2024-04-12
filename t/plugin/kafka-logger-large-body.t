@@ -796,7 +796,7 @@ passed
             local httpc = http.new()
             local res, err = httpc:request_uri(uri,
                 {
-                    method = "GET",
+                    method = "POST",
                     body = large_body,
                 }
             )
@@ -859,11 +859,11 @@ passed
 
 
 
-=== TEST 25: fail to get body_file with empty request body
+=== TEST 25: empty request body
 --- request
 GET /hello?ab=cd
 --- response_body
 hello world
---- error_log
-fail to get body_file
+--- error_log eval
+qr/send data to kafka/
 --- wait: 2
