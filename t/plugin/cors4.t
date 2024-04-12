@@ -690,6 +690,7 @@ Origin: http://sub.domain.com
 --- response_headers
 Access-Control-Allow-Origin: http://sub.domain.com
 Access-Control-Allow-Methods: GET,POST,PUT,DELETE,PATCH,HEAD,OPTIONS,CONNECT,TRACE
+Access-Control-Expose-Headers:
 Access-Control-Allow-Headers:
 Access-Control-Max-Age: 3500
 Access-Control-Allow-Credentials: true
