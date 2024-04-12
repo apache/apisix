@@ -355,7 +355,6 @@ local function sync_data(self)
             goto waitdir
         end
         ::fail::
-        log.error("waitdir failed: ", err)
         return false, err
     end
     log.info("waitdir success")
