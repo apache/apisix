@@ -354,6 +354,12 @@ local function sync_data(self)
             end
             goto waitdir
         end
+        if err == "compacted" then
+            self.need_reload = true
+            log.warn("waitdir [", self.key, "] err: ", err,
+                     ", will read the configuration again via readdir")
+            goto fail
+        end
         ::fail::
         return false, err
     end
