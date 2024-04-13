@@ -165,7 +165,106 @@ apikey: auth-two
 
 
 
-=== TEST 8: enable multi auth plugin using admin api, without any auth_plugins configuration
+=== TEST 8: enable multi auth plugin with default plugin conf
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "basic-auth": {}
+                                },
+                                {
+                                    "key-auth": {}
+                                },
+                                {
+                                    "jwt-auth": {}
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 9: verify, missing authorization
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Authorization Failed"}
+
+
+
+=== TEST 10: verify basic-auth
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo
+
+
+
+=== TEST 11: verify key-auth
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+--- response_body
+hello world
+
+
+
+=== TEST 12: verify, invalid basic credentials
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic YmFyOmJhcgo=
+--- error_code: 401
+--- response_body
+{"message":"Authorization Failed"}
+
+
+
+=== TEST 13: verify, invalid api key
+--- request
+GET /hello
+--- more_headers
+apikey: auth-two
+--- error_code: 401
+--- response_body
+{"message":"Authorization Failed"}
+
+
+
+=== TEST 14: enable multi auth plugin using admin api, without any auth_plugins configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -200,7 +299,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 9: enable multi auth plugin using admin api, with auth_plugins configuration but with one authorization plugin
+=== TEST 15: enable multi auth plugin using admin api, with auth_plugins configuration but with one authorization plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +340,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 10: create public API route (jwt-auth sign)
+=== TEST 16: create public API route (jwt-auth sign)
 --- config
     location /t {
         content_by_lua_block {
@@ -269,7 +368,7 @@ passed
 
 
 
-=== TEST 11: add consumer with username and jwt-auth plugins
+=== TEST 17: add consumer with username and jwt-auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -300,7 +399,7 @@ passed
 
 
 
-=== TEST 12: sign / verify jwt-auth
+=== TEST 18: sign / verify jwt-auth
 --- config
     location /t {
         content_by_lua_block {
@@ -330,7 +429,7 @@ hello world
 
 
 
-=== TEST 13: verify multi-auth with plugin config will cause the conf_version change
+=== TEST 19: verify multi-auth with plugin config will cause the conf_version change
 --- config
     location /t {
         content_by_lua_block {
