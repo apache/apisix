@@ -346,22 +346,15 @@ local function sync_data(self)
     if not dir_res then
         if err == "timeout" then
             log.info("updating prev_index from "..self.prev_index.." to "..rev )
-            if rev then
-                if rev == self.prev_index then
-                    goto fail
-                end
-                self.prev_index = rev
-            end
+            self:upgrade_version(rev)
             goto waitdir
         end
         if err == "compacted" then
             self.need_reload = true
             log.warn("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
-            goto fail
+            return false
         end
-        ::fail::
-        return false, err
     end
     log.info("waitdir success")
     local res = dir_res.body.node
