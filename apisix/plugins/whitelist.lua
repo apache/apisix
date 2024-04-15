@@ -39,6 +39,8 @@ local networks = {
     "scroll-alpha",
     "scroll-testnet",
     "scroll-mainnet",
+    "merlin-testnet",
+    "merlin-mainnet",
     "ckb-mirana",
     "starknet-mainnet",
     "starknet-testnet",
@@ -67,6 +69,8 @@ local networks = {
     "staging-scroll-alpha",
     "staging-scroll-testnet",
     "staging-scroll-mainnet",
+    "staging-merlin-testnet",
+    "staging-merlin-mainnet",
     "staging-ckb-mirana",
     "staging-starknet-mainnet",
     "staging-starknet-testnet",
@@ -457,6 +461,10 @@ function _M.init()
             network == "staging-linea-testnet" or network == "linea-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, debug_methods)
+        elseif network == "staging-merlin-mainnet" or network == "merlin-mainnet" or
+            network == "staging-merlin-testnet" or network == "merlin-testnet" then
+            _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
+            _M.paid_list[network] = _M.free_list[network]
         elseif network == "polygon-mainnet" or network == "staging-polygon-mainnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, bor_methods, trace_methods)
