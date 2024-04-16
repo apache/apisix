@@ -109,6 +109,7 @@ services:
           - consul.cluster
 
   ## Nacos cluster
+
   nacos_auth:
     hostname: nacos1
     image: nacos/nacos-server:1.4.1
@@ -130,6 +131,20 @@ services:
     restart: unless-stopped
     ports:
       - "8858:8848"
+    networks:
+      nacos_net:
+
+
+  nacos_auth_standalone:
+    hostname: nacos3
+    image: nacos/nacos-server:1.4.1
+    env_file:
+      - ci/pod/nacos/env/standalone.env
+    environment:
+      NACOS_AUTH_ENABLE: "true"
+    restart: unless-stopped
+    ports:
+      - "8868:8848"
     networks:
       nacos_net:
 
@@ -288,6 +303,24 @@ services:
       SUFFIX_NUM: 4
       GROUP: test_group
       NAMESPACE: test_ns2
+    restart: unless-stopped
+    ports:
+      - "18007:18001"
+    depends_on:
+      nacos_server_health_check:
+        condition: service_healthy
+    networks:
+      nacos_net:
+  nacos-service8:
+    build:
+      context: ci/pod/nacos/service
+      dockerfile: Dockerfile
+    env_file:
+      - ci/pod/nacos/env/service_standalone.env
+    environment:
+      SUFFIX_NUM: 4
+      GROUP: test_group
+      NAMESPACE: test_ns
     restart: unless-stopped
     ports:
       - "18007:18001"

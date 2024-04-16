@@ -63,9 +63,9 @@ discovery:
         send: 2000
         read: 5000
       others:
-        - name:nacos2
+        - name:nacos3
           host:
-            - "http://nacos:nacos\@127.0.0.1:8848"
+            - "http://nacos:nacos\@127.0.0.1:8868"
           prefix: "/nacos/v1/"
           fetch_interval: 1
           weight: 1
@@ -941,7 +941,7 @@ server 4
 
 
 
-=== TEST 27: get APISIX-NACOS info from NACOS by nacos name - no auth
+=== TEST 27: get APISIX-NACOS info from NACOS by nacos name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -951,7 +951,9 @@ routes:
       service_name: APISIX-NACOS
       discovery_type: nacos
       discovery_args:
-        name: nacos2
+        name: nacos3
+        namespace_id: test_ns
+        group_name: test_group
 
       type: roundrobin
 #END
