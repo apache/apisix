@@ -941,7 +941,7 @@ server 4
 
 
 
-=== TEST 1: get APISIX-NACOS info from NACOS By NACOSNAME - no auth
+=== TEST 1: get APISIX-NACOS info from NACOS by nacos name - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -951,7 +951,7 @@ routes:
       service_name: APISIX-NACOS
       discovery_type: nacos
       discovery_args:
-        name:nacos2
+        name: nacos2
 
       type: roundrobin
 #END
