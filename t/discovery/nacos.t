@@ -63,7 +63,7 @@ discovery:
         send: 2000
         read: 5000
       others:
-        - name:nacos3
+        - name: nacos3
           host:
             - "http://nacos:nacos\@127.0.0.1:8868"
           prefix: "/nacos/v1/"
