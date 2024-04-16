@@ -199,6 +199,10 @@ local config_schema = {
                 dns_resolver_valid = {
                     type = "integer",
                 },
+                enable_http2 = {
+                    type = "boolean",
+                    default = true
+                },
                 ssl = {
                     type = "object",
                     properties = {
@@ -218,9 +222,9 @@ local config_schema = {
                                         minimum = 1,
                                         maximum = 65535
                                     },
-                                    enable_http2 = {
+                                    enable_http3 = {
                                         type = "boolean",
-                                    }
+                                    },
                                 }
                             }
                         },

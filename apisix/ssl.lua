@@ -24,7 +24,6 @@ local ngx_decode_base64 = ngx.decode_base64
 local aes = require("resty.aes")
 local str_lower = string.lower
 local str_byte = string.byte
-local str_len = string.len
 local assert = assert
 local type = type
 local ipairs = ipairs
@@ -299,7 +298,7 @@ function _M.get_status_request_ext()
         core.log.debug("no contains status request extension")
         return false
     end
-    local total_len = str_len(ext)
+    local total_len = #ext
     -- 1-byte for CertificateStatusType
     -- 2-byte for zero-length "responder_id_list"
     -- 2-byte for zero-length "request_extensions"

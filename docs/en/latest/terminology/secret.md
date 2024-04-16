@@ -99,9 +99,18 @@ export JACK_AUTH_KEY=abc
 
 Step 2: Reference the environment variable in the `key-auth` plugin
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -141,7 +150,7 @@ Step 2: Add APISIX Secrets resources through the Admin API, configure the Vault 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/secrets/vault/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "https://127.0.0.1:8200"，
     "prefix": "apisix",
@@ -163,7 +172,7 @@ Step 3: Reference the APISIX Secrets resource in the `key-auth` plugin and fill 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {

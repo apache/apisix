@@ -117,7 +117,7 @@ local function set_ctx_and_check_token()
     local ok, err = check_token(api_ctx)
     if not ok then
         core.log.warn("failed to check token: ", err)
-        core.response.exit(401, { error_msg = "failed to check token" })
+        core.response.exit(401, { error_msg = "failed to check token", description = err })
     end
 end
 
@@ -463,7 +463,7 @@ function _M.init_worker()
         if local_conf.deployment.admin.admin_key_required == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
-                "please disable `admin_key_required` and set a secure admin key!")
+                "please enable `admin_key_required` and set a secure admin key!")
         end
 
         local ok, err = ngx_timer_at(0, function(premature)

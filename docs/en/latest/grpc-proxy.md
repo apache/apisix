@@ -40,8 +40,17 @@ Here's an example, to proxying gRPC service by specified route:
 * attention: APISIX also support to expose gRPC service with plaintext HTTP/2, which does not rely on TLS, usually used to proxy gRPC service in intranet environment
 * the grpc server example：[grpc_server_example](https://github.com/api7/grpc_server_example)
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",
@@ -78,9 +87,8 @@ By default, the APISIX only listens to `9443` for TLS‑encrypted HTTP/2. You ca
 apisix:
     node_listen:
         - port: 9080
-          enable_http2: false
         - port: 9081
-          enable_http2: true
+    enable_http2: true
 ```
 
 Invoking the route created before：
@@ -99,7 +107,7 @@ This means that the proxying is working.
 If your gRPC service encrypts with TLS by itself (so called `gPRCS`, gPRC + TLS), you need to change the `scheme` to `grpcs`. The example above runs gRPCS service on port 50052, to proxy gRPC request, we need to use the configuration below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",

@@ -72,6 +72,15 @@ local schema = {
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
                 },
+                cookie = {
+                    type = "object",
+                    properties = {
+                        lifetime = {
+                            type = "integer",
+                            description = "it holds the cookie lifetime in seconds in the future",
+                        }
+                    }
+                }
             },
             required = {"secret"},
             additionalProperties = false,
@@ -259,7 +268,7 @@ local schema = {
             }
         }
     },
-    encrypt_fields = {"client_secret"},
+    encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
 }
 

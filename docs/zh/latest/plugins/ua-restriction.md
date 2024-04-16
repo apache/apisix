@@ -38,7 +38,7 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 | --------- | ------------- | ------ | ------ | ------ | -------------------------------- |
 | allowlist | array[string] | 否   |        |        | 加入白名单的 `User-Agent`。 |
 | denylist  | array[string] | 否   |        |        | 加入黑名单的 `User-Agent`。 |
-| message | string  | 否   | "Not allowed" | [1, 1024] | 当未允许的 `User-Agent` 访问时返回的信息。 |
+| message | string  | 否   | "Not allowed" |  | 当未允许的 `User-Agent` 访问时返回的信息。 |
 | bypass_missing | boolean       | 否    | false   |       | 当设置为 `true` 时，如果 `User-Agent` 请求头不存在或格式有误时，将绕过检查。 |
 
 :::note
@@ -51,8 +51,18 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 
 以下示例展示了如何在指定路由上启用并配置 `ua-restriction` 插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -64,31 +74,14 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
     "plugins": {
         "ua-restriction": {
             "bypass_missing": true,
-             "allowlist": [
-                 "my-bot1",
-                 "(Baiduspider)/(\\d+)\\.(\\d+)"
-             ],
              "denylist": [
                  "my-bot2",
                  "(Twitterspider)/(\\d+)\\.(\\d+)"
-             ]
+             ],
+             "message": "Do you want to do something bad?"
         }
     }
 }'
-```
-
-当未允许的 `User-Agent` 访问时，默认返回 `{"message":"Not allowed"}`。如果你想使用自定义的 `message`，可以在 `plugins` 部分进行配置：
-
-```json
-"plugins": {
-    "ua-restriction": {
-        "denylist": [
-            "my-bot2",
-            "(Twitterspider)/(\\d+)\\.(\\d+)"
-        ],
-        "message": "Do you want to do something bad?"
-    }
-}
 ```
 
 ## 测试插件
@@ -99,12 +92,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 curl http://127.0.0.1:9080/index.html -i
 ```
 
-返回的 HTTP 响应头中带有 `200` 状态码，代表请求成功：
-
-```shell
-HTTP/1.1 200 OK
-...
-```
+你应当收到 `HTTP/1.1 200 OK` 的响应，表示请求成功。
 
 接下来，请求的同时指定处于 `denylist` 中的 `User-Agent`，如 `Twitterspider/2.0`：
 
@@ -112,12 +100,10 @@ HTTP/1.1 200 OK
 curl http://127.0.0.1:9080/index.html --header 'User-Agent: Twitterspider/2.0'
 ```
 
-返回的 HTTP 响应头中带有 `403` 状态码，请求失败，代表插件生效：
+你应当收到 `HTTP/1.1 403 Forbidden` 的响应和以下报错，表示请求失败，代表插件生效：
 
-```shell
-HTTP/1.1 403 Forbidden
-...
-{"message":"Not allowed"}
+```text
+{"message":"Do you want to do something bad?"}
 ```
 
 ## 删除插件
@@ -125,7 +111,7 @@ HTTP/1.1 403 Forbidden
 当你需要禁用 `ua-restriction` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

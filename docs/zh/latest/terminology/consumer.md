@@ -72,11 +72,21 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
 以下示例介绍了如何对某个 Consumer 开启指定插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. 创建 Consumer，指定认证插件 `key-auth`，并开启特定插件 `limit-count`。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "username": "jack",
         "plugins": {
@@ -97,7 +107,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {}
@@ -133,7 +143,7 @@ Consumer 是某类服务的消费者，需要与用户认证配合才可以使�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {},

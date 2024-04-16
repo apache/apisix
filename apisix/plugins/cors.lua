@@ -341,15 +341,32 @@ function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
     -- If allow_origins_by_regex is not nil, should be matched to it only
     local allow_origins
-    if conf.allow_origins_by_regex == nil then
-        allow_origins = process_with_allow_origins(
-            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins, ctx, req_origin
+    local allow_origins_local = false
+    if conf.allow_origins_by_metadata then
+        allow_origins = process_with_allow_origins_by_metadata(
+            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_metadata, ctx, req_origin
         )
+        if not match_origins(req_origin, allow_origins) then
+            if conf.allow_origins and conf.allow_origins ~= "*" then
+                allow_origins_local = true
+            end
+        end
     else
-        allow_origins = process_with_allow_origins_by_regex(
-            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_regex,
-            conf, ctx, req_origin
-        )
+        allow_origins_local = true
+    end
+    if conf.allow_origins_by_regex == nil then
+        if allow_origins_local then
+            allow_origins = process_with_allow_origins(
+                TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins, ctx, req_origin
+            )
+        end
+    else
+        if allow_origins_local then
+            allow_origins = process_with_allow_origins_by_regex(
+                TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_regex,
+                conf, ctx, req_origin
+            )
+        end
     end
     if not match_origins(req_origin, allow_origins) then
         allow_origins = process_with_allow_origins_by_metadata(

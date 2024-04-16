@@ -57,8 +57,17 @@ If `apisix.stream_proxy` is undefined in `conf/config.yaml`, you will encounter 
 
 You can create a stream route using the Admin API `/stream_routes` endpoint. For example:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "remote_addr": "192.168.5.3",
     "upstream": {
@@ -85,7 +94,7 @@ Currently there are three attributes in stream routes that can be used for filte
 Here is an example:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "server_addr": "127.0.0.1",
     "server_port": 2000,
@@ -128,7 +137,7 @@ Here is an example with MySQL:
 3. Now we are going to create a stream route with server filtering:
 
    ```shell
-   curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+   curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
    {
        "server_addr": "127.0.0.10",
        "server_port": 9101,
@@ -186,7 +195,7 @@ mTLS is also supported, see [Protect Route](./mtls.md#protect-route) for how to 
 Third, we need to configure a stream route to match and proxy it to the upstream:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "nodes": {
@@ -200,7 +209,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 When the connection is TLS over TCP, we can use the SNI to match a route, like:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "sni": "a.test.com",
     "upstream": {
@@ -219,7 +228,7 @@ In this case, a connection handshaked with SNI `a.test.com` will be proxied to `
 APISIX also supports proxying to TLS over TCP upstream.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "scheme": "tls",

@@ -14,15 +14,28 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local limit_req_new = require("resty.limit.req").new
-local core = require("apisix.core")
-local plugin_name = "limit-req"
+local limit_req_new                     = require("resty.limit.req").new
+local core                              = require("apisix.core")
+local redis_schema                      = require("apisix.utils.redis-schema")
+local policy_to_additional_properties   = redis_schema.schema
+local plugin_name                       = "limit-req"
 local sleep = core.sleep
+
+local redis_single_new
+local redis_cluster_new
+do
+    local redis_src = "apisix.plugins.limit-req.limit-req-redis"
+    redis_single_new = require(redis_src).new
+
+    local cluster_src = "apisix.plugins.limit-req.limit-req-redis-cluster"
+    redis_cluster_new = require(cluster_src).new
+end
 
 
 local lrucache = core.lrucache.new({
     type = "plugin",
 })
+
 
 local schema = {
     type = "object",
@@ -33,6 +46,11 @@ local schema = {
         key_type = {type = "string",
             enum = {"var", "var_combination"},
             default = "var",
+        },
+        policy = {
+            type = "string",
+            enum = {"redis", "redis-cluster", "local"},
+            default = "local",
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -45,7 +63,25 @@ local schema = {
         },
         allow_degradation = {type = "boolean", default = false}
     },
-    required = {"rate", "burst", "key"}
+    required = {"rate", "burst", "key"},
+    ["if"] = {
+        properties = {
+            policy = {
+                enum = {"redis"},
+            },
+        },
+    },
+    ["then"] = policy_to_additional_properties.redis,
+    ["else"] = {
+        ["if"] = {
+            properties = {
+                policy = {
+                    enum = {"redis-cluster"},
+                },
+            },
+        },
+        ["then"] = policy_to_additional_properties["redis-cluster"],
+    }
 }
 
 
@@ -68,8 +104,21 @@ end
 
 
 local function create_limit_obj(conf)
-    core.log.info("create new limit-req plugin instance")
-    return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
+    if conf.policy == "local" then
+        core.log.info("create new limit-req plugin instance")
+        return limit_req_new("plugin-limit-req", conf.rate, conf.burst)
+
+    elseif conf.policy == "redis" then
+        core.log.info("create new limit-req redis plugin instance")
+        return redis_single_new("plugin-limit-req", conf, conf.rate, conf.burst)
+
+    elseif conf.policy == "redis-cluster" then
+        core.log.info("create new limit-req redis-cluster plugin instance")
+        return redis_cluster_new("plugin-limit-req", conf, conf.rate, conf.burst)
+
+    else
+        return nil, "policy enum not match"
+    end
 end
 
 

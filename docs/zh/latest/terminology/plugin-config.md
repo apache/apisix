@@ -39,11 +39,21 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
 
 你可以参考如下步骤将 Plugin Config 绑定在路由上。
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. 创建 Plugin config。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "desc": "enable limit-count plugin",
         "plugins": {
@@ -60,7 +70,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uris": ["/index.html"],
         "plugin_config_id": 1,
@@ -85,7 +95,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "desc": "enable ip-restruction and limit-count plugin",
         "plugins": {
@@ -108,7 +118,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uris": ["/index.html"],
         "plugin_config_id": 1,
@@ -137,7 +147,7 @@ description: Plugin Config 对象，可以用于创建一组通用的插件配�
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uris": ["/index.html"],
         "upstream": {

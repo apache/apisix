@@ -41,7 +41,7 @@ The data to be cached can be filtered with response codes, request modes, or mor
 | cache_bypass       | array[string]  | False    |                           |                         | Conditions in which response from cache is bypassed. Whether to skip cache retrieval. If at least one value of the string parameters is not empty and is not equal to `0` then the response will not be taken from the cache. For example, `["$arg_bypass"]`.                                         |
 | cache_method       | array[string]  | False    | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | Request methods for which the response will be cached.                                                                                                                                                                                                                                                |
 | cache_http_status  | array[integer] | False    | [200, 301, 404]           | [200, 599]              | HTTP status codes of the Upstream response for which the response will be cached.                                                                                                                                                                                                                     |
-| hide_cache_headers | boolean        | False    | false                     |                         | When set to `true` adds the `Expires` and `Cache-Control` headers to the client response.                                                                                                                                                                                                               |
+| hide_cache_headers | boolean        | False    | false                     |                         | When set to `true`, hide the `Expires` and `Cache-Control` response headers.                                                                                                                                                                                                               |
 | cache_control      | boolean        | False    | false                     |                         | When set to `true`, complies with Cache-Control behavior in the HTTP specification. Used only for memory strategy.                                                                                                                                                                                      |
 | no_cache           | array[string]  | False    |                           |                         | Conditions in which the response will not be cached. If at least one value of the string parameters is not empty and is not equal to `0` then the response will not be saved.                                                                                                                         |
 | cache_ttl          | integer        | False    | 300 seconds               |                         | Time that a response is cached until it is deleted or refreshed. Comes in to effect when the `cache_control` attribute is not enabled or the proxied server does not return cache header. Used only for memory strategy.                                                                              |
@@ -82,9 +82,18 @@ apisix:
 
 You can enable the Plugin on a Route as shown below. The Plugin uses the disk-based `cache_strategy` and `disk_cache_one` as the `cache_zone` by default:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {
@@ -112,7 +121,7 @@ You can enable the Plugin on a Route with in-memory `cache_strategy` and a corre
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {
@@ -185,7 +194,7 @@ To remove the `proxy-cache` Plugin, you can delete the corresponding JSON config
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {},

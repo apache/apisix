@@ -63,11 +63,20 @@ APISIX provides several plugins for limiting current and speed, including [limit
 
 Next, we will use the `limit-count` plugin as an example to show you how to protect your API with a rate limit plugin:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. Create a Route.
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {

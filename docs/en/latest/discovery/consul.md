@@ -47,6 +47,7 @@ discovery:
     weight: 1                     # default 1
     fetch_interval: 5             # default 3 sec, only take effect for keepalive: false way
     keepalive: true               # default true, use the long pull way to query consul servers
+    sort_type: "origin"           # default origin
     default_service:              # you can define default service when missing hit
       host: "127.0.0.1"
       port: 20999
@@ -72,6 +73,13 @@ The `keepalive` has two optional values:
 
 - `true`, default and recommend value, use the long pull way to query consul servers
 - `false`, not recommend, it would use the short pull way to query consul servers, then you can set the `fetch_interval` for fetch interval
+
+The `sort_type` has four optional values:
+
+- `origin`, not sorting
+- `host_sort`, sort by host
+- `port_sort`, sort by port
+- `combine_sort`, with the precondition that hosts are ordered, ports are also ordered.
 
 #### Dump Data
 
@@ -153,8 +161,17 @@ To avoid confusion, use the full consul key url path as service name in practice
 
 Here is an example of routing a request with a URL of "/*" to a service which named "service_a" and use consul discovery client in the registry :
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uri": "/*",
     "upstream": {
@@ -196,7 +213,7 @@ You could find more usage in the `apisix/t/discovery/consul.t` file.
 Consul service discovery also supports use in L4, the configuration method is similar to L7.
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+$ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "remote_addr": "127.0.0.1",
     "upstream": {
