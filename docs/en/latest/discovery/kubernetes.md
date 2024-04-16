@@ -358,6 +358,8 @@ It also offers control api for debugging.
 
 ### Memory Dump API
 
+To query/list the nodes discoverd by kubernetes discovery, you can query the /v1/discovery/kubernetes/dump control API endpoint like so:
+
 ```shell
 GET /v1/discovery/kubernetes/dump
 ```
