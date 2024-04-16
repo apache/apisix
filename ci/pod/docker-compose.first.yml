@@ -167,6 +167,25 @@ services:
     networks:
       nacos_net:
 
+  nacos_standalone_server_health_check:
+    build:
+      context: ci/pod/nacos/healthcheck
+      dockerfile: Dockerfile
+    environment:
+      CHECK_URI: "http://nacos3:8848/nacos/v1/ns/service/list?pageNo=1&pageSize=2"
+    tty: true
+    # debug healthcheck script
+    #    volumes:
+    #     - ./ci/pod/nacos/healthcheck/nacos-server-healthcheck.sh:/nacos-server-healthcheck.sh
+    healthcheck:
+      test: [ "CMD", "bash", "/nacos-server-healthcheck.sh" ]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 10s
+    networks:
+      nacos_net:
+
   nacos_service_health_check:
     build:
       context: ci/pod/nacos/healthcheck
@@ -325,7 +344,7 @@ services:
     ports:
       - "18007:18001"
     depends_on:
-      nacos_server_health_check:
+      nacos_standalone_server_health_check:
         condition: service_healthy
     networks:
       nacos_net:
