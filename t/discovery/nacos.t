@@ -63,16 +63,16 @@ discovery:
         send: 2000
         read: 5000
       others:
-        name:nacos2
-        host:
-          - "http://nacos:nacos\@127.0.0.1:8848"
-        prefix: "/nacos/v1/"
-        fetch_interval: 1
-        weight: 1
-        timeout:
-          connect: 2000
-          send: 2000
-          read: 5000
+        - name:nacos2
+          host:
+            - "http://nacos:nacos\@127.0.0.1:8848"
+          prefix: "/nacos/v1/"
+          fetch_interval: 1
+          weight: 1
+          timeout:
+            connect: 2000
+            send: 2000
+            read: 5000
 
 _EOC_
 
@@ -941,7 +941,7 @@ server 4
 
 
 
-=== TEST 1: get APISIX-NACOS info from NACOS by nacos name - no auth
+=== TEST 27: get APISIX-NACOS info from NACOS by nacos name - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
