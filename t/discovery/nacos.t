@@ -62,6 +62,17 @@ discovery:
         connect: 2000
         send: 2000
         read: 5000
+      others:
+        name:nacos2
+        host:
+          - "http://nacos:nacos\@127.0.0.1:8848"
+        prefix: "/nacos/v1/"
+        fetch_interval: 1
+        weight: 1
+        timeout:
+          connect: 2000
+          send: 2000
+          read: 5000
 
 _EOC_
 
@@ -927,3 +938,32 @@ GET /t
 --- response_body
 server 1
 server 4
+
+
+
+=== TEST 1: get APISIX-NACOS info from NACOS By NACOSNAME - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      discovery_args:
+        name:nacos2
+
+      type: roundrobin
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- no_error_log
+[error, error]
