@@ -61,6 +61,8 @@ description: OpenID Connect allows the client to obtain user information from th
 | set_refresh_token_header             | boolean  | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.                                                                                                                            |
 | session                              | object   | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration.                                                                   |
 | session.secret                       | string   | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation.                                                                                                                                                                                  |
+| session.cookie                       | object   | False    |                       |             |                                                                                                                                                                                  |
+| session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
 | unauth_action                        | string   | False    | "auth"                |  ["auth","deny","pass"]            | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication.                                                 |
 | proxy_opts                           | object   | False    |                       |                                  | HTTP proxy that the OpenID provider is behind.                                                                                                                                                                                  |
 | proxy_opts.http_proxy     | string   | False    |                       | http://proxy-server:port         | HTTP proxy server address.                                                                                                                                                                                                            |
@@ -116,8 +118,17 @@ The image below shows an example token introspection flow via a Gateway:
 
 The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -160,7 +171,7 @@ You can also provide the public key of the JWT token for verification. If you ha
 The example below shows how you can add public key introspection to a Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -196,7 +207,7 @@ Once the user has authenticated with the identity provider, the Plugin will obta
 The example below adds the Plugin with this mode of operation to the Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {

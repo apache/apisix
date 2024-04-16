@@ -64,8 +64,17 @@ Once you have done that you need to add `application`, `admin`, `normal user`, `
 
 You need to first configure the Plugin on a Consumer:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "username":"wolf_rbac",
   "plugins":{
@@ -87,7 +96,7 @@ The `appid` added in the configuration should already exist in wolf.
 You can now add the Plugin to a Route or a Service:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",
@@ -116,7 +125,7 @@ You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete 
 You can use the `public-api` Plugin to expose the API:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/wal -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/wal -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/apisix/plugin/wolf-rbac/login",
     "plugins": {
@@ -271,7 +280,7 @@ HTTP/1.1 200 OK
 To remove the `wolf-rbac` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/*",

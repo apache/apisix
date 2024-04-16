@@ -213,11 +213,19 @@ function _M.access(conf, ctx)
     end
 
     if err then
-        core.response.set_header("Apisix-Cache-Status", "MISS")
-        if err ~= "not found" then
+        if err == "expired" then
+            core.response.set_header("Apisix-Cache-Status", "EXPIRED")
+
+        elseif err ~= "not found" then
+            core.response.set_header("Apisix-Cache-Status", "MISS")
             core.log.error("failed to get from cache, err: ", err)
+
         elseif conf.cache_control and cc["only-if-cached"] then
+            core.response.set_header("Apisix-Cache-Status", "MISS")
             return 504
+
+        else
+            core.response.set_header("Apisix-Cache-Status", "MISS")
         end
         return
     end

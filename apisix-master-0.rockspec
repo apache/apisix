@@ -32,6 +32,7 @@ description = {
 
 dependencies = {
     "lua-resty-ctxdump = 0.1-0",
+    "lyaml = 6.2.8",
     "api7-lua-resty-dns-client = 7.0.1",
     "lua-resty-template = 2.0",
     "lua-resty-etcd = 1.10.5",
@@ -79,7 +80,7 @@ dependencies = {
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
-    "lua-resty-t1k = 1.1.0",
+    "lua-resty-t1k = 1.1.3",
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0"
 }

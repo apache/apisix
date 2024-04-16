@@ -46,9 +46,19 @@ description: 本文介绍了 Apache APISIX proxy-control 插件的相关操作�
 
 以下示例展示了如何在指定路由上启用 `proxy-control` 插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/upload",
     "plugins": {
@@ -81,7 +91,7 @@ curl -i http://127.0.0.1:9080/upload -d @very_big_file
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d
+  -H "X-API-KEY: $admin_key" -X PUT -d
 {
     "uri": "/upload",
     "upstream": {

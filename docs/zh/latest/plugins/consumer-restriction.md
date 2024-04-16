@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API 网关
   - Consumer restriction
-description: Consumer Restriction 插件允许用户根据 Route、Service 或 Consumer 来设置相应的访问限制。
+description: Consumer Restriction 插件允许用户根据 Route、Service、Consumer 或 Consumer Group 来设置相应的访问限制。
 ---
 
 <!--
@@ -28,7 +28,7 @@ description: Consumer Restriction 插件允许用户根据 Route、Service 或 C
 
 ## 描述
 
-`consumer-restriction` 插件允许用户根据 Route、Service 或 Consumer 来设置相应的访问限制。
+`consumer-restriction` 插件允许用户根据 Route、Service、Consumer 或 Consumer Group 来设置相应的访问限制。
 
 ## 属性
 
@@ -60,8 +60,18 @@ description: Consumer Restriction 插件允许用户根据 Route、Service 或 C
 
 首先，创建两个 Consumer，分别为 `jack1` 和 `jack2`：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "username": "jack1",
     "plugins": {
@@ -72,7 +82,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
     }
 }'
 
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "username": "jack2",
     "plugins": {
@@ -87,7 +97,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 然后，在指定路由上启用并配置 `consumer-restriction` 插件，并通过将 `consumer_name` 加入 `whitelist` 来限制不同 Consumer 的访问：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -138,7 +148,7 @@ HTTP/1.1 403 Forbidden
 然后，在指定路由上启用并配置 `consumer-restriction` 插件，并且仅允许 `jack1` 使用 `POST` 方法进行访问：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -176,7 +186,7 @@ HTTP/1.1 403 Forbidden
 现在更新插件配置，增加 `jack1` 的 `GET` 访问能力：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -214,7 +224,7 @@ HTTP/1.1 200 OK
 首先，创建两个 Service：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/services/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "nodes": {
@@ -225,7 +235,7 @@ curl http://127.0.0.1:9180/apisix/admin/services/1 -H 'X-API-KEY: edd1c9f034335f
     "desc": "new service 001"
 }'
 
-curl http://127.0.0.1:9180/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/services/2 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "nodes": {
@@ -240,7 +250,7 @@ curl http://127.0.0.1:9180/apisix/admin/services/2 -H 'X-API-KEY: edd1c9f034335f
 在指定 Consumer 上配置 `key-auth` 和 `consumer-restriction` 插件，并通过将 `service_id` 加入 `whitelist` 来限制 Consumer 对 Service 的访问：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "new_consumer",
     "plugins": {
@@ -263,7 +273,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 在指定路由上启用并配置 `key-auth` 插件，并绑定 `service_id` 为 `1`：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -293,7 +303,7 @@ HTTP/1.1 200 OK
 更新配置 `key-auth` 插件，并绑定 `service_id` 为 `2`：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {
@@ -327,7 +337,7 @@ HTTP/1.1 403 Forbidden
 当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {

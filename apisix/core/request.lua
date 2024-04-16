@@ -55,17 +55,17 @@ local function _headers(ctx)
     end
 
     if not is_apisix_or then
-        return get_headers(0)
+        return get_headers()
     end
 
     if a6_request.is_request_header_set() then
         a6_request.clear_request_header()
-        ctx.headers = get_headers(0)
+        ctx.headers = get_headers()
     end
 
     local headers = ctx.headers
     if not headers then
-        headers = get_headers(0)
+        headers = get_headers()
         ctx.headers = headers
     end
 
@@ -107,7 +107,9 @@ function _M.header(ctx, name)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
-    return _headers(ctx)[name]
+
+    local value = _headers(ctx)[name]
+    return type(value) == "table" and value[1] or value
 end
 
 local function modify_header(ctx, header_name, header_value, override)
@@ -282,6 +284,15 @@ function _M.get_body(max_size, ctx)
         end
     end
 
+    -- check content-length header for http2/http3
+    do
+        local var = ctx and ctx.var or ngx.var
+        local content_length = tonumber(var.http_content_length)
+        if (var.server_protocol == "HTTP/2.0" or var.server_protocol == "HTTP/3.0")
+            and not content_length then
+            return nil, "HTTP2/HTTP3 request without a Content-Length header"
+        end
+    end
     req_read_body()
 
     local req_body = req_get_body_data()

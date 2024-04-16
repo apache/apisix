@@ -43,11 +43,21 @@ Upstream（也称之为上游）是对虚拟主机抽象，即应用层服务或
 
 APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上游做主被动健康检查、重试等逻辑。更多信息，请参考 [Admin API 中的 Upstream 资源](../admin-api.md#upstream)。
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. 创建上游对象用例。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "type": "chash",
         "key": "remote_addr",
@@ -64,7 +74,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/index.html",
         "upstream_id": 1
@@ -77,7 +87,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/index.html",
         "plugins": {
@@ -103,7 +113,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/index.html",
         "plugins": {
@@ -148,7 +158,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "username": "jack",
         "plugins": {
@@ -163,7 +173,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {}
@@ -192,7 +202,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/hash_on_cookie",
         "upstream": {
@@ -211,7 +221,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9080/hash_on_cookie \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+    -H "X-API-KEY: $admin_key" \
     -H "Cookie: sid=3c183a30cffcda1408daf1c61d47b274"
     ```
 
@@ -221,7 +231,7 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/hash_on_header",
         "upstream": {
@@ -240,6 +250,6 @@ APISIX 的 Upstream 对象除了基本的负载均衡算法外，还支持对上
 
 ```shell
  curl http://127.0.0.1:9080/hash_on_header \
- -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+ -H "X-API-KEY: $admin_key" \
  -H "Content-Type: application/json"
 ```

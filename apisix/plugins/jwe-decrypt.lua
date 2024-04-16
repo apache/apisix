@@ -51,6 +51,7 @@ local consumer_schema = {
         is_base64_encoded = { type = "boolean" },
     },
     required = { "key", "secret" },
+    encrypt_fields = { "key", "secret" },
 }
 
 
@@ -71,15 +72,26 @@ function _M.check_schema(conf, schema_type)
             return false, err
         end
 
-        -- restrict the length of secret, we use A256GCM for encryption,
-        -- so the length should be 32 chars only
-        if conf.is_base64_encoded then
-            if #base64.decode_base64url(conf.secret) ~= 32 then
-                 return false, "the secret length after base64 decode should be 32 chars"
-            end
-        else
-            if #conf.secret ~= 32 then
-                return false, "the secret length should be 32 chars"
+        local local_conf, err = core.config.local_conf(true)
+        if not local_conf then
+            return false, "failed to load the configuration file: " .. err
+        end
+
+        local encrypted = core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+        "enable_encrypt_fields") and (core.config.type == "etcd")
+
+        -- if encrypted, the secret length will exceed 32 so don't check
+        if not encrypted then
+            -- restrict the length of secret, we use A256GCM for encryption,
+            -- so the length should be 32 chars only
+            if conf.is_base64_encoded then
+                if #base64.decode_base64url(conf.secret) ~= 32 then
+                    return false, "the secret length after base64 decode should be 32 chars"
+                end
+            else
+                if #conf.secret ~= 32 then
+                    return false, "the secret length should be 32 chars"
+                end
             end
         end
 

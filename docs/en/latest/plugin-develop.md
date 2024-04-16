@@ -341,7 +341,7 @@ If none of the keys in `keyring` can decrypt the data, the original data is used
 Determine which phase to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
-In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.
+Similarly, if you want to modify or process the response body or headers you can do that in the `body_filter` or in the `header_filter` phases respectively.
 
 The following code snippet shows how to implement any logic relevant to the plugin in the OpenResty log phase.
 
@@ -370,8 +370,17 @@ end
 
 Write the logic of the plugin in the corresponding phase. There are two parameters `conf` and `ctx` in the phase method, take the `limit-conn` plugin configuration as an example.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

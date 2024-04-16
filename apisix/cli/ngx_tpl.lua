@@ -293,6 +293,7 @@ http {
     {% end %}
 
     {% if enabled_plugins["limit-req"] then %}
+    lua_shared_dict plugin-limit-req-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-req-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-req {* http.lua_shared_dict["plugin-limit-req"] *};
     {% end %}
 
@@ -627,12 +628,23 @@ http {
     {% end %}
 
     server {
+        {% if enable_http2 then %}
+        http2 on;
+        {% end %}
+        {% if enable_http3_in_server_context then %}
+        http3 on;
+        {% end %}
         {% for _, item in ipairs(node_listen) do %}
-        listen {* item.ip *}:{* item.port *} default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        listen {* item.ip *}:{* item.port *} default_server {% if enable_reuseport then %} reuseport {% end %};
         {% end %}
         {% if ssl.enable then %}
         {% for _, item in ipairs(ssl.listen) do %}
-        listen {* item.ip *}:{* item.port *} ssl default_server {% if item.enable_http2 then %} http2 {% end %} {% if enable_reuseport then %} reuseport {% end %};
+        {% if item.enable_http3 then %}
+        listen {* item.ip *}:{* item.port *} quic default_server {% if enable_reuseport then %} reuseport {% end %};
+        listen {* item.ip *}:{* item.port *} ssl default_server;
+        {% else %}
+        listen {* item.ip *}:{* item.port *} ssl default_server {% if enable_reuseport then %} reuseport {% end %};
+        {% end %}
         {% end %}
         {% end %}
         {% if proxy_protocol and proxy_protocol.listen_http_port then %}

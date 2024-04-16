@@ -41,6 +41,7 @@ ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(proj
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
+ENV_LIBYAML_INSTALL_PREFIX ?= /usr
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
@@ -131,6 +132,7 @@ deps: install-runtime
 		mkdir -p ~/.luarocks; \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
+		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
 		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
@@ -311,6 +313,9 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-conn
 	$(ENV_INSTALL) apisix/plugins/limit-conn/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-conn/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-req
+	$(ENV_INSTALL) apisix/plugins/limit-req/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-req/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/limit-count
 	$(ENV_INSTALL) apisix/plugins/limit-count/*.lua $(ENV_INST_LUADIR)/apisix/plugins/limit-count/

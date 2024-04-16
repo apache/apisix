@@ -63,9 +63,19 @@ APISIX 接收 HTTP 请求后，首先对请求进行转码，并将转码后的�
 
 可以使用 `/admin/protos/id` 接口将文件的内容添加到 `content` 字段：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -107,33 +117,23 @@ protoc --include_imports --descriptor_set_out=proto.pb proto/helloworld.proto
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "'"$(base64 -w0 /path/to/proto.pb)"'"
 }'
 ```
 
-该脚本将使用 `.pb` 文件和要创建的 `id`，将 proto 的内容转换成 `base64`，并使用转换后的内容调用 Admin API。
-
-运行脚本：
-
-```shell
-chmod +x ./upload_pb.py
-./upload_pb.py proto.pb 1
-```
-
-返回结果：
+返回 `HTTP/1.1 201 Created` 结果如下：
 
 ```
-# 200
-# {"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"}}
+{"node":{"value":{"create_time":1643879753,"update_time":1643883085,"content":"CmgKEnByb3RvL2ltcG9ydC5wcm90bxIDcGtnIhoKBFVzZXISEgoEbmFtZRgBIAEoCVIEbmFtZSIeCghSZXNwb25zZRISCgRib2R5GAEgASgJUgRib2R5QglaBy4vcHJvdG9iBnByb3RvMwq9AQoPcHJvdG8vc3JjLnByb3RvEgpoZWxsb3dvcmxkGhJwcm90by9pbXBvcnQucHJvdG8iPAoHUmVxdWVzdBIdCgR1c2VyGAEgASgLMgkucGtnLlVzZXJSBHVzZXISEgoEYm9keRgCIAEoCVIEYm9keTI5CgpUZXN0SW1wb3J0EisKA1J1bhITLmhlbGxvd29ybGQuUmVxdWVzdBoNLnBrZy5SZXNwb25zZSIAQglaBy4vcHJvdG9iBnByb3RvMw=="},"key":"\/apisix\/proto\/1"}}
 ```
 
 现在我们可以在指定路由中启用 `grpc-transcode` 插件：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -189,7 +189,7 @@ Proxy-Connection: keep-alive
 你也可以配置 `pb_option`，如下所示：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/23 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/23 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/zeebe/WorkflowInstanceCreate",
@@ -240,7 +240,7 @@ Trailer: grpc-message
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -262,7 +262,7 @@ curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -310,7 +310,7 @@ Server: APISIX web server
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/protos/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "content" : "syntax = \"proto3\";
     package helloworld;
@@ -337,7 +337,7 @@ curl http://127.0.0.1:9180/apisix/admin/protos/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/grpctest",
@@ -381,7 +381,7 @@ Server: APISIX web server
 当你需要禁用 `grpc-transcode` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/111 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/111 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/grpctest",
     "plugins": {},

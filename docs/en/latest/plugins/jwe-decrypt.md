@@ -62,8 +62,17 @@ For Route:
 
 First, create a Consumer with `jwe-decrypt` and configure the decryption key:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -78,7 +87,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Next, create a Route with `jwe-decrypt` enabled to decrypt the authorization header:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything*",
@@ -99,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The Plugin creates an internal endpoint `/apisix/plugin/jwe/encrypt` to encrypt data with JWE. To expose it publicly, create a Route with the [public-api](public-api.md) Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jwenew -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/jwenew -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/apisix/plugin/jwe/encrypt",
     "plugins": {
@@ -174,7 +183,7 @@ Apisix-Plugins: jwe-decrypt
 To remove the `jwe-decrypt` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything*",

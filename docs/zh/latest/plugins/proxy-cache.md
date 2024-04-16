@@ -40,7 +40,7 @@ description: 本文介绍了 Apache APISIX proxy-cache 插件的相关操作，�
 | cache_bypass       | array[string]  | 否   |                           |                                                                                 | 当该属性的值不为空或者非 `0` 时则会跳过缓存检查，即不在缓存中查找数据，可以使用变量，例如：`["$arg_bypass"]`。 |
 | cache_method       | array[string]  | 否   | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | 根据请求 method 决定是否需要缓存。                                                                                                     |
 | cache_http_status  | array[integer] | 否   | [200, 301, 404]           | [200, 599]                                                                      | 根据 HTTP 响应码决定是否需要缓存。                                                                                                         |
-| hide_cache_headers | boolean        | 否   | false                     |                                                                                 | 当设置为 `true` 时将 `Expires` 和 `Cache-Control` 响应头返回给客户端。                                                                                 |
+| hide_cache_headers | boolean        | 否   | false                     |                                                                                 | 当设置为 `true` 时不将 `Expires` 和 `Cache-Control` 响应头返回给客户端。                                                                                 |
 | cache_control      | boolean        | 否   | false                     |                                                                                 | 当设置为 `true` 时遵守 HTTP 协议规范中的 `Cache-Control` 的行为。                                 |
 | no_cache           | array[string]  | 否   |                           |                                                                                 | 当此参数的值不为空或非 `0` 时将不会缓存数据，可以使用变量。                                                      |
 | cache_ttl          | integer        | 否   | 300 秒                    |                                                                                 | 当选项 `cache_control` 未开启或开启以后服务端没有返回缓存控制头时，提供的默认缓存时间。    |
@@ -80,9 +80,19 @@ apisix:
 
 以下示例展示了如何在路由上启用 `proxy-cache` 插件。该插件默认使用基于磁盘的 `cache_strategy` 和默认使用`disk_cache_one` 为 `cache_zone`：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {
@@ -110,7 +120,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {
@@ -187,7 +197,7 @@ HTTP/1.1 200 OK
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "plugins": {},
