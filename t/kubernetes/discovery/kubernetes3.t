@@ -202,6 +202,29 @@ _EOC_
             }
         }
 
+        location /dump {
+            content_by_lua_block {
+                local json_decode = require("toolkit.json").decode
+                local core = require("apisix.core")
+                local http = require "resty.http"
+                local httpc = http.new()
+
+                ngx.sleep(1)
+
+                local dump_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/discovery/kubernetes/dump"
+                local res, err = httpc:request_uri(dump_uri, { method = "GET"})
+                if err then
+                    ngx.log(ngx.ERR, err)
+                    ngx.status = res.status
+                    return
+                end
+
+                local body = json_decode(res.body)
+                local endpoints = body.endpoints
+                ngx.say(core.json.encode(endpoints,true))
+            }
+        }
+
 _EOC_
 
     $block->set_value("config", $config);
@@ -395,3 +418,12 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 0 0 2 2 0 0 0 0 2 2 0 0 }
+
+
+
+=== TEST 4: test dump
+--- yaml_config eval: $::yaml_config
+--- request
+GET /dump
+--- response_body_like
+.*"name":"default/kubernetes".*
