@@ -32,6 +32,43 @@ This guide walks you through how you can install and run Apache APISIX in your e
 
 Refer to the [Getting Started](./getting-started/README.md) guide for a quick walk-through on running Apache APISIX.
 
+## Installing etcd
+
+APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration. Before installing APISIX, you need to install etcd on your machine.
+
+It would be installed automatically if you choose the Docker or Helm install method while installing APISIX. If you choose a different method or you need to install it manually, follow the steps shown below:
+
+<Tabs
+  groupId="os"
+  defaultValue="linux"
+  values={[
+    {label: 'Linux', value: 'linux'},
+    {label: 'macOS', value: 'mac'},
+  ]}>
+<TabItem value="linux">
+
+```shell
+ETCD_VERSION='3.5.4'
+wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
+tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
+  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
+  sudo cp -a etcd etcdctl /usr/bin/
+nohup etcd >/tmp/etcd.log 2>&1 &
+```
+
+</TabItem>
+
+<TabItem value="mac">
+
+```shell
+brew install etcd
+brew services start etcd
+```
+
+</TabItem>
+</Tabs>
+
+
 ## Installing APISIX
 
 APISIX can be installed by the different methods listed below:
@@ -222,42 +259,6 @@ If you want to build APISIX from source, please refer to [Building APISIX from s
 </TabItem>
 </Tabs>
 
-## Installing etcd
-
-APISIX uses [etcd](https://github.com/etcd-io/etcd) to save and synchronize configuration. Before installing APISIX, you need to install etcd on your machine.
-
-It would be installed automatically if you choose the Docker or Helm install method while installing APISIX. If you choose a different method or you need to install it manually, follow the steps shown below:
-
-<Tabs
-  groupId="os"
-  defaultValue="linux"
-  values={[
-    {label: 'Linux', value: 'linux'},
-    {label: 'macOS', value: 'mac'},
-  ]}>
-<TabItem value="linux">
-
-```shell
-ETCD_VERSION='3.5.4'
-wget https://github.com/etcd-io/etcd/releases/download/v${ETCD_VERSION}/etcd-v${ETCD_VERSION}-linux-amd64.tar.gz
-tar -xvf etcd-v${ETCD_VERSION}-linux-amd64.tar.gz && \
-  cd etcd-v${ETCD_VERSION}-linux-amd64 && \
-  sudo cp -a etcd etcdctl /usr/bin/
-nohup etcd >/tmp/etcd.log 2>&1 &
-```
-
-</TabItem>
-
-<TabItem value="mac">
-
-```shell
-brew install etcd
-brew services start etcd
-```
-
-</TabItem>
-</Tabs>
-
 ## Next steps
 
 ### Configuring APISIX
@@ -271,9 +272,11 @@ You can configure your APISIX deployment in two ways:
    apisix start -c <path to config file>
    ```
 
-APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured.
+APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured. Generally, APISIX gets installed at `/usr/local/apisix/` directory, so your configuration file will be present at `/usr/local/apisix/conf/` path.
 
-For example, to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
+In case you get the Port binding logs when trying to run the APISIX server using `apisix start` command, it is most likely that the ports are being used by certain processes running on your machine. Try deleting the process using the port or configure the default listening port to other available port on your local machine.
+
+In order to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
 
 ```yaml title="conf/config.yaml"
 apisix:
