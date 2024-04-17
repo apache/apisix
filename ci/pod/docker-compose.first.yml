@@ -342,7 +342,7 @@ services:
       NAMESPACE: test_ns
     restart: unless-stopped
     ports:
-      - "18007:18001"
+      - "18008:18001"
     depends_on:
       nacos_standalone_server_health_check:
         condition: service_healthy
