@@ -274,7 +274,9 @@ You can configure your APISIX deployment in two ways:
 
 APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured. Generally, APISIX gets installed at `/usr/local/apisix/` directory, so your configuration file will be present at `/usr/local/apisix/conf/` path.
 
-In case you get the Port binding logs when trying to run the APISIX server using `apisix start` command, it is most likely that the ports are being used by certain processes running on your machine. Try deleting the process using the port or configure the default listening port to other available port on your local machine.
+In case you get the Port binding logs, that says `Bind address already in use` when trying to run the APISIX server using `apisix start` command, it is most likely that the ports are being used by certain processes running on your machine. Try killing the process which is using the port. You can find the PID of the process that is using the process by running the `sudo netstat -tulpn` command and later using `kill <process id>` command to kill the process. 
+
+Other way is to configure the default listening port to other available port on your local machine.
 
 In order to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
 
