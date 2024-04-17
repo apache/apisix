@@ -140,8 +140,6 @@ services:
     image: nacos/nacos-server:1.4.1
     env_file:
       - ci/pod/nacos/env/standalone.env
-    environment:
-      NACOS_AUTH_ENABLE: "true"
     restart: unless-stopped
     ports:
       - "8868:8848"

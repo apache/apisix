@@ -65,7 +65,7 @@ discovery:
       others:
         - name: nacos3
           host:
-            - "http://nacos:nacos\@127.0.0.1:8868"
+            - "http://127.0.0.1:8868"
           prefix: "/nacos/v1/"
           fetch_interval: 1
           weight: 1
