@@ -364,7 +364,7 @@ To query/list the nodes discoverd by kubernetes discovery, you can query the /v1
 GET /v1/discovery/kubernetes/dump
 ```
 
-For example:
+Which will yield the following response:
 
 ```shell
 # curl http://127.0.0.1:9090/v1/discovery/kubernetes/dump | jq
