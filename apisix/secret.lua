@@ -26,7 +26,6 @@ local byte      = string.byte
 local type      = type
 local pcall     = pcall
 local pairs     = pairs
-local ipairs    = ipairs
 
 local _M = {}
 
