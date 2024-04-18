@@ -366,8 +366,7 @@ GET /v1/discovery/kubernetes/dump
 
 Which will yield the following response:
 
-```shell
-# curl http://127.0.0.1:9090/v1/discovery/kubernetes/dump | jq
+```
 {
   "endpoints": [
     {
