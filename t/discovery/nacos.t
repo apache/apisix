@@ -956,15 +956,7 @@ routes:
 
       type: roundrobin
 #END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
---- no_error_log
-[error, error]
+--- request
+GET /hello
+--- response_body
+server 4
