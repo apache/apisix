@@ -32,15 +32,26 @@ deployment:
     config_provider: yaml
 discovery:
   nacos:
-      host:
-        - "http://127.0.0.1:8858"
-      prefix: "/nacos/v1/"
-      fetch_interval: 1
-      weight: 1
-      timeout:
-        connect: 2000
-        send: 2000
-        read: 5000
+    host:
+      - "http://127.0.0.1:8858"
+    prefix: "/nacos/v1/"
+    fetch_interval: 1
+    weight: 1
+    timeout:
+      connect: 2000
+      send: 2000
+      read: 5000
+    others:
+      - name: nacos3
+        host:
+          - "http://127.0.0.1:8868"
+        prefix: "/nacos/v1/"
+        fetch_interval: 1
+        weight: 1
+        timeout:
+          connect: 2000
+          send: 2000
+          read: 5000
 
 _EOC_
 
@@ -53,27 +64,15 @@ deployment:
     config_provider: yaml
 discovery:
   nacos:
-      host:
-        - "http://nacos:nacos\@127.0.0.1:8848"
-      prefix: "/nacos/v1/"
-      fetch_interval: 1
-      weight: 1
-      timeout:
-        connect: 2000
-        send: 2000
-        read: 5000
-      others:
-        - name: nacos3
-          host:
-            - "http://127.0.0.1:8868"
-          prefix: "/nacos/v1/"
-          fetch_interval: 1
-          weight: 1
-          timeout:
-            connect: 2000
-            send: 2000
-            read: 5000
-
+    host:
+      - "http://nacos:nacos\@127.0.0.1:8848"
+    prefix: "/nacos/v1/"
+    fetch_interval: 1
+    weight: 1
+    timeout:
+      connect: 2000
+      send: 2000
+      read: 5000
 _EOC_
 
 run_tests();
