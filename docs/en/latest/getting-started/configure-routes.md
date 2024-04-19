@@ -39,7 +39,7 @@ The following command creates a route, which should forward all requests sent to
 [//]: <TODO: Add the link to the authorization of Admin API>
 
 ```shell
-curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
+curl -i "http://127.0.0.1:9080/apisix/admin/routes" -X PUT -d '
 {
   "id": "getting-started-ip",
   "uri": "/ip",
