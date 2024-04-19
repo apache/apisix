@@ -960,3 +960,5 @@ routes:
 GET /hello
 --- response_body
 server 4
+--- no_error_log
+[error]
