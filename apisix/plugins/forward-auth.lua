@@ -88,10 +88,14 @@ function _M.access(conf, ctx)
         ["X-Forwarded-Host"] = core.request.get_host(ctx),
         ["X-Forwarded-Uri"] = ctx.var.request_uri,
         ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
-        ["Expect"] = core.request.header(ctx, "expect"),
-        ["Content-Length"] = core.request.header(ctx, "content-length"),
-        ["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
     }
+
+    if conf.request_method == "POST" then
+        auth_headers["Content-Length"] = core.request.header(ctx, "content-length")
+        auth_headers["Expect"] = core.request.header(ctx, "expect")
+        auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
+        auth_headers["Content-Encoding"] = core.request.header(ctx, "content-encoding")
+    end
 
     -- append headers that need to be get from the client request header
     if #conf.request_headers > 0 then
