@@ -33,7 +33,7 @@ local str_byte           = string.byte
 local str_find           = core.string.find
 local log                = core.log
 
-local applications ={}
+local applications = {}
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
