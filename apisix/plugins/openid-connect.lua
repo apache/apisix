@@ -571,6 +571,9 @@ function _M.rewrite(plugin_conf, ctx)
         response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
+            if session then
+                session:close()
+            end
             if err == "unauthorized request" then
                 if conf.unauth_action == "pass" then
                     return nil
