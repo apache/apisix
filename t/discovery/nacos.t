@@ -958,7 +958,7 @@ routes:
 #END
 --- request
 GET /hello
---- response_body
+--- response_body chomp
 server 4
 --- no_error_log
 [error]
