@@ -237,7 +237,6 @@ local function iter_and_add_service(services, values,nacos)
         local group_name = (up.discovery_args and up.discovery_args.group_name)
                            or default_group_name
 
-
         local dup = de_duplication(services, namespace_id, group_name,
                 up.service_name, up.scheme)
         if dup then
