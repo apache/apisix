@@ -183,7 +183,7 @@ local function get_base_uri(nacos)
         url = protocol .. other
     end
 
-    local prefix =nacos.prefix
+    local prefix = nacos.prefix
     if prefix then
         url = url ..prefix
     end
