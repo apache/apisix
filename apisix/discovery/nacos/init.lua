@@ -38,7 +38,7 @@ local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
 local default_group_name = "DEFAULT_GROUP"
-local default_nacos_name ="default"
+local default_nacos_name = "default"
 
 local events
 local events_list
