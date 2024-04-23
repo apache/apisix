@@ -185,7 +185,7 @@ Access-Control-Allow-Origin: https://test.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -204,7 +204,7 @@ Access-Control-Allow-Origin: https://domain.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -276,7 +276,7 @@ Access-Control-Allow-Origin: https://domain.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -295,7 +295,7 @@ Access-Control-Allow-Origin: https://sub.domain.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -348,7 +348,7 @@ Access-Control-Allow-Origin: http://foo.example.org
 Vary: Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -417,6 +417,6 @@ hello world
 Access-Control-Allow-Origin: https://domain.com
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
