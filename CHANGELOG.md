@@ -83,7 +83,6 @@ title: Changelog
 
 - Fix: fix: add post request headers only if auth request method is post (#11184)
 
-
 ## 3.9.0
 
 ### Change
