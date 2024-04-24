@@ -45,16 +45,10 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 
 ## Building APISIX from source
 
-First of all, we need to specify the version `APISIX_VERSION` to be installed:
-
-```shell
-APISIX_VERSION='3.9.0'
-```
-
 Then, you can run the following command to clone the APISIX source code from Github:
 
 ```shell
-git clone --depth 1 --branch master https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
+git clone --depth 1 --branch master https://github.com/apache/apisix.git
 ```
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
