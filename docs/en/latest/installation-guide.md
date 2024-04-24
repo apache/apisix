@@ -277,7 +277,7 @@ If you are unable to start APISIX and observe `Bind address already in use` in l
 
 Other way is to configure the default listening port to other available port on your local machine.
 
-In order to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
+In order to configure the default listening port to be `8000` without changing other configurations, your configuration file should look like this:
 
 ```yaml title="conf/config.yaml"
 apisix:
