@@ -48,7 +48,7 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 First of all, we need to specify the version `APISIX_VERSION` to be installed:
 
 ```shell
-APISIX_VERSION='3.9.0'
+APISIX_VERSION='3.9.1'
 ```
 
 Then, you can run the following command to clone the APISIX source code from Github:
