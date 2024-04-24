@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.9.1](#391)
 - [3.9.0](#390)
 - [3.8.0](#380)
 - [3.7.0](#370)
@@ -75,6 +76,12 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.9.1
+
+### Bug Fixes
+
+- Fix: add post request headers only if auth request method is post (#11184)
 
 ## 3.9.0
 
