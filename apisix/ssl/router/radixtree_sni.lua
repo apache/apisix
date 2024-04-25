@@ -244,6 +244,7 @@ function _M.set(matched_ssl, sni)
     if not ok then
         return false, err
     end
+    
 
     if matched_ssl.value.client then
         local ca_cert = matched_ssl.value.client.ca
