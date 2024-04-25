@@ -238,7 +238,7 @@ function _M.set(matched_ssl, sni)
     end
     ngx_ssl.clear_certs()
 
-    local new_ssl_value = secret.fetch_secrets(matched_ssl.value) or matched_ssl.value
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "") or matched_ssl.value
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
