@@ -104,7 +104,8 @@ local function create_consume_cache(consumers_conf, key_attr)
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
         local new_consumer = core.table.clone(consumer)
-        new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, true, new_consumer.auth_conf, "")
+        new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, true,
+                                                        new_consumer.auth_conf, "")
         consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
     end
 
