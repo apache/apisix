@@ -235,7 +235,7 @@ Access-Control-Allow-Origin: *
 Vary:
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
