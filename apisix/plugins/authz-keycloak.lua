@@ -759,7 +759,7 @@ end
 
 function _M.access(conf, ctx)
     -- resolve secrets
-    conf = fetch_secrets(conf)
+    conf = fetch_secrets(conf, true, conf, "")
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and
