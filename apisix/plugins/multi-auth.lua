@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local plugin_util = require("apisix.utils.plugin-util")
+local auth_util = require("apisix.utils.auth-util")
 local require = require
 local pairs = pairs
 
@@ -70,6 +70,42 @@ function _M.check_schema(conf)
     return true
 end
 
+local function hide_credentials(conf, ctx, status_code)
+    local auth_plugins = conf.auth_plugins
+    if conf.hide_credentials then
+        for k, auth_plugin in pairs(auth_plugins) do
+            for _, auth_plugin_conf in pairs(auth_plugin) do
+                -- hide for header
+                if auth_plugin_conf.header ~= nil then
+                    core.request.set_header(ctx, auth_plugin_conf.header, nil)
+                end
+                -- hide for query
+                if auth_plugin_conf.query ~= nil then
+                    local uri_args = core.request.get_uri_args(ctx) or {}
+                    local token = uri_args[conf.query]
+                    if token then
+                        uri_args[auth_plugin_conf.query] = nil
+                        core.request.set_uri_args(ctx, uri_args)
+
+                    end
+
+                end
+                -- hide for cookie
+                if auth_plugin_conf.cookie ~= nil then
+                    local src = core.request.header(ctx, "Cookie")
+                    local reset_val = auth_util.remove_specified_cookie(src,
+                            auth_plugin_conf.cookie)
+                    core.request.set_header(ctx, "Cookie", reset_val)
+
+                end
+            end
+        end
+    end
+    if status_code ~= nil then
+        return 401, { message = "Authorization Failed" }
+    end
+end
+
 function _M.rewrite(conf, ctx)
     local auth_plugins = conf.auth_plugins
     local status_code
@@ -81,50 +117,17 @@ function _M.rewrite(conf, ctx)
             status_code = auth_code
             if auth_code == nil then
                 core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
-                goto hide_credentials
+                return hide_credentials(conf,ctx,status_code)
             else
                 core.log.debug(auth_plugin_name .. " failed to authenticate the request, code: "
                         .. auth_code)
             end
         end
     end
-    goto hide_credentials
-
-
-    :: hide_credentials ::
-        if conf.hide_credentials then
-            for k, auth_plugin in pairs(auth_plugins) do
-                for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
-                    -- hide for header
-                    if auth_plugin_conf.header ~= nil then
-                        core.request.set_header(ctx, auth_plugin_conf.header, nil)
-                    end
-                    -- hide for query
-                    if auth_plugin_conf.query ~= nil then
-                        local uri_args = core.request.get_uri_args(ctx) or {}
-                        local token = uri_args[conf.query]
-                        if token then
-                            uri_args[auth_plugin_conf.query] = nil
-                            core.request.set_uri_args(ctx, uri_args)
-
-                        end
-
-                    end
-                    -- hide for cookie
-                    if auth_plugin_conf.cookie ~= nil then
-                        local src = core.request.header(ctx, "Cookie")
-                        local reset_val = plugin_util.remove_specified_cookie(src,
-                                auth_plugin_conf.cookie)
-                        core.request.set_header(ctx, "Cookie", reset_val)
-
-                    end
-                end
-            end
-        end
-        if status_code ~= nil then
-            return 401, { message = "Authorization Failed" }
-        end
+    return hide_credentials(conf,ctx,status_code)
 
 end
+
+
 
 return _M

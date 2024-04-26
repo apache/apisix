@@ -695,7 +695,7 @@ hello world
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
+                    "uri": "/echo"
                 }]]
                 )
 
@@ -712,13 +712,13 @@ passed
 
 
 
-=== TEST 15: verify key-auth with same header
+=== TEST 15: verify key-auth with same authorization header
 --- request
-GET /hello
+GET /echo
 --- more_headers
 Authorization: auth-one
---- response_body
-hello world
+--- response_headers
+Authorization: auth-one
 
 
 
@@ -759,7 +759,7 @@ hello world
                         },
                         "type": "roundrobin"
                     },
-                    "uri": "/hello"
+                    "uri": "/echo"
                 }]]
                 )
 
@@ -770,7 +770,7 @@ hello world
         }
     }
 --- request
-GET /hello
+GET /echo
 --- more_headers
 Authorization: auth-one
 --- response_headers
@@ -795,7 +795,7 @@ Authorization: auth-one
 
             -- verify JWT token
             local http = require("resty.http")
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/echo"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {headers={authorization=sign}})
 
@@ -805,5 +805,5 @@ Authorization: auth-one
     }
 --- request
 GET /t
---- response_body
-hello world
+--- response_headers
+!Authorization

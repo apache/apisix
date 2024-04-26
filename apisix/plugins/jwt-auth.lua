@@ -17,7 +17,7 @@
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
-local plugin_util = require("apisix.utils.plugin-util")
+local auth_util = require("apisix.utils.auth-util")
 local resty_random = require("resty.random")
 
 local ngx_encode_base64 = ngx.encode_base64
@@ -184,7 +184,7 @@ local function fetch_jwt_token(conf, ctx)
     if conf.hide_credentials then
         -- hide for cookie
         local src = core.request.header(ctx, "Cookie")
-        local reset_val = plugin_util.remove_specified_cookie(src, conf.cookie)
+        local reset_val = auth_util.remove_specified_cookie(src, conf.cookie)
         core.request.set_header(ctx, "Cookie", reset_val)
     end
 
