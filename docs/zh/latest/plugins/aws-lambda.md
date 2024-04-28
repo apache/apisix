@@ -43,20 +43,15 @@ description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信�
 | authorization        | object  | 否       |         |              | 访问云函数的授权凭证。                                       |
 | authorization.apikey | string  | 否       |         |              | 生成的 API 密钥，用于授权对 AWS Gateway 端点的请求。         |
 | authorization.iam    | object  | 否       |         |              | 用于通过 AWS v4 请求签名执行的基于 AWS IAM 角色的授权。请参考 [IAM 授权方案](#iam-授权方案)。 |
+| authorization.iam.accesskey  | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥 ID。                     |
+| authorization.iam.secretkey | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥。                          |
+| aws_region | string | 否       | "us-east-1"   | 发出请求的 AWS 区域。有关更多 AWS 区域代码的信息请参考 [AWS 区域代码表](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html#region-names-codes)。 |
+| service    | string | 否       | "execute-api" | 接收该请求的服务。若使用 Amazon API gateway APIs, 应设置为 `execute-api`。若使用 Lambda function, 应设置为 `lambda`。 |
 | timeout              | integer | 否       | 3000    | [100,...]    | 代理请求超时（以毫秒为单位）。                                 |
 | ssl_verify           | boolean | 否       | true    | true/false   | 当设置为 `true` 时执行 SSL 验证。                          |
 | keepalive            | boolean | 否       | true    | true/false   | 当设置为 `true` 时，保持连接的活动状态以便重复使用。         |
 | keepalive_pool       | integer | 否       | 5       | [1,...]      | 在关闭该连接之前，可以在该连接上发送的最大请求数。           |
 | keepalive_timeout    | integer | 否       | 60000   | [1000,...]   | 当连接空闲时，保持该连接处于活动状态的时间，以毫秒为单位。           |
-
-### IAM 授权方案
-
-| 名称       | 类型    | 必选项   | 默认值         | 描述                                                  |
-| ---------- | ------ | -------- | ------------- | ------------------------------------------------------------ |
-| accesskey  | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥 ID。                     |
-| secret_key | string | 是       |               | 从 AWS IAM 控制台生成的访问密钥。                          |
-| aws_region | string | 否       | "us-east-1"   | 发出请求的 AWS 区域。有关更多 AWS 区域代码的信息请参考 [AWS 区域代码表](https://docs.aws.amazon.com/zh_cn/general/latest/gr/rande.html#region-names-codes)。 |
-| service    | string | 否       | "execute-api" | 接收该请求的服务。请注意，对于 HTTP 触发器是 `"execute-api"`。 |
 
 ## 启用插件
 
@@ -80,7 +75,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
         "aws-lambda": {
             "function_uri": "https://x9w6z07gb9.execute-api.us-east-1.amazonaws.com/default/test-apisix",
             "authorization": {
-                "apikey": "<Generated API Key from aws console>",
+                "apikey": "<Generated API Key from aws console>"
             },
             "ssl_verify":false
         }
