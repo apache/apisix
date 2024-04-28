@@ -33,7 +33,7 @@ The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https:/
 
 When enabled, the Plugin terminates the ongoing request to the configured URI and initiates a new request to the AWS Lambda Gateway URI on behalf of the client with configured authorization details, request headers, body and parameters (all three passed from the original request). It returns the response with headers, status code and the body to the client that initiated the request with APISIX.
 
-This Plugin supports authorization via AWS API key and AWS IAM secrets.
+This Plugin supports authorization via AWS API key and AWS IAM secrets. The Plugin implements [AWS Signature Version 4 signing](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) for IAM secrets.
 
 ## Attributes
 

@@ -33,7 +33,7 @@ description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信�
 
 启用 `aws-lambda` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 AWS Lambda Gateway URI 发起一个新的请求。这个新请求中携带了之前配置的授权详细信息，包括请求头、请求体和参数（以上参数都是从原始请求中传递的），然后 `aws-lambda` 插件会将带有响应头、状态码和响应体的响应信息返回给使用 APISIX 发起请求的客户端。
 
-该插件支持通过 AWS API key 和 AWS IAM secrets 进行授权。
+该插件支持通过 AWS API key 和 AWS IAM secrets 进行授权。当使用AWS IAM secrets 时，该插件支持 [AWS Signature Version 4 signing](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html)。
 
 ## 属性
 
