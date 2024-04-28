@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX aws-lamb
 
 ## Description
 
-The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) as a dynamic upstream to proxy all requests for a particular URI to the AWS Cloud.
+The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) and [Amazon API Gateway](https://aws.amazon.com/api-gateway/) as a dynamic upstream to proxy all requests for a particular URI to the AWS Cloud.
 
 When enabled, the Plugin terminates the ongoing request to the configured URI and initiates a new request to the AWS Lambda Gateway URI on behalf of the client with configured authorization details, request headers, body and parameters (all three passed from the original request). It returns the response with headers, status code and the body to the client that initiated the request with APISIX.
 

@@ -29,7 +29,7 @@ description: 本文介绍了关于 Apache APISIX aws-lambda 插件的基本信�
 
 ## 描述
 
-`aws-lambda` 插件用于将 [AWS Lambda](https://aws.amazon.com/lambda/) 作为动态上游集成至 APISIX，从而实现将访问指定 URI 的请求代理到 AWS 云。
+`aws-lambda` 插件用于将 [AWS Lambda](https://aws.amazon.com/lambda/) 和 [Amazon API Gateway](https://aws.amazon.com/api-gateway/) 作为动态上游集成至 APISIX，从而实现将访问指定 URI 的请求代理到 AWS 云。
 
 启用 `aws-lambda` 插件后，该插件会终止对已配置 URI 的请求，并代表客户端向 AWS Lambda Gateway URI 发起一个新的请求。这个新请求中携带了之前配置的授权详细信息，包括请求头、请求体和参数（以上参数都是从原始请求中传递的），然后 `aws-lambda` 插件会将带有响应头、状态码和响应体的响应信息返回给使用 APISIX 发起请求的客户端。
 
