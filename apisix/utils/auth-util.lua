@@ -15,16 +15,14 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local new_tab = require ("table.new")
+local new_tab = require("table.new")
 
-local ngx  = ngx
+local ngx = ngx
 local table_insert = table.insert
 local table_concat = table.concat
 local ngx_re_gmatch = ngx.re.gmatch
 
-
 local _M = {}
-
 
 function _M.remove_specified_cookie(src, key)
     local cookie_key_pattern = "([a-zA-Z0-9-_]*)"
@@ -52,6 +50,5 @@ function _M.remove_specified_cookie(src, key)
 
     return table_concat(t, "; ")
 end
-
 
 return _M
