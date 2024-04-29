@@ -149,7 +149,7 @@ local function get_group_name_param(group_name)
 end
 
 
-local function get_signed_param(group_name, service_name,nacos)
+local function get_signed_param(group_name, service_name, nacos)
     local param = ''
     if nacos.access_key ~= '' and nacos.secret_key ~= '' then
         local str_to_sign = ngx.now() * 1000 .. '@@' .. group_name .. '@@' .. service_name
@@ -185,7 +185,7 @@ local function get_base_uri(nacos)
 
     local prefix = nacos.prefix
     if prefix then
-        url = url ..prefix
+        url = url .. prefix
     end
 
     if str_byte(url, #url) ~= str_byte('/') then
@@ -207,7 +207,7 @@ local function de_duplication(services, namespace_id, group_name, service_name, 
 end
 
 
-local function iter_and_add_service(services, values,nacos)
+local function iter_and_add_service(services, values, nacos)
     if not values then
         return
     end
@@ -265,13 +265,13 @@ local function get_nacos_services(nacos)
     local get_stream_routes = require('apisix.router').stream_routes
     local get_services = require('apisix.http.service').services
     local values = get_upstreams()
-    iter_and_add_service(services, values,nacos)
+    iter_and_add_service(services, values, nacos)
     values = get_routes()
-    iter_and_add_service(services, values,nacos)
+    iter_and_add_service(services, values, nacos)
     values = get_services()
-    iter_and_add_service(services, values,nacos)
+    iter_and_add_service(services, values, nacos)
     values = get_stream_routes()
-    iter_and_add_service(services, values,nacos)
+    iter_and_add_service(services, values, nacos)
     return services
 end
 
@@ -315,7 +315,7 @@ local function fetch_from_naocs(nacos)
         local namespace_param = get_namespace_param(service_info.namespace_id)
         local group_name_param = get_group_name_param(service_info.group_name)
         local signature_param = get_signed_param(service_info.group_name,
-                service_info.service_name,nacos)
+                service_info.service_name, nacos)
         local query_path = instance_list_path .. service_info.service_name
                 .. token_param .. namespace_param .. group_name_param
                 .. signature_param
@@ -384,7 +384,7 @@ local function fetch_full_registry(premature)
     end
     fetch_from_naocs(local_conf.discovery.nacos)
     local others_nacos = local_conf.discovery.nacos.others
-    if others_nacos and #others_nacos>0 then
+    if others_nacos and #others_nacos > 0 then
         for _, nacos in ipairs(others_nacos) do
             fetch_from_naocs(nacos)
         end
@@ -413,7 +413,7 @@ function _M.nodes(service_name, discovery_args)
         waiting_time = waiting_time - step
     end
 
-    if not applications or  not applications[nacos_name]
+    if not applications or not applications[nacos_name]
         or not  applications[nacos_name][namespace_id]
         or not applications[nacos_name][namespace_id][group_name]
     then
