@@ -32,7 +32,6 @@ local schema = {
     required = { "auth_plugins" },
 }
 
-
 local plugin_name = "multi-auth"
 
 local _M = {
@@ -55,7 +54,7 @@ function _M.check_schema(conf)
             local auth = require("apisix.plugins." .. auth_plugin_name)
             if auth == nil then
                 return false, auth_plugin_name .. " plugin did not found"
-                else
+            else
                 if auth.type ~= 'auth' then
                     return false, auth_plugin_name .. " plugin is not supported"
                 end
@@ -117,16 +116,15 @@ function _M.rewrite(conf, ctx)
             status_code = auth_code
             if auth_code == nil then
                 core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
-                return hide_credentials(conf,ctx,status_code)
+                return hide_credentials(conf, ctx, status_code)
             else
                 core.log.debug(auth_plugin_name .. " failed to authenticate the request, code: "
                         .. auth_code)
             end
         end
     end
-    return hide_credentials(conf,ctx,status_code)
+    return hide_credentials(conf, ctx, status_code)
 
 end
-
 
 return _M
