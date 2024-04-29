@@ -383,7 +383,7 @@ local function fetch_full_registry(premature)
         return
     end
     fetch_from_naocs(local_conf.discovery.nacos)
-    local others_nacos = local_conf.discovery.nacos.others
+    local others_nacos = local_conf.discovery.nacos.hosts
     if others_nacos and #others_nacos > 0 then
         for _, nacos in ipairs(others_nacos) do
             fetch_from_naocs(nacos)

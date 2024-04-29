@@ -54,7 +54,7 @@ return {
         },
         access_key = {type = 'string', default = ''},
         secret_key = {type = 'string', default = ''},
-        others = {
+        hosts = {
             type = 'array',
             items = {
                 type = 'object',

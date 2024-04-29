@@ -41,7 +41,7 @@ discovery:
       connect: 2000
       send: 2000
       read: 5000
-    others:
+    hosts:
       - name: nacos3
         host:
           - "http://127.0.0.1:8868"
