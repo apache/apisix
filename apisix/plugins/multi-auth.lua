@@ -124,7 +124,7 @@ function _M.rewrite(conf, ctx)
         end
     end
     return hide_credentials(conf, ctx, status_code)
-
 end
+
 
 return _M
