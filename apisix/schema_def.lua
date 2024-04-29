@@ -730,13 +730,13 @@ _M.ssl = {
             oneOf = {
                 certificate_scheme,
                 -- TODO: uniformly define the schema of secret_uri
-                { type = "string", pattern = "^\\$(secret|env|SECRET|ENV)://"}
+                { type = "string", pattern = "^\\$(secret|env|ENV)://"}
             }
         },
         key = {
             oneOf = {
                 private_key_schema,
-                { type = "string", pattern = "^\\$(secret|env|SECRET|ENV)://"}
+                { type = "string", pattern = "^\\$(secret|env|ENV)://"}
             }
         },
         sni = {
