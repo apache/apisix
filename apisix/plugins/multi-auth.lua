@@ -32,6 +32,7 @@ local schema = {
     required = { "auth_plugins" },
 }
 
+
 local plugin_name = "multi-auth"
 
 local _M = {
@@ -100,9 +101,11 @@ local function hide_credentials(conf, ctx, status_code)
             end
         end
     end
+
     if status_code ~= nil then
         return 401, { message = "Authorization Failed" }
     end
+
 end
 
 function _M.rewrite(conf, ctx)
@@ -123,6 +126,7 @@ function _M.rewrite(conf, ctx)
             end
         end
     end
+
     return hide_credentials(conf, ctx, status_code)
 end
 
