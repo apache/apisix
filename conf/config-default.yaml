@@ -296,20 +296,38 @@ nginx_config:                     # Config for render the template to generate n
 #      connect: 2000              # Default 2000ms
 #      send: 2000                 # Default 2000ms
 #      read: 5000                 # Default 5000ms
-#  nacos:                         # Nacos
-#    host:                        # Nacos address(es)
+
+#  nacos:
+#    name: "default"       # Deprecated,see nacos.hosts.name
+#    host:                 # Deprecated,see nacos.hosts.host
 #      - "http://${username}:${password}@${host1}:${port1}"
-#    prefix: "/nacos/v1/"
-#    fetch_interval: 30    # Default 30s
-# `weight` is the `default_weight` that will be attached to each discovered node that
-# doesn't have a weight explicitly provided in nacos results
-#    weight: 100           # Default 100.
-#    timeout:
-#      connect: 2000       # Default 2000ms
-#      send: 2000          # Default 2000ms
-#      read: 5000          # Default 5000ms
-#    access_key: ""        # Nacos AccessKey ID in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
-#    secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
+#    prefix: "/nacos/v1/"  # Deprecated,see nacos.hosts.prefix.
+#    fetch_interval: 30    # default 30 sec.all nacos in config will use this config
+#
+#    weight: 100           # Deprecated see nacos.hosts.weight
+#    timeout:              # Deprecated see nacos.hosts.timeout
+#      connect: 2000       # Deprecated see nacos.hosts.timeout
+#      send: 2000          # Deprecated see nacos.hosts.timeout
+#      read: 5000          # Deprecated see nacos.hosts.timeout
+#    access_key: ""        # Deprecated see nacos.hosts.access_key
+#    secret_key: ""        # Deprecated see nacos.hosts.secret_key
+#    hosts:
+#      - name: "your_nacos_cluster_name"  #your nacos cluster name
+#        host:
+#          - "http://${username}:${password}@${host1}:${port1}"
+#        prefix: "/nacos/v1/"
+#        # `weight` is the `default_weight` that will be attached to each discovered node that
+#        # doesn't have a weight explicitly provided in nacos results
+#        weight: 100         # default 100
+#        timeout:
+#          connect: 2000     # default 2000 ms
+#          send: 2000        # default 2000 ms
+#          read: 5000        # default 5000 ms
+#        access_key: ""        # Nacos AccessKey ID in Alibaba Cloud, notice that it's for Nacos instances on
+#        # Microservices Engine (MSE)
+#        secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud, notice that it's for Nacos instances on
+#        # Microservices Engine (MSE)
+
 #  consul_kv:              # Consul KV
 #    servers:              # Consul KV address(es)
 #      - "http://127.0.0.1:8500"

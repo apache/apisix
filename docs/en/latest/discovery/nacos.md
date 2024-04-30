@@ -34,17 +34,35 @@ Add following configuration in `conf/config.yaml` :
 ```yaml
 discovery:
   nacos:
-    host:
+    name: "default"       # Deprecated,see nacos.hosts.name
+    host:                 # Deprecated,see nacos.hosts.host
       - "http://${username}:${password}@${host1}:${port1}"
-    prefix: "/nacos/v1/"
-    fetch_interval: 30    # default 30 sec
-    # `weight` is the `default_weight` that will be attached to each discovered node that
-    # doesn't have a weight explicitly provided in nacos results
-    weight: 100           # default 100
-    timeout:
-      connect: 2000       # default 2000 ms
-      send: 2000          # default 2000 ms
-      read: 5000          # default 5000 ms
+    prefix: "/nacos/v1/"  # Deprecated,see nacos.hosts.prefix.
+    fetch_interval: 30    # default 30 sec.all nacos in config will use this config
+
+    weight: 100           # Deprecated see nacos.hosts.weight
+    timeout:              # Deprecated see nacos.hosts.timeout
+      connect: 2000       # Deprecated see nacos.hosts.timeout
+      send: 2000          # Deprecated see nacos.hosts.timeout
+      read: 5000          # Deprecated see nacos.hosts.timeout
+    access_key: ""        # Deprecated see nacos.hosts.access_key
+    secret_key: ""        # Deprecated see nacos.hosts.secret_key
+    hosts:
+      - name: "your_nacos_cluster_name"  #your nacos cluster name
+        host:
+          - "http://${username}:${password}@${host1}:${port1}"
+        prefix: "/nacos/v1/"
+        # `weight` is the `default_weight` that will be attached to each discovered node that
+        # doesn't have a weight explicitly provided in nacos results
+        weight: 100         # default 100
+        timeout:
+          connect: 2000     # default 2000 ms
+          send: 2000        # default 2000 ms
+          read: 5000        # default 5000 ms
+        access_key: ""        # Nacos AccessKey ID in Alibaba Cloud, notice that it's for Nacos instances on
+        # Microservices Engine (MSE)
+        secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud, notice that it's for Nacos instances on
+        # Microservices Engine (MSE)
 ```
 
 And you can config it in short by default value:
@@ -52,8 +70,9 @@ And you can config it in short by default value:
 ```yaml
 discovery:
   nacos:
-    host:
-      - "http://192.168.33.1:8848"
+    hosts:
+      - host:
+         - "http://192.168.33.1:8848"
 ```
 
 ### Upstream setting
@@ -79,9 +98,13 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
         "service_name": "APISIX-NACOS",
         "type": "roundrobin",
         "discovery_type": "nacos"
+        "discovery_args":{
+          "name": "your_naocos_cluster_name"
+        }
     }
 }'
 ```
+
 
 The formatted response as below:
 
@@ -128,10 +151,11 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 
 ### discovery_args
 
-| Name         | Type   | Requirement | Default | Valid | Description                                                  |
-| ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
-| namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
-| group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
+| Name         | Type   | Requirement | Default       | Valid | Description                                                                |
+|--------------| ------ | ----------- |---------------| ----- |----------------------------------------------------------------------------|
+| name         | string | optional    | default       |       | This parameter is used to specify nacos cluster in nacos.hosts config      |
+| namespace_id | string | optional    | public        |       | This parameter is used to specify the namespace of the corresponding service |
+| group_name   | string | optional    | DEFAULT_GROUP |       | This parameter is used to specify the group of the corresponding service   |
 
 #### Specify the namespace
 

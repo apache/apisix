@@ -436,6 +436,11 @@ function _M.init_worker()
 
     --default_weight = local_conf.discovery.nacos.weight
     --log.info('default_weight:', default_weight)
+    if local_conf.discovery.nacos.host
+    then
+        log.warn("config \"naocs.host\" will be deprecated soon.")
+    end
+
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
     log.info('fetch_interval:', fetch_interval)
     --access_key = local_conf.discovery.nacos.access_key
