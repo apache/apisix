@@ -15,12 +15,14 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
+local core_str    = require("apisix.core.string")
 local plugin_name = "proxy-rewrite"
 local pairs       = pairs
 local ipairs      = ipairs
 local ngx         = ngx
 local type        = type
 local re_sub      = ngx.re.sub
+local re_gsub     = ngx.re.gsub
 local re_match    = ngx.re.match
 local req_set_uri = ngx.req.set_uri
 local sub_str     = string.sub
@@ -184,6 +186,32 @@ local function check_set_headers(headers)
     return true
 end
 
+local function empty_ngx_params(uri, escaper)
+    if not uri then
+        return uri, nil
+    end
+
+    local flag = core_str.find(uri, "$")
+    if not flag then
+        return uri, nil
+    end
+
+    local pat = [[(?<!\\)\$(?!\d+)[\d\w]+]]
+    local res, _, err = re_gsub(uri, pat, "", "jo")
+    if not res then
+        return nil, err
+    end
+    if escaper then
+        return escaper(tostring(res))
+    end
+
+    return res, nil
+end
+
+local function escape_separator(s)
+    return re_sub(s, [[\?]], "%3F", "jo")
+end
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -195,8 +223,14 @@ function _M.check_schema(conf)
             return false, "The length of regex_uri should be an even number"
         end
         for i = 1, #conf.regex_uri, 2 do
-            local _, _, err = re_sub("/fake_uri", conf.regex_uri[i],
+            -- TODO: double-check ${xxx} is part of ngx env params if needed
+            local reg_res, err = empty_ngx_params(conf.regex_uri[i], nil)
+
+            if reg_res then
+                local _, _, err = re_sub("/fake_uri", reg_res,
                 conf.regex_uri[i + 1], "jo")
+            end
+
             if err then
                 return false, "invalid regex_uri(" .. conf.regex_uri[i] ..
                     ", " .. conf.regex_uri[i + 1] .. "): " .. err
@@ -263,11 +297,6 @@ do
     end
 
 
-    local function escape_separator(s)
-        return re_sub(s, [[\?]], "%3F", "jo")
-    end
-
-
 function _M.rewrite(conf, ctx)
     for _, name in ipairs(upstream_names) do
         if conf[name] then
@@ -280,7 +309,7 @@ function _M.rewrite(conf, ctx)
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
     end
-
+    -- TODO: change behavior of regex_uri replacement
     if conf.uri ~= nil then
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
@@ -291,8 +320,63 @@ function _M.rewrite(conf, ctx)
         end
 
         local error_msg
+
+        local pat = [[(?<!\\)\$(\{(\w+)\}|(\w+))]]
+        local n_resolved
+        local _ctx
+        local _escaper
+
+        local function replace_regex_if_exists(m)
+            local origin = m[0]
+            local variable = m[2] or m[3]
+            local v = _ctx[variable]
+    
+            if v == nil then
+                return origin
+            end
+    
+            n_resolved = n_resolved + 1
+    
+            if _escaper then
+                return _escaper(tostring(v))
+            end
+            return tostring(v)
+        end
+
+
+        local function resolve_env_params(uri, ctx, escaper)
+            n_resolved = 0
+            if not uri then
+                return uri, nil, n_resolved
+            end
+    
+            local flag = core_str.find(uri, "$")
+            if not flag then
+                return uri, nil, n_resolved
+            end
+    
+            _ctx = ctx
+            _escaper = escaper
+            local res, _, err = re_gsub(uri, pat, replace_regex_if_exists, "jo")
+            _ctx = nil
+            _escaper = nil
+            if not res then
+                return nil, err, n_resolved
+            end
+    
+            return res, nil, n_resolved
+        end
+
+
         for i = 1, #conf.regex_uri, 2 do
-            local captures, err = re_match(upstream_uri, conf.regex_uri[i], "jo")
+            local captures
+            -- 1. replace regex_uri[i] with ctx params
+            local regex_template, err, _ = resolve_env_params(conf.regex_uri[i + 1], ctx.var, escape_separator)
+            -- 2. get regex captures
+            if regex_template then
+                captures, _, err = re_match(upstream_uri, conf.regex_uri[i], "jo")
+            end
+
             if err then
                 error_msg = "failed to match the uri " .. ctx.var.uri ..
                     " (" .. conf.regex_uri[i] .. ") " .. " : " .. err
@@ -303,13 +387,13 @@ function _M.rewrite(conf, ctx)
                 ctx.proxy_rewrite_regex_uri_captures = captures
 
                 local uri, _, err = re_sub(upstream_uri,
-                    conf.regex_uri[i], conf.regex_uri[i + 1], "jo")
+                    conf.regex_uri[i], regex_template, "jo")
                 if uri then
                     upstream_uri = uri
                 else
                     error_msg = "failed to substitute the uri " .. ngx.var.uri ..
                         " (" .. conf.regex_uri[i] .. ") with " ..
-                        conf.regex_uri[i + 1] .. " : " .. err
+                        regex_template .. " : " .. err
                 end
 
                 break
@@ -359,7 +443,7 @@ function _M.rewrite(conf, ctx)
             core.log.error("failed to create header operation: ", err)
             return
         end
-
+        -- TODO: solve the way it apply to headers if needed
         local field_cnt = #hdr_op.add
         for i = 1, field_cnt, 2 do
             local val = core.utils.resolve_var_with_captures(hdr_op.add[i + 1],
