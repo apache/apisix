@@ -227,14 +227,16 @@ function _M.check_schema(conf)
         for i = 1, #conf.regex_uri, 2 do
             -- TODO: double-check ${xxx} is part of ngx env params if needed
             local reg_res, err = make_ngx_params_empty(conf.regex_uri[i], nil)
-
-            if reg_res then
-                _, _, err = re_sub("/fake_uri", reg_res,
-                conf.regex_uri[i + 1], "jo")
-            end
-
             if err then
-                return false, "invalid regex_uri(" .. conf.regex_uri[i] ..
+                return false, "invalid nginx variables in regex_uri(" ..
+                    conf.regex_uri[i] ..
+                    ", " .. conf.regex_uri[i + 1] .. "): " .. err
+            end
+            local _, _, err = re_sub("/fake_uri", reg_res,
+                conf.regex_uri[i + 1], "jo")
+            if err then
+                return false, "invalid regex pattern in regex_uri(" ..
+                    conf.regex_uri[i] ..
                     ", " .. conf.regex_uri[i + 1] .. "): " .. err
             end
         end
@@ -379,7 +381,7 @@ function _M.rewrite(conf, ctx)
             end
             -- 2. replace regex_uri[i + 1] with ctx params
             local regex_template, err, _ = resolve_env_params(
-                conf.regex_uri[i + 1], 
+                conf.regex_uri[i + 1],
                 ctx.var, escape_separator)
             if err then
                 error_msg = "failed to fill the nginx params " .. ctx.var.uri ..
