@@ -186,7 +186,9 @@ local function check_set_headers(headers)
     return true
 end
 
-local function empty_ngx_params(uri, escaper)
+local function make_ngx_params_empty(uri, escaper)
+    -- make ${xxx} empty
+    -- xxx: parameters not only contain numbers
     if not uri then
         return uri, nil
     end
@@ -224,7 +226,7 @@ function _M.check_schema(conf)
         end
         for i = 1, #conf.regex_uri, 2 do
             -- TODO: double-check ${xxx} is part of ngx env params if needed
-            local reg_res, err = empty_ngx_params(conf.regex_uri[i], nil)
+            local reg_res, err = make_ngx_params_empty(conf.regex_uri[i], nil)
 
             if reg_res then
                 local _, _, err = re_sub("/fake_uri", reg_res,
@@ -309,7 +311,6 @@ function _M.rewrite(conf, ctx)
     if conf.use_real_request_uri_unsafe then
         upstream_uri = ctx.var.real_request_uri
     end
-    -- TODO: change behavior of regex_uri replacement
     if conf.uri ~= nil then
         separator_escaped = true
         upstream_uri = core.utils.resolve_var(conf.uri, ctx.var, escape_separator)
@@ -369,19 +370,21 @@ function _M.rewrite(conf, ctx)
 
 
         for i = 1, #conf.regex_uri, 2 do
-            local captures
-            -- 1. replace regex_uri[i] with ctx params
-            local regex_template, err, _ = resolve_env_params(conf.regex_uri[i + 1], ctx.var, escape_separator)
-            -- 2. get regex captures
-            if regex_template then
-                captures, _, err = re_match(upstream_uri, conf.regex_uri[i], "jo")
-            end
-
+            -- 1. get regex captures
+            local captures, _, err = re_match(upstream_uri, conf.regex_uri[i], "jo")
             if err then
                 error_msg = "failed to match the uri " .. ctx.var.uri ..
                     " (" .. conf.regex_uri[i] .. ") " .. " : " .. err
                 break
             end
+            -- 2. replace regex_uri[i + 1] with ctx params
+            local regex_template, err, _ = resolve_env_params(conf.regex_uri[i + 1], ctx.var, escape_separator)
+            if err then
+                error_msg = "failed to fill the nginx params " .. ctx.var.uri .. 
+                    " (" .. conf.regex_uri[i + 1] .. ") " .. " : " .. err
+                break
+            end
+            
 
             if captures then
                 ctx.proxy_rewrite_regex_uri_captures = captures
