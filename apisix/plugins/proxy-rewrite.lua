@@ -198,7 +198,7 @@ local function make_ngx_params_empty(uri, escaper)
         return uri, nil
     end
 
-    local pat = [[(?<!\\)\$(?!\d+)[\d\w]+]]
+    local pat = [[(?<!\\)\$(\{[A-Za-z]\w*\}|([A-Za-z]\w*))]]
     local res, _, err = re_gsub(uri, pat, "", "jo")
     if not res then
         return nil, err
@@ -322,7 +322,7 @@ function _M.rewrite(conf, ctx)
 
         local error_msg
 
-        local pat = [[(?<!\\)\$(\{(\w+)\}|(\w+))]]
+        local pat = [[(?<!\\)\$(\{[A-Za-z]\w*\}|([A-Za-z]\w*))]]
         local n_resolved
         local _ctx
         local _escaper
