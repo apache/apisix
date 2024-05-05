@@ -229,7 +229,7 @@ function _M.check_schema(conf)
             local reg_res, err = make_ngx_params_empty(conf.regex_uri[i], nil)
 
             if reg_res then
-                local _, _, err = re_sub("/fake_uri", reg_res,
+                _, _, err = re_sub("/fake_uri", reg_res,
                 conf.regex_uri[i + 1], "jo")
             end
 
@@ -331,13 +331,13 @@ function _M.rewrite(conf, ctx)
             local origin = m[0]
             local variable = m[2] or m[3]
             local v = _ctx[variable]
-    
+
             if v == nil then
                 return origin
             end
-    
+
             n_resolved = n_resolved + 1
-    
+
             if _escaper then
                 return _escaper(tostring(v))
             end
@@ -350,12 +350,12 @@ function _M.rewrite(conf, ctx)
             if not uri then
                 return uri, nil, n_resolved
             end
-    
+
             local flag = core_str.find(uri, "$")
             if not flag then
                 return uri, nil, n_resolved
             end
-    
+
             _ctx = ctx
             _escaper = escaper
             local res, _, err = re_gsub(uri, pat, replace_regex_if_exists, "jo")
@@ -364,7 +364,7 @@ function _M.rewrite(conf, ctx)
             if not res then
                 return nil, err, n_resolved
             end
-    
+
             return res, nil, n_resolved
         end
 
@@ -378,13 +378,14 @@ function _M.rewrite(conf, ctx)
                 break
             end
             -- 2. replace regex_uri[i + 1] with ctx params
-            local regex_template, err, _ = resolve_env_params(conf.regex_uri[i + 1], ctx.var, escape_separator)
+            local regex_template, err, _ = resolve_env_params(
+                conf.regex_uri[i + 1], 
+                ctx.var, escape_separator)
             if err then
-                error_msg = "failed to fill the nginx params " .. ctx.var.uri .. 
+                error_msg = "failed to fill the nginx params " .. ctx.var.uri ..
                     " (" .. conf.regex_uri[i + 1] .. ") " .. " : " .. err
                 break
             end
-            
 
             if captures then
                 ctx.proxy_rewrite_regex_uri_captures = captures
