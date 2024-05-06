@@ -226,18 +226,18 @@ function _M.check_schema(conf)
         end
         for i = 1, #conf.regex_uri, 2 do
             -- TODO: double-check ${xxx} is part of ngx env params if needed
-            local reg_res, err = make_ngx_params_empty(conf.regex_uri[i], nil)
+            local reg_res, err = make_ngx_params_empty(conf.regex_uri[i + 1], nil)
             if err then
                 return false, "invalid nginx variables in regex_uri(" ..
                     conf.regex_uri[i] ..
                     ", " .. conf.regex_uri[i + 1] .. "): " .. err
             end
-            local _, _, err = re_sub("/fake_uri", reg_res,
-                conf.regex_uri[i + 1], "jo")
+            local _, _, err = re_sub("/fake_uri", conf.regex_uri[i],
+                reg_res, "jo")
             if err then
                 return false, "invalid regex pattern in regex_uri(" ..
                     conf.regex_uri[i] ..
-                    ", " .. conf.regex_uri[i + 1] .. "): " .. err
+                    ", " .. reg_res .. "): " .. err
             end
         end
     end
