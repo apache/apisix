@@ -46,16 +46,30 @@ function _M.check_schema(conf)
 end
 
 
-local function fetch_ocsp_resp(der_cert_chain)
-    core.log.info("fetch ocsp response from remote")
-    local ocsp_url, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+local function get_ocsp_responder(der_cert_chain, overrides_responder)
+    if overrides_responder then
+        return overrides_responder
+    end 
 
-    if not ocsp_url then
+    local responder, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
+
+    if not responder then
         -- if cert not support ocsp, the report error is nil
         if not err then
             err = "cert not contains authority_information_access extension"
         end
         return nil, "failed to get ocsp url: " .. err
+    end
+
+    return responder
+end
+
+
+local function fetch_ocsp_resp(der_cert_chain, responder)
+    core.log.info("fetch ocsp response from remote")
+    local ocsp_url, err = get_ocsp_responder(der_cert_chain, responder)
+    if not responder then
+        return nil, err
     end
 
     local ocsp_req, err = ngx_ocsp.create_ocsp_request(der_cert_chain)
@@ -176,6 +190,36 @@ local function set_cert_and_key(sni, value)
 end
 
 
+local original_verify_client_hook
+local function verify_client_hook(ok, err, value)
+    -- only client verify ok and ssl_ocsp is "leaf" need to validate ocsp response
+    if ok and value.ocsp_stapling.ssl_ocsp == "leaf" then
+        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(ngx.var.ssl_client_raw_cert)
+        if not der_cert_chain then
+            return false, "failed to convert certificate chain from PEM to DER: ", err
+        end
+    
+        local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
+        if ocsp_resp == nil then
+            core.log.info("not ocsp resp cache found, fetch from ocsp responder")
+            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, value.ocsp_stapling.ssl_ocsp_responder)
+            if ocsp_resp == nil then
+                return false, err
+            end
+            core.log.info("fetch ocsp resp ok, cache it")
+            ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
+        end
+    
+        local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
+        if not ok then
+            return false, "failed to validate ocsp response: " .. err
+        end
+        return true
+    end
+
+    return ok, err
+end
+
 function _M.init()
     if core.schema.ssl.properties.gm ~= nil then
         core.log.error("ocsp-stapling plugin should not run with gm plugin")
@@ -183,6 +227,9 @@ function _M.init()
 
     original_set_cert_and_key = radixtree_sni.set_cert_and_key
     radixtree_sni.set_cert_and_key = set_cert_and_key
+
+    original_verify_client_hook = radixtree_sni.verify_client_hook
+    radixtree_sni.verify_client_hook = verify_client_hook
 
     if core.schema.ssl.properties.ocsp_stapling ~= nil then
         core.log.error("Field 'ocsp_stapling' is occupied")
@@ -199,6 +246,19 @@ function _M.init()
                 type = "boolean",
                 default = false,
             },
+            ssl_stapling_responder = {
+                type = "string",
+                pattern = [[^http://]],
+            },
+            ssl_ocsp = {
+                type = "string",
+                default = "off",
+                enum = {"off", "leaf"},
+            },
+            ssl_ocsp_responder = {
+                type = "string",
+                pattern = [[^http://]],
+            },
             cache_ttl = {
                 type = "integer",
                 minimum = 60,
@@ -212,6 +272,7 @@ end
 
 function _M.destroy()
     radixtree_sni.set_cert_and_key = original_set_cert_and_key
+    radixtree_sni.verify_client_hook = original_verify_client_hook
     core.schema.ssl.properties.ocsp_stapling = nil
     ocsp_resp_cache:flush_all()
 end
