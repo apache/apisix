@@ -54,7 +54,7 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 
 | 名称                                       | 类型    | 默认值                                             | 描述                                                                                                                                             |
 | ------------------------------------------ | ------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| trace_id_source                            | enum    | random                                            | trace ID 的来源。有效值为：`random` 或 `x-request-id`。当设置为 `x-request-id` 时，`x-request-id` 头的值将用作跟踪 ID。请确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}`。 |
+| trace_id_source                            | enum    | x-request-id                                      | trace ID 的来源。有效值为：`random` 或 `x-request-id`。当设置为 `x-request-id` 时，`x-request-id` 头的值将用作跟踪 ID。请确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}`。 |
 | resource                                   | object  |                                                   | 追加到 trace 的额外 [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md)。 |
 | collector                                  | object  | {address = "127.0.0.1:4318", request_timeout = 3} | OpenTelemetry Collector 配置。 |
 | collector.address                          | string  | 127.0.0.1:4318                                    | 数据采集服务的地址。如果数据采集服务使用的是 HTTPS 协议，可以将 address 设置为 https://127.0.0.1:4318。 |
