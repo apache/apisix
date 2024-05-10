@@ -224,7 +224,7 @@ local function iter_and_add_service(services, values, nacos)
         else
             up = conf
         end
-        local nacos_name_form_args = (up.discovery_args and up.discovery_args.name)
+        local nacos_name_from_args = (up.discovery_args and up.discovery_args.name)
              or default_nacos_name
         local nacos_name = nacos.name or default_nacos_name
         if nacos_name ~= nacos_name_form_args then
