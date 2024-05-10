@@ -571,13 +571,13 @@ plugin_attr:          # Plugin attributes
       request_headers:              # Set the headers to include in requests to the OpenTelemetry collector.
         Authorization: token        # Set the authorization header to include an access token.
     batch_span_processor:
-      drop_on_queue_full: false     # Drop spans when the export queue is full.
-      max_queue_size: 1024          # Set the maximum size of the span export queue.
-      batch_timeout: 2              # Set the timeout for span batches to wait in the export queue before
+      drop_on_queue_full: true      # Drop spans when the export queue is full.
+      max_queue_size: 2048          # Set the maximum size of the span export queue.
+      batch_timeout: 5              # Set the timeout for span batches to wait in the export queue before
                                     # being sent.
-      inactive_timeout: 1           # Set the timeout for spans to wait in the export queue before being sent,
+      inactive_timeout: 2           # Set the timeout for spans to wait in the export queue before being sent,
                                     # if the queue is not full.
-      max_export_batch_size: 16     # Set the maximum number of spans to include in each batch sent to the
+      max_export_batch_size: 256    # Set the maximum number of spans to include in each batch sent to the
                                     # OpenTelemetry collector.
     set_ngx_var: false              # Export opentelemetry variables to NGINX variables.
   prometheus:                               # Plugin: prometheus
