@@ -71,7 +71,7 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 
 当`trace_id_source`设置为`x-request-id`且请求携带由 Envoy 默认生成的`x-request-id`标头时，将链路数据推送到采集器时可能会出现问题。
 
-这是因为 Envoy 默认使用 UUID 生成其 `x-request-id` 标头，不符合指定的正则表达式模式 `[0-9a-f]{32}` 标准。
+这是因为 Envoy 默认使用 [UUID](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing#trace-context-propagation) 生成其 `x-request-id` 标头，不符合指定的正则表达式模式 `[0-9a-f]{32}` 标准。
 
 :::
 
