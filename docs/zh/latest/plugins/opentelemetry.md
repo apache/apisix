@@ -67,6 +67,14 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 | batch_span_processor.max_export_batch_size | integer | 256                                               | 单个批次中要处理的 span 数量。 |
 | batch_span_processor.inactive_timeout      | number  | 2                                                 | 两个处理批次之间的时间间隔，单位为秒。 |
 
+:::note
+
+当`trace_id_source`设置为`x-request-id`且请求携带由 Envoy 默认生成的`x-request-id`标头时，将链路数据推送到采集器时可能会出现问题。
+
+这是因为 Envoy 默认使用 UUID 生成其 `x-request-id` 标头，不符合指定的正则表达式模式 `[0-9a-f]{32}` 标准。
+
+:::
+
 你可以参考以下示例进行配置：
 
 ```yaml title="./conf/config.yaml"
