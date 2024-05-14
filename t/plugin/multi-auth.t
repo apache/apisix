@@ -659,7 +659,7 @@ hello world
 
 
 
-=== TEST 14: enable multi auth plugin with same header without hide credential
+=== TEST 23: enable multi auth plugin with same header without hide credential
 --- config
     location /t {
         content_by_lua_block {
@@ -712,7 +712,7 @@ passed
 
 
 
-=== TEST 15: verify key-auth using the same authorization header for jwt-auth
+=== TEST 24: verify key-auth using the same authorization header for jwt-auth
 --- request
 GET /echo
 --- more_headers
