@@ -61,7 +61,66 @@ passed
 
 
 
-=== TEST 2: verify multi auth plugin (in header) with hiding credentials
+=== TEST 2: create public API route (jwt-auth sign)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwt/sign"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 3: add consumer with username and jwt-auth plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "jack",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key",
+                            "secret": "my-secret-key"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: verify multi auth plugin (in header) with hiding credentials
 --- config
     location /t {
         content_by_lua_block {
@@ -108,25 +167,13 @@ passed
         }
     }
 --- request
-GET /echo
---- more_headers
-Authorization: auth-one
---- response_headers
-!Authorization
+GET /t
+--- response_body
+passed
 
 
 
-=== TEST 3: verify key auth with same header with hiding credentials
---- request
-GET /echo
---- more_headers
-apikey: auth-one
---- response_headers
-!Authorization
-
-
-
-=== TEST 4: verify jwt-auth with same header
+=== TEST 5: sign / verify jwt-auth
 --- config
     location /t {
         content_by_lua_block {
@@ -141,17 +188,35 @@ apikey: auth-one
                 return
             end
 
-            -- verify JWT token
-            local http = require("resty.http")
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/echo"
-            local httpc = http.new()
-            local res, err = httpc:request_uri(uri, {headers={authorization=sign}})
+            local code, _, res = t('/echo?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
 
-            ngx.status = res.status
-            ngx.print(res.body)
+            ngx.status = code
+            ngx.say(body)
         }
     }
 --- request
 GET /t
+--- response_args
+!jwt
+
+
+
+=== TEST 6: verify key auth with same Authorization header with hiding credentials
+--- request
+GET /echo
+--- more_headers
+Authorization: auth-one
+--- response_headers
+!Authorization
+
+
+
+=== TEST 7: verify jwt-key (in header) with hiding credentials
+--- request
+GET /echo
+--- more_headers
+Authorization: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs
 --- response_headers
 !Authorization
