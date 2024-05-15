@@ -41,6 +41,7 @@ For Route:
 | Name         | Type  | Required | Default | Description                                                           |
 |--------------|-------|----------|---------|-----------------------------------------------------------------------|
 | auth_plugins | array | True     | -       | Add supporting auth plugins configuration. expects at least 2 plugins |
+|hide_credentials|boolean|False|False|Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
 
 ## Enable Plugin
 

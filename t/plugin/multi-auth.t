@@ -656,3 +656,66 @@ hello world
 GET /t
 --- response_body
 hello world
+
+
+
+=== TEST 23: enable multi auth plugin with same header without hide credential
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "basic-auth": {}
+                                },
+                                {
+                                    "key-auth": {
+                                        "query": "apikey",
+                                        "header": "authorization"
+                                    }
+                                },
+                                {
+                                    "jwt-auth": {
+                                        "cookie": "jwt",
+                                        "query": "jwt",
+                                        "header": "authorization"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/echo"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 24: verify key-auth using the same authorization header for jwt-auth
+--- request
+GET /echo
+--- more_headers
+Authorization: auth-one
+--- response_headers
+Authorization: auth-one
