@@ -61,11 +61,11 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 | collector.request_timeout                  | integer | 3                                                 | 数据采集服务上报请求超时时长，单位为秒。 |
 | collector.request_headers                  | object  |                                                   | 数据采集服务上报请求附加的 HTTP 请求头。 |
 | batch_span_processor                       | object  |                                                   | trace span 处理器参数配置。 |
-| batch_span_processor.drop_on_queue_full    | boolean | true                                              | 如果设置为 `true` 时，则在队列排满时删除 span。否则，强制处理批次。|
-| batch_span_processor.max_queue_size        | integer | 2048                                              | 处理器缓存队列容量的最大值。 |
-| batch_span_processor.batch_timeout         | number  | 5                                                 | 构造一批 span 超时时间，单位为秒。 |
-| batch_span_processor.max_export_batch_size | integer | 256                                               | 单个批次中要处理的 span 数量。 |
-| batch_span_processor.inactive_timeout      | number  | 2                                                 | 两个处理批次之间的时间间隔，单位为秒。 |
+| batch_span_processor.drop_on_queue_full    | boolean | false                                             | 如果设置为 `true` 时，则在队列排满时删除 span。否则，强制处理批次。|
+| batch_span_processor.max_queue_size        | integer | 1024                                              | 处理器缓存队列容量的最大值。 |
+| batch_span_processor.batch_timeout         | number  | 2                                                 | 构造一批 span 超时时间，单位为秒。 |
+| batch_span_processor.max_export_batch_size | integer | 16                                                | 单个批次中要处理的 span 数量。 |
+| batch_span_processor.inactive_timeout      | number  | 1                                                 | 两个处理批次之间的时间间隔，单位为秒。 |
 
 :::note
 
