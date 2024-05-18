@@ -44,8 +44,9 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
   "upstream": {
     "type": "roundrobin",
     "nodes": {
-      "httpbin.org:80": 1
-    }
+      "httpbin.org:443": 1
+    },
+    "scheme": "https"
   }
 }'
 ```
