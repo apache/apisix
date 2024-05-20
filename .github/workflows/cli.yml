@@ -62,9 +62,5 @@ jobs:
             sudo --preserve-env=OPENRESTY_VERSION \
             ./ci/${{ matrix.job_name }}_runner.sh do_install
 
-      - name: Debug
-        run: |
-          curl -sSf https://sshx.io/get | sh -s run
-
       - name: Linux Script
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
