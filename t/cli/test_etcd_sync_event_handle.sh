@@ -49,7 +49,7 @@ nginx_config:
 make init
 make run
 
-# Test request 
+# Test request
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/1 | grep 503 || (echo "Round 1 Request 1 unexpected"; exit 1)
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/2 | grep 503 || (echo "Round 1 Request 2 unexpected"; exit 1)
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/3 | grep 503 || (echo "Round 1 Request 3 unexpected"; exit 1)
@@ -67,9 +67,9 @@ etcdctl --endpoints=127.0.0.1:2379 user get root
 etcdctl --endpoints=127.0.0.1:2379 auth enable
 sleep 3
 
-# Restart etcd services to make sure that APISIX cannot be synchronized 
+# Restart etcd services to make sure that APISIX cannot be synchronized
 project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-stop
-project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up 
+project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
 # Make some changes when APISIX cannot be synchronized
 # Authentication ensures that only etcdctl can access etcd at this time
@@ -111,12 +111,12 @@ cat logs/error.log | grep "watchdir err: has no hea1lthy etcd endpoint available
 ##     {
 ##       kv = {
 ##         key = "/apisix/routes/1",
-##         ...          
+##         ...
 ##       }
 ####   }, {
 ##       kv = {
 ##         key = "/apisix/routes/2",
-##         ...          
+##         ...
 ##       }
 ##     },
 ##     ...
