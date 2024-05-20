@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-#. ./t/cli/common.sh
+. ./t/cli/common.sh
 
 # check etcd while enable auth
 git checkout conf/config.yaml
@@ -42,6 +42,7 @@ deployment:
       - http://127.0.0.1:2379
     prefix: /apisix
 nginx_config:
+  error_log_level: info
   worker_processes: 1
 ' > conf/config.yaml
 
@@ -50,12 +51,12 @@ make init
 make run
 
 # Test request
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/1 | grep 503 || (echo "Round 1 Request 1 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/2 | grep 503 || (echo "Round 1 Request 2 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/3 | grep 503 || (echo "Round 1 Request 3 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/4 | grep 503 || (echo "Round 1 Request 4 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/5 | grep 503 || (echo "Round 1 Request 5 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/6 | grep 404 || (echo "Round 1 Request 6 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/1 | grep 503 || (echo "failed: Round 1 Request 1 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/2 | grep 503 || (echo "failed: Round 1 Request 2 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/3 | grep 503 || (echo "failed: Round 1 Request 3 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/4 | grep 503 || (echo "failed: Round 1 Request 4 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/5 | grep 503 || (echo "failed: Round 1 Request 5 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/6 | grep 404 || (echo "failed: Round 1 Request 6 unexpected"; exit 1)
 
 # Enable auth to block APISIX connect
 export ETCDCTL_API=3
@@ -93,16 +94,16 @@ sleep 5 # wait resync by watch
 # Test request
 # All but the intentionally incoming misconfigurations should be applied,
 # and non-existent routes will remain non-existent.
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/1 | grep 204 || (echo "Round 2 Request 1 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/2 | grep 503 || (echo "Round 2 Request 2 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/3 | grep 204 || (echo "Round 2 Request 3 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/4 | grep 204 || (echo "Round 2 Request 4 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/5 | grep 204 || (echo "Round 2 Request 5 unexpected"; exit 1)
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/6 | grep 404 || (echo "Round 2 Request 6 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/1 | grep 204 || (echo "failed: Round 2 Request 1 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/2 | grep 503 || (echo "failed: Round 2 Request 2 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/3 | grep 204 || (echo "failed: Round 2 Request 3 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/4 | grep 204 || (echo "failed: Round 2 Request 4 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/5 | grep 204 || (echo "failed: Round 2 Request 5 unexpected"; exit 1)
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/6 | grep 404 || (echo "failed: Round 2 Request 6 unexpected"; exit 1)
 
 # Check logs
 ## Case1: Ensure etcd is disconnected
-cat logs/error.log | grep "watchdir err: has no hea1lthy etcd endpoint available" || (echo "Log case 1 unexpected"; exit 1)
+cat logs/error.log | grep "watchdir err: has no healthy etcd endpoint available" || (echo "Log case 1 unexpected"; exit 1)
 
 ## Case2: Ensure events are sent in bulk after connection is restored
 ## It is extracted from the structure of following type
@@ -126,7 +127,7 @@ cat logs/error.log | grep "watchdir err: has no hea1lthy etcd endpoint available
 ##   }
 ## }
 ## After check, it only appears when watch recovers and returns events in bulk.
-cat logs/error.log | grep "}, {" || (echo "Log case 2 unexpected"; exit 1)
+cat logs/error.log | grep "}, {" || (echo "failed: Log case 2 unexpected"; exit 1)
 
 # Clean up
 make stop
