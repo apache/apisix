@@ -24,6 +24,7 @@ repeat_each(2);
 run_tests();
 
 __DATA__
+
 === TEST 1: set stream route(id: 1) -> service(id: 1)
 --- config
     location /t {
