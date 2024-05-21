@@ -129,5 +129,8 @@ cat logs/error.log | grep "watchdir err: has no healthy etcd endpoint available"
 ## After check, it only appears when watch recovers and returns events in bulk.
 cat logs/error.log | grep "}, {" || (echo "failed: Log case 2 unexpected"; exit 1)
 
+## Case3: Ensure that the check schema error is actually triggered.
+cat logs/error.log | grep "failed to check item data" || (echo "failed: Log case 3 unexpected"; exit 1)
+
 # Clean up
 make stop
