@@ -651,6 +651,7 @@ local function sync_data(self)
     -- waitdir will return [res] even for self.single_item = true
     for _, res in ipairs(res_copy) do
         local key
+        local data_valid = true
         if self.single_item then
             key = self.key
         else
@@ -658,33 +659,37 @@ local function sync_data(self)
         end
 
         if res.value and not self.single_item and type(res.value) ~= "table" then
-            self:upgrade_version(res.modifiedIndex)
-            return false, "invalid item data of [" .. self.key .. "/" .. key
-                            .. "], val: " .. res.value
-                            .. ", it should be an object"
+            data_valid = false
+            log.error("invalid item data of [", self.key .. "/" .. key,
+                      "], val: ", res.value,
+                      ", it should be an object")
         end
 
-        if res.value and self.item_schema then
-            local ok, err = check_schema(self.item_schema, res.value)
-            if not ok then
-                self:upgrade_version(res.modifiedIndex)
-
-                return false, "failed to check item data of ["
-                                .. self.key .. "] err:" .. err
+        if data_valid and res.value and self.item_schema then
+            data_valid, err = check_schema(self.item_schema, res.value)
+            if not data_valid then
+                log.error("failed to check item data of [", self.key,
+                          "] err:", err, " ,val: ", json.encode(res.value))
             end
 
-            if self.checker then
-                local ok, err = self.checker(res.value)
-                if not ok then
-                    self:upgrade_version(res.modifiedIndex)
-
-                    return false, "failed to check item data of ["
-                                    .. self.key .. "] err:" .. err
+            if data_valid and self.checker then
+                data_valid, err = self.checker(res.value)
+                if not data_valid then
+                    log.error("failed to check item data of [", self.key,
+                              "] err:", err, " ,val: ", json.delay_encode(res.value))
                 end
             end
         end
 
+        -- the modifiedIndex tracking should be updated regardless of the validity of the config
         self:upgrade_version(res.modifiedIndex)
+
+        if not data_valid then
+            -- do not update the config cache when the data is invalid
+            -- invalid data should only cancel this config item update, not discard
+            -- the remaining events, use continue instead of loop break and return
+            goto CONTINUE
+        end
 
         if res.dir then
             if res.value then
@@ -758,6 +763,8 @@ local function sync_data(self)
         end
 
         self.conf_version = self.conf_version + 1
+
+        ::CONTINUE::
     end
 
     return self.values
