@@ -65,6 +65,8 @@ local function make_request_to_vault(conf, method, key, data)
         ["X-Vault-Token"] = token
     }
     if conf.namespace then
+        -- The namespace rule is referenced in
+        -- https://developer.hashicorp.com/vault/docs/enterprise/namespaces#vault-api-and-namespaces
         headers["X-Vault-Namespace"] = conf.namespace
     end
 
