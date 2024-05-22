@@ -123,9 +123,9 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 Through the above steps, the `key` configuration in the `key-auth` plugin can be saved in the environment variable instead of being displayed in plain text when configuring the plugin.
 
-## Use Vault to manage secrets
+## Use HashiCorp Vault to manage secrets
 
-Using Vault to manage secrets means that you can store secrets information in the Vault service and refer to it through variables in a specific format when configuring plugins. APISIX currently supports [Vault KV engine version V1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1).
+Using HashiCorp Vault to manage secrets means that you can store secrets information in the Vault service and refer to it through variables in a specific format when configuring plugins. APISIX currently supports [Vault KV engine version V1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1).
 
 ### Usage
 
@@ -133,7 +133,7 @@ Using Vault to manage secrets means that you can store secrets information in th
 $secret://$manager/$id/$secret_name/$key
 ```
 
-- manager: secrets management service, could be the Vault, AWS, etc.
+- manager: secrets management service, could be the HashiCorp Vault, AWS, etc.
 - id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
 - secret_name: the secret name in the secrets management service
 - key: the key corresponding to the secret in the secrets management service
@@ -167,6 +167,12 @@ secrets:
     token: root
     uri: 127.0.0.1:8200
 ```
+
+:::tip
+
+It now supports the use of the `namespace` field to set the multi-tenant namespace concepts supported by HashiCorp Vault Enterprise and HCP Vault.
+
+:::
 
 Step 3: Reference the APISIX Secrets resource in the `key-auth` plugin and fill in the key information:
 

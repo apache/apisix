@@ -169,6 +169,12 @@ secrets:
     uri: 127.0.0.1:8200
 ```
 
+:::tip
+
+它现在支持使用 `namespace` 字段设置 HashiCorp Vault Enterprise 和 HCP Vault 所支持的多租户命名空间概念。
+
+:::
+
 第三步：在 `key-auth` 插件中引用 APISIX Secret 资源，填充秘钥信息：
 
 ```shell
