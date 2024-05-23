@@ -170,7 +170,7 @@ secrets:
 
 :::tip
 
-It now supports the use of the `namespace` field to set the multi-tenant namespace concepts supported by HashiCorp Vault Enterprise and HCP Vault.
+It now supports the use of the [`namespace` field](../admin-api.md#request-body-parameters-11) to set the multi-tenant namespace concepts supported by [HashiCorp Vault Enterprise](https://developer.hashicorp.com/vault/docs/enterprise/namespaces#vault-api-and-namespaces) and HCP Vault.
 
 :::
 

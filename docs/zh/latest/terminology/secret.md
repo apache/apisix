@@ -171,7 +171,7 @@ secrets:
 
 :::tip
 
-它现在支持使用 `namespace` 字段设置 HashiCorp Vault Enterprise 和 HCP Vault 所支持的多租户命名空间概念。
+它现在支持使用 [`namespace` 字段](../admin-api.md#secret-config-body-requset-parameters]设置 [HashiCorp Vault Enterprise](https://developer.hashicorp.com/vault/docs/enterprise/namespaces#vault-api-and-namespaces) 和 HCP Vault 所支持的多租户命名空间概念。
 
 :::
 
