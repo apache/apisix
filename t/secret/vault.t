@@ -236,3 +236,60 @@ failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
 GET /t
 --- response_body_like
 failed to decode result, res: \{\"errors\":\[\"permission denied\"\]}\n
+
+
+
+=== TEST 10: setup route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "access",
+                            "functions": [
+                                "return function(conf, ctx) ngx.log(ngx.ERR, 'HCV_NAMESAPCE:'..(ctx.var.http_x_vault_namespace or '_')); require('apisix.core').response.exit(200); end"
+                            ]
+                        }
+                    },
+                    "uri": "/*"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: hit route (test namespace header)
+--- config
+    location /t {
+        content_by_lua_block {
+            local vault = require("apisix.secret.vault")
+            local conf = {
+                prefix = "kv/apisix",
+                token = "test",
+                uri = "http://localhost:1984/mock",
+                namespace = "apisix",
+            }
+            local value, err = vault.get(conf, "/apisix-key/jack/key")
+            if err then
+                return ngx.say(err)
+            end
+        }
+    }
+--- request
+GET /t
+--- error_log
+HCV_NAMESAPCE:apisix
