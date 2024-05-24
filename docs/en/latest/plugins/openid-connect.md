@@ -60,8 +60,10 @@ description: OpenID Connect allows the client to obtain user information from th
 | set_userinfo_header                  | boolean  | False    | true                  |              | When set to true and the UserInfo object is available, sets it in the `X-Userinfo` request header.                                                                                                                                    |
 | set_refresh_token_header             | boolean  | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.                                                                                                                            |
 | session                              | object   | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration.                                                                   |
+| session.name                         | string   | False    | "session"             |              | The cookie name used for the authenticate session.                                    |
 | session.secret                       | string   | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation.                                                                                                                                                                                  |
 | session.cookie                       | object   | False    |                       |             |                                                                                                                                                                                  |
+| session.cookie.path                  | string    | False    | "/"                   |             | Cookie path.                |
 | session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
 | unauth_action                        | string   | False    | "auth"                |  ["auth","deny","pass"]            | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication.                                                 |
 | proxy_opts                           | object   | False    |                       |                                  | HTTP proxy that the OpenID provider is behind.                                                                                                                                                                                  |
@@ -278,3 +280,7 @@ If so, try adjusting `proxy_buffers`, `proxy_buffer_size`, and `proxy_busy_buffe
 #### 5. Invalid Client Secret
 
 Verify if `client_secret` is valid and correct. An invalid `client_secret` would lead to an authentication failure and no token shall be returned and stored in session.
+
+#### 6. Multi identity providers support
+
+If you use multi identity providers on different paths within the same host, you might encounter the access token being passed to the wrong backend services. You can set different `session.name` to avoid session being overwritten. 
