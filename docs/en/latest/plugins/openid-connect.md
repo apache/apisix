@@ -283,4 +283,4 @@ Verify if `client_secret` is valid and correct. An invalid `client_secret` would
 
 #### 6. Multi identity providers support
 
-If you use multi identity providers on different paths within the same host, you might encounter the access token being passed to the wrong backend services. You can set different `session.name` to avoid session being overwritten. 
+If you use multi identity providers on different paths within the same host, you might encounter the access token being passed to the wrong backend services. You can set different `session.name` to avoid session being overwritten.

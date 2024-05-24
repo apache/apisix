@@ -59,7 +59,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                    |
 | set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
 | session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
-| session.name                         | string   | 否     | "session"             |               | 用于设置session cookie的名字。         |
+| session.name                         | string   | 否     | "session"             |               | 用于设置 session cookie 的名字。         |
 | session.secret                       | string   | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
 | session.cookie                       | object   | False    |                       |             |                                                                                                                                                                                                                                                                                                                                 |
 | session.cookie.path                  | string    | False    | "/"                   |             | 用户设置 cookie 的路径。                 |
@@ -283,4 +283,4 @@ upstream sent too big header while reading response header from upstream
 
 #### 6. 多认证提供商支持
 
-如果您在同一个host上的不同路径上使用不同的认证提供商，可能会导致访问token混乱，您可以通过设置session.name来防止session被覆盖。
+如果您在同一个 host 上的不同路径上使用不同的认证提供商，可能会导致访问 token 混乱，您可以通过设置 session.name 来防止 session 被覆盖。
