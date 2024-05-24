@@ -22,6 +22,7 @@
 local core_str     = require("apisix.core.string")
 local core_tab     = require("apisix.core.table")
 local request      = require("apisix.core.request")
+local utils         = require("apisix.core.utils")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local config_local = require("apisix.core.config_local")
@@ -39,6 +40,7 @@ local ipairs       = ipairs
 local type         = type
 local error        = error
 local pcall        = pcall
+local cjson        = require("cjson")
 
 
 local _M = {version = 0.2}
@@ -271,6 +273,19 @@ do
                         else
                             val = args
                         end
+                    end
+                end
+
+            elseif core_str.has_prefix(key, "json_body_arg_") then
+                -- only match json type request body
+                local content_type = request.header(nil, "Content-Type")
+                if content_type ~= nil and core_str.has_prefix(content_type,
+                        "application/json") then
+                    local arg_key = sub_str(key, 15)
+                    local raw_request_body = request.get_body()
+                    local body = cjson.decode(raw_request_body)
+                    if body then
+                        val = utils.get_nested_json_value(body, arg_key)
                     end
                 end
 

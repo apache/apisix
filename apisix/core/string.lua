@@ -104,6 +104,17 @@ function _M.compress_script(s)
     return s
 end
 
+-- split string
+function _M.split (inputstr, sep)
+   if sep == nil then
+      sep = "%s"
+   end
+   local t={}
+   for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
+      table.insert(t, str)
+   end
+   return t
+end
 
 ---
 -- Decodes a URI encoded query-string into a Lua table.
