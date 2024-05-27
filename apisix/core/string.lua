@@ -23,6 +23,8 @@ local error = error
 local type = type
 local str_byte = string.byte
 local str_find = string.find
+local str_gmatch = string.gmatch
+local tbl_insert = table.insert
 local ffi         = require("ffi")
 local C           = ffi.C
 local ffi_cast    = ffi.cast
@@ -110,8 +112,8 @@ function _M.split (inputstr, sep)
       sep = "%s"
    end
    local t={}
-   for str in string.gmatch(inputstr, "([^"..sep.."]+)") do
-      table.insert(t, str)
+   for str in str_gmatch(inputstr, "([^"..sep.."]+)") do
+      tbl_insert(t, str)
    end
    return t
 end
