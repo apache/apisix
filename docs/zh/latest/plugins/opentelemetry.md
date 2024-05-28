@@ -69,7 +69,9 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 
 :::note
 
-当 `trace_id_source` 设置为 `x-request-id` 且请求携带由 Envoy 默认生成的 `x-request-id` 标头时，您可能会遇到由 `hex2bytes` 函数触发的 `bad argument #1 to '?' (invalid value)` 错误。这是因为 Envoy 默认使用 [UUID](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing#trace-context-propagation) 生成其 `x-request-id` 标头，这与 opentelemetry 的 [traceId 格式](https://opentelemetry.io/docs/specs/otel/trace/api/#retrieving-the-traceid-and-spanid)所需的正则表达式模式 `[0-9a-f]{32}` 不匹配。这种不一致导致将链路数据推送到采集器时出现问题。
+如果你在 error log 中发现由 hex2bytes 函数引发的 `bad argument #1 to '?' (invalid value)` 错误，务必确认你的 traceId 是否满足 opentelemetry 的 [traceId 格式](https://opentelemetry.io/docs/specs/otel/trace/api/#retrieving-the-traceid-and-spanid) 所需的正则规范`[0-9a-f]{32}`。
+
+例如，当插件属性 `trace_id_source` 配置为 `x-request-id` 时，如果请求包含由 Envoy 生成的 x-request-id 请求头，可能会发生上述情况。Envoy 默认使用 [UUID](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing#trace-context-propagation) 生成该请求头。当 opentelemetry 插件将此 UUID 作为 traceId 时，UUID 中的 `-` 可能会引起问题。由于带有 `-` 的 UUID 格式与 traceId 格式不符，因此尝试将跟踪推送到收集器时会导致错误。
 
 :::
 
