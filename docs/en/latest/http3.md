@@ -161,21 +161,21 @@ You should receive an `HTTP/3 200` response similar to the following:
 > Host: test.com
 > User-Agent: curl/8.7.1
 > Accept: */*
-> 
+>
 * Request completely sent off
-< HTTP/3 200 
+< HTTP/3 200
 ...
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Content-Length": "0", 
-    "Host": "test.com", 
-    "User-Agent": "curl/8.7.1", 
-    "X-Amzn-Trace-Id": "Root=1-6656013a-27da6b6a34d98e3e79baaf5b", 
+    "Accept": "*/*",
+    "Content-Length": "0",
+    "Host": "test.com",
+    "User-Agent": "curl/8.7.1",
+    "X-Amzn-Trace-Id": "Root=1-6656013a-27da6b6a34d98e3e79baaf5b",
     "X-Forwarded-Host": "test.com"
-  }, 
-  "origin": "172.19.0.1, 123.40.79.456", 
+  },
+  "origin": "172.19.0.1, 123.40.79.456",
   "url": "http://test.com/get"
 }
 * Connection #0 to host test.com left intact
