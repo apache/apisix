@@ -393,3 +393,28 @@ res:nil
 res:5
 res:12
 res:7
+
+
+
+=== TEST 13: get_nested_json_value
+--- config
+    location /t {
+        content_by_lua_block {
+            local get_nested_json_value = require("apisix.core.utils").get_nested_json_value
+            local obj = {
+                "a" = "a",
+                "b" = {
+                    "c" = "b.c",
+                    "d" =  {
+                        "e" = "b.d.e"
+                    }
+                }
+            }
+
+            assert(get_nested_json_value(obj, "a") == "a", string.format("obj key %s mismatch value %s", get_nested_json_value(obj, "a"), "a"))
+            assert(get_nested_json_value(obj, "b.c") == "b.c", string.format("obj key %s mismatch value %s", get_nested_json_value(obj, "b.c"), "b.c"))
+            assert(get_nested_json_value(obj, "b.d.e") == "b.d.e", string.format("obj key %s mismatch value %s", get_nested_json_value(obj, "b.d.e"), "b.d.e"))
+        }
+    }
+--- request
+GET /t

@@ -137,3 +137,26 @@ GET /t
     }
 --- request
 GET /t
+
+
+
+=== TEST 4: split
+--- config
+    location /t {
+        content_by_lua_block {
+            local str = require("apisix.core.string")
+            local cases = {
+                {"Hello World   Test", nil, {"Hello", "World", "Test"}},
+                {"foo,bar,baz", ",", {"foo", "bar", "baz"}},
+                {"Hello", "", {"H", "e", "l", "l", "o"}},
+                {"", nil, {}},
+                {"a,b,c", nil, {"a,b,c"}},
+            }
+            for _, case in ipairs(cases) do
+                local result = str.split(case[1], case[2])
+                assert(result == case[3], string.format("unexpected string split result: %s , expected: %s", result, case[3]))
+            end
+        }
+    }
+--- request
+GET /t
