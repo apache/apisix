@@ -380,6 +380,10 @@
         {
           "type": "doc",
           "id": "ssl-protocol"
+        },
+        {
+          "type": "doc",
+          "id": "http3"
         }
       ]
     },
