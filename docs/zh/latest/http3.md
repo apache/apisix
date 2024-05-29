@@ -21,21 +21,23 @@ title: HTTP3 协议
 #
 -->
 
-[HTTP/3](https://en.wikipedia.org/wiki/HTTP/3) 是 Hypertext Transfer Protocol(HTTP) 的第三个主要版本。 与依赖 TCP 的前辈不同，HTTP/3 基于 [QUIC (Quick UDP Internet Connections) protocol](https://en.wikipedia.org/wiki/QUIC)。 它带来了多项好处，减少了延迟并提高了性能：
+[HTTP/3](https://en.wikipedia.org/wiki/HTTP/3) 是 Hypertext Transfer Protocol(HTTP) 的第三个主要版本。与依赖 TCP 的前辈不同，HTTP/3 基于 [QUIC (Quick UDP Internet Connections) protocol](https://en.wikipedia.org/wiki/QUIC)。它带来了多项好处，减少了延迟并提高了性能：
 
 * 实现不同网络连接之间的无缝过渡，例如从 Wi-Fi 切换到移动数据。
 * 消除队头阻塞，以便丢失的数据包不会阻塞所有流。
 * 在 TLS 握手的同时协商 TLS 版本，从而实现更快的连接。
 * 默认提供加密，确保通过 HTTP/3 连接传输的所有数据都受到保护和保密。
-* 在与客户端已建立连接的服务器通信时提供零往返时间(0-RTT)。
+* 在与客户端已建立连接的服务器通信时提供零往返时间 (0-RTT)。
 
-APISIX 目前支持下游客户端和 APISIX 之间的 HTTP/3 连接。 尚不支持与上游服务的 HTTP/3 连接。 欢迎社区贡献。
+APISIX 目前支持下游客户端和 APISIX 之间的 HTTP/3 连接。尚不支持与上游服务的 HTTP/3 连接。欢迎社区贡献。
 
 :::caution
 
 此功能尚未经过大规模测试，因此不建议用于生产使用。
 
 :::
+
+本文档将向您展示如何配置 APISIX 以在客户端和 APISIX 之间启用 HTTP/3 连接，并记录一些已知问题。
 
 ## 使用示例
 
@@ -127,7 +129,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 ### 验证 HTTP/3 连接
 
-验证前需要安装支持 HTTP/3 的 curl，如 [curl `>= 7.88.0`](https://curl.se/changes.html#7_88_0) 或其他支持HTTP/3 的 curl。
+验证前需要安装支持 HTTP/3 的 curl，如 [curl `>= 7.88.0`](https://curl.se/changes.html#7_88_0) 或其他支持 HTTP/3 的 curl。
 
 发送一个请求到路由：
 
