@@ -129,7 +129,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 ### 验证 HTTP/3 连接
 
-验证前需要安装支持 HTTP/3 的 curl，如 [curl `>= 7.88.0`](https://curl.se/changes.html#7_88_0) 或其他支持 HTTP/3 的 curl。
+验证前需要安装支持 HTTP/3 的 curl，如 [static-curl](https://github.com/stunnel/static-curl) 或其他支持 HTTP/3 的 curl。
 
 发送一个请求到路由：
 
