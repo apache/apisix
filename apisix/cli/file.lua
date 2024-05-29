@@ -18,6 +18,7 @@
 local yaml = require("lyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
+local cli_config = require("apisix.cli.config")
 local dkjson = require("dkjson")
 
 local pairs = pairs
@@ -228,18 +229,8 @@ function _M.read_yaml_conf(apisix_home)
         profile.apisix_home = apisix_home .. "/"
     end
 
-    local local_conf_path = profile:yaml_path("config-default")
-    local default_conf_yaml, err = util.read_file(local_conf_path)
-    if not default_conf_yaml then
-        return nil, err
-    end
-
-    local default_conf = yaml.load(default_conf_yaml)
-    if not default_conf then
-        return nil, "invalid config-default.yaml file"
-    end
-
-    local_conf_path = profile:customized_yaml_path()
+    local default_conf = cli_config.default_config
+    local local_conf_path = profile:customized_yaml_path()
     if not local_conf_path then
         local_conf_path = profile:yaml_path("config")
     end
