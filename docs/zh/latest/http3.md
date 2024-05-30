@@ -136,7 +136,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 ```shell
 curl -kv --http3-only \
   -H "Host: test.com" \
-  -H "content-length: 0" \
   --resolve "test.com:9443:127.0.0.1" "https://test.com:9443/get"
 ```
 
