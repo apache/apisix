@@ -29,7 +29,7 @@ title: HTTP/3 Protocol
 * providing encryption by default, ensuring that all data transmitted over an HTTP/3 connection is protected and confidential.
 * providing zero round-trip time (0-RTT) when communicating with servers that clients already established connections to.
 
-APISIX currently supports HTTP/3 connections between downstream clients and APISIX. HTTP/3 connections with upstream services is not yet supported and contribution is welcomed.
+APISIX currently supports HTTP/3 connections between downstream clients and APISIX. HTTP/3 connections with upstream services are not yet supported, and contributions are welcomed.
 
 :::caution
 
