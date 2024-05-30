@@ -184,5 +184,4 @@ You should receive an `HTTP/3 200` response similar to the following:
 ## Known Issues
 
 - For APISIX-3.9, test cases of Tongsuo will fail because the Tongsuo does not support QUIC TLS.
-- For HTTP/2 or HTTP/3 the request should send `content-length` header no matter what HTTP methods you use.
 - APISIX-3.9 is based on NGINX-1.25.3 with  vulnerabilities in HTTP/3 (CVE-2024-24989, CVE-2024-24990).
