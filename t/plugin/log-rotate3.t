@@ -205,3 +205,40 @@ nginx_config:
     }
 --- response_body
 2
+
+
+
+=== TEST 6: rotate do not work for access log when enable_access_log is set to false
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 1
+    max_kept: 1
+    enable_compresssion: false
+--- yaml_config
+nginx_config:
+    http:
+        enable_access_log: false
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(3)
+            local lfs = require("lfs")
+            local access_count, error_count = 0, 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "error.log$") then
+                    error_count = error_count + 1
+                end
+                if string.match(file_name, "access.log$") then
+                    access_count = access_count + 1
+                end
+            end
+            ngx.say(access_count)
+            ngx.say(error_count)
+        }
+    }
+--- response_body
+0
+2

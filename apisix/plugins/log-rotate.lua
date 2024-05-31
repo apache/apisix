@@ -76,7 +76,6 @@ end
 
 
 local function get_log_path_info(file_type)
-    local_conf = core.config.local_conf()
     local conf_path
     if file_type == "error.log" then
         conf_path = local_conf and local_conf.nginx_config and
@@ -289,8 +288,16 @@ local function rotate()
         return
     end
 
+    local nginx_config = local_conf and local_conf.nginx_config
+    local enable_access_log = nginx_config and nginx_config.http and nginx_config.http.enable_access_log
+
     if now_time >= rotate_time then
-        local files = {DEFAULT_ACCESS_LOG_FILENAME, DEFAULT_ERROR_LOG_FILENAME}
+        local files = {DEFAULT_ERROR_LOG_FILENAME}
+
+        if enable_access_log then
+            table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
+        end
+
         rotate_file(files, now_time, max_kept, timeout)
 
         -- reset rotate time
@@ -299,9 +306,9 @@ local function rotate()
     elseif max_size > 0 then
         local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
         local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
-        local files = core.table.new(2, 0)
+        local files = {}
 
-        if access_log_file_size >= max_size then
+        if enable_access_log and access_log_file_size >= max_size then
             core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
 
@@ -315,6 +322,9 @@ end
 
 
 function _M.init()
+    if not local_conf then
+        local_conf = core.config.local_conf()
+    end
     timers.register_timer("plugin#log-rotate", rotate, true)
 end
 
