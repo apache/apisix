@@ -157,14 +157,6 @@ local function replace_by_reserved_env_vars(conf)
 end
 
 
-local function tinyyaml_type(t)
-    local mt = getmetatable(t)
-    if mt then
-        return mt.__type
-    end
-end
-
-
 local function path_is_multi_type(path, type_val)
     if str_sub(path, 1, 14) == "nginx_config->" and
             (type_val == "number" or type_val == "string") then
@@ -188,7 +180,7 @@ local function merge_conf(base, new_tab, ppath)
 
     for key, val in pairs(new_tab) do
         if type(val) == "table" then
-            if tinyyaml_type(val) == "null" then
+            if val == yaml.null() then
                 base[key] = nil
 
             elseif tab_is_array(val) then
