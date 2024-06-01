@@ -25,7 +25,7 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (! $block->extra_yaml_config) {
+    if (!defined $block->extra_yaml_config) {
         my $extra_yaml_config = <<_EOC_;
 plugins:
   - log-rotate
@@ -136,10 +136,7 @@ passed
 
 
 === TEST 4: test rotate time align
---- yaml_config
-apisix:
-  node_listen: 1984
-  admin_key: ~
+--- extra_yaml_config
 plugins:
   - log-rotate
 plugin_attr:
