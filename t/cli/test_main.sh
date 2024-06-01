@@ -716,7 +716,7 @@ echo "passed: bad lua_module_hook should be rejected"
 echo '
 apisix:
     proxy_mode: http&stream
-    extra_lua_path: "\$prefix/example/?.lua"
+    extra_lua_path: "$prefix/example/?.lua"
     lua_module_hook: "my_hook"
     stream_proxy:
         tcp:
