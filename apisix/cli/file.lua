@@ -23,7 +23,6 @@ local dkjson = require("dkjson")
 local pairs = pairs
 local type = type
 local tonumber = tonumber
-local getmetatable = getmetatable
 local getenv = os.getenv
 local str_gmatch = string.gmatch
 local str_find = string.find
@@ -180,7 +179,7 @@ local function merge_conf(base, new_tab, ppath)
 
     for key, val in pairs(new_tab) do
         if type(val) == "table" then
-            if val == yaml.null() then
+            if val == yaml.null then
                 base[key] = nil
 
             elseif tab_is_array(val) then
