@@ -80,7 +80,7 @@ use config_provider: yaml
 routes:
   -
     uri: /server_port
-    host: *.test.com
+    host: "*.test.com"
     upstream:
         nodes:
             "127.0.0.1:1981": 1
@@ -109,7 +109,7 @@ use config_provider: yaml
 routes:
   -
     uri: /*
-    host: *.test.com
+    host: "*.test.com"
     upstream:
         nodes:
             "127.0.0.1:1981": 1
@@ -138,7 +138,7 @@ use config_provider: yaml
 routes:
   -
     uri: /*
-    host: *.test.com
+    host: "*.test.com"
     filter_func: "function(vars) return vars.arg_name == 'json' end"
     upstream:
         nodes:
@@ -168,7 +168,7 @@ use config_provider: yaml
 routes:
   -
     uri: /*
-    host: *.test.com
+    host: "*.test.com"
     filter_func: "function(vars) return vars.arg_name == 'json' end"
     upstream:
         nodes:
