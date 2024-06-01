@@ -664,8 +664,8 @@ echo "passed: disable ssl_session_tickets by default"
 # support 3rd-party plugin
 echo '
 apisix:
-    extra_lua_path: "\$prefix/example/?.lua"
-    extra_lua_cpath: "\$prefix/example/?.lua"
+    extra_lua_path: "$prefix/example/?.lua"
+    extra_lua_cpath: "$prefix/example/?.lua"
 plugins:
     - 3rd-party
 stream_plugins:
