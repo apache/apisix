@@ -73,7 +73,7 @@ apisix:
     ssl: radixtree_sni          # radixtree_sni: match route by SNI
 
   # http is the default proxy mode. proxy_mode can be one of `http`, `stream`, or `http&stream`
-  proxy_mode: http
+  proxy_mode: "http"
   # stream_proxy:                 # TCP/UDP L4 proxy
   #   tcp:
   #     - addr: 9100              # Set the TCP proxy listening ports.
