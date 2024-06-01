@@ -159,10 +159,12 @@ local function aes_decrypt_pkey(origin, field)
     for _, aes_128_cbc_with_iv in ipairs(aes_128_cbc_with_iv_tbl) do
         local decrypted = aes_128_cbc_with_iv:decrypt(decoded_key)
         if decrypted then
-            if C.ERR_peek_error() then
-                C.ERR_clear_error()
-            end
             return decrypted
+        end
+
+        if C.ERR_peek_error() then
+            -- clean up the error queue of OpenSSL to prevent normal requests from being interfered with.
+            C.ERR_clear_error()
         end
     end
 
