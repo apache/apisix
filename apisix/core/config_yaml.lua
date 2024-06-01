@@ -21,7 +21,7 @@
 
 local config_local = require("apisix.core.config_local")
 local config_util  = require("apisix.core.config_util")
-local yaml         = require("tinyyaml")
+local lyaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
@@ -100,7 +100,7 @@ local function read_apisix_yaml(premature, pre_mtime)
     local yaml_config = f:read("*a")
     f:close()
 
-    local apisix_yaml_new = yaml.parse(yaml_config)
+    local apisix_yaml_new = lyaml.load(yaml_config)
     if not apisix_yaml_new then
         log.error("failed to parse the content of file " .. apisix_yaml_path)
         return

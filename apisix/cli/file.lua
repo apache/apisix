@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-local yaml = require("tinyyaml")
+local lyaml = require("lyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
 local dkjson = require("dkjson")
@@ -243,7 +243,7 @@ function _M.read_yaml_conf(apisix_home)
         return nil, err
     end
 
-    local default_conf = yaml.parse(default_conf_yaml)
+    local default_conf = lyaml.load(default_conf_yaml)
     if not default_conf then
         return nil, "invalid config-default.yaml file"
     end
@@ -266,7 +266,7 @@ function _M.read_yaml_conf(apisix_home)
     end
 
     if not is_empty_file then
-        local user_conf = yaml.parse(user_conf_yaml)
+        local user_conf = lyaml.load(user_conf_yaml)
         if not user_conf then
             return nil, "invalid config.yaml file"
         end
@@ -306,7 +306,7 @@ function _M.read_yaml_conf(apisix_home)
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
         if apisix_conf_yaml then
-            local apisix_conf = yaml.parse(apisix_conf_yaml)
+            local apisix_conf = lyaml.load(apisix_conf_yaml)
             if apisix_conf then
                 local ok, err = resolve_conf_var(apisix_conf)
                 if not ok then
