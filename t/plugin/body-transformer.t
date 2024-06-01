@@ -473,8 +473,8 @@ qr/attempt to call global 'name' \(a string value\)/
             local core = require("apisix.core")
             local req_template = [[
             {%
-                local lyaml = require("lyaml")
-                local body = lyaml.load(_body)
+                local yaml = require("lyaml")
+                local body = yaml.load(_body)
             %}
             {"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
             ]]

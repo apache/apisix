@@ -118,8 +118,8 @@ For example, parse YAML to JSON yourself:
 
 ```
 {%
-    local lyaml = require("lyaml")
-    local body = lyaml.load(_body)
+    local yaml = require("lyaml")
+    local body = yaml.load(_body)
 %}
 {"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
 ```
