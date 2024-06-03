@@ -163,7 +163,8 @@ local function aes_decrypt_pkey(origin, field)
         end
 
         if C.ERR_peek_error() then
-            -- clean up the error queue of OpenSSL to prevent normal requests from being interfered with.
+            -- clean up the error queue of OpenSSL to prevent 
+            -- normal requests from being interfered with.
             C.ERR_clear_error()
         end
     end
