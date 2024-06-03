@@ -20,99 +20,111 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
 
-=== TEST 1: add consumer with basic-auth and key-auth plugins
+=== TEST 1: setup consumers with basic-auth and key-auth plugins
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "foo",
-                    "plugins": {
-                        "basic-auth": {
-                            "username": "foo",
-                            "password": "bar"
-                        },
-                        "key-auth": {
-                            "key": "auth-one"
+            local data = {
+                            {
+                                url = "/apisix/admin/consumers",
+                                data = [[{
+                                 "username": "foo",
+                                 "plugins": {
+                                     "basic-auth": {
+                                         "username": "foo",
+                                         "password": "bar"
+                                     },
+                                     "key-auth": {
+                                         "key": "auth-one"
+                                     }
+                                 }
+                             }]],
+                            },
+                            {
+                                url = "/apisix/admin/routes/1",
+                                data = [[{
+                                 "plugins": {
+                                     "multi-auth": {
+                                         "auth_plugins": [
+                                             {
+                                                 "basic-auth": {}
+                                             },
+                                             {
+                                                 "key-auth": {
+                                                     "query": "apikey",
+                                                     "hide_credentials": true,
+                                                     "header": "apikey"
+                                                 }
+                                             },
+                                             {
+                                                 "jwt-auth": {
+                                                     "cookie": "jwt",
+                                                     "query": "jwt",
+                                                     "hide_credentials": true,
+                                                     "header": "authorization"
+                                                 }
+                                             }
+                                         ]
+                                     }
+                                 },
+                                 "upstream": {
+                                     "nodes": {
+                                         "127.0.0.1:1980": 1
+                                     },
+                                     "type": "roundrobin"
+                                 },
+                                 "uri": "/hello"
+                             }]],
+                            },
+                            {
+                                url = "/apisix/admin/routes/2",
+                                data = [[{
+                                     "plugins": {
+                                         "public-api": {}
+                                     },
+                                     "uri": "/apisix/plugin/jwt/sign"
+                              }]],
+                            },
+                            {
+                                url = "/apisix/admin/consumers",
+                                data = [[{
+                                 "username": "jack",
+                                 "plugins": {
+                                     "jwt-auth": {
+                                         "key": "user-key",
+                                         "secret": "my-secret-key"
+                                     }
+                                 }
+                             }]],
+                            }
                         }
-                    }
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
+
+             for _, data in ipairs(data) do
+                        local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                        ngx.say(body)
+             end
         }
     }
---- request
-GET /t
---- response_body
-passed
+--- response_body eval
+"passed\n" x 4
 
 
 
-=== TEST 2: enable multi auth plugin using admin api
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "multi-auth": {
-                            "auth_plugins": [
-                                {
-                                    "basic-auth": {}
-                                },
-                                {
-                                    "key-auth": {
-                                        "query": "apikey",
-                                        "hide_credentials": true,
-                                        "header": "apikey"
-                                    }
-                                },
-                                {
-                                    "jwt-auth": {
-                                        "cookie": "jwt",
-                                        "query": "jwt",
-                                        "hide_credentials": true,
-                                        "header": "authorization"
-                                    }
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 3: verify, missing authorization
+=== TEST 2: verify, missing authorization
 --- request
 GET /hello
 --- error_code: 401
@@ -121,7 +133,7 @@ GET /hello
 
 
 
-=== TEST 4: verify basic-auth
+=== TEST 3: verify basic-auth
 --- request
 GET /hello
 --- more_headers
@@ -133,7 +145,7 @@ find consumer foo
 
 
 
-=== TEST 5: verify key-auth
+=== TEST 4: verify key-auth
 --- request
 GET /hello
 --- more_headers
@@ -143,7 +155,7 @@ hello world
 
 
 
-=== TEST 6: verify, invalid basic credentials
+=== TEST 5: verify, invalid basic credentials
 --- request
 GET /hello
 --- more_headers
@@ -154,7 +166,7 @@ Authorization: Basic YmFyOmJhcgo=
 
 
 
-=== TEST 7: verify, invalid api key
+=== TEST 6: verify, invalid api key
 --- request
 GET /hello
 --- more_headers
@@ -165,7 +177,7 @@ apikey: auth-two
 
 
 
-=== TEST 8: enable multi auth plugin with invalid plugin conf in first auth_plugin
+=== TEST 7: enable multi auth plugin with invalid plugin conf in first auth_plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +226,7 @@ GET /t
 
 
 
-=== TEST 9: enable multi auth plugin with invalid plugin conf in second auth_plugins
+=== TEST 8: enable multi auth plugin with invalid plugin conf in second auth_plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -261,7 +273,7 @@ GET /t
 
 
 
-=== TEST 10: enable multi auth plugin with invalid plugin conf in third auth_plugins
+=== TEST 9: enable multi auth plugin with invalid plugin conf in third auth_plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -310,7 +322,7 @@ GET /t
 
 
 
-=== TEST 11: enable multi auth plugin with default plugin conf
+=== TEST 10: enable multi auth plugin with default plugin conf
 --- config
     location /t {
         content_by_lua_block {
@@ -356,7 +368,7 @@ passed
 
 
 
-=== TEST 12: verify, missing authorization
+=== TEST 11: verify, missing authorization
 --- request
 GET /hello
 --- error_code: 401
@@ -365,7 +377,7 @@ GET /hello
 
 
 
-=== TEST 13: verify basic-auth
+=== TEST 12: verify basic-auth
 --- request
 GET /hello
 --- more_headers
@@ -377,7 +389,7 @@ find consumer foo
 
 
 
-=== TEST 14: verify key-auth
+=== TEST 13: verify key-auth
 --- request
 GET /hello
 --- more_headers
@@ -387,7 +399,7 @@ hello world
 
 
 
-=== TEST 15: verify, invalid basic credentials
+=== TEST 14: verify, invalid basic credentials
 --- request
 GET /hello
 --- more_headers
@@ -398,7 +410,7 @@ Authorization: Basic YmFyOmJhcgo=
 
 
 
-=== TEST 16: verify, invalid api key
+=== TEST 15: verify, invalid api key
 --- request
 GET /hello
 --- more_headers
@@ -409,7 +421,7 @@ apikey: auth-two
 
 
 
-=== TEST 17: enable multi auth plugin using admin api, without any auth_plugins configuration
+=== TEST 16: enable multi auth plugin using admin api, without any auth_plugins configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -444,7 +456,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 18: enable multi auth plugin using admin api, with auth_plugins configuration but with one authorization plugin
+=== TEST 17: enable multi auth plugin using admin api, with auth_plugins configuration but with one authorization plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -485,96 +497,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 19: create public API route (jwt-auth sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 20: add consumer with username and jwt-auth plugins
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jack",
-                    "plugins": {
-                        "jwt-auth": {
-                            "key": "user-key",
-                            "secret": "my-secret-key"
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 21: sign / verify jwt-auth
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- request
-GET /t
---- response_body
-hello world
-
-
-
-=== TEST 22: verify multi-auth with plugin config will cause the conf_version change
+=== TEST 18: verify multi-auth with plugin config will cause the conf_version change
 --- config
     location /t {
         content_by_lua_block {
@@ -659,7 +582,7 @@ hello world
 
 
 
-=== TEST 23: enable multi auth plugin with same header without hide credential
+=== TEST 19: enable multi auth plugin with same header without hide credential
 --- config
     location /t {
         content_by_lua_block {
@@ -712,7 +635,7 @@ passed
 
 
 
-=== TEST 24: verify key-auth using the same authorization header for jwt-auth
+=== TEST 20: verify key-auth using the same authorization header for jwt-auth
 --- request
 GET /echo
 --- more_headers

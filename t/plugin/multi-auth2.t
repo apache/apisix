@@ -20,160 +20,114 @@ repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!defined $block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
 run_tests;
 
 __DATA__
 
-=== TEST 1: add consumer with basic-auth and key-auth plugins
+=== TEST 1: setup consumers with basic-auth and key-auth plugins with hide_credentials true option
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "foo",
-                    "plugins": {
-                        "basic-auth": {
-                            "username": "foo",
-                            "password": "bar"
-                        },
-                        "key-auth": {
-                            "key": "auth-one"
-                        },
-                        "jwt-auth": {
-                            "key": "user-key",
-                            "secret": "my-secret-key"
+            local data = {
+                            {
+                                url = "/apisix/admin/consumers",
+                                data = [[{
+                                 "username": "foo",
+                                 "plugins": {
+                                     "basic-auth": {
+                                         "username": "foo",
+                                         "password": "bar"
+                                     },
+                                     "key-auth": {
+                                         "key": "auth-one"
+                                     },
+                                     "jwt-auth": {
+                                         "key": "user-key",
+                                         "secret": "my-secret-key"
+                                     }
+                                 }
+                             }]],
+                            },
+                            {
+                                url = "/apisix/admin/routes/1",
+                                data = [[{
+                                 "plugins": {
+                                     "multi-auth": {
+                                         "auth_plugins": [
+                                             {
+                                                 "basic-auth": {}
+                                             },
+                                             {
+                                                 "key-auth": {
+                                                     "query": "apikey",
+                                                     "header": "authorization"
+                                                 }
+                                             },
+                                             {
+                                                 "jwt-auth": {
+                                                     "cookie": "jwt",
+                                                     "query": "jwt",
+                                                     "header": "authorization"
+                                                 }
+                                             }
+                                         ],
+                                         "hide_credentials": true
+                                     }
+                                 },
+                                 "upstream": {
+                                     "nodes": {
+                                         "127.0.0.1:1980": 1
+                                     },
+                                     "type": "roundrobin"
+                                 },
+                                 "uri": "/echo"
+                             }]],
+                            },
+                            {
+                                url = "/apisix/admin/routes/2",
+                                data = [[{
+                                     "plugins": {
+                                         "public-api": {}
+                                     },
+                                     "uri": "/apisix/plugin/jwt/sign"
+                              }]],
+                            },
+                            {
+                                url = "/apisix/admin/consumers",
+                                data = [[{
+                                 "username": "jack",
+                                 "plugins": {
+                                     "jwt-auth": {
+                                         "key": "user-key",
+                                         "secret": "my-secret-key"
+                                     }
+                                 }
+                             }]],
+                            }
                         }
-                    }
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
+
+             for _, data in ipairs(data) do
+                        local code, body = t(data.url, ngx.HTTP_PUT, data.data)
+                        ngx.say(body)
+             end
         }
     }
---- request
-GET /t
---- response_body
-passed
+--- response_body eval
+"passed\n" x 4
 
 
 
-=== TEST 2: create public API route (jwt-auth sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 3: add consumer with username and jwt-auth plugins
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jack",
-                    "plugins": {
-                        "jwt-auth": {
-                            "key": "user-key",
-                            "secret": "my-secret-key"
-                        }
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 4: verify multi auth plugin (in header) with hiding credentials
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "multi-auth": {
-                            "auth_plugins": [
-                                {
-                                    "basic-auth": {}
-                                },
-                                {
-                                    "key-auth": {
-                                        "query": "apikey",
-                                        "header": "authorization"
-                                    }
-                                },
-                                {
-                                    "jwt-auth": {
-                                        "cookie": "jwt",
-                                        "query": "jwt",
-                                        "header": "authorization"
-                                    }
-                                }
-                            ],
-                            "hide_credentials": true
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/echo"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 5: sign / verify jwt-auth
+=== TEST 2: sign / verify jwt-auth
 --- config
     location /t {
         content_by_lua_block {
@@ -203,7 +157,7 @@ GET /t
 
 
 
-=== TEST 6: verify key auth with same Authorization header with hiding credentials
+=== TEST 3: verify key auth with same Authorization header with hiding credentials
 --- request
 GET /echo
 --- more_headers
@@ -213,7 +167,7 @@ Authorization: auth-one
 
 
 
-=== TEST 7: verify jwt-key (in header) with hiding credentials
+=== TEST 4: verify jwt-key (in header) with hiding credentials
 --- request
 GET /echo
 --- more_headers
