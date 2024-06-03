@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local require      = require
-local yaml         = require("tinyyaml")
+local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
@@ -130,7 +130,7 @@ local function read_debug_yaml()
     local yaml_config = f:read("*a")
     f:close()
 
-    local debug_yaml_new = yaml.parse(yaml_config)
+    local debug_yaml_new = yaml.load(yaml_config)
     if not debug_yaml_new then
         log.error("failed to parse the content of file " .. debug_yaml_path)
         return

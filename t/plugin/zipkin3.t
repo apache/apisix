@@ -119,7 +119,9 @@ qr/ngx_var.zipkin_context_traceparent:00-\w{32}-\w{16}-01*/
 
 
 === TEST 3: trigger zipkin with disable set variables
---- yaml_config
+--- extra_yaml_config
+plugins:
+    - zipkin
 plugin_attr:
     zipkin:
         set_ngx_var: false

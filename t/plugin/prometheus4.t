@@ -333,54 +333,29 @@ passed
 
 
 === TEST 11: remove prometheus -> reload -> send batch request -> add prometheus for next tests
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - example-plugin
+plugin_attr:
+  example-plugin:
+    val: 1
 --- config
     location /t {
         content_by_lua_block {
-            local http = require "resty.http"
-            local httpc = http.new()
-
             local t = require("lib.test_admin").test
-            ngx.sleep(0.1)
-            local data = [[
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  admin:
-    admin_key: null
-apisix:
-  node_listen: 1984
-plugins:
-    - example-plugin
-plugin_attr:
-    example-plugin:
-        val: 1
-        ]]
-            require("lib.test_admin").set_config_yaml(data)
             local code, _, org_body = t('/v1/plugins/reload', ngx.HTTP_PUT)
-            local code, body = t('/batch-process-metrics',
-                 ngx.HTTP_GET
-                )
+            local code, body = t('/batch-process-metrics', ngx.HTTP_GET)
 
             ngx.status = code
             ngx.say(body)
-
-            local data = [[
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  admin:
-    admin_key: null
-apisix:
-  node_listen: 1984
-plugins:
-    - prometheus
-plugin_attr:
-    example-plugin:
-        val: 1
-        ]]
-            require("lib.test_admin").set_config_yaml(data)
         }
     }
 --- request
@@ -392,6 +367,18 @@ qr/404 Not Found/
 
 
 === TEST 12: fetch prometheus metrics -> batch_process_entries metrics should not be present
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - prometheus
+  - public-api
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200
