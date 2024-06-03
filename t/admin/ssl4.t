@@ -242,7 +242,6 @@ apisix:
             - qeddd145sfvddff3
 --- error_log
 decrypt ssl key failed
-[alert]
 
 
 
