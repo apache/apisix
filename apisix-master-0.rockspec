@@ -51,7 +51,6 @@ dependencies = {
     "lua-protobuf = 0.5.0-1",
     "lua-resty-openidc = 1.7.6-3",
     "luafilesystem = 1.7.0-2",
-    "api7-lua-tinyyaml = 0.4.4",
     "nginx-lua-prometheus-api7 = 0.20240201-1",
     "jsonschema = 0.9.8",
     "lua-resty-ipmatcher = 0.6.1",

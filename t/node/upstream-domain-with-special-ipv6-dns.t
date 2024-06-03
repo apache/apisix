@@ -58,8 +58,7 @@ __DATA__
 --- listen_ipv6
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     nodes:
         ipv6.test.local:1980: 1
     type: roundrobin
