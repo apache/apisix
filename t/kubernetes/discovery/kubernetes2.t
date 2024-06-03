@@ -36,8 +36,8 @@ discovery:
         token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
@@ -366,8 +366,8 @@ discovery:
         token: ${KUBERNETES_CLIENT_TOKEN}
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -405,8 +405,8 @@ discovery:
         equal: ns-a
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -443,8 +443,8 @@ discovery:
         not_equal: ns-a
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -481,8 +481,8 @@ discovery:
         match: [ns-a,ns-b]
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -519,8 +519,8 @@ discovery:
         match: ["ns-[ab]"]
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -557,8 +557,8 @@ discovery:
         not_match: ["ns-a"]
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -595,8 +595,8 @@ discovery:
         not_match: ["ns-[ab]"]
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}
@@ -633,8 +633,8 @@ discovery:
         first=1,second
     - id: second
       service:
-        schema: "http",
-        host: "127.0.0.1",
+        schema: "http"
+        host: "127.0.0.1"
         port: "6445"
       client:
         token: ${KUBERNETES_CLIENT_TOKEN}

@@ -54,8 +54,7 @@ __DATA__
 === TEST 1: sanity
 --- apisix_yaml
 stream_routes:
-    -
-    id: 1
+  - id: 1
     upstream:
         type: least_conn
         nodes:
@@ -100,8 +99,7 @@ proxy request to 127.0.0.1:1995
 === TEST 2: default priority is 0
 --- apisix_yaml
 stream_routes:
-    -
-    id: 1
+  - id: 1
     upstream:
         type: least_conn
         nodes:
@@ -144,8 +142,7 @@ proxy request to 127.0.0.1:1995
 === TEST 3: fix priority for nonarray nodes
 --- apisix_yaml
 stream_routes:
-    -
-    id: 1
+  - id: 1
     upstream:
         type: roundrobin
         nodes:

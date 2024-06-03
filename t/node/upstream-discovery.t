@@ -153,13 +153,11 @@ create_obj_fun(): upstream nodes:
 === TEST 3: create new server picker when nodes change, up_conf doesn't come from upstream
 --- apisix_yaml
 routes:
-  -
-    uris:
+  - uris:
         - /hello
     service_id: 1
 services:
-    -
-    id: 1
+  - id: 1
     upstream:
         service_name: mock
         discovery_type: mock
