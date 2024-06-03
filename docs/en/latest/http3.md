@@ -129,7 +129,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
 
 ### Verify HTTP/3 Connections
 
-Install [static-curl](https://github.com/stunnel/static-curl) or other curl that have HTTP/3 support.
+Install [static-curl](https://github.com/stunnel/static-curl) or any other curl executable that has HTTP/3 support.
 
 Send a request to the route:
 
