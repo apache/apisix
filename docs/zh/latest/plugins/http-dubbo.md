@@ -95,7 +95,6 @@ curl --location 'http://127.0.0.1:9080/TestService/testMethod' \
 2'
 ```
 
-
 ## 如何获取params_type_desc
 ```java
 Method[] declaredMethods = YourService.class.getDeclaredMethods();
@@ -108,7 +107,7 @@ String params_type_desc = ReflectUtils.getDesc(Arrays.stream(declaredMethods).fi
 为了防止精度丢失。我们推荐使用序列化好的body 进行请求。
 dubbo的fastjson序列化规则如下
 - 每个参数之间使用toJSONString转化为JSON 字符串
-- 每个参数之间使用换行符`\n`分隔 
+- 每个参数之间使用换行符`\n`分隔
 
 部分语言和库在字符串或数字调用toJSONString后结果是不变的这可能需要你手动处理一些特殊情况
 例如 :
@@ -118,22 +117,8 @@ dubbo的fastjson序列化规则如下
 抽象类，父类或者泛型作为入参签名,入参需要具体类型时。序列化需要写入具体的类型信息
 具体参考 [WriteClassName](https://github.com/alibaba/fastjson/wiki/SerializerFeature_cn)
 
-
-
-
-
-
-
-
-
 ## 删除插件
 
 当你需要禁用 `http-dubbo` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务
 
-
-
-## Description
-The http-dubbo plugin can encode HTTP requests into Dubbo protocol and forward them to upstream services (Note: in Dubbo 2.x, the serialization type of the upstream service must be fastjson).
-
-## Attributes
 
