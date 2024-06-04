@@ -108,7 +108,6 @@ String params_type_desc = ReflectUtils.getDesc(Arrays.stream(declaredMethods).fi
 dubbo的fastjson序列化规则如下
 - 每个参数之间使用toJSONString转化为JSON 字符串
 - 每个参数之间使用换行符`\n`分隔
-
 部分语言和库在字符串或数字调用toJSONString后结果是不变的这可能需要你手动处理一些特殊情况
 例如 :
 - 字符串 `abc"`  需要被encode 为 `"abc\""`
@@ -120,5 +119,3 @@ dubbo的fastjson序列化规则如下
 ## 删除插件
 
 当你需要禁用 `http-dubbo` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务
-
-
