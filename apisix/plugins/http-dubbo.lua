@@ -69,7 +69,7 @@ local schema = {
             default = 6000
         }
     },
-    required = { "service_name", "method" },
+    required = { "service_name", "method", "params_type_desc" },
 }
 
 local _M = {
