@@ -159,6 +159,8 @@ deployment:
       cert: t/certs/mtls_client.crt
       key: t/certs/mtls_client.key
       verify: false
+  admin:
+    admin_key_required: false
 --- config
     location /t {
         content_by_lua_block {

@@ -58,7 +58,7 @@ routes:
       plugin_config_id: 1
       upstream:
         nodes:
-          "127.0.0.1:1980":1
+          "127.0.0.1:1980": 1
         type: roundrobin
 #END
 --- response_body
@@ -74,7 +74,7 @@ routes:
       plugin_config_id: 1
       upstream:
         nodes:
-          "127.0.0.1:1980":1
+          "127.0.0.1:1980": 1
         type: roundrobin
 #END
 --- error_code: 503
@@ -105,7 +105,7 @@ routes:
           body: "world\n"
       upstream:
         nodes:
-          "127.0.0.1:1980":1
+          "127.0.0.1:1980": 1
         type: roundrobin
 #END
 --- request
@@ -135,7 +135,7 @@ routes:
       plugin_config_id: 1
       upstream:
         nodes:
-          "127.0.0.1:1980":1
+          "127.0.0.1:1980": 1
         type: roundrobin
 #END
 --- error_code: 503
