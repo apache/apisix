@@ -120,3 +120,89 @@ __DATA__
     }
 --- response_body
 safe-jws
+
+
+
+=== TEST 2: verify that key_claim_name can be used to validate the Consumer JWT with a different
+claim than 'key'
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            -- prepare consumer
+            local csm_code, csm_body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "mike",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "custom-user-key",
+                            "secret": "custom-secret-key"
+                        }
+                    }
+                }]]
+            )
+
+            if csm_code >= 300 then
+                ngx.status = csm_code
+                ngx.say(csm_body)
+                return
+            end
+
+            -- prepare route
+            local rot_code, rot_body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything/*",
+                    "upstream": {
+                      "type": "roundrobin",
+                      "nodes": {
+                        "httpbin.org:80": 1
+                      }
+                    },
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "custom-user-key",
+                            "secret": "custom-secret-key",
+                            "key_claim_name": "iss"
+                        }
+                    }
+                }]]
+            )
+
+            if rot_code >= 300 then
+                ngx.status = rot_code
+                ngx.say("FAILED: Test /verify route creation - Body:" .. rot_body)
+                return
+            end
+
+            -- generate JWT with custom key ("key_claim_name" = "iss")
+            local sign_code, sign_body, token = t('/apisix/plugin/jwt/sign?key=custom-user-key&key_claim_name=iss',
+                ngx.HTTP_GET
+            )
+
+            if sign_code > 200 then
+                ngx.status = sign_code
+                ngx.say("FAILED: Test sign - Token: " .. token .. "\nBody: " .. sign_body)
+                return
+            end
+
+            -- verify JWT using the custom key_claim_name
+            ngx.req.set_header("Authorization", "Bearer " .. token)
+            local ver_code, ver_body, ver_extra = t('/anything/get?jwt=' .. token,
+                ngx.HTTP_GET
+            )
+
+            if ver_code > 200 then
+                ngx.status = ver_code
+                ngx.say("FAILED: Test verify - Token: " .. token .. "\nBody: " .. ver_body .. "\nExtra: " .. ver_extra)
+                return
+            end
+
+            ngx.say("verified-jwt")
+        }
+    }
+--- response_body
+verified-jwt
