@@ -93,7 +93,7 @@ curl --location 'http://127.0.0.1:9080/TestService/testMethod' \
 2'
 ```
 
-## How to Get params_type_desc
+## How to Get `params_type_desc`
 
 ```java
 Method[] declaredMethods = YourService.class.getDeclaredMethods();
