@@ -2,7 +2,7 @@
 title: http-dubbo
 keywords:
   - Apache APISIX
-  - API 网关
+  - API Gateway
   - Plugin
   - http-dubbo
   - http to dubbo
