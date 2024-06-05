@@ -463,3 +463,30 @@ test
 test
 --- error_log
 DEPRECATED: use add_header(ctx, header_name, header_value) instead
+
+
+
+=== TEST 16: after setting the header, ctx.var can still access the correct value
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            ngx.ctx.api_ctx = {}
+            local ctx = ngx.ctx.api_ctx
+            core.ctx.set_vars_meta(ctx)
+
+            ctx.var.http_server = "ngx"
+            ngx.say(ctx.var.http_server)
+
+            core.request.set_header(ctx, "server",  "test")
+            ngx.say(ctx.var.http_server)
+
+            -- case-insensitive
+            core.request.set_header(ctx, "Server",  "apisix")
+            ngx.say(ctx.var.http_server)
+        }
+    }
+--- response_body
+ngx
+test
+apisix
