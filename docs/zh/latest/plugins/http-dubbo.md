@@ -113,7 +113,7 @@ dubbo 的 fastjson 序列化规则如下：
 
 部分语言和库在字符串或数字调用 toJSONString 后结果是不变的这可能需要你手动处理一些特殊情况例如：
 
-- 字符串 `abc"`  需要被 encode 为 `"abc\""`
+- 字符串 `abc"` 需要被 encode 为 `"abc\""`
 
 - 字符串 `123`需要被 encode 为 `"123"`
 
