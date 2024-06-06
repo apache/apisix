@@ -267,6 +267,26 @@ plugins:
 #END
 ```
 
+### How to configure Plugin Configs
+
+```yml
+plugin_configs:
+    -
+        id: 1
+        plugins:
+            response-rewrite:
+                body: "hello\n"
+routes:
+    - id: 1
+      uri: /hello
+      plugin_config_id: 1
+      upstream:
+        nodes:
+          "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+```
+
 ### How to enable SSL
 
 ```yml
