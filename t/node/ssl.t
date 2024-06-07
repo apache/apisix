@@ -231,7 +231,7 @@ passed
 
 
 
-=== TEST 6: access to https with test.com
+=== TEST 7: access to https with test.com
 --- exec
 curl -s -k https://test.com:1994/hello
 --- response_body
