@@ -190,35 +190,35 @@ local function set_cert_and_key(sni, value)
 end
 
 
-local original_verify_client_hook
-local function verify_client_hook(ok, err, value)
+function _M.rewrite(conf, ctx)
+    core.log.error(core.json.delay_encode(ctx.matched_ssl))
     -- only client verify ok and ssl_ocsp is "leaf" need to validate ocsp response
-    if ok and value.ocsp_stapling.ssl_ocsp == "leaf" then
-        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(ngx.var.ssl_client_raw_cert)
-        if not der_cert_chain then
-            return false, "failed to convert certificate chain from PEM to DER: ", err
-        end
-    
-        local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
-        if ocsp_resp == nil then
-            core.log.info("not ocsp resp cache found, fetch from ocsp responder")
-            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, value.ocsp_stapling.ssl_ocsp_responder)
-            if ocsp_resp == nil then
-                return false, err
-            end
-            core.log.info("fetch ocsp resp ok, cache it")
-            ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
-        end
-    
-        local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
-        if not ok then
-            return false, "failed to validate ocsp response: " .. err
-        end
-        return true
-    end
-
-    return ok, err
+    --if ok and value.ocsp_stapling.ssl_ocsp == "leaf" then
+    --    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(ngx.var.ssl_client_raw_cert)
+    --    if not der_cert_chain then
+    --        return false, "failed to convert certificate chain from PEM to DER: ", err
+    --    end
+    --
+    --    local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
+    --    if ocsp_resp == nil then
+    --        core.log.info("not ocsp resp cache found, fetch from ocsp responder")
+    --        ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, value.ocsp_stapling.ssl_ocsp_responder)
+    --        if ocsp_resp == nil then
+    --            return false, err
+    --        end
+    --        core.log.info("fetch ocsp resp ok, cache it")
+    --        ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
+    --    end
+    --
+    --    local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
+    --    if not ok then
+    --        return false, "failed to validate ocsp response: " .. err
+    --    end
+    --    return true
+    --end
+    --return ok, err
 end
+
 
 function _M.init()
     if core.schema.ssl.properties.gm ~= nil then

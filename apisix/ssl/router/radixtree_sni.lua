@@ -260,7 +260,6 @@ function _M.set(matched_ssl, sni)
                 (matched_ssl.value.client.skip_mtls_uri_regex == nil)
             local ok, err = ngx_ssl.verify_client(parsed_cert, depth,
                 reject_in_handshake)
-            ok, err = _M.verify_client_hook(ok, err, matched_ssl.value)
             if not ok then
                 return false, err
             end
@@ -268,11 +267,6 @@ function _M.set(matched_ssl, sni)
     end
 
     return true
-end
-
-
-function _M.verify_client_hook(ok, err, value)
-    return ok, err
 end
 
 
