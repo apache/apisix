@@ -37,6 +37,7 @@ local str_byte = string.byte
 local ngx_sleep = require("apisix.core.utils").sleep
 local string_rfind = require("pl.stringx").rfind
 local local_conf
+local enable_access_log
 
 
 local plugin_name = "log-rotate"
@@ -188,10 +189,8 @@ end
 local function init_default_logs(logs_info, log_type)
     local filepath, filename = get_log_path_info(log_type)
     logs_info[log_type] = { type = log_type }
-    if filename ~= "off" then
-        logs_info[log_type].file = filepath .. filename
-        logs_info[log_type].new_file = filepath .. "/%s__" .. filename
-    end
+    logs_info[log_type].file = filepath .. filename
+    logs_info[log_type].new_file = filepath .. "/%s__" .. filename
 end
 
 
@@ -209,7 +208,7 @@ local function rotate_file(files, now_time, max_kept, timeout)
         return
     end
 
-    local new_files = core.table.new(2, 0)
+    local new_files = core.table.new(#files, 0)
     -- rename the log files
     for _, file in ipairs(files) do
         local now_date = os_date("%Y-%m-%d_%H-%M-%S", now_time)
@@ -288,14 +287,10 @@ local function rotate()
         return
     end
 
-    local nginx_config = local_conf and local_conf.nginx_config
-    local enable_access_log = nginx_config and nginx_config.http and nginx_config.http.enable_access_log
-
     if now_time >= rotate_time then
         local files = {DEFAULT_ERROR_LOG_FILENAME}
-
         if enable_access_log then
-            table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
+            core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
 
         rotate_file(files, now_time, max_kept, timeout)
@@ -304,14 +299,13 @@ local function rotate()
         rotate_time = rotate_time + interval
 
     elseif max_size > 0 then
-        local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
-        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
         local files = {}
 
-        if enable_access_log and access_log_file_size >= max_size then
+        if enable_access_log and file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file) >= max_size then
             core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
 
+        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
         if error_log_file_size >= max_size then
             core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
@@ -325,6 +319,8 @@ function _M.init()
     if not local_conf then
         local_conf = core.config.local_conf()
     end
+    local nginx_config = local_conf and local_conf.nginx_config
+    enable_access_log = nginx_config and nginx_config.http and nginx_config.http.enable_access_log
     timers.register_timer("plugin#log-rotate", rotate, true)
 end
 
