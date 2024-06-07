@@ -189,8 +189,10 @@ end
 local function init_default_logs(logs_info, log_type)
     local filepath, filename = get_log_path_info(log_type)
     logs_info[log_type] = { type = log_type }
-    logs_info[log_type].file = filepath .. filename
-    logs_info[log_type].new_file = filepath .. "/%s__" .. filename
+    if filename ~= "off" then
+        logs_info[log_type].file = filepath .. filename
+        logs_info[log_type].new_file = filepath .. "/%s__" .. filename
+    end
 end
 
 
@@ -299,13 +301,14 @@ local function rotate()
         rotate_time = rotate_time + interval
 
     elseif max_size > 0 then
+        local access_log_file_size = file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file)
+        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
         local files = {}
 
-        if enable_access_log and file_size(default_logs[DEFAULT_ACCESS_LOG_FILENAME].file) >= max_size then
+        if enable_access_log and access_log_file_size >= max_size then
             core.table.insert(files, DEFAULT_ACCESS_LOG_FILENAME)
         end
 
-        local error_log_file_size = file_size(default_logs[DEFAULT_ERROR_LOG_FILENAME].file)
         if error_log_file_size >= max_size then
             core.table.insert(files, DEFAULT_ERROR_LOG_FILENAME)
         end
