@@ -345,3 +345,24 @@ nginx_config:
 GET /t
 --- response_body
 1
+
+
+
+=== TEST 5: allow environment variable in config-default.yaml
+--- config
+    location /t {
+        content_by_lua_block {
+            local config = require("apisix.core").config.local_conf()
+
+            ngx.say(config.env_test.id)
+        }
+    }
+--- main_config
+env AID=3;
+--- extra_default_yaml_config
+env_test:
+    id: ${{ AID }}
+--- request
+GET /t
+--- response_body
+3

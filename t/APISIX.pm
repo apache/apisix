@@ -239,6 +239,9 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
+    if ($block->extra_default_yaml_config) {
+        $default_yaml_config .= $block->extra_default_yaml_config;
+    }
     if ($block->apisix_yaml && (!defined $block->yaml_config)) {
         $user_yaml_config = <<_EOC_;
 apisix:
