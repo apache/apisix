@@ -58,7 +58,7 @@ routes:
 plugin_metadata:
   - id: http-logger
     log_format:
-        host: "$host",
+        host: "$host"
         remote_addr: "$remote_addr"
 #END
 --- request

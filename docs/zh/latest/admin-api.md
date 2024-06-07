@@ -358,7 +358,7 @@ Route 对象 JSON 配置示例：
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"],        # 一组客户端请求 IP 地址
     "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
-    "upstream_id": "1",                   # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream_id": "1",                   # upstream 对象在 etcd 中的 id，建议使用此值
     "upstream": {},                       # upstream 信息对象，建议尽量不要使用
     "timeout": {                          # 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。
         "connect": 3,
@@ -652,7 +652,7 @@ Service 对象 JSON 配置示例：
 {
     "id": "1",                # id
     "plugins": {},            # 指定 service 绑定的插件
-    "upstream_id": "1",       # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream_id": "1",       # upstream 对象在 etcd 中的 id，建议使用此值
     "upstream": {},           # upstream 信息对象，不建议使用
     "name": "test svc",       # service 名称
     "desc": "hello world",    # service 描述
@@ -1476,6 +1476,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 | uri    | 是     | URI        |  Vault 服务器的 URI                                                 |                                                  |
 | prefix    | 是    | 字符串       | 密钥前缀
 | token     | 是    | 字符串       | Vault 令牌 |                                                  |
+| namespace | 否    | 字符串       | Vault 命名空间，该字段无默认值 | `admin` |
 
 配置示例：
 

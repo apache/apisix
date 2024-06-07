@@ -91,8 +91,7 @@ services:
                       interval: 1
                       http_failures: 2
 routes:
-    -
-    service_id: 1
+  - service_id: 1
     uri: /server_port
 #END
 --- config
@@ -166,8 +165,7 @@ services:
                       interval: 1
                       http_failures: 2
 routes:
-    -
-    service_id: 1
+  - service_id: 1
     uri: /server_port
     upstream:
         type: roundrobin
