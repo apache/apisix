@@ -42,7 +42,7 @@ The technical architecture of Apache APISIX:
 
 ## Community
 
-- [Kindly Write a Review](https://www.g2.com/products/apache-apisix/reviews)
+- [Kindly Write a Review](https://www.g2.com/products/apache-apisix/reviews) for APISIX in G2.
 - Mailing List: Mail to dev-subscribe@apisix.apache.org, follow the reply to subscribe to the mailing list.
 - Slack Workspace - [invitation link](https://apisix.apache.org/slack) (Please open an [issue](https://apisix.apache.org/docs/general/submit-issue) if this link is expired), and then join the #apisix channel (Channels -> Browse channels -> search for "apisix").
 - ![Twitter Follow](https://img.shields.io/twitter/follow/ApacheAPISIX?style=social) - follow and interact with us using hashtag `#ApacheAPISIX`
@@ -71,7 +71,8 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - Proxy Websocket
   - Proxy Protocol
   - HTTP(S) Forward Proxy
-  - [SSL](docs/en/latest/certificate.md): Dynamically load an SSL certificate.
+  - [SSL](docs/en/latest/certificate.md): Dynamically load an SSL certificate
+  - [HTTP/3 with QUIC](docs/en/latest/http3.md)
 
 - **Full Dynamic**
 
@@ -134,7 +135,7 @@ A/B testing, canary release, blue-green deployment, limit rate, defense against 
   - [Global Rule](docs/en/latest/terminology/global-rule.md): Allows to run any plugin for all request, eg: limit rate, IP filter etc.
   - High performance: The single-core QPS reaches 18k with an average delay of fewer than 0.2 milliseconds.
   - [Fault Injection](docs/en/latest/plugins/fault-injection.md)
-  - [REST Admin API](docs/en/latest/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also, note that the Admin API uses key auth to verify the identity of the caller. **The `admin_key` field in `conf/config.yaml` needs to be modified before deployment to ensure security**.
+  - [REST Admin API](docs/en/latest/admin-api.md): Using the REST Admin API to control Apache APISIX, which only allows 127.0.0.1 access by default, you can modify the `allow_admin` field in `conf/config.yaml` to specify a list of IPs that are allowed to call the Admin API. Also, note that the Admin API uses key auth to verify the identity of the caller.
   - External Loggers: Export access logs to external log management tools. ([HTTP Logger](docs/en/latest/plugins/http-logger.md), [TCP Logger](docs/en/latest/plugins/tcp-logger.md), [Kafka Logger](docs/en/latest/plugins/kafka-logger.md), [UDP Logger](docs/en/latest/plugins/udp-logger.md), [RocketMQ Logger](docs/en/latest/plugins/rocketmq-logger.md), [SkyWalking Logger](docs/en/latest/plugins/skywalking-logger.md), [Alibaba Cloud Logging(SLS)](docs/en/latest/plugins/sls-logger.md), [Google Cloud Logging](docs/en/latest/plugins/google-cloud-logging.md), [Splunk HEC Logging](docs/en/latest/plugins/splunk-hec-logging.md), [File Logger](docs/en/latest/plugins/file-logger.md), [SolarWinds Loggly Logging](docs/en/latest/plugins/loggly.md), [TencentCloud CLS](docs/en/latest/plugins/tencent-cloud-cls.md)).
   - [ClickHouse](docs/en/latest/plugins/clickhouse-logger.md): push logs to ClickHouse.
   - [Elasticsearch](docs/en/latest/plugins/elasticsearch-logger.md): push logs to Elasticsearch.
@@ -192,12 +193,6 @@ Using AWS's eight-core server, APISIX's QPS reaches 140,000 with a latency of on
 
 [APISIX also works perfectly in AWS graviton3 C7g.](https://apisix.apache.org/blog/2022/06/07/installation-performance-test-of-apigateway-apisix-on-aws-graviton3)
 
-## Contributor Over Time
-
-> [visit here](https://www.apiseven.com/contributor-graph) to generate Contributor Over Time.
-
-[![Contributor over time](https://contributor-graph-api.apiseven.com/contributors-svg?repo=apache/apisix)](https://www.apiseven.com/en/contributor-graph?repo=apache/apisix)
-
 ## User Stories
 
 - [European eFactory Platform: API Security Gateway – Using APISIX in the eFactory Platform](https://www.efactory-project.eu/post/api-security-gateway-using-apisix-in-the-efactory-platform)
@@ -231,15 +226,6 @@ A wide variety of companies and organizations use APISIX API Gateway for researc
 - WPS
 - XPENG
 - Zoom
-
-## Landscape
-
-<p align="left">
-<img src="./logos/cncf-landscape-white-bg.jpg" width="175">&nbsp;&nbsp;<img src="./logos/cncf-white-bg.jpg" width="200" />
-<br /><br />
-APISIX enriches the <a href="https://landscape.cncf.io/card-mode?category=api-gateway&grouping=category">
-CNCF API Gateway Landscape.</a>
-</p>
 
 ## Logos
 
