@@ -1205,8 +1205,8 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | ----------- | ------ | -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
 | key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
-| certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。 该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |                                                  |
-| keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。 该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                          |                                                  |
+| certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |                                                  |
+| keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
