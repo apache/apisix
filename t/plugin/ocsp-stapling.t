@@ -108,11 +108,11 @@ location /t {
     }
 }
 --- response_body
-{"cache_ttl":3600,"enabled":false,"skip_verify":false}
-{"cache_ttl":3600,"enabled":true,"skip_verify":false}
-{"cache_ttl":3600,"enabled":false,"skip_verify":true}
-{"cache_ttl":6000,"enabled":false,"skip_verify":false}
-{"cache_ttl":6000,"enabled":true,"skip_verify":true}
+{"cache_ttl":3600,"enabled":false,"skip_verify":false,"ssl_ocsp":"off"}
+{"cache_ttl":3600,"enabled":true,"skip_verify":false,"ssl_ocsp":"off"}
+{"cache_ttl":3600,"enabled":false,"skip_verify":true,"ssl_ocsp":"off"}
+{"cache_ttl":6000,"enabled":false,"skip_verify":false,"ssl_ocsp":"off"}
+{"cache_ttl":6000,"enabled":true,"skip_verify":true,"ssl_ocsp":"off"}
 
 
 

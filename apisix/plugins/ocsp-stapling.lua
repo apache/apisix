@@ -228,9 +228,6 @@ function _M.init()
     original_set_cert_and_key = radixtree_sni.set_cert_and_key
     radixtree_sni.set_cert_and_key = set_cert_and_key
 
-    original_verify_client_hook = radixtree_sni.verify_client_hook
-    radixtree_sni.verify_client_hook = verify_client_hook
-
     if core.schema.ssl.properties.ocsp_stapling ~= nil then
         core.log.error("Field 'ocsp_stapling' is occupied")
     end
@@ -272,7 +269,6 @@ end
 
 function _M.destroy()
     radixtree_sni.set_cert_and_key = original_set_cert_and_key
-    radixtree_sni.verify_client_hook = original_verify_client_hook
     core.schema.ssl.properties.ocsp_stapling = nil
     ocsp_resp_cache:flush_all()
 end
