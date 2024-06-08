@@ -1,3 +1,20 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
+
 local _M = {}
 
 _M.default_config = {
@@ -98,7 +115,7 @@ _M.default_config = {
       enable_access_log = true,
       access_log = "logs/access.log",
       access_log_buffer = 16384,
-      access_log_format = "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\"",
+      access_log_format = '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"',
       access_log_format_escape = "default",
       keepalive_timeout = "60s",
       client_header_timeout = "60s",
@@ -182,7 +199,7 @@ _M.default_config = {
         max_queue_size = 1024,
         batch_timeout = 2,
         inactive_timeout = 1,
-        max_export_batch_size = "${{OTEL_BSP_MAX_EXPORT_BATCH_SIZE:=16}}"
+        max_export_batch_size = tonumber(os.getenv("OTEL_BSP_MAX_EXPORT_BATCH_SIZE")) or 16
       },
       set_ngx_var = false
     },
