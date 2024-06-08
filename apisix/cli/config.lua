@@ -99,8 +99,9 @@ local _M = {
     stream = {
       enable_access_log = false,
       access_log = "logs/access_stream.log",
-      access_log_format =
-        "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time",
+      -- luacheck: push max code line length 300
+      access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time",
+      -- luacheck: pop
       access_log_format_escape = "default",
       lua_shared_dict = {
         ["etcd-cluster-health-check-stream"] = "10m",
