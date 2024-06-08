@@ -531,8 +531,6 @@ _EOC_
 
     require "resty.core"
 
-    $test_default_config
-
     $extra_init_by_lua_start
 
     apisix = require("apisix")
@@ -628,6 +626,7 @@ _EOC_
     $dubbo_upstream
 
     init_by_lua_block {
+        $test_default_config
         $init_by_lua_block
     }
 
