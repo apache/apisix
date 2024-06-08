@@ -175,7 +175,6 @@ local _M = {
   graphql = {
     max_size = 1048576
   },
-  -- list of plugins, sorted by alphabetical order
   plugins = {
     "real-ip",
     "ai",
