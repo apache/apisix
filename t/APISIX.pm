@@ -416,8 +416,6 @@ _EOC_
             jit.off()
         end
 
-        $test_default_config
-
         require "resty.core"
 
         $stream_extra_init_by_lua_start
@@ -434,6 +432,7 @@ _EOC_
 
     $stream_config .= <<_EOC_;
     init_by_lua_block {
+        $test_default_config
         $stream_init_by_lua_block
         $stream_extra_init_by_lua
     }
