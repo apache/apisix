@@ -15,9 +15,7 @@
 -- limitations under the License.
 --
 
-local _M = {}
-
-_M.default_config = {
+local _M = {
   apisix = {
     node_listen = { 9080 },
     enable_admin = true,
