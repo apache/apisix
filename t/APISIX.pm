@@ -412,7 +412,7 @@ _EOC_
         -- cache will persist it for loading by other entrypoints
         -- it is used to replace the test::nginx implementation
         local default_config = require("apisix.cli.config")
-        table.insert(default_config.plugins, example-plugin)
+        table.insert(default_config.plugins, "example-plugin")
         default_config.plugin_attr.prometheus.enable_export_server = false
         default_config.apisix.event.module = "$events_module"
 
@@ -533,7 +533,7 @@ _EOC_
     -- cache will persist it for loading by other entrypoints
     -- it is used to replace the test::nginx implementation
     local default_config = require("apisix.cli.config")
-    table.insert(default_config.plugins, example-plugin)
+    table.insert(default_config.plugins, "example-plugin")
     default_config.plugin_attr.prometheus.enable_export_server = false
     default_config.apisix.event.module = "$events_module"
 
