@@ -79,6 +79,15 @@ if ($custom_dns_server) {
 
 
 my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
+my test_default_config = <<_EOC_;
+    -- read the default configuration, modify it, and the Lua package
+    -- cache will persist it for loading by other entrypoints
+    -- it is used to replace the test::nginx implementation
+    local default_config = require("apisix.cli.config")
+    table.insert(default_config.plugins, "example-plugin")
+    default_config.plugin_attr.prometheus.enable_export_server = false
+    default_config.apisix.event.module = "$events_module"
+_EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -408,13 +417,7 @@ _EOC_
             jit.off()
         end
 
-        -- read the default configuration, modify it, and the Lua package
-        -- cache will persist it for loading by other entrypoints
-        -- it is used to replace the test::nginx implementation
-        local default_config = require("apisix.cli.config")
-        table.insert(default_config.plugins, "example-plugin")
-        default_config.plugin_attr.prometheus.enable_export_server = false
-        default_config.apisix.event.module = "$events_module"
+        $test_default_config
 
         require "resty.core"
 
@@ -529,13 +532,7 @@ _EOC_
 
     require "resty.core"
 
-    -- read the default configuration, modify it, and the Lua package
-    -- cache will persist it for loading by other entrypoints
-    -- it is used to replace the test::nginx implementation
-    local default_config = require("apisix.cli.config")
-    table.insert(default_config.plugins, "example-plugin")
-    default_config.plugin_attr.prometheus.enable_export_server = false
-    default_config.apisix.event.module = "$events_module"
+    $test_default_config
 
     $extra_init_by_lua_start
 
