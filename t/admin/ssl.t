@@ -680,3 +680,123 @@ GET /t
 GET /t
 --- response_body chomp
 passed
+
+
+
+=== TEST 21: set ssl with sercret
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                sni = "test.com",
+                cert = "$secret://vault/test/ssl/test.com.crt",
+                key = "$secret://vault/test/ssl/test.com.key",
+                certs = {"$secret://vault/test/ssl/test.com.2.crt"},
+                keys = {"$secret://vault/test/ssl/test.com.2.key"}
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "sni": "test.com",
+                        "cert": "$secret://vault/test/ssl/test.com.crt",
+                        "key": "$secret://vault/test/ssl/test.com.key",
+                        "certs": ["$secret://vault/test/ssl/test.com.2.crt"],
+                        "keys": ["$secret://vault/test/ssl/test.com.2.key"]
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: set ssl with env, and prefix is all uppercase or lowercase
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                sni = "test.com",
+                cert = "$ENV://APISIX_TEST_SSL_CERT",
+                key = "$env://APISIX_TEST_SSL_KEY",
+                certs = {"$env://APISIX_TEST_SSL_CERTS"},
+                keys = {"$ENV://APISIX_TEST_SSL_KEYS"},
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "sni": "test.com",
+                        "cert": "$ENV://APISIX_TEST_SSL_CERT",
+                        "key": "$env://APISIX_TEST_SSL_KEY",
+                        "certs": ["$env://APISIX_TEST_SSL_CERTS"],
+                        "keys": ["$ENV://APISIX_TEST_SSL_KEYS"]
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 23: set ssl with invalid prefix
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin")
+
+            local data = {
+                sni = "test.com",
+                cert = "$ENV://APISIX_TEST_SSL_CERT",
+                key = "$env://APISIX_TEST_SSL_KEY",
+                certs = {"https://APISIX_TEST_SSL_CERTS"},
+                keys = {"$ENV://APISIX_TEST_SSL_KEYS"},
+            }
+
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                core.json.encode(data),
+                [[{
+                    "value": {
+                        "sni": "test.com"
+                    },
+                    "key": "/apisix/ssls/1"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid configuration: property \"certs\" validation failed: failed to validate item 1: value should match only one schema, but matches none"}
