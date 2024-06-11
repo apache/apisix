@@ -87,6 +87,7 @@ end
 
 
 function _M.fetch_by_uri(env_uri)
+    log.info("fetching data from env uri: ", env_uri)
     local opts, err = parse_env_uri(env_uri)
     if not opts then
         return nil, err
