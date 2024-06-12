@@ -206,7 +206,9 @@ function _M.rewrite(conf, ctx)
     local client_verify_res = ctx.var.ssl_client_verify
     -- only client verify ok and ssl_ocsp is "leaf" need to validate ocsp response
     if required_ssl_ocsp == "leaf" and client_verify_res == "SUCCESS" then
-        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(ctx.var.ssl_client_raw_cert)
+        -- ssl_client_raw_cert will return client cert only, need to combine ca cert
+        local full_chain_pem_cert = ctx.var.ssl_client_raw_cert .. matched_ssl.value.client.ca
+        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(full_chain_pem_cert)
         if not der_cert_chain then
             core.log.error("failed to convert clinet certificate from PEM to DER: ", err)
             -- return NGX_HTTPS_CERT_ERROR
@@ -226,14 +228,15 @@ function _M.rewrite(conf, ctx)
             ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
          end
 
-        local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, matched_ssl.value.client.ca)
+        local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
         if not ocsp_ok then
             core.log.error("failed to validate ocsp response: ", err)
             ngx.exit(495)
         end
-        core.log.info("validate ocsp response ok")
+        core.log.info("validate client cert ocsp response ok")
+        return
     end
-    core.log.info("client cert ocsp not required")
+    core.log.info("no client cert ocsp verify required")
 end
 
 
