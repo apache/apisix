@@ -49,10 +49,9 @@ end
 local function get_ocsp_responder(der_cert_chain, overrides_responder)
     if overrides_responder then
         return overrides_responder
-    end 
+    end
 
     local responder, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
-
     if not responder then
         -- if cert not support ocsp, the report error is nil
         if not err then
@@ -65,9 +64,9 @@ local function get_ocsp_responder(der_cert_chain, overrides_responder)
 end
 
 
-local function fetch_ocsp_resp(der_cert_chain, responder)
+local function fetch_ocsp_resp(der_cert_chain, overrides_responder)
     core.log.info("fetch ocsp response from remote")
-    local ocsp_url, err = get_ocsp_responder(der_cert_chain, responder)
+    local responder, err = get_ocsp_responder(der_cert_chain, overrides_responder)
     if not responder then
         return nil, err
     end
@@ -78,7 +77,7 @@ local function fetch_ocsp_resp(der_cert_chain, responder)
     end
 
     local httpc = http.new()
-    local res, err = httpc:request_uri(ocsp_url, {
+    local res, err = httpc:request_uri(responder, {
         method = "POST",
         headers = {
             ["Content-Type"] = "application/ocsp-request",
@@ -104,7 +103,7 @@ local function fetch_ocsp_resp(der_cert_chain, responder)
 end
 
 
-local function set_ocsp_resp(full_chain_pem_cert, skip_verify, cache_ttl)
+local function set_ocsp_resp(full_chain_pem_cert, overrides_responder, skip_verify, cache_ttl)
     local der_cert_chain, err = ngx_ssl.cert_pem_to_der(full_chain_pem_cert)
     if not der_cert_chain then
         return false, "failed to convert certificate chain from PEM to DER: ", err
@@ -113,7 +112,7 @@ local function set_ocsp_resp(full_chain_pem_cert, skip_verify, cache_ttl)
     local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
     if ocsp_resp == nil then
         core.log.info("not ocsp resp cache found, fetch from ocsp responder")
-        ocsp_resp, err = fetch_ocsp_resp(der_cert_chain)
+        ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, overrides_responder)
         if ocsp_resp == nil then
             return false, err
         end
@@ -180,6 +179,7 @@ local function set_cert_and_key(sni, value)
     end
 
     local ok, err = set_ocsp_resp(fin_pem_cert,
+                                  value.ocsp_stapling.ssl_stapling_responder,
                                   value.ocsp_stapling.skip_verify,
                                   value.ocsp_stapling.cache_ttl)
     if not ok then
@@ -191,32 +191,49 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    core.log.error(core.json.delay_encode(ctx.matched_ssl))
+    local scheme = ctx.var.scheme
+    if scheme ~= "https" then
+        return
+    end
+
+    local matched_ssl = ctx.matched_ssl
+    local required_verify_client = matched_ssl.value.client
+    if not required_verify_client then
+        return
+    end
+
+    local required_ssl_ocsp = matched_ssl.value.ocsp_stapling.ssl_ocsp
+    local client_verify_res = ctx.var.ssl_client_verify
     -- only client verify ok and ssl_ocsp is "leaf" need to validate ocsp response
-    --if ok and value.ocsp_stapling.ssl_ocsp == "leaf" then
-    --    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(ngx.var.ssl_client_raw_cert)
-    --    if not der_cert_chain then
-    --        return false, "failed to convert certificate chain from PEM to DER: ", err
-    --    end
-    --
-    --    local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
-    --    if ocsp_resp == nil then
-    --        core.log.info("not ocsp resp cache found, fetch from ocsp responder")
-    --        ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, value.ocsp_stapling.ssl_ocsp_responder)
-    --        if ocsp_resp == nil then
-    --            return false, err
-    --        end
-    --        core.log.info("fetch ocsp resp ok, cache it")
-    --        ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
-    --    end
-    --
-    --    local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
-    --    if not ok then
-    --        return false, "failed to validate ocsp response: " .. err
-    --    end
-    --    return true
-    --end
-    --return ok, err
+    if required_ssl_ocsp == "leaf" and client_verify_res == "SUCCESS" then
+        local der_cert_chain, err = ngx_ssl.cert_pem_to_der(ctx.var.ssl_client_raw_cert)
+        if not der_cert_chain then
+            core.log.error("failed to convert clinet certificate from PEM to DER: ", err)
+            -- return NGX_HTTPS_CERT_ERROR
+            ngx.exit(495)
+        end
+
+        local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
+        if ocsp_resp == nil then
+            core.log.info("not ocsp resp cache found, fetch from ocsp responder")
+            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, 
+                                             matched_ssl.value.ocsp_stapling.ssl_ocsp_responder)
+            if ocsp_resp == nil then
+                core.log.error("failed to get ocsp respone: ", err)
+                ngx.exit(495)
+            end
+            core.log.info("fetch ocsp resp ok, cache it")
+            ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
+         end
+
+        local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, matched_ssl.value.client.ca)
+        if not ocsp_ok then
+            core.log.error("failed to validate ocsp response: ", err)
+            ngx.exit(495)
+        end
+        core.log.info("validate ocsp response ok")
+    end
+    core.log.info("client cert ocsp not required")
 end
 
 
