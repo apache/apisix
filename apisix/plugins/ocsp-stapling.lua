@@ -36,7 +36,7 @@ local plugin_schema = {
 local _M = {
     name = plugin_name,
     schema = plugin_schema,
-    version = 0.1,
+    version = 0.2,
     priority = -44,
 }
 
@@ -218,7 +218,7 @@ function _M.rewrite(conf, ctx)
         local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
         if ocsp_resp == nil then
             core.log.info("not ocsp resp cache found, fetch from ocsp responder")
-            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, 
+            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain,
                                              matched_ssl.value.ocsp_stapling.ssl_ocsp_responder)
             if ocsp_resp == nil then
                 core.log.error("failed to get ocsp respone: ", err)
