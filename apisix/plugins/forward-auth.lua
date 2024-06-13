@@ -68,9 +68,9 @@ local schema = {
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
-	-- suggest adding this switch
+        -- suggest adding this switch
         forward_client_body = {type = "boolean", default = true},
-	-- test purpose, for covering the downloading fashion(core.request.get_body())
+        -- test purpose, for covering the downloading fashion(core.request.get_body())
         forward_by_streaming = {type = "boolean", default = true},
     },
     required = {"uri"}
@@ -102,7 +102,7 @@ function _M.access(conf, ctx)
     local forward_client_body = false
     local client_body_length = core.request.header(ctx, "content-length")
     if conf.request_method == "POST" and conf.forward_client_body and client_body_length then
-	forward_client_body = true
+        forward_client_body = true
         auth_headers["Content-Length"] = client_body_length
         auth_headers["Expect"] = core.request.header(ctx, "expect")
         auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
@@ -131,40 +131,49 @@ function _M.access(conf, ctx)
     httpc:set_timeout(conf.timeout)
     if forward_client_body then
         params.body = co_wrap(
-	    function()
-		-- get_client_body_reader() -> ngx.req.socket()
-		-- once invoking ngx.req.socket() would stop NGX from reading client body causing 504 issue
-		-- why there is such a performance needs further clarification
-		-- delay the invoking in order to follow the normal proxy_pass flow rather than buffering
-		-- the client body by the plugin in case of client body has not started to read,
-		-- e.g. auth svc. is unable to connect and allow_degradation is true
+            function()
+                --[[ get_client_body_reader() -> ngx.req.socket()
+
+                    Once invoking ngx.req.socket() would stop NGX from
+                    reading client body, which causing 504 issue. Why
+                    there is such a performance needs further
+                    clarification.
+
+                    Delaying the invocation in order to follow the
+                    normal proxy_pass flow rather than buffering the
+                    client body by the plugin in case of client body
+                    has not started to read, e.g. auth svc. is unable
+                    to connect and allow_degradation is true.
+
+                ]]
+
                 if forward_by_streaming then
                     local client_body_reader, err = httpc:get_client_body_reader()
                     if client_body_reader then
                         ngx_req.init_body()
-			streaming_started = true
+                        streaming_started = true
                         repeat
                             local chunk, err, partial = client_body_reader()
                             if chunk then
                                 ngx_req.append_body(chunk)
                             elseif not err then
                                 ngx_req.finish_body()
-				streaming_finished = true
+                                streaming_finished = true
                             end
                             co_yield(chunk, err, partial)
                         until not chunk
                         return
-		    else
-			forward_by_streaming = false
-			core.log.warn("failed to get client_body_reader. err: ", err,
-				      " using core.request.get_body() instead")
+                    else
+                        forward_by_streaming = false
+                        core.log.warn("failed to get client_body_reader. err: ", err,
+                                      " using core.request.get_body() instead")
                     end
-		else
-		    core.log.warn("forward client body by downloading")
+                else
+                    core.log.warn("forward client body by downloading")
                 end
                 co_yield(core.request.get_body())
-	    end
-	)
+            end
+        )
     end
 
     if conf.keepalive then
@@ -175,17 +184,18 @@ function _M.access(conf, ctx)
     local res, err = httpc:request_uri(conf.uri, params)
     if not res and conf.allow_degradation then
         core.log.warn("allow_degradation, err: ", err)
-	if forward_client_body and forward_by_streaming and
-	    streaming_started and not streaming_finished then
-	    core.log.warn("allow_degradation, continue buffering the whole client body")
-	    repeat
-		local chunk, err = params.body()
-		if err then
-		    core.log.warn("allow_degradation, failed to buffer the whole client body, err: ", err)
-		    return conf.status_on_error
-		end
-	    until not chunk
-	end
+        if forward_client_body and forward_by_streaming and
+            streaming_started and not streaming_finished then
+            core.log.warn("allow_degradation, continue buffering the whole client body")
+            repeat
+                local chunk, err = params.body()
+                if err then
+                    core.log.warn("allow_degradation, " ..
+                                  "failed to buffer the whole client body, err: ", err)
+                    return conf.status_on_error
+                end
+            until not chunk
+        end
         return
     elseif not res then
         core.log.warn("failed to process forward auth, err: ", err)

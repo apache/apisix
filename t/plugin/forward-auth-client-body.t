@@ -60,24 +60,24 @@ __DATA__
                                 phase = "rewrite",
                                 functions = {
                                     [[
-				    return function(conf, ctx)
+                                    return function(conf, ctx)
                                         local core = require("apisix.core")
                                         if core.request.get_method() == "POST" then
                                             if core.request.header(ctx, "Authorization") == "read-whole-client-body" then
-					        local body = core.request.get_body()
-						local content_length = tonumber(ngx.var.content_length)
-						if content_length > 0 then
-						    assert(#body == content_length)
-						end
+                                                local body = core.request.get_body()
+                                                local content_length = tonumber(ngx.var.content_length)
+                                                if content_length > 0 then
+                                                    assert(#body == content_length)
+                                                end
                                                 core.response.exit(200)
                                             end
                                             if core.request.header(ctx, "Authorization") == "simulate-partially-read-client-body" then
-					        ngx.sleep(1)
+                                                ngx.sleep(1)
                                                 ngx.exit(ngx.ERROR)
                                             end
                                         end
                                     end
-				    ]]
+                                    ]]
                                 }
                             }
                         },
@@ -92,19 +92,19 @@ __DATA__
                                 phase = "rewrite",
                                 functions = {
                                     [[
-				    return function(conf, ctx)
+                                    return function(conf, ctx)
                                         local core = require("apisix.core")
-					local resty_md5 = require("resty.md5")
-					local resty_str = require("resty.string")
-					local body = core.request.get_body()
-					assert(#body == tonumber(ngx.var.content_length))
-					local md5 = resty_md5:new()
-					md5:update(body)
-					local digest = md5:final()
-					local body_md5 = resty_str.to_hex(digest)
+                                        local resty_md5 = require("resty.md5")
+                                        local resty_str = require("resty.string")
+                                        local body = core.request.get_body()
+                                        assert(#body == tonumber(ngx.var.content_length))
+                                        local md5 = resty_md5:new()
+                                        md5:update(body)
+                                        local digest = md5:final()
+                                        local body_md5 = resty_str.to_hex(digest)
                                         core.response.exit(200, body_md5)
                                     end
-				    ]]
+                                    ]]
                                 }
                             }
                         },
@@ -120,15 +120,15 @@ __DATA__
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST"
                         },
-  			"proxy-rewrite": {
+                        "proxy-rewrite": {
                                 "uri": "/echo"
-			    }
-			},			
-			"upstream_id": "u1",
+                            }
+                        },
+                        "upstream_id": "u1",
                         "uri": "/sanity"
                     }]],
                 },
-		{
+                {
                     url = "/apisix/admin/routes/11",
                     data = [[{
                         "plugins": {
@@ -136,17 +136,17 @@ __DATA__
                                 "uri": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST",
-				"forward_by_streaming": false
+                                "forward_by_streaming": false
                         },
-  			"proxy-rewrite": {
+                        "proxy-rewrite": {
                                 "uri": "/echo"
-			    }
-			},			
-			"upstream_id": "u1",
+                            }
+                        },
+                        "upstream_id": "u1",
                         "uri": "/sanity_download"
                     }]],
                 },
-		{
+                {
                     url = "/apisix/admin/routes/12",
                     data = [[{
                         "plugins": {
@@ -154,13 +154,13 @@ __DATA__
                                 "uri": "http://127.0.0.1:1984/auth",
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST",
-				"forward_client_body": false
+                                "forward_client_body": false
                         },
-  			"proxy-rewrite": {
+                        "proxy-rewrite": {
                                 "uri": "/echo"
-			    }
-			},			
-			"upstream_id": "u1",
+                            }
+                        },
+                        "upstream_id": "u1",
                         "uri": "/sanity_not_forward"
                     }]],
                 },
@@ -174,15 +174,15 @@ __DATA__
                                 "request_method": "POST",
                                 "allow_degradation": true
                         },
-  			"proxy-rewrite": {
+                        "proxy-rewrite": {
                                 "uri": "/echo"
-			    }
-			},			
-			"upstream_id": "u1",
+                            }
+                        },
+                        "upstream_id": "u1",
                         "uri": "/partially_forwarded"
                     }]],
                 },
-		{
+                {
                     url = "/apisix/admin/routes/21",
                     data = [[{
                         "plugins": {
@@ -191,13 +191,13 @@ __DATA__
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST",
                                 "allow_degradation": true,
-				"forward_by_streaming": false
+                                "forward_by_streaming": false
                         },
-  			"proxy-rewrite": {
+                        "proxy-rewrite": {
                                 "uri": "/echo"
-			    }
-			},			
-			"upstream_id": "u1",
+                            }
+                        },
+                        "upstream_id": "u1",
                         "uri": "/partially_forwarded_download"
                     }]],
                 },
@@ -210,7 +210,7 @@ __DATA__
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST",
                                 "allow_degradation": true,
-				"timeout": 100
+                                "timeout": 100
                             },
                             "proxy-rewrite": {
                                 "uri": "/echo"
@@ -220,7 +220,7 @@ __DATA__
                         "uri": "/connect_auth_svc_not_exists"
                     }]],
                 },
-		{
+                {
                     url = "/apisix/admin/routes/31",
                     data = [[{
                         "plugins": {
@@ -229,8 +229,8 @@ __DATA__
                                 "request_headers": ["Authorization"],
                                 "request_method": "POST",
                                 "allow_degradation": true,
-				"timeout": 100,
-				"forward_by_streaming": false
+                                "timeout": 100,
+                                "forward_by_streaming": false
                             },
                             "proxy-rewrite": {
                                 "uri": "/echo"
