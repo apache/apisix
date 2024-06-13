@@ -212,7 +212,7 @@ function _M.rewrite(conf, ctx)
         if not der_cert_chain then
             core.log.error("failed to convert clinet certificate from PEM to DER: ", err)
             -- return NGX_HTTPS_CERT_ERROR
-            ngx.exit(495)
+            return 495
         end
 
         local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
@@ -222,7 +222,7 @@ function _M.rewrite(conf, ctx)
                                              matched_ssl.value.ocsp_stapling.ssl_ocsp_responder)
             if ocsp_resp == nil then
                 core.log.error("failed to get ocsp respone: ", err)
-                ngx.exit(495)
+                return 495
             end
             core.log.info("fetch ocsp resp ok, cache it")
             ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
@@ -231,7 +231,7 @@ function _M.rewrite(conf, ctx)
         local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
         if not ocsp_ok then
             core.log.error("failed to validate ocsp response: ", err)
-            ngx.exit(495)
+            return 495
         end
         core.log.info("validate client cert ocsp response ok")
         return
