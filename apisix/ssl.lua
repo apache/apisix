@@ -278,8 +278,8 @@ function _M.check_ssl_conf(in_dp, conf)
     end
 
     for i = 1, numcerts do
-        if not secret.check_secret_uri(conf.cert[i]) and
-            not secret.check_secret_uri(conf.key[i]) then
+        if not secret.check_secret_uri(conf.certs[i]) and
+            not secret.check_secret_uri(conf.keys[i]) then
 
             local ok, err = validate(conf.certs[i], conf.keys[i])
             if not ok then
