@@ -237,6 +237,7 @@ function _M.rewrite(conf, ctx)
         return
     end
     core.log.info("no client cert ocsp verify required")
+    return
 end
 
 
