@@ -36,7 +36,7 @@ deployment:
   etcd:
     prefix: "/apisix"
     host:
-      - "http://127.0.0.1:7777"  -- wrong etcd port
+      - "http://127.0.0.1:7777" # wrong etcd port
     timeout: 1
 --- config
     location /t {
@@ -208,10 +208,10 @@ deployment:
     config_provider: etcd
   etcd:
     host:
-      - "http://127.0.0.1:1980" -- fake server port
+      - "http://127.0.0.1:1980" # fake server port
     timeout: 1
-    user: root                    # root username for etcd
-    password: 5tHkHhYkjr6cQY      # root password for etcd
+    user: root                  # root username for etcd
+    password: 5tHkHhYkjr6cQY    # root password for etcd
 --- extra_init_by_lua
 local health_check = require("resty.etcd.health_check")
 health_check.get_target_status = function()

@@ -42,8 +42,7 @@ _EOC_
 
         my $route = <<_EOC_;
 routes:
-    -
-    upstream_id: 1
+  - upstream_id: 1
     uris:
         - /hello
         - /mysleep
@@ -65,8 +64,7 @@ __DATA__
 === TEST 1: sanity
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         - host: 127.0.0.1
@@ -109,8 +107,7 @@ proxy request to 127.0.0.1:1980
 === TEST 2: all failed
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         - host: 127.0.0.1
@@ -140,8 +137,7 @@ proxy request to 127.0.0.1:1979
 === TEST 3: default priority is zero
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         - host: 127.0.0.1
@@ -171,8 +167,7 @@ proxy request to 127.0.0.1:1980
 === TEST 4: least_conn
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         - host: 127.0.0.1
@@ -229,8 +224,7 @@ proxy request to 127.0.0.1:1980 while connecting to upstream
 === TEST 5: roundrobin
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: roundrobin
     nodes:
         - host: 127.0.0.1
@@ -265,8 +259,7 @@ proxy request to 127.0.0.4:1979
 === TEST 6: ewma
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: ewma
     key: remote_addr
     nodes:
@@ -297,8 +290,7 @@ proxy request to 127.0.0.3:1979
 === TEST 7: chash
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: chash
     key: remote_addr
     nodes:

@@ -142,7 +142,11 @@ deps: install-runtime
 
 ### undeps : Uninstalling dependencies
 .PHONY: undeps
-undeps: uninstall-runtime
+undeps: uninstall-rocks uninstall-runtime
+
+
+.PHONY: uninstall-rocks
+uninstall-rocks:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_LUAROCKS) purge --tree=deps
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
