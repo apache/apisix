@@ -97,6 +97,9 @@ location /t {
             {skip_verify = true},
             {cache_ttl = 6000},
             {enabled = true, skip_verify = true, cache_ttl = 6000},
+            {enabled = true, skip_verify = true, cache_ttl = 6000, ssl_stapling_responder = "http://localhost"},
+            {ssl_ocsp = "leaf"},
+            {ssl_ocsp = "leaf", ssl_ocsp_responder = "http://localhost"},
         }) do
             local ok, err = core.schema.check(core.schema.ssl.properties.ocsp_stapling, conf)
             if not ok then
@@ -113,6 +116,9 @@ location /t {
 {"cache_ttl":3600,"enabled":false,"skip_verify":true,"ssl_ocsp":"off"}
 {"cache_ttl":6000,"enabled":false,"skip_verify":false,"ssl_ocsp":"off"}
 {"cache_ttl":6000,"enabled":true,"skip_verify":true,"ssl_ocsp":"off"}
+{"cache_ttl":6000,"enabled":true,"skip_verify":true,"ssl_ocsp":"off","ssl_stapling_responder":"http://localhost"}
+{"cache_ttl":3600,"enabled":false,"skip_verify":false,"ssl_ocsp":"leaf"}
+{"cache_ttl":3600,"enabled":false,"skip_verify":false,"ssl_ocsp":"leaf","ssl_ocsp_responder":"http://localhost"}
 
 
 
@@ -674,3 +680,88 @@ qr/CONNECTED/
 echo -n "Q" | $OPENSSL_BIN s_client -status -connect localhost:1994 -servername ocsp-unknown.test.com 2>&1 | cat
 --- response_body eval
 qr/Cert Status: unknown/
+
+
+
+=== TEST 34: run ocsp responder for overrides test, will exit when test finished
+--- config
+location /t {
+    content_by_lua_block {
+        local shell = require("resty.shell")
+        local cmd = [[ openssl ocsp -index t/certs/ocsp/index.txt -port 12345 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/apisix.crt -nrequest 2 2>&1 1>/dev/null & ]]
+        local ok, stdout, stderr, reason, status = shell.run(cmd, nil, 1000, 8096)
+        if not ok then
+            ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+            return
+        end
+        ngx.print(stderr)
+    }
+}
+
+
+
+=== TEST 35: overrides responder
+--- config
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+
+        local ssl_cert = t.read_file("t/certs/ocsp/rsa_good.crt")
+        local ssl_key  = t.read_file("t/certs/ocsp/rsa_good.key")
+
+        local data = {
+            cert = ssl_cert,
+            key = ssl_key,
+            sni = "ocsp.test.com",
+            ocsp_stapling = {
+                enabled = true,
+                ssl_stapling_responder = "http://127.0.0.1:12345/",
+            }
+        }
+
+        local code, body = t.test('/apisix/admin/ssls/1',
+            ngx.HTTP_PUT,
+            core.json.encode(data)
+        )
+
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 36: hit, handshake ok:1
+--- exec
+echo -n "Q" | $OPENSSL_BIN s_client -status -connect localhost:1994 -servername ocsp.test.com 2>&1 | cat
+--- max_size: 16096
+--- response_body eval
+qr/CONNECTED/
+
+
+
+=== TEST 37: hit, get ocsp response and status is good:2
+--- exec
+echo -n "Q" | $OPENSSL_BIN s_client -status -connect localhost:1994 -servername ocsp.test.com 2>&1 | cat
+--- max_size: 16096
+--- response_body eval
+qr/Cert Status: good/
+
+
+
+=== TEST 38: failed, override responder is closed
+--- exec
+echo -n "Q" | $OPENSSL_BIN s_client -status -connect localhost:1994 -servername ocsp.test.com 2>&1 | cat
+--- max_size: 16096
+--- response_body eval
+qr/CONNECTED/
+--- error_log
+no ocsp response send: ocsp responder query failed: connection refused
