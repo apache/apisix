@@ -65,6 +65,9 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key
 |----------------|----------------------|----------|---------------|--------------|-----------------------------------------------------------------------|
 | enabled        | boolean              | False    | false         |              | 与 `ssl_stapling` 指令类似，用于启用或禁用 OCSP stapling 特性            |
 | skip_verify    | boolean              | False    | false         |              | 与 `ssl_stapling_verify` 指令类似，用于启用或禁用对于 OCSP 响应结果的校验 |
+| ssl_stapling_responder | string       | False    | ""            |"http://..."  | 与 `ssl_stapling_responder` 指令类似，用于覆写服务端证书中的 OCSP 响应器 url 地址 |
+| ssl_ocsp    | string                  | False    | "off"         |["off", "leaf"]| 与 `ssl_ocsp` 指令类似，用于启用或禁用对于客户端证书的 OCSP 验证 |
+| ssl_ocsp_responder        | string    | False    | ""            |"http://..."  | 与 `ssl_ocsp_responder` 指令类似，用于覆写客户端证书中的 OCSP 响应器 url 地址  |
 | cache_ttl      | integer              | False    | 3600          | >= 60        | 指定 OCSP 响应结果的缓存时间                                            |
 
 ## 使用示例
@@ -113,6 +116,89 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
     "snis": ["test.com"],
     "ocsp_stapling": {
         "enabled": false
+    }
+}'
+```
+
+## 客户端证书 OCSP 验证
+
+客户端证书 OCSP 验证功能是基于路由运行的，并且需要当前的 SSL 资源已经开启了 mTLS 模式。
+
+如下示例中，在 SSL 资源中配置相关的部分：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "cert" : "'"$(cat server.crt)"'",
+    "key": "'"$(cat server.key)"'",
+    "snis": ["test.com"],
+    "client": {
+        "ca": "'"$(cat ca.crt)"'"
+    },
+    "ocsp_stapling": {
+        "enabled": true，
+        "ssl_ocsp": "leaf"
+    }
+}'
+```
+
+配置需要进行客户端证书 OCSP 验证的路由资源：
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/",
+    "plugins": {
+        "ocsp-stapling": {}
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org": 1
+        }
+    }
+}'
+```
+
+通过上述命令完成更新后，可以通过以下方法测试：
+
+```shell
+curl --resolve "test.com:9443:127.0.0.1" https://test.com:9443/ -k --cert client.crt --key client.key
+```
+
+如果当前客户端证书 OCSP 验证通过，将会返回正常响应，验证失败或者验证过程中发生错误都会返回 HTTP 400 的证书错误响应。
+
+因为这个功能是基于路由运行的，所以禁用这个功能只需要在对应路由上删除插件即可，但是需要注意此时服务端证书的 OCSP stapling 特性依然生效并且由对应的 SSL 资源控制。可以将 `ssl_ocsp` 设置为 `"off"` 来禁用当前 SSL 资源所有的客户端证书 OCSP 验证行为。
+
+```shell
+# 在当前路由上禁用客户端证书 OCSP 验证
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/",
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "httpbin.org": 1
+        }
+    }
+}'
+
+# 禁用所有客户端证书 OCSP 验证行为
+curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "cert" : "'"$(cat server.crt)"'",
+    "key": "'"$(cat server.key)"'",
+    "snis": ["test.com"],
+    "client": {
+        "ca": "'"$(cat ca.crt)"'"
+    },
+    "ocsp_stapling": {
+        "enabled": true，
+        "ssl_ocsp": "off"
     }
 }'
 ```
