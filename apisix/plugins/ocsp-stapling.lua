@@ -225,7 +225,8 @@ function _M.rewrite(conf, ctx)
                 return 495
             end
             core.log.info("fetch ocsp resp ok, cache it")
-            ocsp_resp_cache:set(der_cert_chain, ocsp_resp, cache_ttl)
+            ocsp_resp_cache:set(der_cert_chain,
+                                ocsp_resp, matched_ssl.value.ocsp_stapling.cache_ttl)
          end
 
         local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
