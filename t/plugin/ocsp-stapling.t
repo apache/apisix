@@ -288,7 +288,7 @@ no ocsp response send: failed to get ocsp url: cert not contains authority_infor
 location /t {
     content_by_lua_block {
         local shell = require("resty.shell")
-        local cmd = [[ openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/apisix.crt -nrequest 16 2>&1 1>/dev/null & ]]
+        local cmd = [[ /usr/local/openresty/openssl3/bin/openssl ocsp -index t/certs/ocsp/index.txt -port 11451 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/apisix.crt -nrequest 16 2>&1 1>/dev/null & ]]
         local ok, stdout, stderr, reason, status = shell.run(cmd, nil, 1000, 8096)
         if not ok then
             ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
@@ -688,7 +688,7 @@ qr/Cert Status: unknown/
 location /t {
     content_by_lua_block {
         local shell = require("resty.shell")
-        local cmd = [[ openssl ocsp -index t/certs/ocsp/index.txt -port 12345 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/apisix.crt -nrequest 2 2>&1 1>/dev/null & ]]
+        local cmd = [[ /usr/local/openresty/openssl3/bin/openssl ocsp -index t/certs/ocsp/index.txt -port 12345 -rsigner t/certs/ocsp/signer.crt -rkey t/certs/ocsp/signer.key -CA t/certs/apisix.crt -nrequest 2 2>&1 1>/dev/null & ]]
         local ok, stdout, stderr, reason, status = shell.run(cmd, nil, 1000, 8096)
         if not ok then
             ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
