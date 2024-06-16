@@ -107,9 +107,9 @@ GET /t
 
 === TEST 2: disable client cert ocsp verify, mtls passed when client cert is good status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 no client cert ocsp verify required
 
@@ -117,9 +117,9 @@ no client cert ocsp verify required
 
 === TEST 3: disable client cert ocsp verify, mtls passed when client cert is good status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/ecc_good.crt --key t/certs/ocsp/ecc_good.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/ecc_good.crt --key t/certs/ocsp/ecc_good.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 no client cert ocsp verify required
 
@@ -127,9 +127,9 @@ no client cert ocsp verify required
 
 === TEST 4: disable client cert ocsp verify, mtls passed when client cert is unknown status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_unknown.crt --key t/certs/ocsp/rsa_unknown.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_unknown.crt --key t/certs/ocsp/rsa_unknown.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 no client cert ocsp verify required
 
@@ -137,9 +137,9 @@ no client cert ocsp verify required
 
 === TEST 5: disable client cert ocsp verify, mtls passed when client cert is revoked status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_revoked.crt --key t/certs/ocsp/rsa_revoked.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_revoked.crt --key t/certs/ocsp/rsa_revoked.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 no client cert ocsp verify required
 
@@ -218,9 +218,9 @@ location /t {
 
 === TEST 8: enabled client cert ocsp verify, mtls passed when client cert is good status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 validate client cert ocsp response ok
 
@@ -228,9 +228,9 @@ validate client cert ocsp response ok
 
 === TEST 9: enabled client cert ocsp verify, mtls passed when client cert is good status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/ecc_good.crt --key t/certs/ocsp/ecc_good.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/ecc_good.crt --key t/certs/ocsp/ecc_good.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 validate client cert ocsp response ok
 
@@ -238,7 +238,7 @@ validate client cert ocsp response ok
 
 === TEST 10: enabled client cert ocsp verify, mtls failed when client cert is unknown status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_unknown.crt --key t/certs/ocsp/rsa_unknown.key
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_unknown.crt --key t/certs/ocsp/rsa_unknown.key 2>&1 | cat
 --- response_body eval
 qr/400 Bad Request/
 --- error_log
@@ -248,12 +248,31 @@ failed to validate ocsp response: certificate status "unknown" in the OCSP respo
 
 === TEST 11: enabled client cert ocsp verify, mtls failed when client cert is revoked status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_revoked.crt --key t/certs/ocsp/rsa_revoked.key
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_revoked.crt --key t/certs/ocsp/rsa_revoked.key 2>&1 | cat
 --- response_body eval
 qr/400 Bad Request/
 --- error_log
 failed to validate ocsp response: certificate status "revoked" in the OCSP response
 
+
+
+
+=== TEST 7: run ocsp responder, will exit when test finished
+--- config
+location /t {
+    content_by_lua_block {
+        local shell = require("resty.shell")
+        local cmd = [[ ps aux |grep openssl 1>&2 ]]
+        local ok, stdout, stderr, reason, status = shell.run(cmd, nil, 1000, 8096)
+        if not ok then
+            ngx.log(ngx.WARN, "failed to execute the script with status: " .. status or "nil" .. ", reason: " .. reason .. ", stderr: " .. stderr)
+            return
+        end
+        ngx.print(stderr)
+    }
+}
+--- response_body
+openssl
 
 
 === TEST 12: enable mtls and ocsp-stapling plugin in route, enable client cert ocsp verify but override ssl_ocsp_responder
@@ -330,9 +349,9 @@ location /t {
 
 === TEST 14: enabled client cert ocsp verify, mtls passed when client cert is good status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 validate client cert ocsp response ok
 
@@ -340,9 +359,9 @@ validate client cert ocsp response ok
 
 === TEST 15: enabled client cert ocsp verify, mtls passed when client cert is good status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/ecc_good.crt --key t/certs/ocsp/ecc_good.key
---- response_body
-hello world
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/ecc_good.crt --key t/certs/ocsp/ecc_good.key 2>&1 | cat
+--- response_body eval
+qr/hello world/
 --- error_log
 validate client cert ocsp response ok
 
@@ -350,7 +369,7 @@ validate client cert ocsp response ok
 
 === TEST 16: enabled client cert ocsp verify, mtls failed when client cert is unknown status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_unknown.crt --key t/certs/ocsp/rsa_unknown.key
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_unknown.crt --key t/certs/ocsp/rsa_unknown.key 2>&1 | cat
 --- response_body eval
 qr/400 Bad Request/
 --- error_log
@@ -360,7 +379,7 @@ failed to validate ocsp response: certificate status "unknown" in the OCSP respo
 
 === TEST 17: enabled client cert ocsp verify, mtls failed when client cert is revoked status
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_revoked.crt --key t/certs/ocsp/rsa_revoked.key
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_revoked.crt --key t/certs/ocsp/rsa_revoked.key 2>&1 | cat
 --- response_body eval
 qr/400 Bad Request/
 --- error_log
@@ -370,7 +389,7 @@ failed to validate ocsp response: certificate status "revoked" in the OCSP respo
 
 === TEST 18: enabled client cert ocsp verify, mtls failed because override responder is closed
 --- exec
-curl https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key
+curl -i -v https://admin.apisix.dev:1994/hello --resolv "admin.apisix.dev:1994:127.0.0.1" --cacert t/certs/mtls_ca.crt --cert t/certs/ocsp/rsa_good.crt --key t/certs/ocsp/rsa_good.key 2>&1 | cat
 --- response_body eval
 qr/400 Bad Request/
 --- error_log
