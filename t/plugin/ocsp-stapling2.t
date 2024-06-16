@@ -256,25 +256,6 @@ failed to validate ocsp response: certificate status "revoked" in the OCSP respo
 
 
 
-
-=== TEST 7: run ocsp responder, will exit when test finished
---- config
-location /t {
-    content_by_lua_block {
-        local shell = require("resty.shell")
-        local cmd = [[ ps aux |grep openssl 1>&2 ]]
-        local ok, stdout, stderr, reason, status = shell.run(cmd, nil, 1000, 8096)
-        if not ok then
-            ngx.log(ngx.WARN, "failed to execute the script with status: " .. status or "nil" .. ", reason: " .. reason .. ", stderr: " .. stderr)
-            return
-        end
-        ngx.print(stderr)
-    }
-}
---- response_body
-openssl
-
-
 === TEST 12: enable mtls and ocsp-stapling plugin in route, enable client cert ocsp verify but override ssl_ocsp_responder
 --- config
     location /t {
