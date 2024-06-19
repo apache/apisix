@@ -264,6 +264,43 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
 
 当 POST 表单中包含 `name=json` 的属性时，将匹配到路由。
 
+### 如何通过 POST body属性过滤路由
+
+APISIX 支持通过 POST 表单属性过滤路由，其中需要您使用 `Content-Type` = `application/json` 的 POST 请求。
+
+我们可以定义这样的路由：
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "methods": ["POST"],
+    "uri": "/_post",
+    "vars": [
+        ["json_body_arg_foo.bar.baz", "==", "baz"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+当 POST body中包含 `body.foo.bar.baz == "baz"` 的属性时，将匹配到路由。
+
+例如，这 json body 将匹配到路由:
+```json
+{
+    "foo" : {
+        "bar": {
+            "baz": "baz"
+        },
+        "hello" : "world"
+    }
+}
+```
+
 ### 如何通过 GraphQL 属性过滤路由
 
 目前，APISIX 可以处理 HTTP GET 和 POST 方法。请求体正文可以是 GraphQL 查询字符串，也可以是 JSON 格式的内容。

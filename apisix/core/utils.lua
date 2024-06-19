@@ -271,6 +271,24 @@ function _M.gethostname()
     return hostname
 end
 
+-- get value of nested json
+function _M.get_nested_json_value(obj, key_path)
+    local keys = core_str.split(key_path, ".")
+    local current_obj = obj
+
+    for i = 1, #keys do
+        local key = keys[i]
+        if current_obj[key] == nil then
+            return nil
+        end
+        if i == #keys then
+            return current_obj[key]
+        else
+            current_obj = current_obj[key]
+        end
+    end
+end
+
 
 local function sleep(sec)
     if sec <= max_sleep_interval then
