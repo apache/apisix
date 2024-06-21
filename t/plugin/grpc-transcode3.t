@@ -525,3 +525,45 @@ location /t {
         end
     }
 }
+
+
+
+=== TEST 13: bugfix - filter out illegal INT(string) formats
+--- config
+location /t {
+    content_by_lua_block {
+        local pb = require "pb"
+        local pb_encode = pb.encode
+        local protoc = require "protoc"
+        local pcall = pcall
+
+        assert(protoc:load [[
+        syntax = "proto3";
+        message IntStringPatterns {
+          repeated int64 values = 1;
+        }]])
+
+        local supported = {
+            values = {
+                1, 2, -3, "#123", "0xabF", "#-0x123abcdef", "-#0x123abcdef", "#0x123abc", "123",
+            },
+        }
+
+        local unsupported = {
+            values = {
+                "#a", "+aaa", "#aaaaa", "#-aa",
+            },
+        }
+
+        --pb.option "int64_as_string"
+        --pb.option "int64_as_hexstring"
+        pb_encode("IntStringPatterns", supported)
+        local status, err = pcall(pb_encode, "IntStringPatterns", unsupported)
+        if not status then
+            print(err)
+            ngx.say(err)
+        end
+    }
+}
+--- response_body
+bad argument #2 to '?' (number/'#number' expected for field 'values', got string)
