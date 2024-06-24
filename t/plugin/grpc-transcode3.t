@@ -560,7 +560,6 @@ location /t {
         pb_encode("IntStringPatterns", supported)
         local status, err = pcall(pb_encode, "IntStringPatterns", unsupported)
         if not status then
-            print(err)
             ngx.say(err)
         end
     }
