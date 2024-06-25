@@ -301,6 +301,10 @@ http {
     lua_shared_dict plugin-limit-count {* http.lua_shared_dict["plugin-limit-count"] *};
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock {* http.lua_shared_dict["plugin-limit-count-redis-cluster-slot-lock"] *};
     lua_shared_dict plugin-limit-count-reset-header {* http.lua_shared_dict["plugin-limit-count"] *};
+
+    lua_shared_dict plugin-limit-count-redis-counter {* http.lua_shared_dict["plugin-limit-count-redis-counter"] *};
+    lua_shared_dict plugin-limit-count-redis-cluster-counter {* http.lua_shared_dict["plugin-limit-count-redis-cluster-counter"] *};
+
     {% end %}
 
     {% if enabled_plugins["prometheus"] and not enabled_stream_plugins["prometheus"] then %}

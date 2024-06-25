@@ -74,7 +74,8 @@ __DATA__
                 redis_port = 6379,
                 redis_database = 0,
                 policy = "redis",
-                key = "remote_addr"
+                key = "remote_addr",
+                sync_interval = -1,
             }
 
             local lim_count_redis = require("apisix.plugins.limit-count.limit-count-redis")

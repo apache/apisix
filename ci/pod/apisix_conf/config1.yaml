@@ -1,0 +1,18 @@
+apisix:
+  node_listen: 9081
+  enable_ipv6: false
+  enable_control: true
+  control:
+    ip: "0.0.0.0"
+    port: 9093
+deployment:
+  admin:
+    allow_admin:
+      - 0.0.0.0/0
+    admin_listen:
+      ip: 0.0.0.0
+      port: 9181
+plugins:
+  - limit-count
+nginx_config:
+  error_log: logs/error1.log

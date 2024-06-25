@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -ex
+clean_up() {
+    if [ $? -gt 0 ]; then
+      cat logs/error.log
+      cat logs/error1.log
+    fi
+    ./bin/apisix stop
+    kill $pid0
+    git checkout conf/config.yaml
+}
+
+trap clean_up EXIT
+
+wait_for_ready() {
+  attempt=0
+  while [ $attempt -le 10 ]; do
+      if ! curl -s --fail http://127.0.0.1:$1/apisix/admin/routes \
+            -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' > /dev/null 2>&1; then
+          attempt=$((attempt + 1))
+          sleep 1
+      else
+          break
+      fi
+  done
+}
+
+# start two gateway instances running on different port, this is a mock ha setup of gateway
+#
+# start first gateway and get the PID to kill after running test
+# rm the PID file so that another instance can be started
+cat ./ci/pod/apisix_conf/config0.yaml > conf/config.yaml
+./bin/apisix start
+wait_for_ready 9180
+
+# start another gateway
+pid0=$(cat logs/nginx.pid) && rm logs/nginx.pid
+cat ./ci/pod/apisix_conf/config1.yaml > conf/config.yaml
+./bin/apisix start
+wait_for_ready 9181
+
+# create a redis based rate limiting rule with delayed syncing
+count=3
+window=10
+sync_interval=2
+
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9180/apisix/admin/routes \
+-H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X POST -d '{
+  "uri": "/get",
+  "plugins": {
+    "limit-count": {
+      "count": '$count',
+      "time_window": '$window',
+      "rejected_code": 504,
+      "key": "remote_addr",
+      "policy": "redis-cluster",
+      "redis_cluster_nodes": [
+          "127.0.0.1:5000",
+          "127.0.0.1:5002"
+      ],
+      "redis_cluster_name": "redis-cluster-1",
+      "sync_interval": '$sync_interval'
+    }
+  },
+  "upstream": {
+    "nodes": {
+      "127.0.0.1:4901": 1
+    },
+    "type": "roundrobin"
+  }
+}' | grep -e 200 -e 201 || (echo "failed: creating route for test should succeed"; exit 1)
+sleep 3 # wait for etcd sync to both gateways
+
+last_time=$(date +%s)
+# redis will be synced every $sync_interval seconds but
+# it can take more $sync_interval seconds to propagate update to other gateways
+sync_time=$((sync_interval+2+1))
+# shdict reset can take (sync_interval + 1)s to propagate update to redis
+shdict_counter_reset_time=$((window+sync_interval+1))
+
+send_request() {
+  { set +x; } 2>/dev/null # to avoid output from following command to pollute the logs in CI
+  exit_code=0
+  out=$(curl -s -i http://127.0.0.1:$1/get)
+  echo $out | grep "$2" > /dev/null || exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    printf "\n\n###########################\n FAILED!!\n $3, but got:\n\n$out \n\n ERROR LOGS:\n\n"
+    exit $exit_code
+  else
+    echo "yes!"
+  fi
+  set -x
+}
+
+# send intial requests to fire off the timer in both gateways
+send_request 9080 "200 OK" "initial request to dp-A should pass"
+send_request 9081 "200 OK" "initial request to dp-B should pass"
+echo "end intial"
+
+# sending two requests to dp-A should pass, next requests will exceed the rate limiting rule so the requests will fail
+send_request 9080 "200 OK" "first request to dp-A should pass"
+send_request 9080 "200 OK" "second request to dp-A should also pass"
+sleep $sync_time
+send_request 9081 "504 Gateway Time-out" "first request to dp-B should fail"
+send_request 9081 "504 Gateway Time-out" "second request to dp-B should also fail"
+
+diff=$(($(date +%s)-last_time))
+sleep $((shdict_counter_reset_time-diff)) # sleep to allow the counter to reset
+
+last_time=$(date +%s)
+# similar test as above but send request to dp-B first
+send_request 9081 "200 OK" "first request to dp-B should pass"
+send_request 9081 "200 OK" "second request to dp-B should also pass"
+send_request 9081 "200 OK" "third request to dp-B should also pass"
+sleep $sync_time
+send_request 9080 "504 Gateway Time-out" "first request to dp-A should fail"
+send_request 9080 "504 Gateway Time-out" "second request to dp-A should also fail"
+
+diff=$(($(date +%s)-last_time))
+sleep $((shdict_counter_reset_time-diff)) # sleep to allow the counter to reset
+
+# similar test but send 1-1 requests to both dps one by one
+send_request 9081 "200 OK" "first request to dp-B should pass"
+send_request 9081 "200 OK" "second request to dp-B should pass"
+send_request 9080 "200 OK" "first request to dp-A should also pass"
+send_request 9080 "200 OK" "second request to dp-A should also pass"
+sleep $sync_time
+send_request 9081 "504 Gateway Time-out" "third request to dp-B should fail"
+send_request 9080 "504 Gateway Time-out" "third request to dp-A should also fail"
