@@ -68,7 +68,8 @@ __DATA__
                 rejected_code = 503,
                 count = 3,
                 policy = "redis-cluster",
-                redis_cluster_ssl_verify = false
+                redis_cluster_ssl_verify = false,
+                sync_interval = -1
             }
 
             local lim_count_redis_cluster = require("apisix.plugins.limit-count.limit-count-redis-cluster")
