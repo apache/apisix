@@ -110,10 +110,10 @@ send_request() {
   set -x
 }
 
-# send intial requests to fire off the timer in both gateways
+# send initial requests to fire off the timer in both gateways
 send_request 9080 "200 OK" "initial request to dp-A should pass"
 send_request 9081 "200 OK" "initial request to dp-B should pass"
-echo "end intial"
+echo "end initial"
 
 # sending two requests to dp-A should pass, next requests will exceed the rate limiting rule so the requests will fail
 send_request 9080 "200 OK" "first request to dp-A should pass"

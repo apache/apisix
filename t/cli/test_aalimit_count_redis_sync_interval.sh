@@ -94,10 +94,10 @@ sync_time=$((sync_interval+2))
 # shdict reset can take (sync_interval + 1)s to propagate update to redis
 shdict_counter_reset_time=$((window+sync_interval+1))
 
-# send intial requests to fire off the timer in both gateways
+# send initial requests to fire off the timer in both gateways
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/get | grep 200 > /dev/null || (echo "failed: initial request to dp-A should pass"; exit 1)
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9081/get | grep 200 > /dev/null || ( curl -i http://127.0.0.1:9081/get || echo "failed: initial request to dp-B should pass"; exit 1)
-echo "end intial"
+echo "end initial"
 
 # sending two requests to dp-A should pass, next requests will exceed the rate limiting rule so the requests will fail
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:9080/get | grep 200 || (echo "failed: first request to dp-A should pass"; exit 1)
