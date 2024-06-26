@@ -22,6 +22,8 @@ apisix:
   control:
     ip: "0.0.0.0"
     port: 9093
+  events:
+    module: lua-resty-worker-events
 deployment:
   admin:
     allow_admin:
@@ -29,6 +31,7 @@ deployment:
     admin_listen:
       ip: 0.0.0.0
       port: 9181
+    admin_key_required: false
 plugins:
   - limit-count
 nginx_config:
