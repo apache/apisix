@@ -74,7 +74,9 @@ local function sync_counter_data(premature, counter, to_be_synced, redis_confs, 
       if not ok then
         core.log.error("failed to create redis syncer timer: ", err,
                         ". New main redis syncer will be created.")
-        counter:set(consts.REDIS_SYNCER, false) -- next incoming request will pick this up and create a new timer
+
+        -- next incoming request will pick this up and create a new timer
+        counter:set(consts.REDIS_SYNCER, false)
       end
     end
   end
