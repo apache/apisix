@@ -45,7 +45,7 @@ location /t {
 
         ngx.status = code
         ngx.say(org_body)
-        ngx.sleep(0.2)
+        ngx.sleep(1)
     }
 }
 --- request
@@ -70,7 +70,7 @@ location /t {
     content_by_lua_block {
         local core = require "apisix.core"
         local config_util   = require("apisix.core.config_util")
-        ngx.sleep(0.5) -- make sure the sync happened when admin starts is already finished
+        ngx.sleep(1) -- make sure the sync happened when admin starts is already finished
 
         local before_reload = true
         local plugins_conf, err
@@ -88,7 +88,7 @@ location /t {
             error("failed to create etcd instance for fetching /plugins : "
                 .. err)
         end
-        ngx.sleep(0.5)
+        ngx.sleep(1)
 
         local data = [[
 deployment:

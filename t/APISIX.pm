@@ -79,11 +79,14 @@ if ($custom_dns_server) {
 
 
 my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
-my $default_yaml_config = read_file("conf/config-default.yaml");
-# enable example-plugin as some tests require it
-$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
-$default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
-$default_yaml_config =~ s/module: lua-resty-events/module: $events_module/;
+my $test_default_config = <<_EOC_;
+    -- read the default configuration, modify it, and the Lua package
+    -- cache will persist it for loading by other entrypoints
+    -- it is used to replace the test::nginx implementation
+    local default_config = require("apisix.cli.config")
+    default_config.plugin_attr.prometheus.enable_export_server = false
+    default_config.apisix.events.module = "$events_module"
+_EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -429,6 +432,7 @@ _EOC_
 
     $stream_config .= <<_EOC_;
     init_by_lua_block {
+        $test_default_config
         $stream_init_by_lua_block
         $stream_extra_init_by_lua
     }
@@ -621,6 +625,7 @@ _EOC_
     $dubbo_upstream
 
     init_by_lua_block {
+        $test_default_config
         $init_by_lua_block
     }
 
@@ -912,8 +917,6 @@ _EOC_
     $user_files .= <<_EOC_;
 >>> ../conf/$debug_file
 $user_debug_config
->>> ../conf/config-default.yaml
-$default_yaml_config
 >>> ../conf/$config_file
 $yaml_config
 >>> ../conf/cert/apisix.crt
