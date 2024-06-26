@@ -315,3 +315,72 @@ discovery:
     }
 --- response_body
 2
+
+
+
+=== TEST 6: Nacos node failure should not corrupt in-memory data
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:20999"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      weight: 1
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+#END
+--- http_config
+    server {
+        listen 20999;
+
+        location / {
+            proxy_pass http://127.0.0.1:8858;
+        }
+    }
+--- request
+GET /hello
+--- response_body_like eval
+qr/server [1-2]/
+
+--- step: Simulate Nacos failure
+--- http_config
+    server {
+        listen 20999;
+
+        location / {
+            access_by_lua_block {
+                ngx.exit(502)
+            }
+        }
+    }
+--- request
+GET /hello
+--- response_body_like eval
+qr/server [1-2]/
+--- error_log
+err:status = 502
+
+--- step: Verify in-memory data remains unchanged
+--- request
+GET /hello
+--- response_body_like eval
+qr/server [1-2]/
+--- no_error_log
+
