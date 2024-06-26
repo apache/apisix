@@ -173,7 +173,7 @@ apikey: 123
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"Missing API key found in request"}
+{"message":"Missing API key in request"}
 
 
 

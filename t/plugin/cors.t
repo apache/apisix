@@ -454,7 +454,7 @@ ExternalHeader1: val
 ExternalHeader2: val
 ExternalHeader3: val
 --- response_body
-{"message":"Missing API key found in request"}
+{"message":"Missing API key in request"}
 --- error_code: 401
 --- response_headers
 Access-Control-Allow-Origin: https://sub.domain.com
