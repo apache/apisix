@@ -551,8 +551,8 @@ _EOC_
     lua_shared_dict plugin-limit-req 10m;
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
-    lua_shared_dict plugin-limit-count-redis-counter: 10m;
-    lua_shared_dict  plugin-limit-count-redis-cluster-counter: 10m;
+    lua_shared_dict plugin-limit-count-redis-counter 10m;
+    lua_shared_dict plugin-limit-count-redis-cluster-counter 10m;
     lua_shared_dict plugin-limit-conn 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
