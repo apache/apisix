@@ -74,7 +74,8 @@ function _M.incoming(self, key, cost)
     local counter = self.counter
 
     if conf.sync_interval ~= -1 then
-        local delay, remaining, ttl = delayed_syncer.rate_limit_with_delayed_sync(conf, counter, to_be_synced, redis_confs, key, cost, limit, window, script)
+        local delay, remaining, ttl = delayed_syncer.rate_limit_with_delayed_sync(conf, counter,
+                                      to_be_synced, redis_confs, key, cost, limit, window, script)
         return delay, remaining, ttl
     end
     local ttl = 0

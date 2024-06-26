@@ -62,24 +62,30 @@ local function sync_counter_data(premature, counter, to_be_synced, redis_confs, 
 
     local remaining = res[1]
     local ttl = res[2]
-    core.log.info("syncing shdict num_req counter to redis. remaining: ", remaining, " ttl: ", ttl, " reqs: ", num_reqs)
+    core.log.info("syncing shdict num_req counter to redis. remaining: ", remaining,
+                  " ttl: ", ttl, " reqs: ", num_reqs)
     counter:set(key .. consts.SHDICT_REDIS_REMAINING, tonumber(remaining), tonumber(ttl))
     counter:set(key .. consts.REDIS_COUNTER, 0)
 
-    if (not redis_stop and (conf.policy == "redis")) or (not redis_cluster_stop and (conf.policy == "redis-cluster")) then
-      local ok, err = ngx_timer.at(conf.sync_interval, sync_counter_data, counter, to_be_synced, redis_confs, script)
+    if (not redis_stop and (conf.policy == "redis"))
+        or (not redis_cluster_stop and (conf.policy == "redis-cluster")) then
+      local ok, err = ngx_timer.at(conf.sync_interval, sync_counter_data, counter, to_be_synced,
+                                   redis_confs, script)
       if not ok then
-        core.log.error("failed to create redis syncer timer: ", err, ". New main redis syncer will be created.")
+        core.log.error("failed to create redis syncer timer: ", err,
+                        ". New main redis syncer will be created.")
         counter:set(consts.REDIS_SYNCER, false) -- next incoming request will pick this up and create a new timer
       end
     end
   end
 end
 
-function _M.rate_limit_with_delayed_sync(conf, counter, to_be_synced, redis_confs, key, cost, limit, window, script)
+function _M.rate_limit_with_delayed_sync(conf, counter, to_be_synced, redis_confs, key, cost,
+                                         limit, window, script)
   local syncer_started = counter:get(consts.REDIS_SYNCER)
   if not syncer_started then
-    local ok, err = ngx_timer.at(conf.sync_interval, sync_counter_data, counter, to_be_synced, redis_confs, script)
+    local ok, err = ngx_timer.at(conf.sync_interval, sync_counter_data, counter, to_be_synced,
+                                 redis_confs, script)
     if ok then
       counter:set(consts.REDIS_SYNCER, true)
     else
@@ -97,7 +103,8 @@ function _M.rate_limit_with_delayed_sync(conf, counter, to_be_synced, redis_conf
   core.log.info("num reqs passed since sync to redis: ", incr)
 
   local ttl = 0
-  local remaining, err = counter:incr(key .. consts.SHDICT_REDIS_REMAINING, 0 - cost, limit, window)
+  local remaining, err = counter:incr(key .. consts.SHDICT_REDIS_REMAINING,
+                                      0 - cost, limit, window)
   if not remaining then
     return nil, err, ttl
   end
