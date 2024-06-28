@@ -115,7 +115,7 @@ dubbo 的 fastjson 序列化规则如下：
 
 - 字符串 `abc"` 需要被 encode 为 `"abc\""`
 
-- 字符串 `123`需要被 encode 为 `"123"`
+- 字符串 `123` 需要被 encode 为 `"123"`
 
 抽象类，父类或者泛型作为入参签名，入参需要具体类型时。序列化需要写入具体的类型信息具体参考 [WriteClassName](https://github.com/alibaba/fastjson/wiki/SerializerFeature_cn)
 
