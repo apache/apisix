@@ -6,6 +6,7 @@ keywords:
   - Plugin
   - http-dubbo
   - http to dubbo
+  - transcode
 description: This document contains information about the Apache APISIX http-dubbo Plugin.
 ---
 
@@ -30,7 +31,7 @@ description: This document contains information about the Apache APISIX http-dub
 
 ## Description
 
-The `http-dubbo` plugin can encode HTTP requests into Dubbo protocol and forward them to upstream services (Note: in
+The `http-dubbo` plugin can transcode between http and Dubbo (Note: in
 Dubbo 2.x, the serialization type of the upstream service must be fastjson).
 
 ## Attributes

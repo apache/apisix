@@ -66,13 +66,13 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
 {
     "uri": "/TestService/testMethod",
     "plugins": {
-      "http-dubbo": {
-      "method": "testMethod",
-      "params_type_desc": "Ljava/lang/Long;Ljava/lang/Integer;",
-      "serialized": true,
-      "service_name": "com.xxx.xxx.TestService",
-      "service_version": "0.0.0"
-    }
+        "http-dubbo": {
+            "method": "testMethod",
+            "params_type_desc": "Ljava/lang/Long;Ljava/lang/Integer;",
+            "serialized": true,
+            "service_name": "com.xxx.xxx.TestService",
+            "service_version": "0.0.0"
+        }
     },
     "upstream": {
         "type": "roundrobin",
