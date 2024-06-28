@@ -217,7 +217,8 @@
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
-            "plugins/kafka-proxy"
+            "plugins/kafka-proxy",
+            "plugins/http-dubbo"
           ]
         }
       ]
