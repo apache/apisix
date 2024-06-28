@@ -116,7 +116,7 @@ Some languages and libraries may produce unchanged results when calling toJSONSt
 cases, you may need to manually handle some special cases. For example:
 
 - The string `abc"` needs to be encoded as `"abc\""`.
-- The string 123 needs to be encoded as `"123"`.
+- The string `123` needs to be encoded as `"123"`.
 
 Abstract class, parent class, or generic type as input parameter signature, when the input parameter requires a specific
 type. Serialization requires writing specific type information.
