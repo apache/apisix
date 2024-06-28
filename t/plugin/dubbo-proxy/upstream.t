@@ -161,3 +161,24 @@ upstreams:
 #END
 --- response_body
 ok
+
+
+
+=== TEST 5: upstream return big response timeout this test will fail
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    plugins:
+        dubbo-proxy:
+            service_name: org.apache.dubbo.backend.DemoService
+            service_version: 1.0.0
+            method: bigResponseTimeout
+    upstream_id: 1
+upstreams:
+  - nodes:
+        "127.0.0.1:20880": 1
+    type: roundrobin
+    id: 1
+#END
+--- error_code: 200
