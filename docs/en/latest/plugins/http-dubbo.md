@@ -115,7 +115,7 @@ fastjson are as follows:
 Some languages and libraries may produce unchanged results when calling toJSONString on strings or numbers. In such
 cases, you may need to manually handle some special cases. For example:
 
-- The string abc" needs to be encoded as `"abc\""`.
+- The string `abc"` needs to be encoded as `"abc\""`.
 - The string 123 needs to be encoded as `"123"`.
 
 Abstract class, parent class, or generic type as input parameter signature, when the input parameter requires a specific
