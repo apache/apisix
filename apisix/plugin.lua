@@ -38,6 +38,8 @@ local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
 local stream_local_plugins_hash = core.table.new(0, 32)
+local default_buckets = {1, 2, 5, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100}
+local plugin_exec_metrics_histogram
 
 
 local merged_route = core.lrucache.new({
@@ -1122,12 +1124,41 @@ function _M.stream_plugin_checker(item, in_cp)
     return true
 end
 
+local function real_run(plugin, phase, func, conf, api_ctx)
+    local plugin_exec_start_time = ngx.now() * 1000
+    -- convert plugin name
+    local plugin_name = plugin.name
+    local plugin_runner_phase = plugin_name == "ext-plugin-pre-req" or plugin_name == "ext-plugin-post-req" or plugin_name == "ext-plugin-post-resp"
+    if plugin_runner_phase then
+        plugin_name = plugin.name .. "(" .. conf.conf[1].name .. ")"
+    end
+    api_ctx._plugin_name = plugin["name"]
+
+    local code, body = func(conf, api_ctx)
+    local plugin_exec_end_time = ngx.now() * 1000
+    api_ctx._plugin_name = nil
+    local elapsed_time = plugin_exec_end_time - plugin_exec_start_time
+    if elapsed_time > 50 then
+        core.log.debug("[" .. plugin_name .. "][" .. phase .. "] use time:", elapsed_time)
+    end
+    if is_http and plugin_exec_metrics_histogram then
+        plugin_exec_metrics_histogram:observe(elapse_time, {plugin_name, phase})
+    end
+    return code, body
+end
+
 
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
     api_ctx = api_ctx or ngx.ctx.api_ctx
     if not api_ctx then
         return
+    end
+
+    if is_http and not plugin_exec_metrics_histogram then
+        plugin_exec_metrics_histogram = require("apisix.plugins.prometheus.exporter").get_prometheus():histogram("plugin_exec_costs_histogram",
+                "each plugin exec costs histogram",
+                {"plugin", "phase"}, default_buckets)
     end
 
     plugins = plugins or api_ctx.plugins
@@ -1162,9 +1193,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 end
 
                 plugin_run = true
-                api_ctx._plugin_name = plugins[i]["name"]
-                local code, body = phase_func(conf, api_ctx)
-                api_ctx._plugin_name = nil
+                local code, body = real_run(plugins[i], phase, phase_func, conf, api_ctx)
                 if code or body then
                     if is_http then
                         if code >= 400 then
@@ -1199,9 +1228,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
             plugin_run = true
-            api_ctx._plugin_name = plugins[i]["name"]
-            phase_func(conf, api_ctx)
-            api_ctx._plugin_name = nil
+            real_run(plugins[i], phase, phase_func, conf, api_ctx)
         end
     end
 
