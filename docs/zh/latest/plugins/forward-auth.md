@@ -49,6 +49,8 @@ description: 本文介绍了关于 Apache APISIX `forward-auth` 插件的基本�
 | keepalive_pool    | integer       | 否    | 5       | [1, ...]ms     | 长连接池大小。                                                                                                        |
 | allow_degradation | boolean       | 否    | false   |                | 当设置为 `true` 时，允许在身份验证服务器不可用时跳过身份验证。 |
 | status_on_error   | boolean       | 否    | 403     | [200,...,599]   | 设置授权服务出现网络错误时返回给客户端的 HTTP 状态。默认状态为“403”。 |
+| forward_client_body    | boolean       | 否    | true     | [true,false]  | 是否转发客户端请求体到 `auth` 服务。注意，`request_method` 设置为 "POST" 并且请求体不为空时才会转发 |
+| forward_by_streaming   | boolean       | 否    | true     | [true,false]  | 是否使用`流`方式转发客户端请求体。适用于请求体较大的场景。设置为 `false` 时，会将整个请求体缓存（于内存或者临时文件）后再进行转发 |
 
 ## 数据定义
 

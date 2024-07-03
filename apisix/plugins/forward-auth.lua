@@ -68,9 +68,7 @@ local schema = {
         keepalive = {type = "boolean", default = true},
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
-        -- suggest adding this switch
         forward_client_body = {type = "boolean", default = true},
-        -- test purpose, for covering the downloading fashion(core.request.get_body())
         forward_by_streaming = {type = "boolean", default = true},
     },
     required = {"uri"}
