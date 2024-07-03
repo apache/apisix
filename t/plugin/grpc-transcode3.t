@@ -532,37 +532,47 @@ location /t {
 --- config
 location /t {
     content_by_lua_block {
-        local pb = require "pb"
-        local pb_encode = pb.encode
-        local protoc = require "protoc"
         local pcall = pcall
+        local require = require
+        local protoc = require("protoc")
+        local pb = require("pb")
+        local pb_encode = pb.encode
 
         assert(protoc:load [[
         syntax = "proto3";
-        message IntStringPatterns {
-          repeated int64 values = 1;
+        message IntStringPattern {
+            int64 value = 1;
         }]])
 
-        local supported = {
-            values = {
-                1, 2, -3, "#123", "0xabF", "#-0x123abcdef", "-#0x123abcdef", "#0x123abc", "123",
-            },
-        }
+        local patterns
+        do
+            local function G(pattern)
+                return {pattern, true}
+            end
 
-        local unsupported = {
-            values = {
-                "#a", "+aaa", "#aaaaa", "#-aa",
-            },
-        }
+            local function B(pattern)
+                return {pattern, [[bad argument #2 to '?' (number/'#number' expected for field 'value', got string)]]}
+            end
 
-        --pb.option "int64_as_string"
-        --pb.option "int64_as_hexstring"
-        pb_encode("IntStringPatterns", supported)
-        local status, err = pcall(pb_encode, "IntStringPatterns", unsupported)
-        if not status then
-            ngx.say(err)
+            patterns = {
+                G(1), G(2), G(-3), G("#123"), G("0xabF"), G("#-0x123abcdef"), G("-#0x123abcdef"), G("#0x123abcdef"), G("123"),
+                B("#a"), B("+aaa"), B("#aaaa"), B("#-aa"),
+            }
         end
+
+        for _, p in pairs(patterns) do
+            local pattern = {
+                value = p[1],
+            }
+            local status, err = pcall(pb_encode, "IntStringPattern", pattern)
+            local res = status
+            if not res then
+                res = err
+            end
+            assert(res == p[2])
+        end
+        ngx.say("passed")
     }
 }
 --- response_body
-bad argument #2 to '?' (number/'#number' expected for field 'values', got string)
+passed
