@@ -27,7 +27,6 @@ jobs:
         platform:
           - ubuntu-20.04
         os_platform:
-          - centos7
           - ubuntu
           - redhat
     services:
