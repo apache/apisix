@@ -525,3 +525,54 @@ location /t {
         end
     }
 }
+
+
+
+=== TEST 13: bugfix - filter out illegal INT(string) formats
+--- config
+location /t {
+    content_by_lua_block {
+        local pcall = pcall
+        local require = require
+        local protoc = require("protoc")
+        local pb = require("pb")
+        local pb_encode = pb.encode
+
+        assert(protoc:load [[
+        syntax = "proto3";
+        message IntStringPattern {
+            int64 value = 1;
+        }]])
+
+        local patterns
+        do
+            local function G(pattern)
+                return {pattern, true}
+            end
+
+            local function B(pattern)
+                return {pattern, [[bad argument #2 to '?' (number/'#number' expected for field 'value', got string)]]}
+            end
+
+            patterns = {
+                G(1), G(2), G(-3), G("#123"), G("0xabF"), G("#-0x123abcdef"), G("-#0x123abcdef"), G("#0x123abcdef"), G("123"),
+                B("#a"), B("+aaa"), B("#aaaa"), B("#-aa"),
+            }
+        end
+
+        for _, p in pairs(patterns) do
+            local pattern = {
+                value = p[1],
+            }
+            local status, err = pcall(pb_encode, "IntStringPattern", pattern)
+            local res = status
+            if not res then
+                res = err
+            end
+            assert(res == p[2])
+        end
+        ngx.say("passed")
+    }
+}
+--- response_body
+passed
