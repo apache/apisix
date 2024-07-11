@@ -69,7 +69,7 @@ dependencies = {
     "lua-resty-consul = 0.3-2",
     "penlight = 1.13.1",
     "ext-plugin-proto = 0.6.1",
-    "casbin = 1.41.8-1",
+    "casbin = 1.41.9-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
