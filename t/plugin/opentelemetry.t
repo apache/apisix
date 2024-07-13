@@ -85,7 +85,7 @@ __DATA__
 --- request
 GET /t
 --- error_log
-Using opentelemetry address with no TLS is a security risk
+Using opentelemetry collector.address with no TLS is a security risk
 
 
 
@@ -137,7 +137,7 @@ plugin_attr:
 --- request
 GET /t
 --- no_error_log
-Using opentelemetry address with no TLS is a security risk
+Using opentelemetry collector.address with no TLS is a security risk
 
 
 

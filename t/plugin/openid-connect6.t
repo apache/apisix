@@ -69,7 +69,7 @@ Using openid-connect discovery with no TLS is a security risk
 Using openid-connect introspection_endpoint with no TLS is a security risk
 Using openid-connect redirect_uri with no TLS is a security risk
 Using openid-connect post_logout_redirect_uri with no TLS is a security risk
-Using openid-connect http_proxy with no TLS is a security risk
+Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
 
 
 
@@ -105,7 +105,7 @@ Using openid-connect discovery with no TLS is a security risk
 Using openid-connect introspection_endpoint with no TLS is a security risk
 Using openid-connect redirect_uri with no TLS is a security risk
 Using openid-connect post_logout_redirect_uri with no TLS is a security risk
-Using openid-connect http_proxy with no TLS is a security risk
+Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
 
 
 
