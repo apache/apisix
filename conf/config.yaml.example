@@ -1,0 +1,690 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# CAUTION: DO NOT MODIFY DEFAULT CONFIGURATIONS IN THIS FILE.
+# Keep the custom configurations in conf/config.yaml.
+#
+
+apisix:
+  # node_listen: 9080          # APISIX listening port.
+  node_listen:                 # APISIX listening ports.
+    - 9080
+  #   - port: 9081
+  #   - ip: 127.0.0.2          # If not set, default to `0.0.0.0`
+  #     port: 9082
+  enable_admin: true           # Admin API
+  enable_dev_mode: false       # If true, set nginx `worker_processes` to 1.
+  enable_reuseport: true       # If true, enable nginx SO_REUSEPORT option.
+  show_upstream_status_in_response_header: false  # If true, include the upstream HTTP status code in
+                                                  # the response header `X-APISIX-Upstream-Status`.
+                                                  # If false, show `X-APISIX-Upstream-Status` only if
+                                                  # the upstream response code is 5xx.
+  enable_ipv6: true
+  enable_http2: true
+
+  # proxy_protocol:                    # PROXY Protocol configuration
+  #   listen_http_port: 9181           # APISIX listening port for HTTP traffic with PROXY protocol.
+  #   listen_https_port: 9182          # APISIX listening port for HTTPS traffic with PROXY protocol.
+  #   enable_tcp_pp: true              # Enable the PROXY protocol when stream_proxy.tcp is set.
+  #   enable_tcp_pp_to_upstream: true  # Enable the PROXY protocol.
+
+  enable_server_tokens: true           # If true, show APISIX version in the `Server` response header.
+  extra_lua_path: ""                   # Extend lua_package_path to load third-party code.
+  extra_lua_cpath: ""                  # Extend lua_package_cpath to load third-party code.
+  # lua_module_hook: "my_project.my_hook"  # Hook module used to inject third-party code into APISIX.
+
+  proxy_cache:      # Proxy Caching configuration
+    cache_ttl: 10s  # The default caching time on disk if the upstream does not specify a caching time.
+    zones:
+      - name: disk_cache_one    # Name of the cache.
+        memory_size: 50m        # Size of the memory to store the cache index.
+        disk_size: 1G           # Size of the disk to store the cache data.
+        disk_path: /tmp/disk_cache_one  # Path to the cache file for disk cache.
+        cache_levels: "1:2"               # Cache hierarchy levels of disk cache.
+      # - name: disk_cache_two
+      #  memory_size: 50m
+      #  disk_size: 1G
+      #  disk_path: "/tmp/disk_cache_two"
+      #  cache_levels: "1:2"
+      - name: memory_cache
+        memory_size: 50m
+
+  delete_uri_tail_slash: false        # Delete the '/' at the end of the URI
+  normalize_uri_like_servlet: false   # If true, use the same path normalization rules as the Java
+                                      # servlet specification. See https://github.com/jakartaee/servlet/blob/master/spec/src/main/asciidoc/servlet-spec-body.adoc#352-uri-path-canonicalization, which is used in Tomcat.
+
+  router:
+    http: radixtree_host_uri    # radixtree_host_uri: match route by host and URI
+                                # radixtree_uri: match route by URI
+                                # radixtree_uri_with_parameter: similar to radixtree_uri but match URI with parameters. See https://github.com/api7/lua-resty-radixtree/#parameters-in-path for more details.
+    ssl: radixtree_sni          # radixtree_sni: match route by SNI
+
+  # http is the default proxy mode. proxy_mode can be one of `http`, `stream`, or `http&stream`
+  proxy_mode: "http"
+  # stream_proxy:                 # TCP/UDP L4 proxy
+  #   tcp:
+  #     - addr: 9100              # Set the TCP proxy listening ports.
+  #       tls: true
+  #     - addr: "127.0.0.1:9101"
+  #   udp:                        # Set the UDP proxy listening ports.
+  #     - 9200
+  #     - "127.0.0.1:9201"
+
+  # dns_resolver:                 # If not set, read from `/etc/resolv.conf`
+  #   - 1.1.1.1
+  #   - 8.8.8.8
+  # dns_resolver_valid: 30        # Override the default TTL of the DNS records.
+  resolver_timeout: 5             # Set the time in seconds that the server will wait for a response from the
+                                  # DNS resolver before timing out.
+  enable_resolv_search_opt: true  # If true, use search option in the resolv.conf file in DNS lookups.
+
+  ssl:
+    enable: true
+    listen:                                       # APISIX listening port for HTTPS traffic.
+      - port: 9443
+        enable_http3: false                       # Enable HTTP/3 (with QUIC). If not set default to `false`.
+      # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
+      #   port: 9445
+      #   enable_http3: true
+    # ssl_trusted_certificate: /path/to/ca-cert   # Set the path to CA certificates used to verify client
+                                                  # certificates in the PEM format.
+    ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
+    ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+    ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
+                                # Disabled by default because it renders Perfect Forward Secrecy (FPS)
+                                # useless. See https://github.com/mozilla/server-side-tls/issues/135.
+
+    # fallback_sni: "my.default.domain"      # Fallback SNI to be used if the client does not send SNI during
+    #                                        # the handshake.
+
+  enable_control: true  # Control API
+  # control:
+  #  ip: 127.0.0.1
+  #  port: 9090
+
+  disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
+
+  data_encryption:                # Data encryption settings.
+    enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
+                                  # in plugin schema.
+      - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string
+                                  # of length 16.
+      - edd1c9f0985e76a2          # If not set, APISIX saves the original data into etcd.
+                                  # CAUTION: If you would like to update the key, add the new key as the
+                                  # first item in the array and keep the older keys below the newly added
+                                  # key, so that data can be decrypted with the older keys and encrypted
+                                  # with the new key. Removing the old keys directly can render the data
+                                  # unrecoverable.
+
+  events:                             # Event distribution module configuration
+    module: lua-resty-events          # Sets the name of the events module used.
+                                      # Supported module: lua-resty-worker-events and lua-resty-events
+
+nginx_config:                     # Config for render the template to generate nginx.conf
+  # user: root                    # Set the execution user of the worker process. This is only
+                                  # effective if the master process runs with super-user privileges.
+  error_log: logs/error.log       # Location of the error log.
+  error_log_level:  warn          # Logging level: info, debug, notice, warn, error, crit, alert, or emerg.
+  worker_processes: auto          # Automatically determine the optimal number of worker processes based
+                                  # on the available system resources.
+                                  # If you want use multiple cores in container, you can inject the number of
+                                  # CPU cores as environment variable "APISIX_WORKER_PROCESSES".
+  enable_cpu_affinity: false      # Disable CPU affinity by default as worker_cpu_affinity affects the
+                                  # behavior of APISIX in containers. For example, multiple instances could
+                                  # be bound to one CPU core, which is not desirable.
+                                  # If APISIX is deployed on a physical machine, CPU affinity can be enabled.
+  worker_rlimit_nofile: 20480     # The number of files a worker process can open.
+                                  # The value should be larger than worker_connections.
+  worker_shutdown_timeout: 240s   # Timeout for a graceful shutdown of worker processes.
+
+  max_pending_timers: 16384       # The maximum number of pending timers that can be active at any given time.
+                                  # Error "too many pending timers" indicates the threshold is reached.
+  max_running_timers: 4096        # The maximum number of running timers that can be active at any given time.
+                                  # Error "lua_max_running_timers are not enough" error indicates the
+                                  # threshold is reached.
+
+  event:
+    worker_connections: 10620
+
+  # envs:                         # Get environment variables.
+  #  - TEST_ENV
+
+  meta:
+    lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
+      prometheus-metrics: 15m
+
+  stream:
+    enable_access_log: false                 # Enable stream proxy access logging.
+    access_log: logs/access_stream.log       # Location of the stream access log.
+    access_log_format: |
+      "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
+    access_log_format_escape: default        # Escape default or json characters in variables.
+    lua_shared_dict:                         # Nginx Lua shared memory zone. Size units are m or k.
+      etcd-cluster-health-check-stream: 10m
+      lrucache-lock-stream: 10m
+      plugin-limit-conn-stream: 10m
+      worker-events-stream: 10m
+      tars-stream: 1m
+
+  # Add other custom Nginx configurations.
+  # Users are responsible for validating the custom configurations
+  # to ensure they are not in conflict with APISIX configurations.
+  main_configuration_snippet: |
+    # Add custom Nginx main configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_configuration_snippet: |
+    # Add custom Nginx http configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_server_configuration_snippet: |
+    # Add custom Nginx http server configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_server_location_configuration_snippet: |
+    # Add custom Nginx http server location configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_admin_configuration_snippet: |
+    # Add custom Nginx admin server configuration to nginx.conf.
+    # The configuration should be well indented!
+  http_end_configuration_snippet: |
+    # Add custom Nginx http end configuration to nginx.conf.
+    # The configuration should be well indented!
+  stream_configuration_snippet: |
+    # Add custom Nginx stream configuration to nginx.conf.
+    # The configuration should be well indented!
+
+  http:
+    enable_access_log: true             # Enable HTTP proxy access logging.
+    access_log: logs/access.log         # Location of the access log.
+    access_log_buffer: 16384            # buffer size of access log.
+    access_log_format: |
+      "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
+    # Customize log format: http://nginx.org/en/docs/varindex.html
+    access_log_format_escape: default   # Escape default or json characters in variables.
+    keepalive_timeout: 60s              # Set the maximum time for which TCP connection keeps alive.
+    client_header_timeout: 60s          # Set the maximum time waiting for client to send the entire HTTP
+                                        # request header before closing the connection.
+    client_body_timeout: 60s            # Set the maximum time waiting for client to send the request body.
+    client_max_body_size: 0             # Set the maximum allowed size of the client request body.
+                                        # Default to 0, unlimited.
+                                        # Unlike Nginx, APISIX does not limit the body size by default.
+                                        # If exceeded, the 413 (Request Entity Too Large) error is returned.
+    send_timeout: 10s   # Set the maximum time for transmitting a response to the client before closing.
+    underscores_in_headers: "on"  # Allow HTTP request headers to contain underscores in their names.
+    real_ip_header: X-Real-IP     # https://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_header
+    real_ip_recursive: "off" # http://nginx.org/en/docs/http/ngx_http_realip_module.html#real_ip_recursive
+    real_ip_from:            # http://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from
+      - 127.0.0.1
+      - "unix:"
+
+    # custom_lua_shared_dict:     # Custom Nginx Lua shared memory zone for nginx.conf. Size units are m or k.
+    #  ipc_shared_dict: 100m      # Custom shared cache, format: `cache-key: cache-size`
+
+    proxy_ssl_server_name: true   # Send the server name in the SNI extension when establishing an SSL/TLS
+                                  # connection with the upstream server, allowing the upstream server to
+                                  # select the appropriate SSL/TLS certificate and configuration based on
+                                  # the requested server name.
+
+    upstream:
+      keepalive: 320              # Set the maximum time of keep-alive connections to the upstream servers.
+                                  # When the value is exceeded, the least recently used connection is closed.
+      keepalive_requests: 1000    # Set the maximum number of requests that can be served through one
+                                  # keep-alive connection.
+                                  # After the maximum number of requests is made, the connection is closed.
+      keepalive_timeout: 60s      # Set the maximum time for which TCP connection keeps alive.
+    charset: utf-8                # Add the charset to the "Content-Type" response header field.
+                                  # See http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
+    variables_hash_max_size: 2048 # Set the maximum size of the variables hash table.
+
+    lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
+      internal-status: 10m
+      plugin-limit-req: 10m
+      plugin-limit-count: 10m
+      prometheus-metrics: 10m
+      plugin-limit-conn: 10m
+      upstream-healthcheck: 10m
+      worker-events: 10m
+      lrucache-lock: 10m
+      balancer-ewma: 10m
+      balancer-ewma-locks: 10m
+      balancer-ewma-last-touched-at: 10m
+      plugin-limit-req-redis-cluster-slot-lock: 1m
+      plugin-limit-count-redis-cluster-slot-lock: 1m
+      plugin-limit-conn-redis-cluster-slot-lock: 1m
+      tracing_buffer: 10m
+      plugin-api-breaker: 10m
+      etcd-cluster-health-check: 10m
+      discovery: 1m
+      jwks: 1m
+      introspection: 10m
+      access-tokens: 1m
+      ext-plugin: 1m
+      tars: 1m
+      cas-auth: 10m
+      ocsp-stapling: 10m
+
+# discovery:                      # Service Discovery
+#  dns:
+#    servers:
+#      - "127.0.0.1:8600"         # Replace with the address of your DNS server.
+#    resolv_conf: /etc/resolv.conf # Replace with the path to the local DNS resolv config. Configure either "servers" or "resolv_conf".
+#    order:                       # Resolve DNS records this order.
+#      - last                     # Try the latest successful type for a hostname.
+#      - SRV
+#      - A
+#      - AAAA
+#      - CNAME
+#  eureka:                        # Eureka
+#    host:                        # Eureka address(es)
+#      - "http://127.0.0.1:8761"
+#    prefix: /eureka/
+#    fetch_interval: 30           # Default 30s
+#    weight: 100                  # Default weight for node
+#    timeout:
+#      connect: 2000              # Default 2000ms
+#      send: 2000                 # Default 2000ms
+#      read: 5000                 # Default 5000ms
+#  nacos:                         # Nacos
+#    host:                        # Nacos address(es)
+#      - "http://${username}:${password}@${host1}:${port1}"
+#    prefix: "/nacos/v1/"
+#    fetch_interval: 30    # Default 30s
+# `weight` is the `default_weight` that will be attached to each discovered node that
+# doesn't have a weight explicitly provided in nacos results
+#    weight: 100           # Default 100.
+#    timeout:
+#      connect: 2000       # Default 2000ms
+#      send: 2000          # Default 2000ms
+#      read: 5000          # Default 5000ms
+#    access_key: ""        # Nacos AccessKey ID in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
+#    secret_key: ""        # Nacos AccessKey Secret in Alibaba Cloud, notice that it's for Nacos instances on Microservices Engine (MSE)
+#  consul_kv:              # Consul KV
+#    servers:              # Consul KV address(es)
+#      - "http://127.0.0.1:8500"
+#      - "http://127.0.0.1:8600"
+#    prefix: "upstreams"
+#    skip_keys:                     # Skip special keys
+#      - "upstreams/unused_api/"
+#    timeout:
+#      connect: 2000                # Default 2000ms
+#      read: 2000                   # Default 2000ms
+#      wait: 60                     # Default 60s
+#    weight: 1                      # Default 1
+#    fetch_interval: 3              # Default 3s. Effective only when keepalive is false.
+#    keepalive: true                # Default to true. Use long pull to query Consul.
+#    default_server:                # Define default server to route traffic to.
+#      host: "127.0.0.1"
+#      port: 20999
+#      metadata:
+#        fail_timeout: 1            # Default 1ms
+#        weight: 1                  # Default 1
+#        max_fails: 1               # Default 1
+#    dump:                          # Dump the Consul key-value (KV) store to a file.
+#       path: "logs/consul_kv.dump" # Location of the dump file.
+#       expire: 2592000             # Specify the expiration time of the dump file in units of seconds.
+#  consul:                          # Consul
+#    servers:                       # Consul address(es)
+#      - "http://127.0.0.1:8500"
+#      - "http://127.0.0.1:8600"
+#    skip_services:                 # Skip services during service discovery.
+#      - "service_a"
+#    timeout:
+#      connect: 2000                # Default 2000ms
+#      read: 2000                   # Default 2000ms
+#      wait: 60                     # Default 60s
+#    weight: 1                      # Default 1
+#    fetch_interval: 3              # Default 3s. Effective only when keepalive is false.
+#    keepalive: true                # Default to true. Use long pull to query Consul.
+#    default_service:               # Define the default service to route traffic to.
+#      host: "127.0.0.1"
+#      port: 20999
+#      metadata:
+#        fail_timeout: 1           # Default 1ms
+#        weight: 1                 # Default 1
+#        max_fails: 1              # Default 1
+#    dump:                           # Dump the Consul key-value (KV) store to a file.
+#       path: "logs/consul_kv.dump"  # Location of the dump file.
+#       expire: 2592000              # Specify the expiration time of the dump file in units of seconds.
+#       load_on_init: true           # Default true, load the consul dump file on init
+#  kubernetes:                     # Kubernetes service discovery
+#    ### kubernetes service discovery both support single-cluster and multi-cluster mode
+#    ### applicable to the case where the service is distributed in a single or multiple kubernetes clusters.
+#    ### single-cluster mode ###
+#    service:
+#      schema: https                     # apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  # apiserver host, options [ipv4, ipv6, domain, environment variable], default ${KUBERNETES_SERVICE_HOST}
+#      port: ${KUBERNETES_SERVICE_PORT}  # apiserver port, options [port number, environment variable], default ${KUBERNETES_SERVICE_PORT}
+#    client:
+#      # serviceaccount token or path of serviceaccount token_file
+#      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+#      # token: |-
+#       # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+#       # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#    # kubernetes discovery plugin support use namespace_selector
+#    # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+#      # only save endpoints with namespace equal default
+#      equal: default
+#      # only save endpoints with namespace not equal default
+#      #not_equal: default
+#      # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+#      #match:
+#      #- default
+#      #- ^my-[a-z]+$
+#      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+#      #not_match:
+#      #- default
+#      #- ^my-[a-z]+$
+#    # kubernetes discovery plugin support use label_selector
+#    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
+#    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
+#    shared_size: 1m #default 1m
+#    ### single-cluster mode ###
+#    ### multi-cluster mode ###
+#  - id: release  # a custom name refer to the cluster, pattern ^[a-z0-9]{1,8}
+#    service:
+#      schema: https                     # apiserver schema, options [http, https], default https
+#      host: ${KUBERNETES_SERVICE_HOST}  # apiserver host, options [ipv4, ipv6, domain, environment variable]
+#      port: ${KUBERNETES_SERVICE_PORT}  # apiserver port, options [port number, environment variable]
+#    client:
+#      # serviceaccount token or path of serviceaccount token_file
+#      token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+#      # token: |-
+#       # eyJhbGciOiJSUzI1NiIsImtpZCI6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEif
+#       # 6Ikx5ME1DNWdnbmhQNkZCNlZYMXBsT3pYU3BBS2swYzBPSkN3ZnBESGpkUEEifeyJhbGciOiJSUzI1NiIsImtpZCI
+#    # kubernetes discovery plugin support use namespace_selector
+#    # you can use one of [equal, not_equal, match, not_match] filter namespace
+#    namespace_selector:
+#      # only save endpoints with namespace equal default
+#      equal: default
+#      # only save endpoints with namespace not equal default
+#      #not_equal: default
+#      # only save endpoints with namespace match one of [default, ^my-[a-z]+$]
+#      #match:
+#      #- default
+#      #- ^my-[a-z]+$
+#      # only save endpoints with namespace not match one of [default, ^my-[a-z]+$ ]
+#      #not_match:
+#      #- default
+#      #- ^my-[a-z]+$
+#    # kubernetes discovery plugin support use label_selector
+#    # for the expression of label_selector, please refer to https://kubernetes.io/docs/concepts/overview/working-with-objects/labels
+#    label_selector: |-
+#      first="a",second="b"
+#    # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
+#    shared_size: 1m #default 1m
+#    ### multi-cluster mode ###
+
+graphql:
+  max_size: 1048576                # Set the maximum size limitation of graphql in bytes. Default to 1MiB.
+
+# ext-plugin:
+#   cmd: ["ls", "-l"]
+
+plugins:                           # plugin list (sorted by priority)
+  - real-ip                        # priority: 23000
+  - ai                             # priority: 22900
+  - client-control                 # priority: 22000
+  - proxy-control                  # priority: 21990
+  - request-id                     # priority: 12015
+  - zipkin                         # priority: 12011
+  #- skywalking                    # priority: 12010
+  #- opentelemetry                 # priority: 12009
+  - ext-plugin-pre-req             # priority: 12000
+  - fault-injection                # priority: 11000
+  - mocking                        # priority: 10900
+  - serverless-pre-function        # priority: 10000
+  #- batch-requests                # priority: 4010
+  - cors                           # priority: 4000
+  - ip-restriction                 # priority: 3000
+  - ua-restriction                 # priority: 2999
+  - referer-restriction            # priority: 2990
+  - csrf                           # priority: 2980
+  - uri-blocker                    # priority: 2900
+  - request-validation             # priority: 2800
+  - chaitin-waf                    # priority: 2700
+  - multi-auth                     # priority: 2600
+  - openid-connect                 # priority: 2599
+  - cas-auth                       # priority: 2597
+  - authz-casbin                   # priority: 2560
+  - authz-casdoor                  # priority: 2559
+  - wolf-rbac                      # priority: 2555
+  - ldap-auth                      # priority: 2540
+  - hmac-auth                      # priority: 2530
+  - basic-auth                     # priority: 2520
+  - jwt-auth                       # priority: 2510
+  - jwe-decrypt                    # priority: 2509
+  - key-auth                       # priority: 2500
+  - consumer-restriction           # priority: 2400
+  - forward-auth                   # priority: 2002
+  - opa                            # priority: 2001
+  - authz-keycloak                 # priority: 2000
+  #- error-log-logger              # priority: 1091
+  - proxy-cache                    # priority: 1085
+  - body-transformer               # priority: 1080
+  - proxy-mirror                   # priority: 1010
+  - proxy-rewrite                  # priority: 1008
+  - workflow                       # priority: 1006
+  - api-breaker                    # priority: 1005
+  - limit-conn                     # priority: 1003
+  - limit-count                    # priority: 1002
+  - limit-req                      # priority: 1001
+  #- node-status                   # priority: 1000
+  #- brotli                        # priority: 996
+  - gzip                           # priority: 995
+  - server-info                    # priority: 990
+  - traffic-split                  # priority: 966
+  - redirect                       # priority: 900
+  - response-rewrite               # priority: 899
+  - degraphql                      # priority: 509
+  - kafka-proxy                    # priority: 508
+  #- dubbo-proxy                   # priority: 507
+  - grpc-transcode                 # priority: 506
+  - grpc-web                       # priority: 505
+  - http-dubbo                     # priority: 504
+  - public-api                     # priority: 501
+  - prometheus                     # priority: 500
+  - datadog                        # priority: 495
+  - loki-logger                    # priority: 414
+  - elasticsearch-logger           # priority: 413
+  - echo                           # priority: 412
+  - loggly                         # priority: 411
+  - http-logger                    # priority: 410
+  - splunk-hec-logging             # priority: 409
+  - skywalking-logger              # priority: 408
+  - google-cloud-logging           # priority: 407
+  - sls-logger                     # priority: 406
+  - tcp-logger                     # priority: 405
+  - kafka-logger                   # priority: 403
+  - rocketmq-logger                # priority: 402
+  - syslog                         # priority: 401
+  - udp-logger                     # priority: 400
+  - file-logger                    # priority: 399
+  - clickhouse-logger              # priority: 398
+  - tencent-cloud-cls              # priority: 397
+  - inspect                        # priority: 200
+  #- log-rotate                    # priority: 100
+  # <- recommend to use priority (0, 100) for your custom plugins
+  - example-plugin                 # priority: 0
+  #- gm                            # priority: -43
+  #- ocsp-stapling                 # priority: -44
+  - aws-lambda                     # priority: -1899
+  - azure-functions                # priority: -1900
+  - openwhisk                      # priority: -1901
+  - openfunction                   # priority: -1902
+  - serverless-post-function       # priority: -2000
+  - ext-plugin-post-req            # priority: -3000
+  - ext-plugin-post-resp           # priority: -4000
+
+stream_plugins:                    # stream plugin list (sorted by priority)
+  - ip-restriction                 # priority: 3000
+  - limit-conn                     # priority: 1003
+  - mqtt-proxy                     # priority: 1000
+  #- prometheus                    # priority: 500
+  - syslog                         # priority: 401
+  # <- recommend to use priority (0, 100) for your custom plugins
+
+
+# wasm:
+#   plugins:
+#     - name: wasm_log
+#       priority: 7999
+#       file: t/wasm/log/main.go.wasm
+
+# xrpc:
+#   protocols:
+#     - name: pingpong
+plugin_attr:          # Plugin attributes
+  log-rotate:         # Plugin: log-rotate
+    timeout: 10000    # maximum wait time for a log rotation(unit: millisecond)
+    interval: 3600    # Set the log rotate interval in seconds.
+    max_kept: 168     # Set the maximum number of log files to keep. If exceeded, historic logs are deleted.
+    max_size: -1      # Set the maximum size of log files in bytes before a rotation.
+                      # Skip size check if max_size is less than 0.
+    enable_compression: false    # Enable log file compression (gzip).
+  skywalking:                                     # Plugin: skywalking
+    service_name: APISIX                          # Set the service name for SkyWalking reporter.
+    service_instance_name: APISIX Instance Name   # Set the service instance name for SkyWalking reporter.
+    endpoint_addr: http://127.0.0.1:12800         # Set the SkyWalking HTTP endpoint.
+    report_interval: 3                            # Set the reporting interval in second.
+  opentelemetry:      # Plugin: opentelemetry
+    trace_id_source: x-request-id   # Specify the source of the trace ID for OpenTelemetry traces.
+    resource:
+      service.name: APISIX          # Set the service name for OpenTelemetry traces.
+    collector:
+      address: 127.0.0.1:4318       # Set the address of the OpenTelemetry collector to send traces to.
+      request_timeout: 3            # Set the timeout for requests to the OpenTelemetry collector in seconds.
+      request_headers:              # Set the headers to include in requests to the OpenTelemetry collector.
+        Authorization: token        # Set the authorization header to include an access token.
+    batch_span_processor:
+      drop_on_queue_full: false     # Drop spans when the export queue is full.
+      max_queue_size: 1024          # Set the maximum size of the span export queue.
+      batch_timeout: 2              # Set the timeout for span batches to wait in the export queue before
+                                    # being sent.
+      inactive_timeout: 1           # Set the timeout for spans to wait in the export queue before being sent,
+                                    # if the queue is not full.
+      max_export_batch_size: 16     # Set the maximum number of spans to include in each batch sent to the
+                                    # OpenTelemetry collector.
+    set_ngx_var: false              # Export opentelemetry variables to NGINX variables.
+  prometheus:                               # Plugin: prometheus
+    export_uri: /apisix/prometheus/metrics  # Set the URI for the Prometheus metrics endpoint.
+    metric_prefix: apisix_                  # Set the prefix for Prometheus metrics generated by APISIX.
+    enable_export_server: true              # Enable the Prometheus export server.
+    export_addr:                            # Set the address for the Prometheus export server.
+      ip: 127.0.0.1                         # Set the IP.
+      port: 9091                            # Set the port.
+    # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
+    #  http_status:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
+    #      - status: $upstream_status  # The label name does not need to be the same as the variable name.
+    #  http_latency:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
+    #  bandwidth:
+    #    extra_labels:
+    #      - upstream_addr: $upstream_addr
+    # default_buckets:
+    #   - 10
+    #   - 50
+    #   - 100
+    #   - 200
+    #   - 500
+    # expire: 0                       # The expiration time after metrics become inactive, unit: second.
+                                      # 0 means the metrics will not expire
+                                      # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
+  server-info:                        # Plugin: server-info
+    report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
+                                      # Maximum: 86400. Minimum: 3.
+  dubbo-proxy:                        # Plugin: dubbo-proxy
+    upstream_multiplex_count: 32      # Set the maximum number of connections that can be multiplexed over
+                                      # a single network connection between the Dubbo Proxy and the upstream
+                                      # Dubbo services.
+  proxy-mirror:                       # Plugin: proxy-mirror
+    timeout:                          # Set the timeout for mirrored requests.
+      connect: 60s
+      read: 60s
+      send: 60s
+  # redirect:                         # Plugin: redirect
+  #   https_port: 8443                # Set the default port used to redirect HTTP to HTTPS.
+  inspect:                            # Plugin: inspect
+    delay: 3                          # Set the delay in seconds for the frequency of checking the hooks file.
+    hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"  # Set the path to the Lua file that defines
+                                                              # hooks. Only administrators should have
+                                                              # write access to this file for security.
+  zipkin:                             # Plugin: zipkin
+    set_ngx_var: false                # export zipkin variables to nginx variables
+
+deployment:                    # Deployment configurations
+  role: traditional            # Set deployment mode: traditional, control_plane, or data_plane.
+  role_traditional:
+    config_provider: etcd      # Set the configuration center.
+
+  #role_data_plane:            # Set data plane details if role is data_plane.
+  #  config_provider: etcd     # Set the configuration center: etcd, xds, or yaml.
+
+  #role_control_plane:         # Set control plane details if role is control_plane.
+  #  config_provider: etcd     # Set the configuration center.
+
+  admin:                       # Admin API
+    admin_key_required: true   # Enable Admin API authentication by default for security.
+    admin_key:
+      -
+        name: admin                             # admin: write access to configurations.
+        key: ''   # Set API key for the admin of Admin API.
+        role: admin
+      -
+        name: viewer                            # viewer: read-only to configurations.
+        key: 4054f7cf07e344346cd3f287985e76a2   # Set API key for the viewer of Admin API.
+        role: viewer
+
+    enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    allow_admin:                  # Limit Admin API access by IP addresses.
+      - 127.0.0.0/24              # If not set, any IP address is allowed.
+      # - "::/64"
+    admin_listen:                 # Set the Admin API listening addresses.
+      ip: 0.0.0.0                 # Set listening IP.
+      port: 9180                  # Set listening port. Beware of port conflict with node_listen.
+
+    # https_admin: true           # Enable SSL for Admin API on IP and port specified in admin_listen.
+                                  # Use admin_api_mtls.admin_ssl_cert and admin_api_mtls.admin_ssl_cert_key.
+    # admin_api_mtls:             # Set this if `https_admin` is true.
+    #   admin_ssl_cert: ""        # Set path to SSL/TLS certificate.
+    #   admin_ssl_cert_key: ""    # Set path to SSL/TLS key.
+    #   admin_ssl_ca_cert: ""     # Set path to CA certificate used to sign client certificates.
+
+    admin_api_version: v3         # Set the version of Admin API (latest: v3).
+
+  etcd:
+    host:                         # Set etcd address(es) in the same etcd cluster.
+      - "http://127.0.0.1:2379"   # If TLS is enabled for etcd, use https://127.0.0.1:2379.
+    prefix: /apisix               # Set etcd prefix.
+    timeout: 30                   # The timeout when connect/read/write to etcd, Set timeout in seconds.
+    watch_timeout: 50             # The timeout when watch etcd
+    # resync_delay: 5             # Set resync time in seconds after a sync failure.
+                                  # The actual resync time would be resync_delay plus 50% random jitter.
+    # health_check_timeout: 10    # Set timeout in seconds for etcd health check.
+                                  # Default to 10 if not set or a negative value is provided.
+    startup_retry: 2              # Set the number of retries to etcd on startup. Default to 2.
+    # user: root                  # Set the root username for etcd.
+    # password: 5tHkHhYkjr6cQ     # Set the root password for etcd.
+    tls:
+      # cert: /path/to/cert       # Set the path to certificate used by the etcd client
+      # key: /path/to/key         # Set the path to path of key used by the etcd client
+      verify: true                # Verify the etcd certificate when establishing a TLS connection with etcd.
+      # sni:                      # The SNI for etcd TLS requests.
+                                  # If not set, the host from the URL is used.
