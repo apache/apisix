@@ -305,7 +305,8 @@ function _M.check_schema(conf)
         }
     end
 
-    local check = {"discovery", "introspection_endpoint", "redirect_uri", "post_logout_redirect_uri", "proxy_opts.http_proxy"}
+    local check = {"discovery", "introspection_endpoint", "redirect_uri",
+                    "post_logout_redirect_uri", "proxy_opts.http_proxy"}
     core.utils.check_https(check, conf, plugin_name)
 
     local ok, err = core.schema.check(schema, conf)
