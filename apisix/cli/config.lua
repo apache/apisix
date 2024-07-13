@@ -123,7 +123,8 @@ local _M = {
       access_log = "logs/access.log",
       access_log_buffer = 16384,
       -- luacheck: push max code line length 300
-      access_log_format = '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"',
+      access_log_format =
+      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"',
       -- luacheck: pop
       access_log_format_escape = "default",
       keepalive_timeout = "60s",
@@ -332,15 +333,13 @@ local _M = {
     },
     admin = {
       admin_key_required = true,
-      admin_key = { {
-        name = "admin",
-        key = "",
-        role = "admin"
-      }, {
-        name = "viewer",
-        key = "4054f7cf07e344346cd3f287985e76a2",
-        role = "viewer"
-      } },
+      admin_key = {
+        {
+          name = "admin",
+          key = "",
+          role = "admin"
+        }
+      },
       enable_admin_cors = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
