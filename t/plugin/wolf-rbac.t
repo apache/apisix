@@ -43,7 +43,9 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.wolf-rbac")
-            local conf = {}
+            local conf = {
+                server = "http://127.0.0.1:12180"
+            }
 
             local ok, err = plugin.check_schema(conf)
             if not ok then
