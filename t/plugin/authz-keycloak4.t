@@ -56,7 +56,7 @@ done
 --- error_log
 Using authz-keycloak discovery with no TLS is a security risk
 Using authz-keycloak token_endpoint with no TLS is a security risk
-Using authz-keycloak resource_registration_endpoint with no TLS is a security 
+Using authz-keycloak resource_registration_endpoint with no TLS is a security
 Using authz-keycloak access_denied_redirect_uri with no TLS is a security risk
 
 
@@ -88,7 +88,7 @@ done
 --- no_error_log
 Using authz-keycloak discovery with no TLS is a security risk
 Using authz-keycloak token_endpoint with no TLS is a security risk
-Using authz-keycloak resource_registration_endpoint with no TLS is a security 
+Using authz-keycloak resource_registration_endpoint with no TLS is a security
 Using authz-keycloak access_denied_redirect_uri with no TLS is a security risk
 
 

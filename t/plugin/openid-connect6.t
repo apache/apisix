@@ -90,7 +90,7 @@ Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
                     http_proxy = "https://e.com"
                 }
             })
-            
+
             if not ok then
                 ngx.say(err)
             end
@@ -434,74 +434,3 @@ qr/x-addon-header-.{10}/
 --- grep_error_log_out
 x-addon-header-a: Value-A
 x-addon-header-b: Value-b
-
-
-
-=== TEST 11: Sanity check with minimal valid configuration.
---- config
-    location /t {
-        content_by_lua_block {
-
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "http://a.com",
-                introspection_endpoint = "http://b.com",
-                redirect_uri = "http://c.com",
-                post_logout_redirect_uri = "http://d.com",
-                proxy_opts = {
-                    http_proxy = "http://e.com"
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- error_log
-Using openid-connect discovery with no TLS is a security risk
-Using openid-connect introspection_endpoint with no TLS is a security risk
-Using openid-connect redirect_uri with no TLS is a security risk
-Using openid-connect post_logout_redirect_uri with no TLS is a security risk
-Using openid-connect http_proxy with no TLS is a security risk
-
-
-
-=== TEST 12: Sanity check with minimal valid configuration.
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "https://a.com",
-                introspection_endpoint = "https://b.com",
-                redirect_uri = "https://c.com",
-                post_logout_redirect_uri = "https://d.com",
-                proxy_opts = {
-                    http_proxy = "https://e.com"
-                }
-            })
-            
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- no_error_log
-Using openid-connect discovery with no TLS is a security risk
-Using openid-connect introspection_endpoint with no TLS is a security risk
-Using openid-connect redirect_uri with no TLS is a security risk
-Using openid-connect post_logout_redirect_uri with no TLS is a security risk
-Using openid-connect http_proxy with no TLS is a security risk
