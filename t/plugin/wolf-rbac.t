@@ -55,10 +55,43 @@ __DATA__
     }
 --- response_body_like eval
 qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+--- error_log
+Using wolf-rbac server with no TLS is a security risk
 
 
 
-=== TEST 2: wrong type of string
+=== TEST 2: add consumer with username and plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_unit_test",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app",
+                            "server": "https://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+Using wolf-rbac server with no TLS is a security risk
+
+
+
+=== TEST 3: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
@@ -77,7 +110,7 @@ done
 
 
 
-=== TEST 3: setup public API route
+=== TEST 4: setup public API route
 --- config
     location /t {
         content_by_lua_block {
@@ -124,7 +157,7 @@ done
 
 
 
-=== TEST 4: add consumer with username and plugins
+=== TEST 5: add consumer with username and plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -153,7 +186,7 @@ passed
 
 
 
-=== TEST 5: enable wolf rbac plugin using admin api
+=== TEST 6: enable wolf rbac plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -185,7 +218,7 @@ passed
 
 
 
-=== TEST 6: login failed, appid is missing
+=== TEST 7: login failed, appid is missing
 --- request
 POST /apisix/plugin/wolf-rbac/login
 username=admin&password=123456
@@ -197,7 +230,7 @@ qr/appid is missing/
 
 
 
-=== TEST 7: login failed, appid not found
+=== TEST 8: login failed, appid not found
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=not-found&username=admin&password=123456
@@ -209,7 +242,7 @@ qr/appid not found/
 
 
 
-=== TEST 8: login failed, username missing
+=== TEST 9: login failed, username missing
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&password=123456
@@ -225,7 +258,7 @@ qr/ERR_USERNAME_MISSING/
 
 
 
-=== TEST 9: login failed, password missing
+=== TEST 10: login failed, password missing
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=admin
@@ -241,7 +274,7 @@ qr/ERR_PASSWORD_MISSING/
 
 
 
-=== TEST 10: login failed, username not found
+=== TEST 11: login failed, username not found
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=not-found&password=123456
@@ -257,7 +290,7 @@ qr/ERR_USER_NOT_FOUND/
 
 
 
-=== TEST 11: login failed, wrong password
+=== TEST 12: login failed, wrong password
 --- request
 POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=admin&password=wrong-password
@@ -273,7 +306,7 @@ qr/ERR_PASSWORD_ERROR/
 
 
 
-=== TEST 12: login successfully
+=== TEST 13: login successfully
 --- config
     location /t {
         content_by_lua_block {
@@ -294,7 +327,7 @@ qr/ERR_PASSWORD_ERROR/
 
 
 
-=== TEST 13: verify, missing token
+=== TEST 14: verify, missing token
 --- request
 GET /hello
 --- error_code: 401
@@ -303,7 +336,7 @@ GET /hello
 
 
 
-=== TEST 14: verify: invalid rbac token
+=== TEST 15: verify: invalid rbac token
 --- request
 GET /hello
 --- error_code: 401
@@ -314,7 +347,7 @@ x-rbac-token: invalid-rbac-token
 
 
 
-=== TEST 15: verify: invalid appid in rbac token
+=== TEST 16: verify: invalid appid in rbac token
 --- request
 GET /hello
 --- error_code: 401
@@ -327,7 +360,7 @@ consumer [invalid-appid] not found
 
 
 
-=== TEST 16: verify: failed
+=== TEST 17: verify: failed
 --- request
 GET /hello1
 --- error_code: 403
@@ -344,7 +377,7 @@ ERR_ACCESS_DENIED
 
 
 
-=== TEST 17: verify (in argument)
+=== TEST 18: verify (in argument)
 --- request
 GET /hello?rbac_token=V1%23wolf-rbac-app%23wolf-rbac-token
 --- response_headers
@@ -356,7 +389,7 @@ hello world
 
 
 
-=== TEST 18: verify (in header Authorization)
+=== TEST 19: verify (in header Authorization)
 --- request
 GET /hello
 --- more_headers
@@ -370,7 +403,7 @@ hello world
 
 
 
-=== TEST 19: verify (in header x-rbac-token)
+=== TEST 20: verify (in header x-rbac-token)
 --- request
 GET /hello
 --- more_headers
@@ -384,7 +417,7 @@ hello world
 
 
 
-=== TEST 20: verify (in cookie)
+=== TEST 21: verify (in cookie)
 --- request
 GET /hello
 --- more_headers
@@ -398,7 +431,7 @@ hello world
 
 
 
-=== TEST 21: get userinfo failed, missing token
+=== TEST 22: get userinfo failed, missing token
 --- request
 GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
@@ -407,7 +440,7 @@ GET /apisix/plugin/wolf-rbac/user_info
 
 
 
-=== TEST 22: get userinfo failed, invalid rbac token
+=== TEST 23: get userinfo failed, invalid rbac token
 --- request
 GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
@@ -418,7 +451,7 @@ x-rbac-token: invalid-rbac-token
 
 
 
-=== TEST 23: get userinfo
+=== TEST 24: get userinfo
 --- config
     location /t {
         content_by_lua_block {
@@ -437,7 +470,7 @@ x-rbac-token: invalid-rbac-token
 
 
 
-=== TEST 24: change password failed, old password incorrect
+=== TEST 25: change password failed, old password incorrect
 --- request
 PUT /apisix/plugin/wolf-rbac/change_pwd
 {"oldPassword": "error", "newPassword": "abcdef"}
@@ -454,7 +487,7 @@ qr/ERR_OLD_PASSWORD_INCORRECT/
 
 
 
-=== TEST 25: change password
+=== TEST 26: change password
 --- request
 PUT /apisix/plugin/wolf-rbac/change_pwd
 {"oldPassword":"123456", "newPassword": "abcdef"}
@@ -467,7 +500,7 @@ qr/success to change password/
 
 
 
-=== TEST 26: custom headers in request headers
+=== TEST 27: custom headers in request headers
 --- request
 GET /wolf/rbac/custom/headers?rbac_token=V1%23wolf-rbac-app%23wolf-rbac-token
 --- response_headers
@@ -479,7 +512,7 @@ id:100,username:admin,nickname:administrator
 
 
 
-=== TEST 27: change password by post raw args
+=== TEST 28: change password by post raw args
 --- request
 PUT /apisix/plugin/wolf-rbac/change_pwd
 oldPassword=123456&newPassword=abcdef
@@ -491,7 +524,7 @@ qr/success to change password/
 
 
 
-=== TEST 28: change password by post raw args, greater than 100 args is ok
+=== TEST 29: change password by post raw args, greater than 100 args is ok
 --- config
 location /t {
     content_by_lua_block {
@@ -520,7 +553,7 @@ qr/success to change password/
 
 
 
-=== TEST 29: verify: failed, server internal error
+=== TEST 30: verify: failed, server internal error
 --- request
 GET /hello/500
 --- error_code: 500
@@ -536,7 +569,7 @@ request to wolf-server failed, status:500
 
 
 
-=== TEST 30: verify: failed, token is expired
+=== TEST 31: verify: failed, token is expired
 --- request
 GET /hello/401
 --- error_code: 401
@@ -553,7 +586,7 @@ ERR_TOKEN_INVALID
 
 
 
-=== TEST 31: set hmac-auth conf: appid uses secret ref
+=== TEST 32: set hmac-auth conf: appid uses secret ref
 --- config
     location /t {
         content_by_lua_block {
@@ -597,7 +630,7 @@ passed
 
 
 
-=== TEST 32: store secret into vault
+=== TEST 33: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/wolf_rbac_unit_test appid=wolf-rbac-app
 --- response_body
@@ -605,7 +638,7 @@ Success! Data written to: kv/apisix/wolf_rbac_unit_test
 
 
 
-=== TEST 33: login successfully
+=== TEST 34: login successfully
 --- config
     location /t {
         content_by_lua_block {
@@ -626,7 +659,7 @@ Success! Data written to: kv/apisix/wolf_rbac_unit_test
 
 
 
-=== TEST 34: set hmac-auth conf with the token in an env var: appid uses secret ref
+=== TEST 35: set hmac-auth conf with the token in an env var: appid uses secret ref
 --- config
     location /t {
         content_by_lua_block {
@@ -667,7 +700,7 @@ passed
 
 
 
-=== TEST 35: login successfully
+=== TEST 36: login successfully
 --- config
     location /t {
         content_by_lua_block {
@@ -688,7 +721,7 @@ passed
 
 
 
-=== TEST 36: add consumer with echo plugin
+=== TEST 37: add consumer with echo plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -722,7 +755,7 @@ passed
 
 
 
-=== TEST 37: verify echo plugin in consumer
+=== TEST 38: verify echo plugin in consumer
 --- request
 GET /hello
 --- more_headers
@@ -735,3 +768,34 @@ X-Nickname: administrator
 consumer merge echo plugins
 --- no_error_log
 [error]
+
+
+
+=== TEST 39: add consumer with username and plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_unit_test",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-app",
+                            "server": "https://127.0.0.1:1982"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+--- no_error_log
+Using wolf-rbac server with no TLS is a security risk

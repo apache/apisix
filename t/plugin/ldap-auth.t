@@ -56,7 +56,49 @@ done
 
 
 
-=== TEST 2: wrong type of string
+=== TEST 2: using default value use_tls = false should give security warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.ldap-auth")
+            local ok, err = plugin.check_schema({base_dn = "123", ldap_uri = "127.0.0.1:1389"})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- error_log
+Using LDAP auth with TLS disabled is a security risk
+
+
+
+=== TEST 3: `use_tls = true` should not give security warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.ldap-auth")
+            local ok, err = plugin.check_schema({base_dn = "123", ldap_uri = "127.0.0.1:1389", use_tls = true})
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- no_error_log
+Using LDAP auth with TLS disabled is a security risk
+
+
+
+=== TEST 4: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
@@ -76,7 +118,7 @@ done
 
 
 
-=== TEST 3: add consumer with username and plugins
+=== TEST 5: add consumer with username and plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -104,7 +146,7 @@ passed
 
 
 
-=== TEST 4: enable basic auth plugin using admin api
+=== TEST 6: enable basic auth plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -140,7 +182,7 @@ passed
 
 
 
-=== TEST 5: verify, missing authorization
+=== TEST 7: verify, missing authorization
 --- request
 GET /hello
 --- error_code: 401
@@ -149,7 +191,7 @@ GET /hello
 
 
 
-=== TEST 6: verify, invalid basic authorization header
+=== TEST 8: verify, invalid basic authorization header
 --- request
 GET /hello
 --- more_headers
@@ -164,7 +206,7 @@ Invalid authorization header format
 
 
 
-=== TEST 7: verify, invalid authorization value (bad base64 str)
+=== TEST 9: verify, invalid authorization value (bad base64 str)
 --- request
 GET /hello
 --- more_headers
@@ -179,7 +221,7 @@ Failed to decode authentication header: aca_a
 
 
 
-=== TEST 8: verify, invalid authorization value (no password)
+=== TEST 10: verify, invalid authorization value (no password)
 --- request
 GET /hello
 --- more_headers
@@ -194,7 +236,7 @@ Split authorization err: invalid decoded data: foo
 
 
 
-=== TEST 9: verify, invalid password
+=== TEST 11: verify, invalid password
 --- request
 GET /hello
 --- more_headers
@@ -204,54 +246,6 @@ Authorization: Basic Zm9vOmZvbwo=
 {"message":"Invalid user authorization"}
 --- error_log
 The supplied credential is invalid
-
-
-
-=== TEST 10: verify
---- request
-GET /hello
---- more_headers
-Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
---- response_body
-hello world
---- error_log
-find consumer user01
-
-
-
-=== TEST 11: enable basic auth plugin using admin api
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "ldap-auth": {
-                            "base_dn": "ou=users,dc=example,dc=org",
-                            "ldap_uri": "127.0.0.1:1389",
-                            "uid": "cn"
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
 
 
 
@@ -267,7 +261,55 @@ find consumer user01
 
 
 
-=== TEST 13: invalid schema
+=== TEST 13: enable basic auth plugin using admin api
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "ldap-auth": {
+                            "base_dn": "ou=users,dc=example,dc=org",
+                            "ldap_uri": "127.0.0.1:1389",
+                            "uid": "cn"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: verify
+--- request
+GET /hello
+--- more_headers
+Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 15: invalid schema
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +337,7 @@ find consumer user01
 
 
 
-=== TEST 14: get the default schema
+=== TEST 16: get the default schema
 --- config
     location /t {
         content_by_lua_block {
@@ -313,7 +355,7 @@ find consumer user01
 
 
 
-=== TEST 15: get the schema by schema_type
+=== TEST 17: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -331,7 +373,7 @@ find consumer user01
 
 
 
-=== TEST 16: get the schema by error schema_type
+=== TEST 18: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -348,7 +390,7 @@ find consumer user01
 
 
 
-=== TEST 17: enable ldap-auth with tls
+=== TEST 19: enable ldap-auth with tls
 --- config
     location /t {
         content_by_lua_block {
@@ -385,7 +427,7 @@ passed
 
 
 
-=== TEST 18: verify
+=== TEST 20: verify
 --- request
 GET /hello
 --- more_headers
@@ -397,7 +439,7 @@ find consumer user01
 
 
 
-=== TEST 19: enable ldap-auth with tls, verify CA
+=== TEST 21: enable ldap-auth with tls, verify CA
 --- config
     location /t {
         content_by_lua_block {
@@ -435,7 +477,7 @@ passed
 
 
 
-=== TEST 20: verify
+=== TEST 22: verify
 --- request
 GET /hello
 --- more_headers
@@ -447,7 +489,7 @@ find consumer user01
 
 
 
-=== TEST 21: set ldap-auth conf: user_dn uses secret ref
+=== TEST 23: set ldap-auth conf: user_dn uses secret ref
 --- request
 GET /t
 --- config
@@ -518,7 +560,7 @@ passed
 
 
 
-=== TEST 22: store secret into vault
+=== TEST 24: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/user01 user_dn="cn=user01,ou=users,dc=example,dc=org"
 --- response_body
@@ -526,7 +568,7 @@ Success! Data written to: kv/apisix/user01
 
 
 
-=== TEST 23: verify
+=== TEST 25: verify
 --- request
 GET /hello
 --- more_headers
@@ -538,7 +580,7 @@ find consumer user01
 
 
 
-=== TEST 24: set ldap-auth conf with the token in an env var: user_dn uses secret ref
+=== TEST 26: set ldap-auth conf with the token in an env var: user_dn uses secret ref
 --- request
 GET /t
 --- config
@@ -605,7 +647,7 @@ passed
 
 
 
-=== TEST 25: verify
+=== TEST 27: verify
 --- request
 GET /hello
 --- more_headers

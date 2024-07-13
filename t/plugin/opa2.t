@@ -32,7 +32,39 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: setup all-in-one test
+=== TEST 1: sanity
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.opa")
+            local ok, err = plugin.check_schema({host = "http://127.0.0.1:8181", policy = "example/allow"})
+            ngx.say(ok and "done" or err)
+        }
+    }
+--- response_body
+done
+--- error_log
+Using opa host with no TLS is a security risk
+
+
+
+=== TEST 2: sanity
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.opa")
+            local ok, err = plugin.check_schema({host = "https://127.0.0.1:8181", policy = "example/allow"})
+            ngx.say(ok and "done" or err)
+        }
+    }
+--- response_body
+done
+--- no_error_log
+Using opa host with no TLS is a security risk
+
+
+
+=== TEST 3: setup all-in-one test
 --- config
     location /t {
         content_by_lua_block {
@@ -105,7 +137,7 @@ __DATA__
 
 
 
-=== TEST 2: hit route (test route data)
+=== TEST 4: hit route (test route data)
 --- request
 GET /hello
 --- more_headers
@@ -118,7 +150,7 @@ qr/\"with_route\":true/
 
 
 
-=== TEST 3: hit route (test consumer data)
+=== TEST 5: hit route (test consumer data)
 --- request
 GET /hello
 --- more_headers
@@ -130,7 +162,7 @@ qr/\"consumer\":/ and qr/\"username\":\"test\"/ and qr/\"key\":\"test-key\"/
 
 
 
-=== TEST 4: hit route (test service data)
+=== TEST 6: hit route (test service data)
 --- request
 GET /hello
 --- more_headers
@@ -143,7 +175,7 @@ qr/\"header\":\"apikey\"/
 
 
 
-=== TEST 5: setup route without service
+=== TEST 7: setup route without service
 --- config
     location /t {
         content_by_lua_block {
@@ -176,7 +208,7 @@ passed
 
 
 
-=== TEST 6: hit route (test without service and consumer)
+=== TEST 8: hit route (test without service and consumer)
 --- request
 GET /hello
 --- more_headers
@@ -188,7 +220,7 @@ qr/\"service\"/ and qr/\"consumer\"/
 
 
 
-=== TEST 7: setup route
+=== TEST 9: setup route
 --- config
     location /t {
         content_by_lua_block {
@@ -218,7 +250,7 @@ passed
 
 
 
-=== TEST 8: hit route (with JSON empty array)
+=== TEST 10: hit route (with JSON empty array)
 --- request
 GET /hello?user=elisa
 --- error_code: 403
@@ -227,7 +259,7 @@ GET /hello?user=elisa
 
 
 
-=== TEST 9: create route: `with_route = true` and opa validation passes when route name == "valid"
+=== TEST 11: create route: `with_route = true` and opa validation passes when route name == "valid"
 --- config
     location /t {
         content_by_lua_block {
@@ -264,14 +296,14 @@ passed
 
 
 
-=== TEST 10: hit route
+=== TEST 12: hit route
 --- request
 GET /hello
 --- error_code: 200
 
 
 
-=== TEST 11: create route: `with_route = true` and opa validation fails when route name != "valid"
+=== TEST 13: create route: `with_route = true` and opa validation fails when route name != "valid"
 --- config
     location /t {
         content_by_lua_block {
@@ -308,7 +340,7 @@ passed
 
 
 
-=== TEST 12: hit route
+=== TEST 14: hit route
 --- request
 GET /hello
 --- error_code: 403

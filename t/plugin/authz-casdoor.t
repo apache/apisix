@@ -105,10 +105,43 @@ __DATA__
     }
 --- response_body
 done
+--- error_log
+Using authz-casdoor endpoint_addr with no TLS is a security risk
+Using authz-casdoor callback_url with no TLS is a security risk
 
 
 
-=== TEST 2: enable plugin test redirect
+=== TEST 2: using https should not give error
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.authz-casdoor")
+            local fake_uri = "https://127.0.0.1:" .. ngx.var.server_port
+            local callback_url = "https://127.0.0.1:" .. ngx.var.server_port ..
+                                    "/anything/callback"
+            local conf = {
+                callback_url = callback_url,
+                endpoint_addr = fake_uri,
+                client_id = "7ceb9b7fda4a9061ec1c",
+                client_secret = "3416238e1edf915eac08b8fe345b2b95cdba7e04"
+            }
+            local ok, err = plugin.check_schema(conf)
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+
+        }
+    }
+--- response_body
+done
+--- no_error_log
+Using authz-casdoor endpoint_addr with no TLS is a security risk
+Using authz-casdoor callback_url with no TLS is a security risk
+
+
+
+=== TEST 3: enable plugin test redirect
 --- config
     location /t {
         content_by_lua_block {
@@ -154,7 +187,7 @@ done
 
 
 
-=== TEST 3: test redirect
+=== TEST 4: test redirect
 --- config
     location /t {
         content_by_lua_block {
@@ -175,7 +208,7 @@ done
 
 
 
-=== TEST 4: enable fake casdoor
+=== TEST 5: enable fake casdoor
 --- config
     location /t {
         content_by_lua_block {
@@ -204,7 +237,7 @@ passed
 
 
 
-=== TEST 5: test fake casdoor
+=== TEST 6: test fake casdoor
 --- config
     location /t {
         content_by_lua_block {
@@ -234,7 +267,7 @@ done
 
 
 
-=== TEST 6: test code handling
+=== TEST 7: test code handling
 --- config
     location /t {
         content_by_lua_block {
@@ -295,7 +328,7 @@ done
 
 
 
-=== TEST 7: incorrect test code handling
+=== TEST 8: incorrect test code handling
 --- config
     location /t {
         content_by_lua_block {
@@ -321,7 +354,7 @@ no session found
 
 
 
-=== TEST 8: incorrect state handling
+=== TEST 9: incorrect state handling
 --- config
     location /t {
         content_by_lua_block {
@@ -382,7 +415,7 @@ invalid state
 
 
 
-=== TEST 9: test incorrect access_token
+=== TEST 10: test incorrect access_token
 --- config
     location /t {
         content_by_lua_block {
@@ -444,7 +477,7 @@ failed when accessing token: invalid access_token
 
 
 
-=== TEST 10: data encryption for client_secret
+=== TEST 11: data encryption for client_secret
 --- yaml_config
 apisix:
     data_encryption:

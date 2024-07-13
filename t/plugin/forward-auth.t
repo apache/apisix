@@ -59,10 +59,31 @@ property "uri" validation failed: wrong type: expected string, got number
 property "request_headers" validation failed: wrong type: expected array, got string
 done
 property "request_method" validation failed: matches none of the enum values
+--- error_log
+Using forward-auth uri with no TLS is a security risk
+Using forward-auth uri with no TLS is a security risk
 
 
 
-=== TEST 2: setup route with plugin
+=== TEST 2: using https should not give warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.forward-auth")
+
+            local ok, err = plugin.check_schema({uri = "https://127.0.0.1:8199"})
+            ngx.say(ok and "done" or err)
+
+        }
+    }
+--- response_body
+done
+--- no_error_log
+Using forward-auth uri with no TLS is a security risk
+
+
+
+=== TEST 3: setup route with plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -321,7 +342,7 @@ property "request_method" validation failed: matches none of the enum values
 
 
 
-=== TEST 3: hit route (test request_headers)
+=== TEST 4: hit route (test request_headers)
 --- request
 GET /hello
 --- more_headers
@@ -331,7 +352,7 @@ qr/\"authorization\":\"111\"/
 
 
 
-=== TEST 4: hit route (test upstream_headers)
+=== TEST 5: hit route (test upstream_headers)
 --- request
 GET /hello
 --- more_headers
@@ -341,7 +362,7 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 
 
 
-=== TEST 5: hit route (test client_headers)
+=== TEST 6: hit route (test client_headers)
 --- request
 GET /hello
 --- more_headers
@@ -352,7 +373,7 @@ Location: http://example.com/auth
 
 
 
-=== TEST 6: hit route (check APISIX generated headers and ignore client headers)
+=== TEST 7: hit route (check APISIX generated headers and ignore client headers)
 --- request
 GET /hello
 --- more_headers
@@ -368,7 +389,7 @@ qr/\"x-forwarded-host\":\"apisix.apache.org\"/
 
 
 
-=== TEST 7: hit route (not send upstream headers)
+=== TEST 8: hit route (not send upstream headers)
 --- request
 GET /empty
 --- more_headers
@@ -378,7 +399,7 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 
 
 
-=== TEST 8: hit route (not send client headers)
+=== TEST 9: hit route (not send client headers)
 --- request
 GET /empty
 --- more_headers
@@ -389,7 +410,7 @@ Authorization: 333
 
 
 
-=== TEST 9: hit route (test upstream_headers when use post method)
+=== TEST 10: hit route (test upstream_headers when use post method)
 --- request
 POST /ping
 {"authorization": "555"}
@@ -398,7 +419,7 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 
 
 
-=== TEST 10: hit route (test client_headers when use post method)
+=== TEST 11: hit route (test client_headers when use post method)
 --- request
 POST /ping
 {"authorization": "666"}
@@ -408,7 +429,7 @@ Location: http://example.com/auth
 
 
 
-=== TEST 11: hit route (unavailable auth server, expect failure)
+=== TEST 12: hit route (unavailable auth server, expect failure)
 --- request
 GET /nodegr
 --- more_headers
@@ -419,7 +440,7 @@ failed to process forward auth, err: closed
 
 
 
-=== TEST 12: hit route (unavailable auth server, allow degradation)
+=== TEST 13: hit route (unavailable auth server, allow degradation)
 --- request
 GET /hello
 --- more_headers
@@ -428,7 +449,7 @@ Authorization: 111
 
 
 
-=== TEST 13: Verify status_on_error
+=== TEST 14: Verify status_on_error
 --- request
 GET /onerror
 --- more_headers
@@ -437,7 +458,7 @@ Authorization: 333
 
 
 
-=== TEST 14: test large body
+=== TEST 15: test large body
 --- config
     location /t {
         content_by_lua_block {

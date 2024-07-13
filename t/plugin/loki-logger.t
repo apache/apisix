@@ -65,10 +65,31 @@ property "endpoint_uri" validation failed: wrong type: expected string, got numb
 property "tenant_id" validation failed: wrong type: expected string, got number
 property "log_labels" validation failed: wrong type: expected object, got string
 done
+--- error_log
+Using loki-logger endpoint_addrs with no TLS is a security risk
+Using loki-logger endpoint_addrs with no TLS is a security risk
+Using loki-logger endpoint_addrs with no TLS is a security risk
 
 
 
-=== TEST 2: setup route
+=== TEST 2: using https should not give security warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.loki-logger")
+
+            local ok, err = plugin.check_schema({endpoint_addrs = {"https://127.0.0.1:8199"}})
+            ngx.say(ok and "done" or err)
+        }
+    }
+--- response_body
+done
+--- no_error_log
+Using loki-logger endpoint_addrs with no TLS is a security risk
+
+
+
+=== TEST 3: setup route
 --- config
     location /t {
         content_by_lua_block {
@@ -104,7 +125,7 @@ passed
 
 
 
-=== TEST 3: hit route
+=== TEST 4: hit route
 --- request
 GET /hello
 --- more_headers
@@ -114,7 +135,7 @@ hello world
 
 
 
-=== TEST 4: check loki log
+=== TEST 5: check loki log
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +159,7 @@ hello world
 
 
 
-=== TEST 5: setup route (with log_labels)
+=== TEST 6: setup route (with log_labels)
 --- config
     location /t {
         content_by_lua_block {
@@ -177,7 +198,7 @@ passed
 
 
 
-=== TEST 6: hit route
+=== TEST 7: hit route
 --- request
 GET /hello
 --- more_headers
@@ -187,7 +208,7 @@ hello world
 
 
 
-=== TEST 7: check loki log (with custom_label)
+=== TEST 8: check loki log (with custom_label)
 --- config
     location /t {
         content_by_lua_block {
@@ -212,7 +233,7 @@ hello world
 
 
 
-=== TEST 8: setup route (with tenant_id)
+=== TEST 9: setup route (with tenant_id)
 --- config
     location /t {
         content_by_lua_block {
@@ -248,7 +269,7 @@ passed
 
 
 
-=== TEST 9: hit route
+=== TEST 10: hit route
 --- request
 GET /hello
 --- more_headers
@@ -258,7 +279,7 @@ hello world
 
 
 
-=== TEST 10: check loki log (with tenant_id tenant_1)
+=== TEST 11: check loki log (with tenant_id tenant_1)
 --- config
     location /t {
         content_by_lua_block {
@@ -282,7 +303,7 @@ hello world
 
 
 
-=== TEST 11: check loki log (with tenant_id tenant_2)
+=== TEST 12: check loki log (with tenant_id tenant_2)
 --- config
     location /t {
         content_by_lua_block {
@@ -309,7 +330,7 @@ hello world
 
 
 
-=== TEST 12: setup route (with log_labels as variables)
+=== TEST 13: setup route (with log_labels as variables)
 --- config
     location /t {
         content_by_lua_block {
@@ -348,7 +369,7 @@ passed
 
 
 
-=== TEST 13: hit route
+=== TEST 14: hit route
 --- request
 GET /hello
 --- response_body
@@ -356,7 +377,7 @@ hello world
 
 
 
-=== TEST 14: check loki log (with custom_label)
+=== TEST 15: check loki log (with custom_label)
 --- config
     location /t {
         content_by_lua_block {

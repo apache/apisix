@@ -40,10 +40,52 @@ __DATA__
 GET /t
 --- response_body
 done
+--- error_log
+Using tcp-logger without tls is a security risk
 
 
 
-=== TEST 2: missing host
+=== TEST 2: no security warning when tls = true
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tcp-logger": {
+                                "host": "127.0.0.1",
+                                "port": 3000,
+                                "tls": true
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+Using tcp-logger without tls is a security risk
+
+
+
+=== TEST 3: missing host
 --- config
     location /t {
         content_by_lua_block {
@@ -64,7 +106,7 @@ done
 
 
 
-=== TEST 3: wrong type of string
+=== TEST 4: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
@@ -86,7 +128,7 @@ done
 
 
 
-=== TEST 4: add plugin
+=== TEST 5: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -124,7 +166,7 @@ passed
 
 
 
-=== TEST 5: access
+=== TEST 6: access
 --- request
 GET /hello
 --- response_body
@@ -133,7 +175,7 @@ hello world
 
 
 
-=== TEST 6: error log
+=== TEST 7: error log
 --- log_level: error
 --- config
     location /t {
@@ -182,7 +224,7 @@ failed to connect to TCP server: host[312.0.0.1] port[2000]
 
 
 
-=== TEST 7: check plugin configuration updating
+=== TEST 8: check plugin configuration updating
 --- config
     location /t {
         content_by_lua_block {
@@ -275,7 +317,7 @@ sending a batch logs to 127.0.0.1:43000
 
 
 
-=== TEST 8: bad custom log format
+=== TEST 9: bad custom log format
 --- config
     location /t {
         content_by_lua_block {
@@ -302,7 +344,7 @@ GET /t
 
 
 
-=== TEST 9: add plugin
+=== TEST 10: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -369,7 +411,7 @@ passed
 
 
 
-=== TEST 10: log format in plugin_metadata
+=== TEST 11: log format in plugin_metadata
 --- exec
 tail -n 1 ci/pod/vector/tcp.log
 --- response_body eval
@@ -377,7 +419,7 @@ qr/.*plugin_metadata.*/
 
 
 
-=== TEST 11: remove tcp logger metadata
+=== TEST 12: remove tcp logger metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -400,7 +442,7 @@ passed
 
 
 
-=== TEST 12: log format in plugin
+=== TEST 13: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -455,7 +497,7 @@ passed
 
 
 
-=== TEST 13: check tcp log
+=== TEST 14: check tcp log
 --- exec
 tail -n 1 ci/pod/vector/tcp.log
 --- response_body eval
@@ -463,7 +505,7 @@ qr/.*logger format in plugin.*/
 
 
 
-=== TEST 14: true tcp log with tls
+=== TEST 15: true tcp log with tls
 --- config
     location /t {
         content_by_lua_block {
@@ -513,7 +555,7 @@ opentracing
 
 
 
-=== TEST 15: check tls log
+=== TEST 16: check tls log
 --- exec
 tail -n 1 ci/pod/vector/tls-datas.log
 --- response_body eval
@@ -521,7 +563,7 @@ qr/.*route_id.*1.*/
 
 
 
-=== TEST 16: add plugin with 'include_req_body' setting, collect request log
+=== TEST 17: add plugin with 'include_req_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {
@@ -565,7 +607,7 @@ GET /t
 
 
 
-=== TEST 17: add plugin with 'include_resp_body' setting, collect request log
+=== TEST 18: add plugin with 'include_resp_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {

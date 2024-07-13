@@ -52,10 +52,38 @@ __DATA__
     }
 --- response_body
 done
+--- error_log
+Using rocketmq-logger without TLS is a security risk
 
 
 
-=== TEST 2: missing nameserver list
+=== TEST 2: `use_tls = true` should not give security warning
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.rocketmq-logger")
+            local ok, err = plugin.check_schema({
+                 topic = "test",
+                 key = "key1",
+                 nameserver_list = {
+                    "127.0.0.1:3"
+                 },
+                 use_tls = true
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- response_body
+done
+--- no_error_log
+Using rocketmq-logger without TLS is a security risk
+
+
+
+=== TEST 3: missing nameserver list
 --- config
     location /t {
         content_by_lua_block {
@@ -73,7 +101,7 @@ done
 
 
 
-=== TEST 3: wrong type of string
+=== TEST 4: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
@@ -98,7 +126,7 @@ done
 
 
 
-=== TEST 4: set route(id: 1)
+=== TEST 5: set route(id: 1)
 --- config
     location /t {
         content_by_lua_block {
@@ -135,7 +163,7 @@ passed
 
 
 
-=== TEST 5: access
+=== TEST 6: access
 --- request
 GET /hello
 --- response_body
@@ -145,7 +173,7 @@ hello world
 
 
 
-=== TEST 6: unavailable nameserver
+=== TEST 7: unavailable nameserver
 --- config
     location /t {
         content_by_lua_block {
@@ -188,7 +216,7 @@ failed to send data to rocketmq topic
 
 
 
-=== TEST 7: set route(meta_format = origin, include_req_body = true)
+=== TEST 8: set route(meta_format = origin, include_req_body = true)
 --- config
     location /t {
         content_by_lua_block {
@@ -227,7 +255,7 @@ passed
 
 
 
-=== TEST 8: hit route, report log to rocketmq
+=== TEST 9: hit route, report log to rocketmq
 --- request
 GET /hello?ab=cd
 abcdef
@@ -245,7 +273,7 @@ abcdef
 
 
 
-=== TEST 9: set route(meta_format = origin, include_req_body = false)
+=== TEST 10: set route(meta_format = origin, include_req_body = false)
 --- config
     location /t {
         content_by_lua_block {
@@ -284,7 +312,7 @@ passed
 
 
 
-=== TEST 10: hit route, report log to rocketmq
+=== TEST 11: hit route, report log to rocketmq
 --- request
 GET /hello?ab=cd
 abcdef
@@ -300,7 +328,7 @@ connection: close
 
 
 
-=== TEST 11: set route(meta_format = default)
+=== TEST 12: set route(meta_format = default)
 --- config
     location /t {
         content_by_lua_block {
@@ -338,7 +366,7 @@ passed
 
 
 
-=== TEST 12: hit route, report log to rocketmq
+=== TEST 13: hit route, report log to rocketmq
 --- request
 GET /hello?ab=cd
 abcdef
@@ -351,7 +379,7 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
 
 
 
-=== TEST 13: set route(id: 1), missing key field
+=== TEST 14: set route(id: 1), missing key field
 --- config
     location /t {
         content_by_lua_block {
@@ -387,7 +415,7 @@ passed
 
 
 
-=== TEST 14: access, test key field is optional
+=== TEST 15: access, test key field is optional
 --- request
 GET /hello
 --- response_body
@@ -397,7 +425,7 @@ hello world
 
 
 
-=== TEST 15: set route(meta_format = default), missing key field
+=== TEST 16: set route(meta_format = default), missing key field
 --- config
     location /t {
         content_by_lua_block {
@@ -434,7 +462,7 @@ passed
 
 
 
-=== TEST 16: hit route, report log to rocketmq
+=== TEST 17: hit route, report log to rocketmq
 --- request
 GET /hello?ab=cd
 abcdef
@@ -447,7 +475,7 @@ qr/send data to rocketmq: \{.*"upstream":"127.0.0.1:1980"/
 
 
 
-=== TEST 17: use the topic with 3 partitions
+=== TEST 18: use the topic with 3 partitions
 --- config
     location /t {
         content_by_lua_block {
@@ -484,7 +512,7 @@ passed
 
 
 
-=== TEST 18: report log to rocketmq by different partitions
+=== TEST 19: report log to rocketmq by different partitions
 --- config
     location /t {
         content_by_lua_block {
@@ -530,7 +558,7 @@ qr/queue: 2/]
 
 
 
-=== TEST 19: report log to rocketmq by different partitions in async mode
+=== TEST 20: report log to rocketmq by different partitions in async mode
 --- config
     location /t {
         content_by_lua_block {

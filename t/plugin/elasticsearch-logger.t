@@ -89,6 +89,15 @@ __DATA__
                     field = {
                         index = "services"
                     }
+                },
+                {
+                    endpoint_addrs = {
+                        "http://127.0.0.1:9200",
+                        "http://abc.com"
+                    },
+                    field = {
+                        index = "services"
+                    }
                 }
             }
 
@@ -110,10 +119,42 @@ value should match only one schema, but matches none
 value should match only one schema, but matches none
 property "field" validation failed: property "index" is required
 property "endpoint_addr" validation failed: failed to match pattern "\[\^/\]\$" with "http://127.0.0.1:9200/"
+passed
+--- error_log
+Using elasticsearch-logger endpoint_addrs with no TLS is a security risk
 
 
 
-=== TEST 2: set route
+=== TEST 2: sanity
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok, err
+            local plugin = require("apisix.plugins.elasticsearch-logger")
+                ok, err = plugin.check_schema({
+                    endpoint_addrs = {
+                        "https://127.0.0.1:9200"
+                    },
+                    field = {
+                        index = "services"
+                    }
+                })
+                if err then
+                    ngx.say(err)
+                else
+                    ngx.say("passed")
+                end
+
+        }
+    }
+--- response_body_like
+passed
+--- no_error_log
+Using elasticsearch-logger endpoint_addrs with no TLS is a security risk
+
+
+
+=== TEST 3: set route
 --- config
     location /t {
         content_by_lua_block {
@@ -152,7 +193,7 @@ passed
 
 
 
-=== TEST 3: test route (success write)
+=== TEST 4: test route (success write)
 --- extra_init_by_lua
     local core = require("apisix.core")
     local http = require("resty.http")
@@ -199,7 +240,7 @@ check elasticsearch full log body success
 
 
 
-=== TEST 4: set route (auth)
+=== TEST 5: set route (auth)
 --- config
     location /t {
         content_by_lua_block {
@@ -239,7 +280,7 @@ passed
 
 
 
-=== TEST 5: test route (auth success)
+=== TEST 6: test route (auth success)
 --- request
 GET /hello
 --- wait: 2
@@ -250,7 +291,7 @@ Batch Processor[elasticsearch-logger] successfully processed the entries
 
 
 
-=== TEST 6: set route (no auth)
+=== TEST 7: set route (no auth)
 --- config
     location /t {
         content_by_lua_block {
@@ -286,7 +327,7 @@ passed
 
 
 
-=== TEST 7: test route (no auth, failed)
+=== TEST 8: test route (no auth, failed)
 --- request
 GET /hello
 --- wait: 2
@@ -299,7 +340,7 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
 
 
 
-=== TEST 8: set route (error auth)
+=== TEST 9: set route (error auth)
 --- config
     location /t {
         content_by_lua_block {
@@ -339,7 +380,7 @@ passed
 
 
 
-=== TEST 9: test route (error auth failed)
+=== TEST 10: test route (error auth failed)
 --- request
 GET /hello
 --- wait: 2
@@ -351,7 +392,7 @@ Batch Processor[elasticsearch-logger] exceeded the max_retry_count
 
 
 
-=== TEST 10: add plugin metadata
+=== TEST 11: add plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -403,7 +444,7 @@ passed
 
 
 
-=== TEST 11: hit route and check custom elasticsearch logger
+=== TEST 12: hit route and check custom elasticsearch logger
 --- extra_init_by_lua
     local core = require("apisix.core")
     local http = require("resty.http")
@@ -450,7 +491,7 @@ check elasticsearch custom body success
 
 
 
-=== TEST 12: data encryption for auth.password
+=== TEST 13: data encryption for auth.password
 --- yaml_config
 apisix:
     data_encryption:
@@ -518,7 +559,7 @@ PTQvJEaPcNOXcOHeErC0XQ==
 
 
 
-=== TEST 13: add plugin on routes using multi elasticsearch-logger
+=== TEST 14: add plugin on routes using multi elasticsearch-logger
 --- config
     location /t {
         content_by_lua_block {
@@ -554,7 +595,7 @@ passed
 
 
 
-=== TEST 14: to show that different endpoints will be chosen randomly
+=== TEST 15: to show that different endpoints will be chosen randomly
 --- config
     location /t {
         content_by_lua_block {
@@ -585,7 +626,7 @@ http://127.0.0.1:9201/_bulk
 
 
 
-=== TEST 15: log format in plugin
+=== TEST 16: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -624,7 +665,7 @@ passed
 
 
 
-=== TEST 16: hit route and check custom elasticsearch logger
+=== TEST 17: hit route and check custom elasticsearch logger
 --- extra_init_by_lua
     local core = require("apisix.core")
     local http = require("resty.http")
@@ -671,7 +712,7 @@ check elasticsearch custom body success
 
 
 
-=== TEST 17: using unsupported field (type) for elasticsearch v8 should work normally
+=== TEST 18: using unsupported field (type) for elasticsearch v8 should work normally
 --- config
     location /t {
         content_by_lua_block {
@@ -712,7 +753,7 @@ passed
 
 
 
-=== TEST 18: test route (auth success)
+=== TEST 19: test route (auth success)
 --- request
 GET /hello
 --- wait: 2
@@ -723,7 +764,7 @@ Action/metadata line [1] contains an unknown parameter [_type]
 
 
 
-=== TEST 19: add plugin with 'include_req_body' setting, collect request log
+=== TEST 20: add plugin with 'include_req_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {
@@ -763,7 +804,7 @@ Action/metadata line [1] contains an unknown parameter [_type]
 
 
 
-=== TEST 20: add plugin with 'include_resp_body' setting, collect response log
+=== TEST 21: add plugin with 'include_resp_body' setting, collect response log
 --- config
     location /t {
         content_by_lua_block {

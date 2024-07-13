@@ -43,10 +43,37 @@ __DATA__
 GET /t
 --- response_body
 done
+--- error_log
+Using syslog logger with TLS disabled is a security risk
 
 
 
-=== TEST 2: missing port
+=== TEST 2: no security warning when tls is true
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.syslog")
+            local ok, err = plugin.check_schema({
+                 host = "127.0.0.1",
+                 port = 5140,
+                 tls = true
+            })
+            if not ok then
+                ngx.say(err)
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log
+Using syslog logger with TLS disabled is a security risk
+
+
+
+=== TEST 3: missing port
 --- config
     location /t {
         content_by_lua_block {
@@ -66,7 +93,7 @@ done
 
 
 
-=== TEST 3: wrong type of string
+=== TEST 4: wrong type of string
 --- config
     location /t {
         content_by_lua_block {
@@ -89,7 +116,7 @@ done
 
 
 
-=== TEST 4: add plugin
+=== TEST 5: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -125,7 +152,7 @@ passed
 
 
 
-=== TEST 5: access
+=== TEST 6: access
 --- request
 GET /hello
 --- response_body
@@ -134,7 +161,7 @@ hello world
 
 
 
-=== TEST 6: flush manually
+=== TEST 7: flush manually
 --- config
     location /t {
         content_by_lua_block {
@@ -171,7 +198,7 @@ done
 
 
 
-=== TEST 7: small flush_limit, instant flush
+=== TEST 8: small flush_limit, instant flush
 --- config
     location /t {
         content_by_lua_block {
@@ -236,7 +263,7 @@ unlock with key route#1
 
 
 
-=== TEST 8: check log
+=== TEST 9: check log
 --- exec
 tail -n 1 ci/pod/vector/syslog-tcp.log
 --- response_body eval
@@ -244,7 +271,7 @@ qr/.*apisix_latency.*/
 
 
 
-=== TEST 9: check plugin configuration updating
+=== TEST 10: check plugin configuration updating
 --- config
     location /t {
         content_by_lua_block {
@@ -335,7 +362,7 @@ sending a batch logs to 127.0.0.1:5045
 
 
 
-=== TEST 10: add log format
+=== TEST 11: add log format
 --- config
     location /t {
         content_by_lua_block {
@@ -363,7 +390,7 @@ passed
 
 
 
-=== TEST 11: Add route and Enable Syslog Plugin, batch_max_size=1
+=== TEST 12: Add route and Enable Syslog Plugin, batch_max_size=1
 --- config
     location /t {
         content_by_lua_block {
@@ -402,7 +429,7 @@ passed
 
 
 
-=== TEST 12: hit route and report sys logger
+=== TEST 13: hit route and report sys logger
 --- extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
     local json = require("apisix.core.json")
@@ -424,7 +451,7 @@ qr/syslog-log-format.*\{.*"upstream":"127.0.0.1:\d+"/
 
 
 
-=== TEST 13: check log
+=== TEST 14: check log
 --- exec
 tail -n 1 ci/pod/vector/syslog-tcp.log
 --- response_body eval
@@ -432,7 +459,7 @@ qr/.*\"host\":\"localhost\".*/
 
 
 
-=== TEST 14: log format in plugin
+=== TEST 15: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -477,7 +504,7 @@ passed
 
 
 
-=== TEST 15: access
+=== TEST 16: access
 --- extra_init_by_lua
     local syslog = require("apisix.plugins.syslog.init")
     local json = require("apisix.core.json")
@@ -500,7 +527,7 @@ push_entry is called with data
 
 
 
-=== TEST 16: check log
+=== TEST 17: check log
 --- exec
 tail -n 1 ci/pod/vector/syslog-tcp.log
 --- response_body eval
@@ -508,7 +535,7 @@ qr/.*vip.*/
 
 
 
-=== TEST 17: test udp mode
+=== TEST 18: test udp mode
 --- config
     location /t {
         content_by_lua_block {
@@ -548,13 +575,13 @@ passed
 
 
 
-=== TEST 18: hit
+=== TEST 19: hit
 --- request
 GET /hello
 
 
 
-=== TEST 19: check log
+=== TEST 20: check log
 --- exec
 tail -n 1 ci/pod/vector/syslog-udp.log
 --- response_body eval
@@ -562,7 +589,7 @@ qr/.*upstream.*/
 
 
 
-=== TEST 20: add plugin with 'include_req_body' setting, collect request log
+=== TEST 21: add plugin with 'include_req_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {
@@ -608,7 +635,7 @@ GET /t
 
 
 
-=== TEST 21: add plugin with 'include_resp_body' setting, collect response log
+=== TEST 22: add plugin with 'include_resp_body' setting, collect response log
 --- config
     location /t {
         content_by_lua_block {

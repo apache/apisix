@@ -82,6 +82,8 @@ function _M.check_schema(conf, schema_type)
         return core.schema.check(metadata_schema, conf)
     end
 
+    local check = {"uri"}
+    core.utils.check_https(check, conf, plugin_name)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, err

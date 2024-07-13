@@ -59,6 +59,9 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
         ok, err = core.schema.check(consumer_schema, conf)
     else
+        if not conf.use_tls then
+            core.log.warn("Using LDAP auth with TLS disabled is a security risk.")
+        end
         ok, err = core.schema.check(schema, conf)
     end
 

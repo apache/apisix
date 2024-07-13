@@ -141,6 +141,8 @@ end
 
 
 function _M.check_schema(conf)
+    local check = {"server"}
+    core.utils.check_https(check, conf, plugin_name)
     core.log.info("input conf: ", core.json.delay_encode(conf))
 
     local ok, err = core.schema.check(schema, conf)

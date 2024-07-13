@@ -65,6 +65,8 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"host"}
+    core.utils.check_https(check, conf, "opa")
     return core.schema.check(schema, conf)
 end
 

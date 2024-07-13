@@ -84,10 +84,64 @@ __DATA__
     }
 --- request
 GET /t
+--- error_log
+Using opentelemetry address with no TLS is a security risk
 
 
 
-=== TEST 2: trigger opentelemetry
+=== TEST 2: add plugin
+--- extra_yaml_config
+plugins:
+    - opentelemetry
+plugin_attr:
+    opentelemetry:
+        trace_id_source: x-request-id
+        batch_span_processor:
+            max_export_batch_size: 1
+            inactive_timeout: 0.5
+        collector:
+            address: https://127.0.0.1:4318
+            request_timeout: 3
+            request_headers:
+                foo: bar
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "opentelemetry": {
+                            "sampler": {
+                                "name": "always_on"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/opentracing"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+Using opentelemetry address with no TLS is a security risk
+
+
+
+=== TEST 3: trigger opentelemetry
 --- request
 GET /opentracing
 --- wait: 2
@@ -96,7 +150,7 @@ opentracing
 
 
 
-=== TEST 3: check log
+=== TEST 4: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -104,7 +158,7 @@ qr/.*opentelemetry-lua.*/
 
 
 
-=== TEST 4: use trace_id_ratio sampler, fraction = 1.0
+=== TEST 5: use trace_id_ratio sampler, fraction = 1.0
 --- config
     location /t {
         content_by_lua_block {
@@ -143,7 +197,7 @@ GET /t
 
 
 
-=== TEST 5: trigger opentelemetry
+=== TEST 6: trigger opentelemetry
 --- request
 GET /opentracing
 --- wait: 2
@@ -152,7 +206,7 @@ opentracing
 
 
 
-=== TEST 6: check log
+=== TEST 7: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -160,7 +214,7 @@ qr/.*opentelemetry-lua.*/
 
 
 
-=== TEST 7: use parent_base sampler, root sampler = trace_id_ratio with default fraction = 0
+=== TEST 8: use parent_base sampler, root sampler = trace_id_ratio with default fraction = 0
 --- config
     location /t {
         content_by_lua_block {
@@ -201,7 +255,7 @@ GET /t
 
 
 
-=== TEST 8: trigger opentelemetry, trace_flag = 1
+=== TEST 9: trigger opentelemetry, trace_flag = 1
 --- request
 GET /opentracing
 --- more_headers
@@ -212,7 +266,7 @@ opentracing
 
 
 
-=== TEST 9: check log
+=== TEST 10: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -220,7 +274,7 @@ qr/.*"traceId":"00000000000000000000000000000001",.*/
 
 
 
-=== TEST 10: use parent_base sampler, root sampler = trace_id_ratio with fraction = 1
+=== TEST 11: use parent_base sampler, root sampler = trace_id_ratio with fraction = 1
 --- config
     location /t {
         content_by_lua_block {
@@ -264,7 +318,7 @@ GET /t
 
 
 
-=== TEST 11: trigger opentelemetry, trace_flag = 1
+=== TEST 12: trigger opentelemetry, trace_flag = 1
 --- request
 GET /opentracing
 --- more_headers
@@ -275,7 +329,7 @@ opentracing
 
 
 
-=== TEST 12: check log
+=== TEST 13: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -283,7 +337,7 @@ qr/.*"traceId":"00000000000000000000000000000001",.*/
 
 
 
-=== TEST 13: set additional_attributes
+=== TEST 14: set additional_attributes
 --- config
     location /t {
         content_by_lua_block {
@@ -338,7 +392,7 @@ GET /t
 
 
 
-=== TEST 14: trigger opentelemetry
+=== TEST 15: trigger opentelemetry
 --- request
 GET /opentracing?foo=bar&a=b
 --- more_headers
@@ -351,7 +405,7 @@ opentracing
 
 
 
-=== TEST 15: check log
+=== TEST 16: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -359,7 +413,7 @@ qr/.*\/opentracing\?foo=bar.*/
 
 
 
-=== TEST 16: create route for /specific_status
+=== TEST 17: create route for /specific_status
 --- config
     location /t {
         content_by_lua_block {
@@ -396,7 +450,7 @@ GET /t
 
 
 
-=== TEST 17: test response empty body
+=== TEST 18: test response empty body
 --- request
 HEAD /specific_status
 --- response_body
@@ -404,7 +458,7 @@ HEAD /specific_status
 
 
 
-=== TEST 18: check log
+=== TEST 19: check log
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
