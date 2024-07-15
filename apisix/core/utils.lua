@@ -45,6 +45,7 @@ local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
+local ipairs         = ipairs
 
 local hostname
 local dns_resolvers
@@ -380,17 +381,17 @@ end
 _M.resolve_var_with_captures = resolve_var_with_captures
 
 
--- some fields can be nested into the table so the `field` may be specified
--- as foo.second.third, `get_root_conf` gets the table on second level and
--- the field name to be looked i.e "third"
+-- if `str` is a string containing period `some_plugin.some_field.nested_field`
+-- return the table that contains `nested_field` in its root level
+-- else return the original table `conf`
 local function get_root_conf(str, conf, field)
-    -- if the string contains period, split them
-    -- foo.second.third -> foo, second, third
+    -- if the string contains periods, get the splits in `it` iterator
     local it, _ = re_gmatch(str, [[([^\.]+)]])
     if not it then
         return conf, field
     end
 
+    -- add the splits into a table
     local matches = {}
     while true do
         local m, _ = it()
