@@ -84,6 +84,8 @@ function _M.check_schema(conf, schema_type)
 
     local check = {"uri"}
     core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({conf.ssl_verify}, {"ssl_verify"}, plugin_name)
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, err

@@ -187,12 +187,11 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    if not conf.tcp.tls then
-        core.log.warn("Using error-log-logger TCP with no TLS is a security risk")
-    end
 
     local check = {"skywalking.endpoint_addr", "clickhouse.endpoint_addr"}
     core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({conf.tcp.tls}, {"tcp.tls"}, plugin_name)
+
     return core.schema.check(schema, conf)
 end
 

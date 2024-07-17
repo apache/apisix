@@ -99,9 +99,7 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
-    if not conf.use_tls then
-        core.log.warn("Using rocketmq-logger without TLS is a security risk")
-    end
+    core.utils.check_tls_bool({conf.use_tls}, {"use_tls"}, plugin_name)
     return log_util.check_log_schema(conf)
 end
 

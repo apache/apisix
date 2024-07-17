@@ -80,9 +80,7 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    if not conf.tls then
-        core.log.warn("Using syslog logger with TLS disabled is a security risk.")
-    end
+    core.utils.check_tls_bool({conf.tls}, {"tls"}, plugin_name)
     return core.schema.check(schema, conf)
 end
 

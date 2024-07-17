@@ -126,6 +126,8 @@ function _M.check_schema(conf, schema_type)
     end
     local check = {"endpoint_addrs"}
     core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({conf.ssl_verify}, {"ssl_verify"}, plugin_name)
+
     return core.schema.check(schema, conf)
 end
 
