@@ -240,7 +240,6 @@ function _M.set(matched_ssl, sni)
 
     local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "")
                             or matched_ssl.value
-                            core.log.warn("dibag: ", core.json.encode(new_ssl_value))
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
