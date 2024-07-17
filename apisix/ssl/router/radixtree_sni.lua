@@ -240,6 +240,7 @@ function _M.set(matched_ssl, sni)
 
     local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "")
                             or matched_ssl.value
+                            core.log.warn("dibag: ", core.json.encode(new_ssl_value))
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
@@ -285,9 +286,11 @@ local function ssl_filter(ssl)
     end
 
     if ssl.value.sni then
+        ssl.value.sni = ngx.re.sub(ssl.value.sni, "\\.$", "", "jo")
         ssl.value.sni = str_lower(ssl.value.sni)
     elseif ssl.value.snis then
         for i, v in ipairs(ssl.value.snis) do
+            v = ngx.re.sub(v, "\\.$", "", "jo")
             ssl.value.snis[i] = str_lower(v)
         end
     end
