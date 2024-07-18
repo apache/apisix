@@ -140,7 +140,7 @@ can't find sub key, key: apisix/
 --- request
 GET /t
 --- response_body
-failed to retrtive data from aws: unable to retrieve secret from aws secret manager SecretsManager:getSecretValue() failed to connect to 'http://127.0.0.1:8080': connection refused
+failed to retrtive data from aws secret manager: SecretsManager:getSecretValue() failed to connect to 'http://127.0.0.1:8080': connection refused
 --- timeout: 6
 
 
@@ -167,7 +167,7 @@ failed to retrtive data from aws: unable to retrieve secret from aws secret mana
 --- request
 GET /t
 --- response_body
-failed to retrtive data from aws: failed to retrieve secret from aws secret manager (invalid status code received)
+failed to retrtive data from aws secret manager: (invalid status)
 --- timeout: 20
 
 

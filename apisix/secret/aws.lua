@@ -17,7 +17,6 @@
 
 --- AWS Tools.
 local core = require("apisix.core")
-local norm_path = require("pl.path").normpath
 local http = require("resty.http")
 local aws = require("resty.aws")
 
@@ -99,12 +98,13 @@ local function make_request_to_aws(conf,key)
     end
 
     if not my_creds then
-        return nil, "unable to retrieve secret from aws secret manager (invalid credentials)"
+        return nil, "(invalid credentials)"
     end
 
     AWS.config.credentials = my_creds
 
-    local pre, host, port, _, _ = unpack(http:parse_uri(conf.endpoint_url or "https://secretsmanager." .. region .. ".amazonaws.com"))
+    local default_endpoint = "https://secretsmanager." .. region .. ".amazonaws.com"
+    local pre, host, port, _, _ = unpack(http:parse_uri(conf.endpoint_url or default_endpoint))
     local endpoint = pre .. "://" .. host
 
     local sm = AWS:SecretsManager {
@@ -120,9 +120,9 @@ local function make_request_to_aws(conf,key)
 
     if type(res) ~= "table" then
         if err then
-            return nil, "unable to retrieve secret from aws secret manager " .. err
+            return nil, err
         end
-        return nil, "unable to retrieve secret from aws secret manager (invalid response)"
+        return nil, "(invalid response)"
     end
 
     if res.status ~= 200 then
@@ -132,20 +132,20 @@ local function make_request_to_aws(conf,key)
         end
 
         if err then
-            return nil, "failed to retrieve secret from aws secret manager " .. err
+            return nil, err
         end
 
-        return nil, "failed to retrieve secret from aws secret manager (invalid status code received)"
+        return nil, "(invalid status)"
     end
 
     local body = res.body
     if type(body) ~= "table" then
-        return nil, "unable to retrieve secret from aws secret manager (invalid response)"
+        return nil, "(invalid response)"
     end
 
     local secret = res.body.SecretString
     if type(secret) ~= "string" then
-        return nil, "unable to retrieve secret from aws secret manager (invalid secret string)"
+        return nil, "(invalid secret)"
     end
 
     return secret
@@ -174,7 +174,7 @@ local function get(conf,key)
 
     local res,err = make_request_to_aws(conf,main_key)
     if not res then
-        return nil, "failed to retrtive data from aws: " .. err
+        return nil, "failed to retrtive data from aws secret manager: " .. err
     end
 
     local ret = core.json.decode(res)
