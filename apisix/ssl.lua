@@ -214,7 +214,6 @@ end
 
 
 function _M.fetch_cert(sni, cert)
-    core.log.warn(debug.traceback())
     local parsed_cert, err = cert_cache(cert, nil, parse_pem_cert, sni, cert)
     if not parsed_cert then
         return false, err
