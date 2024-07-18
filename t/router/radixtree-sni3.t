@@ -126,7 +126,7 @@ passed
 
 
 
-=== TEST 4: match agains sni with no trailing period
+=== TEST 4: match against sni with no trailing period
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
