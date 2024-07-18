@@ -225,8 +225,6 @@ end
 
 
 local function parse_pem_priv_key(sni, pkey)
-    core.log.debug("parsing priv key for sni: ", sni)
-
     local key, err = aes_decrypt_pkey(pkey)
     if not key then
         core.log.error(err)
