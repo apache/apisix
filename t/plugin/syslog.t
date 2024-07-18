@@ -32,6 +32,7 @@ __DATA__
             local ok, err = plugin.check_schema({
                  host = "127.0.0.1",
                  port = 5140,
+                 tls = false
             })
             if not ok then
                 ngx.say(err)
@@ -44,7 +45,7 @@ GET /t
 --- response_body
 done
 --- error_log
-Using syslog logger with TLS disabled is a security risk
+Keeping tls disabled in syslog configuration is a security risk
 
 
 
@@ -69,7 +70,7 @@ GET /t
 --- response_body
 done
 --- no_error_log
-Using syslog logger with TLS disabled is a security risk
+Keeping tls disabled in syslog configuration is a security risk
 
 
 

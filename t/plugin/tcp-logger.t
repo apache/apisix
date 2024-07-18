@@ -28,7 +28,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.tcp-logger")
-            local ok, err = plugin.check_schema({host = "127.0.0.1", port = 3000})
+            local ok, err = plugin.check_schema({host = "127.0.0.1", port = 3000, tls = false})
             if not ok then
                 ngx.say(err)
             end
@@ -41,7 +41,7 @@ GET /t
 --- response_body
 done
 --- error_log
-Using tcp-logger without tls is a security risk
+Keeping tls disabled in tcp-logger configuration is a security risk
 
 
 
@@ -81,7 +81,7 @@ GET /t
 --- response_body
 passed
 --- no_error_log
-Using tcp-logger without tls is a security risk
+Keeping tls disabled in tcp-logger configuration is a security risk
 
 
 

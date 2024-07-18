@@ -42,7 +42,8 @@ __DATA__
                  key = "key1",
                  nameserver_list = {
                     "127.0.0.1:3"
-                 }
+                 },
+                 use_tls = false
             })
             if not ok then
                 ngx.say(err)
@@ -53,7 +54,7 @@ __DATA__
 --- response_body
 done
 --- error_log
-Using rocketmq-logger without TLS is a security risk
+Keeping use_tls disabled in rocketmq-logger configuration is a security risk
 
 
 
@@ -79,7 +80,7 @@ Using rocketmq-logger without TLS is a security risk
 --- response_body
 done
 --- no_error_log
-Using rocketmq-logger without TLS is a security risk
+Keeping use_tls disabled in rocketmq-logger configuration is a security risk
 
 
 

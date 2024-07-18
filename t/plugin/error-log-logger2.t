@@ -57,7 +57,7 @@ done
 --- error_log
 Using error-log-logger skywalking.endpoint_addr with no TLS is a security risk
 Using error-log-logger clickhouse.endpoint_addr with no TLS is a security risk
-Using error-log-logger TCP with no TLS is a security risk
+Keeping tcp.tls disabled in error-log-logger configuration is a security risk
 
 
 
@@ -94,4 +94,4 @@ done
 --- no_error_log
 Using error-log-logger skywalking.endpoint_addr with no TLS is a security risk
 Using error-log-logger clickhouse.endpoint_addr with no TLS is a security risk
-Using error-log-logger TCP with no TLS is a security risk
+Keeping tcp.tls disabled in error-log-logger configuration is a security risk

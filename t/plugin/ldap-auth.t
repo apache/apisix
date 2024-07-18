@@ -62,7 +62,13 @@ done
         content_by_lua_block {
             local core = require("apisix.core")
             local plugin = require("apisix.plugins.ldap-auth")
-            local ok, err = plugin.check_schema({base_dn = "123", ldap_uri = "127.0.0.1:1389"})
+            local ok, err = plugin.check_schema(
+                {
+                    base_dn = "123",
+                    ldap_uri = "127.0.0.1:1389",
+                    tls_verify = false,
+                    use_tls = false
+                })
             if not ok then
                 ngx.say(err)
             end
@@ -73,7 +79,8 @@ done
 --- response_body
 done
 --- error_log
-Using LDAP auth with TLS disabled is a security risk
+Keeping tls_verify disabled in ldap-auth configuration is a security risk
+Keeping use_tls disabled in ldap-auth configuration is a security risk
 
 
 
