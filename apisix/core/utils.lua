@@ -446,9 +446,9 @@ end
 
 function _M.check_tls_bool(fields, field_names, plugin_name)
     for i, field in ipairs(fields) do
-        if not field then
+        if field ~= true then
             log.warn("Keeping ", field_names[i], " disabled in ",
-                     plugin_name, " configuration is a security risk.")
+                     plugin_name, " configuration is a security risk")
         end
     end
 end
