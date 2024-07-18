@@ -213,7 +213,7 @@ $secret://$manager/$id/$secret_name/$key
 
 Here, we use the key-auth plugin as an example to demonstrate how to manage secrets through AWS Secrets Manager.
 
-Step 1: Create the corresponding key in the aws secrets manager.Here, [localstack]((https://www.localstack.cloud/)) is used for simulation, and you can use the following command:
+Step 1: Create the corresponding key in the aws secrets manager.Here, [localstack](https://www.localstack.cloud/) is used for simulation, and you can use the following command:
 
 ```shell
 docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name jack --description 'APISIX Secret' --secret-string '{\"auth-key\":\"value\"}'"
@@ -281,7 +281,7 @@ You can verify this with the following command:
 
 ```shell
 #Replace the following your_route with the actual route path.
-curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'  
+curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'
 ```
 
 This will verify whether the key-auth plugin is correctly using the key from AWS Secrets Manager.
