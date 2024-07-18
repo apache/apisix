@@ -284,7 +284,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 ```shell
 # 示例：将下面的 your_route 替换为实际的路由路径
-curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'  
+curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'
 ```
 
 这将验证 key-auth 插件是否正确地使用 AWS Secret Manager 中的密钥。
