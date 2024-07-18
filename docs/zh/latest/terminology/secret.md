@@ -288,4 +288,3 @@ curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'
 ```
 
 这将验证 key-auth 插件是否正确地使用 AWS Secret Manager 中的密钥。
-
