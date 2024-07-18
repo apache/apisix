@@ -278,7 +278,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 通过上面两步操作，当用户请求命中 `key-auth` 插件时，会通过 APISIX Secret 组件获取到 key 在 AWS Secret Manager 中的真实值。
 
-###  验证
+### 验证
 
 你可以通过如下指令进行验证：
 
