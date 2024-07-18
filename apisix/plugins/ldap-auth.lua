@@ -59,7 +59,8 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
         ok, err = core.schema.check(consumer_schema, conf)
     else
-        core.utils.check_tls_bool({conf.use_tls, conf.tls_verify}, {"use_tls", "tls_verify"}, plugin_name)
+        core.utils.check_tls_bool({conf.use_tls, conf.tls_verify},
+                                  {"use_tls", "tls_verify"}, plugin_name)
         ok, err = core.schema.check(schema, conf)
     end
 
