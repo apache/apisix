@@ -39,6 +39,7 @@ APISIX currently supports storing secrets in the following ways:
 
 - [Environment Variables](#use-environment-variables-to-manage-secrets)
 - [HashiCorp Vault](#use-vault-to-manage-secrets)
+- [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 
 You can use APISIX Secret functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
 
@@ -190,3 +191,97 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 ```
 
 Through the above two steps, when the user request hits the `key-auth` plugin, the real value of the key in the Vault will be obtained through the APISIX Secret component.
+
+## Use AWS Secrets Manager to manage secrets
+
+Managing secrets with AWS Secrets Manager is a secure and convenient way to store and manage sensitive information. This method allows you to save secret information in AWS Secrets Manager and reference these secrets in a specific format when configuring APISIX plugins.
+
+APISIX currently supports two access methods: [long-term credential access](https://docs.aws.amazon.com/zh_cn/sdkref/latest/guide/access-iam-users.html) and [short-term credential access](https://docs.aws.amazon.com/zh_cn/sdkref/latest/guide/access-temp-idc.html).
+
+### Usage
+
+```
+$secret://$manager/$id/$secret_name/$key
+```
+
+- manager: secrets management service, could be the HashiCorp Vault, AWS, etc.
+- id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
+- secret_name: the secret name in the secrets management service
+- key: the key corresponding to the secret in the secrets management service
+
+### Example: use in key-auth plugin
+
+Here, we use the key-auth plugin as an example to demonstrate how to manage secrets through AWS Secrets Manager.
+
+Step 1: Create the corresponding key in the aws secrets manager.Here, [localstack]((https://www.localstack.cloud/)) is used for simulation, and you can use the following command:
+
+```shell
+docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name jack --description 'APISIX Secret' --secret-string '{\"auth-key\":\"value\"}'"
+```
+
+Step 2: Add APISIX Secrets resources through the Admin API, configure the connection information such as the address of AWS Secrets Manager:
+
+In the configuration where APISIX is connected to a specific AWS Secrets Manager, custom configurations will override environment variable configurations.
+
+You can expose your information directly in the environment variables, so it can be shared everywhere:
+
+```shell
+export AWS_ACCESS_KEY_ID=<access_key_id>
+export AWS_SECRET_ACCESS_KEY=<secrets_access_key>
+export AWS_SESSION_TOKEN=<token>
+export AWS_REGION=<aws-region>
+```
+
+Alternatively, you can specify information through custom configurations, which will override the environment variable configurations:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/secrets/aws/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}'
+```
+
+If you use APISIX Standalone mode, you can add the following configuration in `apisix.yaml` configuration file:
+
+```yaml
+secrets:
+  - id: aws/1
+    endpoint_url: http://127.0.0.1:4566
+    region: us-east-1
+    access_key_id: access
+    secret_access_key: secret
+    session_token: token
+```
+
+Step 3: Reference the APISIX Secrets resource in the `key-auth` plugin and fill in the key information:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "$secret://aws/1/jack/auth-key"
+        }
+    }
+}'
+```
+
+Through the above two steps, when the user request hits the `key-auth` plugin, the real value of the key in the Vault will be obtained through the APISIX Secret component.
+
+### Verification
+
+You can verify this with the following command:
+
+```shell
+#Replace the following your_route with the actual route path.
+curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'  
+```
+
+This will verify whether the key-auth plugin is correctly using the key from AWS Secrets Manager.

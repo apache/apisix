@@ -39,6 +39,7 @@ APISIX 目前支持通过以下方式存储密钥：
 
 - [环境变量](#使用环境变量管理密钥)
 - [HashiCorp Vault](#使用-vault-管理密钥)
+- [AWS Secrets Manager](#使用-aws-secrets-manager-管理密钥)
 
 你可以在以下插件的 consumer 配置中通过指定格式的变量来使用 APISIX Secret 功能，比如 `key-auth` 插件。
 
@@ -191,3 +192,99 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 ```
 
 通过上面两步操作，当用户请求命中 `key-auth` 插件时，会通过 APISIX Secret 组件获取到 key 在 Vault 中的真实值。
+
+## 使用 AWS Secrets Manager 管理密钥
+
+使用 AWS Secrets Manager 管理密钥是一种安全且便捷的方式来存储和管理敏感信息。通过这种方式，你可以将密钥信息保存在 AWS Secret Manager 中，并在配置 APISIX 插件时通过特定的格式引用这些密钥。
+
+APISIX 目前支持两种访问方式： [长期凭证的访问方式](https://docs.aws.amazon.com/zh_cn/sdkref/latest/guide/access-iam-users.html) 和 [短期凭证的访问方式](https://docs.aws.amazon.com/zh_cn/sdkref/latest/guide/access-temp-idc.html)。
+
+### 引用方式
+
+在 APISIX 中引用密钥时，可以使用以下格式：
+
+```
+$secret://$manager/$id/$secret_name/$key
+```
+
+- manager: 密钥管理服务，可以是 Vault、AWS 等
+- APISIX Secret 资源 ID，需要与添加 APISIX Secret 资源时指定的 ID 保持一致
+- secret_name: 密钥管理服务中的密钥名称
+- key：密钥管理服务中密钥对应的 key
+
+### 示例：在 key-auth 插件中使用
+
+这里以 key-auth 插件的使用为例，展示如何通过 AWS Secret Manager 管理密钥：
+
+第一步：在 AWS Secret Manager 中创建对应的密钥，这里使用 [localstack](https://www.localstack.cloud/) 模拟，可以使用如下命令：
+
+```shell
+docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name jack --description 'APISIX Secret' --secret-string '{\"auth-key\":\"value\"}'"
+```
+
+第二步：通过 Admin API 添加 Secret 资源，配置 AWS Secret Manager 的地址等连接信息：
+
+APISIX 对接到具体 AWS Secret Manager 的配置中，自定义配置会覆盖环境变量配置。
+
+你可以直接在环境变量中暴露你的信息，这样所有地方都可以共享：
+
+```shell
+export AWS_ACCESS_KEY_ID=<access_key_id>
+export AWS_SECRET_ACCESS_KEY=<secrets_access_key>
+export AWS_SESSION_TOKEN=<token>
+export AWS_REGION=<aws-region>
+```
+
+或者，可以通过自定义配置的方式指定信息，这会覆盖环境变量的配置：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/secrets/aws/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}'
+```
+
+如果使用 APISIX Standalone 版本，则可以在 `apisix.yaml`  文件中添加如下配置：
+
+```yaml
+secrets:
+  - id: aws/1
+    endpoint_url: http://127.0.0.1:4566
+    region: us-east-1
+    access_key_id: access
+    secret_access_key: secret
+    session_token: token
+```
+
+第三步：在 `key-auth` 插件中引用 APISIX Secret 资源，填充秘钥信息：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "username": "jack",
+    "plugins": {
+        "key-auth": {
+            "key": "$secret://aws/1/jack/auth-key"
+        }
+    }
+}'
+```
+
+通过上面两步操作，当用户请求命中 `key-auth` 插件时，会通过 APISIX Secret 组件获取到 key 在 AWS Secret Manager 中的真实值。
+###  验证
+
+你可以通过如下指令进行验证：
+
+```shell
+# 示例：将下面的 your_route 替换为实际的路由路径
+curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'  
+```
+
+这将验证 key-auth 插件是否正确地使用 AWS Secret Manager 中的密钥。
+
