@@ -285,9 +285,11 @@ local function ssl_filter(ssl)
     end
 
     if ssl.value.sni then
+        ssl.value.sni = ngx.re.sub(ssl.value.sni, "\\.$", "", "jo")
         ssl.value.sni = str_lower(ssl.value.sni)
     elseif ssl.value.snis then
         for i, v in ipairs(ssl.value.snis) do
+            v = ngx.re.sub(v, "\\.$", "", "jo")
             ssl.value.snis[i] = str_lower(v)
         end
     end

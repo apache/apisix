@@ -498,3 +498,40 @@ message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,new_tag:must
 message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,new_tag:must,route_name:1,service_name:1,balancer_ip:[\d.]+,response_status:200,scheme:http
 /
+
+
+
+=== TEST 10: testing behaviour with consumer
+--- apisix_yaml
+consumers:
+  - username: user0
+    plugins:
+      key-auth:
+        key: user0
+routes:
+  - uri: /opentracing
+    name: datadog
+    upstream:
+      nodes:
+        "127.0.0.1:1982": 1
+    plugins:
+      datadog:
+        batch_max_size: 1
+        max_retry_count: 0
+      key-auth: {}
+#END
+--- request
+GET /opentracing?apikey=user0
+--- response_body
+opentracing
+--- wait: 0.5
+--- grep_error_log eval
+qr/message received: apisix(.+?(?=, ))/
+--- grep_error_log_out eval
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_name:datadog,consumer:user0,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,consumer:user0,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,consumer:user0,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,consumer:user0,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,consumer:user0,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,consumer:user0,balancer_ip:[\d.]+,response_status:200,scheme:http
+/
