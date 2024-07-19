@@ -32,15 +32,26 @@ deployment:
     config_provider: yaml
 discovery:
   nacos:
-      host:
-        - "http://127.0.0.1:8858"
-      prefix: "/nacos/v1/"
-      fetch_interval: 1
-      weight: 1
-      timeout:
-        connect: 2000
-        send: 2000
-        read: 5000
+    host:
+      - "http://127.0.0.1:8858"
+    prefix: "/nacos/v1/"
+    fetch_interval: 1
+    weight: 1
+    timeout:
+      connect: 2000
+      send: 2000
+      read: 5000
+    hosts:
+      - name: nacos3
+        host:
+          - "http://127.0.0.1:8868"
+        prefix: "/nacos/v1/"
+        fetch_interval: 1
+        weight: 1
+        timeout:
+          connect: 2000
+          send: 2000
+          read: 5000
 
 _EOC_
 
@@ -53,16 +64,15 @@ deployment:
     config_provider: yaml
 discovery:
   nacos:
-      host:
-        - "http://nacos:nacos\@127.0.0.1:8848"
-      prefix: "/nacos/v1/"
-      fetch_interval: 1
-      weight: 1
-      timeout:
-        connect: 2000
-        send: 2000
-        read: 5000
-
+    host:
+      - "http://nacos:nacos\@127.0.0.1:8848"
+    prefix: "/nacos/v1/"
+    fetch_interval: 1
+    weight: 1
+    timeout:
+      connect: 2000
+      send: 2000
+      read: 5000
 _EOC_
 
 run_tests();
@@ -927,3 +937,28 @@ GET /t
 --- response_body
 server 1
 server 4
+
+
+
+=== TEST 27: get APISIX-NACOS info from NACOS by nacos name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      discovery_args:
+        name: nacos3
+        namespace_id: test_ns
+        group_name: test_group
+
+      type: roundrobin
+#END
+--- request
+GET /hello
+--- response_body chomp
+server 4
+--- no_error_log
+[error]
