@@ -564,20 +564,20 @@ plugin_attr:          # Plugin attributes
   opentelemetry:      # Plugin: opentelemetry
     trace_id_source: x-request-id   # Specify the source of the trace ID for OpenTelemetry traces.
     resource:
-      service.name: APISIX          # Set the service name for OpenTelemetry traces.
+      service.name: ${{OTEL_SERVICE_NAME:=APISIX}}          # Set the service name for OpenTelemetry traces.
     collector:
-      address: 127.0.0.1:4318       # Set the address of the OpenTelemetry collector to send traces to.
+      address: ${{OTEL_EXPORTER_OTLP_TRACES_ENDPOINT:=127.0.0.1:4318}}       # Set the address of the OpenTelemetry collector to send traces to.
       request_timeout: 3            # Set the timeout for requests to the OpenTelemetry collector in seconds.
       request_headers:              # Set the headers to include in requests to the OpenTelemetry collector.
         Authorization: token        # Set the authorization header to include an access token.
     batch_span_processor:
       drop_on_queue_full: false     # Drop spans when the export queue is full.
-      max_queue_size: 1024          # Set the maximum size of the span export queue.
+      max_queue_size: ${{OTEL_BSP_MAX_QUEUE_SIZE:=1024}}          # Set the maximum size of the span export queue.
       batch_timeout: 2              # Set the timeout for span batches to wait in the export queue before
                                     # being sent.
       inactive_timeout: 1           # Set the timeout for spans to wait in the export queue before being sent,
                                     # if the queue is not full.
-      max_export_batch_size: 16     # Set the maximum number of spans to include in each batch sent to the
+      max_export_batch_size: ${{OTEL_BSP_MAX_EXPORT_BATCH_SIZE:=16}}     # Set the maximum number of spans to include in each batch sent to the
                                     # OpenTelemetry collector.
     set_ngx_var: false              # Export opentelemetry variables to NGINX variables.
   prometheus:                               # Plugin: prometheus
