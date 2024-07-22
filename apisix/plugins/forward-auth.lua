@@ -80,7 +80,7 @@ local _M = {
 function _M.check_schema(conf)
     local check = {"uri"}
     core.utils.check_https(check, conf, _M.name)
-    core.utils.check_tls_bool({conf.ssl_verify}, {"ssl_verify"}, _M.name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
 
     return core.schema.check(schema, conf)
 end

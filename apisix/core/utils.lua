@@ -444,10 +444,18 @@ function _M.check_https(fields, conf, plugin_name)
 end
 
 
-function _M.check_tls_bool(fields, field_names, plugin_name)
+function _M.check_tls_bool(fields, conf, plugin_name)
     for i, field in ipairs(fields) do
-        if field ~= true then
-            log.warn("Keeping ", field_names[i], " disabled in ",
+
+        local new_conf, new_field = get_root_conf(field, conf)
+        if not new_conf then
+            return
+        end
+
+        local value = new_conf[new_field]
+
+        if value ~= true and value ~= nil then
+            log.warn("Keeping ", field, " disabled in ",
                      plugin_name, " configuration is a security risk")
         end
     end

@@ -76,7 +76,7 @@ function _M.check_schema(conf, schema_type)
         return core.schema.check(metadata_schema, conf)
     end
 
-    core.utils.check_tls_bool({conf.tls}, {"tls"}, plugin_name)
+    core.utils.check_tls_bool({"tls"}, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 
