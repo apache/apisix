@@ -31,7 +31,7 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 
 `opentelemetry` 插件可用于根据 [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Tracing 数据。
 
-该插件仅支持二进制编码的 [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp)，即请求类型为 `application/x-protobuf` 的数据上报。
+该插件仅支持二进制编码的 [OTLP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp)，即请求类型为 `application/x-protobuf` 的数据上报。
 
 ## 属性
 
