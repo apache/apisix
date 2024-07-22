@@ -251,7 +251,6 @@ install: runtime
 	$(ENV_INSTALL) -d /usr/local/apisix/conf/cert
 	$(ENV_INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(ENV_INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
-	$(ENV_INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
