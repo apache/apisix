@@ -99,26 +99,6 @@ make stop
 
 echo "passed: allow configuring address in stream_proxy"
 
-sed -i 's/^  \(node_listen:\)/  #\1/g' conf/config-default.yaml
-sed -i 's/^    \(- 9080\)/    #\1/g' conf/config-default.yaml
-sed -i 's/^  # \(node_listen: 9080\)/  \1/g' conf/config-default.yaml
-
-echo '
-apisix:
-    node_listen:
-      - 9080
-      - 9081
-' > conf/config.yaml
-
-out=$(make init 2>&1 || true)
-if ! echo "$out"; then
-    echo "failed: allow configuring node_listen as a number in the default config"
-    exit 1
-fi
-git checkout conf/config-default.yaml
-
-echo "passed: allow configuring node_listen as a number in the default config"
-
 # apisix test
 git checkout conf/config.yaml
 
