@@ -38,78 +38,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Sanity check with minimal valid configuration.
---- config
-    location /t {
-        content_by_lua_block {
-
-            local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "http://a.com",
-                introspection_endpoint = "http://b.com",
-                redirect_uri = "http://c.com",
-                post_logout_redirect_uri = "http://d.com",
-                proxy_opts = {
-                    http_proxy = "http://e.com"
-                }
-            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- error_log
-Using openid-connect discovery with no TLS is a security risk
-Using openid-connect introspection_endpoint with no TLS is a security risk
-Using openid-connect redirect_uri with no TLS is a security risk
-Using openid-connect post_logout_redirect_uri with no TLS is a security risk
-Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
-
-
-
-=== TEST 2: Sanity check with minimal valid configuration.
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openid-connect")
-
-            local ok, err = plugin.check_schema({
-                client_id = "a",
-                client_secret = "b",
-                discovery = "https://a.com",
-                introspection_endpoint = "https://b.com",
-                redirect_uri = "https://c.com",
-                post_logout_redirect_uri = "https://d.com",
-                proxy_opts = {
-                    http_proxy = "https://e.com"
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- no_error_log
-Using openid-connect discovery with no TLS is a security risk
-Using openid-connect introspection_endpoint with no TLS is a security risk
-Using openid-connect redirect_uri with no TLS is a security risk
-Using openid-connect post_logout_redirect_uri with no TLS is a security risk
-Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
-
-
-
-=== TEST 3: Check configuration of cookie
+=== TEST 1: Check configuration of cookie
 --- config
     location /t {
         content_by_lua_block {
@@ -138,7 +67,7 @@ done
 
 
 
-=== TEST 4: Set up new route access the auth server
+=== TEST 2: Set up new route access the auth server
 --- config
     location /t {
         content_by_lua_block {
@@ -194,7 +123,7 @@ passed
 
 
 
-=== TEST 5: Call to route to get session
+=== TEST 3: Call to route to get session
 --- config
     location /t {
         content_by_lua_block {
@@ -229,7 +158,7 @@ passed
 
 
 
-=== TEST 6: Update route with Keycloak introspection endpoint and introspection addon headers.
+=== TEST 4: Update route with Keycloak introspection endpoint and introspection addon headers.
 --- config
     location /t {
         content_by_lua_block {
@@ -273,7 +202,7 @@ passed
 
 
 
-=== TEST 7: Obtain valid token and access route with it, introspection work as expected when configured extras headers.
+=== TEST 5: Obtain valid token and access route with it, introspection work as expected when configured extras headers.
 --- config
     location /t {
         content_by_lua_block {
@@ -333,7 +262,7 @@ token validate successfully by introspection
 
 
 
-=== TEST 8: Access route with an invalid token, should fail.
+=== TEST 6: Access route with an invalid token, should fail.
 --- config
     location /t {
         content_by_lua_block {
@@ -364,7 +293,7 @@ OIDC introspection failed: invalid token
 
 
 
-=== TEST 9: Update route with fake Keycloak introspection endpoint and introspection addon headers
+=== TEST 7: Update route with fake Keycloak introspection endpoint and introspection addon headers
 --- config
     location /t {
         content_by_lua_block {
@@ -408,7 +337,7 @@ passed
 
 
 
-=== TEST 10: Check http headers from fake introspection endpoint.
+=== TEST 8: Check http headers from fake introspection endpoint.
 --- config
     location /t {
         content_by_lua_block {

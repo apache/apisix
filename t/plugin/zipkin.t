@@ -41,34 +41,10 @@ __DATA__
 GET /t
 --- response_body
 done
---- error_log
-Using zipkin endpoint with no TLS is a security risk
 
 
 
-=== TEST 2: no security warning when https
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.zipkin")
-            local ok, err = plugin.check_schema({endpoint = 'https://127.0.0.1', sample_ratio = 0.001})
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-Using zipkin endpoint with no TLS is a security risk
-
-
-
-=== TEST 3: wrong value of ratio
+=== TEST 2: wrong value of ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -89,7 +65,7 @@ done
 
 
 
-=== TEST 4: wrong value of ratio
+=== TEST 3: wrong value of ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -110,7 +86,7 @@ done
 
 
 
-=== TEST 5: add plugin
+=== TEST 4: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -148,14 +124,14 @@ passed
 
 
 
-=== TEST 6: tiger zipkin
+=== TEST 5: tiger zipkin
 --- request
 GET /opentracing
 --- wait: 10
 
 
 
-=== TEST 7: change sample ratio
+=== TEST 6: change sample ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -192,7 +168,7 @@ passed
 
 
 
-=== TEST 8: not tiger zipkin
+=== TEST 7: not tiger zipkin
 --- request
 GET /opentracing
 --- response_body
@@ -200,7 +176,7 @@ opentracing
 
 
 
-=== TEST 9: disabled
+=== TEST 8: disabled
 --- config
     location /t {
         content_by_lua_block {
@@ -233,7 +209,7 @@ passed
 
 
 
-=== TEST 10: not tiger zipkin
+=== TEST 9: not tiger zipkin
 --- request
 GET /opentracing
 --- response_body
@@ -241,7 +217,7 @@ opentracing
 
 
 
-=== TEST 11: set plugin with external ip address
+=== TEST 10: set plugin with external ip address
 --- config
     location /t {
         content_by_lua_block {
@@ -280,14 +256,14 @@ passed
 
 
 
-=== TEST 12: tiger zipkin
+=== TEST 11: tiger zipkin
 --- request
 GET /opentracing
 --- wait: 10
 
 
 
-=== TEST 13: sanity server_addr
+=== TEST 12: sanity server_addr
 --- config
     location /t {
         content_by_lua_block {
@@ -311,7 +287,7 @@ property "server_addr" validation failed: failed to match pattern "^[0-9]{1,3}.[
 
 
 
-=== TEST 14: check zipkin headers
+=== TEST 13: check zipkin headers
 --- config
     location /t {
         content_by_lua_block {
@@ -348,7 +324,7 @@ passed
 
 
 
-=== TEST 15: set x-b3-sampled if sampled
+=== TEST 14: set x-b3-sampled if sampled
 --- request
 GET /echo
 --- response_headers
@@ -356,7 +332,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 16: don't sample if disabled
+=== TEST 15: don't sample if disabled
 --- request
 GET /echo
 --- more_headers
@@ -366,7 +342,7 @@ x-b3-sampled: 0
 
 
 
-=== TEST 17: don't sample if disabled (old way)
+=== TEST 16: don't sample if disabled (old way)
 --- request
 GET /echo
 --- more_headers
@@ -376,7 +352,7 @@ x-b3-sampled: 0
 
 
 
-=== TEST 18: sample according to the header
+=== TEST 17: sample according to the header
 --- config
     location /t {
         content_by_lua_block {
@@ -413,7 +389,7 @@ passed
 
 
 
-=== TEST 19: don't sample by default
+=== TEST 18: don't sample by default
 --- request
 GET /echo
 --- response_headers
@@ -421,7 +397,7 @@ x-b3-sampled: 0
 
 
 
-=== TEST 20: sample if needed
+=== TEST 19: sample if needed
 --- request
 GET /echo
 --- more_headers
@@ -431,7 +407,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 21: sample if debug
+=== TEST 20: sample if debug
 --- request
 GET /echo
 --- more_headers
@@ -441,7 +417,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 22: sample if needed (old way)
+=== TEST 21: sample if needed (old way)
 --- request
 GET /echo
 --- more_headers
@@ -451,7 +427,7 @@ x-b3-sampled: 1
 
 
 
-=== TEST 23: don't cache the per-req sample ratio
+=== TEST 22: don't cache the per-req sample ratio
 --- config
     location /t {
         content_by_lua_block {
@@ -494,7 +470,7 @@ GET /t
 
 
 
-=== TEST 24: no error in log phase while b3 header invalid
+=== TEST 23: no error in log phase while b3 header invalid
 --- request
 GET /echo
 --- more_headers

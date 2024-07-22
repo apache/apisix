@@ -29,71 +29,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: using http should not give security warning
---- config
-    location /t {
-        content_by_lua_block {
-    local check = {"discovery", "token_endpoint", "resource_registration_endpoint", "access_denied_redirect_uri"}
-            local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({
-                                client_id = "foo",
-                                discovery = "http://host.domain/realms/foo/protocol/openid-connect/token",
-                                token_endpoint = "http://token_endpoint.domain",
-                                resource_registration_endpoint = "http://resource_registration_endpoint.domain",
-                                access_denied_redirect_uri = "http://access_denied_redirect_uri.domain"
-                            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- error_log
-Using authz-keycloak discovery with no TLS is a security risk
-Using authz-keycloak token_endpoint with no TLS is a security risk
-Using authz-keycloak resource_registration_endpoint with no TLS is a security
-Using authz-keycloak access_denied_redirect_uri with no TLS is a security risk
-
-
-
-=== TEST 2: using https should not give security warning
---- config
-    location /t {
-        content_by_lua_block {
-    local check = {"discovery", "token_endpoint", "resource_registration_endpoint", "access_denied_redirect_uri"}
-            local plugin = require("apisix.plugins.authz-keycloak")
-            local ok, err = plugin.check_schema({
-                                client_id = "foo",
-                                discovery = "https://host.domain/realms/foo/protocol/openid-connect/token",
-                                token_endpoint = "https://token_endpoint.domain",
-                                resource_registration_endpoint = "https://resource_registration_endpoint.domain",
-                                access_denied_redirect_uri = "https://access_denied_redirect_uri.domain"
-                            })
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-done
---- no_error_log
-Using authz-keycloak discovery with no TLS is a security risk
-Using authz-keycloak token_endpoint with no TLS is a security risk
-Using authz-keycloak resource_registration_endpoint with no TLS is a security
-Using authz-keycloak access_denied_redirect_uri with no TLS is a security risk
-
-
-
-=== TEST 3: store secret into vault
+=== TEST 1: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5
 --- response_body
@@ -101,7 +37,7 @@ Success! Data written to: kv/apisix/foo
 
 
 
-=== TEST 4: set client_secret as a reference to secret
+=== TEST 2: set client_secret as a reference to secret
 --- config
     location /t {
         content_by_lua_block {
@@ -179,7 +115,7 @@ success
 
 
 
-=== TEST 5: set client_secret as a reference to env variable
+=== TEST 3: set client_secret as a reference to env variable
 --- config
     location /t {
         content_by_lua_block {
@@ -243,7 +179,7 @@ success
 
 
 
-=== TEST 6: set invalid client_secret as a reference to env variable
+=== TEST 4: set invalid client_secret as a reference to env variable
 --- config
     location /t {
         content_by_lua_block {

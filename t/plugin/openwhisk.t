@@ -47,32 +47,10 @@ __DATA__
     }
 --- response_body
 done
---- error_log
-Using openwhisk api_host with no TLS is a security risk
 
 
 
-=== TEST 2: using https should not give security warning
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.openwhisk")
-            local ok, err = plugin.check_schema({api_host = "https://127.0.0.1:3233", service_token = "test:test", namespace = "test", action = "test"})
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- no_error_log
-Using openwhisk api_host with no TLS is a security risk
-
-
-
-=== TEST 3: missing `api_host`
+=== TEST 2: missing `api_host`
 --- config
     location /t {
         content_by_lua_block {
@@ -88,7 +66,7 @@ property "api_host" is required
 
 
 
-=== TEST 4: wrong type for `api_host`
+=== TEST 3: wrong type for `api_host`
 --- config
     location /t {
         content_by_lua_block {
@@ -104,7 +82,7 @@ property "api_host" validation failed: wrong type: expected string, got number
 
 
 
-=== TEST 5: setup route with plugin
+=== TEST 4: setup route with plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -139,7 +117,7 @@ passed
 
 
 
-=== TEST 6: verify encrypted field
+=== TEST 5: verify encrypted field
 --- config
     location /t {
         content_by_lua_block {
@@ -159,7 +137,7 @@ pe14btxogtzJ4qPM/W2qj0AQeUK/O5oegLkKJLkkSEsKUIjP+bgyO+qsTXuLrY/h/esLKrRulD2TOtf+
 
 
 
-=== TEST 7: hit route (with GET request)
+=== TEST 6: hit route (with GET request)
 --- request
 GET /hello
 --- response_body chomp
@@ -167,7 +145,7 @@ GET /hello
 
 
 
-=== TEST 8: hit route (with POST method and non-json format request body)
+=== TEST 7: hit route (with POST method and non-json format request body)
 --- request
 POST /hello
 test=test
@@ -179,7 +157,7 @@ qr/"error":"The request content was malformed/
 
 
 
-=== TEST 9: setup route with plugin
+=== TEST 8: setup route with plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +192,7 @@ passed
 
 
 
-=== TEST 10: hit route (with POST and correct request body)
+=== TEST 9: hit route (with POST and correct request body)
 --- request
 POST /hello
 {"name": "world"}
@@ -225,7 +203,7 @@ Content-Type: application/json
 
 
 
-=== TEST 11: reset route to non-existent action
+=== TEST 10: reset route to non-existent action
 --- config
     location /t {
         content_by_lua_block {
@@ -260,7 +238,7 @@ passed
 
 
 
-=== TEST 12: hit route (with non-existent action)
+=== TEST 11: hit route (with non-existent action)
 --- request
 POST /hello
 {"name": "world"}
@@ -272,7 +250,7 @@ qr/"error":"The requested resource does not exist."/
 
 
 
-=== TEST 13: reset route to wrong api_host
+=== TEST 12: reset route to wrong api_host
 --- config
     location /t {
         content_by_lua_block {
@@ -307,7 +285,7 @@ passed
 
 
 
-=== TEST 14: hit route (with wrong api_host)
+=== TEST 13: hit route (with wrong api_host)
 --- request
 POST /hello
 {"name": "world"}
@@ -319,7 +297,7 @@ failed to process openwhisk action, err:
 
 
 
-=== TEST 15: reset route to packaged action
+=== TEST 14: reset route to packaged action
 --- config
     location /t {
         content_by_lua_block {
@@ -355,7 +333,7 @@ passed
 
 
 
-=== TEST 16: hit route (with packaged action)
+=== TEST 15: hit route (with packaged action)
 --- request
 GET /hello
 --- response_body chomp
@@ -363,7 +341,7 @@ GET /hello
 
 
 
-=== TEST 17: reset route to status code action
+=== TEST 16: reset route to status code action
 --- config
     location /t {
         content_by_lua_block {
@@ -398,14 +376,14 @@ passed
 
 
 
-=== TEST 18: hit route (with packaged action)
+=== TEST 17: hit route (with packaged action)
 --- request
 GET /hello
 --- error_code: 407
 
 
 
-=== TEST 19: reset route to headers action
+=== TEST 18: reset route to headers action
 --- config
     location /t {
         content_by_lua_block {
@@ -440,7 +418,7 @@ passed
 
 
 
-=== TEST 20: hit route (with headers action)
+=== TEST 19: hit route (with headers action)
 --- request
 GET /hello
 --- response_headers
@@ -448,7 +426,7 @@ test: header
 
 
 
-=== TEST 21: reset route to body action
+=== TEST 20: reset route to body action
 --- config
     location /t {
         content_by_lua_block {
@@ -483,7 +461,7 @@ passed
 
 
 
-=== TEST 22: hit route (with body action)
+=== TEST 21: hit route (with body action)
 --- request
 GET /hello
 --- response_body

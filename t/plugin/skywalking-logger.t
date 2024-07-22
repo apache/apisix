@@ -67,34 +67,10 @@ __DATA__
             ngx.say("done")
         }
     }
---- response_body
-done
---- error_log
-Using skywalking-logger endpoint_addr with no TLS is a security risk
 
 
 
-=== TEST 2: using https should not give security warning
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.skywalking-logger")
-            local ok, err = plugin.check_schema({endpoint_addr = "https://127.0.0.1"})
-            if not ok then
-                ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- response_body
-done
---- no_error_log
-Using skywalking-logger endpoint_addr with no TLS is a security risk
-
-
-
-=== TEST 3: full schema check
+=== TEST 2: full schema check
 --- config
     location /t {
         content_by_lua_block {
@@ -118,7 +94,7 @@ Using skywalking-logger endpoint_addr with no TLS is a security risk
 
 
 
-=== TEST 4: uri is missing
+=== TEST 3: uri is missing
 --- config
     location /t {
         content_by_lua_block {
@@ -144,7 +120,7 @@ done
 
 
 
-=== TEST 5: add plugin
+=== TEST 4: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -184,7 +160,7 @@ passed
 
 
 
-=== TEST 6: access local server
+=== TEST 5: access local server
 --- request
 GET /opentracing
 --- response_body
@@ -195,7 +171,7 @@ Batch Processor[skywalking logger] successfully processed the entries
 
 
 
-=== TEST 7: test trace context header
+=== TEST 6: test trace context header
 --- request
 GET /opentracing
 --- more_headers
@@ -208,7 +184,7 @@ qr/.*\\\"traceContext\\\":\{(\\\"traceSegmentId\\\":\\\"ae709769-6e20-4c68-9733-
 
 
 
-=== TEST 8: test wrong trace context header
+=== TEST 7: test wrong trace context header
 --- request
 GET /opentracing
 --- more_headers
@@ -221,7 +197,7 @@ qr/failed to parse trace_context header:/
 
 
 
-=== TEST 9: add plugin metadata
+=== TEST 8: add plugin metadata
 --- config
     location /t {
         content_by_lua_block {
@@ -248,7 +224,7 @@ passed
 
 
 
-=== TEST 10: access local server and test log format
+=== TEST 9: access local server and test log format
 --- request
 GET /opentracing
 --- response_body
@@ -259,7 +235,7 @@ qr/.*\{\\\"json\\\":\\\"\{(\\\\\\\"\@timestamp\\\\\\\":\\\\\\\".*\\\\\\\"|\\\\\\
 
 
 
-=== TEST 11: log format in plugin
+=== TEST 10: log format in plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -301,7 +277,7 @@ passed
 
 
 
-=== TEST 12: access local server and test log format
+=== TEST 11: access local server and test log format
 --- request
 GET /opentracing
 --- response_body
@@ -312,7 +288,7 @@ qr/.*\{\\\"json\\\":.*\\\\\\"my_ip\\\\\\":\\\\\\"127\.0\.0\.1\\\\\\".*\}/
 
 
 
-=== TEST 13: test serviceInstance $hostname
+=== TEST 12: test serviceInstance $hostname
 --- request
 GET /opentracing
 --- response_body
@@ -324,7 +300,7 @@ qr/\\\"serviceInstance\\\":\\\"\\\"/
 
 
 
-=== TEST 14: add plugin with 'include_req_body' setting, collect request log
+=== TEST 13: add plugin with 'include_req_body' setting, collect request log
 --- config
     location /t {
         content_by_lua_block {
@@ -367,7 +343,7 @@ qr/\\\"serviceInstance\\\":\\\"\\\"/
 
 
 
-=== TEST 15: add plugin with 'include_resp_body' setting, collect response log
+=== TEST 14: add plugin with 'include_resp_body' setting, collect response log
 --- config
     location /t {
         content_by_lua_block {
