@@ -23,6 +23,8 @@ local aws = require("resty.aws")
 local sub = core.string.sub
 local rfind_char = core.string.rfind_char
 local env = core.env
+local type = type
+local unpack = unpack
 
 --- AWS Environment Configuration
 local AWS
