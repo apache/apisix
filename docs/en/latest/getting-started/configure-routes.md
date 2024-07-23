@@ -36,10 +36,19 @@ In this section, you will create a route that forwards client requests to [httpb
 
 The following command creates a route, which should forward all requests sent to `http://127.0.0.1:9080/ip` to [httpbin.org/ip](http://httpbin.org/ip):
 
-[//]: <TODO: Add the link to the authorization of Admin API>
+[the Admin API key](https://apisix.apache.org/docs/apisix/installation-guide/#updating-admin-api-key)
+```
+deployment:
+  admin:
+    admin_key
+      -
+        name: "admin"
+        key: newsupersecurekey
+        role: admin
+```
 
 ```shell
-curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
+curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -H 'X-API-KEY: <admin api key>' -d '
 {
   "id": "getting-started-ip",
   "uri": "/ip",
