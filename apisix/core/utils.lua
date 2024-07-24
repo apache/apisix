@@ -36,6 +36,8 @@ local str_byte       = string.byte
 local tonumber       = tonumber
 local tostring       = tostring
 local re_gsub        = ngx.re.gsub
+local re_match       = ngx.re.match
+local re_gmatch      = ngx.re.gmatch
 local type           = type
 local io_popen       = io.popen
 local C              = ffi.C
@@ -43,6 +45,7 @@ local ffi_string     = ffi.string
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
+local ipairs         = ipairs
 
 local hostname
 local dns_resolvers
@@ -376,6 +379,87 @@ do
 end
 -- Resolve {$1, $2, ...} in the given string
 _M.resolve_var_with_captures = resolve_var_with_captures
+
+
+-- if `str` is a string containing period `some_plugin.some_field.nested_field`
+-- return the table that contains `nested_field` in its root level
+-- else return the original table `conf`
+local function get_root_conf(str, conf, field)
+    -- if the string contains periods, get the splits in `it` iterator
+    local it, _ = re_gmatch(str, [[([^\.]+)]])
+    if not it then
+        return conf, field
+    end
+
+    -- add the splits into a table
+    local matches = {}
+    while true do
+        local m, _ = it()
+        if not m then
+            break
+        end
+        table.insert(matches, m[0])
+    end
+
+    -- get to the table that holds the last field
+    local num_of_matches = #matches
+    for i = 1, num_of_matches - 1 , 1 do
+        conf = conf[matches[i]]
+    end
+
+    -- return the table and the last field
+    return conf, matches[num_of_matches]
+end
+
+
+local function find_and_log(field, plugin_name, value)
+    local match, err = re_match(value, "^https")
+    if not match and not err then
+        log.warn("Using ", plugin_name, " " , field, " with no TLS is a security risk")
+    end
+end
+
+
+function _M.check_https(fields, conf, plugin_name)
+    for _, field in ipairs(fields) do
+
+        local new_conf, new_field = get_root_conf(field, conf)
+        if not new_conf then
+            return
+        end
+
+        local value = new_conf[new_field]
+        if not value then
+            return
+        end
+
+        if type(value) == "table" then
+            for _, v in ipairs(value) do
+                find_and_log(field, plugin_name, v)
+            end
+        else
+            find_and_log(field, plugin_name, value)
+        end
+    end
+end
+
+
+function _M.check_tls_bool(fields, conf, plugin_name)
+    for i, field in ipairs(fields) do
+
+        local new_conf, new_field = get_root_conf(field, conf)
+        if not new_conf then
+            return
+        end
+
+        local value = new_conf[new_field]
+
+        if value ~= true and value ~= nil then
+            log.warn("Keeping ", field, " disabled in ",
+                     plugin_name, " configuration is a security risk")
+        end
+    end
+end
 
 
 return _M
