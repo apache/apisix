@@ -305,6 +305,11 @@ function _M.check_schema(conf)
         }
     end
 
+    local check = {"discovery", "introspection_endpoint", "redirect_uri",
+                    "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
+    core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
