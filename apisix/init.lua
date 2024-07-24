@@ -113,13 +113,6 @@ function _M.http_init_worker()
     -- for testing only
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
-    -- Because go's scheduler doesn't work after fork, we have to load the gRPC module
-    -- in each worker.
-    core.grpc = require("apisix.core.grpc")
-    if type(core.grpc) ~= "table" then
-        core.grpc = nil
-    end
-
     require("apisix.events").init_worker()
 
     local discovery = require("apisix.discovery.init").discovery
