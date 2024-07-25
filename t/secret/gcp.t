@@ -203,7 +203,7 @@ GET /t
 --- config
     location /t {
         content_by_lua_block {
-                    local conf = {
+            local conf = {
                 auth_config = {
                     client_email = "email@apisix.iam.gserviceaccount.com",
                     private_key = [[
