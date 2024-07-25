@@ -69,7 +69,7 @@ kEJQcmfVew5mFXyxuEn3zA==
                 },
             }
             local data, err = gcp.get(config, "apisix")
-            if err then 
+            if err then
                 return ngx.say(err)
             end
 
