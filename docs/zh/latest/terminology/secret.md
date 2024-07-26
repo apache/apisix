@@ -195,7 +195,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 ## 使用 GCP Secrets Manager 管理密钥
 
-使用 GCP Secret Manager 来管理密钥意味着你可以将密钥信息保存在 GCP 服务中，在配置插件时通过特定格式的变量来引用。APISIX 目前支持对接GCP Secret Manager, 所支持的验证方式是[OAuth 2.0](https://developers.google.com/identity/protocols/oauth2?hl=zh-cn)。
+使用 GCP Secret Manager 来管理密钥意味着你可以将密钥信息保存在 GCP 服务中，在配置插件时通过特定格式的变量来引用。APISIX 目前支持对接 GCP Secret Manager, 所支持的验证方式是[OAuth 2.0](https://developers.google.com/identity/protocols/oauth2?hl=zh-cn)。
 
 ### 引用方式
 
@@ -224,7 +224,7 @@ $secret://$manager/$id/$secret_name/$key
 | auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。          |
 | ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
 
-你需要配置相应的认证参数，或者通过auth_file来指定认证文件，其中auth_file的内容为认证参数的json格式。
+你需要配置相应的认证参数，或者通过 auth_file 来指定认证文件，其中 auth_file 的内容为认证参数的 json 格式。
 
 ### 示例
 

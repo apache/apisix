@@ -565,7 +565,7 @@ value
 
 
 
-=== TEST 10: get value from gcp by auth_file(configuration is undefined)
+=== TEST 11: get value from gcp by auth_file(configuration is undefined)
 --- config
     location /t {
         content_by_lua_block {
