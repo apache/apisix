@@ -26,13 +26,6 @@ local env = core.env
 local type = type
 local unpack = unpack
 
---- AWS Environment Configuration
-local AWS
-local AWS_ACCESS_KEY_ID
-local AWS_SECRET_ACCESS_KEY
-local AWS_SESSION_TOKEN
-local AWS_REGION
-
 local schema = {
     type = "object",
     properties = {
@@ -47,69 +40,40 @@ local schema = {
         },
         region = {
             type = "string",
+            default = "us-east-1",
         },
         endpoint_url = core.schema.uri_def,
     },
+    required = {"access_key_id", "secret_access_key"},
 }
 
 local _M = {
     schema = schema
 }
 
-local function initialize_aws()
-    AWS_ACCESS_KEY_ID = env.fetch_by_uri("$ENV://AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = env.fetch_by_uri("$ENV://AWS_SECRET_ACCESS_KEY")
-    AWS_SESSION_TOKEN = env.fetch_by_uri("$ENV://AWS_SESSION_TOKEN")
-    AWS_REGION = env.fetch_by_uri("$ENV://AWS_REGION")
-    AWS = aws()
-    initialize_aws= nil
-end
-
 local function make_request_to_aws(conf,key)
-    if initialize_aws then
-        initialize_aws()
-    end
+    local aws_instance = aws()
 
-    local region = conf.region or AWS_REGION
-    if not region then
-        return nil, "aws secret manager requires region"
-    end
+    local region = conf.region
 
-    local access_key_id = env.fetch_by_uri(conf.access_key_id)
-    if not access_key_id then
-        access_key_id = conf.access_key_id or AWS_ACCESS_KEY_ID
-    end
+    local access_key_id = env.fetch_by_uri(conf.access_key_id) or conf.access_key_id
 
-    local secret_access_key = env.fetch_by_uri(conf.secret_access_key)
-    if not secret_access_key then
-        secret_access_key = conf.secret_access_key or AWS_SECRET_ACCESS_KEY
-    end
+    local secret_access_key = env.fetch_by_uri(conf.secret_access_key) or conf.secret_access_key
 
-    local session_token = env.fetch_by_uri(conf.session_token)
-    if not session_token then
-        session_token = conf.session_token or AWS_SESSION_TOKEN
-    end
+    local session_token = env.fetch_by_uri(conf.session_token) or conf.session_token
 
-    local my_creds = nil
-    if access_key_id and secret_access_key then
-        my_creds = AWS:Credentials {
-            accessKeyId = access_key_id,
-            secretAccessKey = secret_access_key,
-            sessionToken = session_token,
-        }
-    end
-
-    if not my_creds then
-        return nil, "(invalid credentials)"
-    end
-
-    AWS.config.credentials = my_creds
+    local credentials = aws_instance:Credentials {
+        accessKeyId = access_key_id,
+        secretAccessKey = secret_access_key,
+        sessionToken = session_token,
+    }
 
     local default_endpoint = "https://secretsmanager." .. region .. ".amazonaws.com"
     local pre, host, port, _, _ = unpack(http:parse_uri(conf.endpoint_url or default_endpoint))
     local endpoint = pre .. "://" .. host
 
-    local sm = AWS:SecretsManager {
+    local sm = aws_instance:SecretsManager {
+        credentials = credentials,
         endpoint = endpoint,
         region = region,
         port = port,
@@ -124,30 +88,34 @@ local function make_request_to_aws(conf,key)
         if err then
             return nil, err
         end
-        return nil, "(invalid response)"
+
+        return nil, "invalid response"
     end
 
     if res.status ~= 200 then
         local body = res.body
         if type(body) == "table" then
-            err = core.json.decode(body)
+            local data, err = core.json.encode(body)
+            if err then
+                return nil, "invalid status code " .. res.status .. ", " .. err
+            end
+
+            if data then
+                return nil, "invalid status code " .. res.status .. ", " .. data
+            end
         end
 
-        if err then
-            return nil, err
-        end
-
-        return nil, "(invalid status)"
+        return nil, "invalid status code received " .. res.status
     end
 
     local body = res.body
     if type(body) ~= "table" then
-        return nil, "(invalid response)"
+        return nil, "invalid response body"
     end
 
     local secret = res.body.SecretString
     if type(secret) ~= "string" then
-        return nil, "(invalid secret)"
+        return nil, "invalid secret string"
     end
 
     return secret
@@ -179,12 +147,16 @@ local function get(conf,key)
         return nil, "failed to retrtive data from aws secret manager: " .. err
     end
 
-    local ret = core.json.decode(res)
-    if not ret then
+    local data, err = core.json.decode(res)
+    if not data then
+        if err then
+            return nil, "failed to decode result, res: " .. res .. ", " .. err
+        end
+
         return nil, "failed to decode result, res: " .. res
     end
 
-    return ret[sub_key]
+    return data[sub_key]
 end
 
 _M.get = get

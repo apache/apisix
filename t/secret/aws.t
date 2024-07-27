@@ -20,10 +20,6 @@ BEGIN {
     $ENV{AWS_ACCESS_KEY_ID} = "access";
     $ENV{AWS_SECRET_ACCESS_KEY} = "secret";
     $ENV{AWS_SESSION_TOKEN} = "token";
-    $ENV{AWS_REGION_LOCAL} = "us-east-1";
-    $ENV{AWS_ACCESS_KEY_ID_LOCAL} = "access";
-    $ENV{AWS_SECRET_ACCESS_KEY_LOCAL} = "secret";
-    $ENV{AWS_SESSION_TOKEN_LOCAL} = "token";
 }
 
 use t::APISIX 'no_plan';
@@ -145,7 +141,7 @@ failed to retrtive data from aws secret manager: SecretsManager:getSecretValue()
 
 
 
-=== TEST 5: error aws region
+=== TEST 5: get value from aws(err region, status ~= 200)
 --- config
     location /t {
         content_by_lua_block {
@@ -159,7 +155,7 @@ failed to retrtive data from aws secret manager: SecretsManager:getSecretValue()
             }
             local data, err = aws.get(conf, "/apisix-key/jack/key")
             if err then
-                return ngx.say(err)
+                return ngx.say("err")
             end
             ngx.say("done")
         }
@@ -167,12 +163,37 @@ failed to retrtive data from aws secret manager: SecretsManager:getSecretValue()
 --- request
 GET /t
 --- response_body
-failed to retrtive data from aws secret manager: (invalid status)
---- timeout: 20
+err
 
 
 
-=== TEST 6: get value from aws
+=== TEST 6: get value from aws(err key, status ~= 200)
+--- config
+    location /t {
+        content_by_lua_block {
+            local aws = require("apisix.secret.aws")
+            local conf = {
+                endpoint_url = "http://127.0.0.1:4566",
+                region = "us-east-1",
+                access_key_id = "access",
+                secret_access_key = "secret",
+                session_token = "token",
+            }
+            local data, err = aws.get(conf, "/apisix-key/jack-error/key")
+            if err then
+                return ngx.say("err")
+            end
+            ngx.say("value")
+        }
+    }
+--- request
+GET /t
+--- response_body
+err
+
+
+
+=== TEST 7: get value from aws
 --- config
     location /t {
         content_by_lua_block {
@@ -198,7 +219,7 @@ value
 
 
 
-=== TEST 7: get value from aws using access_key and secret_access_key and token in an env var
+=== TEST 8: get value from aws using env var
 --- config
     location /t {
         content_by_lua_block {
@@ -206,31 +227,9 @@ value
             local conf = {
                 endpoint_url = "http://127.0.0.1:4566",
                 region = "us-east-1",
-                access_key_id = "$ENV://AWS_ACCESS_KEY_ID_LOCAL",
-                secret_access_key = "$ENV://AWS_SECRET_ACCESS_KEY_LOCAL",
-                session_token = "$ENV://AWS_SESSION_TOKEN_LOCAL",
-            }
-            local data, err = aws.get(conf, "/apisix-key/jack/key")
-            if err then
-                return ngx.say(err)
-            end
-            ngx.say("value")
-        }
-    }
---- request
-GET /t
---- response_body
-value
-
-
-
-=== TEST 8: get value from aws using access_key and secret_access_key and token in an global env var
---- config
-    location /t {
-        content_by_lua_block {
-            local aws = require("apisix.secret.aws")
-            local conf = {
-                endpoint_url = "http://127.0.0.1:4566",
+                access_key_id = "$ENV://AWS_ACCESS_KEY_ID",
+                secret_access_key = "$ENV://AWS_SECRET_ACCESS_KEY",
+                session_token = "$ENV://AWS_SESSION_TOKEN",
             }
             local data, err = aws.get(conf, "/apisix-key/jack/key")
             if err then
