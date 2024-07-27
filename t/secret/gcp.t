@@ -439,10 +439,10 @@ pi0w/L2I/2nLqgPFtqSGpL2KkJYcXPECIQCdM/PD1k4haNzCOXNA++M1JnYLSPfI
 zKkMh4MrEZHDWQIhAKasRiKBaUnTCIJ04bs9L6NDtO4Ic9jj8ANW0Nk9yoJxAiAA
 tBXLQH7fw5H8RaxBN91yQUZombw6JnRBXKKohWHZ3Q==
 -----END RSA PRIVATE KEY-----]],
-                    project_id = "apisix",
+                    project_id = "/fail/apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
                     scopes = "https://www.googleapis.com/auth/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/secret/fail"
+                    entries_uri = "http://127.0.0.1:1980/google/secret/"
                 },
             }
             local gcp = require("apisix.secret.gcp")
@@ -500,16 +500,16 @@ vjImOadWZbuOVnvEQjb5XCdcOsWsMcg96PtoeuyyHmhnEF1GsMzcIdQv/PHrvYpK
 Yp8D0aqsLEgwGrJQER26FPpKmyIwvcL+nm6q5W31PnU9AOC/WEkB6Zs58hsMzD2S
 kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
-                    project_id = "apisix",
+                    project_id = "/fail/apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
                     scopes = "https://www.googleapis.com/auth/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/fail/"
+                    entries_uri = "http://127.0.0.1:1980/google/secret/"
                 },
             }
             local gcp = require("apisix.secret.gcp")
             local value, err = gcp.get(conf, "jack/key")
             if not value then
-                return ngx.say(err)
+                return ngx.say("err")
             end
             ngx.say(value)
         }
@@ -517,7 +517,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 --- request
 GET /t
 --- response_body
-failed to retrtive data from gcp secret manager: invalid status code
+err
 
 
 

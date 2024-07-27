@@ -127,16 +127,28 @@ local function get_secret(oauth, secrets_id)
         },
     })
 
-    if not res or err then
+    if not res then
+        if err then
+            return nil, "invalid response, " .. err
+        end
+
         return nil, "invalid response"
     end
 
     if res.status ~= 200 then
-        return nil, "invalid status code"
+        if res.body then
+            return nil, "invalid status code " .. res.status .. ", " .. res.body
+        end
+
+        return nil, "invalid status code" .. res.status
     end
 
     res, err = core.json.decode(res.body)
-    if not res or err then
+    if not res then
+        if err then
+            return nil, "failed to parse response data, " .. err
+        end
+
         return nil, "failed to parse response data"
     end
 
@@ -200,12 +212,16 @@ local function get(conf, key)
         return nil, "failed to retrtive data from gcp secret manager: " .. err
     end
 
-    local ret = core.json.decode(res)
-    if not ret then
+    local data, err = core.json.decode(res)
+    if not data then
+        if err then
+            return nil, "failed to decode result, res:" .. res .. ", ".. err
+        end
+
         return nil, "failed to decode result, res: " .. res
     end
 
-    return ret[sub_key]
+    return data[sub_key]
 end
 
 _M.get = get
