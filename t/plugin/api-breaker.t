@@ -652,3 +652,53 @@ phase_func(): breaker_time: 10
 GET /t
 --- response_body eval
 qr/failed to check the configuration of plugin api-breaker err: property \"break_response_headers\" validation failed: failed to validate item 1: property \"(key|value)\" is required/
+
+
+
+=== TEST 21: continuous trigger break, The number of unhealthy instances is uncertain 
+--- config
+location /t {
+    content_by_lua_block {
+        local t = require("lib.test_admin").test
+        local json = require("toolkit.json")
+
+        -- trigger to unhealth
+        for i = 1, 4 do
+            local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+            ngx.say("code: ", code)
+        end
+
+        -- break for 2 seconds
+        ngx.sleep(2)
+
+        -- trigger to unhealth
+        for i = 1, 4 do
+            local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+            ngx.say("code: ", code)
+        end
+
+        -- break for 2 seconds
+        ngx.sleep(4)
+        
+        -- trigger to unhealth
+        for i = 1, 4 do
+            local code = t('/api_breaker?code=500', ngx.HTTP_GET)
+            ngx.say("code: ", code)
+        end
+    }
+}
+--- request
+GET /t
+--- response_body
+code: 500
+code: 500
+code: 500
+code: 599
+code: 500
+code: 599
+code: 599
+code: 599
+code: 500
+code: 500
+code: 599
+code: 599
