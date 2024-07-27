@@ -212,6 +212,16 @@ $secret://$manager/$id/$secret_name/$key
 - secret_name: 密钥管理服务中的密钥名称
 - key：密钥管理服务中密钥对应的 key
 
+### 相关参数
+
+| 名称 | 必选项 | 默认值 | 描述 |
+| --- | --- | --- | --- |
+| access_key_id | 是 |  | AWS 访问密钥 ID |
+| secret_access_key | 是 |  | AWS 访问密钥 |
+| session_token | 否 |  | 临时访问凭证信息 |
+| region | 否 | us-east-1 | AWS 区域 |
+| endpoint_url | 否 | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager 地址 |
+
 ### 示例：在 key-auth 插件中使用
 
 这里以 key-auth 插件的使用为例，展示如何通过 AWS Secret Manager 管理密钥：
@@ -224,18 +234,15 @@ docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name ja
 
 第二步：通过 Admin API 添加 Secret 资源，配置 AWS Secret Manager 的地址等连接信息：
 
-APISIX 对接到具体 AWS Secret Manager 的配置中，自定义配置会覆盖环境变量配置。
-
-你可以直接在环境变量中暴露你的信息，这样所有地方都可以共享：
+你可以在环境变量中存储关键密钥信息，保证配置信息是安全的，在使用到地方进行引用：
 
 ```shell
 export AWS_ACCESS_KEY_ID=<access_key_id>
 export AWS_SECRET_ACCESS_KEY=<secrets_access_key>
 export AWS_SESSION_TOKEN=<token>
-export AWS_REGION=<aws-region>
 ```
 
-或者，可以通过自定义配置的方式指定信息，这会覆盖环境变量的配置：
+当然，你也可以通过直接在配置中指定所有信息内容：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/secrets/aws/1 \

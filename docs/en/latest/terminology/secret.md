@@ -209,6 +209,16 @@ $secret://$manager/$id/$secret_name/$key
 - secret_name: the secret name in the secrets management service
 - key: the key corresponding to the secret in the secrets management service
 
+### Required Parameters
+
+| Name | Required | Default Value | Description |
+| --- | --- | --- | --- |
+| access_key_id | Yes |  | AWS Access Key ID |
+| secret_access_key | Yes |  | AWS Secret Access Key |
+| session_token | No |  | Temporary access credential information |
+| region | No | us-east-1 | AWS Region |
+| endpoint_url | No | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager URL |
+
 ### Example: use in key-auth plugin
 
 Here, we use the key-auth plugin as an example to demonstrate how to manage secrets through AWS Secrets Manager.
@@ -221,9 +231,7 @@ docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name ja
 
 Step 2: Add APISIX Secrets resources through the Admin API, configure the connection information such as the address of AWS Secrets Manager:
 
-In the configuration where APISIX is connected to a specific AWS Secrets Manager, custom configurations will override environment variable configurations.
-
-You can expose your information directly in the environment variables, so it can be shared everywhere:
+You can store the critical key information in environment variables to ensure the configuration information is secure, and reference it where it is used:
 
 ```shell
 export AWS_ACCESS_KEY_ID=<access_key_id>
@@ -232,7 +240,7 @@ export AWS_SESSION_TOKEN=<token>
 export AWS_REGION=<aws-region>
 ```
 
-Alternatively, you can specify information through custom configurations, which will override the environment variable configurations:
+Alternatively, you can also specify all the information directly in the configuration:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/secrets/aws/1 \
