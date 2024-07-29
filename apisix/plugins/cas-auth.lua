@@ -35,6 +35,8 @@ local schema = {
         idp_uri = {type = "string"},
         cas_callback_uri = {type = "string"},
         logout_uri = {type = "string"},
+        set_user_header = {type = "boolean", default = true},
+        user_header = {type = "string", default = "X-Proxy-User"},
     },
     required = {
         "idp_uri", "cas_callback_uri", "logout_uri"
@@ -87,6 +89,9 @@ local function with_session_id(conf, ctx, session_id)
     else
         -- refresh the TTL
         store:set(session_id, user, SESSION_LIFETIME)
+        if conf.set_user_header then
+            core.request.set_header(conf.user_header, user)
+        end
     end
 end
 
