@@ -114,6 +114,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"discovery", "token_endpoint", "resource_registration_endpoint",
+                    "access_denied_redirect_uri"}
+    core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
+
     return core.schema.check(schema, conf)
 end
 
