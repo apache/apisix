@@ -35,8 +35,8 @@ to do authentication, from the SP (service provider) perspective.
 
 ## Attributes
 
-| Name               | Type    | Required | Default        | Description |
-| ------------------ | ------- | -------- | -------------- |
+| Name               | Type    | Required | Default        | Description                                                                                                           |
+| ------------------ | ------- | -------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
 | `idp_uri`          | string  | True     |                | URI of IdP.                                                                                                           |
 | `cas_callback_uri` | string  | True     |                | Redirect uri used to callback the SP from IdP after login or logout.                                                  |
 | `logout_uri`       | string  | True     |                | Logout uri to trigger logout.                                                                                         |
