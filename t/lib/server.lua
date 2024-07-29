@@ -646,7 +646,7 @@ function _M.google_secret_apisix_jack()
     ngx.say(json_encode(response))
 end
 
-function _M.google_secret_fail_apisix_jack()
+function _M.google_secret_apisix_error_jack()
     local args = ngx.req.get_uri_args()
     local args_token_type = args.token_type or "Bearer"
     local jwt = require("resty.jwt")
@@ -684,7 +684,7 @@ function _M.google_secret_fail_apisix_jack()
     end
 
     local response = {
-        name = "projects/647037004838/secrets/apisix/versions/1",
+        name = "projects/647037004838/secrets/apisix_error/versions/1",
         payload = {
           data = "eyJrZXkiOiJ2YWx1ZSJ9",
           dataCrc32c = "2296192492"

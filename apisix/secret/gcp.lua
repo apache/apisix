@@ -73,18 +73,14 @@ local function fetch_oauth_conf(conf)
         return conf.auth_config
     end
 
-    if not conf.auth_file then
-        return nil, "configuration is not defined"
-    end
-
     local file_content, err = core.io.get_file(conf.auth_file)
-    if not file_content or err then
-        return nil, "failed to read configuration, file: " .. conf.auth_file
+    if not file_content then
+        return nil, "failed to read configuration, file: " .. conf.auth_file .. ", err: " .. err
     end
 
     local config_tab, err = core.json.decode(file_content)
-    if not config_tab or err then
-        return nil, "config parse failure, data: " .. file_content
+    if not config_tab then
+        return nil, "config parse failure, data: " .. file_content .. ", err: " .. err
     end
 
     if not config_tab.client_email or
@@ -128,32 +124,20 @@ local function get_secret(oauth, secrets_id)
     })
 
     if not res then
-        if err then
-            return nil, "invalid response, " .. err
-        end
-
-        return nil, "invalid response"
+        return nil, err
     end
 
     if res.status ~= 200 then
-        if res.body then
-            return nil, "invalid status code " .. res.status .. ", " .. res.body
-        end
-
-        return nil, "invalid status code" .. res.status
+        return nil, res.body
     end
 
-    res, err = core.json.decode(res.body)
-    if not res then
-        if err then
-            return nil, "failed to parse response data, " .. err
-        end
-
-        return nil, "failed to parse response data"
+    local body, err = core.json.decode(res.body)
+    if not body then
+        return nil, "failed to parse response data, " .. err
     end
 
-    local payload = res.payload
-    if type(payload) ~= "table" then
+    local payload = body.payload
+    if not payload then
         return nil, "invalid payload"
     end
 
@@ -175,8 +159,8 @@ local function make_request_to_gcp(conf, key)
     local lru_key =  auth_config.client_email .. "#" .. auth_config.project_id
 
     local oauth, err = lrucache(lru_key, "gcp", create_oauth_object, auth_config, conf.ssl_verify)
-    if not oauth or err then
-        return nil, "failed to create oauth object"
+    if not oauth then
+        return nil, "failed to create oauth object, " .. err
     end
 
     local secret, err = get_secret(oauth, key)
@@ -184,7 +168,7 @@ local function make_request_to_gcp(conf, key)
         return nil, err
     end
 
-    return secret, nil
+    return secret
 end
 
 local function get(conf, key)
@@ -212,19 +196,14 @@ local function get(conf, key)
         return nil, "failed to retrtive data from gcp secret manager: " .. err
     end
 
-    local data, err = core.json.decode(res)
-    if not data then
-        if err then
-            return nil, "failed to decode result, res:" .. res .. ", ".. err
-        end
-
+    local ret = core.json.decode(res)
+    if not ret then
         return nil, "failed to decode result, res: " .. res
     end
 
-    return data[sub_key]
+    return ret[sub_key]
 end
 
 _M.get = get
-
 
 return _M
