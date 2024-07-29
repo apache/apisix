@@ -62,27 +62,27 @@ local function make_request_to_aws(conf,key)
 
     local session_token = env.fetch_by_uri(conf.session_token) or conf.session_token
 
-    local credentials = aws_instance:Credentials {
+    local credentials = aws_instance:Credentials({
         accessKeyId = access_key_id,
         secretAccessKey = secret_access_key,
         sessionToken = session_token,
-    }
+    })
 
     local default_endpoint = "https://secretsmanager." .. region .. ".amazonaws.com"
     local pre, host, port, _, _ = unpack(http:parse_uri(conf.endpoint_url or default_endpoint))
     local endpoint = pre .. "://" .. host
 
-    local sm = aws_instance:SecretsManager {
+    local sm = aws_instance:SecretsManager({
         credentials = credentials,
         endpoint = endpoint,
         region = region,
         port = port,
-    }
+    })
 
-    local res, err = sm:getSecretValue {
+    local res, err = sm:getSecretValue({
         SecretId = key,
         VersionStage = "AWSCURRENT",
-    }
+    })
 
     if type(res) ~= "table" then
         if err then
@@ -95,17 +95,13 @@ local function make_request_to_aws(conf,key)
     if res.status ~= 200 then
         local body = res.body
         if type(body) == "table" then
-            local data, err = core.json.encode(body)
-            if err then
-                return nil, "invalid status code " .. res.status .. ", " .. err
-            end
-
+            local data = core.json.encode(body)
             if data then
                 return nil, "invalid status code " .. res.status .. ", " .. data
             end
         end
 
-        return nil, "invalid status code received " .. res.status
+        return nil, "invalid status code " .. res.status
     end
 
     local body = res.body
@@ -147,16 +143,12 @@ local function get(conf,key)
         return nil, "failed to retrtive data from aws secret manager: " .. err
     end
 
-    local data, err = core.json.decode(res)
-    if not data then
-        if err then
-            return nil, "failed to decode result, res: " .. res .. ", " .. err
-        end
-
+    local ret = core.json.decode(res)
+    if not ret then
         return nil, "failed to decode result, res: " .. res
     end
 
-    return data[sub_key]
+    return ret[sub_key]
 end
 
 _M.get = get
