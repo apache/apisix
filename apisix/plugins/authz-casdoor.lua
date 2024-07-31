@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local connection_util = require("apisix.utils.connection-util")
 local http = require("resty.http")
 local session = require("resty.session")
 local ngx = ngx
@@ -60,7 +61,7 @@ local function fetch_access_token(code, conf)
             ["Content-Type"] = "application/x-www-form-urlencoded"
         }
     })
-
+    connection_util.close_http_connection(client)
     if not res then
         return nil, nil, err
     end
