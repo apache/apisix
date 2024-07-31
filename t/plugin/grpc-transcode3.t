@@ -576,3 +576,46 @@ location /t {
 }
 --- response_body
 passed
+
+
+
+=== TEST 14: pb_option - check the matchings between enum and category
+--- config
+    location /t {
+        content_by_lua_block {
+            local ngx_re_match = ngx.re.match
+            local plugin = require("apisix.plugins.grpc-transcode")
+
+            local pb_option_def = plugin.schema.properties.pb_option.items.anyOf
+
+            local patterns = {
+                [[^enum_as_.+$]],
+                [[^int64_as_.+$]],
+                [[^.+_default_.+$]],
+                [[^.+_hooks$]],
+            }
+
+            local function check_pb_option_enum_category()
+                for i, category in ipairs(pb_option_def) do
+                    for _, enum in ipairs(category.enum) do
+                        if not ngx_re_match(enum, patterns[i], "jo") then
+                            return ([[mismatch between enum("%s") and category("%s")]]):format(
+                                enum, category.description)
+                        end
+                    end
+                end
+            end
+
+            local err = check_pb_option_enum_category()
+            if err then
+                ngx.say(err)
+                return
+            end
+
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
