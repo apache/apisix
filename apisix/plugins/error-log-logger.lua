@@ -18,6 +18,7 @@
 local core = require("apisix.core")
 local errlog = require("ngx.errlog")
 local batch_processor = require("apisix.utils.batch-processor")
+local connection_util = require("apisix.utils.connection-util")
 local plugin = require("apisix.plugin")
 local timers = require("apisix.timers")
 local http = require("resty.http")
@@ -273,6 +274,7 @@ local function send_to_skywalking(log_message)
         }
     )
 
+    connection_util.close_http_connection(httpc)
     if not httpc_res then
         return false, "error while sending data to skywalking["
             .. config.skywalking.endpoint_addr .. "] " .. httpc_err
@@ -323,6 +325,8 @@ local function send_to_clickhouse(log_message)
             }
         }
     )
+
+    connection_util.close_http_connection(httpc)
 
     if not httpc_res then
         return false, "error while sending data to clickhouse["

@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local connection_util = require("apisix.utils.connection-util")
 local type = type
 local setmetatable = setmetatable
 
@@ -57,6 +58,8 @@ function _M:refresh_access_token()
             ["Content-Type"] = "application/x-www-form-urlencoded",
         },
     })
+
+    connection_util.close_http_connection(http_new)
 
     if not res then
         core.log.error("failed to refresh google oauth access token, ", err)

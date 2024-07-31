@@ -19,6 +19,7 @@ local require            = require
 local local_conf         = require('apisix.core.config_local').local_conf()
 local http               = require('resty.http')
 local core               = require('apisix.core')
+local connection_util = require("apisix.utils.connection-util")
 local ipairs             = ipairs
 local type               = type
 local math               = math
@@ -89,6 +90,9 @@ local function request(request_uri, path, body, method, basic_auth)
         body = body,
         ssl_verify = true,
     })
+
+    connection_util.close_http_connection(httpc)
+
     if not res then
         return nil, err
     end
