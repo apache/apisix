@@ -93,6 +93,14 @@ description: OpenID Connect allows the client to obtain user information from th
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
+In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).
+
+For example
+`export keycloak_secret=abc`
+
+and use it in plugin conf like below
+
+`"client_secret": "$ENV://keycloak_secret"`
 ## Scenarios
 
 :::tip
