@@ -61,15 +61,28 @@ local schema = {
     required = {"host", "port", "project", "logstore", "access_key_id", "access_key_secret"}
 }
 
+local metadata_schema = {
+    type = "object",
+    properties = {
+        log_format = {
+            type = "object"
+        }
+    },
+}
+
 local _M = {
     version = 0.1,
     priority = 406,
     name = plugin_name,
     schema = batch_processor_manager:wrap_schema(schema),
+    metadata_schema = metadata_schema,
 }
 
-function _M.check_schema(conf)
-   return core.schema.check(schema, conf)
+function _M.check_schema(conf,schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+      return core.schema.check(metadata_schema, conf)
+    end
+    return core.schema.check(schema, conf)
 end
 
 local function send_tcp_data(route_conf, log_message)

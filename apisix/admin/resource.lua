@@ -254,6 +254,8 @@ function _M:put(id, conf, sub_path, args)
         if not ok then
             return 503, {error_msg = err}
         end
+    else
+        conf.id = id
     end
 
     local ttl = nil
