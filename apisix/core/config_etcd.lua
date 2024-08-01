@@ -677,7 +677,7 @@ local function sync_data(self)
             data_valid, err = self.checker(res.value)
             if not data_valid then
                 log.error("failed to check item data of [", self.key,
-                            "] err:", err, " ,val: ", json.delay_encode(res.value))
+                          "] err:", err, " ,val: ", json.delay_encode(res.value))
             end
         end
 
