@@ -274,7 +274,7 @@ qr/\{"error_msg":"invalid configuration: property \\"ikey\\" is required"\}/
         }
     }
 --- response_body
-{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}
+{"key":"/apisix/plugin_metadata/example-plugin","value":{"id":"example-plugin","ikey":1,"skey":"val"}}
 --- request
 GET /t
 
@@ -305,7 +305,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/plugin_metadata/example-plugin","value":{"ikey":1,"skey":"val"}}
+{"key":"/apisix/plugin_metadata/example-plugin","value":{"id":"example-plugin","ikey":1,"skey":"val"}}
 --- request
 GET /t
 
