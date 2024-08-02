@@ -141,7 +141,7 @@ failed to retrtive data from aws secret manager: SecretsManager:getSecretValue()
 
 
 
-=== TEST 5: get value from aws(err region, status ~= 200)
+=== TEST 5: get value from aws (err region, status ~= 200)
 --- config
     location /t {
         content_by_lua_block {
@@ -167,7 +167,7 @@ err
 
 
 
-=== TEST 6: get value from aws(err key, status ~= 200)
+=== TEST 6: get value from aws (err key, status ~= 200)
 --- config
     location /t {
         content_by_lua_block {
@@ -319,3 +319,51 @@ GET /t
     }
 --- response_body
 nil
+
+
+
+=== TEST 10: sanity
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local test_case = {
+                {},
+                {access_key_id = "access"},
+                {secret_access_key = "secret"},
+                {access_key_id = "access", secret_access_key = 1234},
+                {access_key_id = 1234, secret_access_key = "secret"},
+                {access_key_id = "access", secret_access_key = "secret"},
+                {access_key_id = "access", secret_access_key = "secret", session_token = "token"},
+                {access_key_id = "access", secret_access_key = "secret", session_token = 1234},
+                {access_key_id = "access", secret_access_key = "secret", region = "us-east-1"},
+                {access_key_id = "access", secret_access_key = "secret", region = 1234},
+                {access_key_id = "access", secret_access_key = "secret", endpoint_url = "http://127.0.0.1:4566"},
+                {access_key_id = "access", secret_access_key = "secret", endpoint_url = 1234},
+                {access_key_id = "access", secret_access_key = "secret", session_token = "token", endpoint_url = "http://127.0.0.1:4566", region = "us-east-1"},
+            }
+            local aws = require("apisix.secret.aws")
+            local core = require("apisix.core")
+            local metadata_schema = aws.schema
+            
+            for _, conf in ipairs(test_case) do
+                local ok, err = core.schema.check(metadata_schema, conf)
+                ngx.say(ok and "done" or err)
+            end
+        }
+    }
+--- response_body
+property "access_key_id" is required
+property "secret_access_key" is required
+property "access_key_id" is required
+property "secret_access_key" validation failed: wrong type: expected string, got number
+property "access_key_id" validation failed: wrong type: expected string, got number
+done
+done
+property "session_token" validation failed: wrong type: expected string, got number
+done
+property "region" validation failed: wrong type: expected string, got number
+done
+property "endpoint_url" validation failed: wrong type: expected string, got number
+done
