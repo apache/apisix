@@ -22,4 +22,6 @@ docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' 
 
 # prepare localstack
 sleep 3s
-docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name /apisix-key/jack --description 'APISIX Secret' --secret-string '{\"key\":\"value\"}'"
+docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name apisix-key --description 'APISIX Secret' --secret-string '{\"jack\":\"value\"}'"
+sleep 3s
+docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name apisix-mysql --description 'APISIX Secret' --secret-string 'secret'"

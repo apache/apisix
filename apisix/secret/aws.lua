@@ -21,7 +21,7 @@ local http = require("resty.http")
 local aws = require("resty.aws")
 
 local sub = core.string.sub
-local rfind_char = core.string.rfind_char
+local find = core.string.find
 local env = core.env
 local type = type
 local unpack = unpack
@@ -121,26 +121,27 @@ end
 local function get(conf, key)
     core.log.info("fetching data from aws for key: ", key)
 
-    local idx = rfind_char(key, '/')
-    if not idx then
-        return nil, "error key format, key: " .. key
-    end
+    local idx = find(key, '/')
 
-    local main_key = sub(key, 1, idx - 1)
+    local main_key = idx and sub(key, 1, idx - 1) or key
     if main_key == "" then
         return nil, "can't find main key, key: " .. key
     end
 
-    local sub_key = sub(key, idx + 1)
-    if sub_key == "" then
-        return nil, "can't find sub key, key: " .. key
+    local sub_key = idx and sub(key, idx + 1) or nil
+    if not sub_key then
+        core.log.info("main: ", main_key)
+    else
+        core.log.info("main: ", main_key, " sub: ", sub_key)
     end
-
-    core.log.info("main: ", main_key, " sub: ", sub_key)
 
     local res, err = make_request_to_aws(conf, main_key)
     if not res then
         return nil, "failed to retrtive data from aws secret manager: " .. err
+    end
+
+    if not sub_key then
+        return res
     end
 
     local ret = core.json.decode(res)

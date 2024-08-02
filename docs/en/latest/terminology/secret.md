@@ -38,7 +38,7 @@ Its working principle is shown in the figure:
 APISIX currently supports storing secrets in the following ways:
 
 - [Environment Variables](#use-environment-variables-to-manage-secrets)
-- [HashiCorp Vault](#use-vault-to-manage-secrets)
+- [HashiCorp Vault](#use-hashicorp-vault-to-manage-secrets)
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
 
 You can use APISIX Secret functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
@@ -207,7 +207,7 @@ $secret://$manager/$id/$secret_name/$key
 - manager: secrets management service, could be the HashiCorp Vault, AWS, etc.
 - id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
 - secret_name: the secret name in the secrets management service
-- key: the key corresponding to the secret in the secrets management service
+- key: get the value of a property when the value of the secret is a JSON string
 
 ### Required Parameters
 

@@ -210,7 +210,7 @@ $secret://$manager/$id/$secret_name/$key
 - manager: 密钥管理服务，可以是 Vault、AWS 等
 - APISIX Secret 资源 ID，需要与添加 APISIX Secret 资源时指定的 ID 保持一致
 - secret_name: 密钥管理服务中的密钥名称
-- key：密钥管理服务中密钥对应的 key
+- key：当密钥的值是 JSON 字符串时，获取某个属性的值
 
 ### 相关参数
 
