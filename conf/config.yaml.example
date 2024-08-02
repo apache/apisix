@@ -53,7 +53,7 @@ apisix:
         memory_size: 50m        # Size of the memory to store the cache index.
         disk_size: 1G           # Size of the disk to store the cache data.
         disk_path: /tmp/disk_cache_one  # Path to the cache file for disk cache.
-        cache_levels: 1:2               # Cache hierarchy levels of disk cache.
+        cache_levels: "1:2"               # Cache hierarchy levels of disk cache.
       # - name: disk_cache_two
       #  memory_size: 50m
       #  disk_size: 1G
@@ -73,7 +73,7 @@ apisix:
     ssl: radixtree_sni          # radixtree_sni: match route by SNI
 
   # http is the default proxy mode. proxy_mode can be one of `http`, `stream`, or `http&stream`
-  proxy_mode: http
+  proxy_mode: "http"
   # stream_proxy:                 # TCP/UDP L4 proxy
   #   tcp:
   #     - addr: 9100              # Set the TCP proxy listening ports.
@@ -118,7 +118,7 @@ apisix:
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
   data_encryption:                # Data encryption settings.
-    enable_encrypt_fields: false  # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
+    enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
                                   # in plugin schema.
       - qeddd145sfvddff3          # Set the encryption key for AES-128-CBC. It should be a hexadecimal string
@@ -170,7 +170,8 @@ nginx_config:                     # Config for render the template to generate n
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
     access_log: logs/access_stream.log       # Location of the stream access log.
-    access_log_format: "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
+    access_log_format: |
+      "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time" # Customize log format: http://nginx.org/en/docs/varindex.html
     access_log_format_escape: default        # Escape default or json characters in variables.
     lua_shared_dict:                         # Nginx Lua shared memory zone. Size units are m or k.
       etcd-cluster-health-check-stream: 10m
@@ -208,7 +209,8 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
-    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
+    access_log_format: |
+      "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     # Customize log format: http://nginx.org/en/docs/varindex.html
     access_log_format_escape: default   # Escape default or json characters in variables.
     keepalive_timeout: 60s              # Set the maximum time for which TCP connection keeps alive.
@@ -643,12 +645,12 @@ deployment:                    # Deployment configurations
     admin_key:
       -
         name: admin                             # admin: write access to configurations.
-        key: edd1c9f034335f136f87ad84b625c8f1   # Set API key for the admin of Admin API.
+        key: ''   # Set API key for the admin of Admin API.
         role: admin
-      -
-        name: viewer                            # viewer: read-only to configurations.
-        key: 4054f7cf07e344346cd3f287985e76a2   # Set API key for the viewer of Admin API.
-        role: viewer
+      # -
+      #   name: viewer                            # viewer: read-only to configurations.
+      #   key: 4054f7cf07e344346cd3f287985e76a2   # Set API key for the viewer of Admin API.
+      #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
     allow_admin:                  # Limit Admin API access by IP addresses.

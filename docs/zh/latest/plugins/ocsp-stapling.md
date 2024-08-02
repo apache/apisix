@@ -43,8 +43,18 @@ plugins:
 
 修改配置文件之后，重启 APISIX 或者通过插件热加载接口来使配置生效：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```
 
 ## 属性
@@ -65,7 +75,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert" : "'"$(cat server.crt)"'",
     "key": "'"$(cat server.key)"'",
@@ -96,7 +106,7 @@ OCSP Response Data:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert" : "'"$(cat server.crt)"'",
     "key": "'"$(cat server.key)"'",
@@ -113,7 +123,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -d '
+-H "X-API-KEY: $admin_key" -X PATCH -d '
 {
     "ocsp_stapling": null
 }'
@@ -130,5 +140,5 @@ plugins:
 修改配置文件之后，重启 APISIX 或者通过插件热加载接口来使配置生效：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```

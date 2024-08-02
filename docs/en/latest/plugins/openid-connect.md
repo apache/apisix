@@ -89,6 +89,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | cache_segment | string | False |  |  | Optional name of a cache segment, used to separate and differentiate caches used by token introspection or JWT verification. |
 | introspection_interval | integer | False | 0 |  | TTL of the cached and introspected access token in seconds. |
 | introspection_expiry_claim | string | False |  |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. The default value is 0, which means this option is not used and the plugin defaults to use the TTL passed by expiry claim defined in `introspection_expiry_claim`. If `introspection_interval` is larger than 0 and less than the TTL passed by expiry claim defined in `introspection_expiry_claim`, use `introspection_interval`. |
+| introspection_addon_headers | string[] | False |  |  | Array of strings. Used to append additional header values to the introspection HTTP request. If the specified header does not exist in origin request, value will not be appended. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -118,8 +119,17 @@ The image below shows an example token introspection flow via a Gateway:
 
 The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -162,7 +172,7 @@ You can also provide the public key of the JWT token for verification. If you ha
 The example below shows how you can add public key introspection to a Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -198,7 +208,7 @@ Once the user has authenticated with the identity provider, the Plugin will obta
 The example below adds the Plugin with this mode of operation to the Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {

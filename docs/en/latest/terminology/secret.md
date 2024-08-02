@@ -99,9 +99,18 @@ export JACK_AUTH_KEY=abc
 
 Step 2: Reference the environment variable in the `key-auth` plugin
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -114,9 +123,9 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 Through the above steps, the `key` configuration in the `key-auth` plugin can be saved in the environment variable instead of being displayed in plain text when configuring the plugin.
 
-## Use Vault to manage secrets
+## Use HashiCorp Vault to manage secrets
 
-Using Vault to manage secrets means that you can store secrets information in the Vault service and refer to it through variables in a specific format when configuring plugins. APISIX currently supports [Vault KV engine version V1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1).
+Using HashiCorp Vault to manage secrets means that you can store secrets information in the Vault service and refer to it through variables in a specific format when configuring plugins. APISIX currently supports [Vault KV engine version V1](https://developer.hashicorp.com/vault/docs/secrets/kv/kv-v1).
 
 ### Usage
 
@@ -124,7 +133,7 @@ Using Vault to manage secrets means that you can store secrets information in th
 $secret://$manager/$id/$secret_name/$key
 ```
 
-- manager: secrets management service, could be the Vault, AWS, etc.
+- manager: secrets management service, could be the HashiCorp Vault, AWS, etc.
 - id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
 - secret_name: the secret name in the secrets management service
 - key: the key corresponding to the secret in the secrets management service
@@ -141,7 +150,7 @@ Step 2: Add APISIX Secrets resources through the Admin API, configure the Vault 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/secrets/vault/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "https://127.0.0.1:8200"，
     "prefix": "apisix",
@@ -159,11 +168,17 @@ secrets:
     uri: 127.0.0.1:8200
 ```
 
+:::tip
+
+It now supports the use of the [`namespace` field](../admin-api.md#request-body-parameters-11) to set the multi-tenant namespace concepts supported by [HashiCorp Vault Enterprise](https://developer.hashicorp.com/vault/docs/enterprise/namespaces#vault-api-and-namespaces) and HCP Vault.
+
+:::
+
 Step 3: Reference the APISIX Secrets resource in the `key-auth` plugin and fill in the key information:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {

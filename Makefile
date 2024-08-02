@@ -41,6 +41,7 @@ ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(proj
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
+ENV_LIBYAML_INSTALL_PREFIX ?= /usr
 ENV_LUAROCKS           ?= luarocks
 ## These variables can be injected by luarocks
 ENV_INST_PREFIX        ?= /usr
@@ -131,6 +132,7 @@ deps: install-runtime
 		mkdir -p ~/.luarocks; \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
+		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
 		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
@@ -140,7 +142,11 @@ deps: install-runtime
 
 ### undeps : Uninstalling dependencies
 .PHONY: undeps
-undeps: uninstall-runtime
+undeps: uninstall-rocks uninstall-runtime
+
+
+.PHONY: uninstall-rocks
+uninstall-rocks:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_LUAROCKS) purge --tree=deps
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
@@ -245,7 +251,6 @@ install: runtime
 	$(ENV_INSTALL) -d /usr/local/apisix/conf/cert
 	$(ENV_INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(ENV_INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
-	$(ENV_INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
@@ -462,4 +467,11 @@ ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	rm $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) down
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### ci-env-stop : CI env temporary stop
+.PHONY: ci-env-stop
+ci-env-stop:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER_COMPOSE) stop
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

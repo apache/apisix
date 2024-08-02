@@ -99,9 +99,19 @@ export JACK_AUTH_KEY=abc
 
 第二步：在 `key-auth` 插件中引用环境变量
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
@@ -141,7 +151,7 @@ vault kv put apisix/jack auth-key=value
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/secrets/vault/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "https://127.0.0.1:8200"，
     "prefix": "apisix",
@@ -159,11 +169,17 @@ secrets:
     uri: 127.0.0.1:8200
 ```
 
+:::tip
+
+它现在支持使用 [`namespace` 字段](../admin-api.md#secret-config-body-requset-parameters] 设置 [HashiCorp Vault Enterprise](https://developer.hashicorp.com/vault/docs/enterprise/namespaces#vault-api-and-namespaces) 和 HCP Vault 所支持的多租户命名空间概念。
+
+:::
+
 第三步：在 `key-auth` 插件中引用 APISIX Secret 资源，填充秘钥信息：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {

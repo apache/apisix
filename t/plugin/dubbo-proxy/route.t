@@ -39,6 +39,7 @@ plugins:
     - dubbo-proxy
     - response-rewrite
     - proxy-rewrite
+    - key-auth
 _EOC_
 
         $block->set_value("extra_yaml_config", $extra_yaml_config);
@@ -161,9 +162,6 @@ dubbo success
 apisix:
     node_listen: 1984
     enable_admin: true
-plugins:
-    - key-auth
-    - dubbo-proxy
 --- config
     location /t {
         content_by_lua_block {
@@ -228,9 +226,6 @@ passed
 apisix:
     node_listen: 1984
     enable_admin: true
-plugins:
-    - key-auth
-    - dubbo-proxy
 --- error_code: 401
 
 
@@ -240,9 +235,6 @@ plugins:
 apisix:
     node_listen: 1984
     enable_admin: true
-plugins:
-    - key-auth
-    - dubbo-proxy
 --- more_headers
 apikey: jack
 --- response_body

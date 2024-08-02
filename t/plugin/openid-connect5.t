@@ -138,3 +138,96 @@ __DATA__
     }
 --- response_body_like
 hello world
+
+
+
+=== TEST 2: Call to route with locking session storage, no authentication and unauth_action 'deny' should not block subsequent requests on same session
+--- config
+    set $session_storage redis;
+    set $session_redis_uselocking               on;
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "unauth_action": "deny"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+
+            -- Make the final call to protected route WITHOUT cookie
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+
+            -- Extract cookie which is not authenticated
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+
+            -- Make the call to protected route with cookie
+            local function firstRequest()
+               local httpc = http.new()
+
+               local res, err = httpc:request_uri(uri, {
+                        method = "GET",
+                        headers = {
+                            ["Cookie"] = cookie_str
+                        }
+                    })
+
+                if not res then
+                    ngx.log(ngx.ERR, "request failed with err: ", err)
+                    return
+                end
+                return res
+            end
+
+            local thread = ngx.thread.spawn(firstRequest)
+            ok, res = ngx.thread.wait(thread)
+
+            if not ok then
+                ngx.log(ngx.ERR, "First request did not complete: ", res)
+                return
+            end
+
+            if res.status ~= 401 then
+                ngx.log(ngx.ERR, "Expected status 401 received: ", res.status)
+                return
+            end
+
+            -- Make second call to protected route and same cookie which should not timeout due to a blocked session
+            local httpc = http.new()
+            httpc:set_timeout(2000)
+
+            res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                     headers = {
+                        ["Cookie"] = cookie_str
+                     }
+            })
+            ngx.status = res.status
+        }
+    }
+--- error_code: 401

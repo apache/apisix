@@ -124,24 +124,34 @@ routes:
 
 可以通过在删除请求中添加请求参数 `force=true` 来进行强制删除，例如：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
 ```bash
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H "X-API-KEY: $admin_key" -X PUT -d '{
     "nodes": {
         "127.0.0.1:8080": 1
     },
     "type": "roundrobin"
 }'
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '{
     "uri": "/*",
     "upstream_id": 1
 }'
 {"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
 
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H "X-API-KEY: $admin_key" -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=anyvalue" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=anyvalue" -H "X-API-KEY: $admin_key" -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=true" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=true" -H "X-API-KEY: $admin_key" -X DELETE
 {"deleted":"1","key":"/apisix/upstreams/1"}
 ```
 
@@ -224,7 +234,7 @@ APISIX 在 v3 版本对响应体做了以下调整：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+-H "X-API-KEY: $admin_key" -X GET
 ```
 
 ```json
@@ -258,7 +268,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
 
 ```shell
 curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+-H "X-API-KEY: $admin_key" -X GET
 ```
 
 返回结果：
@@ -348,7 +358,7 @@ Route 对象 JSON 配置示例：
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"],        # 一组客户端请求 IP 地址
     "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
-    "upstream_id": "1",                   # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream_id": "1",                   # upstream 对象在 etcd 中的 id，建议使用此值
     "upstream": {},                       # upstream 信息对象，建议尽量不要使用
     "timeout": {                          # 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。
         "connect": 3,
@@ -365,7 +375,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uri": "/index.html",
         "hosts": ["foo.com", "*.bar.com"],
@@ -391,7 +401,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uri": "/aa/index.html",
         "upstream": {
@@ -413,7 +423,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -441,7 +451,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -469,7 +479,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -496,7 +506,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '{
         "methods": ["GET", "POST"]
     }'
     ```
@@ -516,7 +526,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -539,7 +549,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1/methods \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '["POST", "DELETE", "PATCH"]'
     ```
 
     ```
@@ -557,7 +567,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "status": 0
     }'
@@ -580,7 +590,7 @@ Route 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "status": 1
     }'
@@ -642,7 +652,7 @@ Service 对象 JSON 配置示例：
 {
     "id": "1",                # id
     "plugins": {},            # 指定 service 绑定的插件
-    "upstream_id": "1",       # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream_id": "1",       # upstream 对象在 etcd 中的 id，建议使用此值
     "upstream": {},           # upstream 信息对象，不建议使用
     "name": "test svc",       # service 名称
     "desc": "hello world",    # service 描述
@@ -657,7 +667,7 @@ Service 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "plugins": {
             "limit-count": {
@@ -686,7 +696,7 @@ Service 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -714,7 +724,7 @@ Service 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -742,7 +752,7 @@ Service 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -769,7 +779,7 @@ Service 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201/upstream/nodes \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -843,7 +853,7 @@ Consumer 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "username": "jack",
         "plugins": {
@@ -973,7 +983,7 @@ Upstream 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+    -H "X-API-KEY: $admin_key" -i -X PUT -d '
     {
         "type":"roundrobin",
         "nodes":{
@@ -991,7 +1001,7 @@ Upstream 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1981": 1
@@ -1017,7 +1027,7 @@ Upstream 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1981": 10
@@ -1043,7 +1053,7 @@ Upstream 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1980": null
@@ -1068,7 +1078,7 @@ Upstream 对象 JSON 配置示例：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -1093,7 +1103,7 @@ Upstream 对象 JSON 配置示例：
 
     ```shell
     curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/get",
         "upstream": {
@@ -1195,8 +1205,8 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | ----------- | ------ | -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
 | key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
-| certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。 |                                                  |
-| keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。                                                          |                                                  |
+| certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |                                                  |
+| keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
@@ -1322,7 +1332,7 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_metadata/{plugin_name}
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+-H "X-API-KEY: $admin_key" -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
@@ -1466,6 +1476,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 | uri    | 是     | URI        |  Vault 服务器的 URI                                                 |                                                  |
 | prefix    | 是    | 字符串       | 密钥前缀
 | token     | 是    | 字符串       | Vault 令牌 |                                                  |
+| namespace | 否    | 字符串       | Vault 命名空间，该字段无默认值 | `admin` |
 
 配置示例：
 
@@ -1482,7 +1493,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "http://xxx/get",
     "prefix" : "apisix",

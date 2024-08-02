@@ -21,8 +21,8 @@ local openidc = require("resty.openidc")
 local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
-local ipairs = ipairs
-local concat = table.concat
+local ipairs  = ipairs
+local concat  = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
@@ -260,6 +260,15 @@ local schema = {
             description = "Name of the expiry claim that controls the cached access token TTL.",
             type = "string"
         },
+        introspection_addon_headers = {
+            description = "Extra http headers in introspection",
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                pattern = "^[^:]+$"
+            }
+        },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",
@@ -268,7 +277,7 @@ local schema = {
             }
         }
     },
-    encrypt_fields = {"client_secret"},
+    encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
 }
 
@@ -295,6 +304,11 @@ function _M.check_schema(conf)
             secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
         }
     end
+
+    local check = {"discovery", "introspection_endpoint", "redirect_uri",
+                    "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
+    core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
 
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -386,7 +400,23 @@ local function introspect(ctx, conf)
     else
         -- Validate token against introspection endpoint.
         -- TODO: Same as above for public key validation.
+        if conf.introspection_addon_headers then
+            -- http_request_decorator option provided by lua-resty-openidc
+            conf.http_request_decorator = function(req)
+                local h = req.headers or {}
+                for _, name in ipairs(conf.introspection_addon_headers) do
+                    local value = core.request.header(ctx, name)
+                    if value then
+                        h[name] = value
+                    end
+                end
+                req.headers = h
+                return req
+            end
+        end
+
         local res, err = openidc.introspect(conf)
+        conf.http_request_decorator = nil
 
         if err then
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
@@ -546,6 +576,9 @@ function _M.rewrite(plugin_conf, ctx)
         response, err, _, session  = openidc.authenticate(conf, nil, unauth_action, conf.session)
 
         if err then
+            if session then
+                session:close()
+            end
             if err == "unauthorized request" then
                 if conf.unauth_action == "pass" then
                     return nil

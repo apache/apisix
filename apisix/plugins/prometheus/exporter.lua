@@ -28,6 +28,7 @@ local pcall = pcall
 local select = select
 local type = type
 local prometheus
+local prometheus_bkp
 local router = require("apisix.router")
 local get_routes = router.http_routes
 local get_ssls   = router.ssls
@@ -112,6 +113,9 @@ function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
+        if prometheus_bkp then
+            prometheus = prometheus_bkp
+        end
         return
     end
 
@@ -522,6 +526,9 @@ _M.get_api = get_api
 
 
 function _M.export_metrics(stream_only)
+    if not prometheus then
+        core.response.exit(200, "{}")
+    end
     local api = get_api(false)
     local uri = ngx.var.uri
     local method = ngx.req.get_method()
@@ -544,5 +551,14 @@ end
 function _M.get_prometheus()
     return prometheus
 end
+
+
+function _M.destroy()
+    if prometheus ~= nil then
+        prometheus_bkp = core.table.deepcopy(prometheus)
+        prometheus = nil
+    end
+end
+
 
 return _M

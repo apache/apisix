@@ -164,8 +164,12 @@ passed
 deployment:
   admin:
     admin_key_required: true
+    admin_key:
+    - name: admin
+      role: admin
+      key: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
 --- more_headers
-X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-API-KEY: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
 --- request
 GET /apisix/admin/routes
 --- error_code: 200
@@ -201,8 +205,12 @@ GET /apisix/admin/routes
 deployment:
   admin:
     admin_key_required: false
+    admin_key:
+    - name: admin
+      role: admin
+      key: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
 --- more_headers
-X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-API-KEY: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
 --- request
 GET /apisix/admin/routes
 --- error_code: 200

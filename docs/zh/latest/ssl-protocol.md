@@ -81,9 +81,19 @@ apisix:
 
 2. 为 test.com 域名指定 TLSv1.1 协议版本。
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
@@ -98,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server2.crt)"'",
      "key": "'"$(cat server2.key)"'",
@@ -197,7 +207,7 @@ curl: (35) error:1409442E:SSL routines:ssl3_read_bytes:tlsv1 alert protocol vers
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",
@@ -212,7 +222,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/ssls/2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
      "cert" : "'"$(cat server.crt)"'",
      "key": "'"$(cat server.key)"'",

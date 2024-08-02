@@ -34,19 +34,6 @@ deployment:
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
-
-    my $routes = <<_EOC_;
-routes:
-  -
-    uri: /hello
-    upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
-#END
-_EOC_
-
-    $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
 });
 
 run_tests();
@@ -57,6 +44,12 @@ __DATA__
 --- apisix_yaml
 consumers:
   - username: jwt-auth
+routes:
+  - uri: /hello
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 --- request
 GET /hello

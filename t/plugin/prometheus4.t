@@ -277,3 +277,126 @@ apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",nod
 apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="105"\} \d+
 apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="205"\} \d+
 apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="505"\} \d+/
+
+
+
+=== TEST 10: set sys plugins
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/9',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "prometheus": {},
+                            "syslog": {
+                                "host": "127.0.0.1",
+                                "include_req_body": false,
+                                "max_retry_times": 1,
+                                "tls": false,
+                                "retry_interval": 1,
+                                "batch_max_size": 1000,
+                                "buffer_duration": 60,
+                                "port": 1000,
+                                "name": "sys-logger",
+                                "flush_limit": 4096,
+                                "sock_type": "tcp",
+                                "timeout": 3,
+                                "drop_limit": 1048576,
+                                "pool_size": 5
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/batch-process-metrics"
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- no_error_log
+[error]
+
+
+
+=== TEST 11: remove prometheus -> reload -> send batch request -> add prometheus for next tests
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - example-plugin
+plugin_attr:
+  example-plugin:
+    val: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, org_body = t('/v1/plugins/reload', ngx.HTTP_PUT)
+            local code, body = t('/batch-process-metrics', ngx.HTTP_GET)
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 404
+--- response_body_like eval
+qr/404 Not Found/
+
+
+
+=== TEST 12: fetch prometheus metrics -> batch_process_entries metrics should not be present
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+apisix:
+  node_listen: 1984
+plugins:
+  - prometheus
+  - public-api
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_unlike eval
+qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 13: hit batch-process-metrics with prometheus enabled from TEST 11
+--- request
+GET /batch-process-metrics
+--- error_code: 404
+
+
+
+=== TEST 14: batch_process_entries metrics should be present now
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127.0.0.1"\} \d+/

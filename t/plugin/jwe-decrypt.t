@@ -95,6 +95,10 @@ done
 
 
 === TEST 4: secret length too long
+--- yaml_config
+apisix:
+  data_encryption:
+    enable_encrypt_fields: false
 --- config
     location /t {
         content_by_lua_block {
@@ -115,6 +119,10 @@ done
 
 
 === TEST 5: secret length too long(base64 encode)
+--- yaml_config
+apisix:
+  data_encryption:
+    enable_encrypt_fields: false
 --- config
     location /t {
         content_by_lua_block {
@@ -163,7 +171,27 @@ passed
 
 
 
-=== TEST 7: enable jwe-decrypt plugin using admin api
+=== TEST 7: verify encrypted field
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+            -- get plugin conf from etcd, secret and key is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/consumers/jack'))
+            ngx.say(res.body.node.value.plugins["jwe-decrypt"].key)
+            ngx.say(res.body.node.value.plugins["jwe-decrypt"].secret)
+        }
+    }
+--- response_body
+XU29sA3FEVF68hGcdPo7sg==
+f9pGB0Dt4gYNCLKiINPfVSviKjQs2zfkBCT4+XZ3mDABZkJTr0orzYRD5CptDKMc
+
+
+
+=== TEST 8: enable jwe-decrypt plugin using admin api
 --- config
     location /t {
         content_by_lua_block {
@@ -198,7 +226,7 @@ passed
 
 
 
-=== TEST 8: create public API route (jwe-decrypt sign)
+=== TEST 9: create public API route (jwe-decrypt sign)
 --- config
     location /t {
         content_by_lua_block {
@@ -224,7 +252,7 @@ passed
 
 
 
-=== TEST 9: sign / verify in argument
+=== TEST 10: sign / verify in argument
 --- config
     location /t {
         content_by_lua_block {
@@ -254,14 +282,14 @@ hello world
 
 
 
-=== TEST 10: test for unsupported method
+=== TEST 11: test for unsupported method
 --- request
 PATCH /apisix/plugin/jwe/encrypt?key=user-key
 --- error_code: 404
 
 
 
-=== TEST 11: verify, missing token
+=== TEST 12: verify, missing token
 --- request
 GET /hello
 --- error_code: 403
@@ -270,7 +298,7 @@ GET /hello
 
 
 
-=== TEST 12: verify: invalid JWE token
+=== TEST 13: verify: invalid JWE token
 --- request
 GET /hello
 --- more_headers
@@ -281,7 +309,7 @@ Authorization: invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6IkEyNTZHQ
 
 
 
-=== TEST 13: verify (in header)
+=== TEST 14: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -291,7 +319,7 @@ hello world
 
 
 
-=== TEST 14: verify (in header without Bearer)
+=== TEST 15: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -301,7 +329,7 @@ hello world
 
 
 
-=== TEST 15: verify (header with bearer)
+=== TEST 16: verify (header with bearer)
 --- request
 GET /hello
 --- more_headers
@@ -311,7 +339,7 @@ hello world
 
 
 
-=== TEST 16: verify (invalid bearer token)
+=== TEST 17: verify (invalid bearer token)
 --- request
 GET /hello
 --- more_headers
@@ -322,7 +350,7 @@ Authorization: bearer invalid-eyJhbGciOiJkaXIiLCJraWQiOiJ1c2VyLWtleSIsImVuYyI6Ik
 
 
 
-=== TEST 17: delete a exist consumer
+=== TEST 18: delete a exist consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -372,7 +400,7 @@ code: true body: passed
 
 
 
-=== TEST 18: add consumer with username and plugins with base64 secret
+=== TEST 19: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -402,7 +430,7 @@ passed
 
 
 
-=== TEST 19: enable jwt decrypt plugin with base64 secret
+=== TEST 20: enable jwt decrypt plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -436,7 +464,7 @@ passed
 
 
 
-=== TEST 20: create public API route (jwe-decrypt sign)
+=== TEST 21: create public API route (jwe-decrypt sign)
 --- config
     location /t {
         content_by_lua_block {
@@ -462,7 +490,7 @@ passed
 
 
 
-=== TEST 21: sign / verify in argument
+=== TEST 22: sign / verify in argument
 --- config
     location /t {
         content_by_lua_block {
@@ -494,7 +522,7 @@ hello world
 
 
 
-=== TEST 22: verify (in header)
+=== TEST 23: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -504,7 +532,7 @@ hello world
 
 
 
-=== TEST 23: verify (in header without Bearer)
+=== TEST 24: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -514,7 +542,7 @@ hello world
 
 
 
-=== TEST 24: enable jwt decrypt plugin with test upstream route
+=== TEST 25: enable jwt decrypt plugin with test upstream route
 --- config
     location /t {
         content_by_lua_block {
@@ -548,7 +576,7 @@ passed
 
 
 
-=== TEST 25:  verify in upstream header
+=== TEST 26:  verify in upstream header
 --- request
 GET /headers
 --- more_headers

@@ -309,6 +309,7 @@ local nodes_schema = {
                         description = "port of node",
                         type = "integer",
                         minimum = 1,
+                        maximum = 65535
                     },
                     weight = {
                         description = "weight of node",
@@ -342,6 +343,7 @@ _M.discovery_nodes = {
                 description = "port of node",
                 type = "integer",
                 minimum = 1,
+                maximum = 65535
             },
             weight = {
                 description = "weight of node",
@@ -712,6 +714,12 @@ _M.consumer = {
 _M.upstream = upstream_schema
 
 
+local secret_uri_schema = {
+    type = "string",
+    pattern = "^\\$(secret|env|ENV)://"
+}
+
+
 _M.ssl = {
     type = "object",
     properties = {
@@ -727,14 +735,13 @@ _M.ssl = {
         cert = {
             oneOf = {
                 certificate_scheme,
-                -- TODO: uniformly define the schema of secret_uri
-                { type = "string", pattern = "^\\$(secret|env)://"}
+                secret_uri_schema
             }
         },
         key = {
             oneOf = {
                 private_key_schema,
-                { type = "string", pattern = "^\\$(secret|env)://"}
+                secret_uri_schema
             }
         },
         sni = {
@@ -751,11 +758,21 @@ _M.ssl = {
         },
         certs = {
             type = "array",
-            items = certificate_scheme,
+            items = {
+                oneOf = {
+                    certificate_scheme,
+                    secret_uri_schema
+                }
+            }
         },
         keys = {
             type = "array",
-            items = private_key_schema,
+            items = {
+                oneOf = {
+                    private_key_schema,
+                    secret_uri_schema
+                }
+            }
         },
         client = {
             type = "object",
@@ -901,6 +918,8 @@ _M.stream_route = {
         server_port = {
             description = "server port",
             type = "integer",
+            minimum = 1,
+            maximum = 65535
         },
         sni = {
             description = "server name indication",

@@ -664,8 +664,8 @@ echo "passed: disable ssl_session_tickets by default"
 # support 3rd-party plugin
 echo '
 apisix:
-    extra_lua_path: "\$prefix/example/?.lua"
-    extra_lua_cpath: "\$prefix/example/?.lua"
+    extra_lua_path: "$prefix/example/?.lua"
+    extra_lua_cpath: "$prefix/example/?.lua"
 plugins:
     - 3rd-party
 stream_plugins:
@@ -716,7 +716,7 @@ echo "passed: bad lua_module_hook should be rejected"
 echo '
 apisix:
     proxy_mode: http&stream
-    extra_lua_path: "\$prefix/example/?.lua"
+    extra_lua_path: "$prefix/example/?.lua"
     lua_module_hook: "my_hook"
     stream_proxy:
         tcp:
@@ -838,7 +838,7 @@ apisix:
         disk_path: /tmp/disk_cache_one
         disk_size: 100m
         memory_size: 20m
-        cache_levels: 1:2
+        cache_levels: "1:2"
 ' > conf/config.yaml
 
 make init

@@ -42,8 +42,17 @@ plugins:
 
 After modifying the config file, reload APISIX or send an hot-loaded HTTP request through the Admin API to take effect:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```
 
 ## Attributes
@@ -64,7 +73,7 @@ Create an SSL Resource as such:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert" : "'"$(cat server.crt)"'",
     "key": "'"$(cat server.key)"'",
@@ -95,7 +104,7 @@ To disable OCSP stapling feature, you can make a request as shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert" : "'"$(cat server.crt)"'",
     "key": "'"$(cat server.key)"'",
@@ -112,7 +121,7 @@ Make sure all your SSL Resource doesn't contains `ocsp_stapling` field anymore. 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -d '
+-H "X-API-KEY: $admin_key" -X PATCH -d '
 {
     "ocsp_stapling": null
 }'
@@ -129,5 +138,5 @@ plugins:
 After modifying the config file, reload APISIX or send an hot-loaded HTTP request through the Admin API to take effect:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```

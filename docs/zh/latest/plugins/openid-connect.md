@@ -89,6 +89,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | cache_segment                   | string  | 否    |               |             | 可选的缓存段的名称，用于区分和区分用于令牌内省或 JWT 验证的缓存。 |
 | introspection_interval          | integer | 否    | 0             |             | 以秒为单位的缓存和内省访问令牌的 TTL。   |
 | introspection_expiry_claim      | string  | 否    |               |             | 过期声明的名称，用于控制缓存和内省访问令牌的 TTL。 |
+| introspection_addon_headers     | string[] | 否    |               |             | `introspection_addon_headers` 是字符串列表，用于配置额外添加到内省 HTTP 请求中的请求头，如果配置的请求头不存在于源请求中，它将被忽略。|
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
@@ -116,9 +117,19 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 
 以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -162,7 +173,7 @@ curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -197,7 +208,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {

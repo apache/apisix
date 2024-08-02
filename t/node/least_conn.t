@@ -40,10 +40,9 @@ _EOC_
 
     my $route = <<_EOC_;
 routes:
-    -
-    upstream_id: 1
+  - upstream_id: 1
     uris:
-        - /mysleep
+      - /mysleep
 #END
 _EOC_
 
@@ -61,8 +60,7 @@ __DATA__
 === TEST 1: select highest weight
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         "127.0.0.1:1980": 2
@@ -77,8 +75,7 @@ proxy request to 127.0.0.1:1980 while connecting to upstream
 === TEST 2: select least conn
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         "127.0.0.1:1980": 3
@@ -121,8 +118,7 @@ proxy request to 127.0.0.1:1980 while connecting to upstream
 === TEST 3: retry
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         "127.0.0.1:1999": 2
@@ -140,8 +136,7 @@ proxy request to 127.0.0.1:1980 while connecting to upstream
 === TEST 4: retry all nodes, failed
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     type: least_conn
     nodes:
         "127.0.0.1:1999": 2

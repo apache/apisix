@@ -58,8 +58,18 @@ plugins:
 
 这里有个例子，在指定的路由中启用 `dubbo-proxy` 插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "nodes": {
         "127.0.0.1:20880": 1
@@ -67,7 +77,7 @@ curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f03433
     "type": "roundrobin"
 }'
 
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uris": [
         "/hello"
@@ -119,7 +129,7 @@ blahblah # "body" will be the body
 当你想在某个路由或服务中禁用 `dubbo-proxy` 插件，非常简单，你可以直接删除插件配置中的 `json` 配置，不需要重启服务就能立即生效：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [

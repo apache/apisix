@@ -193,7 +193,7 @@ local function init(env)
         checked_admin_key = true
         print("Warning! Admin key is bypassed! "
                 .. "If you are deploying APISIX in a production environment, "
-                .. "please disable `admin_key_required` and set a secure admin key!")
+                .. "please enable `admin_key_required` and set a secure admin key!")
     end
 
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
@@ -221,12 +221,9 @@ Please modify "admin_key" in conf/config.yaml .
             end
 
             if admin.key == "" then
-                util.die(help:format("ERROR: missing valid Admin API token."), "\n")
-            end
-
-            if admin.key == "edd1c9f034335f136f87ad84b625c8f1" then
                 stderr:write(
-                    help:format([[WARNING: using fixed Admin API token has security risk.]]),
+                    help:format([[WARNING: using empty Admin API.
+                    This will trigger APISIX to automatically generate a random Admin API token.]]),
                     "\n"
                 )
             end
