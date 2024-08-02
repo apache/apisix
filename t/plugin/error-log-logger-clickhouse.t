@@ -98,7 +98,7 @@ done
 --- error_log
 this is a warning message for test2
 clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:dpwomMlEsHH2L7wSUi6YiQ==
+clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
 --- wait: 3
@@ -133,7 +133,7 @@ clickhouse headers: x-clickhouse-database:default
 --- error_log
 this is a warning message for test3
 clickhouse body: INSERT INTO t FORMAT JSONEachRow
-clickhouse headers: x-clickhouse-key:dpwomMlEsHH2L7wSUi6YiQ==
+clickhouse headers: x-clickhouse-key:a
 clickhouse headers: x-clickhouse-user:default
 clickhouse headers: x-clickhouse-database:default
 --- wait: 5
