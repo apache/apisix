@@ -51,7 +51,7 @@ local _M = {
     schema = schema
 }
 
-local function make_request_to_aws(conf,key)
+local function make_request_to_aws(conf, key)
     local aws_instance = aws()
 
     local region = conf.region
@@ -118,7 +118,7 @@ local function make_request_to_aws(conf,key)
 end
 
 -- key is the aws secretId
-local function get(conf,key)
+local function get(conf, key)
     core.log.info("fetching data from aws for key: ", key)
 
     local idx = rfind_char(key, '/')
@@ -138,7 +138,7 @@ local function get(conf,key)
 
     core.log.info("main: ", main_key, " sub: ", sub_key)
 
-    local res,err = make_request_to_aws(conf,main_key)
+    local res, err = make_request_to_aws(conf, main_key)
     if not res then
         return nil, "failed to retrtive data from aws secret manager: " .. err
     end
@@ -155,3 +155,5 @@ _M.get = get
 
 
 return _M
+
+
