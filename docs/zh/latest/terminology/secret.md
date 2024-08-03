@@ -208,7 +208,7 @@ $secret://$manager/$id/$secret_name/$key
 - manager: 密钥管理服务，可以是 Vault、AWS\GCP 等
 - APISIX Secret 资源 ID，需要与添加 APISIX Secret 资源时指定的 ID 保持一致
 - secret_name: 密钥管理服务中的密钥名称
-- key：密钥管理服务中密钥对应的 key
+- key：当密钥的值是 JSON 字符串时，获取某个属性的值
 
 ### 必要参数
 
@@ -218,7 +218,7 @@ $secret://$manager/$id/$secret_name/$key
 | auth_config.client_email | 是       |                                                  | 谷歌服务帐号的 email 参数。                                                                                                           |
 | auth_config.private_key | 是       |                                                  | 谷歌服务帐号的私钥参数。                                                                                                           |
 | auth_config.project_id  | 是       |                                                  | 谷歌服务帐号的项目 ID。                                                                                                            |
-| auth_config.token_uri   | 是       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                        |
+| auth_config.token_uri   | 否       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                        |
 | auth_config.entries_uri | 否       |   https://secretmanager.googleapis.com/v1/     | 谷歌密钥服务访问端点 API。                                                                                                   |
 | auth_config.scopes      | 否       |   https://www.googleapis.com/auth/cloud-platform                                               | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes)|
 | auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。          |

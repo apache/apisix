@@ -26,60 +26,56 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: check key: error format
+=== TEST 1: sanity
 --- config
     location /t {
         content_by_lua_block {
-            local gcp = require("apisix.secret.gcp")
-            local conf = {
-                auth_config = {
-                    client_email = "email@apisix.iam.gserviceaccount.com",
-                    private_key = [[
------BEGIN PRIVATE KEY-----
-MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
-aeMgaLD3hBjvxKrz10uox1X8q7YYhf2ViRtLRUMa2bEMYksE5hbhwpNf6mKAnLOC
-UuAT6cPPdUl/agKpJXviBPIR2LuzD17WsLJHp1HxUDssSkgfCaGcOGGNfLUhhIpF
-2JUctLmxiZoAZySlSjcwupSuDJ0aPm0XO8r9H8Qu5kF2Vkz5e5bFivLTmvzrQTe4
-v5V1UI6hThElCSeUmdNF3uG3wopxlvq4zXgLTnuLbrNf/Gc4mlpV+UDgTISj32Ep
-AB2vxKEbvQw4ti8YJnGXWjxLerhfrszFw+V8lpeduiDYA44ZFoVqvzxeIsVZNtcw
-Iu7PvEPNAgMBAAECggEAVpyN9m7A1F631/aLheFpLgMbeKt4puV7zQtnaJ2XrZ9P
-PR7pmNDpTu4uF3k/D8qrIm+L+uhVa+hkquf3wDct6w1JVnfQ93riImbnoKdK13ic
-DcEZCwLjByfjFMNCxZ/gAZca55fbExlqhFy6EHmMjhB8s2LsXcTHRuGxNI/Vyi49
-sxECibe0U53aqdJbVWrphIS67cpwl4TUkN6mrHsNuDYNJ9dgkpapoqp4FTFQsBqC
-afOK5qgJ68dWZ47FBUng+AZjdCncqAIuJxxItGVQP6YPsFs+OXcivIVHJr363TpC
-l85FfdvqWV5OGBbwSKhNwiTNUVvfSQVmtURGWG/HbQKBgQD4gZ1z9+Lx19kT9WTz
-lw93lxso++uhAPDTKviyWSRoEe5aN3LCd4My+/Aj+sk4ON/s2BV3ska5Im93j+vC
-rCv3uPn1n2jUhWuJ3bDqipeTW4n/CQA2m/8vd26TMk22yOkkqw2MIA8sjJ//SD7g
-tdG7up6DgGMP4hgbO89uGU7DAwKBgQDJtkKd0grh3u52Foeh9YaiAgYRwc65IE16
-UyD1OJxIuX/dYQDLlo5KyyngFa1ZhWIs7qC7r3xXH+10kfJY+Q+5YMjmZjlL8SR1
-Ujqd02R9F2//6OeswyReachJZbZdtiEw3lPa4jVFYfhSe0M2ZPxMwvoXb25eyCNI
-1lYjSKq87wKBgHnLTNghjeDp4UKe6rNYPgRm0rDrhziJtX5JeUov1mALKb6dnmkh
-GfRK9g8sQqKDfXwfC6Z2gaMK9YaryujGaWYoCpoPXtmJ6oLPXH4XHuLh4mhUiP46
-xn8FEfSimuQS4/FMxH8A128GHQSI7AhGFFzlwfrBWcvXC+mNDsTvMmLxAoGARc+4
-upppfccETQZ7JsitMgD1TMwA2f2eEwoWTAitvlXFNT9PYSbYVHaAJbga6PLLCbYF
-FzAjHpxEOKYSdEyu7n/ayDL0/Z2V+qzc8KarDsg/0RgwppBbU/nUgeKb/U79qcYo
-y4ai3UKNCS70Ei1dTMvmdpnwXwlxfNIBufB6dy0CgYBMYq9Lc31GkC6PcGEEbx6W
-vjImOadWZbuOVnvEQjb5XCdcOsWsMcg96PtoeuyyHmhnEF1GsMzcIdQv/PHrvYpK
-Yp8D0aqsLEgwGrJQER26FPpKmyIwvcL+nm6q5W31PnU9AOC/WEkB6Zs58hsMzD2S
-kEJQcmfVew5mFXyxuEn3zA==
------END PRIVATE KEY-----]],
-                    project_id = "apisix",
-                    token_uri = "http://127.0.0.1:2800/token",
-                    scopes = "https://www.googleapis.com/auth/cloud-platform",
-                },
+            local test_case = {
+                {},
+                {auth_file = "123"},
+                {auth_file = 123},
+                {auth_config = {}},
+                {auth_config = {client_email = "client"}},
+                {auth_config = {client_email = "client", private_key = "private_key"}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id"}},
+                {auth_config = {client_email = 1234, private_key = "private_key", project_id = "project_id"}},
+                {auth_config = {client_email = "client", private_key = 1234, project_id = "project_id"}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = 1234}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id"}, ssl_verify = 1234},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", token_uri = 1234}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", scopes = 1234}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", entries_uri = 1234}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", token_uri = "token_uri",
+                    scopes = "scopes", entries_uri = "entries_uri"}, ssl_verify = true},
             }
-            local data, err = gcp.get(config, "apisix")
-            if err then
-                return ngx.say(err)
-            end
+            local gcp = require("apisix.secret.gcp")
+            local core = require("apisix.core")
+            local metadata_schema = gcp.schema
 
-            ngx.say("done")
+            for _, conf in ipairs(test_case) do
+                local ok, err = core.schema.check(metadata_schema, conf)
+                ngx.say(ok and "done" or err)
+            end
         }
     }
 --- request
 GET /t
 --- response_body
-error key format, key: apisix
+value should match only one schema, but matches none
+done
+property "auth_file" validation failed: wrong type: expected string, got number
+property "auth_config" validation failed: property "private_key" is required
+property "auth_config" validation failed: property "private_key" is required
+property "auth_config" validation failed: property "project_id" is required
+done
+property "auth_config" validation failed: property "client_email" validation failed: wrong type: expected string, got number
+property "auth_config" validation failed: property "private_key" validation failed: wrong type: expected string, got number
+property "auth_config" validation failed: property "project_id" validation failed: wrong type: expected string, got number
+property "ssl_verify" validation failed: wrong type: expected boolean, got number
+property "auth_config" validation failed: property "token_uri" validation failed: wrong type: expected string, got number
+property "auth_config" validation failed: property "scopes" validation failed: wrong type: expected string, got number
+property "auth_config" validation failed: property "entries_uri" validation failed: wrong type: expected string, got number
+done
 
 
 
@@ -140,64 +136,7 @@ can't find main key, key: /apisix
 
 
 
-=== TEST 3: check key: no sub key
---- config
-    location /t {
-        content_by_lua_block {
-            local gcp = require("apisix.secret.gcp")
-            local conf = {
-                auth_config = {
-                    client_email = "email@apisix.iam.gserviceaccount.com",
-                    private_key = [[
------BEGIN PRIVATE KEY-----
-MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
-aeMgaLD3hBjvxKrz10uox1X8q7YYhf2ViRtLRUMa2bEMYksE5hbhwpNf6mKAnLOC
-UuAT6cPPdUl/agKpJXviBPIR2LuzD17WsLJHp1HxUDssSkgfCaGcOGGNfLUhhIpF
-2JUctLmxiZoAZySlSjcwupSuDJ0aPm0XO8r9H8Qu5kF2Vkz5e5bFivLTmvzrQTe4
-v5V1UI6hThElCSeUmdNF3uG3wopxlvq4zXgLTnuLbrNf/Gc4mlpV+UDgTISj32Ep
-AB2vxKEbvQw4ti8YJnGXWjxLerhfrszFw+V8lpeduiDYA44ZFoVqvzxeIsVZNtcw
-Iu7PvEPNAgMBAAECggEAVpyN9m7A1F631/aLheFpLgMbeKt4puV7zQtnaJ2XrZ9P
-PR7pmNDpTu4uF3k/D8qrIm+L+uhVa+hkquf3wDct6w1JVnfQ93riImbnoKdK13ic
-DcEZCwLjByfjFMNCxZ/gAZca55fbExlqhFy6EHmMjhB8s2LsXcTHRuGxNI/Vyi49
-sxECibe0U53aqdJbVWrphIS67cpwl4TUkN6mrHsNuDYNJ9dgkpapoqp4FTFQsBqC
-afOK5qgJ68dWZ47FBUng+AZjdCncqAIuJxxItGVQP6YPsFs+OXcivIVHJr363TpC
-l85FfdvqWV5OGBbwSKhNwiTNUVvfSQVmtURGWG/HbQKBgQD4gZ1z9+Lx19kT9WTz
-lw93lxso++uhAPDTKviyWSRoEe5aN3LCd4My+/Aj+sk4ON/s2BV3ska5Im93j+vC
-rCv3uPn1n2jUhWuJ3bDqipeTW4n/CQA2m/8vd26TMk22yOkkqw2MIA8sjJ//SD7g
-tdG7up6DgGMP4hgbO89uGU7DAwKBgQDJtkKd0grh3u52Foeh9YaiAgYRwc65IE16
-UyD1OJxIuX/dYQDLlo5KyyngFa1ZhWIs7qC7r3xXH+10kfJY+Q+5YMjmZjlL8SR1
-Ujqd02R9F2//6OeswyReachJZbZdtiEw3lPa4jVFYfhSe0M2ZPxMwvoXb25eyCNI
-1lYjSKq87wKBgHnLTNghjeDp4UKe6rNYPgRm0rDrhziJtX5JeUov1mALKb6dnmkh
-GfRK9g8sQqKDfXwfC6Z2gaMK9YaryujGaWYoCpoPXtmJ6oLPXH4XHuLh4mhUiP46
-xn8FEfSimuQS4/FMxH8A128GHQSI7AhGFFzlwfrBWcvXC+mNDsTvMmLxAoGARc+4
-upppfccETQZ7JsitMgD1TMwA2f2eEwoWTAitvlXFNT9PYSbYVHaAJbga6PLLCbYF
-FzAjHpxEOKYSdEyu7n/ayDL0/Z2V+qzc8KarDsg/0RgwppBbU/nUgeKb/U79qcYo
-y4ai3UKNCS70Ei1dTMvmdpnwXwlxfNIBufB6dy0CgYBMYq9Lc31GkC6PcGEEbx6W
-vjImOadWZbuOVnvEQjb5XCdcOsWsMcg96PtoeuyyHmhnEF1GsMzcIdQv/PHrvYpK
-Yp8D0aqsLEgwGrJQER26FPpKmyIwvcL+nm6q5W31PnU9AOC/WEkB6Zs58hsMzD2S
-kEJQcmfVew5mFXyxuEn3zA==
------END PRIVATE KEY-----]],
-                    project_id = "apisix",
-                    token_uri = "http://127.0.0.1:2800/token",
-                    scopes = "https://www.googleapis.com/auth/cloud-platform",
-                },
-            }
-            local data, err = gcp.get(conf, "apisix/")
-            if err then
-                return ngx.say(err)
-            end
-
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-can't find sub key, key: apisix/
-
-
-
-=== TEST 4: add secret  && consumer && check
+=== TEST 3: add secret  && consumer && check
 --- request
 GET /t
 --- config
@@ -304,7 +243,7 @@ nil
 
 
 
-=== TEST 5: get value from gcp by auth_file(fetch_oatuh_conf failed, read failed)
+=== TEST 4: get value from gcp by auth_file(fetch_oatuh_conf failed, read failed)
 --- config
     location /t {
         content_by_lua_block {
@@ -326,7 +265,7 @@ failed to retrtive data from gcp secret manager: failed to read configuration, f
 
 
 
-=== TEST 6: get value from gcp by auth_file(fetch_oatuh_conf success)
+=== TEST 5: get value from gcp by auth_file(fetch_oatuh_conf success)
 --- config
     location /t {
         content_by_lua_block {
@@ -348,7 +287,7 @@ value
 
 
 
-=== TEST 7: get value from gcp by auth_file(fetch_oatuh_conf failed, undefined)
+=== TEST 6: get value from gcp by auth_file(fetch_oatuh_conf failed, undefined)
 --- config
     location /t {
         content_by_lua_block {
@@ -370,7 +309,7 @@ failed to retrtive data from gcp secret manager: configuration is undefined, fil
 
 
 
-=== TEST 8: get value from gcp
+=== TEST 7: get json value from gcp
 --- config
     location /t {
         content_by_lua_block {
@@ -424,6 +363,63 @@ kEJQcmfVew5mFXyxuEn3zA==
 GET /t
 --- response_body
 value
+
+
+
+=== TEST 8: get string value from gcp
+--- config
+    location /t {
+        content_by_lua_block {
+            local conf = {
+                auth_config = {
+                    client_email = "email@apisix.iam.gserviceaccount.com",
+                    private_key = [[
+-----BEGIN PRIVATE KEY-----
+MIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDDzrFwnA3EvYyR
+aeMgaLD3hBjvxKrz10uox1X8q7YYhf2ViRtLRUMa2bEMYksE5hbhwpNf6mKAnLOC
+UuAT6cPPdUl/agKpJXviBPIR2LuzD17WsLJHp1HxUDssSkgfCaGcOGGNfLUhhIpF
+2JUctLmxiZoAZySlSjcwupSuDJ0aPm0XO8r9H8Qu5kF2Vkz5e5bFivLTmvzrQTe4
+v5V1UI6hThElCSeUmdNF3uG3wopxlvq4zXgLTnuLbrNf/Gc4mlpV+UDgTISj32Ep
+AB2vxKEbvQw4ti8YJnGXWjxLerhfrszFw+V8lpeduiDYA44ZFoVqvzxeIsVZNtcw
+Iu7PvEPNAgMBAAECggEAVpyN9m7A1F631/aLheFpLgMbeKt4puV7zQtnaJ2XrZ9P
+PR7pmNDpTu4uF3k/D8qrIm+L+uhVa+hkquf3wDct6w1JVnfQ93riImbnoKdK13ic
+DcEZCwLjByfjFMNCxZ/gAZca55fbExlqhFy6EHmMjhB8s2LsXcTHRuGxNI/Vyi49
+sxECibe0U53aqdJbVWrphIS67cpwl4TUkN6mrHsNuDYNJ9dgkpapoqp4FTFQsBqC
+afOK5qgJ68dWZ47FBUng+AZjdCncqAIuJxxItGVQP6YPsFs+OXcivIVHJr363TpC
+l85FfdvqWV5OGBbwSKhNwiTNUVvfSQVmtURGWG/HbQKBgQD4gZ1z9+Lx19kT9WTz
+lw93lxso++uhAPDTKviyWSRoEe5aN3LCd4My+/Aj+sk4ON/s2BV3ska5Im93j+vC
+rCv3uPn1n2jUhWuJ3bDqipeTW4n/CQA2m/8vd26TMk22yOkkqw2MIA8sjJ//SD7g
+tdG7up6DgGMP4hgbO89uGU7DAwKBgQDJtkKd0grh3u52Foeh9YaiAgYRwc65IE16
+UyD1OJxIuX/dYQDLlo5KyyngFa1ZhWIs7qC7r3xXH+10kfJY+Q+5YMjmZjlL8SR1
+Ujqd02R9F2//6OeswyReachJZbZdtiEw3lPa4jVFYfhSe0M2ZPxMwvoXb25eyCNI
+1lYjSKq87wKBgHnLTNghjeDp4UKe6rNYPgRm0rDrhziJtX5JeUov1mALKb6dnmkh
+GfRK9g8sQqKDfXwfC6Z2gaMK9YaryujGaWYoCpoPXtmJ6oLPXH4XHuLh4mhUiP46
+xn8FEfSimuQS4/FMxH8A128GHQSI7AhGFFzlwfrBWcvXC+mNDsTvMmLxAoGARc+4
+upppfccETQZ7JsitMgD1TMwA2f2eEwoWTAitvlXFNT9PYSbYVHaAJbga6PLLCbYF
+FzAjHpxEOKYSdEyu7n/ayDL0/Z2V+qzc8KarDsg/0RgwppBbU/nUgeKb/U79qcYo
+y4ai3UKNCS70Ei1dTMvmdpnwXwlxfNIBufB6dy0CgYBMYq9Lc31GkC6PcGEEbx6W
+vjImOadWZbuOVnvEQjb5XCdcOsWsMcg96PtoeuyyHmhnEF1GsMzcIdQv/PHrvYpK
+Yp8D0aqsLEgwGrJQER26FPpKmyIwvcL+nm6q5W31PnU9AOC/WEkB6Zs58hsMzD2S
+kEJQcmfVew5mFXyxuEn3zA==
+-----END PRIVATE KEY-----]],
+                    project_id = "apisix",
+                    token_uri = "http://127.0.0.1:1980/google/secret/token",
+                    scopes = "https://www.googleapis.com/auth/cloud",
+                    entries_uri = "http://127.0.0.1:1980/google/secret/"
+                },
+            }
+            local gcp = require("apisix.secret.gcp")
+            local value, err = gcp.get(conf, "mysql")
+            if not value then
+                return ngx.say(err)
+            end
+            ngx.say(value)
+        }
+    }
+--- request
+GET /t
+--- response_body
+secret
 
 
 
