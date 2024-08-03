@@ -57,7 +57,7 @@ GET /t
             local aws = require("apisix.secret.aws")
             local core = require("apisix.core")
             local metadata_schema = aws.schema
-            
+
             for _, conf in ipairs(test_case) do
                 local ok, err = core.schema.check(metadata_schema, conf)
                 ngx.say(ok and "done" or err)
@@ -241,7 +241,7 @@ value
 
 
 
-=== TEST 8: get string value from aws 
+=== TEST 8: get string value from aws
 --- config
     location /t {
         content_by_lua_block {
