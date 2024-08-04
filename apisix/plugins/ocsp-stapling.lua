@@ -46,11 +46,7 @@ function _M.check_schema(conf)
 end
 
 
-local function get_ocsp_responder(der_cert_chain, overrides_responder)
-    if overrides_responder then
-        return overrides_responder
-    end
-
+local function get_ocsp_responder(der_cert_chain)
     local responder, err = ngx_ocsp.get_ocsp_responder_from_der_chain(der_cert_chain)
     if not responder then
         -- if cert not support ocsp, the report error is nil
@@ -64,11 +60,11 @@ local function get_ocsp_responder(der_cert_chain, overrides_responder)
 end
 
 
-local function fetch_ocsp_resp(der_cert_chain, overrides_responder)
+local function fetch_ocsp_resp(der_cert_chain, responder)
     core.log.info("fetch ocsp response from remote")
-    local responder, err = get_ocsp_responder(der_cert_chain, overrides_responder)
+
     if not responder then
-        return nil, err
+        return nil, "no specified responder"
     end
 
     local ocsp_req, err = ngx_ocsp.create_ocsp_request(der_cert_chain)
@@ -103,16 +99,11 @@ local function fetch_ocsp_resp(der_cert_chain, overrides_responder)
 end
 
 
-local function set_ocsp_resp(full_chain_pem_cert, overrides_responder, skip_verify, cache_ttl)
-    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(full_chain_pem_cert)
-    if not der_cert_chain then
-        return false, "failed to convert certificate chain from PEM to DER: ", err
-    end
-
+local function set_ocsp_resp(der_cert_chain, responder, skip_verify, cache_ttl)
     local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
     if ocsp_resp == nil then
         core.log.info("not ocsp resp cache found, fetch from ocsp responder")
-        ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, overrides_responder)
+        ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, responder)
         if ocsp_resp == nil then
             return false, err
         end
@@ -178,8 +169,24 @@ local function set_cert_and_key(sni, value)
         end
     end
 
-    local ok, err = set_ocsp_resp(fin_pem_cert,
-                                  value.ocsp_stapling.ssl_stapling_responder,
+    local der_cert_chain, err = ngx_ssl.cert_pem_to_der(fin_pem_cert)
+    if not der_cert_chain then
+        core.log.error("no ocsp response send: ", err)
+        return true
+    end
+
+    local responder = value.ocsp_stapling.ssl_stapling_responder
+    if responder == nil then
+        -- no overrides responder, get ocsp responder from cert
+        responder, err = get_ocsp_responder(der_cert_chain)
+        if not responder then
+            core.log.error("no ocsp response send: ", err)
+            return true
+        end
+    fi
+
+    local ok, err = set_ocsp_resp(der_cert_chain,
+                                  responder,
                                   value.ocsp_stapling.skip_verify,
                                   value.ocsp_stapling.cache_ttl)
     if not ok then
@@ -218,8 +225,16 @@ function _M.rewrite(conf, ctx)
         local ocsp_resp = ocsp_resp_cache:get(der_cert_chain)
         if ocsp_resp == nil then
             core.log.info("not ocsp resp cache found, fetch from ocsp responder")
-            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain,
-                                             matched_ssl.value.ocsp_stapling.ssl_ocsp_responder)
+            local responder = matched_ssl.value.ocsp_stapling.ssl_ocsp_responder
+            if responder == nil then
+                -- no overrides responder, get ocsp responder from cert
+                responder, err = get_ocsp_responder(der_cert_chain)
+                if not responder then
+                    core.log.error(err)
+                    return 495
+                end
+            end
+            ocsp_resp, err = fetch_ocsp_resp(der_cert_chain, responder)
             if ocsp_resp == nil then
                 core.log.error("failed to get ocsp respone: ", err)
                 return 495
@@ -227,7 +242,7 @@ function _M.rewrite(conf, ctx)
             core.log.info("fetch ocsp resp ok, cache it")
             ocsp_resp_cache:set(der_cert_chain,
                                 ocsp_resp, matched_ssl.value.ocsp_stapling.cache_ttl)
-         end
+        end
 
         local ocsp_ok, err = ngx_ocsp.validate_ocsp_response(ocsp_resp, der_cert_chain)
         if not ocsp_ok then
