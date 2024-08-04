@@ -48,7 +48,7 @@ dependencies = {
     "lua-resty-session = 3.10",
     "opentracing-openresty = 0.1",
     "lua-resty-radixtree = 2.9.1",
-    "lua-protobuf = 0.5.0-1",
+    "lua-protobuf = 0.5.2-1",
     "lua-resty-openidc = 1.7.6-3",
     "luafilesystem = 1.7.0-2",
     "nginx-lua-prometheus-api7 = 0.20240201-1",
@@ -69,7 +69,7 @@ dependencies = {
     "lua-resty-consul = 0.3-2",
     "penlight = 1.13.1",
     "ext-plugin-proto = 0.6.1",
-    "casbin = 1.41.8-1",
+    "casbin = 1.41.9-1",
     "inspect == 3.1.1",
     "lualdap = 1.2.6-1",
     "lua-resty-rocketmq = 0.3.0-0",
@@ -79,7 +79,7 @@ dependencies = {
     "nanoid = 0.1-1",
     "lua-resty-mediador = 0.1.2-1",
     "lua-resty-ldap = 0.1.0-0",
-    "lua-resty-t1k = 1.1.3",
+    "lua-resty-t1k = 1.1.5",
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0"
 }

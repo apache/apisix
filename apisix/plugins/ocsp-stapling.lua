@@ -204,20 +204,19 @@ function _M.rewrite(conf, ctx)
     end
 
     local matched_ssl = ctx.matched_ssl
-    local required_verify_client = matched_ssl.value.client
-    if not required_verify_client then
+    if not matched_ssl.value.client then
         return
     end
 
-    local required_ssl_ocsp = matched_ssl.value.ocsp_stapling.ssl_ocsp
+    local ssl_ocsp = matched_ssl.value.ocsp_stapling.ssl_ocsp
     local client_verify_res = ctx.var.ssl_client_verify
     -- only client verify ok and ssl_ocsp is "leaf" need to validate ocsp response
-    if required_ssl_ocsp == "leaf" and client_verify_res == "SUCCESS" then
+    if ssl_ocsp == "leaf" and client_verify_res == "SUCCESS" then
         -- ssl_client_raw_cert will return client cert only, need to combine ca cert
         local full_chain_pem_cert = ctx.var.ssl_client_raw_cert .. matched_ssl.value.client.ca
         local der_cert_chain, err = ngx_ssl.cert_pem_to_der(full_chain_pem_cert)
         if not der_cert_chain then
-            core.log.error("failed to convert clinet certificate from PEM to DER: ", err)
+            core.log.error("failed to convert client certificate from PEM to DER: ", err)
             -- return NGX_HTTPS_CERT_ERROR
             return 495
         end

@@ -77,7 +77,7 @@ function _M.rewrite(conf, ctx)
     end
 
     if not key then
-        return 401, {message = "Missing API key found in request"}
+        return 401, {message = "Missing API key in request"}
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
