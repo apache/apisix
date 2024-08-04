@@ -197,12 +197,12 @@ local function get(conf, key)
         return res
     end
 
-    local ret = core.json.decode(res)
-    if not ret then
-        return nil, "failed to decode result, res: " .. res
+    local data, err = core.json.decode(res)
+    if not data then
+        return nil, "failed to decode result, res: " .. res .. ", err: " .. err
     end
 
-    return ret[sub_key]
+    return data[sub_key]
 end
 
 _M.get = get
