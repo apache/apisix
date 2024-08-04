@@ -50,6 +50,8 @@ This Plugin moves the authentication and authorization logic to a dedicated exte
 | keepalive_pool    | integer       | False    | 5       | [1, ...]ms     | Connection pool limit.                                                                                                                           |
 | allow_degradation | boolean       | False    | false   |                | When set to `true`, allows authentication to be skipped when authentication server is unavailable. |
 | status_on_error   | integer       | False    | 403     | [200,...,599]  | Sets the HTTP status that is returned to the client when there is a network error to the authorization service. The default status is “403” (HTTP Forbidden). |
+| forward_client_body  | boolean       | False    | true     | [true,false]  | When set to `true`, allows forwarding client body to `auth` service. The forwarding takes effect must also meet the conditions: `request_method` set to "POST" and the client body is non-empty |
+| forward_by_streaming | boolean       | False    | true     | [true,false]  | When set to `true`, using the `streaming` way to forward client body. It's suitable for large client body. In case of `false`, the whole clien body is buffered(to memory or tempfile) first then start forwarding. |
 
 ## Data definition
 
