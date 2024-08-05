@@ -144,6 +144,11 @@ local function modify_header(ctx, header_name, header_value, override)
         req_add_header(header_name, header_value)
     end
 
+    if ctx and ctx.var then
+        -- when the header is updated, clear cache of ctx.var
+        ctx.var["http_" .. str_lower(header_name)] = nil
+    end
+
     if is_apisix_or and not changed then
         -- if the headers are not changed before,
         -- we can only update part of the cache instead of invalidating the whole

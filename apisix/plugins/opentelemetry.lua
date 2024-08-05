@@ -219,6 +219,8 @@ function _M.init()
     hostname = core.utils.gethostname()
 
     plugin_info = plugin.plugin_attr(plugin_name) or {}
+    local check = {"collector.address"}
+    core.utils.check_https(check, plugin_info, plugin_name)
     local ok, err = core.schema.check(attr_schema, plugin_info)
     if not ok then
         core.log.error("failed to check the plugin_attr[", plugin_name, "]",

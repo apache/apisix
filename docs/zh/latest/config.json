@@ -201,7 +201,8 @@
           "label": "其它协议",
           "items": [
             "plugins/dubbo-proxy",
-            "plugins/mqtt-proxy"
+            "plugins/mqtt-proxy",
+            "plugins/http-dubbo"
           ]
         }
       ]
@@ -325,6 +326,10 @@
         {
           "type": "doc",
           "id": "ssl-protocol"
+        },
+        {
+          "type": "doc",
+          "id": "http3"
         }
       ]
     },

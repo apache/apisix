@@ -135,6 +135,7 @@ end
 
 
 local function fetch_by_uri(secret_uri)
+    core.log.info("fetching data from secret uri: ", secret_uri)
     local opts, err = parse_secret_uri(secret_uri)
     if not opts then
         return nil, err

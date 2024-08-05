@@ -358,7 +358,7 @@ Route 对象 JSON 配置示例：
     "desc": "hello world",
     "remote_addrs": ["127.0.0.1"],        # 一组客户端请求 IP 地址
     "vars": [["http_user", "==", "ios"]], # 由一个或多个 [var, operator, val] 元素组成的列表
-    "upstream_id": "1",                   # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream_id": "1",                   # upstream 对象在 etcd 中的 id，建议使用此值
     "upstream": {},                       # upstream 信息对象，建议尽量不要使用
     "timeout": {                          # 为 route 设置 upstream 的连接、发送消息、接收消息的超时时间。
         "connect": 3,
@@ -652,7 +652,7 @@ Service 对象 JSON 配置示例：
 {
     "id": "1",                # id
     "plugins": {},            # 指定 service 绑定的插件
-    "upstream_id": "1",       # upstream 对象在 etcd 中的 id ，建议使用此值
+    "upstream_id": "1",       # upstream 对象在 etcd 中的 id，建议使用此值
     "upstream": {},           # upstream 信息对象，不建议使用
     "name": "test svc",       # service 名称
     "desc": "hello world",    # service 描述
@@ -1205,8 +1205,8 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | ----------- | ------ | -------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | cert        | 是     | 证书           | HTTP 证书。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                             |                                                  |
 | key         | 是     | 私钥           | HTTPS 证书私钥。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                                                         |                                                  |
-| certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。 |                                                  |
-| keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。                                                          |                                                  |
+| certs       | 否   | 证书字符串数组 | 当你想给同一个域名配置多个证书时，除了第一个证书需要通过 `cert` 传递外，剩下的证书可以通过该参数传递上来。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。 |                                                  |
+| keys        | 否   | 私钥字符串数组 | `certs` 对应的证书私钥，需要与 `certs` 一一对应。该字段支持使用 [APISIX Secret](./terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                                          |                                                  |
 | client.ca   | 否   | 证书 |  设置将用于客户端证书校验的 `CA` 证书。该特性需要 OpenResty 为 1.19 及以上版本。  |                                                  |
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
@@ -1476,6 +1476,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 | uri    | 是     | URI        |  Vault 服务器的 URI                                                 |                                                  |
 | prefix    | 是    | 字符串       | 密钥前缀
 | token     | 是    | 字符串       | Vault 令牌 |                                                  |
+| namespace | 否    | 字符串       | Vault 命名空间，该字段无默认值 | `admin` |
 
 配置示例：
 

@@ -53,20 +53,28 @@ You can set up the collector by configuring it in you configuration file (`conf/
 
 | Name                                       | Type    | Default                                           | Description                                                                                                                                                                                                                   |
 |--------------------------------------------|---------|---------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| trace_id_source                            | enum    | random                                            | Source of the trace ID. Valid values are `random` or `x-request-id`. When set to `x-request-id`, the value of the `x-request-id` header will be used as trace ID. Make sure that is matches the regex pattern `[0-9a-f]{32}`. |
+| trace_id_source                            | enum    | x-request-id                                      | Source of the trace ID. Valid values are `random` or `x-request-id`. When set to `x-request-id`, the value of the `x-request-id` header will be used as trace ID. Make sure that it matches the regex pattern `[0-9a-f]{32}`. |
 | resource                                   | object  |                                                   | Additional [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md) appended to the trace.                                                                           |
 | collector                                  | object  | {address = "127.0.0.1:4318", request_timeout = 3} | OpenTelemetry Collector configuration.                                                                                                                                                                                        |
 | collector.address                          | string  | 127.0.0.1:4318                                    | Collector address. If the collector serves on https, use https://127.0.0.1:4318 as the address.                                                                                                                                    |
 | collector.request_timeout                  | integer | 3                                                 | Report request timeout in seconds.                                                                                                                                                                                            |
 | collector.request_headers                  | object  |                                                   | Report request HTTP headers.                                                                                                                                                                                                  |
 | batch_span_processor                       | object  |                                                   | Trace span processor.                                                                                                                                                                                                         |
-| batch_span_processor.drop_on_queue_full    | boolean | true                                              | When set to `true`, drops the span when queue is full. Otherwise, force process batches.                                                                                                                                      |
-| batch_span_processor.max_queue_size        | integer | 2048                                              | Maximum queue size for buffering spans for delayed processing.                                                                                                                                                                |
-| batch_span_processor.batch_timeout         | number  | 5                                                 | Maximum time in seconds for constructing a batch.                                                                                                                                                                             |
-| batch_span_processor.max_export_batch_size | integer | 256                                               | Maximum number of spans to process in a single batch.                                                                                                                                                                         |
-| batch_span_processor.inactive_timeout      | number  | 2                                                 | Time interval in seconds between processing batches.                                                                                                                                                                          |
+| batch_span_processor.drop_on_queue_full    | boolean | false                                             | When set to `true`, drops the span when queue is full. Otherwise, force process batches.                                                                                                                                      |
+| batch_span_processor.max_queue_size        | integer | 1024                                              | Maximum queue size for buffering spans for delayed processing.                                                                                                                                                                |
+| batch_span_processor.batch_timeout         | number  | 2                                                 | Maximum time in seconds for constructing a batch.                                                                                                                                                                             |
+| batch_span_processor.max_export_batch_size | integer | 16                                                | Maximum number of spans to process in a single batch.                                                                                                                                                                         |
+| batch_span_processor.inactive_timeout      | number  | 1                                                 | Time interval in seconds between processing batches.                                                                                                                                                                          |
 
-You can configure these as shown below:
+:::note
+
+If you find a `bad argument #1 to '?' (invalid value)` error triggered by the `hex2bytes` function in error log, it's essential to verify if your traceId matches the specified regex pattern `[0-9a-f]{32}`, as required by opentelemetry's [traceId format](https://opentelemetry.io/docs/specs/otel/trace/api/#retrieving-the-traceid-and-spanid).
+
+For instance, a possible scenario occurs when the plugin attribute `trace_id_source` is configured as `x-request-id`, and requests include an x-request-id header generated by Envoy. Envoy typically uses a [UUID](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing#trace-context-propagation) to create this header by default. When the opentelemetry plugin adopts this UUID as the traceId, the presence of hyphens in the UUID can cause issues. Since the UUID format with hyphens does not comply with the expected traceId format, it results in errors when attempting to push traces to the collector.
+
+:::
+
+You can configure these as shown below in your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -97,7 +105,7 @@ The following nginx variables are set by OpenTelemetry:
 
 How to use variables? you have to add it to your configuration file (`conf/config.yaml`):
 
-```yaml title="./conf/config.yaml"
+```yaml title="conf/config.yaml"
 http:
     enable_access_log: true
     access_log: "/dev/stdout"

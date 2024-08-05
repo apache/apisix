@@ -118,8 +118,8 @@ For example, parse YAML to JSON yourself:
 
 ```
 {%
-    local yaml = require("tinyyaml")
-    local body = yaml.parse(_body)
+    local yaml = require("lyaml")
+    local body = yaml.load(_body)
 %}
 {"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
 ```
@@ -138,6 +138,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
     "plugins": {
         "body-transformer": {
             "request": {
+                "template_is_base64": true,
                 "template": "'"$(base64 -w0 /path/to/my_template_file)"'"
             }
         }

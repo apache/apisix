@@ -37,7 +37,7 @@ ENV_TAR                ?= tar
 ENV_INSTALL            ?= install
 ENV_RM                 ?= rm -vf
 ENV_DOCKER             ?= docker
-ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
+ENV_DOCKER_COMPOSE     ?= docker compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
@@ -142,7 +142,11 @@ deps: install-runtime
 
 ### undeps : Uninstalling dependencies
 .PHONY: undeps
-undeps: uninstall-runtime
+undeps: uninstall-rocks uninstall-runtime
+
+
+.PHONY: uninstall-rocks
+uninstall-rocks:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_LUAROCKS) purge --tree=deps
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
@@ -247,7 +251,6 @@ install: runtime
 	$(ENV_INSTALL) -d /usr/local/apisix/conf/cert
 	$(ENV_INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(ENV_INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
-	$(ENV_INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
@@ -464,4 +467,11 @@ ci-env-down:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	rm $(OTEL_CONFIG)
 	$(ENV_DOCKER_COMPOSE) down
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### ci-env-stop : CI env temporary stop
+.PHONY: ci-env-stop
+ci-env-stop:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER_COMPOSE) stop
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

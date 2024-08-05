@@ -99,6 +99,7 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+    core.utils.check_tls_bool({"use_tls"}, conf, plugin_name)
     return log_util.check_log_schema(conf)
 end
 
