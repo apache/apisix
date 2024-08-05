@@ -261,4 +261,4 @@ Note that you can also add or remove a consumer from any consumer group and enab
 
 ## More Tutorials
 
-Read our other [tutorials](./expose-api.md) to learn more about API Management.
+Read our other [tutorials](https://apisix.apache.org/zh/docs/apisix/tutorials/expose-api/) to learn more about API Management.
