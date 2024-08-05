@@ -23,7 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
-- [3.10.0] (#3100)
+- [3.10.0](#3100)
 - [3.9.0](#390)
 - [3.8.0](#380)
 - [3.7.0](#370)
@@ -83,6 +83,9 @@ title: Changelog
 
 - remove `core.grpc` module [11427](https://github.com/apache/apisix/pull/11427)
 - add max req/resp body size attributes [11133](https://github.com/apache/apisix/pull/11133)
+- autogenerate admin api key if not passed [11080](https://github.com/apache/apisix/pull/11080)
+- enable sensitive fields encryption by default [11076](https://github.com/apache/apisix/pull/11076)
+- support more sensitive fields for encryption [11095](https://github.com/apache/apisix/pull/11095)
 
 ### Plugins
 
@@ -123,9 +126,6 @@ title: Changelog
 - move tinyyaml to lyaml [11312](https://github.com/apache/apisix/pull/11312)
 - support hcv namespace [11277](https://github.com/apache/apisix/pull/11277)
 - add discovery k8s dump data interface [11111](https://github.com/apache/apisix/pull/11111)
-- autogenerate admin api key if not passed [11080](https://github.com/apache/apisix/pull/11080)
-- support more sensitive fields for encryption [11095](https://github.com/apache/apisix/pull/11095)
-- enable sensitive fields encryption by default [11076](https://github.com/apache/apisix/pull/11076)
 - make fetch_secrets use cache for performance [11201](https://github.com/apache/apisix/pull/11201)
 - replace 'string.len' with '#' [11078](https://github.com/apache/apisix/pull/11078)
 
