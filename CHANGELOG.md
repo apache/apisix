@@ -86,7 +86,7 @@ title: Changelog
 
 ### Plugins
 
-- allow set headers in introspection request [11090](https://github.com/apache/apisix/pull/11090)--------------
+- allow set headers in introspection request [11090](https://github.com/apache/apisix/pull/11090)
 
 ### Bugfixes
 
