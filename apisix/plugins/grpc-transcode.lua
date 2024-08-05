@@ -27,11 +27,11 @@ local plugin_name = "grpc-transcode"
 local pb_option_def = {
     {   description = "enum as result",
         type = "string",
-        enum = {"int64_as_number", "int64_as_string", "int64_as_hexstring"},
+        enum = {"enum_as_name", "enum_as_value"},
     },
     {   description = "int64 as result",
         type = "string",
-        enum = {"enum_as_name", "enum_as_value"},
+        enum = {"int64_as_number", "int64_as_string", "int64_as_hexstring"},
     },
     {   description ="default values option",
         type = "string",
