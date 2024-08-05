@@ -74,7 +74,7 @@ For instance, a possible scenario occurs when the plugin attribute `trace_id_sou
 
 :::
 
-You can configure these as shown below:
+You can configure these as shown below in your configuration file (`conf/config.yaml`):
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -105,7 +105,7 @@ The following nginx variables are set by OpenTelemetry:
 
 How to use variables? you have to add it to your configuration file (`conf/config.yaml`):
 
-```yaml title="./conf/config.yaml"
+```yaml title="conf/config.yaml"
 http:
     enable_access_log: true
     access_log: "/dev/stdout"
