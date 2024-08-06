@@ -242,4 +242,4 @@ Either API consumers will transparently use the new endpoint because they will f
 
 As you followed throughout the tutorial, it is very easy to publish multiple versions of your API with Apache APISIX and it does not require setting up actual API endpoints for each version of your API in the backend. It also allows your clients to switch between two versions without any downtime and save assets if there’s ever an update.
 
-Learn more about how to [manage](./manage-api-consumers.md) API consumers and [protect](./protect-api.md) your APIs.
+Learn more about how to [manage](/en/docs/apisix/tutorials/manage-api-consumers.md) API consumers and [protect](/en/docs/apisix/tutorials/protect-api.md) your APIs.
