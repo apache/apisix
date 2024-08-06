@@ -396,11 +396,11 @@ res:7
 
 
 
-=== TEST 13: get_nested_json_value
+=== TEST 13: query_json
 --- config
     location /t {
         content_by_lua_block {
-            local get_nested_json_value = require("apisix.core.utils").get_nested_json_value
+            local query_json = require("apisix.core.utils").query_json
             local obj = {
                 "a" = "a",
                 "b" = {
@@ -411,9 +411,9 @@ res:7
                 }
             }
 
-            assert(get_nested_json_value(obj, "a") == "a", string.format("obj key %s mismatch value %s", get_nested_json_value(obj, "a"), "a"))
-            assert(get_nested_json_value(obj, "b.c") == "b.c", string.format("obj key %s mismatch value %s", get_nested_json_value(obj, "b.c"), "b.c"))
-            assert(get_nested_json_value(obj, "b.d.e") == "b.d.e", string.format("obj key %s mismatch value %s", get_nested_json_value(obj, "b.d.e"), "b.d.e"))
+            assert(query_json(obj, "$.a") == "a", string.format("obj key %s mismatch value %s", query_json(obj, "$.a"), "a"))
+            assert(query_json(obj, "$.b.c") == "b.c", string.format("obj key %s mismatch value %s", query_json(obj, "$.b.c"), "b.c"))
+            assert(query_json(obj, "$.b.d.e") == "b.d.e", string.format("obj key %s mismatch value %s", query_json(obj, "$.b.d.e"), "b.d.e"))
         }
     }
 --- request

@@ -283,9 +283,12 @@ do
                         "application/json") then
                     local arg_key = sub_str(key, 15)
                     local raw_request_body = request.get_body()
-                    local body = cjson.decode(raw_request_body)
+                    local body, err = json.decode(raw_request_body)
                     if body then
-                        val = utils.get_nested_json_value(body, arg_key)
+                        val = utils.query_json(body, arg_key)
+                    end
+                    if err then
+                        log.error("Fail to decode json body")
                     end
                 end
 

@@ -30,6 +30,7 @@ local ngx_re         = require("ngx.re")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
+local jsonpath       = require("jsonpath")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
@@ -272,21 +273,8 @@ function _M.gethostname()
 end
 
 -- get value of nested json
-function _M.get_nested_json_value(obj, key_path)
-    local keys = core_str.split(key_path, ".")
-    local current_obj = obj
-
-    for i = 1, #keys do
-        local key = keys[i]
-        if current_obj[key] == nil then
-            return nil
-        end
-        if i == #keys then
-            return current_obj[key]
-        else
-            current_obj = current_obj[key]
-        end
-    end
+function _M.query_json(obj, expression)
+    return jsonpath.value(obj, expression)
 end
 
 
