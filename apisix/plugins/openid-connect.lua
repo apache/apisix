@@ -67,6 +67,11 @@ local schema = {
         session = {
             type = "object",
             properties = {
+                name = {
+                    type = "string",
+                    description = "the cookie name used for the authenticate session",
+                    default = "session"
+                },
                 secret = {
                     type = "string",
                     description = "the key used for the encrypt and HMAC calculation",
@@ -75,6 +80,11 @@ local schema = {
                 cookie = {
                     type = "object",
                     properties = {
+                        path = {
+                            type = "string",
+                            description = "the path of the cookie",
+                            default = "/"
+                        },
                         lifetime = {
                             type = "integer",
                             description = "it holds the cookie lifetime in seconds in the future",
