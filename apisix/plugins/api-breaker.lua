@@ -179,7 +179,7 @@ function _M.access(conf, ctx)
     core.log.info("breaker_time: ", breaker_time)
 
     -- breaker
-    if lasttime + breaker_time >= ngx.time() then
+    if lasttime + breaker_time >= ngx.time() and unhealthy_count % conf.unhealthy.failures == 0 then
         if conf.break_response_body then
             if conf.break_response_headers then
                 for _, value in ipairs(conf.break_response_headers) do
