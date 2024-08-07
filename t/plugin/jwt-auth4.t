@@ -120,3 +120,100 @@ __DATA__
     }
 --- response_body
 safe-jws
+
+
+
+=== TEST 2: enable jwt auth plugin (with custom key_claim_name) using admin api
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/4',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "custom-user-key",
+                            "secret": "custom-secret-key",
+                            "key_claim_name": "iss"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 3: verify that key_claim_name can be used to validate the Consumer JWT
+with a different claim than 'key'
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+
+            -- prepare consumer with a custom key claim name
+            local csm_code, csm_body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "mike",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "custom-user-key",
+                            "secret": "custom-secret-key"
+                        }
+                    }
+                }]]
+            )
+
+            if csm_code >= 300 then
+                ngx.status = csm_code
+                ngx.say(csm_body)
+                return
+            end
+
+            -- generate JWT with custom key ("key_claim_name" = "iss")
+            local sign_code, sign_body, token = t('/apisix/plugin/jwt/sign?key=custom-user-key&key_claim_name=iss',
+                ngx.HTTP_GET
+            )
+
+            if sign_code > 200 then
+                ngx.status = sign_code
+                ngx.say(sign_body)
+                return
+            end
+
+            -- verify JWT using the custom key_claim_name
+            local ver_code, ver_body = t('/hello?jwt=' .. token,
+                ngx.HTTP_GET
+            )
+
+            if ver_code > 200 then
+                ngx.status = ver_code
+                ngx.say(ver_body)
+                return
+            end
+
+            ngx.say("verified-jwt")
+        }
+    }
+--- response_body
+verified-jwt
