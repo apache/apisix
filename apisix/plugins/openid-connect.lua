@@ -17,6 +17,7 @@
 
 local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
+local consumer = require("apisix.consumer")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
 local string  = string
@@ -281,36 +282,54 @@ local schema = {
     required = {"client_id", "client_secret", "discovery"}
 }
 
+local consumer_schema = {
+    type = "object",
+    title = "work with consumer object",
+    properties = {
+        preferred_username = { type = "string" },
+    },
+    required = {"username"},
+}
+
 
 local _M = {
     version = 0.2,
     priority = 2599,
+    type = 'auth',
     name = plugin_name,
     schema = schema,
+    consumer_schema = consumer_schema
 }
 
 
-function _M.check_schema(conf)
-    if conf.ssl_verify == "no" then
-        -- we used to set 'ssl_verify' to "no"
-        conf.ssl_verify = false
+function _M.check_schema(conf, schema_type)
+    local ok, err
+
+    if schema_type == core.schema.TYPE_CONSUMER then
+        ok, err = core.schema.check(consumer_schema, conf)
+    else
+        if conf.ssl_verify == "no" then
+            -- we used to set 'ssl_verify' to "no"
+            conf.ssl_verify = false
+        end
+    
+        if not conf.bearer_only and not conf.session then
+            core.log.warn("when bearer_only = false, " ..
+                           "you'd better complete the session configuration manually")
+            conf.session = {
+                -- generate a secret when bearer_only = false and no secret is configured
+                secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
+            }
+        end
+    
+        local check = {"discovery", "introspection_endpoint", "redirect_uri",
+                        "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
+        core.utils.check_https(check, conf, plugin_name)
+        core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
+    
+        ok, err = core.schema.check(schema, conf)
     end
-
-    if not conf.bearer_only and not conf.session then
-        core.log.warn("when bearer_only = false, " ..
-                       "you'd better complete the session configuration manually")
-        conf.session = {
-            -- generate a secret when bearer_only = false and no secret is configured
-            secret = ngx_encode_base64(random.bytes(32, true) or random.bytes(32))
-        }
-    end
-
-    local check = {"discovery", "introspection_endpoint", "redirect_uri",
-                    "post_logout_redirect_uri", "proxy_opts.http_proxy", "proxy_opts.https_proxy"}
-    core.utils.check_https(check, conf, plugin_name)
-    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
-
-    local ok, err = core.schema.check(schema, conf)
+    
     if not ok then
         return false, err
     end
@@ -451,6 +470,24 @@ local function add_access_token_header(ctx, conf, token)
     end
 end
 
+-- Function inspired by basic-auth.lua
+local function attach_consumer(ctx, conf, preferred_username)
+    local consumer_conf = consumer.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, { message = "Missing related consumer" }
+    end
+
+    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "preferred_username")
+
+    local cur_consumer = consumers[preferred_username]
+    if not cur_consumer then
+        return 401, { message = "Invalid user authorization" }
+    end
+    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
+
+    consumer.attach_consumer(ctx, cur_consumer, consumer_conf)
+end
+
 -- Function to split the scope string into a table
 local function split_scopes_by_space(scope_string)
     local scopes = {}
@@ -550,6 +587,8 @@ function _M.rewrite(plugin_conf, ctx)
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
+            attach_consumer(ctx, conf, access_token.payload.preferred_username)
+
             if userinfo and conf.set_userinfo_header then
                 -- Set X-Userinfo header to introspection endpoint response.
                 core.request.set_header(ctx, "X-Userinfo",
@@ -597,6 +636,8 @@ function _M.rewrite(plugin_conf, ctx)
 
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, response.access_token)
+
+            attach_consumer(ctx, conf, response.access_token.payload.preferred_username)
 
             -- Add X-ID-Token header, maybe.
             if response.id_token and conf.set_id_token_header then
