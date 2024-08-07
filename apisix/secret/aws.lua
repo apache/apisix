@@ -129,11 +129,8 @@ local function get(conf, key)
     end
 
     local sub_key = idx and sub(key, idx + 1) or nil
-    if not sub_key then
-        core.log.info("main: ", main_key)
-    else
-        core.log.info("main: ", main_key, " sub: ", sub_key)
-    end
+
+    core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
     local res, err = make_request_to_aws(conf, main_key)
     if not res then
