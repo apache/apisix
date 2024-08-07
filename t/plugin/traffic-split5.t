@@ -535,3 +535,66 @@ id=1
 Content-Type: application/x-www-form-urlencoded;charset=UTF-8
 --- response_body
 1970
+
+
+=== TEST 12: set upstream for json_body_arg_foo.bar.baz test case
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local data = {
+                uri = "/hello",
+                plugins = {
+                    ["traffic-split"] = {
+                        rules = {
+                            {
+                                match = { {
+                                    vars = { { "json_body_arg_foo.bar.baz", "==", "baz" } }
+                                } },
+                                weighted_upstreams = {
+                                    {
+                                        upstream = {
+                                            name = "upstream_A",
+                                            type = "roundrobin",
+                                            nodes = {
+                                                ["127.0.0.1:1970"] = 1
+                                            }
+                                        },
+                                        weight = 1
+                                    }
+                               }
+                            }
+                        }
+                    }
+                },
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1974"] = 1
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 13: json_body_arg_foo.bar.baz = "baz" with content-type application/json
+--- request
+POST /hello
+{"foo":{"bar":{"baz":"baz"}}}
+--- more_headers
+Content-Type: application/json
+--- response_body
+1970

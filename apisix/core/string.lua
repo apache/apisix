@@ -23,6 +23,8 @@ local error = error
 local type = type
 local str_byte = string.byte
 local str_find = string.find
+local str_gmatch = string.gmatch
+local tbl_insert = table.insert
 local ffi         = require("ffi")
 local C           = ffi.C
 local ffi_cast    = ffi.cast
@@ -104,6 +106,17 @@ function _M.compress_script(s)
     return s
 end
 
+-- split string
+function _M.split (inputstr, sep)
+   if sep == nil then
+      sep = "%s"
+   end
+   local t={}
+   for str in str_gmatch(inputstr, "([^"..sep.."]+)") do
+      tbl_insert(t, str)
+   end
+   return t
+end
 
 ---
 -- Decodes a URI encoded query-string into a Lua table.

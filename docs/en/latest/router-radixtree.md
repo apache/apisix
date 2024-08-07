@@ -247,6 +247,43 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
 
 The route will be matched when the POST form contains `name=json`.
 
+### How to filter route by POST json body field?
+
+APISIX supports filtering route by POST form attributes with `Content-Type` = `application/json`.
+
+We can define the following route:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "methods": ["POST", "GET"],
+    "uri": "/_post",
+    "vars": [
+        ["json_body_arg_foo.bar.baz", "==", "baz"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+The route will be matched when the POST json body matches `body.foo.bar.baz == "baz"`.
+
+For example, this json body will be mateched in this case:
+```json
+{
+    "foo" : {
+        "bar": {
+            "baz": "baz"
+        },
+        "hello" : "world"
+    }
+}
+```
+
 ### How to filter route by GraphQL attributes?
 
 APISIX can handle HTTP GET and POST methods. At the same time, the request body can be a GraphQL query string or JSON-formatted content.
