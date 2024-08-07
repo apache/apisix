@@ -63,6 +63,10 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"api_host"}
+    core.utils.check_https(check, conf, _M.name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err

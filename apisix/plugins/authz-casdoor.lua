@@ -85,6 +85,8 @@ end
 
 
 function _M.check_schema(conf)
+    local check = {"endpoint_addr", "callback_url"}
+    core.utils.check_https(check, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 

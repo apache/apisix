@@ -29,6 +29,7 @@ local str_byte = string.byte
 local assert = assert
 local type = type
 local ipairs = ipairs
+local ngx_sub = ngx.re.sub
 
 ffi.cdef[[
 unsigned long ERR_peek_error(void);
@@ -66,6 +67,7 @@ function _M.server_name(clienthello)
         end
     end
 
+    sni = ngx_sub(sni, "\\.$", "", "jo")
     sni = str_lower(sni)
     return sni
 end

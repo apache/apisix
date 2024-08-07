@@ -647,10 +647,10 @@ deployment:                    # Deployment configurations
         name: admin                             # admin: write access to configurations.
         key: ''   # Set API key for the admin of Admin API.
         role: admin
-      -
-        name: viewer                            # viewer: read-only to configurations.
-        key: 4054f7cf07e344346cd3f287985e76a2   # Set API key for the viewer of Admin API.
-        role: viewer
+      # -
+      #   name: viewer                            # viewer: read-only to configurations.
+      #   key: 4054f7cf07e344346cd3f287985e76a2   # Set API key for the viewer of Admin API.
+      #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
     allow_admin:                  # Limit Admin API access by IP addresses.
