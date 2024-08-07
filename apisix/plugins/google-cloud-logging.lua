@@ -19,6 +19,7 @@ local core            = require("apisix.core")
 local tostring        = tostring
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
+local connection_util = require("apisix.utils.connection-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local google_oauth    = require("apisix.plugins.google-cloud-logging.oauth")
 
@@ -126,6 +127,7 @@ local function send_to_google(oauth, entries)
         },
     })
 
+    connection_util.close_http_connection(http_new)
     if not res then
         return nil, "failed to write log to google, " .. err
     end

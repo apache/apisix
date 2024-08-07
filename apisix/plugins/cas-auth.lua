@@ -16,6 +16,7 @@
 ----
 local core = require("apisix.core")
 local http = require("resty.http")
+local connection_util = require("apisix.utils.connection-util")
 local ngx = ngx
 local ngx_re_match = ngx.re.match
 
@@ -130,6 +131,8 @@ local function validate(conf, ctx, ticket)
         core.log.error("validate ticket failed: status=", (res and res.status),
             ", has_body=", (res and res.body ~= nil or false), ", err=", err)
     end
+
+    connection_util.close_http_connection(httpc)
     return nil
 end
 

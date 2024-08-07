@@ -17,6 +17,7 @@
 
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
+local connection_util = require("apisix.utils.connection-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
@@ -116,6 +117,7 @@ local function send_http_data(conf, log_message)
         }
     })
 
+    connection_util.close_http_connection(httpc)
     if not httpc_res then
         return false, "error while sending data to [" .. host .. "] port["
             .. tostring(port) .. "] " .. httpc_err
