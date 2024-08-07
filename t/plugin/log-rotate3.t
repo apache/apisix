@@ -205,3 +205,38 @@ nginx_config:
     }
 --- response_body
 2
+
+
+
+=== TEST 6: do not rotate access log files when access log is disable
+--- extra_yaml_config
+plugins:
+  - log-rotate
+plugin_attr:
+  log-rotate:
+    interval: 1
+    max_kept: 2
+    enable_compression: false
+--- yaml_config
+nginx_config:
+    http:
+        enable_access_log: false
+        access_log: logs/acc3.log
+--- config
+    location /t {
+        access_log off;
+
+        content_by_lua_block {
+            ngx.sleep(3)
+            local lfs = require("lfs")
+            local access_count = 0
+            for file_name in lfs.dir(ngx.config.prefix() .. "/logs/") do
+                if string.match(file_name, "acc3.log$") then
+                    access_count = access_count + 1
+                end
+            end
+            ngx.say(access_count)
+        }
+    }
+--- response_body
+0
