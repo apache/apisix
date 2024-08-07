@@ -19,6 +19,7 @@ local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
+local fetch_secrets = require("apisix.secret").fetch_secrets
 local string  = string
 local ngx     = ngx
 local ipairs  = ipairs
@@ -290,7 +291,8 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(plugin_conf)
+    local conf = fetch_secrets(plugin_conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
         conf.ssl_verify = false
@@ -471,7 +473,7 @@ local function required_scopes_present(required_scopes, http_scopes)
 end
 
 function _M.rewrite(plugin_conf, ctx)
-    local conf = core.table.clone(plugin_conf)
+    local conf = fetch_secrets(plugin_conf)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.

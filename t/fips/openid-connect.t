@@ -22,6 +22,10 @@ no_long_string();
 no_root_location();
 no_shuffle();
 
+BEGIN {
+    $ENV{CLIENT_SECRET_ENV} = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa";
+}
+
 add_block_preprocessor(sub {
     my ($block) = @_;
 
@@ -109,3 +113,48 @@ passed
 --- error_code: 401
 --- error_log
 jwt signature verification failed: invalid key length
+
+
+
+=== TEST 3: configure oidc plugin with small public key using environment variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "$ENV://CLIENT_SECRET_ENV",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": true,
+                                "scope": "apisix",
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                                    [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
