@@ -47,4 +47,11 @@ public interface DemoService {;
      * @return Map<String, Object></> pass to response http
      **/
     Map<String, Object> badStatus(Map<String, Object> context);
+
+    /**
+     * test for https://github.com/apache/apisix/issues/10620
+     * @param context pass http infos
+     * @return Map<String, Object></> pass to response http
+     **/
+    Map<String, Object> bigResponseTimeout(Map<String, Object> context);
 }

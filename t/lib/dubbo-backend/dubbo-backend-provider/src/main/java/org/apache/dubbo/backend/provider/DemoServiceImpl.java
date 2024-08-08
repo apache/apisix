@@ -24,6 +24,148 @@ import java.util.concurrent.TimeUnit;
 import java.lang.InterruptedException;
 
 public class DemoServiceImpl implements DemoService {
+
+
+    /**
+     * a 8k length UTF_8 String
+     */
+    public static final String UTF_8_8K = "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" +
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"+
+            "this is a big response aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+
+
+
+
+
+
+
+
+
     @Override
     public Map<String, Object> hello(Map<String, Object> context) {
         Map<String, Object> ret = new HashMap<String, Object>();
@@ -66,4 +208,15 @@ public class DemoServiceImpl implements DemoService {
         ret.put("status", 200);
         return ret;
     }
+
+    @Override
+    public Map<String, Object> bigResponseTimeout(Map<String, Object> context) {
+        Map<String, Object> ret = new HashMap<String, Object>();
+        StringBuilder sb = new StringBuilder();
+        sb.append(UTF_8_8K).append(UTF_8_8K);
+        ret.put("body", sb.toString());
+        ret.put("status", "200");
+        return ret;
+    }
+
 }
