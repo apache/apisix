@@ -125,6 +125,8 @@ function install_apisix_runtime() {
     chmod +x build-apisix-runtime.sh
     ./build-apisix-runtime.sh latest
     rm build-apisix-runtime.sh
+    wget https://github.com/libexpat/libexpat/releases/download/R_2_5_0/expat-2.5.0.tar.gz
+    tar -xzf expat-2.5.0.tar.gz && cd expat-2.5.0 && ./configure && sudo make install && cd ..
 }
 
 # Install LuaRocks
