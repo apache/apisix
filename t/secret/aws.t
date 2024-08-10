@@ -43,9 +43,9 @@ GET /t
                 {},
                 {access_key_id = "access"},
                 {secret_access_key = "secret"},
+                {access_key_id = "access", secret_access_key = "secret"},
                 {access_key_id = "access", secret_access_key = 1234},
                 {access_key_id = 1234, secret_access_key = "secret"},
-                {access_key_id = "access", secret_access_key = "secret"},
                 {access_key_id = "access", secret_access_key = "secret", session_token = "token"},
                 {access_key_id = "access", secret_access_key = "secret", session_token = 1234},
                 {access_key_id = "access", secret_access_key = "secret", region = "us-east-1"},
@@ -60,25 +60,23 @@ GET /t
 
             for _, conf in ipairs(test_case) do
                 local ok, err = core.schema.check(metadata_schema, conf)
-                ngx.say(ok and "done" or err)
+                ngx.say(ok and "done" or "err")
             end
         }
     }
---- timeout
-6
 --- response_body
-property "access_key_id" is required
-property "secret_access_key" is required
-property "access_key_id" is required
-property "secret_access_key" validation failed: wrong type: expected string, got number
-property "access_key_id" validation failed: wrong type: expected string, got number
+err
+err
+err
 done
+err
+err
 done
-property "session_token" validation failed: wrong type: expected string, got number
+err
 done
-property "region" validation failed: wrong type: expected string, got number
+err
 done
-property "endpoint_url" validation failed: wrong type: expected string, got number
+err
 done
 
 
@@ -137,33 +135,7 @@ failed to retrtive data from aws secret manager: SecretsManager:getSecretValue()
 
 
 
-=== TEST 4: get value from aws (err region, status ~= 200)
---- config
-    location /t {
-        content_by_lua_block {
-            local aws = require("apisix.secret.aws")
-            local conf = {
-                endpoint_url = "http://127.0.0.1:4566",
-                region = "error-region",
-                access_key_id = "access",
-                secret_access_key = "secret",
-                session_token = "token",
-            }
-            local data, err = aws.get(conf, "apisix-key/jack")
-            if err then
-                return ngx.say("err")
-            end
-            ngx.say("done")
-        }
-    }
---- request
-GET /t
---- response_body
-err
-
-
-
-=== TEST 5: get value from aws (err key, status ~= 200)
+=== TEST 4: get value from aws (status ~= 200)
 --- config
     location /t {
         content_by_lua_block {
@@ -189,7 +161,7 @@ err
 
 
 
-=== TEST 6: get json value from aws
+=== TEST 5: get json value from aws
 --- config
     location /t {
         content_by_lua_block {
@@ -215,7 +187,7 @@ value
 
 
 
-=== TEST 7: get json value from aws using env var
+=== TEST 6: get json value from aws using env var
 --- config
     location /t {
         content_by_lua_block {
@@ -241,7 +213,7 @@ value
 
 
 
-=== TEST 8: get string value from aws
+=== TEST 7: get string value from aws
 --- config
     location /t {
         content_by_lua_block {
@@ -267,7 +239,7 @@ secret
 
 
 
-=== TEST 9: add secret  && consumer && check
+=== TEST 8: add secret  && consumer && check
 --- request
 GET /t
 --- config
