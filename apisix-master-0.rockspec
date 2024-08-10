@@ -82,7 +82,7 @@ dependencies = {
     "lua-resty-t1k = 1.1.5",
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0",
-    "lua-resty-aws == 1.5.0",
+    "api7-lua-resty-aws == 2.0.0-1",
     "luatz == 0.4",
 }
 
