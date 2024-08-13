@@ -34,9 +34,9 @@ __DATA__
                 {},
                 {auth_file = "123"},
                 {auth_file = 123},
-                {auth_config = {}},
-                {auth_config = {client_email = "client"}},
                 {auth_config = {client_email = "client", private_key = "private_key"}},
+                {auth_config = {private_key = "private_key", project_id = "project_id"}},
+                {auth_config = {client_email = "client", project_id = "project_id"}},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id"}},
                 {auth_config = {client_email = 1234, private_key = "private_key", project_id = "project_id"}},
                 {auth_config = {client_email = "client", private_key = 1234, project_id = "project_id"}},
@@ -64,9 +64,9 @@ GET /t
 value should match only one schema, but matches none
 done
 property "auth_file" validation failed: wrong type: expected string, got number
-property "auth_config" validation failed: property "private_key" is required
-property "auth_config" validation failed: property "private_key" is required
 property "auth_config" validation failed: property "project_id" is required
+property "auth_config" validation failed: property "client_email" is required
+property "auth_config" validation failed: property "private_key" is required
 done
 property "auth_config" validation failed: property "client_email" validation failed: wrong type: expected string, got number
 property "auth_config" validation failed: property "private_key" validation failed: wrong type: expected string, got number
