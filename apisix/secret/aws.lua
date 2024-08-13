@@ -23,7 +23,6 @@ local aws = require("resty.aws")
 local sub = core.string.sub
 local find = core.string.find
 local env = core.env
-local type = type
 local unpack = unpack
 
 local schema = {
@@ -84,37 +83,20 @@ local function make_request_to_aws(conf, key)
         VersionStage = "AWSCURRENT",
     })
 
-    if type(res) ~= "table" then
-        if err then
-            return nil, err
-        end
-
-        return nil, "invalid response"
+    if not res then
+        return nil, err
     end
 
     if res.status ~= 200 then
-        local body = res.body
-        if type(body) == "table" then
-            local data = core.json.encode(body)
-            if data then
-                return nil, "invalid status code " .. res.status .. ", " .. data
-            end
+        local data = core.json.encode(res.body)
+        if data then
+            return nil, "invalid status code " .. res.status .. ", " .. data
         end
 
         return nil, "invalid status code " .. res.status
     end
 
-    local body = res.body
-    if type(body) ~= "table" then
-        return nil, "invalid response body"
-    end
-
-    local secret = res.body.SecretString
-    if type(secret) ~= "string" then
-        return nil, "invalid secret string"
-    end
-
-    return secret
+    return res.body.SecretString
 end
 
 -- key is the aws secretId

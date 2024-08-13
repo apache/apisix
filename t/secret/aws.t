@@ -40,7 +40,6 @@ GET /t
     location /t {
         content_by_lua_block {
             local test_case = {
-                {},
                 {access_key_id = "access"},
                 {secret_access_key = "secret"},
                 {access_key_id = "access", secret_access_key = "secret"},
@@ -60,23 +59,22 @@ GET /t
 
             for _, conf in ipairs(test_case) do
                 local ok, err = core.schema.check(metadata_schema, conf)
-                ngx.say(ok and "done" or "err")
+                ngx.say(ok and "done" or err)
             end
         }
     }
 --- response_body
-err
-err
-err
+property "secret_access_key" is required
+property "access_key_id" is required
 done
-err
-err
+property "secret_access_key" validation failed: wrong type: expected string, got number
+property "access_key_id" validation failed: wrong type: expected string, got number
 done
-err
+property "session_token" validation failed: wrong type: expected string, got number
 done
-err
+property "region" validation failed: wrong type: expected string, got number
 done
-err
+property "endpoint_url" validation failed: wrong type: expected string, got number
 done
 
 
