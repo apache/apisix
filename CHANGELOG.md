@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.10.0](#3100)
 - [3.9.0](#390)
 - [3.8.0](#380)
 - [3.7.0](#370)
@@ -75,6 +76,58 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.10.0
+
+### Change
+
+- remove `core.grpc` module [#11427](https://github.com/apache/apisix/pull/11427)
+- add max req/resp body size attributes [#11133](https://github.com/apache/apisix/pull/11133)
+- autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
+- enable sensitive fields encryption by default [#11076](https://github.com/apache/apisix/pull/11076)
+- support more sensitive fields for encryption [#11095](https://github.com/apache/apisix/pull/11095)
+
+### Plugins
+
+- allow set headers in introspection request [#11090](https://github.com/apache/apisix/pull/11090)
+
+### Bugfixes
+
+- Fix: etcd sync data checker should work [#11457](https://github.com/apache/apisix/pull/11457)
+- Fix: plugin metadata add id value for etcd checker [#11452](https://github.com/apache/apisix/pull/11452)
+- Fix: allow trailing period in SNI and CN for SSL [#11414](https://github.com/apache/apisix/pull/11414)
+- Fix: filter out illegal INT(string) formats [#11367](https://github.com/apache/apisix/pull/11367)
+- Fix: make the message clearer when API key is missing [#11370](https://github.com/apache/apisix/pull/11370)
+- Fix: report consumer username tag in datadog [#11354](https://github.com/apache/apisix/pull/11354)
+- Fix: after updating the header, get the old value from the ctx.var [#11329](https://github.com/apache/apisix/pull/11329)
+- Fix: ssl key rotation caused request failure [#11305](https://github.com/apache/apisix/pull/11305)
+- Fix: validation fails causing etcd events not to be handled correctly [#11268](https://github.com/apache/apisix/pull/11268)
+- Fix: stream route matcher is nil after first match [#11269](https://github.com/apache/apisix/pull/11269)
+- Fix: rectify the way to fetch secret resource by id [#11164](https://github.com/apache/apisix/pull/11164)
+- Fix: multi-auth raise 500 error when use default conf [#11145](https://github.com/apache/apisix/pull/11145)
+- Fix: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
+- Fix: close session in case of error to avoid blocked session [#11089](https://github.com/apache/apisix/pull/11089)
+- Fix: restore `pb.state` appropriately [#11135](https://github.com/apache/apisix/pull/11135)
+- Fix: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
+- Fix: disable features when prometheus plugin is turned off [#11117](https://github.com/apache/apisix/pull/11117)
+- Fix: add post request headers only if auth request method is POST [#11021](https://github.com/apache/apisix/pull/11021)
+- Fix: core.request.header return strings instead of table [#11127](https://github.com/apache/apisix/pull/11127)
+- Fix: brotli partial response [#11087](https://github.com/apache/apisix/pull/11087)
+- Fix: the port value greater than 65535 should not be allowed [#11043](https://github.com/apache/apisix/pull/11043)
+
+### Core
+
+- upgrade openresty version to 1.25.3.2 [#11419](https://github.com/apache/apisix/pull/11419)
+- move config-default.yaml to hardcoded lua file [#11343](https://github.com/apache/apisix/pull/11343)
+- warn log when sending requests to external services insecurely [#11403](https://github.com/apache/apisix/pull/11403)
+- update casbin to 1.41.9 [#11400](https://github.com/apache/apisix/pull/11400)
+- update lua-resty-t1k to 1.1.5 [#11391](https://github.com/apache/apisix/pull/11391)
+- support store ssl.keys ssl.certs in secrets mamager [#11339](https://github.com/apache/apisix/pull/11339)
+- move tinyyaml to lyaml [#11312](https://github.com/apache/apisix/pull/11312)
+- support hcv namespace [#11277](https://github.com/apache/apisix/pull/11277)
+- add discovery k8s dump data interface [#11111](https://github.com/apache/apisix/pull/11111)
+- make fetch_secrets use cache for performance [#11201](https://github.com/apache/apisix/pull/11201)
+- replace 'string.len' with '#' [#11078](https://github.com/apache/apisix/pull/11078)
 
 ## 3.9.0
 
