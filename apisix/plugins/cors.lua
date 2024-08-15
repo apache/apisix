@@ -248,7 +248,8 @@ end
 local function process_with_allow_origins(allow_origin_type, allow_origins, ctx, req_origin,
                                           cache_key, cache_version)
     if allow_origins == "**" then
-        allow_origins = '*'
+        allow_origins = req_origin or '*'
+        return allow_origins
     end
 
     local multiple_origin, err
