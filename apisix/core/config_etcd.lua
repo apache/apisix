@@ -671,13 +671,13 @@ local function sync_data(self)
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.encode(res.value))
             end
+        end
 
-            if data_valid and self.checker then
-                data_valid, err = self.checker(res.value)
-                if not data_valid then
-                    log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(res.value))
-                end
+        if data_valid and res.value and self.checker then
+            data_valid, err = self.checker(res.value)
+            if not data_valid then
+                log.error("failed to check item data of [", self.key,
+                          "] err:", err, " ,val: ", json.delay_encode(res.value))
             end
         end
 
