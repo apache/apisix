@@ -271,7 +271,7 @@ You can configure your APISIX deployment in two ways:
    apisix start -c <path to config file>
    ```
 
-APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured.
+APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured. The default configurations can be found in `apisix/cli/config.lua` and should not be modified.
 
 For example, to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
 
@@ -294,12 +294,6 @@ deployment:
     host:
       - "http://foo:2379"
 ```
-
-:::warning
-
-APISIX's default configuration can be found in `conf/config-default.yaml` file and it should not be modified. It is bound to the source code and the configuration should only be changed by the methods mentioned above.
-
-:::
 
 :::warning
 

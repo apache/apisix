@@ -38,21 +38,50 @@ If existing APISIX Plugins do not meet your needs, you can also write your own p
 
 ## Plugins installation
 
-APISIX comes with a default configuration file called `config-default.yaml` and a user-defined configuration file called `config.yaml`. These files are located in the `conf` directory. If the same key (e.g. `plugins`) exists in both files, the configuration values for the key in `config.yaml` will overwrite those in `config-default.yaml`.
+By default, most APISIX plugins are [installed](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua):
 
-The `plugins` block is where you can declare the Plugins loaded to your APISIX instance:
+```lua title="apisix/cli/config.lua"
+local _M = {
+  ...
+  plugins = {
+    "real-ip",
+    "ai",
+    "client-control",
+    "proxy-control",
+    "request-id",
+    "zipkin",
+    "ext-plugin-pre-req",
+    "fault-injection",
+    "mocking",
+    "serverless-pre-function",
+    ...
+  },
+  ...
+}
+```
+
+If you would like to make adjustments to plugins installation, add the customized `plugins` configuration to `config.yaml`. For example:
 
 ```yaml
 plugins:
-  - real-ip         # loaded
+  - real-ip                   # installed
+  - ai              
+  - real-ip
   - ai
   - client-control
   - proxy-control
   - request-id
-  - zipkin
-  # - skywalking    # not loaded
-...
+  - zipkin     
+  - ext-plugin-pre-req
+  - fault-injection
+  # - mocking                 # not install
+  - serverless-pre-function
+  ...                         # other plugins
 ```
+
+See `config.yaml.example`(https://github.com/apache/apisix/blob/master/conf/config.yaml.example) for a complete configuration reference.
+
+You should reload APISIX for configuration changes to take effect.
 
 ## Plugins execution lifecycle
 
