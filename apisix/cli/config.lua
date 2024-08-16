@@ -216,6 +216,7 @@ local _M = {
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
+    "ai-proxy",
     "api-breaker",
     "limit-conn",
     "limit-count",

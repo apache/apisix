@@ -59,6 +59,7 @@ local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
 local ngx_re_match    = ngx.re.match
+local balancer        = require("ngx.balancer")
 local control_api_router
 
 local is_http = false
@@ -79,6 +80,23 @@ local ver_header = "APISIX/" .. core.version.VERSION
 local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 local _M = {version = 0.4}
+local HTTP_METHODS = {
+    GET       = ngx.HTTP_GET,
+    HEAD      = ngx.HTTP_HEAD,
+    PUT       = ngx.HTTP_PUT,
+    POST      = ngx.HTTP_POST,
+    DELETE    = ngx.HTTP_DELETE,
+    OPTIONS   = ngx.HTTP_OPTIONS,
+    MKCOL     = ngx.HTTP_MKCOL,
+    COPY      = ngx.HTTP_COPY,
+    MOVE      = ngx.HTTP_MOVE,
+    PROPFIND  = ngx.HTTP_PROPFIND,
+    PROPPATCH = ngx.HTTP_PROPPATCH,
+    LOCK      = ngx.HTTP_LOCK,
+    UNLOCK    = ngx.HTTP_UNLOCK,
+    PATCH     = ngx.HTTP_PATCH,
+    TRACE     = ngx.HTTP_TRACE,
+  }
 
 
 function _M.http_init(args)
@@ -722,7 +740,41 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
-    _M.handle_upstream(api_ctx, route, enable_websocket)
+    ngx.req.read_body()
+    local options = {
+      always_forward_body = true,
+      share_all_vars      = true,
+      method              = HTTP_METHODS[ngx.req.get_method()],
+      ctx                 = ngx.ctx,
+    }
+
+    local res, err = ngx.location.capture("/subrequest", options)
+    if not res then
+        core.log.error("dibaggg: ", err)
+        return core.response.exit(599)
+    end
+    core.log.warn("dibag sub: ", core.json.encode(res, true))
+    if res.truncated and options.method ~= ngx.HTTP_HEAD then
+        return core.response.exit(503)
+    end
+
+    api_ctx.subreq_status = res.status
+    api_ctx.subreq_headers = res.header
+    api_ctx.subreq_body = res.body
+
+    if not api_ctx.custom_upstream_ip then
+        _M.handle_upstream(api_ctx, route, enable_websocket)
+    end
+
+    if ngx.ctx.disable_proxy_buffering then
+        stash_ngx_ctx()
+        return ngx.exec("@disable_proxy_buffering")
+    end
+end
+
+
+function _M.disable_proxy_buffering_access_phase()
+    ngx.ctx = fetch_ctx()
 end
 
 
@@ -893,7 +945,15 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
+    if api_ctx.custom_upstream_ip then
+        local ok, err = balancer.set_current_peer(api_ctx.custom_upstream_ip, api_ctx.custom_upstream_port)
+        if not ok then
+            core.log.error("failed to overwrite upstream for ai_proxy: ", err)
+            return core.response.exit(500)
+        end
+    else
+        load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
+    end
 end
 
 

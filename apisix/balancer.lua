@@ -285,6 +285,8 @@ do
     local default_keepalive_pool
 
     function set_current_peer(server, ctx)
+        core.log.warn("dibag peer: ", core.json.encode(server))
+        core.log.warn(debug.traceback("dibag"))
         local up_conf = ctx.upstream_conf
         local keepalive_pool = up_conf.keepalive_pool
 

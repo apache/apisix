@@ -43,4 +43,6 @@ return {
         ["/stream_routes"] = true,
         ["/plugin_metadata"] = true,
     },
+    CHAT = "llm/chat",
+    COMPLETION = "llm/completion",
 }
