@@ -65,13 +65,13 @@ If you would like to make adjustments to plugins installation, add the customize
 ```yaml
 plugins:
   - real-ip                   # installed
-  - ai              
+  - ai
   - real-ip
   - ai
   - client-control
   - proxy-control
   - request-id
-  - zipkin     
+  - zipkin
   - ext-plugin-pre-req
   - fault-injection
   # - mocking                 # not install
