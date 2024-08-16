@@ -24,7 +24,7 @@ local ngx = ngx
 local plugin_name = "ai-proxy"
 local _M = {
     version = 0.5,
-    priority = 1002,
+    priority = 1004,
     name = plugin_name,
     schema = schema,
 }
