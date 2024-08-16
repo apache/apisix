@@ -80,23 +80,6 @@ local ver_header = "APISIX/" .. core.version.VERSION
 local has_mod, apisix_ngx_client = pcall(require, "resty.apisix.client")
 
 local _M = {version = 0.4}
-local HTTP_METHODS = {
-    GET       = ngx.HTTP_GET,
-    HEAD      = ngx.HTTP_HEAD,
-    PUT       = ngx.HTTP_PUT,
-    POST      = ngx.HTTP_POST,
-    DELETE    = ngx.HTTP_DELETE,
-    OPTIONS   = ngx.HTTP_OPTIONS,
-    MKCOL     = ngx.HTTP_MKCOL,
-    COPY      = ngx.HTTP_COPY,
-    MOVE      = ngx.HTTP_MOVE,
-    PROPFIND  = ngx.HTTP_PROPFIND,
-    PROPPATCH = ngx.HTTP_PROPPATCH,
-    LOCK      = ngx.HTTP_LOCK,
-    UNLOCK    = ngx.HTTP_UNLOCK,
-    PATCH     = ngx.HTTP_PATCH,
-    TRACE     = ngx.HTTP_TRACE,
-  }
 
 
 function _M.http_init(args)
@@ -739,28 +722,6 @@ function _M.http_access_phase()
         end
         plugin.run_plugin("access", plugins, api_ctx)
     end
-
-    ngx.req.read_body()
-    local options = {
-      always_forward_body = true,
-      share_all_vars      = true,
-      method              = HTTP_METHODS[ngx.req.get_method()],
-      ctx                 = ngx.ctx,
-    }
-
-    local res, err = ngx.location.capture("/subrequest", options)
-    if not res then
-        core.log.error("dibaggg: ", err)
-        return core.response.exit(599)
-    end
-    core.log.warn("dibag sub: ", core.json.encode(res, true))
-    if res.truncated and options.method ~= ngx.HTTP_HEAD then
-        return core.response.exit(503)
-    end
-
-    api_ctx.subreq_status = res.status
-    api_ctx.subreq_headers = res.header
-    api_ctx.subreq_body = res.body
 
     if not api_ctx.custom_upstream_ip then
         _M.handle_upstream(api_ctx, route, enable_websocket)

@@ -808,38 +808,6 @@ http {
                 apisix.http_log_phase()
             }
         }
-
-        location /subrequest {
-            internal;
-
-            access_by_lua_block        {;}
-            header_filter_by_lua_block {;}
-            body_filter_by_lua_block   {;}
-            log_by_lua_block           {;}
-
-            proxy_http_version 1.1;
-            proxy_set_header   Host              $upstream_host;
-            proxy_set_header   Upgrade           $upstream_upgrade;
-            proxy_set_header   Connection        $upstream_connection;
-            proxy_set_header   X-Real-IP         $remote_addr;
-            proxy_pass_header  Date;
-
-
-            set $var_x_forwarded_proto      $scheme;
-            set $var_x_forwarded_host       $host;
-            set $var_x_forwarded_port       $server_port;
-
-            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
-            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
-            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
-            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
-
-            proxy_pass_header     Server;
-            proxy_pass_header     Date;
-            proxy_ssl_name        $upstream_host;
-            proxy_ssl_server_name on;
-            proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
-        }
         
         location @disable_proxy_buffering {
             # http server location configuration snippet starts
