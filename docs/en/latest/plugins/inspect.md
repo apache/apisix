@@ -87,16 +87,23 @@ The `info` is a hash table which contains below keys:
 
 ## Enable Plugin
 
-Plugin is enabled by default (`conf/config-default.yaml`):
+Plugin is enabled by default:
 
-```yaml title="conf/config-default.yaml"
-plugins:
-    - inspect
-
-plugin_attr:
-  inspect:
-    delay: 3
-    hooks_file: "/usr/local/apisix/plugin_inspect_hooks.lua"
+```yaml title="apisix/cli/config.lua"
+local _M = {
+  plugins = {
+    "inspect",
+    ...
+  },
+  plugin_attr = {
+    inspect = {
+      delay = 3,
+      hooks_file = "/usr/local/apisix/plugin_inspect_hooks.lua"
+    },
+    ...
+  },
+  ...
+}
 ```
 
 ## Example usage
