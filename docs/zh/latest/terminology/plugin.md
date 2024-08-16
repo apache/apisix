@@ -64,13 +64,13 @@ local _M = {
 ```yaml
 plugins:
   - real-ip                   # 安装
-  - ai              
+  - ai
   - real-ip
   - ai
   - client-control
   - proxy-control
   - request-id
-  - zipkin     
+  - zipkin
   - ext-plugin-pre-req
   - fault-injection
   # - mocking                 # 不安装
