@@ -44,5 +44,5 @@ return {
         ["/plugin_metadata"] = true,
     },
     CHAT = "llm/chat",
-    COMPLETION = "llm/completion",
+    COMPLETION = "llm/completions",
 }
