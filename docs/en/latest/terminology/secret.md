@@ -196,7 +196,7 @@ Through the above two steps, when the user request hits the `key-auth` plugin, t
 
 Managing secrets with AWS Secrets Manager is a secure and convenient way to store and manage sensitive information. This method allows you to save secret information in AWS Secrets Manager and reference these secrets in a specific format when configuring APISIX plugins.
 
-APISIX currently supports two access methods: [long-term credential access](https://docs.aws.amazon.com/zh_cn/sdkref/latest/guide/access-iam-users.html) and [short-term credential access](https://docs.aws.amazon.com/zh_cn/sdkref/latest/guide/access-temp-idc.html).
+APISIX currently supports two authentication methods: using [long-term credentials](https://docs.aws.amazon.com/sdkref/latest/guide/access-iam-users.html) and [short-term credentials](https://docs.aws.amazon.com/sdkref/latest/guide/access-temp-idc.html).
 
 ### Usage
 
@@ -213,23 +213,23 @@ $secret://$manager/$id/$secret_name/$key
 
 | Name | Required | Default Value | Description |
 | --- | --- | --- | --- |
-| access_key_id | Yes |  | AWS Access Key ID |
-| secret_access_key | Yes |  | AWS Secret Access Key |
-| session_token | No |  | Temporary access credential information |
-| region | No | us-east-1 | AWS Region |
-| endpoint_url | No | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager URL |
+| access_key_id | True |  | AWS Access Key ID |
+| secret_access_key | True |  | AWS Secret Access Key |
+| session_token | False |  | Temporary access credential information |
+| region | False | us-east-1 | AWS Region |
+| endpoint_url | False | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager URL |
 
 ### Example: use in key-auth plugin
 
 Here, we use the key-auth plugin as an example to demonstrate how to manage secrets through AWS Secrets Manager.
 
-Step 1: Create the corresponding key in the aws secrets manager.Here, [localstack](https://www.localstack.cloud/) is used for simulation, and you can use the following command:
+Step 1: Create the corresponding key in the AWS secrets manager. Here, [localstack](https://www.localstack.cloud/) is used for as the example environment, and you can use the following command:
 
 ```shell
 docker exec -i localstack sh -c "awslocal secretsmanager create-secret --name jack --description 'APISIX Secret' --secret-string '{\"auth-key\":\"value\"}'"
 ```
 
-Step 2: Add APISIX Secrets resources through the Admin API, configure the connection information such as the address of AWS Secrets Manager:
+Step 2: Add APISIX Secrets resources through the Admin API, configure the connection information such as the address of AWS Secrets Manager.
 
 You can store the critical key information in environment variables to ensure the configuration information is secure, and reference it where it is used:
 
@@ -292,4 +292,4 @@ You can verify this with the following command:
 curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'
 ```
 
-This will verify whether the key-auth plugin is correctly using the key from AWS Secrets Manager.
+This will verify whether the `key-auth` plugin is correctly using the key from AWS Secrets Manager.
