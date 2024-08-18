@@ -40,7 +40,8 @@ function _M.configure_request(conf, ctx)
     local ups_path = (conf.model.options and conf.model.options.upstream_path)
                         or path_mapper[conf.route_type]
     ngx.var.upstream_uri = ups_path
-    ngx.var.upstream_scheme = "https" -- TODO: allow override for tests
+    ngx.var.upstream_scheme = test_scheme or "https"
+    ngx.req.set_method(ngx.HTTP_POST)
     ngx.var.upstream_host = conf.model.options.upstream_host
                             or DEFAULT_HOST -- TODO: sanity checks. encapsulate to a func
     ctx.custom_balancer_host = conf.model.options.upstream_host or DEFAULT_HOST
