@@ -17,6 +17,7 @@
 local _M = {}
 
 local core = require("apisix.core")
+local test_scheme = os.getenv("AI_PROXY_TEST_SCHEME")
 
 -- globals
 local DEFAULT_HOST = "api.openai.com"
