@@ -19,37 +19,24 @@ local _M = {}
 local auth_schema = {
     type = "object",
     properties = {
-        header_name = {
+        source = {
             type = "string",
-            description =
-            "Name of the header carrying Authorization or API key.",
+            enum = {"header", "param"}
         },
-        header_value = {
+        name = {
             type = "string",
-            description =
-            "Full auth-header value.",
+            description = "Name of the param/header carrying Authorization or API key.",
+            minLength = 1,
+        },
+        value = {
+            type = "string",
+            description = "Full auth-header/param value.",
+            minLength = 1,
             encrypted = true, -- TODO
         },
-        param_name = {
-            type = "string",
-            description = "Name of the param carrying Authorization or API key.",
-        },
-        param_value = {
-            type = "string",
-            description = "full parameter value for 'param_name'.",
-            encrypted = true, -- TODO
-        },
-        param_location = {
-            type = "string",
-            description =
-            "location of the auth param: query string, or the POST form/JSON body.",
-            oneOf = { "query", "body" },
-        },
-        oneOf = {
-            { required = { "header_name", "header_value" } },
-            { required = { "param_name", "param_location", "param_value" } }
-        }
-    }
+    },
+    required = { "source", "name", "value" },
+    additionalProperties = false,
 }
 
 local model_options_schema = {
