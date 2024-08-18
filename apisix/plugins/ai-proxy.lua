@@ -31,7 +31,6 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    -- TODO: check custom URL correctness
     return core.schema.check(schema.plugin_schema, conf)
 end
 
@@ -40,7 +39,7 @@ local CONTENT_TYPE_JSON = "application/json"
 
 
 local function get_request_table()
-    local req_body, err = core.request.get_body() -- TODO: max size
+    local req_body, err = core.request.get_body()
     if not req_body then
         return nil, "failed to get request body: " .. (err or "request body is empty")
     end

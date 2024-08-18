@@ -43,8 +43,7 @@ function _M.configure_request(conf, ctx)
     ngx.var.upstream_uri = ups_path
     ngx.var.upstream_scheme = test_scheme or "https"
     ngx.req.set_method(ngx.HTTP_POST)
-    ngx.var.upstream_host = conf.model.options.upstream_host
-                            or DEFAULT_HOST -- TODO: sanity checks. encapsulate to a func
+    ngx.var.upstream_host = conf.model.options.upstream_host or DEFAULT_HOST
     ctx.custom_balancer_host = conf.model.options.upstream_host or DEFAULT_HOST
     ctx.custom_balancer_port = conf.model.options.port or DEFAULT_PORT
     if conf.auth.source == "header" then

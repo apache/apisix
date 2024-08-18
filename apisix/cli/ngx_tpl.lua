@@ -808,7 +808,7 @@ http {
                 apisix.http_log_phase()
             }
         }
-        
+
         location @disable_proxy_buffering {
             # http server location configuration snippet starts
             {% if http_server_location_configuration_snippet then %}

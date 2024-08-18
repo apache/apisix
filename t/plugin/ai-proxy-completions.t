@@ -55,7 +55,7 @@ add_block_preprocessor(sub {
 
                     if ngx.req.get_method() ~= "POST" then
                         ngx.status = 400
-                        ngx.say("Unsupported reqeust method: ", ngx.req.get_method())
+                        ngx.say("Unsupported request method: ", ngx.req.get_method())
                     end
                     ngx.req.read_body()
                     local body, err = ngx.req.get_body_data()
@@ -63,7 +63,7 @@ add_block_preprocessor(sub {
 
                     local header_auth = ngx.req.get_headers()["authorization"]
                     local query_auth = ngx.req.get_uri_args()["apikey"]
-                    
+
                     if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
                         ngx.status = 401
                         ngx.say("Unauthorized")
