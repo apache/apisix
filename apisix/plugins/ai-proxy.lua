@@ -42,7 +42,7 @@ local CONTENT_TYPE_JSON = "application/json"
 local function get_request_table()
     local req_body, err = core.request.get_body() -- TODO: max size
     if not req_body then
-        return nil, "failed to get request body: " .. err
+        return nil, "failed to get request body: " .. (err or "request body is empty")
     end
     req_body, err = req_body:gsub("\\\"", "\"") -- remove escaping in JSON
     if not req_body then
