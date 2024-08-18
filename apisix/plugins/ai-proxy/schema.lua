@@ -112,7 +112,7 @@ local model_schema = {
         },
         options = model_options_schema,
     },
-    required = {"provider"}
+    required = {"provider", "name"}
 }
 
 _M.plugin_schema = {
@@ -120,14 +120,12 @@ _M.plugin_schema = {
     properties = {
         route_type = {
             type = "string",
-            description = "The model's operation implementation, for this provider. " ..
-                "Set to `preserve` to pass through without transformation.",
             enum = { "llm/chat", "llm/completions", "passthrough" }
         },
         auth = auth_schema,
         model = model_schema,
     },
-    required = {"route_type", "model"}
+    required = {"route_type", "model", "auth"}
 }
 
 _M.chat_request_schema = {
