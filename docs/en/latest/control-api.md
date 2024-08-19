@@ -531,7 +531,7 @@ Get memory dump of discovered service endpoints and configuration details:
 
 ## GET /v1/discovery/{service}/show_dump_file
 
-Get configured services details. 
+Get configured services details.
 
 ```json
 {
