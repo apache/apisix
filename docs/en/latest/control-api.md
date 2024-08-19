@@ -485,3 +485,71 @@ Triggers a hot reload of the plugins.
 ```shell
 curl "http://127.0.0.1:9090/v1/plugins/reload" -X PUT
 ```
+
+### GET /v1/discovery/{service}/dump
+
+Get memory dump of discovered service endpoints and configuration details:
+
+```json
+{
+  "endpoints": [
+    {
+      "endpoints": [
+        {
+          "value": "{\"https\":[{\"host\":\"172.18.164.170\",\"port\":6443,\"weight\":50},{\"host\":\"172.18.164.171\",\"port\":6443,\"weight\":50},{\"host\":\"172.18.164.172\",\"port\":6443,\"weight\":50}]}",
+          "name": "default/kubernetes"
+        },
+        {
+          "value": "{\"metrics\":[{\"host\":\"172.18.164.170\",\"port\":2379,\"weight\":50},{\"host\":\"172.18.164.171\",\"port\":2379,\"weight\":50},{\"host\":\"172.18.164.172\",\"port\":2379,\"weight\":50}]}",
+          "name": "kube-system/etcd"
+        },
+        {
+          "value": "{\"http-85\":[{\"host\":\"172.64.89.2\",\"port\":85,\"weight\":50}]}",
+          "name": "test-ws/testing"
+        }
+      ],
+      "id": "first"
+    }
+  ],
+  "config": [
+    {
+      "default_weight": 50,
+      "id": "first",
+      "client": {
+        "token": "xxx"
+      },
+      "service": {
+        "host": "172.18.164.170",
+        "port": "6443",
+        "schema": "https"
+      },
+      "shared_size": "1m"
+    }
+  ]
+}
+```
+
+## GET /v1/discovery/{service}/show_dump_file
+
+Get configured services details. 
+
+```json
+{
+  "services": {
+    "service_a": [
+      {
+        "host": "172.19.5.12",
+        "port": 8000,
+        "weight": 120
+      },
+      {
+        "host": "172.19.5.13",
+        "port": 8000,
+        "weight": 120
+      }
+    ]
+  },
+  "expire": 0,
+  "last_update": 1615877468
+}
+```
