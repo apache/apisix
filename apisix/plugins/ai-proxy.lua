@@ -82,15 +82,20 @@ function _M.access(conf, ctx)
         request_table.model = conf.model.name
     end
 
-    if route_type ~= "preserve" then
-        ngx_req.set_body_data(core.json.encode(request_table))
-    end
-
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
-    local ok, err = ai_driver.configure_request(conf, ctx)
+    local ok, err = ai_driver.configure_request(conf, request_table, ctx)
     if not ok then
         core.log.error("failed to configure request for AI service: ", err)
         return 500
+    end
+
+    if route_type ~= "passthrough" then
+        local final_body, err = core.json.encode(request_table)
+        if not final_body then
+            core.log.error("failed to encode request body to JSON: ", err)
+            return 500
+        end
+        ngx_req.set_body_data(final_body)
     end
 end
 

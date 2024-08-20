@@ -61,6 +61,18 @@ add_block_preprocessor(sub {
                     local body, err = ngx.req.get_body_data()
                     body, err = json.decode(body)
 
+                    local test_type = ngx.req.get_headers()["test-type"]
+                    if test_type == "options" then
+                        if body.foo == "bar" then
+                            ngx.status = 200
+                            ngx.say("options works")
+                        else
+                            ngx.status = 500
+                            ngx.say("model options feature doesn't work")
+                        end
+                        return
+                    end
+
                     local header_auth = ngx.req.get_headers()["authorization"]
                     local query_auth = ngx.req.get_uri_args()["apikey"]
 
@@ -305,3 +317,73 @@ Authorization: Bearer token
 --- error_code: 400
 --- response_body chomp
 request format doesn't match schema: property "messages" is required
+
+
+
+=== TEST 4: model options being merged to request body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "route_type": "llm/chat",
+                            "auth": {
+                                "source": "header",
+                                "name": "Authorization",
+                                "value": "Bearer token"
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "some-model",
+                                "options": {
+                                    "foo": "bar",
+                                    "temperature": 1.0,
+                                    "upstream_host": "localhost",
+                                    "upstream_port": 6724
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["test-type"] = "options",
+                    ["Content-Type"] = "application/json",
+                }
+            )
+            
+            ngx.status = code
+            ngx.say(actual_body)
+
+        }
+    }
+--- error_code: 200
+--- response_body_chomp
+options_works

@@ -29,7 +29,7 @@ local path_mapper = {
 }
 
 
-function _M.configure_request(conf, ctx)
+function _M.configure_request(conf, request_table, ctx)
     local ip, err = core.resolver.parse_domain(conf.model.options.upstream_host or DEFAULT_HOST)
     if not ip then
         core.log.error("failed to resolve ai_proxy upstream host: ", err)
@@ -54,6 +54,11 @@ function _M.configure_request(conf, ctx)
         core.request.set_uri_args(ctx, args)
     end
 
+    if conf.model.options then
+        for opt, val in pairs(conf.model.options) do
+            request_table[opt] = val
+        end
+    end
     return true, nil
 end
 
