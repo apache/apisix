@@ -32,7 +32,7 @@ local auth_schema = {
             type = "string",
             description = "Full auth-header/param value.",
             minLength = 1,
-            encrypted = true, -- TODO
+             -- TODO encrypted = true,
         },
     },
     required = { "source", "name", "value" },
