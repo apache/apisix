@@ -87,7 +87,7 @@ curl http://127.0.0.1:9080/v1/chat/completions -i -XPOST  -H 'Content-Type: appl
   "template_name": "level of detail,
   "topic": "psychology",
   "level": "brief"
-}'
+}' -H "Authorization: Bearer <your token here>"
 ```
 
 Then the request body will be modified to something like this:
