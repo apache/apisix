@@ -320,7 +320,7 @@ request format doesn't match schema: property "messages" is required
 
 
 
-=== TEST 4: model options being merged to request body
+=== TEST 11: model options being merged to request body
 --- config
     location /t {
         content_by_lua_block {
