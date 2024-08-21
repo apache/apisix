@@ -94,7 +94,8 @@
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",
-            "plugins/body-transformer"
+            "plugins/body-transformer",
+            "plugins/ai-proxy"
           ]
         },
         {

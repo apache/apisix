@@ -378,7 +378,7 @@ request format doesn't match schema: property "messages" is required
                     ["Content-Type"] = "application/json",
                 }
             )
-            
+
             ngx.status = code
             ngx.say(actual_body)
 
