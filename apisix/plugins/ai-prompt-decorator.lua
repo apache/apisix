@@ -100,6 +100,9 @@ function _M.rewrite(conf, ctx)
         return 400, err
     end
 
+    if not body_tab.messages then
+        return 400, "messages missing from request body"
+    end
     decorate(conf, body_tab) -- will decorate body_tab in place
 
     local new_jbody, err = core.json.encode(body_tab)
