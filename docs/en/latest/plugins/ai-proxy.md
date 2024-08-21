@@ -121,7 +121,8 @@ curl http://127.0.0.1:9080/anything -i -XPOST  -H 'Content-Type: application/jso
     }'
 ```
 
-You will recieve a response like this:
+You will receive a response like this:
+
 ```json
 {
   "choices": [
