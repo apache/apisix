@@ -73,8 +73,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "api.openai.com": 1
-      }
+        "api.openai.com:443": 1
+      },
+      "pass_host": "node",
+      "scheme": "https"
     }
   }'
 ```
@@ -87,7 +89,7 @@ Now send a request:
 curl http://127.0.0.1:9080/v1/chat/completions -i -XPOST  -H 'Content-Type: application/json' -d '{
   "model": "gpt-4",
   "messages": [{ "role": "user", "content": "What is TLS Handshake?" }]
-}'
+}' -H "Authorization: Bearer <your token here>"
 ```
 
 Then the request body will be modified to something like this:
