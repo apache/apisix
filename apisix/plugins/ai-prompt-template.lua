@@ -107,7 +107,10 @@ local function find_template(conf, template_name)
 end
 
 function _M.rewrite(conf, ctx)
-    local body_tab = get_request_body_table()
+    local body_tab, err = get_request_body_table()
+    if not body_tab then
+        return 400, err
+    end
     local template_name = body_tab.template_name
     if not template_name then
         return 400, { message = "template name is missing in request." }
