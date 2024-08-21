@@ -87,6 +87,7 @@
           "type": "category",
           "label": "Transformation",
           "items": [
+            "plugins/ai-prompt-decorator",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
