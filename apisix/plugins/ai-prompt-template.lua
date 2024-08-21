@@ -16,6 +16,7 @@
 --
 local core              = require("apisix.core")
 local body_transformer  = require("apisix.plugins.body-transformer")
+local ipairs            = ipairs
 
 local prompt_schema = {
     properties = {
