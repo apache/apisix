@@ -51,7 +51,7 @@ __DATA__
                     },
                     "plugins": {
                         "ai-prompt-decorator": {
-                            "prepend":[ 
+                            "prepend":[
                                 {
                                     "role": "system",
                                     "content": "some content"
@@ -124,7 +124,7 @@ passed
                     },
                     "plugins": {
                         "ai-prompt-decorator": {
-                            "append":[ 
+                            "append":[
                                 {
                                     "role": "system",
                                     "content": "some content"
@@ -197,13 +197,13 @@ passed
                     },
                     "plugins": {
                         "ai-prompt-decorator": {
-                            "append":[ 
+                            "append":[
                                 {
                                     "role": "system",
                                     "content": "some append"
                                 }
                             ],
-                            "prepend":[ 
+                            "prepend":[
                                 {
                                     "role": "system",
                                     "content": "some prepend"

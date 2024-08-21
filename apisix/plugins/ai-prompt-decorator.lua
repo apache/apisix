@@ -86,7 +86,7 @@ local function decorate(conf, body_tab)
         core.table.insert_tail(new_messages, message)
     end
 
-    for _, message in ipairs(conf.append or {}) do
+    for _, message in pairs(conf.append or {}) do
         core.table.insert_tail(new_messages, message)
     end
 
