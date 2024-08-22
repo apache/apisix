@@ -19,7 +19,7 @@ local _M = {}
 local auth_schema = {
     type = "object",
     properties = {
-        source = {
+        type = {
             type = "string",
             enum = {"header", "param"}
         },
@@ -35,7 +35,7 @@ local auth_schema = {
              -- TODO encrypted = true,
         },
     },
-    required = { "source", "name", "value" },
+    required = { "type", "name", "value" },
     additionalProperties = false,
 }
 

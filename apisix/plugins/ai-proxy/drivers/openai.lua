@@ -56,7 +56,7 @@ function _M.configure_request(conf, request_table, ctx)
                         or path_mapper[conf.route_type]
     ngx.var.upstream_uri = ups_path
     ngx.req.set_method(ngx.HTTP_POST)
-    if conf.auth.source == "header" then
+    if conf.auth.type == "header" then
         core.request.set_header(ctx, conf.auth.name, conf.auth.value)
     else
         local args = core.request.get_uri_args(ctx)

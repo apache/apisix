@@ -130,7 +130,7 @@ __DATA__
                     name = "gpt-4",
                 },
                 auth = {
-                    source = "header",
+                    type = "header",
                     value = "some value",
                     name = "some name",
                 }
@@ -160,7 +160,7 @@ passed
                     name = "gpt-4",
                 },
                 auth = {
-                    source = "header",
+                    type = "header",
                     value = "some value",
                     name = "some name",
                 }
@@ -191,7 +191,7 @@ qr/.*provider: some-unique is not supported.*/
                         "ai-proxy": {
                             "route_type": "llm/chat",
                             "auth": {
-                                "source": "header",
+                                "type": "header",
                                 "name": "Authorization",
                                 "value": "Bearer wrongtoken"
                             },
@@ -252,7 +252,7 @@ Unauthorized
                         "ai-proxy": {
                             "route_type": "llm/chat",
                             "auth": {
-                                "source": "header",
+                                "type": "header",
                                 "name": "Authorization",
                                 "value": "Bearer token"
                             },
@@ -372,7 +372,7 @@ request format doesn't match schema: property "messages" is required
                         "ai-proxy": {
                             "route_type": "llm/chat",
                             "auth": {
-                                "source": "header",
+                                "type": "header",
                                 "name": "Authorization",
                                 "value": "Bearer token"
                             },
@@ -444,7 +444,7 @@ options_works
                         "ai-proxy": {
                             "route_type": "llm/chat",
                             "auth": {
-                                "source": "header",
+                                "type": "header",
                                 "name": "Authorization",
                                 "value": "Bearer token"
                             },
