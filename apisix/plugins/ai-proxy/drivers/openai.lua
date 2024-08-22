@@ -18,6 +18,7 @@ local _M = {}
 
 local core = require("apisix.core")
 local test_scheme = os.getenv("AI_PROXY_TEST_SCHEME")
+local upstream = require("apisix.upstream")
 local ngx = ngx
 local pairs = pairs
 
@@ -32,22 +33,29 @@ local path_mapper = {
 
 
 function _M.configure_request(conf, request_table, ctx)
-    local ip, err = core.resolver.parse_domain(conf.model.options.upstream_host or DEFAULT_HOST)
-    if not ip then
-        core.log.error("failed to resolve ai_proxy upstream host: ", err)
-        return core.response.exit(500)
+    local ups_host = DEFAULT_HOST
+    if conf.override and conf.override.upstream_host and conf.override.upstream_host ~= "" then
+        ups_host = conf.override.upstream_host
     end
-    ctx.custom_upstream_ip = ip
-    ctx.custom_upstream_port = conf.model.options.upstream_port or DEFAULT_PORT
+    local ups_port = DEFAULT_PORT
+    if conf.override and conf.override.upstream_port and conf.override.upstream_host ~= "" then
+        ups_port = conf.override.upstream_host
+    end
+    local upstream_addr = ups_host .. ":" .. ups_port
+    local upstream_node = {
+        nodes = {
+            [upstream_addr] = 1
+        },
+        pass_host = "node",
+        scheme = test_scheme or "https",
+        vid = "openai",
+    }
+    upstream.set_upstream(upstream_node, ctx)
 
     local ups_path = (conf.model.options and conf.model.options.upstream_path)
                         or path_mapper[conf.route_type]
     ngx.var.upstream_uri = ups_path
-    ngx.var.upstream_scheme = test_scheme or "https"
     ngx.req.set_method(ngx.HTTP_POST)
-    ngx.var.upstream_host = conf.model.options.upstream_host or DEFAULT_HOST
-    ctx.custom_balancer_host = conf.model.options.upstream_host or DEFAULT_HOST
-    ctx.custom_balancer_port = conf.model.options.port or DEFAULT_PORT
     if conf.auth.source == "header" then
         core.request.set_header(ctx, conf.auth.name, conf.auth.value)
     else

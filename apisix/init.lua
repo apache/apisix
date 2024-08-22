@@ -906,16 +906,7 @@ function _M.http_balancer_phase()
         return core.response.exit(500)
     end
 
-    if api_ctx.custom_upstream_ip then
-        local ok, err = balancer.set_current_peer(api_ctx.custom_upstream_ip,
-                                                  api_ctx.custom_upstream_port)
-        if not ok then
-            core.log.error("failed to overwrite upstream for ai_proxy: ", err)
-            return core.response.exit(500)
-        end
-    else
-        load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
-    end
+    load_balancer.run(api_ctx.matched_route, api_ctx, common_phase)
 end
 
 
