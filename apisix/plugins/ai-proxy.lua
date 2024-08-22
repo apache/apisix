@@ -84,6 +84,7 @@ function _M.access(conf, ctx)
 
     if route_type ~= "passthrough" then
         local final_body, err = core.json.encode(request_table)
+        core.log.info("final parsed body: ", final_body)
         if not final_body then
             core.log.error("failed to encode request body to JSON: ", err)
             return 500
