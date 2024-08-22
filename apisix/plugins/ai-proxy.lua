@@ -43,18 +43,6 @@ end
 local CONTENT_TYPE_JSON = "application/json"
 
 
-local function get_request_table()
-    local req_body, err = core.request.get_body()
-    if not req_body then
-        return nil, "failed to get request body: " .. (err or "request body is empty")
-    end
-    req_body, err = req_body:gsub("\\\"", "\"") -- remove escaping in JSON
-    if not req_body then
-        return nil, "failed to remove escaping from body: " .. req_body .. ". err: " .. err
-    end
-    return core.json.decode(req_body)
-end
-
 function _M.access(conf, ctx)
     local route_type = conf.route_type
     ctx.ai_proxy = {}
@@ -64,7 +52,7 @@ function _M.access(conf, ctx)
         return 400, "unsupported content-type: " .. content_type
     end
 
-    local request_table, err = get_request_table()
+    local request_table, err = core.request.get_request_body_table()
     if not request_table then
         return 400, err
     end
