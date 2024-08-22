@@ -61,7 +61,7 @@ function _M.configure_request(conf, request_table, ctx)
             request_table[opt] = val
         end
     end
-    return true, nil
+    return true
 end
 
 return _M
