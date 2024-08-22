@@ -101,8 +101,7 @@ local model_schema = {
     properties = {
         provider = {
             type = "string",
-            description = "AI provider request format - kapisix translates "
-                .. "requests to and from the specified backend compatible formats.",
+            description = "Name of the AI service provider.",
             oneOf = { "openai" }, -- add more providers later
 
         },
@@ -137,7 +136,7 @@ _M.plugin_schema = {
     properties = {
         route_type = {
             type = "string",
-            enum = { "llm/chat", "llm/completions", "passthrough" }
+            enum = { "llm/chat", "passthrough" }
         },
         auth = auth_schema,
         model = model_schema,
@@ -168,17 +167,6 @@ _M.chat_request_schema = {
         }
     },
     required = {"messages"}
-}
-
-_M.chat_completion_request_schema = {
-    type = "object",
-    properties = {
-        prompt = {
-            type = "string",
-            minLength = 1
-        }
-    },
-    required = {"prompt"}
 }
 
 return  _M

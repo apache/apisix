@@ -57,11 +57,7 @@ function _M.access(conf, ctx)
         return 400, err
     end
 
-    local req_schema = schema.chat_request_schema
-    if route_type == constants.COMPLETION then
-        req_schema = schema.chat_completion_request_schema
-    end
-    local ok, err = core.schema.check(req_schema, request_table)
+    local ok, err = core.schema.check(schema.chat_request_schema, request_table)
     if not ok then
         return 400, "request format doesn't match schema: " .. err
     end

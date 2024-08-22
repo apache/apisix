@@ -27,7 +27,6 @@ local DEFAULT_HOST = "api.openai.com"
 local DEFAULT_PORT = 443
 
 local path_mapper = {
-    ["llm/completions"] = "/v1/completions",
     ["llm/chat"] = "/v1/chat/completions",
 }
 
