@@ -47,9 +47,9 @@ function _M.access(conf, ctx)
     local route_type = conf.route_type
     ctx.ai_proxy = {}
 
-    local content_type = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
-    if content_type ~= CONTENT_TYPE_JSON then
-        return 400, "unsupported content-type: " .. content_type
+    local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
+    if ct ~= CONTENT_TYPE_JSON or ct ~= CONTENT_TYPE_JSON .. ";charset=utf8" then
+        return 400, "unsupported content-type: " .. ct
     end
 
     local request_table, err = core.request.get_request_body_table()
