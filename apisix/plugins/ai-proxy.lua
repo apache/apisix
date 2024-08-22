@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
-local constants = require("apisix.constants")
 local require = require
 
 local ngx_req = ngx.req

@@ -123,7 +123,7 @@ local model_schema = {
                 },
                 path = {
                     type = "string",
-                    description = "To be specified to override the URL to the AI provider endpoints",
+                    description = "Overrieds the request path to the AI provider endpoints",
                 },
             }
         }

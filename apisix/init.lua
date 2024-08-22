@@ -59,7 +59,6 @@ local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
 local ngx_re_match    = ngx.re.match
-local balancer        = require("ngx.balancer")
 local control_api_router
 
 local is_http = false
