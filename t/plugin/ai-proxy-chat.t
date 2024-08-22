@@ -103,6 +103,11 @@ add_block_preprocessor(sub {
                 }
             }
 
+            location /random {
+                content_by_lua_block {
+                    ngx.say("path override works")
+                }
+            }
         }
 _EOC_
 
@@ -195,10 +200,12 @@ qr/.*provider: some-unique is not supported.*/
                                 "name": "gpt-35-turbo-instruct",
                                 "options": {
                                     "max_tokens": 512,
-                                    "temperature": 1.0,
-                                    "upstream_host": "localhost",
-                                    "upstream_port": 6724
+                                    "temperature": 1.0
                                 }
+                            },
+                            "override": {
+                                "host": "localhost",
+                                "port": 6724
                             }
                         }
                     },
@@ -254,10 +261,12 @@ Unauthorized
                                 "name": "gpt-35-turbo-instruct",
                                 "options": {
                                     "max_tokens": 512,
-                                    "temperature": 1.0,
-                                    "upstream_host": "localhost",
-                                    "upstream_port": 6724
+                                    "temperature": 1.0
                                 }
+                            },
+                            "override": {
+                                "host": "localhost",
+                                "port": 6724
                             }
                         }
                     },
@@ -372,10 +381,12 @@ request format doesn't match schema: property "messages" is required
                                 "name": "some-model",
                                 "options": {
                                     "foo": "bar",
-                                    "temperature": 1.0,
-                                    "upstream_host": "localhost",
-                                    "upstream_port": 6724
+                                    "temperature": 1.0
                                 }
+                            },
+                            "override": {
+                                "host": "localhost",
+                                "port": 6724
                             }
                         }
                     },
@@ -417,3 +428,75 @@ request format doesn't match schema: property "messages" is required
 --- error_code: 200
 --- response_body_chomp
 options_works
+
+
+
+=== TEST 12: override path
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "route_type": "llm/chat",
+                            "auth": {
+                                "source": "header",
+                                "name": "Authorization",
+                                "value": "Bearer token"
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "some-model",
+                                "options": {
+                                    "foo": "bar",
+                                    "temperature": 1.0
+                                }
+                            },
+                            "override": {
+                                "host": "localhost",
+                                "port": 6724,
+                                "path": "/random"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["test-type"] = "path",
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            ngx.status = code
+            ngx.say(actual_body)
+
+        }
+    }
+--- response_body_chomp
+path override works

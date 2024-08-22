@@ -34,14 +34,15 @@ local path_mapper = {
 
 function _M.configure_request(conf, request_table, ctx)
     local ups_host = DEFAULT_HOST
-    if conf.override and conf.override.upstream_host and conf.override.upstream_host ~= "" then
-        ups_host = conf.override.upstream_host
+    if conf.override and conf.override.host and conf.override.host ~= "" then
+        ups_host = conf.override.host
     end
     local ups_port = DEFAULT_PORT
-    if conf.override and conf.override.upstream_port and conf.override.upstream_host ~= "" then
-        ups_port = conf.override.upstream_host
+    if conf.override and conf.override.port and conf.override.host ~= "" then
+        ups_port = conf.override.port
     end
     local upstream_addr = ups_host .. ":" .. ups_port
+    core.log.info("modified upstream address: ", upstream_addr)
     local upstream_node = {
         nodes = {
             [upstream_addr] = 1
@@ -52,7 +53,7 @@ function _M.configure_request(conf, request_table, ctx)
     }
     upstream.set_upstream(upstream_node, ctx)
 
-    local ups_path = (conf.model.options and conf.model.options.upstream_path)
+    local ups_path = (conf.override and conf.override.path)
                         or path_mapper[conf.route_type]
     ngx.var.upstream_uri = ups_path
     ngx.req.set_method(ngx.HTTP_POST)

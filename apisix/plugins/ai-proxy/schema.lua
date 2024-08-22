@@ -111,6 +111,23 @@ local model_schema = {
             description = "Model name to execute.",
         },
         options = model_options_schema,
+        override = {
+            type = "object",
+            properties = {
+                host = {
+                    type = "string",
+                    description = "To be specified to override the host of the AI provider",
+                },
+                port = {
+                    type = "integer",
+                    description = "To be specified to override the AI provider port",
+                },
+                path = {
+                    type = "string",
+                    description = "To be specified to override the URL to the AI provider endpoints",
+                },
+            }
+        }
     },
     required = {"provider", "name"}
 }
