@@ -17,7 +17,7 @@
 local core  = require("apisix.core")
 local ngx   = ngx
 local pairs = pairs
-
+local EMPTY = {}
 
 local prompt_schema = {
     properties = {
@@ -73,7 +73,7 @@ local function get_request_body_table()
 
     local body_tab, err = core.json.decode(body)
     if not body_tab then
-        return nil, { message = "could not get parse JSON request body: ", err }
+        return nil, { message = "could not get parse JSON request body: " .. err }
     end
 
     return body_tab
@@ -81,12 +81,12 @@ end
 
 
 local function decorate(conf, body_tab)
-    local new_messages = conf.prepend or {}
+    local new_messages = conf.prepend or EMPTY
     for _, message in pairs(body_tab.messages) do
         core.table.insert_tail(new_messages, message)
     end
 
-    for _, message in pairs(conf.append or {}) do
+    for _, message in pairs(conf.append or EMPTY) do
         core.table.insert_tail(new_messages, message)
     end
 
@@ -107,7 +107,7 @@ function _M.rewrite(conf, ctx)
 
     local new_jbody, err = core.json.encode(body_tab)
     if not new_jbody then
-        return 500, { message = "failed to parse modified JSON request body: ", err }
+        return 500, { message = "failed to parse modified JSON request body: " .. err }
     end
 
     ngx.req.set_body_data(new_jbody)
