@@ -143,7 +143,37 @@ passed
 
 
 
-=== TEST 2: set route with wrong auth header
+=== TEST 2: unsupported provider
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-proxy")
+            local ok, err = plugin.check_schema({
+                route_type = "llm/chat",
+                model = {
+                    provider = "some-unique",
+                    name = "gpt-4",
+                },
+                auth = {
+                    source = "header",
+                    value = "some value",
+                    name = "some name",
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body eval
+qr/.*provider: some-unique is not supported.*/
+
+
+
+=== TEST 3: set route with wrong auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -192,7 +222,7 @@ passed
 
 
 
-=== TEST 3: send request
+=== TEST 4: send request
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -202,7 +232,7 @@ Unauthorized
 
 
 
-=== TEST 4: set route with right auth header
+=== TEST 5: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -251,7 +281,7 @@ passed
 
 
 
-=== TEST 5: send request
+=== TEST 6: send request
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -263,7 +293,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 6: send request with empty body
+=== TEST 7: send request with empty body
 --- request
 POST /anything
 --- more_headers
@@ -274,7 +304,7 @@ failed to get request body: request body is empty
 
 
 
-=== TEST 7: send request with wrong method (GET) should work
+=== TEST 8: send request with wrong method (GET) should work
 --- request
 GET /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -286,7 +316,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 8: wrong JSON in request body should give error
+=== TEST 9: wrong JSON in request body should give error
 --- request
 GET /anything
 {}"messages": [ { "role": "system", "cont
@@ -296,7 +326,7 @@ Expected the end but found T_STRING at character 3
 
 
 
-=== TEST 9: content-type should be JSON
+=== TEST 10: content-type should be JSON
 --- request
 POST /anything
 prompt%3Dwhat%2520is%25201%2520%252B%25201
@@ -308,7 +338,7 @@ unsupported content-type: application/x-www-form-urlencoded
 
 
 
-=== TEST 10: request schema validity check
+=== TEST 11: request schema validity check
 --- request
 POST /anything
 { "messages-missing": [ { "role": "system", "content": "xyz" } ] }
@@ -320,7 +350,7 @@ request format doesn't match schema: property "messages" is required
 
 
 
-=== TEST 11: model options being merged to request body
+=== TEST 12: model options being merged to request body
 --- config
     location /t {
         content_by_lua_block {

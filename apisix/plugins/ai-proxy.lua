@@ -32,6 +32,10 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local ai_driver = pcall(require, "apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
+    if not ai_driver then
+        return false, "provider: " .. conf.model.provider .. " is not supported."
+    end
     return core.schema.check(schema.plugin_schema, conf)
 end
 
