@@ -88,7 +88,7 @@ local model_options_schema = {
             type = "string",
             description = "To be specified to override the URL to the AI provider endpoints",
         },
-        response_streaming = {
+        stream = {
             description = "Stream response by SSE",
             type = "boolean",
             default = false,

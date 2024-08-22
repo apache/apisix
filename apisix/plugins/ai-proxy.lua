@@ -66,7 +66,7 @@ function _M.access(conf, ctx)
         return 400, "request format doesn't match schema: " .. err
     end
 
-    if conf.model.options and conf.model.options.response_streaming then
+    if conf.model.options and conf.model.options.stream then
         request_table.stream = true
         ngx.ctx.disable_proxy_buffering = true
     end
