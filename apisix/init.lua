@@ -722,9 +722,7 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
-    if not api_ctx.custom_upstream_ip then
-        _M.handle_upstream(api_ctx, route, enable_websocket)
-    end
+    _M.handle_upstream(api_ctx, route, enable_websocket)
 
     if ngx.ctx.disable_proxy_buffering then
         stash_ngx_ctx()
