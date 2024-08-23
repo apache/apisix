@@ -259,7 +259,7 @@ function _M.set_upstream(upstream_info, ctx)
     local new_nodes = {}
     if core.table.isarray(nodes) then
         for _, node in ipairs(nodes) do
-            core.utils.parse_domain_for_node(node)
+            resolver.parse_domain_for_node(node)
             table_insert(new_nodes, node)
         end
     else
