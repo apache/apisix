@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local require = require
+local pcall = pcall
 
 local ngx_req = ngx.req
 local ngx = ngx
