@@ -431,7 +431,7 @@ options_works
 
 
 
-=== TEST 12: override path
+=== TEST 13: override path
 --- config
     location /t {
         content_by_lua_block {
