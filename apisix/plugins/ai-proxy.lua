@@ -48,7 +48,7 @@ function _M.access(conf, ctx)
     ctx.ai_proxy = {}
 
     local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
-    if ct ~= CONTENT_TYPE_JSON and ct ~= CONTENT_TYPE_JSON .. ";charset=utf8" then
+    if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
         return 400, "unsupported content-type: " .. ct
     end
 
