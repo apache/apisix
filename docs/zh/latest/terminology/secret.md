@@ -219,7 +219,7 @@ $secret://$manager/$id/$secret_name/$key
 | auth_config.private_key | 是       |                                                  | 谷歌服务帐号的私钥参数。                                                                                                           |
 | auth_config.project_id  | 是       |                                                  | 谷歌服务帐号的项目 ID。                                                                                                            |
 | auth_config.token_uri   | 否       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                        |
-| auth_config.entries_uri | 否       |   https://secretmanager.googleapis.com/v1/     | 谷歌密钥服务访问端点 API。                                                                                                   |
+| auth_config.entries_uri | 否       |   https://secretmanager.googleapis.com/v1     | 谷歌密钥服务访问端点 API。                                                                                                   |
 | auth_config.scopes      | 否       |   https://www.googleapis.com/auth/cloud-platform                                               | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes)|
 | auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。          |
 | ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
@@ -239,7 +239,7 @@ curl http://127.0.0.1:9180/apisix/admin/secrets/gcp/1 \
         "private_key": "private_key",
         "project_id": "apisix-project",
         "token_uri": "https://oauth2.googleapis.com/token",
-        "entries_uri": "https://secretmanager.googleapis.com/v1/",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
         "scopes": "https://www.googleapis.com/auth/cloud-platform"
     }
 }'

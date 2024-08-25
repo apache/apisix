@@ -46,7 +46,7 @@ __DATA__
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", scopes = 1234}},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", entries_uri = 1234}},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", token_uri = "token_uri",
-                    scopes = "scopes", entries_uri = "entries_uri"}, ssl_verify = true},
+                    scopes = {"scopes"}, entries_uri = "entries_uri"}, ssl_verify = true},
             }
             local gcp = require("apisix.secret.gcp")
             local core = require("apisix.core")
@@ -73,7 +73,7 @@ property "auth_config" validation failed: property "private_key" validation fail
 property "auth_config" validation failed: property "project_id" validation failed: wrong type: expected string, got number
 property "ssl_verify" validation failed: wrong type: expected boolean, got number
 property "auth_config" validation failed: property "token_uri" validation failed: wrong type: expected string, got number
-property "auth_config" validation failed: property "scopes" validation failed: wrong type: expected string, got number
+property "auth_config" validation failed: property "scopes" validation failed: wrong type: expected array, got number
 property "auth_config" validation failed: property "entries_uri" validation failed: wrong type: expected string, got number
 done
 
@@ -117,8 +117,10 @@ Yp8D0aqsLEgwGrJQER26FPpKmyIwvcL+nm6q5W31PnU9AOC/WEkB6Zs58hsMzD2S
 kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
-                    token_uri = "http://127.0.0.1:2800/token",
-                    scopes = "https://www.googleapis.com/auth/cloud-platform",
+                    token_uri = "http://127.0.0.1:1980/token",
+                    scopes = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    },
                 },
             }
             local data, err = gcp.get(conf, "/apisix")
@@ -176,8 +178,10 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = "https://www.googleapis.com/auth/cloud-platform",
-                    entries_uri = "http://127.0.0.1:2800/google/secret/"
+                    scopes = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    },
+                    entries_uri = "http://127.0.0.1:1984"
                 },
             }
 
@@ -243,7 +247,130 @@ nil
 
 
 
-=== TEST 4: get value from gcp by auth_file(fetch_oatuh_conf failed, read failed)
+=== TEST 4: setup route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": [
+                                "return function(conf, ctx)
+                                    require('lib.server').google_secret_apisix_jack()
+                                end"
+                            ]
+                        }
+                    },
+                    "uri": "/projects/apisix/secrets/jack/versions/latest:access",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 5: setup route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": [
+                                "return function(conf, ctx)
+                                    require('lib.server').google_secret_apisix_error_jack()
+                                end"
+                            ]
+                        }
+                    },
+                    "uri": "/projects/apisix_error/secrets/jack/versions/latest:access",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 6: setup route
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/3',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions": [
+                                "return function(conf, ctx)
+                                    require('lib.server').google_secret_apisix_mysql()
+                                end"
+                            ]
+                        }
+                    },
+                    "uri": "/projects/apisix/secrets/mysql/versions/latest:access",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 7: get value from gcp by auth_file(fetch_oatuh_conf failed, read failed)
 --- config
     location /t {
         content_by_lua_block {
@@ -265,7 +392,7 @@ failed to retrtive data from gcp secret manager: failed to read configuration, f
 
 
 
-=== TEST 5: get value from gcp by auth_file(fetch_oatuh_conf success)
+=== TEST 8: get value from gcp by auth_file(fetch_oatuh_conf success)
 --- config
     location /t {
         content_by_lua_block {
@@ -287,7 +414,7 @@ value
 
 
 
-=== TEST 6: get value from gcp by auth_file(fetch_oatuh_conf failed, undefined)
+=== TEST 9: get value from gcp by auth_file(fetch_oatuh_conf failed, undefined)
 --- config
     location /t {
         content_by_lua_block {
@@ -305,11 +432,11 @@ value
 --- request
 GET /t
 --- response_body
-failed to retrtive data from gcp secret manager: configuration is undefined, file: t/secret/conf/error.json
+failed to retrtive data from gcp secret manager: config parse failure, file: t/secret/conf/error.json, err: property "auth_config" validation failed: property "client_email" is required
 
 
 
-=== TEST 7: get json value from gcp
+=== TEST 10: get json value from gcp
 --- config
     location /t {
         content_by_lua_block {
@@ -347,8 +474,10 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = "https://www.googleapis.com/auth/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/secret/"
+                    scopes = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    },
+                    entries_uri = "http://127.0.0.1:1984"
                 },
             }
             local gcp = require("apisix.secret.gcp")
@@ -366,7 +495,7 @@ value
 
 
 
-=== TEST 8: get string value from gcp
+=== TEST 11: get string value from gcp
 --- config
     location /t {
         content_by_lua_block {
@@ -404,8 +533,10 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = "https://www.googleapis.com/auth/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/secret/"
+                    scopes = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    },
+                    entries_uri = "http://127.0.0.1:1984"
                 },
             }
             local gcp = require("apisix.secret.gcp")
@@ -423,7 +554,7 @@ secret
 
 
 
-=== TEST 9: get value from gcp(failed to get google oauth token)
+=== TEST 12: get value from gcp(failed to get google oauth token)
 --- config
     location /t {
         content_by_lua_block {
@@ -461,8 +592,10 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = "https://www.googleapis.com/auth/root/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/secret/"
+                    scopes = {
+                        "https://www.googleapis.com/auth/root/cloud-platform"
+                    },
+                    entries_uri = "http://127.0.0.1:1984"
                 },
             }
             local gcp = require("apisix.secret.gcp")
@@ -484,7 +617,7 @@ qr/\{\"error\"\:\"[\w+\s+]*\"\}/
 
 
 
-=== TEST 10: get value from gcp (not res)
+=== TEST 13: get value from gcp (not res)
 --- config
     location /t {
         content_by_lua_block {
@@ -522,8 +655,10 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix_error",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = "https://www.googleapis.com/auth/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/"
+                    scopes = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    },
+                    entries_uri = "http://127.0.0.1:1984"
                 },
             }
             local gcp = require("apisix.secret.gcp")
@@ -541,7 +676,7 @@ err
 
 
 
-=== TEST 11: get value from gcp (res status ~= 200)
+=== TEST 14: get value from gcp (res status ~= 200)
 --- config
     location /t {
         content_by_lua_block {
@@ -579,8 +714,10 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix_error",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = "https://www.googleapis.com/auth/cloud",
-                    entries_uri = "http://127.0.0.1:1980/google/secret/"
+                    scopes = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    },
+                    entries_uri = "http://127.0.0.1:1984"
                 },
             }
             local gcp = require("apisix.secret.gcp")

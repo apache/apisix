@@ -22,10 +22,9 @@ local google_oauth = require("apisix.utils.google-cloud-oauth")
 
 local sub        = core.string.sub
 local find = core.string.find
-local type = type
 local decode_base64 = ngx.decode_base64
 
-local lrucache = core.lrucache.new({ttl = 300, count= 16})
+local lrucache = core.lrucache.new({ttl = 300, count= 8})
 
 local schema = {
     type = "object",
@@ -41,12 +40,14 @@ local schema = {
                     default = "https://oauth2.googleapis.com/token"
                 },
                 scopes = {
-                    type = "string",
-                    default = "https://www.googleapis.com/auth/cloud-platform"
+                    type = "array",
+                    default = {
+                        "https://www.googleapis.com/auth/cloud-platform"
+                    }
                 },
                 entries_uri = {
                     type = "string",
-                    default = "https://secretmanager.googleapis.com/v1/"
+                    default = "https://secretmanager.googleapis.com/v1"
                 },
             },
             required = { "client_email", "private_key", "project_id"}
@@ -83,11 +84,17 @@ local function fetch_oauth_conf(conf)
         return nil, "config parse failure, data: " .. file_content .. ", err: " .. err
     end
 
-    if not config_tab.client_email or
-       not config_tab.private_key or
-       not config_tab.project_id or
-       not config_tab.token_uri then
-        return nil, "configuration is undefined, file: " .. conf.auth_file
+    local config = {
+        auth_config = {
+            client_email = config_tab.client_email,
+            private_key = config_tab.private_key,
+            project_id = config_tab.project_id
+        }
+    }
+
+    local ok, err = core.schema.check(schema, config)
+    if not ok then
+        return nil, "config parse failure, file: " .. conf.auth_file .. ", err: " .. err
     end
 
     return config_tab
@@ -105,14 +112,8 @@ local function get_secret(oauth, secrets_id)
         return nil, "failed to get google oauth token"
     end
 
-    local entries_uri
-    if oauth.entries_uri == "http://127.0.0.1:1980/google/secret/" then
-        entries_uri = oauth.entries_uri .. oauth.project_id .. "/" .. secrets_id
-
-    else
-        entries_uri = oauth.entries_uri .. "projects/" .. oauth.project_id
+    local entries_uri = oauth.entries_uri .. "/projects/" .. oauth.project_id
                             .. "/secrets/" .. secrets_id .. "/versions/latest:access"
-    end
 
     local res, err = http_new:request_uri(entries_uri, {
         ssl_verify = oauth.ssl_verify,
@@ -141,16 +142,10 @@ local function get_secret(oauth, secrets_id)
         return nil, "invalid payload"
     end
 
-    local secret_encoded = payload.data
-    if type(secret_encoded) ~= "string" then
-        return nil, "invalid secret string"
-    end
-
-    local secret = decode_base64(secret_encoded)
-    return secret
+    return decode_base64(payload.data)
 end
 
-local function make_request_to_gcp(conf, key)
+local function make_request_to_gcp(conf, secrets_id)
     local auth_config, err = fetch_oauth_conf(conf)
     if not auth_config then
         return nil, err
@@ -163,7 +158,7 @@ local function make_request_to_gcp(conf, key)
         return nil, "failed to create oauth object, " .. err
     end
 
-    local secret, err = get_secret(oauth, key)
+    local secret, err = get_secret(oauth, secrets_id)
     if not secret then
         return nil, err
     end

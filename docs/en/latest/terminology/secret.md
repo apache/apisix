@@ -194,7 +194,7 @@ Through the above two steps, when the user request hits the `key-auth` plugin, t
 
 ## Use GCP Secrets Manager to manage secrets
 
-Using the GCP Secrets Manager to manage secrets means you can store the secret information in the GCP service, and reference it using a specific format of variables when configuring plugins. APISIX currently supports integration with the GCP Secrets Manager, and the supported authentication method is [OAuth 2.0](https://developers.google.com/identity/protocols/oauth2?hl=zh-cn).
+Using the GCP Secrets Manager to manage secrets means you can store the secret information in the GCP service, and reference it using a specific format of variables when configuring plugins. APISIX currently supports integration with the GCP Secrets Manager, and the supported authentication method is [OAuth 2.0](https://developers.google.com/identity/protocols/oauth2).
 
 ### Reference Format
 
@@ -218,7 +218,7 @@ The reference format is the same as before:
 | auth_config.private_key | True     |                                                                                                                                                                                                      | Private key of the Google Cloud service account.                                                                                                                   |
 | auth_config.project_id  | True     |                                                                                                                                                                                                      | Project ID in the Google Cloud service account.                                                                                                                    |
 | auth_config.token_uri   | False    | https://oauth2.googleapis.com/token                                                                                                                                                                    | Token URI of the Google Cloud service account.                                                                                                                     |
-| auth_config.entries_uri | False    | https://secretmanager.googleapis.com/v1/                                                                                                                                                      | 	The API access endpoint for the Google Secrets Manager.                                                                                                                                |
+| auth_config.entries_uri | False    | https://secretmanager.googleapis.com/v1                                                                                                                                                      | 	The API access endpoint for the Google Secrets Manager.                                                                                                                                |
 | auth_config.scopes      | False    | https://www.googleapis.com/auth/cloud-platform | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) |
 | auth_file               | True     |                                                                                                                                                                                                      | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided.                                           |
 | ssl_verify              | False    | true                                                                                                                                                                                                 | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                  |
@@ -238,7 +238,7 @@ curl http://127.0.0.1:9180/apisix/admin/secrets/gcp/1 \
         "private_key": "private_key",
         "project_id": "apisix-project",
         "token_uri": "https://oauth2.googleapis.com/token",
-        "entries_uri": "https://secretmanager.googleapis.com/v1/",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
         "scopes": "https://www.googleapis.com/auth/cloud-platform"
     }
 }'
