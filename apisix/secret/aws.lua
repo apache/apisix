@@ -68,8 +68,8 @@ local function make_request_to_aws(conf, key)
     })
 
     local default_endpoint = "https://secretsmanager." .. region .. ".amazonaws.com"
-    local pre, host, port, _, _ = unpack(http:parse_uri(conf.endpoint_url or default_endpoint))
-    local endpoint = pre .. "://" .. host
+    local scheme, host, port, _, _ = unpack(http:parse_uri(conf.endpoint_url or default_endpoint))
+    local endpoint = scheme .. "://" .. host
 
     local sm = aws_instance:SecretsManager({
         credentials = credentials,
