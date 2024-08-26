@@ -140,7 +140,7 @@ For more reference on how to run the benchmark test, you can see this [PR](https
 
 :::tip
 
-If you want to run the benchmark with a large number of connections, You may have to update the **keepalive** config in the [conf/config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242). Connections exceeding this number will become short connections. You can run the following command to test the benchmark with a large number of connections:
+If you want to run the benchmark with a large number of connections, You may have to update the [**keepalive**](https://github.com/apache/apisix/blob/master/conf/config.yaml.example#L241) config by adding the configuration to [`config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) and reload APISIX. Connections exceeding this number will become short connections. You can run the following command to test the benchmark with a large number of connections:
 
 ```bash
 wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello
