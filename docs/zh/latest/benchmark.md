@@ -139,7 +139,7 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 
 :::tip
 
-如果你想测试大量连接的基准测试，你可能需要更新 [`./conf/config-default.yaml`](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242) 中的 **keepalive** 配置项，否则超过配置数量的连接将成为短连接。你可以使用以下命令运行大量连接的基准测试：
+如果您想使用大量连接运行基准测试，您可能需要更新 [**keepalive**](https://github.com/apache/apisix/blob/master/conf/config.yaml.example#L241) 配置，将配置添加到 [`config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) 并重新加载 APISIX。否则超过配置数量的连接将成为短连接。你可以使用以下命令运行大量连接的基准测试：
 
 ```bash
 wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello
