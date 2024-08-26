@@ -756,15 +756,15 @@ deployment:
     password: etcd_password     # password for etcd
 ```
 
-For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `ETCD` section in the `conf/config-default.yaml` file.
+For other ETCD configurations, such as expiration times, retries, and so on, you can refer to the `etcd` section in the sample configuration `conf/config.yaml.example` file.
 
-## What is the difference between SSLs and tls.client_cert in upstream configurations, and ssl_trusted_certificate in config-default.yaml?
+## What is the difference between SSLs, `tls.client_cert` in upstream configurations, and `ssl_trusted_certificate` in `config.yaml`?
 
 The `ssls` is managed through the `/apisix/admin/ssls` API. It's used for managing TLS certificates. These certificates may be used during TLS handshake (between Apache APISIX and its clients). Apache APISIX uses Server Name Indication (SNI) to differentiate between certificates of different domains.
 
 The `tls.client_cert`, `tls.client_key`, and `tls.client_cert_id` in upstream are used for mTLS communication with the upstream.
 
-The `ssl_trusted_certificate` in config-default.yaml configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
+The `ssl_trusted_certificate` in `config.yaml` configures a trusted CA certificate. It is used for verifying some certificates signed by private authorities within APISIX, to avoid APISIX rejects the certificate. Note that it is not used to trust the certificates of APISIX upstream, because APISIX does not verify the legality of the upstream certificates. Therefore, even if the upstream uses an invalid TLS certificate, it can still be accessed without configuring a root certificate.
 
 ## Where can I find more answers?
 
