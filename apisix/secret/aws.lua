@@ -100,7 +100,7 @@ local function make_request_to_aws(conf, key)
 end
 
 -- key is the aws secretId
-local function get(conf, key)
+function _M.get(conf, key)
     core.log.info("fetching data from aws for key: ", key)
 
     local idx = find(key, '/')
@@ -131,9 +131,5 @@ local function get(conf, key)
     return data[sub_key]
 end
 
-_M.get = get
-
 
 return _M
-
-
