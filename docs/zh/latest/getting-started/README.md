@@ -43,6 +43,18 @@ curl -sL https://run.api7.ai/apisix/quickstart | sh
 ✔ APISIX is ready!
 ```
 
+此时你也会发现 APISIX 默认会同时监听几组端口：
+
+|**端口**|**用途**|
+| ----- | ----- |
+|9080|HTTP请求|
+|9443|HTTPS请求|
+|9180|Admin API|
+|9091|Prometheus指标导出|
+|9100|TCP流量|
+|9200|UDP流量|
+
+
 ## 验证
 
 你可以通过 curl 来访问正在运行的 APISIX 实例。比如，你可以发送一个简单的 HTTP 请求来验证 APISIX 运行状态是否正常：
