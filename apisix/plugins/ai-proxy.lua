@@ -20,7 +20,6 @@ local require = require
 local pcall = pcall
 
 local ngx_req = ngx.req
-local ngx = ngx
 
 local plugin_name = "ai-proxy"
 local _M = {
