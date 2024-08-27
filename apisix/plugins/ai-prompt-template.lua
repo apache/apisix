@@ -77,6 +77,13 @@ local _M = {
     schema   = schema,
 }
 
+local templates_lrucache = core.lrucache.new({
+    ttl = 300, count = 256
+})
+
+local templates_json_lrucache = core.lrucache.new({
+    ttl = 300, count = 256
+})
 
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
@@ -117,12 +124,12 @@ function _M.rewrite(conf, ctx)
         return 400, { message = "template name is missing in request." }
     end
 
-    local template = find_template(conf, template_name)
+    local template = templates_lrucache(template_name, conf, find_template, conf, template_name)
     if not template then
         return 400, { message = "template: " .. template_name .. " not configured." }
     end
 
-    local template_json = core.json.encode(template)
+    local template_json = templates_json_lrucache(template, template, core.json.encode, template)
     core.log.info("sending template to body_transformer: ", template_json)
     return body_transformer.rewrite(
         {
