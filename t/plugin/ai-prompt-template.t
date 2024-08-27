@@ -327,3 +327,77 @@ qr/.*template: random not configured.*/
 --- error_code: 400
 --- response_body eval
 qr/.*template name is missing in request.*/
+
+
+
+=== TEST 9: (cache test) same template name in different routes
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            for i = 1, 5, 1 do
+                local code = t('/apisix/admin/routes/' .. i,
+                    ngx.HTTP_PUT,
+                    [[{
+                        "uri": "/]] .. i .. [[",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ai-prompt-template": {
+                                "templates":[
+                                    {
+                                        "name": "same name",
+                                        "template": {
+                                            "model": "some model",
+                                            "messages": [
+                                                { "role": "system", "content": "Field: {{ field }} in route]] .. i .. [[." }
+                                            ]
+                                        }
+                                    }
+                                ]
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        }
+                    }]]
+                )
+
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say("failed")
+                    return
+                end
+            end
+
+            for i = 1, 5, 1 do
+                local code, body = t('/' .. i,
+                    ngx.HTTP_POST,
+                    [[{
+                        "template_name": "same name",
+                        "field": "foo"
+                    }]],
+                    [[{
+                        "model": "some model",
+                        "messages": [
+                            { "role": "system", "content": "Field: foo in route]] .. i .. [[." }
+                        ]
+                    }]]
+                )
+                if code >= 300 then
+                    ngx.status = code
+                    ngx.say(body)
+                    return
+                end
+            end
+            ngx.status = 200
+            ngx.say("passed")
+        }
+    }
+
+--- response_body
+passed
