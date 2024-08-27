@@ -458,6 +458,45 @@ local function common_phase(phase_name)
     return plugin.run_plugin(phase_name, nil, api_ctx)
 end
 
+local methods_map = {
+    GET       = ngx.HTTP_GET,
+    PUT       = ngx.HTTP_PUT,
+    POST      = ngx.HTTP_POST,
+    PATCH     = ngx.HTTP_PATCH,
+    DELETE    = ngx.HTTP_DELETE,
+    OPTIONS   = ngx.HTTP_OPTIONS,
+    TRACE     = ngx.HTTP_TRACE,
+    HEAD      = ngx.HTTP_HEAD,
+}
+
+local function subrequest(api_ctx)
+    ngx.req.read_body()
+    local options = {
+      always_forward_body = true,
+      share_all_vars = true,
+      method = methods_map[ngx.req.get_method()],
+      ctx = ngx.ctx,
+    }
+
+    local res = ngx.location.capture("/subrequest", options)
+    if not res or res.truncated then
+        return core.response.exit(502)
+    end
+
+    if res.truncated and options.method ~= ngx.HTTP_HEAD then
+        return core.response.exit(503)
+    end
+
+    api_ctx.subreq_status = res.status
+    api_ctx.subreq_headers = res.header
+    api_ctx.subreq_body = res.body
+
+    for key, value in pairs(res.header) do
+        core.response.set_header(key, value)
+    end
+    core.log.info("finishing subrequest")
+    core.response.exit(res.status, res.body)
+end
 
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
@@ -723,8 +762,10 @@ function _M.http_access_phase()
     end
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
-
-    if ngx.ctx.disable_proxy_buffering then
+    if api_ctx.subrequest then
+        subrequest(api_ctx)
+    end
+    if api_ctx.disable_proxy_buffering then
         stash_ngx_ctx()
         return ngx.exec("@disable_proxy_buffering")
     end
