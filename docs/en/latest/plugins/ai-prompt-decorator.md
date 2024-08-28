@@ -29,19 +29,18 @@ description: This document contains information about the Apache APISIX ai-promp
 
 ## Description
 
-The `ai-prompt-decorator` plugin simplifies access to AI providers and models by appending or prepending
-prompts into the request.
+The `ai-prompt-decorator` plugin simplifies access to LLM providers, such as OpenAI and Anthropic, and their models by appending or prepending prompts into the request.
 
 ## Plugin Attributes
 
-| **Field**         | **Type** | **Description**                                     | **Required**    |
-| ----------------- | -------- | --------------------------------------------------- | --------------- |
-| `prepend`         | Array    | An array of prompt objects to be prepended          | Conditionally\* |
-| `prepend.role`    | String   | Role of the message (`system`, `user`, `assistant`) | Yes             |
-| `prepend.content` | String   | Content of the message. Minimum length: 1           | Yes             |
-| `append`          | Array    | An array of prompt objects to be appended           | Conditionally\* |
-| `append.role`     | String   | Role of the message (`system`, `user`, `assistant`) | Yes             |
-| `append.content`  | String   | Content of the message. Minimum length: 1           | Yes             |
+| **Field**         | **Required**    | **Type** | **Description**                                     |
+| ----------------- | --------------- | -------- | --------------------------------------------------- |
+| `prepend`         | Conditionally\* | Array    | An array of prompt objects to be prepended          |
+| `prepend.role`    | Yes             | String   | Role of the message (`system`, `user`, `assistant`) |
+| `prepend.content` | Yes             | String   | Content of the message. Minimum length: 1           |
+| `append`          | Conditionally\* | Array    | An array of prompt objects to be appended           |
+| `append.role`     | Yes             | String   | Role of the message (`system`, `user`, `assistant`) |
+| `append.content`  | Yes             | String   | Content of the message. Minimum length: 1           |
 
 \* **Conditionally Required**: At least one of `prepend` or `append` must be provided.
 
