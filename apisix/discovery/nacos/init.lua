@@ -341,7 +341,7 @@ local function fetch_full_registry(premature)
                 weight = host.weight or default_weight,
             }
 
-            -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
+            -- docs: https://github.com/grpc-ecosystem/grpc-spring/pull/496
             if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
                 node.port = host.metadata.gRPC_port
             end
