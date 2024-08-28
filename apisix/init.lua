@@ -763,8 +763,15 @@ function _M.http_access_phase()
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
     if api_ctx.subrequest then
-        subrequest(api_ctx)
+        local version = ngx.req.http_version()
+        if version < 2 then
+            subrequest(api_ctx)
+        else
+            api_ctx.subrequest = nil
+            core.log.error("cannot perform subrequest in HTTP version: ", version)
+        end
     end
+
     if api_ctx.disable_proxy_buffering then
         stash_ngx_ctx()
         return ngx.exec("@disable_proxy_buffering")
