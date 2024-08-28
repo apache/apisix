@@ -81,7 +81,8 @@ dependencies = {
     "lua-resty-ldap = 0.1.0-0",
     "lua-resty-t1k = 1.1.5",
     "brotli-ffi = 0.3-1",
-    "lua-ffi-zlib = 0.6-0"
+    "lua-ffi-zlib = 0.6-0",
+    "api7-lua-resty-aws == 2.0.1-1",
 }
 
 build = {
