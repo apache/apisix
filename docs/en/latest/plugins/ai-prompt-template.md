@@ -84,7 +84,7 @@ Now send a request:
 
 ```shell
 curl http://127.0.0.1:9080/v1/chat/completions -i -XPOST  -H 'Content-Type: application/json' -d '{
-  "template_name": "level of detail,
+  "template_name": "level of detail",
   "topic": "psychology",
   "level": "brief"
 }' -H "Authorization: Bearer <your token here>"
