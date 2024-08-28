@@ -29,8 +29,7 @@ description: This document contains information about the Apache APISIX ai-promp
 
 ## Description
 
-The `ai-prompt-template` plugin simplifies access to AI providers and models by predefining the request format
-using a template and allowing users to pass only the values for template variables.
+The `ai-prompt-decorator` plugin simplifies access to LLM providers, such as OpenAI and Anthropic, and their models by appending or prepending
 
 ## Plugin Attributes
 
