@@ -34,13 +34,13 @@ using a template and allowing users to pass only the values for template variabl
 
 ## Plugin Attributes
 
-| **Field**                             | **Type** | **Description**                                     | **Required** |
-| ------------------------------------- | -------- | --------------------------------------------------- | ------------ |
-| `templates`                           | Array    | An array of template objects                        | Yes          |
-| `templates.name`                      | String   | Name of the template.                               | Yes          |
-| `templates.template.model`            | String   | Model of the AI Model. Example: gpt-4, gpt-3.5      | Yes          |
-| `templates.template.messages.role`    | String   | Role of the message (`system`, `user`, `assistant`) | Yes          |
-| `templates.template.messages.content` | String   | Content of the message.                             | Yes          |
+| **Field**                             | **Required** | **Type** | **Description**                                     |
+| ------------------------------------- | ------------ | -------- | --------------------------------------------------- |
+| `templates`                           | Yes          | Array    | An array of template objects                        |
+| `templates.name`                      | Yes          | String   | Name of the template.                               |
+| `templates.template.model`            | Yes          | String   | Model of the AI Model. Example: gpt-4, gpt-3.5      |
+| `templates.template.messages.role`    | Yes          | String   | Role of the message (`system`, `user`, `assistant`) |
+| `templates.template.messages.content` | Yes          | String   | Content of the message.                             |
 
 ## Example usage
 
