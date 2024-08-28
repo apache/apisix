@@ -34,13 +34,13 @@ using a template, which only allows users to pass customized values into templat
 
 ## Plugin Attributes
 
-| **Field**                             | **Required** | **Type** | **Description**                                     |
-| ------------------------------------- | ------------ | -------- | --------------------------------------------------- |
-| `templates`                           | Yes          | Array    | An array of template objects                        |
-| `templates.name`                      | Yes          | String   | Name of the template.                               |
-| `templates.template.model`            | Yes          | String   | Model of the AI Model. Example: gpt-4, gpt-3.5      |
-| `templates.template.messages.role`    | Yes          | String   | Role of the message (`system`, `user`, `assistant`) |
-| `templates.template.messages.content` | Yes          | String   | Content of the message.                             |
+| **Field**                             | **Required** | **Type** | **Description**                                                                                                             |
+| ------------------------------------- | ------------ | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `templates`                           | Yes          | Array    | An array of template objects                                                                                                |
+| `templates.name`                      | Yes          | String   | Name of the template.                                                                                                       |
+| `templates.template.model`            | Yes          | String   | Model of the AI Model, for example `gpt-4` or `gpt-3.5`. See your LLM provider API documentation for more available models. |
+| `templates.template.messages.role`    | Yes          | String   | Role of the message (`system`, `user`, `assistant`)                                                                         |
+| `templates.template.messages.content` | Yes          | String   | Content of the message.                                                                                                     |
 
 ## Example usage
 
