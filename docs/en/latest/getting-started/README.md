@@ -37,6 +37,10 @@ curl -sL https://run.api7.ai/apisix/quickstart | sh
 
 The script should start two Docker containers, _apisix-quickstart_ and _etcd_. APISIX uses etcd to save and synchronize configurations. Both the etcd and the APISIX use [**host**](https://docs.docker.com/network/host/) Docker network mode. That is, the APISIX can be accessed from local.
 
+You can see that a number of ports are listened to by default, and the purpose of these default ports can be referenced:
+ [Port Reference](https://docs.api7.ai/apisix/networking/port-reference) 
+
+
 You will see the following message once APISIX is ready:
 
 ```text
