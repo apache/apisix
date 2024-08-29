@@ -106,9 +106,13 @@ Add the required fields to the plugin schema definition and write them to the co
 
 The `kafka-proxy` plugin [kafka-proxy.lua](https://github.com/apache/apisix/blob/master/apisix/plugins/kafka-proxy.lua).
 
-Add this plugin to the list of plugins in the APISIX configuration file.
+Add this plugin to [the existing list of plugins](https://github.com/apache/apisix/blob/master/apisix/cli/config.yaml.example) in the APISIX configuration file [`config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml). For instance:
 
-The plugins list [config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml).
+```yaml title="conf/config.yaml"
+plugins:         # see `conf/config.yaml.example` for an example
+  - ...          # add existing plugins
+  - kafka-proxy
+```
 
 #### Results
 

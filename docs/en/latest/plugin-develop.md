@@ -117,36 +117,36 @@ local _M = {
 
 Note: The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin. It's recommended to use priority 1 ~ 99 for your plugin unless you want it to run before some builtin plugins.
 
-In the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
+By default, most APISIX plugins are [enabled](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua):
 
-```yaml
-plugins:                          # plugin list
-  - limit-req
-  - limit-count
-  - limit-conn
-  - key-auth
-  - prometheus
-  - node-status
-  - jwt-auth
-  - zipkin
-  - ip-restriction
-  - grpc-transcode
-  - serverless-pre-function
-  - serverless-post-function
-  - openid-connect
-  - proxy-rewrite
-  - redirect
+```lua title="apisix/cli/config.lua"
+local _M = {
   ...
+  plugins = {
+    "real-ip",
+    "ai",
+    "client-control",
+    "proxy-control",
+    "request-id",
+    "zipkin",
+    "ext-plugin-pre-req",
+    "fault-injection",
+    "mocking",
+    "serverless-pre-function",
+    ...
+  },
+  ...
+}
 ```
 
 Note: the order of the plugins is not related to the order of execution.
 
-To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
+To enable your custom plugin, add the list of plugins into `conf/config.yaml` and append your plugin name. For instance:
 
 ```yaml
-plugins: # copied from config-default.yaml
-  ...
-  - your-plugin
+plugins:         # see `conf/config.yaml.example` for an example
+  - ...          # add existing plugins
+  - your-plugin  # add your custom plugin
 ```
 
 If your plugin has a new code directory of its own, and you need to redistribute it with the APISIX source code, you will need to modify the `Makefile` to create directory, such as:
