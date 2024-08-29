@@ -213,6 +213,7 @@ local _M = {
     "authz-keycloak",
     "proxy-cache",
     "body-transformer",
+    "ai-prompt-template",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
