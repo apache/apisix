@@ -37,15 +37,8 @@ curl -sL https://run.api7.ai/apisix/quickstart | sh
 
 The script should start two Docker containers, _apisix-quickstart_ and _etcd_. APISIX uses etcd to save and synchronize configurations. Both the etcd and the APISIX use [**host**](https://docs.docker.com/network/host/) Docker network mode. That is, the APISIX can be accessed from local.
 
-This table contains the main APISIX default ports and their uses. Each row clearly lists the port number and its corresponding function.
-|**PORT**|**Purpose**|
-| ----- | ----- |
-|9080|HTTP Request|
-|9443|HTTPS Request|
-|9180|Admin API|
-|9091|Prometheus metrics export|
-|9100|TCP traffic|
-|9200|UDP traffic|
+You can see that a number of ports are listened to by default, and the purpose of these default ports can be referenced:
+ [Port Reference](https://docs.api7.ai/apisix/networking/port-reference) 
 
 
 You will see the following message once APISIX is ready:
