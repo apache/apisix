@@ -80,8 +80,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   }'
 ```
 
-The upstream node can be any arbitrary value because it won't be contacted.
-
 Now send a request:
 
 ```shell
