@@ -14,10 +14,13 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core                  = require("apisix.core")
-local aws                   = require("resty.aws")
-local aws_instance          = aws()
-local http                  = require("resty.http")
+local core = require("apisix.core")
+local aws = require("resty.aws")
+local aws_instance = aws()
+local http = require("resty.http")
+local next = next
+local pairs = pairs
+local unpack = unpack
 
 local aws_comprehend_schema = {
     type = "object",
@@ -33,7 +36,7 @@ local aws_comprehend_schema = {
     required = { "access_key_id", "secret_access_key", "region", }
 }
 
-local schema                = {
+local schema = {
     type = "object",
     properties = {
         provider = {
@@ -49,11 +52,11 @@ local schema                = {
             patternProperties = {
                 -- luacheck: push max code line length 300
                 ["^(PROFANITY|HATE_SPEECH|INSULT|HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"] = {
-                    type = "number",
+                -- luacheck: pop
+                type = "number",
                     minimum = 0,
                     maximum = 1
                 }
-                -- luacheck: pop
             },
             additionalProperties = false
         },
