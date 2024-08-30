@@ -476,8 +476,9 @@ plugins:                           # plugin list (sorted by priority)
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
-  - ai-prompt-template             # priority: 1060
-  - content-moderation             # priority: 1062 TODO: compare priority with other ai plugins
+  - ai-prompt-template             # priority: 1071
+  - ai-prompt-decorator            # priority: 1070
+  - content-moderation             # priority: 1075 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
