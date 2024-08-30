@@ -1,0 +1,224 @@
+{
+  "good_request": {
+    "ResultList": [
+      {
+        "Toxicity": 0.02150000333786,
+        "Labels": [
+          {
+            "Name": "PROFANITY",
+            "Score": 0.00589999556541
+          },
+          {
+            "Name": "HATE_SPEECH",
+            "Score": 0.01729999780655
+          },
+          {
+            "Name": "INSULT",
+            "Score": 0.00519999861717
+          },
+          {
+            "Name": "GRAPHIC",
+            "Score": 0.00520000338554
+          },
+          {
+            "Name": "HARASSMENT_OR_ABUSE",
+            "Score": 0.00090001106262
+          },
+          {
+            "Name": "SEXUAL",
+            "Score": 0.00810000061989
+          },
+          {
+            "Name": "VIOLENCE_OR_THREAT",
+            "Score": 0.00570000290871
+          }
+        ]
+      }
+    ]
+  },
+  "profane": {
+    "ResultList": [
+      {
+        "Toxicity": 0.62150000333786,
+        "Labels": [
+          {
+            "Name": "PROFANITY",
+            "Score": 0.55589999556541
+          },
+          {
+            "Name": "HATE_SPEECH",
+            "Score": 0.21729999780655
+          },
+          {
+            "Name": "INSULT",
+            "Score": 0.25519999861717
+          },
+          {
+            "Name": "GRAPHIC",
+            "Score": 0.12520000338554
+          },
+          {
+            "Name": "HARASSMENT_OR_ABUSE",
+            "Score": 0.27090001106262
+          },
+          {
+            "Name": "SEXUAL",
+            "Score": 0.44810000061989
+          },
+          {
+            "Name": "VIOLENCE_OR_THREAT",
+            "Score": 0.27570000290871
+          }
+        ]
+      }
+    ]
+  },
+  "profane_but_not_toxic": {
+    "ResultList": [
+      {
+        "Toxicity": 0.12150000333786,
+        "Labels": [
+          {
+            "Name": "PROFANITY",
+            "Score": 0.55589999556541
+          },
+          {
+            "Name": "HATE_SPEECH",
+            "Score": 0.21729999780655
+          },
+          {
+            "Name": "INSULT",
+            "Score": 0.25519999861717
+          },
+          {
+            "Name": "GRAPHIC",
+            "Score": 0.12520000338554
+          },
+          {
+            "Name": "HARASSMENT_OR_ABUSE",
+            "Score": 0.27090001106262
+          },
+          {
+            "Name": "SEXUAL",
+            "Score": 0.44810000061989
+          },
+          {
+            "Name": "VIOLENCE_OR_THREAT",
+            "Score": 0.27570000290871
+          }
+        ]
+      }
+    ]
+  },
+  "very_profane": {
+    "ResultList": [
+      {
+        "Toxicity": 0.72150000333786,
+        "Labels": [
+          {
+            "Name": "PROFANITY",
+            "Score": 0.85589999556541
+          },
+          {
+            "Name": "HATE_SPEECH",
+            "Score": 0.21729999780655
+          },
+          {
+            "Name": "INSULT",
+            "Score": 0.25519999861717
+          },
+          {
+            "Name": "GRAPHIC",
+            "Score": 0.12520000338554
+          },
+          {
+            "Name": "HARASSMENT_OR_ABUSE",
+            "Score": 0.27090001106262
+          },
+          {
+            "Name": "SEXUAL",
+            "Score": 0.94810000061989
+          },
+          {
+            "Name": "VIOLENCE_OR_THREAT",
+            "Score": 0.27570000290871
+          }
+        ]
+      }
+    ]
+  },
+  "toxic": {
+    "ResultList": [
+      {
+        "Toxicity": 0.72150000333786,
+        "Labels": [
+          {
+            "Name": "PROFANITY",
+            "Score": 0.25589999556541
+          },
+          {
+            "Name": "HATE_SPEECH",
+            "Score": 0.21729999780655
+          },
+          {
+            "Name": "INSULT",
+            "Score": 0.75519999861717
+          },
+          {
+            "Name": "GRAPHIC",
+            "Score": 0.12520000338554
+          },
+          {
+            "Name": "HARASSMENT_OR_ABUSE",
+            "Score": 0.27090001106262
+          },
+          {
+            "Name": "SEXUAL",
+            "Score": 0.64810000061989
+          },
+          {
+            "Name": "VIOLENCE_OR_THREAT",
+            "Score": 0.27570000290871
+          }
+        ]
+      }
+    ]
+  },
+  "very_toxic": {
+    "ResultList": [
+      {
+        "Toxicity": 0.92150000333786,
+        "Labels": [
+          {
+            "Name": "PROFANITY",
+            "Score": 0.25589999556541
+          },
+          {
+            "Name": "HATE_SPEECH",
+            "Score": 0.21729999780655
+          },
+          {
+            "Name": "INSULT",
+            "Score": 0.25519999861717
+          },
+          {
+            "Name": "GRAPHIC",
+            "Score": 0.12520000338554
+          },
+          {
+            "Name": "HARASSMENT_OR_ABUSE",
+            "Score": 0.27090001106262
+          },
+          {
+            "Name": "SEXUAL",
+            "Score": 0.44810000061989
+          },
+          {
+            "Name": "VIOLENCE_OR_THREAT",
+            "Score": 0.27570000290871
+          }
+        ]
+      }
+    ]
+  }
+}

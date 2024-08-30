@@ -214,6 +214,7 @@ local _M = {
     "proxy-cache",
     "body-transformer",
     "ai-prompt-template",
+    "content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
