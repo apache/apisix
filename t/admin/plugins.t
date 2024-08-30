@@ -93,6 +93,8 @@ opa
 authz-keycloak
 proxy-cache
 body-transformer
+ai-prompt-template
+ai-prompt-decorator
 proxy-mirror
 proxy-rewrite
 workflow

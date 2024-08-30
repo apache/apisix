@@ -109,29 +109,37 @@ local _M = {
 
 注：新插件的优先级（priority 属性）不能与现有插件的优先级相同，您可以使用 [control API](./control-api.md#get-v1schema) 的 `/v1/schema` 方法查看所有插件的优先级。另外，同一个阶段里面，优先级 ( priority ) 值大的插件，会优先执行，比如 `example-plugin` 的优先级是 0，`ip-restriction` 的优先级是 3000，所以在每个阶段，会先执行 `ip-restriction` 插件，再去执行 `example-plugin` 插件。这里的“阶段”的定义，参见后续的 [确定执行阶段](#确定执行阶段) 这一节。对于你的插件，建议采用 1 到 99 之间的优先级。
 
-在 __conf/config-default.yaml__ 配置文件中，列出了启用的插件（都是以插件名指定的）：
+默认情况下，大多数 APISIX 插件都是[启用](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)的状态：
 
-```yaml
-plugins:                          # plugin list
-  - limit-req
-  - limit-count
-  - limit-conn
-  - key-auth
-  - prometheus
-  - node-status
-  - jwt-auth
-  - zipkin
-  - ip-restriction
-  - grpc-transcode
-  - serverless-pre-function
-  - serverless-post-function
-  - openid-connect
-  - proxy-rewrite
-  - redirect
+```lua title="apisix/cli/config.lua"
+local _M = {
   ...
+  plugins = {
+    "real-ip",
+    "ai",
+    "client-control",
+    "proxy-control",
+    "request-id",
+    "zipkin",
+    "ext-plugin-pre-req",
+    "fault-injection",
+    "mocking",
+    "serverless-pre-function",
+    ...
+  },
+  ...
+}
 ```
 
 注：先后顺序与执行顺序无关。
+
+要启用您的自定义插件，请将插件列表添加到 `conf/config.yaml` 并附加您的插件名称。例如：
+
+```yaml
+plugins:         # 请参阅 `conf/config.yaml.example` 示例
+  - ...          # 添加现有插件
+  - your-plugin  # 添加您的自定义插件
+```
 
 特别需要注意的是，如果你的插件有新建自己的代码目录，那么就需要修改 Makefile 文件，新增创建文件夹的操作，比如：
 
