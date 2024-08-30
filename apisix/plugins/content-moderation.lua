@@ -74,7 +74,7 @@ local schema                = {
 
 local _M = {
     version  = 0.1,
-    priority = 1060, -- TODO: change
+    priority = 1075, -- TODO: might change
     name     = "content-moderation",
     schema   = schema,
 }
