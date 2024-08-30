@@ -47,11 +47,13 @@ local schema                = {
         moderation_categories = {
             type = "object",
             patternProperties = {
+                -- luacheck: push max code line length 300
                 ["^(PROFANITY|HATE_SPEECH|INSULT|HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"] = {
                     type = "number",
                     minimum = 0,
                     maximum = 1
                 }
+                -- luacheck: pop
             },
             additionalProperties = false
         },
