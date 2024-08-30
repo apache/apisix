@@ -40,7 +40,7 @@ The `content-moderation` plugin processes the request body to check for toxicity
 | provider.aws_comprehend.region            | Yes          | String   | AWS region                                                                                                                               |
 | provider.aws_comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                     |
 | moderation_categories                     | No           | Object   | Configuration for moderation categories. Must be one of: PROFANITY, HATE_SPEECH, INSULT, HARASSMENT_OR_ABUSE, SEXUAL, VIOLENCE_OR_THREAT |
-| toxicity_level                            | No           | Number   | Threshold for overall toxicity detection. Range: 0 - 1. Default: 0.5                                                                             |
+| toxicity_level                            | No           | Number   | Threshold for overall toxicity detection. Range: 0 - 1. Default: 0.5                                                                     |
 
 ## Example usage
 
@@ -96,6 +96,7 @@ request body exceeds toxicity threshold
 ```
 
 Send a request with normal request body:
+
 ```shell
 curl http://127.0.0.1:9080/post -i -XPOST  -H 'Content-Type: application/json' -d '{
   "info": "APISIX is wonderful"
@@ -135,6 +136,7 @@ Server: APISIX/3.10.0
   "url": "http://127.0.0.1/post"
 }
 ```
+
 You can also configure filters on other moderation categories like so:
 
 ```shell
