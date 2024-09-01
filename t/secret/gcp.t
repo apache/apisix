@@ -239,11 +239,14 @@ kEJQcmfVew5mFXyxuEn3zA==
 
             local secret = require("apisix.secret")
             local value = secret.fetch_by_uri("$secret://gcp/mysecret/jack/key")
-            ngx.say(value)
+            if value then
+                ngx.say("secret value: ", value)
+            end
+            ngx.say("all done")
         }
     }
 --- response_body
-nil
+all done
 
 
 

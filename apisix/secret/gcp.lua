@@ -166,7 +166,7 @@ local function make_request_to_gcp(conf, secrets_id)
     return secret
 end
 
-local function get(conf, key)
+function _M.get(conf, key)
     core.log.info("fetching data from gcp for key: ", key)
 
     local idx = find(key, '/')
@@ -197,6 +197,6 @@ local function get(conf, key)
     return data[sub_key]
 end
 
-_M.get = get
+
 
 return _M
