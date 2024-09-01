@@ -1,5 +1,5 @@
 {
-  "version": "3.9.0",
+  "version": "3.10.0",
   "sidebar": [
     {
       "type": "category",
@@ -87,10 +87,12 @@
           "type": "category",
           "label": "Transformation",
           "items": [
+            "plugins/ai-prompt-decorator",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
+            "plugins/ai-prompt-template",
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",

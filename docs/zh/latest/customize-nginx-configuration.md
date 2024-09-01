@@ -21,11 +21,11 @@ title: 自定义 Nginx 配置
 #
 -->
 
-APISIX 会通过 `apisix/cli/ngx_tpl.lua` 这个模板和 `conf/config-default.yaml` 加 `conf/config.yaml` 的配置生成 Nginx 配置文件。
+APISIX 使用的 Nginx 配置是通过模板文件 `apisix/cli/ngx_tpl.lua` 以及 `apisix/cli/config.lua` 和`conf/config.yaml` 中的参数生成的。
 
 在执行完 `./bin/apisix start`，你可以在 `conf/nginx.conf` 看到生成的 Nginx 配置文件。
 
-在自定义 Nginx 配置文件之前，烦请仔细阅读 `conf/config-default.yaml`。你可以在 `conf/config.yaml` 里面覆盖掉默认值。举个例子，你可以通过 `xxx_snippet` 之类的配置，在 `conf/nginx.conf` 里面注入你的自定义配置：
+如果你需要自定义 Nginx 配置，请阅读 `conf/config.default.example` 中的 `nginx_config`。你可以在 `conf/config.yaml` 中覆盖默认值。例如，你可以在 `conf/nginx.conf` 中通过配置 `xxx_snippet` 条目注入一些代码片段：
 
 ```yaml
 ...
