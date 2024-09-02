@@ -16,8 +16,10 @@
 --
 local core = require("apisix.core")
 local aws = require("resty.aws")
-local aws_instance = aws()
 local http = require("resty.http")
+local fetch_secrets = require("apisix.secret").fetch_secrets
+
+local aws_instance = aws()
 local next = next
 local pairs = pairs
 local unpack = unpack
@@ -88,6 +90,11 @@ function _M.check_schema(conf)
 end
 
 function _M.rewrite(conf, ctx)
+    conf = fetch_secrets(conf, true, conf, "")
+    if not conf then
+        return 500, "failed to retrieve secrets from conf"
+    end
+
     local body, err = core.request.get_body_table()
     if not body then
         return 400, err
