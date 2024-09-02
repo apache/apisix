@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    $ENV{AI_PROXY_TEST_SCHEME} = "http";
-}
 
 use t::APISIX 'no_plan';
 
@@ -25,11 +22,6 @@ repeat_each(1);
 no_long_string();
 no_root_location();
 
-
-# my $resp_file = 't/assets/content-moderation-responses.json';
-# open(my $fh, '<', $resp_file) or die "Could not open file '$resp_file' $!";
-# my $resp = do { local $/; <$fh> };
-# close($fh);
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -40,7 +32,6 @@ add_block_preprocessor(sub {
 
     my $http_config = $block->http_config // <<_EOC_;
         server {
-            server_name openai;
             listen 2668;
 
             default_type 'application/json';
