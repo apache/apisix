@@ -68,12 +68,12 @@ local schema = {
             maximum = 1,
             default = 0.5
         },
-        reject_requests = {
-            type = "boolean",
-            default = true,
+        type = {
+            type = "string",
+            enum = { "openai" },
         }
     },
-    required = { "provider" },
+    required = { "provider", "type" },
 }
 
 
@@ -127,12 +127,10 @@ function _M.rewrite(conf, ctx)
         port = port,
     })
 
-    local text_segments = {}
-    for _, msg in ipairs(msgs) do
-        core.table.insert_tail(text_segments, {
-            Text = msg.content
-        })
-    end
+    local ai_module = require("apisix.plugins.ai." .. conf.type)
+    local create_request_text_segments = ai_module.create_request_text_segments
+
+    local text_segments = create_request_text_segments(msgs)
     local res, err = comprehend:detectToxicContent({
         LanguageCode = "en",
         TextSegments = text_segments,

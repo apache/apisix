@@ -109,7 +109,8 @@ __DATA__
                                     "region": "us-east-1",
                                     "endpoint": "http://localhost:2668"
                                 }
-                            }
+                            },
+                            "type": "openai"
                         }
                     },
                     "upstream": {
@@ -171,7 +172,8 @@ POST /echo
                             },
                             "moderation_categories": {
                                 "PROFANITY": 0.5
-                            }
+                            },
+                            "type": "openai"
                         }
                     },
                     "upstream": {
@@ -243,7 +245,8 @@ POST /echo
                             },
                             "moderation_categories": {
                                 "PROFANITY": 0.7
-                            }
+                            },
+                            "type": "openai"
                         }
                     },
                     "upstream": {

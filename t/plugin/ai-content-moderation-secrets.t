@@ -122,7 +122,8 @@ Success! Data written to: kv/apisix/foo
                                     "region": "us-east-1",
                                     "endpoint": "http://localhost:2668"
                                 }
-                            }
+                            },
+                            "type": "openai"
                         }
                     },
                     "upstream": {
@@ -176,7 +177,8 @@ POST /echo
                                     "region": "us-east-1",
                                     "endpoint": "http://localhost:2668"
                                 }
-                            }
+                            },
+                            "type": "openai"
                         }
                     },
                     "upstream": {
