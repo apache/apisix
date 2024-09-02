@@ -101,7 +101,7 @@ __DATA__
                 [[{
                     "uri": "/echo",
                     "plugins": {
-                        "content-moderation": {
+                        "ai-content-moderation": {
                             "provider": {
                                 "aws_comprehend": {
                                     "access_key_id": "access",
@@ -160,7 +160,7 @@ POST /echo
                 [[{
                     "uri": "/echo",
                     "plugins": {
-                        "content-moderation": {
+                        "ai-content-moderation": {
                             "provider": {
                                 "aws_comprehend": {
                                     "access_key_id": "access",
@@ -232,7 +232,7 @@ POST /echo
                 [[{
                     "uri": "/echo",
                     "plugins": {
-                        "content-moderation": {
+                        "ai-content-moderation": {
                             "provider": {
                                 "aws_comprehend": {
                                     "access_key_id": "access",

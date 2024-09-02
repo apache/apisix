@@ -81,7 +81,7 @@
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
             "plugins/ocsp-stapling",
-            "plugins/content-moderation"
+            "plugins/ai-content-moderation"
           ]
         },
         {

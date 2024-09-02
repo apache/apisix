@@ -1,11 +1,11 @@
 ---
-title: content-moderation
+title: ai-content-moderation
 keywords:
   - Apache APISIX
   - API Gateway
   - Plugin
-  - content-moderation
-description: This document contains information about the Apache APISIX content-moderation Plugin.
+  - ai-content-moderation
+description: This document contains information about the Apache APISIX ai-content-moderation Plugin.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX content-
 
 ## Description
 
-The `content-moderation` plugin processes the request body to check for toxicity and rejects the request if it exceeds the configured threshold.
+The `ai-content-moderation` plugin processes the request body to check for toxicity and rejects the request if it exceeds the configured threshold.
 
 ## Plugin Attributes
 
@@ -44,7 +44,7 @@ The `content-moderation` plugin processes the request body to check for toxicity
 
 ## Example usage
 
-Create a route with the `content-moderation` plugin like so:
+Create a route with the `ai-content-moderation` plugin like so:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -52,7 +52,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
     "uri": "/post",
     "plugins": {
-      "content-moderation": {
+      "ai-content-moderation": {
         "provider": {
           "aws_comprehend": {
             "access_key_id": "access",
@@ -143,7 +143,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
     "uri": "/post",
     "plugins": {
-      "content-moderation": {
+      "ai-content-moderation": {
         "provider": {
           "aws_comprehend": {
             "access_key_id": "access",
@@ -176,7 +176,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
     "uri": "/post",
     "plugins": {
-      "content-moderation": {
+      "ai-content-moderation": {
         "provider": {
           "aws_comprehend": {
             "access_key_id": "access",
