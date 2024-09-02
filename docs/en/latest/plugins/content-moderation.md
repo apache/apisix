@@ -98,9 +98,7 @@ request body exceeds toxicity threshold
 Send a request with normal request body:
 
 ```shell
-curl http://127.0.0.1:9080/post -i -XPOST  -H 'Content-Type: application/json' -d '{
-  "info": "APISIX is wonderful"
-}'
+curl http://127.0.0.1:9080/post -i -XPOST  -H 'Content-Type: application/json' -d 'APISIX is wonderful'
 ```
 
 This request will be proxied normally to the upstream.
@@ -120,7 +118,7 @@ Server: APISIX/3.10.0
   "data": "",
   "files": {},
   "form": {
-    "do you know what is alpha murder method? I will teach you with care": ""
+    "APISIX is wonderful": ""
   },
   "headers": {
     "Accept": "*/*",
