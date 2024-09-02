@@ -88,9 +88,14 @@ function _M.check_schema(conf)
 end
 
 function _M.rewrite(conf, ctx)
-    local body = core.request.get_body()
+    local body, err = core.request.get_body_table()
     if not body then
-        return
+        return 400, err
+    end
+
+    local msgs = body.messages
+    if not msgs or type(msgs) ~= "table" or #msgs < 1 then
+        return 400, "messages not found in request body"
     end
 
     local provider = conf.provider[next(conf.provider)]
@@ -115,13 +120,15 @@ function _M.rewrite(conf, ctx)
         port = port,
     })
 
+    local text_segments = {}
+    for _, msg in ipairs(msgs) do
+        core.table.insert_tail(text_segments, {
+            Text = msg.content
+        })
+    end
     local res, err = comprehend:detectToxicContent({
         LanguageCode = "en",
-        TextSegments = {
-            {
-                Text = body
-            }
-        },
+        TextSegments = text_segments,
     })
 
     if not res then
@@ -129,26 +136,27 @@ function _M.rewrite(conf, ctx)
         return 500, err
     end
 
-    local result = res.body and res.body.ResultList and res.body.ResultList[1]
-    if not result then
-        return 500, "failed to get moderation result from response"
+    local results = res.body and res.body.ResultList
+    if not results or type(results) ~= "table" or #results < 1 then
+        return 500, "failed to get moderation results from response"
     end
 
-
-    if conf.moderation_categories then
-        for _, item in pairs(result.Labels) do
-            if not conf.moderation_categories[item.Name] then
-                goto continue
+    for _, result in ipairs(results) do
+        if conf.moderation_categories then
+            for _, item in pairs(result.Labels) do
+                if not conf.moderation_categories[item.Name] then
+                    goto continue
+                end
+                if item.Score > conf.moderation_categories[item.Name] then
+                    return 400, "request body exceeds " .. item.Name .. " threshold"
+                end
+                ::continue::
             end
-            if item.Score > conf.moderation_categories[item.Name] then
-                return 400, "request body exceeds " .. item.Name .. " threshold"
-            end
-            ::continue::
         end
-    end
 
-    if result.Toxicity > conf.toxicity_level then
-        return 400, "request body exceeds toxicity threshold"
+        if result.Toxicity > conf.toxicity_level then
+            return 400, "request body exceeds toxicity threshold"
+        end
     end
 end
 
