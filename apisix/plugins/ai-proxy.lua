@@ -42,35 +42,7 @@ end
 local CONTENT_TYPE_JSON = "application/json"
 
 
-function _M.access(conf, ctx)
-    local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
-    if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
-        return 400, "unsupported content-type: " .. ct
-    end
-
-    local request_table, err = core.request.get_request_body_table()
-    if not request_table then
-        return 400, err
-    end
-
-    local ok, err = core.schema.check(schema.chat_request_schema, request_table)
-    if not ok then
-        return 400, "request format doesn't match schema: " .. err
-    end
-
-    if conf.model.options and conf.model.options.stream then
-        request_table.stream = true
-        ngx.ctx.disable_proxy_buffering = true
-    end
-
-    if conf.model.name then
-        request_table.model = conf.model.name
-    end
-    ctx.request_table = request_table
-end
-
-
-function _M.delayed_access(conf, ctx)
+local function send_request(conf, ctx)
     local request_table = ctx.request_table
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
     local res, err, httpc = ai_driver.request(conf, request_table, ctx)
@@ -79,6 +51,17 @@ function _M.delayed_access(conf, ctx)
         return 500
     end
 
+    if conf.passthrough then
+        -- do we need a buffer to cache entire LLM response?
+        -- i think so, we can do something like the following, just read, no return
+        local res_body, err = res:read_body()
+        if not res_body then
+            core.log.error("failed to read response body: ", err)
+            return 500
+        end
+        ngx_req.set_body_data(res_body)
+        return
+    end
 
     if core.table.try_read_attr(conf, "model", "options", "stream") then
         local chunk, err
@@ -103,6 +86,42 @@ function _M.delayed_access(conf, ctx)
         end
         return res.status, res_body
     end
+end
+
+
+function _M.access(conf, ctx)
+    local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
+    if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
+        return 400, "unsupported content-type: " .. ct
+    end
+
+    local request_table, err = core.request.get_request_body_table()
+    if not request_table then
+        return 400, err
+    end
+
+    local ok, err = core.schema.check(schema.chat_request_schema, request_table)
+    if not ok then
+        return 400, "request format doesn't match schema: " .. err
+    end
+
+    if conf.model.name then
+        request_table.model = conf.model.name
+    end
+    ctx.request_table = request_table
+
+    if conf.model.options and conf.model.options.stream then
+        request_table.stream = true
+        ngx.ctx.disable_proxy_buffering = true
+        return
+    end
+
+    return send_request(conf, ctx)
+end
+
+
+function _M.delayed_access(conf, ctx)
+    return send_request(conf, ctx)
 end
 
 return _M

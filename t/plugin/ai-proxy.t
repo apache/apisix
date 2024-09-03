@@ -49,6 +49,26 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
+            location /anything {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+
+                    if ngx.req.get_method() ~= "POST" then
+                        ngx.status = 400
+                        ngx.say("Unsupported request method: ", ngx.req.get_method())
+                    end
+                    ngx.req.read_body()
+                    local body = ngx.req.get_body_data()
+
+                    if body ~= "SELECT * FROM STUDENTS" then
+                        ngx.status = 503
+                        ngx.say("passthrough doesn't work")
+                        return
+                    end
+                    ngx.say('{"foo", "bar"}')
+                }
+            }
+
             location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
@@ -88,18 +108,25 @@ add_block_preprocessor(sub {
                         local esc = body:gsub('"\\\""', '\"')
                         body, err = json.decode(esc)
 
-                        if body.messages and #body.messages > 1 then
-                            ngx.status = 200
-                            ngx.say([[$resp]])
-                            return
-                        else
+                        if not body.messages or #body.messages < 1 then
                             ngx.status = 400
                             ngx.say([[{ "error": "bad request"}]])
                             return
                         end
-                    else
-                        ngx.status = 401
+
+                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
+                            ngx.print("SELECT * FROM STUDENTS")
+                            return
+                        end
+
+                        ngx.status = 200
+                        ngx.say([[$resp]])
+                        return
                     end
+
+
+                    ngx.status = 503
+                    ngx.say("reached the end of the test suite")
                 }
             }
 
@@ -304,7 +331,6 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-
 === TEST 7: send request with empty body
 --- request
 POST /anything
@@ -505,3 +531,68 @@ options_works
     }
 --- response_body_chomp
 path override works
+
+
+
+=== TEST 14: set route with right auth header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "route_type": "llm/chat",
+                            "auth": {
+                                "type": "header",
+                                "name": "Authorization",
+                                "value": "Bearer token"
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "gpt-35-turbo-instruct",
+                                "options": {
+                                    "max_tokens": 512,
+                                    "temperature": 1.0
+                                }
+                            },
+                            "override": {
+                                "host": "localhost",
+                                "port": 6724
+                            },
+                            "ssl_verify": false,
+                            "passthrough": true
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:6724": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 15: send request with wrong method should work
+--- request
+POST /anything
+{ "messages": [ { "role": "user", "content": "write an SQL query to get all rows from student table" } ] }
+--- more_headers
+Authorization: Bearer token
+--- error_code: 200
+--- response_body
+{"foo", "bar"}
