@@ -52,8 +52,6 @@ local function send_request(conf, ctx)
     end
 
     if conf.passthrough then
-        -- do we need a buffer to cache entire LLM response?
-        -- i think so, we can do something like the following, just read, no return
         local res_body, err = res:read_body()
         if not res_body then
             core.log.error("failed to read response body: ", err)
@@ -64,19 +62,20 @@ local function send_request(conf, ctx)
     end
 
     if core.table.try_read_attr(conf, "model", "options", "stream") then
-        local chunk, err
         local content_length = 0
         while true do
-            chunk, err = res.body_reader() -- will read chunk by chunk
+            local chunk, err = res.body_reader() -- will read chunk by chunk
             if err then
                 core.log.error("failed to read response chunk: ", err)
-                return 500
+                return
             end
-            content_length = content_length + (#chunk or 0)
+            if not chunk then
+                return
+            end
+            content_length = content_length + #chunk
             ngx.print(chunk)
             ngx.flush(true)
         end
-        core.response.set_header("Content-Length", content_length)
         httpc:set_keepalive(10000, 100)
     else
         local res_body, err = res:read_body()
