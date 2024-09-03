@@ -63,9 +63,7 @@ function _M.access(conf, ctx)
 
     if conf.model.options and conf.model.options.stream then
         request_table.stream = true
-        ctx.disable_proxy_buffering = true
-    else
-        ctx.subrequest = true
+        ngx.ctx.disable_proxy_buffering = true
     end
 
     if conf.model.name then
