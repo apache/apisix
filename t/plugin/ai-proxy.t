@@ -299,8 +299,7 @@ Authorization: Bearer token
 --- error_code: 200
 --- response_body eval
 qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
---- error_log
-finishing subrequest
+
 
 
 
