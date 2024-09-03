@@ -17,6 +17,7 @@
 local _M = {}
 
 local core = require("apisix.core")
+local http = require("resty.http")
 local test_scheme = os.getenv("AI_PROXY_TEST_SCHEME")
 local upstream = require("apisix.upstream")
 local ngx = ngx
@@ -30,38 +31,41 @@ local path_mapper = {
     ["llm/chat"] = "/v1/chat/completions",
 }
 
+function _M.request(conf, request_table, ctx)
+    local httpc, err = http.new()
+    if not httpc then
+        return nil, "failed to create http client to send request to LLM server: " .. err
+    end
+    httpc:set_timeout(conf.timeout)
 
-function _M.configure_request(conf, request_table, ctx)
-    local ups_host = DEFAULT_HOST
-    if conf.override and conf.override.host and conf.override.host ~= "" then
-        ups_host = conf.override.host
-    end
-    local ups_port = DEFAULT_PORT
-    if conf.override and conf.override.port and conf.override.host ~= "" then
-        ups_port = conf.override.port
-    end
-    local upstream_addr = ups_host .. ":" .. ups_port
-    core.log.info("modified upstream address: ", upstream_addr)
-    local upstream_node = {
-        nodes = {
-            [upstream_addr] = 1
-        },
-        pass_host = "node",
+    local custom_host = core.table.try_read_attr(conf, "override", "host")
+    local custom_port = core.table.try_read_attr(conf, "override", "port")
+
+    local ok, err = httpc:connect({
         scheme = test_scheme or "https",
-        vid = "openai",
-    }
-    upstream.set_upstream(upstream_node, ctx)
+        host = custom_host or DEFAULT_HOST,
+        port = custom_port or DEFAULT_PORT,
+        ssl_verify = conf.ssl_verify,
+        ssl_server_name = custom_host or DEFAULT_HOST,
+        pool_size = conf.keepalive and conf.keepalive_pool,
+    })
 
-    local ups_path = (conf.override and conf.override.path)
-                        or path_mapper[conf.route_type]
-    ngx.var.upstream_uri = ups_path
-    ngx.req.set_method(ngx.HTTP_POST)
+    if not ok then
+        return nil, "failed to connect to LLM server: " .. err
+    end
+
+    local params = {
+        method = "POST",
+        headers = {
+            ["Content-Type"] = "application/json",
+        },
+        keepalive = conf.keepalive,
+        ssl_verify = conf.ssl_verify,
+        path = "/v1/chat/completions",
+    }
+
     if conf.auth.type == "header" then
-        core.request.set_header(ctx, conf.auth.name, conf.auth.value)
-    else
-        local args = core.request.get_uri_args(ctx)
-        args[conf.auth.name] = conf.auth.value
-        core.request.set_uri_args(ctx, args)
+        params.headers[conf.auth.name] = conf.auth.value
     end
 
     if conf.model.options then
@@ -69,7 +73,15 @@ function _M.configure_request(conf, request_table, ctx)
             request_table[opt] = val
         end
     end
-    return true
+    params.body = core.json.encode(request_table)
+
+    local res, err = httpc:request(params)
+    if not res then
+        return 500, "failed to send request to LLM server: " .. err
+    end
+
+    -- TOOD: keepalive maintainance
+    return res, nil, httpc
 end
 
 return _M

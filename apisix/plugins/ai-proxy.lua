@@ -43,9 +43,6 @@ local CONTENT_TYPE_JSON = "application/json"
 
 
 function _M.access(conf, ctx)
-    local route_type = conf.route_type
-    ctx.ai_proxy = {}
-
     local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
     if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
         return 400, "unsupported content-type: " .. ct
@@ -69,22 +66,42 @@ function _M.access(conf, ctx)
     if conf.model.name then
         request_table.model = conf.model.name
     end
+    ctx.request_table = request_table
+end
 
+
+function _M.delayed_access(conf, ctx)
+    local request_table = ctx.request_table
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
-    local ok, err = ai_driver.configure_request(conf, request_table, ctx)
-    if not ok then
-        core.log.error("failed to configure request for AI service: ", err)
+    local res, err, httpc = ai_driver.request(conf, request_table, ctx)
+    if not res then
+        core.log.error("failed to send request to AI service: ", err)
         return 500
     end
 
-    if route_type ~= "passthrough" then
-        local final_body, err = core.json.encode(request_table)
-        core.log.info("final parsed body: ", final_body)
-        if not final_body then
-            core.log.error("failed to encode request body to JSON: ", err)
+
+    if core.table.try_read_attr(conf, "model", "options", "stream") then
+        local chunk, err
+        local content_length = 0
+        while true do
+            chunk, err = res.body_reader() -- will read chunk by chunk
+            if err then
+                core.log.error("failed to read response chunk: ", err)
+                return 500
+            end
+            content_length = content_length + (#chunk or 0)
+            ngx.print(chunk)
+            ngx.flush(true)
+        end
+        core.response.set_header("Content-Length", content_length)
+        httpc:set_keepalive(10000, 100)
+    else
+        local res_body, err = res:read_body()
+        if not res_body then
+            core.log.error("failed to read response body: ", err)
             return 500
         end
-        ngx_req.set_body_data(final_body)
+        return res.status, res_body
     end
 end
 

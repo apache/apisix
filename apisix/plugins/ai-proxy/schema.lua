@@ -75,19 +75,6 @@ local model_options_schema = {
             maximum = 1,
 
         },
-        upstream_host = {
-            type = "string",
-            description = "To be specified to override the host of the AI provider",
-        },
-        upstream_port = {
-            type = "integer",
-            description = "To be specified to override the AI provider port",
-
-        },
-        upstream_path = {
-            type = "string",
-            description = "To be specified to override the URL to the AI provider endpoints",
-        },
         stream = {
             description = "Stream response by SSE",
             type = "boolean",
@@ -140,6 +127,18 @@ _M.plugin_schema = {
         },
         auth = auth_schema,
         model = model_schema,
+        passthrough = { type = "boolean", default = false },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 60000,
+            default = 3000,
+            description = "timeout in milliseconds",
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
+        keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        ssl_verify = {type = "boolean", default = true },
     },
     required = {"route_type", "model", "auth"}
 }

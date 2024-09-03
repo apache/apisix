@@ -733,6 +733,11 @@ end
 
 function _M.disable_proxy_buffering_access_phase()
     ngx.ctx = fetch_ctx()
+    local api_ctx = ngx.ctx.api_ctx
+    local plugins = plugin.filter(api_ctx, api_ctx.matched_route)
+
+    -- plugins to be run after proxy_buffering is disabled
+    plugin.run_plugin("delayed_access", plugins, api_ctx)
 end
 
 

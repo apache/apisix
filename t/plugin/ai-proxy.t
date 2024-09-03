@@ -206,7 +206,8 @@ qr/.*provider: some-unique is not supported.*/
                             "override": {
                                 "host": "localhost",
                                 "port": 6724
-                            }
+                            },
+                            "ssl_verify": false
                         }
                     },
                     "upstream": {
@@ -267,7 +268,8 @@ Unauthorized
                             "override": {
                                 "host": "localhost",
                                 "port": 6724
-                            }
+                            },
+                            "ssl_verify": false
                         }
                     },
                     "upstream": {
@@ -388,7 +390,8 @@ request format doesn't match schema: property "messages" is required
                             "override": {
                                 "host": "localhost",
                                 "port": 6724
-                            }
+                            },
+                            "ssl_verify": false
                         }
                     },
                     "upstream": {
@@ -461,7 +464,8 @@ options_works
                                 "host": "localhost",
                                 "port": 6724,
                                 "path": "/random"
-                            }
+                            },
+                            "ssl_verify": false
                         }
                     },
                     "upstream": {
