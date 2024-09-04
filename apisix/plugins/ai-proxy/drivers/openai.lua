@@ -18,17 +18,13 @@ local _M = {}
 
 local core = require("apisix.core")
 local http = require("resty.http")
-local upstream = require("apisix.upstream")
-local ngx = ngx
+
 local pairs = pairs
 
 -- globals
 local DEFAULT_HOST = "api.openai.com"
 local DEFAULT_PORT = 443
 
-local path_mapper = {
-    ["llm/chat"] = "/v1/chat/completions",
-}
 
 function _M.request(conf, request_table, ctx)
     local httpc, err = http.new()
@@ -81,7 +77,6 @@ function _M.request(conf, request_table, ctx)
         return 500, "failed to send request to LLM server: " .. err
     end
 
-    -- TOOD: keepalive maintainance
     return res, nil, httpc
 end
 
