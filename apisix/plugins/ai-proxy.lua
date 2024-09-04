@@ -120,7 +120,7 @@ function _M.access(conf, ctx)
 end
 
 
-function _M.delayed_access(conf, ctx)
+function _M.disable_proxy_buffering_access_phase(conf, ctx)
     return send_request(conf, ctx)
 end
 

@@ -737,7 +737,7 @@ function _M.disable_proxy_buffering_access_phase()
     local plugins = plugin.filter(api_ctx, api_ctx.matched_route)
 
     -- plugins to be run after proxy_buffering is disabled
-    plugin.run_plugin("delayed_access", plugins, api_ctx)
+    plugin.run_plugin("disable_proxy_buffering_access_phase", plugins, api_ctx)
 end
 
 
