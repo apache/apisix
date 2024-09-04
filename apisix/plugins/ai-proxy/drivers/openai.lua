@@ -39,6 +39,7 @@ function _M.request(conf, request_table, ctx)
 
     local custom_host = core.table.try_read_attr(conf, "override", "host")
     local custom_port = core.table.try_read_attr(conf, "override", "port")
+    local custom_path = core.table.try_read_attr(conf, "override", "path")
     local custom_scheme = core.table.try_read_attr(conf, "override", "scheme")
 
     local ok, err = httpc:connect({
@@ -61,7 +62,7 @@ function _M.request(conf, request_table, ctx)
         },
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
-        path = "/v1/chat/completions",
+        path = custom_path or "/v1/chat/completions",
     }
 
     if conf.auth.type == "header" then
