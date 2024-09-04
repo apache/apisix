@@ -20,7 +20,7 @@ local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
 local events = require("apisix.events")
-local resolver = require("apisix.core.resolver")
+
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -251,60 +251,6 @@ local function fill_node_info(up_conf, scheme, is_stream)
     up_conf.nodes_ref = filled_nodes
     up_conf.nodes = filled_nodes
     return true
-end
-
-
-function _M.set_upstream(upstream_info, ctx)
-    local nodes = upstream_info.nodes
-    local new_nodes = {}
-    if core.table.isarray(nodes) then
-        for _, node in ipairs(nodes) do
-            resolver.parse_domain_for_node(node)
-            table_insert(new_nodes, node)
-        end
-    else
-        for addr, weight in pairs(nodes) do
-            local node = {}
-            local port, host
-            host, port = core.utils.parse_addr(addr)
-            node.host = host
-            resolver.parse_domain_for_node(node)
-            node.port = port
-            node.weight = weight
-            table_insert(new_nodes, node)
-        end
-    end
-
-    local up_conf = {
-        name = upstream_info.name,
-        type = upstream_info.type,
-        hash_on = upstream_info.hash_on,
-        pass_host = upstream_info.pass_host,
-        upstream_host = upstream_info.upstream_host,
-        key = upstream_info.key,
-        nodes = new_nodes,
-        timeout = upstream_info.timeout,
-        scheme = upstream_info.scheme
-    }
-
-    local ok, err = _M.check_schema(up_conf)
-    if not ok then
-        core.log.error("failed to validate generated upstream: ", err)
-        return 500, err
-    end
-
-    local matched_route = ctx.matched_route
-    up_conf.parent = matched_route
-    local upstream_key = up_conf.type .. "#route_" ..
-                         matched_route.value.id .. "_" .. upstream_info.vid
-    if upstream_info.node_tid then
-        upstream_key = upstream_key .. "_" .. upstream_info.node_tid
-    end
-    core.log.info("upstream_key: ", upstream_key)
-    _M.set(ctx, upstream_key, ctx.conf_version, up_conf)
-    if upstream_info.scheme == "https" then
-        _M.set_scheme(ctx, up_conf)
-    end
 end
 
 

@@ -67,16 +67,17 @@ local function send_request(conf, ctx)
             local chunk, err = res.body_reader() -- will read chunk by chunk
             if err then
                 core.log.error("failed to read response chunk: ", err)
-                return
+                break
             end
             if not chunk then
-                return
+                break
             end
             content_length = content_length + #chunk
             ngx.print(chunk)
             ngx.flush(true)
         end
         httpc:set_keepalive(10000, 100)
+        return
     else
         local res_body, err = res:read_body()
         if not res_body then

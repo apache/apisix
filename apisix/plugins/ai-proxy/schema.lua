@@ -124,10 +124,6 @@ local model_schema = {
 _M.plugin_schema = {
     type = "object",
     properties = {
-        route_type = {
-            type = "string",
-            enum = { "llm/chat", "passthrough" }
-        },
         auth = auth_schema,
         model = model_schema,
         passthrough = { type = "boolean", default = false },
@@ -143,7 +139,7 @@ _M.plugin_schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
-    required = {"route_type", "model", "auth"}
+    required = {"model", "auth"}
 }
 
 _M.chat_request_schema = {

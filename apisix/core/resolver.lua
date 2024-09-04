@@ -24,7 +24,6 @@ local log            = require("apisix.core.log")
 local utils          = require("apisix.core.utils")
 local dns_utils      = require("resty.dns.utils")
 local config_local   = require("apisix.core.config_local")
-local ipmatcher      = require("resty.ipmatcher")
 
 
 local HOSTS_IP_MATCH_CACHE = {}
@@ -91,25 +90,6 @@ function _M.parse_domain(host)
     end
 
     return nil, "failed to parse domain"
-end
-
-
-function _M.parse_domain_for_node(node)
-    local host = node.domain or node.host
-    if not ipmatcher.parse_ipv4(host)
-       and not ipmatcher.parse_ipv6(host)
-    then
-        node.domain = host
-
-        local ip, err = _M.parse_domain(host)
-        if ip then
-            node.host = ip
-        end
-
-        if err then
-            log.error("dns resolver domain: ", host, " error: ", err)
-        end
-    end
 end
 
 

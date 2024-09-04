@@ -148,7 +148,6 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
             local ok, err = plugin.check_schema({
-                route_type = "llm/chat",
                 model = {
                     provider = "openai",
                     name = "gpt-4",
@@ -178,7 +177,6 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
             local ok, err = plugin.check_schema({
-                route_type = "llm/chat",
                 model = {
                     provider = "some-unique",
                     name = "gpt-4",
@@ -213,7 +211,6 @@ qr/.*provider: some-unique is not supported.*/
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
-                            "route_type": "llm/chat",
                             "auth": {
                                 "type": "header",
                                 "name": "Authorization",
@@ -276,7 +273,6 @@ Unauthorized
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
-                            "route_type": "llm/chat",
                             "auth": {
                                 "type": "header",
                                 "name": "Authorization",
@@ -398,7 +394,6 @@ request format doesn't match schema: property "messages" is required
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
-                            "route_type": "llm/chat",
                             "auth": {
                                 "type": "header",
                                 "name": "Authorization",
@@ -472,7 +467,6 @@ options_works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
-                            "route_type": "llm/chat",
                             "auth": {
                                 "type": "header",
                                 "name": "Authorization",
@@ -546,7 +540,6 @@ path override works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
-                            "route_type": "llm/chat",
                             "auth": {
                                 "type": "header",
                                 "name": "Authorization",
@@ -612,7 +605,6 @@ Authorization: Bearer token
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
-                            "route_type": "llm/chat",
                             "auth": {
                                 "type": "header",
                                 "name": "Authorization",

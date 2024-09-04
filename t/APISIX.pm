@@ -266,7 +266,6 @@ env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
 env OPENSSL_BIN;
-env AI_PROXY_TEST_SCHEME;
 _EOC_
 
 
