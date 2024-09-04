@@ -42,5 +42,5 @@ return {
         ["/ssls"] = true,
         ["/stream_routes"] = true,
         ["/plugin_metadata"] = true,
-    }
+    },
 }
