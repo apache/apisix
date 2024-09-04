@@ -53,14 +53,21 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
+    local query_params = core.utils.table_to_query_params(conf.auth.params)
+    local path = (parsed_url.path or "/v1/chat/completions") ..  query_params
+
+    for key, value in pairs(conf.auth.body or {}) do
+        request_table[key] = value
+    end
+
+    local headers = (conf.auth.header or {})
+    headers["Content-Type"] = "application/json"
     local params = {
         method = "POST",
-        headers = {
-            ["Content-Type"] = "application/json",
-        },
+        headers = headers,
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
-        path = parsed_url.path or "/v1/chat/completions",
+        path = path,
     }
 
     if conf.auth.type == "header" then

@@ -153,9 +153,9 @@ __DATA__
                     name = "gpt-4",
                 },
                 auth = {
-                    type = "header",
-                    value = "some value",
-                    name = "some name",
+                    header = {
+                        some_header = "some_value"
+                    }
                 }
             })
 
@@ -182,9 +182,9 @@ passed
                     name = "gpt-4",
                 },
                 auth = {
-                    type = "header",
-                    value = "some value",
-                    name = "some name",
+                    header = {
+                        some_header = "some_value"
+                    }
                 }
             })
 
@@ -212,9 +212,9 @@ qr/.*provider: some-unique is not supported.*/
                     "plugins": {
                         "ai-proxy": {
                             "auth": {
-                                "type": "header",
-                                "name": "Authorization",
-                                "value": "Bearer wrongtoken"
+                                "header": {
+                                    "Authorization": "Bearer wrongtoken"
+                                }
                             },
                             "model": {
                                 "provider": "openai",
@@ -272,9 +272,9 @@ Unauthorized
                     "plugins": {
                         "ai-proxy": {
                             "auth": {
-                                "type": "header",
-                                "name": "Authorization",
-                                "value": "Bearer token"
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
                             },
                             "model": {
                                 "provider": "openai",
@@ -391,9 +391,9 @@ request format doesn't match schema: property "messages" is required
                     "plugins": {
                         "ai-proxy": {
                             "auth": {
-                                "type": "header",
-                                "name": "Authorization",
-                                "value": "Bearer token"
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
                             },
                             "model": {
                                 "provider": "openai",
@@ -462,9 +462,9 @@ options_works
                     "plugins": {
                         "ai-proxy": {
                             "auth": {
-                                "type": "header",
-                                "name": "Authorization",
-                                "value": "Bearer token"
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
                             },
                             "model": {
                                 "provider": "openai",
@@ -532,9 +532,9 @@ path override works
                     "plugins": {
                         "ai-proxy": {
                             "auth": {
-                                "type": "header",
-                                "name": "Authorization",
-                                "value": "Bearer token"
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
                             },
                             "model": {
                                 "provider": "openai",
@@ -595,9 +595,9 @@ Authorization: Bearer token
                     "plugins": {
                         "ai-proxy": {
                             "auth": {
-                                "type": "header",
-                                "name": "Authorization",
-                                "value": "Bearer token"
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
                             },
                             "model": {
                                 "provider": "openai",

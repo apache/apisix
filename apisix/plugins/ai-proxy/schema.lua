@@ -16,26 +16,20 @@
 --
 local _M = {}
 
+local auth_item_schema = {
+    type = "object",
+    patternProperties = {
+        ["^[a-zA-Z0-9._-]+$"] = {
+            type = "string"
+        }
+    }
+}
+
 local auth_schema = {
     type = "object",
-    properties = {
-        type = {
-            type = "string",
-            enum = {"header", "param"}
-        },
-        name = {
-            type = "string",
-            description = "Name of the param/header carrying Authorization or API key.",
-            minLength = 1,
-        },
-        value = {
-            type = "string",
-            description = "Full auth-header/param value.",
-            minLength = 1,
-             -- TODO encrypted = true,
-        },
+    patternProperties = {
+        ["^(query|body|header)$"] = auth_item_schema
     },
-    required = { "type", "name", "value" },
     additionalProperties = false,
 }
 
