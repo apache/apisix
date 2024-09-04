@@ -18,6 +18,7 @@ local _M = {}
 
 local core = require("apisix.core")
 local http = require("resty.http")
+local url  = require("socket.url")
 
 local pairs = pairs
 
@@ -33,17 +34,18 @@ function _M.request(conf, request_table, ctx)
     end
     httpc:set_timeout(conf.timeout)
 
-    local custom_host = core.table.try_read_attr(conf, "override", "host")
-    local custom_port = core.table.try_read_attr(conf, "override", "port")
-    local custom_path = core.table.try_read_attr(conf, "override", "path")
-    local custom_scheme = core.table.try_read_attr(conf, "override", "scheme")
+    local endpoint = core.table.try_read_attr(conf, "override", "endpoint")
+    local parsed_url
+    if endpoint then
+        parsed_url = url.parse(endpoint)
+    end
 
     local ok, err = httpc:connect({
-        scheme = custom_scheme or "https",
-        host = custom_host or DEFAULT_HOST,
-        port = custom_port or DEFAULT_PORT,
+        scheme = parsed_url.scheme or "https",
+        host = parsed_url.host or DEFAULT_HOST,
+        port = parsed_url.port or DEFAULT_PORT,
         ssl_verify = conf.ssl_verify,
-        ssl_server_name = custom_host or DEFAULT_HOST,
+        ssl_server_name = parsed_url.host or DEFAULT_HOST,
         pool_size = conf.keepalive and conf.keepalive_pool,
     })
 
@@ -58,7 +60,7 @@ function _M.request(conf, request_table, ctx)
         },
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
-        path = custom_path or "/v1/chat/completions",
+        path = parsed_url.path or "/v1/chat/completions",
     }
 
     if conf.auth.type == "header" then

@@ -225,9 +225,7 @@ qr/.*provider: some-unique is not supported.*/
                                 }
                             },
                             "override": {
-                                "host": "localhost",
-                                "port": 6724,
-                                "scheme": "http"
+                                "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
                         }
@@ -287,9 +285,7 @@ Unauthorized
                                 }
                             },
                             "override": {
-                                "host": "localhost",
-                                "port": 6724,
-                                "scheme": "http"
+                                "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
                         }
@@ -408,9 +404,7 @@ request format doesn't match schema: property "messages" is required
                                 }
                             },
                             "override": {
-                                "host": "localhost",
-                                "port": 6724,
-                                "scheme": "http"
+                                "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
                         }
@@ -481,10 +475,7 @@ options_works
                                 }
                             },
                             "override": {
-                                "host": "localhost",
-                                "port": 6724,
-                                "path": "/random",
-                                "scheme": "http"
+                                "endpoint": "http://localhost:6724/random"
                             },
                             "ssl_verify": false
                         }
@@ -554,9 +545,7 @@ path override works
                                 }
                             },
                             "override": {
-                                "host": "localhost",
-                                "port": 6724,
-                                "scheme": "http"
+                                "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false,
                             "passthrough": true
@@ -620,9 +609,7 @@ Authorization: Bearer token
                                 }
                             },
                             "override": {
-                                "host": "localhost",
-                                "port": 7737,
-                                "scheme": "http"
+                                "endpoint": "http://localhost:7737"
                             },
                             "ssl_verify": false
                         }

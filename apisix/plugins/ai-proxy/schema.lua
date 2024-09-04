@@ -100,21 +100,10 @@ local model_schema = {
         override = {
             type = "object",
             properties = {
-                host = {
+                endpoint = {
                     type = "string",
                     description = "To be specified to override the host of the AI provider",
                 },
-                port = {
-                    type = "integer",
-                    description = "To be specified to override the AI provider port",
-                },
-                path = {
-                    type = "string",
-                    description = "Overrieds the request path to the AI provider endpoints",
-                },
-                scheme = {
-                    type = "string"
-                }
             }
         }
     },
