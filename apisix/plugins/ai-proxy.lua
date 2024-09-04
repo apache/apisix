@@ -110,7 +110,7 @@ function _M.access(conf, ctx)
     end
     ctx.request_table = request_table
 
-    if conf.model.options and conf.model.options.stream then
+    if core.table.try_read_attr(conf, "model", "options", "stream") then
         request_table.stream = true
         ngx.ctx.disable_proxy_buffering = true
         return
