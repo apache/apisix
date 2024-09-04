@@ -14,9 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-BEGIN {
-    $ENV{AI_PROXY_TEST_SCHEME} = "http";
-}
 
 use t::APISIX 'no_plan';
 
@@ -232,7 +229,8 @@ qr/.*provider: some-unique is not supported.*/
                             },
                             "override": {
                                 "host": "localhost",
-                                "port": 6724
+                                "port": 6724,
+                                "scheme": "http"
                             },
                             "ssl_verify": false
                         }
@@ -294,7 +292,8 @@ Unauthorized
                             },
                             "override": {
                                 "host": "localhost",
-                                "port": 6724
+                                "port": 6724,
+                                "scheme": "http"
                             },
                             "ssl_verify": false
                         }
@@ -415,7 +414,8 @@ request format doesn't match schema: property "messages" is required
                             },
                             "override": {
                                 "host": "localhost",
-                                "port": 6724
+                                "port": 6724,
+                                "scheme": "http"
                             },
                             "ssl_verify": false
                         }
@@ -489,7 +489,8 @@ options_works
                             "override": {
                                 "host": "localhost",
                                 "port": 6724,
-                                "path": "/random"
+                                "path": "/random",
+                                "scheme": "http"
                             },
                             "ssl_verify": false
                         }
@@ -561,7 +562,8 @@ path override works
                             },
                             "override": {
                                 "host": "localhost",
-                                "port": 6724
+                                "port": 6724,
+                                "scheme": "http"
                             },
                             "ssl_verify": false,
                             "passthrough": true

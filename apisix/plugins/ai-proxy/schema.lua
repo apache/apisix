@@ -112,6 +112,9 @@ local model_schema = {
                     type = "string",
                     description = "Overrieds the request path to the AI provider endpoints",
                 },
+                scheme = {
+                    type = "string"
+                }
             }
         }
     },

@@ -18,7 +18,6 @@ local _M = {}
 
 local core = require("apisix.core")
 local http = require("resty.http")
-local test_scheme = os.getenv("AI_PROXY_TEST_SCHEME")
 local upstream = require("apisix.upstream")
 local ngx = ngx
 local pairs = pairs
@@ -40,9 +39,10 @@ function _M.request(conf, request_table, ctx)
 
     local custom_host = core.table.try_read_attr(conf, "override", "host")
     local custom_port = core.table.try_read_attr(conf, "override", "port")
+    local custom_scheme = core.table.try_read_attr(conf, "override", "scheme")
 
     local ok, err = httpc:connect({
-        scheme = test_scheme or "https",
+        scheme = custom_scheme or "https",
         host = custom_host or DEFAULT_HOST,
         port = custom_port or DEFAULT_PORT,
         ssl_verify = conf.ssl_verify,
