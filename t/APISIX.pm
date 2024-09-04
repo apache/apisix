@@ -845,6 +845,41 @@ _EOC_
             }
         }
 
+        location \@disable_proxy_buffering {
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              \$upstream_host;
+            proxy_set_header   Upgrade           \$upstream_upgrade;
+            proxy_set_header   Connection        \$upstream_connection;
+            proxy_set_header   X-Real-IP         \$remote_addr;
+            proxy_pass_header  Date;
+
+            ### the following x-forwarded-* headers is to send to upstream server
+            proxy_set_header   X-Forwarded-For      \$proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    \$var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     \$var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     \$var_x_forwarded_port;
+
+            proxy_pass      \$upstream_scheme://apisix_backend\$upstream_uri;
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+        }
+
         $grpc_location
         $dubbo_location
 

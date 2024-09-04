@@ -598,3 +598,119 @@ Authorization: Bearer token
 --- error_code: 200
 --- response_body
 {"foo", "bar"}
+
+
+
+=== TEST 16: set route with stream = true (SSE)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "route_type": "llm/chat",
+                            "auth": {
+                                "type": "header",
+                                "name": "Authorization",
+                                "value": "Bearer token"
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "gpt-35-turbo-instruct",
+                                "options": {
+                                    "max_tokens": 512,
+                                    "temperature": 1.0,
+                                    "stream": true
+                                }
+                            },
+                            "override": {
+                                "host": "localhost",
+                                "port": 7737,
+                                "scheme": "http"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: test is SSE works as expected
+--- LAST
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local core = require("apisix.core")
+
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local params = {
+                method = "POST",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                },
+                path = "/anything",
+                body = [[{
+                    "messages": [
+                        { "role": "system", "content": "some content" }
+                    ]
+                }]],
+            }
+
+            local res, err = httpc:request(params)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local final_res = {}
+            while true do
+                local chunk, err = res.body_reader() -- will read chunk by chunk
+                if err then
+                    core.log.error("failed to read response chunk: ", err)
+                    break
+                end
+                if not chunk then
+                    break
+                end
+                core.table.insert_tail(final_res, chunk)
+            end
+
+            ngx.print(#final_res .. final_res[6])
+        }
+    }
+--- response_body_like eval
+qr/6data: \[DONE\]\n\n/
