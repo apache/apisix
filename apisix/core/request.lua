@@ -341,11 +341,6 @@ function _M.get_request_body_table()
         return nil, { message = "could not get body: " .. (err or "request body is empty") }
     end
 
-    body, err = body:gsub("\\\"", "\"") -- remove escaping in JSON
-    if not body then
-        return nil, { message = "failed to remove escaping from body. err: " .. err}
-    end
-
     local body_tab, err = json.decode(body)
     if not body_tab then
         return nil, { message = "could not get parse JSON request body: " .. err }

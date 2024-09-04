@@ -26,7 +26,6 @@ local tostring = tostring
 local ipairs = ipairs
 local pairs = pairs
 local pcall = pcall
-local table_insert = table.insert
 local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
