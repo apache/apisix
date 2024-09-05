@@ -21,7 +21,6 @@ local pcall = pcall
 local ngx_req = ngx.req
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
-local ngx_ctx = ngx.ctx
 
 local plugin_name = "ai-proxy"
 local _M = {
@@ -114,7 +113,7 @@ function _M.access(conf, ctx)
 
     if core.table.try_read_attr(conf, "model", "options", "stream") then
         request_table.stream = true
-        ngx_ctx.disable_proxy_buffering = true
+        ctx.disable_proxy_buffering = true
         return
     end
 

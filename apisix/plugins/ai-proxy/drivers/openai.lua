@@ -53,9 +53,12 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
-    local query_params = core.string.encode_args(conf.auth.query)
-    if query_params and query_params ~= "" then
-        query_params = "?" .. query_params
+    local query_params = ""
+    if conf.auth.query and type(conf.auth.query) == "table" then
+        query_params = core.string.encode_args(conf.auth.query)
+        if query_params and query_params ~= "" then
+            query_params = "?" .. query_params
+        end
     end
 
     local path = (parsed_url.path or "/v1/chat/completions") ..  query_params
