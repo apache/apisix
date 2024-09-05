@@ -70,10 +70,6 @@ function _M.request(conf, request_table, ctx)
         path = path,
     }
 
-    if conf.auth.type == "header" then
-        params.headers[conf.auth.name] = conf.auth.value
-    end
-
     if conf.model.options then
         for opt, val in pairs(conf.model.options) do
             request_table[opt] = val
