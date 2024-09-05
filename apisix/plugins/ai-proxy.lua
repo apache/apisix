@@ -44,8 +44,30 @@ end
 local CONTENT_TYPE_JSON = "application/json"
 
 
-local function send_request(conf, ctx)
-    local request_table = ctx.request_table
+function _M.access(conf, ctx)
+    local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
+    if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
+        return 400, "unsupported content-type: " .. ct
+    end
+
+    local request_table, err = core.request.get_request_body_table()
+    if not request_table then
+        return 400, err
+    end
+
+    local ok, err = core.schema.check(schema.chat_request_schema, request_table)
+    if not ok then
+        return 400, "request format doesn't match schema: " .. err
+    end
+
+    if conf.model.name then
+        request_table.model = conf.model.name
+    end
+
+    if core.table.try_read_attr(conf, "model", "options", "stream") then
+        request_table.stream = true
+    end
+
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
     local res, err, httpc = ai_driver.request(conf, request_table, ctx)
     if not res then
@@ -88,42 +110,6 @@ local function send_request(conf, ctx)
         end
         return res.status, res_body
     end
-end
-
-
-function _M.access(conf, ctx)
-    local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
-    if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
-        return 400, "unsupported content-type: " .. ct
-    end
-
-    local request_table, err = core.request.get_request_body_table()
-    if not request_table then
-        return 400, err
-    end
-
-    local ok, err = core.schema.check(schema.chat_request_schema, request_table)
-    if not ok then
-        return 400, "request format doesn't match schema: " .. err
-    end
-
-    if conf.model.name then
-        request_table.model = conf.model.name
-    end
-    ctx.request_table = request_table
-
-    if core.table.try_read_attr(conf, "model", "options", "stream") then
-        request_table.stream = true
-        ngx_ctx.disable_proxy_buffering = true
-        return
-    end
-
-    return send_request(conf, ctx)
-end
-
-
-function _M.disable_proxy_buffering_access_phase(conf, ctx)
-    return send_request(conf, ctx)
 end
 
 return _M

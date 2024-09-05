@@ -722,23 +722,9 @@ function _M.http_access_phase()
         plugin.run_plugin("access", plugins, api_ctx)
     end
 
-    if ngx.ctx.disable_proxy_buffering then
-        stash_ngx_ctx()
-        return ngx.exec("@disable_proxy_buffering")
-    end
-
     _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
-
-function _M.disable_proxy_buffering_access_phase()
-    ngx.ctx = fetch_ctx()
-    local api_ctx = ngx.ctx.api_ctx
-    local plugins = plugin.filter(api_ctx, api_ctx.matched_route)
-
-    -- plugins to be run after proxy_buffering is disabled
-    plugin.run_plugin("disable_proxy_buffering_access_phase", plugins, api_ctx)
-end
 
 
 function _M.dubbo_access_phase()
