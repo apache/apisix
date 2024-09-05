@@ -75,8 +75,8 @@ local function send_request(conf, ctx)
                 break
             end
             content_length = content_length + #chunk
-            ngx.print(chunk)
-            ngx.flush(true)
+            ngx_print(chunk)
+            ngx_flush(true)
         end
         httpc:set_keepalive(10000, 100)
         return
@@ -114,7 +114,7 @@ function _M.access(conf, ctx)
 
     if core.table.try_read_attr(conf, "model", "options", "stream") then
         request_table.stream = true
-        ngx.ctx.disable_proxy_buffering = true
+        ngx_ctx.disable_proxy_buffering = true
         return
     end
 
