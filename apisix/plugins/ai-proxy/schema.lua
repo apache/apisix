@@ -28,7 +28,7 @@ local auth_item_schema = {
 local auth_schema = {
     type = "object",
     patternProperties = {
-        ["^(query|body|header)$"] = auth_item_schema
+        ["^(query|header)$"] = auth_item_schema
     },
     additionalProperties = false,
 }

@@ -56,10 +56,6 @@ function _M.request(conf, request_table, ctx)
     local query_params = core.utils.table_to_query_params(conf.auth.params)
     local path = (parsed_url.path or "/v1/chat/completions") ..  query_params
 
-    for key, value in pairs(conf.auth.body or {}) do
-        request_table[key] = value
-    end
-
     local headers = (conf.auth.header or {})
     headers["Content-Type"] = "application/json"
     local params = {
