@@ -393,25 +393,3 @@ res:nil
 res:5
 res:12
 res:7
-
-
-
-=== TEST 13: table_to_query_params
---- config
-    location /t {
-        content_by_lua_block {
-            local table_to_query_params = require("apisix.core.utils").table_to_query_params
-            local cases = {
-                {input = {}, out = ""},
-                {input = {"a"}, out = "1=a", },
-                {input = {"a", "b"}, out = "1=a&2=b", },
-                {input = {a = "b", c = "d"}, out = "a=b&c=d", },
-            }
-            for _, case in ipairs(cases) do
-                local got = table_to_query_params(case.input)
-                assert(got == case.out, string.format("got: %s but expected: %s", got, case.out))
-            end
-        }
-    }
---- request
-GET /t

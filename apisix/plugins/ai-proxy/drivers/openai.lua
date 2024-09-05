@@ -53,7 +53,7 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
-    local query_params = core.utils.table_to_query_params(conf.auth.query)
+    local query_params = core.string.encode_args(conf.auth.query)
     if query_params and query_params ~= "" then
         query_params = "?" .. query_params
     end

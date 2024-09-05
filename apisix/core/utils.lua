@@ -215,21 +215,6 @@ function _M.uri_safe_encode(uri)
 end
 
 
-function _M.table_to_query_params(tbl)
-    if not tbl or type(tbl) ~= "table" then
-        return ""
-    end
-
-    local query_params = {}
-    for key, value in pairs(tbl) do
-        local encoded_key = _M.uri_safe_encode(tostring(key))
-        local encoded_value = _M.uri_safe_encode(tostring(value))
-        table.insert(query_params, encoded_key .. "=" .. encoded_value)
-    end
-    return table.concat(query_params, "&")
-end
-
-
 function _M.validate_header_field(field)
     for i = 1, #field do
         local b = str_byte(field, i, i)
