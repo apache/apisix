@@ -21,6 +21,7 @@ local http = require("resty.http")
 local url  = require("socket.url")
 
 local pairs = pairs
+local type  = type
 
 -- globals
 local DEFAULT_HOST = "api.openai.com"

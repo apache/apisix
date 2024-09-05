@@ -43,6 +43,15 @@ end
 local CONTENT_TYPE_JSON = "application/json"
 
 
+local function keepalive_or_close(conf, httpc)
+    if conf.set_keepalive then
+        httpc:set_keepalive(10000, 100)
+        return
+    end
+    httpc:close()
+end
+
+
 local function send_request(conf, ctx)
     local request_table = ctx.request_table
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
@@ -62,10 +71,15 @@ local function send_request(conf, ctx)
         return
     end
 
+    local body_reader = res.body_reader
+    if not body_reader then
+        core.log.error("LLM sent no response body")
+        return 500
+    end
+
     if core.table.try_read_attr(conf, "model", "options", "stream") then
-        local content_length = 0
         while true do
-            local chunk, err = res.body_reader() -- will read chunk by chunk
+            local chunk, err = body_reader() -- will read chunk by chunk
             if err then
                 core.log.error("failed to read response chunk: ", err)
                 break
@@ -73,11 +87,10 @@ local function send_request(conf, ctx)
             if not chunk then
                 break
             end
-            content_length = content_length + #chunk
             ngx_print(chunk)
             ngx_flush(true)
         end
-        httpc:set_keepalive(10000, 100)
+        keepalive_or_close(conf, httpc)
         return
     else
         local res_body, err = res:read_body()
@@ -85,6 +98,7 @@ local function send_request(conf, ctx)
             core.log.error("failed to read response body: ", err)
             return 500
         end
+        keepalive_or_close(conf, httpc)
         return res.status, res_body
     end
 end
