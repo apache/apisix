@@ -36,7 +36,7 @@ end
 local _M = {}
 
 
-function _M:generate_access_token()
+function _M.generate_access_token(self)
     if not self.access_token or get_timestamp() > self.access_token_expire_time - 60 then
         self:refresh_access_token()
     end
@@ -44,7 +44,7 @@ function _M:generate_access_token()
 end
 
 
-function _M:refresh_access_token()
+function _M.refresh_access_token(self)
     local http_new = http.new()
     local res, err = http_new:request_uri(self.token_uri, {
         ssl_verify = self.ssl_verify,
@@ -80,7 +80,7 @@ function _M:refresh_access_token()
 end
 
 
-function _M:generate_jwt_token()
+function _M.generate_jwt_token(self)
     local payload = core.json.encode({
         iss = self.client_email,
         aud = self.token_uri,
@@ -98,7 +98,7 @@ function _M:generate_jwt_token()
 end
 
 
-function _M:new(config, ssl_verify)
+function _M.new(config, ssl_verify)
     local oauth = {
         client_email = config.client_email,
         private_key = config.private_key,
@@ -129,8 +129,7 @@ function _M:new(config, ssl_verify)
                                           "https://www.googleapis.com/auth/cloud-platform" }, " ")
     end
 
-    setmetatable(oauth, { __index = self })
-    return oauth
+    return setmetatable(oauth, { __index = _M })
 end
 
 

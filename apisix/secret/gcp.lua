@@ -16,15 +16,15 @@
 --
 
 --- GCP Tools.
-local core       = require("apisix.core")
-local http       = require("resty.http")
+local core         = require("apisix.core")
+local http         = require("resty.http")
 local google_oauth = require("apisix.utils.google-cloud-oauth")
 
-local sub        = core.string.sub
-local find = core.string.find
+local str_sub       = core.string.sub
+local str_find      = core.string.find
 local decode_base64 = ngx.decode_base64
-
-local lrucache = core.lrucache.new({ttl = 300, count= 8})
+ 
+local lrucache = core.lrucache.new({ ttl = 300, count= 8 })
 
 local schema = {
     type = "object",
@@ -50,7 +50,7 @@ local schema = {
                     default = "https://secretmanager.googleapis.com/v1"
                 },
             },
-            required = { "client_email", "private_key", "project_id"}
+            required = { "client_email", "private_key", "project_id" }
         },
         ssl_verify = {
             type = "boolean",
@@ -62,7 +62,6 @@ local schema = {
         { required = { "auth_config" } },
         { required = { "auth_file" } },
     },
-    encrypt_fields = {"auth_config.private_key"},
 }
 
 local _M = {
@@ -100,9 +99,6 @@ local function fetch_oauth_conf(conf)
     return config_tab
 end
 
-local function create_oauth_object(auth_config, ssl_verify)
-    return google_oauth:new(auth_config, ssl_verify)
-end
 
 local function get_secret(oauth, secrets_id)
     local http_new = http.new()
@@ -145,6 +141,7 @@ local function get_secret(oauth, secrets_id)
     return decode_base64(payload.data)
 end
 
+
 local function make_request_to_gcp(conf, secrets_id)
     local auth_config, err = fetch_oauth_conf(conf)
     if not auth_config then
@@ -153,7 +150,7 @@ local function make_request_to_gcp(conf, secrets_id)
 
     local lru_key =  auth_config.client_email .. "#" .. auth_config.project_id
 
-    local oauth, err = lrucache(lru_key, "gcp", create_oauth_object, auth_config, conf.ssl_verify)
+    local oauth, err = lrucache(lru_key, "gcp", google_oauth.new, auth_config, conf.ssl_verify)
     if not oauth then
         return nil, "failed to create oauth object, " .. err
     end
@@ -166,17 +163,18 @@ local function make_request_to_gcp(conf, secrets_id)
     return secret
 end
 
+
 function _M.get(conf, key)
     core.log.info("fetching data from gcp for key: ", key)
 
-    local idx = find(key, '/')
+    local idx = str_find(key, '/')
 
-    local main_key = idx and sub(key, 1, idx - 1) or key
+    local main_key = idx and str_sub(key, 1, idx - 1) or key
     if main_key == "" then
         return nil, "can't find main key, key: " .. key
     end
 
-    local sub_key = idx and sub(key, idx + 1) or nil
+    local sub_key = idx and str_sub(key, idx + 1) or nil
 
     core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
@@ -196,7 +194,6 @@ function _M.get(conf, key)
 
     return data[sub_key]
 end
-
 
 
 return _M

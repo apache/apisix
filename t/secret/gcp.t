@@ -250,7 +250,7 @@ all done
 
 
 
-=== TEST 4: setup route
+=== TEST 4: setup route (/projects/apisix/secrets/jack/versions/latest:access)
 --- config
     location /t {
         content_by_lua_block {
@@ -291,7 +291,7 @@ passed
 
 
 
-=== TEST 5: setup route
+=== TEST 5: setup route (/projects/apisix_error/secrets/jack/versions/latest:access)
 --- config
     location /t {
         content_by_lua_block {
@@ -332,7 +332,7 @@ passed
 
 
 
-=== TEST 6: setup route
+=== TEST 6: setup route (/projects/apisix/secrets/mysql/versions/latest:access)
 --- config
     location /t {
         content_by_lua_block {
