@@ -20,7 +20,6 @@ local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
 local events = require("apisix.events")
-
 local error = error
 local tostring = tostring
 local ipairs = ipairs
