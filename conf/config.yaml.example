@@ -252,7 +252,7 @@ nginx_config:                     # Config for render the template to generate n
       internal-status: 10m
       plugin-limit-req: 10m
       plugin-limit-count: 10m
-      prometheus-metrics: 10m     # In production, it is recommended that the memory usage does not exceed 50MB
+      prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
       upstream-healthcheck: 10m
       worker-events: 10m
