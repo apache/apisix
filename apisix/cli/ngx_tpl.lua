@@ -809,6 +809,64 @@ http {
             }
         }
 
+        location @disable_proxy_buffering {
+            # http server location configuration snippet starts
+            {% if http_server_location_configuration_snippet then %}
+            {* http_server_location_configuration_snippet *}
+            {% end %}
+            # http server location configuration snippet ends
+
+            proxy_http_version 1.1;
+            proxy_set_header   Host              $upstream_host;
+            proxy_set_header   Upgrade           $upstream_upgrade;
+            proxy_set_header   Connection        $upstream_connection;
+            proxy_set_header   X-Real-IP         $remote_addr;
+            proxy_pass_header  Date;
+
+            ### the following x-forwarded-* headers is to send to upstream server
+            proxy_set_header   X-Forwarded-For      $proxy_add_x_forwarded_for;
+            proxy_set_header   X-Forwarded-Proto    $var_x_forwarded_proto;
+            proxy_set_header   X-Forwarded-Host     $var_x_forwarded_host;
+            proxy_set_header   X-Forwarded-Port     $var_x_forwarded_port;
+
+            {% if enabled_plugins["proxy-cache"] then %}
+            ###  the following configuration is to cache response content from upstream server
+            proxy_cache                         $upstream_cache_zone;
+            proxy_cache_valid                   any {% if proxy_cache.cache_ttl then %} {* proxy_cache.cache_ttl *} {% else %} 10s {% end %};
+            proxy_cache_min_uses                1;
+            proxy_cache_methods                 GET HEAD POST;
+            proxy_cache_lock_timeout            5s;
+            proxy_cache_use_stale               off;
+            proxy_cache_key                     $upstream_cache_key;
+            proxy_no_cache                      $upstream_no_cache;
+            proxy_cache_bypass                  $upstream_cache_bypass;
+
+            {% end %}
+
+            proxy_pass      $upstream_scheme://apisix_backend$upstream_uri;
+
+            {% if enabled_plugins["proxy-mirror"] then %}
+            mirror          /proxy_mirror;
+            {% end %}
+
+            header_filter_by_lua_block {
+                apisix.http_header_filter_phase()
+            }
+
+            body_filter_by_lua_block {
+                apisix.http_body_filter_phase()
+            }
+
+            log_by_lua_block {
+                apisix.http_log_phase()
+            }
+
+            proxy_buffering off;
+            access_by_lua_block {
+                apisix.disable_proxy_buffering_access_phase()
+            }
+        }
+
         location @grpc_pass {
 
             access_by_lua_block {
