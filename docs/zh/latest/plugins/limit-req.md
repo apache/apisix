@@ -81,7 +81,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var",
@@ -97,7 +97,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-上述示例表示，APISIX 将客户端的 IP 地址作为限制请求速率的条件，当请求速率小于 3 次每秒（`rate`）时，请求正常；当请求速率大于 3 次每秒（`rate`），小于 5 次每秒（`rate + burst`）时，将会对超出部分的请求进行延迟处理；当请求速率大于 5 次每秒（`rate + burst`）时，超出规定数量的请求将返回 HTTP 状态码 `503`。
+上述示例表示，APISIX 将客户端的 IP 地址作为限制请求速率的条件，当请求速率小于等于 3 次每秒（`rate`）时，请求正常；当请求速率大于 3 次每秒（`rate`），小于等于 5 次每秒（`rate + burst`）时，将会对超出部分的请求进行延迟处理；当请求速率大于 5 次每秒（`rate + burst`）时，超出规定数量的请求将返回 HTTP 状态码 `503`。
 
 你也可以设置 `key_type` 的值为 `var_combination`：
 
@@ -107,7 +107,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var_combination",
