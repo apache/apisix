@@ -18,8 +18,10 @@ local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local require = require
 local pcall = pcall
-
 local ngx_req = ngx.req
+local ngx_print = ngx.print
+local ngx_flush = ngx.flush
+local ngx_ctx = ngx.ctx
 
 local plugin_name = "ai-proxy"
 local _M = {
