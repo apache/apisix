@@ -35,13 +35,12 @@ to do authentication, from the SP (service provider) perspective.
 
 ## Attributes
 
-| Name               | Type    | Required | Default        | Description                                                                                                           |
-| ------------------ | ------- | -------- | -------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `idp_uri`          | string  | True     |                | URI of IdP.                                                                                                           |
-| `cas_callback_uri` | string  | True     |                | Redirect uri used to callback the SP from IdP after login or logout.                                                  |
-| `logout_uri`       | string  | True     |                | Logout uri to trigger logout.                                                                                         |
-| `set_user_header`  | boolean | False    | true           | When set to true, sets the logged-in user in a request header. By default, the `X-Proxy-User` request header is used. |
-| `user_header`      | string  | False    | "X-Proxy-User" | Overrides the header name used by the `set_user_header` attribute.                                                    |                                                                                        
+| Name               | Type    | Required | Default        | Description                                                                                                         |
+| ------------------ | ------- | -------- | -------------- | --------------------------------------------------------------------------------------------------------------------|
+| `idp_uri`          | string  | True     |                | URI of IdP.                                                                                                         |
+| `cas_callback_uri` | string  | True     |                | Redirect uri used to callback the SP from IdP after login or logout.                                                |
+| `logout_uri`       | string  | True     |                | Logout uri to trigger logout.                                                                                       |
+| `user_header`      | string  | False    |                | Name for the generated request header containing the logged-in user's username. By default, no header is generated. |
 
 ## Enable Plugin
 
