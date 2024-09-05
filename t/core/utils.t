@@ -405,7 +405,7 @@ res:7
                 {input = {}, out = ""},
                 {input = {"a"}, out = "1=a", },
                 {input = {"a", "b"}, out = "1=a&2=b", },
-                {input = {a = "b", c = "d"}, out = "c=d&a=b", },
+                {input = {a = "b", c = "d"}, out = "a=b&c=d", },
             }
             for _, case in ipairs(cases) do
                 local got = table_to_query_params(case.input)
