@@ -576,7 +576,7 @@ function _M.google_secret_token()
             verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
-        ngx.say(json_encode({ error = "no access to this scopes" }))
+        ngx.say(json_encode({ error = "no access to this scope" }))
         return
     end
 
@@ -623,7 +623,7 @@ function _M.google_secret_apisix_jack()
             verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
-        ngx.say(json_encode({ error = "no access to this scopes" }))
+        ngx.say(json_encode({ error = "no access to this scope" }))
         return
     end
 
@@ -672,7 +672,7 @@ function _M.google_secret_apisix_error_jack()
             verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
-        ngx.say(json_encode({ error = "no access to this scopes" }))
+        ngx.say(json_encode({ error = "no access to this scope" }))
         return
     end
 
@@ -721,7 +721,7 @@ function _M.google_secret_apisix_mysql()
             verify.payload.scope:find(access_scopes)
     if not scopes_valid then
         ngx.status = 403
-        ngx.say(json_encode({ error = "no access to this scopes" }))
+        ngx.say(json_encode({ error = "no access to this scope" }))
         return
     end
 

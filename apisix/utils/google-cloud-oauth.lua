@@ -113,20 +113,14 @@ function _M.new(config, ssl_verify)
 
     oauth.ssl_verify = ssl_verify
 
-    if config.scopes then
-        if type(config.scopes) == "string" then
-            oauth.scope = config.scopes
+    if config.scope then
+        if type(config.scope) == "string" then
+            oauth.scope = config.scope
         end
 
-        if type(config.scopes) == "table" then
-            oauth.scope = core.table.concat(config.scopes, " ")
+        if type(config.scope) == "table" then
+            oauth.scope = core.table.concat(config.scope, " ")
         end
-    else
-        -- https://developers.google.com/identity/protocols/oauth2/scopes#logging
-        oauth.scope = core.table.concat({ "https://www.googleapis.com/auth/logging.read",
-                                          "https://www.googleapis.com/auth/logging.write",
-                                          "https://www.googleapis.com/auth/logging.admin",
-                                          "https://www.googleapis.com/auth/cloud-platform" }, " ")
     end
 
     return setmetatable(oauth, { __index = _M })

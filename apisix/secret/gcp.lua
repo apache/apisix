@@ -24,7 +24,7 @@ local str_sub       = core.string.sub
 local str_find      = core.string.find
 local decode_base64 = ngx.decode_base64
  
-local lrucache = core.lrucache.new({ ttl = 300, count= 8 })
+local lrucache = core.lrucache.new({ ttl = 300, count = 8 })
 
 local schema = {
     type = "object",
@@ -39,7 +39,7 @@ local schema = {
                     type = "string",
                     default = "https://oauth2.googleapis.com/token"
                 },
-                scopes = {
+                scope = {
                     type = "array",
                     default = {
                         "https://www.googleapis.com/auth/cloud-platform"

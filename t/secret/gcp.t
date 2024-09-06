@@ -43,10 +43,10 @@ __DATA__
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = 1234}},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id"}, ssl_verify = 1234},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", token_uri = 1234}},
-                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", scopes = 1234}},
+                {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", scope = 1234}},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", entries_uri = 1234}},
                 {auth_config = {client_email = "client", private_key = "private_key", project_id = "project_id", token_uri = "token_uri",
-                    scopes = {"scopes"}, entries_uri = "entries_uri"}, ssl_verify = true},
+                    scope = {"scope"}, entries_uri = "entries_uri"}, ssl_verify = true},
             }
             local gcp = require("apisix.secret.gcp")
             local core = require("apisix.core")
@@ -73,7 +73,7 @@ property "auth_config" validation failed: property "private_key" validation fail
 property "auth_config" validation failed: property "project_id" validation failed: wrong type: expected string, got number
 property "ssl_verify" validation failed: wrong type: expected boolean, got number
 property "auth_config" validation failed: property "token_uri" validation failed: wrong type: expected string, got number
-property "auth_config" validation failed: property "scopes" validation failed: wrong type: expected array, got number
+property "auth_config" validation failed: property "scope" validation failed: wrong type: expected array, got number
 property "auth_config" validation failed: property "entries_uri" validation failed: wrong type: expected string, got number
 done
 
@@ -118,7 +118,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     },
                 },
@@ -178,7 +178,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     },
                     entries_uri = "http://127.0.0.1:1984"
@@ -477,7 +477,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     },
                     entries_uri = "http://127.0.0.1:1984"
@@ -536,7 +536,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     },
                     entries_uri = "http://127.0.0.1:1984"
@@ -595,7 +595,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/root/cloud-platform"
                     },
                     entries_uri = "http://127.0.0.1:1984"
@@ -616,7 +616,7 @@ failed to retrtive data from gcp secret manager: failed to get google oauth toke
 --- grep_error_log eval
 qr/\{\"error\"\:\"[\w+\s+]*\"\}/
 --- grep_error_log_out
-{"error":"no access to this scopes"}
+{"error":"no access to this scope"}
 
 
 
@@ -658,7 +658,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix_error",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     },
                     entries_uri = "http://127.0.0.1:1984"
@@ -717,7 +717,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                     project_id = "apisix_error",
                     token_uri = "http://127.0.0.1:1980/google/secret/token",
-                    scopes = {
+                    scope = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     },
                     entries_uri = "http://127.0.0.1:1984"
