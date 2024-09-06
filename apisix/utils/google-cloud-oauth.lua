@@ -105,7 +105,7 @@ function _M.new(config, ssl_verify)
         project_id = config.project_id,
         token_uri = config.token_uri or "https://oauth2.googleapis.com/token",
         auth_uri = config.auth_uri or "https://accounts.google.com/o/oauth2/auth",
-        entries_uri = config.entries_uri or "https://logging.googleapis.com/v2/entries:write",
+        entries_uri = config.entries_uri,
         access_token = nil,
         access_token_type = nil,
         access_token_expire_time = 0,
