@@ -61,20 +61,28 @@ local function send_request(conf, ctx)
         return 500
     end
 
-    if conf.passthrough then
-        local res_body, err = res:read_body()
-        if not res_body then
-            core.log.error("failed to read response body: ", err)
-            return 500
-        end
-        ngx_req.set_body_data(res_body)
-        return
-    end
-
     local body_reader = res.body_reader
     if not body_reader then
         core.log.error("LLM sent no response body")
         return 500
+    end
+
+    if conf.passthrough then
+        ngx_req.init_body()
+        while true do
+            local chunk, err = body_reader() -- will read chunk by chunk
+            if err then
+                core.log.error("failed to read response chunk: ", err)
+                break
+            end
+            if not chunk then
+                break
+            end
+            ngx_req.append_body(chunk)
+        end
+        ngx_req.finish_body()
+        keepalive_or_close(conf, httpc)
+        return
     end
 
     if core.table.try_read_attr(conf, "model", "options", "stream") then
