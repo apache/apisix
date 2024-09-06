@@ -46,8 +46,8 @@ This Plugin requires APISIX to run on [APISIX-Runtime](../FAQ.md#how-do-i-build-
 | min_length     | integer              | False    | 20            | >= 1         | Dynamically sets the `gzip_min_length` directive.                                       |
 | comp_level     | integer              | False    | 1             | [1, 9]       | Dynamically sets the `gzip_comp_level` directive.                                       |
 | http_version   | number               | False    | 1.1           | 1.1, 1.0     | Dynamically sets the `gzip_http_version` directive.                                     |
-| buffers.number | integer              | False    | 32            | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
-| buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
+| buffers.number | integer              | False    | 32            | >= 1         | Dynamically sets the `gzip_buffers` directive parameter `number`.                                          |
+| buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive parameter `size`. The unit is in bytes.                                          |
 | vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
 
 ## Enable Plugin

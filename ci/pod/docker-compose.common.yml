@@ -102,3 +102,12 @@ services:
       VAULT_DEV_ROOT_TOKEN_ID: root
       VAULT_DEV_LISTEN_ADDRESS: 0.0.0.0:8200
     command: [ "vault", "server", "-dev" ]
+
+
+  ## LocalStack
+  localstack:
+    image: localstack/localstack
+    container_name: localstack
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4566:4566"            # LocalStack Gateway
