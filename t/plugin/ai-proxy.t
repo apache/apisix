@@ -635,7 +635,6 @@ passed
 
 
 === TEST 17: test is SSE works as expected
---- LAST
 --- config
     location /t {
         content_by_lua_block {
