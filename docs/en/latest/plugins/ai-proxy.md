@@ -46,32 +46,29 @@ Proxying requests to OpenAI is supported for now, other AI models will be suppor
 | `messages.role`    | String | Yes      | Role of the message (`system`, `user`, `assistant`) |
 | `messages.content` | String | Yes      | Content of the message                              |
 
-- Completion API
-
-| Name     | Type   | Required | Description                       |
-| -------- | ------ | -------- | --------------------------------- |
-| `prompt` | String | Yes      | Prompt to be sent to the upstream |
-
 ## Plugin Attributes
 
-| Field                              | Type    | Description                                                                                   | Required |
-| ---------------------------------- | ------- | --------------------------------------------------------------------------------------------- | -------- |
-| `route_type`                       | String  | Specifies the type of route (`llm/chat`, `llm/completions`, `passthrough`)                    | Yes      |
-| `auth`                             | Object  | Authentication configuration                                                                  | Yes      |
-| `auth.source`                      | String  | Source of the authentication (`header`, `param`)                                              | Yes      |
-| `auth.name`                        | String  | Name of the param/header carrying Authorization or API key. Minimum length: 1                 | Yes      |
-| `auth.value`                       | String  | Full auth-header/param value. Minimum length: 1. Encrypted.                                   | Yes      |
-| `model`                            | Object  | Model configuration                                                                           | Yes      |
-| `model.provider`                   | String  | AI provider request format. Translates requests to/from specified backend compatible formats. | Yes      |
-| `model.name`                       | String  | Model name to execute.                                                                        | Yes      |
-| `model.options`                    | Object  | Key/value settings for the model                                                              | No       |
-| `model.options.max_tokens`         | Integer | Defines the max_tokens, if using chat or completion models. Default: 256                      | No       |
-| `model.options.temperature`        | Number  | Defines the matching temperature, if using chat or completion models. Range: 0.0 - 5.0        | No       |
-| `model.options.top_p`              | Number  | Defines the top-p probability mass, if supported. Range: 0.0 - 1.0                            | No       |
-| `model.options.upstream_host`      | String  | To be specified to override the host of the AI provider                                       | No       |
-| `model.options.upstream_port`      | Integer | To be specified to override the AI provider port                                              | No       |
-| `model.options.upstream_path`      | String  | To be specified to override the URL to the AI provider endpoints                              | No       |
-| `model.options.response_streaming` | Boolean | Stream response by SSE. Default: false                                                        | No       |
+| **Field**                 | **Required** | **Type** | **Description**                                                                      |
+| ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
+| auth                      | Yes          | Object   | Authentication configuration                                                         |
+| auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
+| auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
+| model.provider            | Yes          | String   | Name of the AI service provider (`openai`).                                          |
+| model.name                | Yes          | String   | Model name to execute.                                                               |
+| model.options             | No           | Object   | Key/value settings for the model                                                     |
+| model.options.max_tokens  | No           | Integer  | Defines the max tokens if using chat or completion models. Default: 256              |
+| model.options.input_cost  | No           | Number   | Cost per 1M tokens in your prompt. Minimum: 0                                        |
+| model.options.output_cost | No           | Number   | Cost per 1M tokens in the output of the AI. Minimum: 0                               |
+| model.options.temperature | No           | Number   | Matching temperature for models. Range: 0.0 - 5.0                                    |
+| model.options.top_p       | No           | Number   | Top-p probability mass. Range: 0 - 1                                                 |
+| model.options.stream      | No           | Boolean  | Stream response by SSE. Default: false                                               |
+| model.override.endpoint   | No           | String   | Override the endpoint of the AI provider                                             |
+| passthrough               | No           | Boolean  | If enabled, the response from LLM will be sent to the upstream. Default: false       |
+| timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 3000         |
+| keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM. Default: true                                  |
+| keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM. Minimum: 1000. Default: 60000 |
+| keepalive_pool            | No           | Integer  | Keepalive pool size for requests to LLM. Minimum: 1. Default: 30                     |
+| ssl_verify                | No           | Boolean  | SSL verification for requests to LLM. Default: true                                  |
 
 ## Example usage
 
@@ -84,10 +81,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "uri": "/anything",
     "plugins": {
       "ai-proxy": {
-        "route_type": "llm/chat",
         "auth": {
-          "header_name": "Authorization",
-          "header_value": "Bearer <some-token>"
+          "header": {
+            "Authorization": "Bearer <some-token>"
+          }
         },
         "model": {
           "provider": "openai",
@@ -103,12 +100,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
       "type": "roundrobin",
       "nodes": {
         "somerandom.com:443": 1
-      }
+      },
+      "scheme": "https",
+      "pass_host": "node"
     }
   }'
 ```
 
-The upstream node can be any arbitrary value because it won't be contacted.
+Since `passthrough` is not enabled upstream node can be any arbitrary value because it won't be contacted.
 
 Now send a request:
 
