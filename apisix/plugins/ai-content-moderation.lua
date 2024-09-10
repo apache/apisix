@@ -23,6 +23,8 @@ local aws_instance = aws()
 local next = next
 local pairs = pairs
 local unpack = unpack
+local type = type
+local ipairs = ipairs
 
 local aws_comprehend_schema = {
     type = "object",
