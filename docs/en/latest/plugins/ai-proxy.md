@@ -29,10 +29,10 @@ description: This document contains information about the Apache APISIX ai-proxy
 
 ## Description
 
-The `ai-proxy` plugin simplifies access to AI providers and models by defining a standard request format
-that allows configuring key fields in plugin configuration to embed into the request.
+The `ai-proxy` plugin simplifies access to LLM providers and models by defining a standard request format
+that allows key fields in plugin configuration to be embedded into the request.
 
-Proxying requests to OpenAI is supported for now, other AI models will be supported soon.
+Proxying requests to OpenAI is supported now. Other LLM services will be supported soon.
 
 ## Request Format
 
