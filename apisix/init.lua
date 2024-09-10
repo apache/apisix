@@ -726,7 +726,6 @@ function _M.http_access_phase()
 end
 
 
-
 function _M.dubbo_access_phase()
     ngx.ctx = fetch_ctx()
 end

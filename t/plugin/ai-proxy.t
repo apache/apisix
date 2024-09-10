@@ -102,8 +102,7 @@ add_block_preprocessor(sub {
                     if header_auth == "Bearer token" or query_auth == "apikey" then
                         ngx.req.read_body()
                         local body, err = ngx.req.get_body_data()
-                        local esc = body:gsub('"\\\""', '\"')
-                        body, err = json.decode(esc)
+                        body, err = json.decode(body)
 
                         if not body.messages or #body.messages < 1 then
                             ngx.status = 400
