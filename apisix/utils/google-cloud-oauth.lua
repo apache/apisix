@@ -86,6 +86,7 @@ function _M.generate_jwt_token(self)
         aud = self.token_uri,
         scope = self.scope,
         iat = get_timestamp(),
+        --- access token lifetime : 60 * 60
         exp = get_timestamp() + (60 * 60)
     })
 

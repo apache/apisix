@@ -142,7 +142,7 @@ local function get_secret(oauth, secrets_id)
 end
 
 
-local function make_request_to_gcp(conf, secrets_id)
+local function request_to_gcp(conf, secrets_id)
     local auth_config, err = fetch_oauth_conf(conf)
     if not auth_config then
         return nil, err
@@ -174,11 +174,11 @@ function _M.get(conf, key)
         return nil, "can't find main key, key: " .. key
     end
 
-    local sub_key = idx and str_sub(key, idx + 1) or nil
+    local sub_key = idx and str_sub(key, idx + 1)
 
     core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-    local res, err = make_request_to_gcp(conf, main_key)
+    local res, err = request_to_gcp(conf, main_key)
     if not res then
         return nil, "failed to retrtive data from gcp secret manager: " .. err
     end
@@ -189,7 +189,7 @@ function _M.get(conf, key)
 
     local data, err = core.json.decode(res)
     if not data then
-        return nil, "failed to decode result, res: " .. res .. ", err: " .. err
+        return nil, "failed to decode result, err: " .. err
     end
 
     return data[sub_key]
