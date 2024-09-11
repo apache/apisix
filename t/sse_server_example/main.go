@@ -36,7 +36,7 @@ func sseHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "[ERROR]")
 		return
 	}
-	// A simple loop that sends a message every 2 seconds
+	// A simple loop that sends a message every 500ms
 	for i := 0; i < 5; i++ {
 		// Create a message to send to the client
 		fmt.Fprintf(w, "data: %s\n\n", time.Now().Format(time.RFC3339))

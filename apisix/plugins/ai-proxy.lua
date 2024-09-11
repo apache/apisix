@@ -81,7 +81,7 @@ function _M.access(conf, ctx)
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
     local res, err, httpc = ai_driver.request(conf, request_table, ctx)
     if not res then
-        core.log.error("failed to send request to AI service: ", err)
+        core.log.error("failed to send request to LLM service: ", err)
         return internal_server_error
     end
 
