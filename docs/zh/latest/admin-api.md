@@ -1508,6 +1508,104 @@ HTTP/1.1 200 OK
 {"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
+当 `{secretmanager}` 是 `aws` 时：
+
+| 名称 | 必选项 | 默认值 | 描述 |
+| --- | --- | --- | --- |
+| access_key_id | 是 |  | AWS 访问密钥 ID |
+| secret_access_key | 是 |  | AWS 访问密钥 |
+| session_token | 否 |  | 临时访问凭证信息 |
+| region | 否 | us-east-1 | AWS 区域 |
+| endpoint_url | 否 | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager 地址 |
+
+配置示例：
+
+```shell
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}
+
+```
+
+使用示例：
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/aws/test3 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"value":{"create_time":1726069970,"endpoint_url":"http://127.0.0.1:4566","region":"us-east-1","access_key_id":"access","secret_access_key":"secret","id":"aws/test3","update_time":1726069970,"session_token":"token"},"key":"/apisix/secrets/aws/test3"}
+```
+
+当 `{secretmanager}` 是 `gcp` 时：
+
+| 名称                     | 必选项   | 默认值                                           | 描述                                                                                                                             |
+| ----------------------- | -------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------  |
+| auth_config             | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。                                                                                     |
+| auth_config.client_email | 是       |                                                  | 谷歌服务帐号的 email 参数。                                                                                                           |
+| auth_config.private_key | 是       |                                                  | 谷歌服务帐号的私钥参数。                                                                                                           |
+| auth_config.project_id  | 是       |                                                  | 谷歌服务帐号的项目 ID。                                                                                                            |
+| auth_config.token_uri   | 否       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                        |
+| auth_config.entries_uri | 否       |   https://secretmanager.googleapis.com/v1     | 谷歌密钥服务访问端点 API。                                                                                                   |
+| auth_config.scope      | 否       |   https://www.googleapis.com/auth/cloud-platform                                               | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes)|
+| auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。          |
+| ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
+
+配置示例：
+
+```shell
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}
+
+```
+
+使用示例：
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/gcp/test4 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"value":{"id":"gcp/test4","ssl_verify":true,"auth_config":{"token_uri":"https://oauth2.googleapis.com/token","scope":["https://www.googleapis.com/auth/cloud-platform"],"entries_uri":"https://secretmanager.googleapis.com/v1","client_email":"email@apisix.iam.gserviceaccount.com","private_key":"private_key","project_id":"apisix-project"},"create_time":1726070161,"update_time":1726070161},"key":"/apisix/secrets/gcp/test4"}
+```
+
 ### 应答参数 {#secret-config-response-parameters}
 
 当前的响应是从 etcd 返回的。
