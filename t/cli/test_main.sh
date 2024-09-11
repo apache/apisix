@@ -394,12 +394,12 @@ nginx_config:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if grep "env ETCD_HOST=.*;" conf/nginx.conf > /dev/null; then
+if grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
 
-if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
+if ! grep "env ETCD_HOST=1.1.1.1;" conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
