@@ -335,7 +335,7 @@ function _M.get_body(max_size, ctx)
 end
 
 
-function _M.get_request_body_table()
+function _M.get_json_request_body_table()
     local body, err = _M.get_body()
     if not body then
         return nil, { message = "could not get body: " .. (err or "request body is empty") }

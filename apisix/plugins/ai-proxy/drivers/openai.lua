@@ -26,6 +26,7 @@ local type  = type
 -- globals
 local DEFAULT_HOST = "api.openai.com"
 local DEFAULT_PORT = 443
+local DEFAULT_PATH = "/v1/chat/completions"
 
 
 function _M.request(conf, request_table, ctx)
@@ -54,15 +55,7 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
-    local query_params = ""
-    if conf.auth.query and type(conf.auth.query) == "table" then
-        query_params = core.string.encode_args(conf.auth.query)
-        if query_params and query_params ~= "" then
-            query_params = "?" .. query_params
-        end
-    end
-
-    local path = (parsed_url.path or "/v1/chat/completions") ..  query_params
+    local path = (parsed_url.path or DEFAULT_PATH)
 
     local headers = (conf.auth.header or {})
     headers["Content-Type"] = "application/json"
@@ -72,6 +65,7 @@ function _M.request(conf, request_table, ctx)
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
         path = path,
+        query = conf.auth.query
     }
 
     if conf.model.options then
