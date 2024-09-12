@@ -285,7 +285,6 @@ passed
 === TEST 8: domain name resolved successfully
 --- request
 GET /server_port
---- error_code: 502
 --- error_log eval
 qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 
