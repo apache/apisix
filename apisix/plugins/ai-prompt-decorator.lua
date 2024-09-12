@@ -114,4 +114,5 @@ function _M.rewrite(conf, ctx)
 end
 
 
+_M.__decorate = decorate -- for ai-rag plugin
 return _M
