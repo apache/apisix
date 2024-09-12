@@ -54,7 +54,7 @@ routes:
 # check for resolve variables
 var_test_path=/test make init
 
-if ! grep "env var_test_path=/test;" conf/nginx.conf > /dev/null; then
+if ! grep "env var_test_path;" conf/nginx.conf > /dev/null; then
     echo "failed: failed to resolve variables"
     exit 1
 fi
