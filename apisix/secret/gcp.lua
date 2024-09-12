@@ -41,6 +41,9 @@ local schema = {
                 },
                 scope = {
                     type = "array",
+                    items = {
+                        type = "string"
+                    },
                     default = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     }
@@ -101,7 +104,7 @@ end
 
 
 local function get_secret(oauth, secrets_id)
-    local http_new = http.new()
+    local httpc = http.new()
 
     local access_token = oauth:generate_access_token()
     if not access_token then
@@ -111,7 +114,7 @@ local function get_secret(oauth, secrets_id)
     local entries_uri = oauth.entries_uri .. "/projects/" .. oauth.project_id
                             .. "/secrets/" .. secrets_id .. "/versions/latest:access"
 
-    local res, err = http_new:request_uri(entries_uri, {
+    local res, err = httpc:request_uri(entries_uri, {
         ssl_verify = oauth.ssl_verify,
         method = "GET",
         headers = {
@@ -142,7 +145,7 @@ local function get_secret(oauth, secrets_id)
 end
 
 
-local function request_to_gcp(conf, secrets_id)
+local function make_request_to_gcp(conf, secrets_id)
     local auth_config, err = fetch_oauth_conf(conf)
     if not auth_config then
         return nil, err
@@ -178,7 +181,7 @@ function _M.get(conf, key)
 
     core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-    local res, err = request_to_gcp(conf, main_key)
+    local res, err = make_request_to_gcp(conf, main_key)
     if not res then
         return nil, "failed to retrtive data from gcp secret manager: " .. err
     end
