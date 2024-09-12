@@ -251,7 +251,7 @@ location /t {
                                         name = "upstream_A",
                                         type = "roundrobin",
                                         nodes = {
-                                            {host = "foo.com", port = 80, weight = 0}
+                                            {host = "test.com", port = 80, weight = 0}
                                         }
                                     },
                                     weight = 2
@@ -285,7 +285,7 @@ passed
 === TEST 8: domain name resolved successfully
 --- request
 GET /server_port
---- error_code: 302
+--- error_code: 502
 --- error_log eval
 qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
 
