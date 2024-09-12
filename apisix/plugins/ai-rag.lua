@@ -97,12 +97,15 @@ function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+
 function _M.access(conf, ctx)
     -- local conf = conf.rag
     -- if conf then
     local httpc = http.new()
-    local body_tab = core.request.get_json_request_body_table()
-
+    local body_tab, err = core.request.get_json_request_body_table()
+    if not body_tab then
+        return 400, err
+    end
     if not body_tab["ai_rag"] then
         core.log.error("request body must have \"ai-rag\" field")
         return 400
@@ -128,25 +131,20 @@ function _M.access(conf, ctx)
         return 400
     end
 
-    local embeddings, err = embeddings_driver.get_embeddings(embeddings_provider_conf, body_tab["ai_rag"].embeddings, httpc)
+    local embeddings, status, err = embeddings_driver.get_embeddings(embeddings_provider_conf,
+    body_tab["ai_rag"].embeddings, httpc)
     if not embeddings then
-        -- TODO: bring order
         core.log.error("could not get embeddings: ", err)
-        return 500
+        return status, err
     end
-    core.log.error("dibag err: ", err)
-    core.log.warn("dibag res: ", core.json.encode(embeddings))
 
     local search_body = body_tab["ai_rag"].vector_search
     search_body.embeddings = embeddings
-    local res, err = vector_search_driver.search(vector_search_provider_conf, search_body, httpc)
+    local res, status, err = vector_search_driver.search(vector_search_provider_conf, search_body, httpc)
     if not res then
-        -- TODO: bring order
-        core.log.error("could not get vector_search: ", err)
-        return 500
+        core.log.error("could not get vector_search result: ", err)
+        return status, err
     end
-    core.log.error("dibag err: ", err)
-    core.log.warn("dibag res: ", core.json.encode(res, true))
 
     body_tab["ai_rag"] = nil
     local prepend = {
@@ -165,5 +163,6 @@ function _M.access(conf, ctx)
     local req_body_json = core.json.encode(body_tab)
     ngx_req.set_body_data(req_body_json)
 end
+
 
 return _M

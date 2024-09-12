@@ -15,11 +15,11 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-
+local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local _M = {}
 
-function _M.get_embeddings(conf, body, httpc)
 
+function _M.get_embeddings(conf, body, httpc)
     local res, err = httpc:request_uri(conf.endpoint, {
         method = "POST",
         headers = {
@@ -32,22 +32,27 @@ function _M.get_embeddings(conf, body, httpc)
         return nil, err
     end
 
+    if res.status ~= 200 then
+        return nil, res.status, res.body
+    end
+
     local res_tab, err = core.json.decode(res.body)
     if not res_tab then
-        return nil, err
+        return nil, internal_server_error, err
     end
 
     if type(res_tab.data) ~= "table" or #res_tab.data < 1 then
-        return nil, res.body
+        return nil, internal_server_error, res.body
     end
 
     local embeddings, err = core.json.encode(res_tab.data[1].embedding)
     if not embeddings then
-        return nil, err
+        return nil, internal_server_error, err
     end
 
     return res_tab.data[1].embedding
 end
+
 
 _M.request_schema = {
     type = "object",

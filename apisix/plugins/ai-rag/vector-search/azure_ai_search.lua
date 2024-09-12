@@ -15,8 +15,10 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local _M = {}
+
 
 function _M.search(conf, search_body, httpc)
     local body = {
@@ -29,18 +31,6 @@ function _M.search(conf, search_body, httpc)
         }
     }
     local final_body = core.json.encode(body)
-    local sb = core.json.encode(search_body)
-    core.log.warn("dibag final body: ", final_body)
-    core.log.warn("dibag final body: ", final_body)
---     [[{
--- "vectorQueries": [
---     {
---         "kind": "vector",
---         "vector": ]].. embeddings .. [[,
---         "fields": "contentVector"
---     }
--- ]
--- }]]
     local res, err = httpc:request_uri(conf.endpoint, {
         method = "POST",
         headers = {
@@ -51,29 +41,16 @@ function _M.search(conf, search_body, httpc)
     })
 
     if not res or not res.body then
-        return nil, err
+        return nil, internal_server_error, err
     end
 
-    return res.body, err
+    if res.status ~= 200 then
+        return nil, res.status, res.body
+    end
+
+    return res.body
 end
 
--- _M.request_schema = {
---     type = "object",
---     properties = {
---         vectorQueries = {
---             type = "array",
---             items = {
---                 type = "object",
---                 properties = {
---                     fields = {
---                         type = "string"
---                     }
---                 },
---                 required = { "fields" }
---             },
---         },
---     },
--- }
 
 _M.request_schema = {
     type = "object",
