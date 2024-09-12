@@ -287,7 +287,7 @@ passed
 GET /server_port
 --- error_code: 502
 --- error_log eval
-qr/dns resolver domain: foo.com to \d+.\d+.\d+.\d+/
+qr/dns resolver domain: test.com to \d+.\d+.\d+.\d+/
 
 
 
