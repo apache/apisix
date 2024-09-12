@@ -1459,7 +1459,7 @@ Secret resource request address: /apisix/admin/secrets/{secretmanager}/{id}
 
 ### Request Body Parameters
 
-When `{secretmanager}` is `vault`:
+#### When `{secretmanager}` is `vault`:
 
 | Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
@@ -1497,7 +1497,7 @@ HTTP/1.1 200 OK
 {"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
-When `{secretmanager}` is `aws`:
+#### When `{secretmanager}` is `aws`:
 
 | Parameter | Required | Type | Description | Example |
 | --- | --- | --- | --- | --- |
@@ -1505,7 +1505,7 @@ When `{secretmanager}` is `aws`:
 | secret_access_key | True | string | AWS Secret Access Key |  |
 | session_token | False | string | Temporary access credential information |  |
 | region | False | string | AWS Region |  |
-| endpoint_url | False | URI | AWS Secret Manager URL | https://secretsmanagerus-east-1.amazonaws.com |
+| endpoint_url | False | URI | AWS Secret Manager URL | https://secretsmanager.{region}.amazonaws.com |
 
 Example Configuration:
 
@@ -1540,7 +1540,7 @@ HTTP/1.1 200 OK
 {"value":{"create_time":1726069970,"endpoint_url":"http://127.0.0.1:4566","region":"us-east-1","access_key_id":"access","secret_access_key":"secret","id":"aws/test3","update_time":1726069970,"session_token":"token"},"key":"/apisix/secrets/aws/test3"}
 ```
 
-When `{secretmanager}` is `gcp`:
+#### When `{secretmanager}` is `gcp`:
 
 | Parameter | Required | Type | Description | Example |
 | --- | --- | --- | --- | --- |
