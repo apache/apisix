@@ -99,10 +99,10 @@ proxy-mirror
 proxy-rewrite
 workflow
 api-breaker
-ai-proxy
 limit-conn
 limit-count
 limit-req
+ai-proxy
 gzip
 server-info
 traffic-split
