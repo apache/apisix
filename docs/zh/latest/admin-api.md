@@ -1469,7 +1469,7 @@ Secret 资源请求地址：/apisix/admin/secrets/{secretmanager}/{id}
 
 ### body 请求参数 {#secret-config-body-requset-parameters}
 
-#### 当 `{secretmanager}` 是 `vault` 时：
+#### 当 Secret Manager 是 Vault 时
 
 | 名称  | 必选项 | 类型        | 描述                                                                                                        | 例子                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
@@ -1508,7 +1508,7 @@ HTTP/1.1 200 OK
 {"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
 ```
 
-#### 当 `{secretmanager}` 是 `aws` 时：
+#### 当 Secret Manager 是 AWS 时
 
 | 名称 | 必选项 | 默认值 | 描述 |
 | --- | --- | --- | --- |
@@ -1552,7 +1552,7 @@ HTTP/1.1 200 OK
 {"value":{"create_time":1726069970,"endpoint_url":"http://127.0.0.1:4566","region":"us-east-1","access_key_id":"access","secret_access_key":"secret","id":"aws/test3","update_time":1726069970,"session_token":"token"},"key":"/apisix/secrets/aws/test3"}
 ```
 
-#### 当 `{secretmanager}` 是 `gcp` 时：
+#### 当 Secret Manager 是 GCP 时
 
 | 名称                     | 必选项   | 默认值                                           | 描述                                                                                                                             |
 | ----------------------- | -------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------  |
