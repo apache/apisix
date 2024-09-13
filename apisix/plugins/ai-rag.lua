@@ -93,14 +93,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    -- TODO: check endpoint validity
     return core.schema.check(schema, conf)
 end
 
 
 function _M.access(conf, ctx)
-    -- local conf = conf.rag
-    -- if conf then
     local httpc = http.new()
     local body_tab, err = core.request.get_json_request_body_table()
     if not body_tab then
@@ -117,7 +114,8 @@ function _M.access(conf, ctx)
 
     local vector_search_provider = next(conf.vector_search_provider)
     local vector_search_provider_conf = conf.vector_search_provider[vector_search_provider]
-    local vector_search_driver = require("apisix.plugins.ai-rag.vector-search." .. vector_search_provider)
+    local vector_search_driver = require("apisix.plugins.ai-rag.vector-search." ..
+                                        vector_search_provider)
 
     local vs_req_schema = vector_search_driver.request_schema
     local emb_req_schema = embeddings_driver.request_schema
@@ -132,7 +130,7 @@ function _M.access(conf, ctx)
     end
 
     local embeddings, status, err = embeddings_driver.get_embeddings(embeddings_provider_conf,
-    body_tab["ai_rag"].embeddings, httpc)
+                                                        body_tab["ai_rag"].embeddings, httpc)
     if not embeddings then
         core.log.error("could not get embeddings: ", err)
         return status, err
@@ -140,7 +138,8 @@ function _M.access(conf, ctx)
 
     local search_body = body_tab["ai_rag"].vector_search
     search_body.embeddings = embeddings
-    local res, status, err = vector_search_driver.search(vector_search_provider_conf, search_body, httpc)
+    local res, status, err = vector_search_driver.search(vector_search_provider_conf,
+                                                        search_body, httpc)
     if not res then
         core.log.error("could not get vector_search result: ", err)
         return status, err

@@ -92,7 +92,7 @@ add_block_preprocessor(sub {
                     body, err = json.decode(body)
                     if body.vectorQueries[1].vector[1] ~= 123456789 then
                         ngx.status = 500
-                        ngx.say({ error = "occured" })
+                        ngx.say({ error = "occurred" })
                         return
                     end
 

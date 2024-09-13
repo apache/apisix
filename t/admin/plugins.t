@@ -95,6 +95,7 @@ proxy-cache
 body-transformer
 ai-prompt-template
 ai-prompt-decorator
+ai-rag
 proxy-mirror
 proxy-rewrite
 workflow
