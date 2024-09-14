@@ -557,7 +557,7 @@ local function multiple_mode_init(confs)
         else
             endpoints_informer.on_added = on_endpoint_modified
             endpoints_informer.on_modified = on_endpoint_modified
-            -- endpoints is fully updated and the cache is cleared first. 
+            -- endpoints is fully updated and the cache is cleared first.
             endpoints_informer.pre_list = pre_list
             endpoints_informer.post_list = post_list
         end
