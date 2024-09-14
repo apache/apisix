@@ -696,7 +696,7 @@ Please modify "admin_key" in conf/config.yaml .
 
         for name, value in pairs(exported_vars) do
             if value then
-                table_insert(sys_conf["envs"], name .. "=" .. value)
+                table_insert(sys_conf["envs"], name)
             end
         end
     end
