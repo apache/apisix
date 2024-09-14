@@ -243,6 +243,10 @@
         },
         {
           "type": "doc",
+          "id": "wasm"
+        },
+        {
+          "type": "doc",
           "id": "CODE_STYLE"
         },
         {
