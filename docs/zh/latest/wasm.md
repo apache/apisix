@@ -23,7 +23,7 @@ wasm:
   plugins:
     - name: wasm_log # 插件的名称
       priority: 7999 # 优先级
-      file: t/wasm/log/main.go.wasm # `.wasm`文件的路径
+      file: t/wasm/log/main.go.wasm # `.wasm` 文件的路径
       http_request_phase: access # 默认是"access"，可以是["access", "rewrite"]之一
 ```
 
@@ -61,9 +61,9 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -
 
 以下是插件中可以配置的属性：
 
-|名称|类型|要求|默认|有效|描述|
+|名称 | 类型 | 要求 | 默认 | 有效 | 描述|
 |---|---|---|---|---|---|
-|conf|字符串|必填|无|!= ""|插件 ctx 配置，可以通过 Proxy Wasm SDK 获取|
+|conf|字符串 | 必填 | 无|!=|插件 ctx 配置，可以通过 Proxy Wasm SDK 获取|
 
 这里是 Proxy Wasm 回调与 APISIX 阶段的映射：
 
