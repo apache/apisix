@@ -220,6 +220,7 @@ local _M = {
     "proxy-rewrite",
     "workflow",
     "api-breaker",
+    "ai-proxy",
     "limit-conn",
     "limit-count",
     "limit-req",

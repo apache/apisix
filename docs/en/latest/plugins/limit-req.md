@@ -77,7 +77,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var",
@@ -101,7 +101,7 @@ You can also configure the `key_type` to `var_combination` as shown:
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var_combination",
@@ -130,8 +130,8 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
             "key": "auth-jack"
         },
         "limit-req": {
-            "rate": 1,
-            "burst": 3,
+            "rate": 3,
+            "burst": 2,
             "rejected_code": 403,
             "key": "consumer_name"
         }
@@ -164,7 +164,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 
 ## Example usage
 
-Once you have configured the Plugin as shown above, you can test it out. The above configuration limits to 1 request per second. If the number of requests is greater than 1 but less than 3, a delay will be added. And if the number of requests per second exceeds 3, it will be rejected.
+Once you have configured the Plugin as shown above, you can test it out. The above configuration limits to 3 request per second. If the number of requests is greater than 3 but less than 5, a delay will be added. And if the number of requests per second exceeds 5, it will be rejected.
 
 Now if you send a request:
 
