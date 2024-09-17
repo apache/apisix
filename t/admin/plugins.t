@@ -102,6 +102,7 @@ api-breaker
 limit-conn
 limit-count
 limit-req
+ai-proxy
 gzip
 server-info
 traffic-split
