@@ -1,0 +1,15 @@
+{
+  "choices": [
+    {
+      "finish_reason": "stop",
+      "index": 0,
+      "message": { "content": "1 + 1 = 2.", "role": "assistant" }
+    }
+  ],
+  "created": 1723780938,
+  "id": "chatcmpl-9wiSIg5LYrrpxwsr2PubSQnbtod1P",
+  "model": "gpt-4o-2024-05-13",
+  "object": "chat.completion",
+  "system_fingerprint": "fp_abc28019ad",
+  "usage": { "completion_tokens": 8, "prompt_tokens": 23, "total_tokens": 31 }
+}
