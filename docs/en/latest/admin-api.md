@@ -1509,7 +1509,7 @@ When `{secretmanager}` is `aws`:
 
 Example Configuration:
 
-```shell
+```json
 {
     "endpoint_url": "http://127.0.0.1:4566",
     "region": "us-east-1",
@@ -1556,7 +1556,7 @@ When `{secretmanager}` is `gcp`:
 
 Example Configuration:
 
-```shell
+```json
 {
     "auth_config" : {
         "client_email": "email@apisix.iam.gserviceaccount.com",

@@ -1520,7 +1520,7 @@ HTTP/1.1 200 OK
 
 配置示例：
 
-```shell
+```json
 {
     "endpoint_url": "http://127.0.0.1:4566",
     "region": "us-east-1",
@@ -1568,7 +1568,7 @@ HTTP/1.1 200 OK
 
 配置示例：
 
-```shell
+```json
 {
     "auth_config" : {
         "client_email": "email@apisix.iam.gserviceaccount.com",
