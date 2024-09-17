@@ -436,6 +436,22 @@ passed
 
 
 
+=== TEST 17: verify: invalid signature
+--- request
+GET /hello
+--- more_headers
+Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
+Date: Thu, 24 Sep 2020 06:39:52 GMT
+--- error_code: 401
+--- response_body
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
+
+
+
 === TEST 18: verify: invalid signature
 --- request
 GET /hello
@@ -452,23 +468,7 @@ client request can't be validated: Invalid signature
 
 
 
-=== TEST 19: verify: invalid signature
---- request
-GET /hello
---- more_headers
-Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
-Date: Thu, 24 Sep 2020 06:39:52 GMT
---- error_code: 401
---- response_body
-{"message":"client request can't be validated"}
---- grep_error_log eval
-qr/client request can't be validated: [^,]+/
---- grep_error_log_out
-client request can't be validated: Invalid signature
-
-
-
-=== TEST 20: add route with 1 clock skew
+=== TEST 19: add route with 1 clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -502,7 +502,7 @@ passed
 
 
 
-=== TEST 21: verify: Invalid GMT format time
+=== TEST 20: verify: Invalid GMT format time
 --- config
 location /t {
     content_by_lua_block {
@@ -556,7 +556,7 @@ client request can't be validated: Clock skew exceeded
 
 
 
-=== TEST 22: update route with default clock skew
+=== TEST 21: update route with default clock skew
 --- config
     location /t {
         content_by_lua_block {
@@ -588,7 +588,7 @@ passed
 
 
 
-=== TEST 23: verify: put ok
+=== TEST 22: verify: put ok
 --- config
 location /t {
     content_by_lua_block {
@@ -646,7 +646,7 @@ passed
 
 
 
-=== TEST 24: update route with signed_headers
+=== TEST 23: update route with signed_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -682,7 +682,7 @@ passed
 
 
 
-=== TEST 25: verify with invalid signed header
+=== TEST 24: verify with invalid signed header
 --- config
 location /t {
     content_by_lua_block {
@@ -734,7 +734,7 @@ client request can't be validated: expected header "x-custom-header-b" missing i
 
 
 
-=== TEST 26: verify ok with signed headers
+=== TEST 25: verify ok with signed headers
 --- config
 location /t {
     content_by_lua_block {
@@ -786,7 +786,7 @@ passed
 
 
 
-=== TEST 27: add consumer with plugin hmac-auth - empty configuration
+=== TEST 26: add consumer with plugin hmac-auth - empty configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -813,7 +813,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 
 
 
-=== TEST 28: add route with no allowed algorithms
+=== TEST 27: add route with no allowed algorithms
 --- config
     location /t {
         content_by_lua_block {
@@ -850,8 +850,7 @@ qr/validation failed: expect array to have at least 1 items/
 
 
 
-
-=== TEST 29: update route with signed_headers
+=== TEST 28: update route with signed_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -887,8 +886,7 @@ passed
 
 
 
-
-=== TEST 30: verify Authorization header missing
+=== TEST 29: verify Authorization header missing
 --- config
 location /t {
     content_by_lua_block {
@@ -936,7 +934,7 @@ passed
 
 
 
-=== TEST 31 : update route with signed_headers
+=== TEST 30 : update route with signed_headers
 --- config
     location /t {
         content_by_lua_block {
@@ -972,8 +970,7 @@ passed
 
 
 
-
-=== TEST 32: verify error with the client only sends one in the request, but there are two in the signature
+=== TEST 31: verify error with the client only sends one in the request, but there are two in the signature
 --- config
 location /t {
     content_by_lua_block {
@@ -1029,7 +1026,7 @@ client request can't be validated: Invalid signature
 
 
 
-=== TEST 33: verify error with the client sends two in the request, but there is only one in the signature
+=== TEST 32: verify error with the client sends two in the request, but there is only one in the signature
 --- config
 location /t {
     content_by_lua_block {
@@ -1085,7 +1082,7 @@ client request can't be validated: Invalid signature
 
 
 
-=== TEST 34 : update route with allowed_algorithms
+=== TEST 33 : update route with allowed_algorithms
 --- config
     location /t {
         content_by_lua_block {
@@ -1121,7 +1118,7 @@ passed
 
 
 
-=== TEST 35: verify with hmac-sha1 algorithm, not part of allowed_algorithms
+=== TEST 34: verify with hmac-sha1 algorithm, not part of allowed_algorithms
 --- config
 location /t {
     content_by_lua_block {
