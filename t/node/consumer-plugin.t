@@ -237,7 +237,7 @@ GET /t
                                 "key": "consumer-plugin-John_Doe"
                             },
                             "hmac-auth": {
-                                "access_key": "my-access-key",
+                                "key_id": "my-access-key",
                                 "secret_key": "my-secret-key",
                                 "clock_skew": 1
                             }
