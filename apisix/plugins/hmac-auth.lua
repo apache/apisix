@@ -18,7 +18,6 @@ local ngx        = ngx
 local abs        = math.abs
 local ngx_time   = ngx.time
 local ngx_re     = require("ngx.re")
-local re_gmatch  = ngx.re.gmatch
 local ipairs     = ipairs
 local hmac_sha1  = ngx.hmac_sha1
 local core       = require("apisix.core")
@@ -173,7 +172,7 @@ local function generate_signature(ctx, secret_key, params)
         end
     end
 
-    local signing_string = core.table.concat(signing_string_items, "\n") .. "\n"          
+    local signing_string = core.table.concat(signing_string_items, "\n") .. "\n"
     return hmac_funcs[params.algorithm](secret_key, signing_string)
 end
 
@@ -273,7 +272,7 @@ local function validate(ctx, conf, params)
         end
 
         req_body = req_body or ""
-        local digest_created = "SHA-256" .. "=" .. 
+        local digest_created = "SHA-256" .. "=" ..
                 ngx_encode_base64(sha256(req_body))
         if digest_created ~= digest_header then
             return nil, "Invalid digest"
