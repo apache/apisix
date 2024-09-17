@@ -202,7 +202,7 @@ local function validate(ctx, conf, params)
 
     local consumer_conf = consumer.auth_conf
     local found_algorithm = false
-    -- check supported alorithm used
+    -- check supported algorithm used
     if not conf.allowed_algorithms then
         conf.allowed_algorithms = ALLOWED_ALGORITHMS
     end

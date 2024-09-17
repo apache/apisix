@@ -556,7 +556,7 @@ client request can't be validated: Clock skew exceeded
 
 
 
-=== TEST 22: update route with defualt clock skew
+=== TEST 22: update route with default clock skew
 --- config
     location /t {
         content_by_lua_block {
