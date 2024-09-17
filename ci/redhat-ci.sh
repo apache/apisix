@@ -77,6 +77,8 @@ install_dependencies() {
     yum install -y iproute procps
     start_grpc_server_example
 
+    start_sse_server_example
+
     # installing grpcurl
     install_grpcurl
 
