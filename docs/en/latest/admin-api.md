@@ -1499,13 +1499,13 @@ HTTP/1.1 200 OK
 
 #### When Secret Manager is AWS
 
-| Parameter | Required | Type | Description | Example |
-| --- | --- | --- | --- | --- |
-| access_key_id | True | string | AWS Access Key ID |  |
-| secret_access_key | True | string | AWS Secret Access Key |  |
-| session_token | False | string | Temporary access credential information |  |
-| region | False | string | AWS Region |  |
-| endpoint_url | False | URI | AWS Secret Manager URL | https://secretsmanager.{region}.amazonaws.com |
+| Parameter         | Required | Type   | Description                             | Example                                       |
+| ----------------- | -------- | ------ | --------------------------------------- | --------------------------------------------- |
+| access_key_id     | True     | string | AWS Access Key ID                       |                                               |
+| secret_access_key | True     | string | AWS Secret Access Key                   |                                               |
+| session_token     | False    | string | Temporary access credential information |                                               |
+| region            | False    | string | AWS Region                              | us-east-1                                     |
+| endpoint_url      | False    | URI    | AWS Secret Manager URL                  | https://secretsmanager.{region}.amazonaws.com |
 
 Example Configuration:
 
@@ -1542,17 +1542,17 @@ HTTP/1.1 200 OK
 
 #### When Secret Manager is GCP
 
-| Parameter | Required | Type | Description | Example |
-| --- | --- | --- | --- | --- |
-| auth_config | True | object | Either `auth_config` or `auth_file` must be provided. |  |
-| auth_config.client_email | True | string | Email address of the Google Cloud service account. |  |
-| auth_config.private_key | True | string | Private key of the Google Cloud service account. |  |
-| auth_config.project_id | True | string | Project ID in the Google Cloud service account. |  |
-| auth_config.token_uri | False | string | Token URI of the Google Cloud service account. | [https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token) |
-| auth_config.entries_uri | False | string | The API access endpoint for the Google Secrets Manager. | [https://secretmanager.googleapis.com/v1](https://secretmanager.googleapis.com/v1) |
-| auth_config.scope | False | string | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) | [https://www.googleapis.com/auth/cloud-platform](https://www.googleapis.com/auth/cloud-platform) |
-| auth_file | True | string | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided. |  |
-| ssl_verify | False | boolean | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). | true |
+| Parameter                | Required | Type    | Description                                                                                                                                               | Example                                                                                          |  
+| ------------------------ | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |  
+| auth_config              | True     | object  | Either `auth_config` or `auth_file` must be provided.                                                                                                     |                                                                                                  |  
+| auth_config.client_email | True     | string  | Email address of the Google Cloud service account.                                                                                                        |                                                                                                  |  
+| auth_config.private_key  | True     | string  | Private key of the Google Cloud service account.                                                                                                          |                                                                                                  |  
+| auth_config.project_id   | True     | string  | Project ID in the Google Cloud service account.                                                                                                           |                                                                                                  |  
+| auth_config.token_uri    | False    | string  | Token URI of the Google Cloud service account.                                                                                                            | [https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token)                       |  
+| auth_config.entries_uri  | False    | string  | The API access endpoint for the Google Secrets Manager.                                                                                                   | [https://secretmanager.googleapis.com/v1](https://secretmanager.googleapis.com/v1)               |  
+| auth_config.scope        | False    | string  | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) | [https://www.googleapis.com/auth/cloud-platform](https://www.googleapis.com/auth/cloud-platform) |  
+| auth_file                | True     | string  | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided.                                  |                                                                                                  |  
+| ssl_verify               | False    | boolean | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).         | true                                                                                             |  
 
 Example Configuration:
 

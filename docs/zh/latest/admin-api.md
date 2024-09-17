@@ -1510,13 +1510,13 @@ HTTP/1.1 200 OK
 
 #### 当 Secret Manager 是 AWS 时
 
-| 名称 | 必选项 | 默认值 | 描述 |
-| --- | --- | --- | --- |
-| access_key_id | 是 |  | AWS 访问密钥 ID |
-| secret_access_key | 是 |  | AWS 访问密钥 |
-| session_token | 否 |  | 临时访问凭证信息 |
-| region | 否 | us-east-1 | AWS 区域 |
-| endpoint_url | 否 | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager 地址 |
+| 名称              | 必选项 | 默认值                                        | 描述                    |
+| ----------------- | ------ | --------------------------------------------- | ----------------------- |
+| access_key_id     | 是     |                                               | AWS 访问密钥 ID         |
+| secret_access_key | 是     |                                               | AWS 访问密钥            |
+| session_token     | 否     |                                               | 临时访问凭证信息        |
+| region            | 否     | us-east-1                                     | AWS 区域                |
+| endpoint_url      | 否     | https://secretsmanager.{region}.amazonaws.com | AWS Secret Manager 地址 |
 
 配置示例：
 
@@ -1554,17 +1554,17 @@ HTTP/1.1 200 OK
 
 #### 当 Secret Manager 是 GCP 时
 
-| 名称                     | 必选项   | 默认值                                           | 描述                                                                                                                             |
-| ----------------------- | -------- | ------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------  |
-| auth_config             | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。                                                                                     |
-| auth_config.client_email | 是       |                                                  | 谷歌服务帐号的 email 参数。                                                                                                           |
-| auth_config.private_key | 是       |                                                  | 谷歌服务帐号的私钥参数。                                                                                                           |
-| auth_config.project_id  | 是       |                                                  | 谷歌服务帐号的项目 ID。                                                                                                            |
-| auth_config.token_uri   | 否       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                        |
-| auth_config.entries_uri | 否       |   https://secretmanager.googleapis.com/v1     | 谷歌密钥服务访问端点 API。                                                                                                   |
-| auth_config.scope      | 否       |   https://www.googleapis.com/auth/cloud-platform                                               | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes)|
-| auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。          |
-| ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
+| 名称                     | 必选项 | 默认值                                         | 描述                                                                                                                              |
+| ------------------------ | ------ | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| auth_config              | 是     |                                                | `auth_config` 和 `auth_file` 必须配置一个。                                                                                       |
+| auth_config.client_email | 是     |                                                | 谷歌服务帐号的 email 参数。                                                                                                       |
+| auth_config.private_key  | 是     |                                                | 谷歌服务帐号的私钥参数。                                                                                                          |
+| auth_config.project_id   | 是     |                                                | 谷歌服务帐号的项目 ID。                                                                                                           |
+| auth_config.token_uri    | 否     | https://oauth2.googleapis.com/token            | 请求谷歌服务帐户的令牌的 URI。                                                                                                    |
+| auth_config.entries_uri  | 否     | https://secretmanager.googleapis.com/v1        | 谷歌密钥服务访问端点 API。                                                                                                        |
+| auth_config.scope        | 否     | https://www.googleapis.com/auth/cloud-platform | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) |
+| auth_file                | 是     |                                                | `auth_config` 和 `auth_file` 必须配置一个。                                                                                       |
+| ssl_verify               | 否     | true                                           | 当设置为 `true` 时，启用 `SSL` 验证。                                                                                             |
 
 配置示例：
 
