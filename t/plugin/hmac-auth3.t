@@ -249,7 +249,6 @@ qr/\{"message":"client request can't be validated"\}/
             core.log.info("signing_string:", signing_string)
 
             local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
-             
             local ngx_encode_base64 = ngx.encode_base64
 
             local resty_sha256 = require("resty.sha256")
@@ -260,7 +259,6 @@ qr/\{"message":"client request can't be validated"\}/
 
             core.log.info("signature:", ngx_encode_base64(signature))
             local headers = {}
-           
             headers["Date"] = gmt
             headers["Digest"] = "SHA-256=" .. body_digest
             headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
