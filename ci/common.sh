@@ -203,3 +203,24 @@ function start_grpc_server_example() {
         ss -lntp | grep 10051 | grep grpc_server && break
     done
 }
+
+
+function start_sse_server_example() {
+    # build sse_server_example
+    pushd t/sse_server_example
+    go build
+    ./sse_server_example 7737 2>&1 &
+
+    for (( i = 0; i <= 10; i++ )); do
+        sleep 0.5
+        SSE_PROC=`ps -ef | grep sse_server_example | grep -v grep || echo "none"`
+        if [[ $SSE_PROC == "none" || "$i" -eq 10 ]]; then
+            echo "failed to start sse_server_example"
+            ss -antp | grep 7737 || echo "no proc listen port 7737"
+            exit 1
+        else
+            break
+        fi
+    done
+    popd
+}
