@@ -243,7 +243,7 @@ nginx_config:                     # Config for render the template to generate n
       keepalive_requests: 1000    # Set the maximum number of requests that can be served through one
                                   # keep-alive connection.
                                   # After the maximum number of requests is made, the connection is closed.
-      keepalive_timeout: 60s      # Set the maximum time for which TCP connection keeps alive.
+      keepalive_timeout: 60s      # Set a timeout during which an idle keepalive connection to an upstream server will stay open.
     charset: utf-8                # Add the charset to the "Content-Type" response header field.
                                   # See http://nginx.org/en/docs/http/ngx_http_charset_module.html#charset
     variables_hash_max_size: 2048 # Set the maximum size of the variables hash table.
