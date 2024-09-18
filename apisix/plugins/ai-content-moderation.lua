@@ -101,7 +101,7 @@ function _M.rewrite(conf, ctx)
         return internal_server_error, "failed to retrieve secrets from conf"
     end
 
-    local body, err = core.request.get_body_table()
+    local body, err = core.request.get_json_request_body_table()
     if not body then
         return bad_request, err
     end
