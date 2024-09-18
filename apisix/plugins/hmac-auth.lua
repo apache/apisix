@@ -164,7 +164,7 @@ local function generate_signature(ctx, secret_key, params)
               end
             else
               core.table.insert(signing_string_items,
-                            h .. ": " .. canonical_header)
+                                h .. ": " .. canonical_header)
               core.log.info("canonical_header name:", core.json.delay_encode(h))
               core.log.info("canonical_header value: ",
                             core.json.delay_encode(canonical_header))
@@ -290,7 +290,7 @@ local function retrieve_hmac_fields(ctx)
         return nil, "missing Authorization header"
     end
 
-    if not auth_string:match("^Signature") then
+    if not core.string.has_prefix(auth_string,"Signature") then
         return nil, "Authorization header does not start with 'Signature'"
     end
 
@@ -339,6 +339,7 @@ function _M.rewrite(conf, ctx)
 
     local consumer_conf = consumer.plugin(plugin_name)
     consumer.attach_consumer(ctx, validated_consumer, consumer_conf)
+    core.log.info("hit hmac-auth rewrite")
 end
 
 
