@@ -26,7 +26,7 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: sanity: validate different schema situation
+=== TEST 1: validate different schema situation
 --- config
     location /t {
         content_by_lua_block {
