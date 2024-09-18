@@ -1499,13 +1499,13 @@ HTTP/1.1 200 OK
 
 #### When Secret Manager is AWS
 
-| Parameter         | Required | Type   | Description                             | Example                                       |
-| ----------------- | -------- | ------ | --------------------------------------- | --------------------------------------------- |
-| access_key_id     | True     | string | AWS Access Key ID                       |                                               |
-| secret_access_key | True     | string | AWS Secret Access Key                   |                                               |
-| session_token     | False    | string | Temporary access credential information |                                               |
-| region            | False    | string | AWS Region                              | us-east-1                                     |
-| endpoint_url      | False    | URI    | AWS Secret Manager URL                  | https://secretsmanager.{region}.amazonaws.com |
+| Parameter         | Required | Type   | Description                             |
+| ----------------- | -------- | ------ | --------------------------------------- |
+| access_key_id     | True     | string | AWS Access Key ID                       |
+| secret_access_key | True     | string | AWS Secret Access Key                   |
+| session_token     | False    | string | Temporary access credential information |
+| region            | False    | string | AWS Region                              |
+| endpoint_url      | False    | URI    | AWS Secret Manager URL                  |
 
 Example Configuration:
 
