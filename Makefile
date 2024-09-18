@@ -380,6 +380,10 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy/drivers
 	$(ENV_INSTALL) apisix/plugins/ai-proxy/drivers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy/drivers
 
+	# ai-content-moderation plugin
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai
+	$(ENV_INSTALL) apisix/plugins/ai/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai
+
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
 

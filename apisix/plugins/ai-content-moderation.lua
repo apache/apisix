@@ -44,6 +44,8 @@ local aws_comprehend_schema = {
     required = { "access_key_id", "secret_access_key", "region", }
 }
 
+local moderation_categories_pattern = "^(PROFANITY|HATE_SPEECH|INSULT|"..
+                                      "HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"
 local schema = {
     type = "object",
     properties = {
@@ -59,7 +61,7 @@ local schema = {
             type = "object",
             patternProperties = {
                 -- luacheck: push max code line length 300
-                ["^(PROFANITY|HATE_SPEECH|INSULT|HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"] = {
+                [moderation_categories_pattern] = {
                 -- luacheck: pop
                 type = "number",
                     minimum = 0,
