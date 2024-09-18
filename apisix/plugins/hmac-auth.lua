@@ -290,7 +290,7 @@ local function retrieve_hmac_fields(ctx)
         return nil, "missing Authorization header"
     end
 
-    if not core.string.has_prefix(auth_string,"Signature") then
+    if not core.string.has_prefix(auth_string, "Signature") then
         return nil, "Authorization header does not start with 'Signature'"
     end
 
