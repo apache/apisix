@@ -391,5 +391,5 @@ passed
 POST /echo
 {"ai_rag":{"vector_search":{"fields":"something"},"embeddings":{"input":"which service is good for devops"}}}
 --- error_code: 200
---- response_body chomp
-{"messages":[{"content":"passed","role":"user"}]}
+--- response_body eval
+qr/\{"messages":\[\{"content":"passed","role":"user"\}\]\}|\{"messages":\[\{"role":"user","content":"passed"\}\]\}/

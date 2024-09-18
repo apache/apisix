@@ -19,6 +19,7 @@ local ngx_req = ngx.req
 local core = require("apisix.core")
 local decorate = require("apisix.plugins.ai-prompt-decorator").__decorate
 local next = next
+local require = require
 
 local azure_ai_search_schema = {
     type = "object",

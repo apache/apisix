@@ -16,6 +16,8 @@
 --
 local core = require("apisix.core")
 local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
+local type = type
+
 local _M = {}
 
 

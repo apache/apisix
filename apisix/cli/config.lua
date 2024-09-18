@@ -177,7 +177,6 @@ local _M = {
     max_size = 1048576
   },
   plugins = {
-    "ai-rag",
     "real-ip",
     "ai",
     "client-control",
@@ -216,6 +215,7 @@ local _M = {
     "body-transformer",
     "ai-prompt-template",
     "ai-prompt-decorator",
+    "ai-rag",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
