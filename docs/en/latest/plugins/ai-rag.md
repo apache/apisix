@@ -131,7 +131,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
       }
     },
     "ai-proxy": {
-      "route_type": "llm/chat",
       "auth": {
         "header": {
           "api-key": "'"$azure_openai_key"'"

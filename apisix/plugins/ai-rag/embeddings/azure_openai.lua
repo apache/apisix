@@ -49,7 +49,7 @@ function _M.get_embeddings(conf, body, httpc)
     })
 
     if not res or not res.body then
-        return nil, res.status or INTERNAL_SERVER_ERROR, err
+        return nil, INTERNAL_SERVER_ERROR, err
     end
 
     if res.status ~= 200 then
