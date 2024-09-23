@@ -123,7 +123,7 @@ Success! Data written to: kv/apisix/foo
                                     "endpoint": "http://localhost:2668"
                                 }
                             },
-                            "type": "openai"
+                            "llm_provider": "openai"
                         }
                     },
                     "upstream": {
@@ -178,7 +178,7 @@ POST /echo
                                     "endpoint": "http://localhost:2668"
                                 }
                             },
-                            "type": "openai"
+                            "llm_provider": "openai"
                         }
                     },
                     "upstream": {

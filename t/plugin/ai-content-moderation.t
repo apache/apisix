@@ -110,7 +110,7 @@ __DATA__
                                     "endpoint": "http://localhost:2668"
                                 }
                             },
-                            "type": "openai"
+                            "llm_provider": "openai"
                         }
                     },
                     "upstream": {
@@ -173,7 +173,7 @@ POST /echo
                             "moderation_categories": {
                                 "PROFANITY": 0.5
                             },
-                            "type": "openai"
+                            "llm_provider": "openai"
                         }
                     },
                     "upstream": {
@@ -246,7 +246,7 @@ POST /echo
                             "moderation_categories": {
                                 "PROFANITY": 0.7
                             },
-                            "type": "openai"
+                            "llm_provider": "openai"
                         }
                     },
                     "upstream": {
