@@ -63,7 +63,7 @@ property "username" validation failed
 === TEST 2: validate the plugin under consumer
 --- apisix_yaml
 routes:
-  - uri: /apisix/plugin/jwt/sign
+  - uri: /apisix/status
     plugins:
         public-api: {}
 consumers:
@@ -73,7 +73,7 @@ consumers:
             secret: my-secret-key
 #END
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key
+GET /apisix/status?key=user-key
 --- error_log
 plugin jwt-auth err: property "key" is required
 --- error_code: 404
@@ -83,7 +83,7 @@ plugin jwt-auth err: property "key" is required
 === TEST 3: provide default value for the plugin
 --- apisix_yaml
 routes:
-  - uri: /apisix/plugin/wolf-rbac/user_info
+  - uri: /apisix/status
     plugins:
         public-api: {}
 consumers:
@@ -94,7 +94,7 @@ consumers:
             secret: my-secret-key
 #END
 --- request
-GET /apisix/plugin/wolf-rbac/user_info?key=user-key
+GET /apisix/status?key=user-key
 --- error_code: 200
 
 

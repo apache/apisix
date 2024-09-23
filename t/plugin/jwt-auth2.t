@@ -151,6 +151,7 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local jwt_sign = require("apisix.plugins.jwt-auth").gen_token
 
             -- in order to modify the system_leeway in jwt-validators module
             local code, body = t('/apisix/admin/routes/1',
@@ -257,30 +258,20 @@ hello world
                 ngx.say(body)
             end
 
-            -- resgiter jwt sign api
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-            end
-
-            -- get JWT token
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=test-jwt-a',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
+            local key = "test-jwt-a"
+            local consumer = {
+                auth_conf = {
+                    exp = 1,
+                    algorithm = "HS256",
+                    base64_secret = false,
+                    secret = "test-jwt-secret",
+                    key = "test-jwt-a"
+                }
+            }
+            local sign = gen_token(key, nil, consumer)
+            if not sign then
+                ngx.status = 404
+                ngx.say("failed to gen_token")
             end
 
             -- verify JWT token
@@ -316,6 +307,7 @@ qr/ailed to verify jwt: 'exp' claim expired at/
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local gen_token = require("apisix.plugins.jwt-auth").gen_token
 
             -- in order to modify the system_leeway in jwt-validators module
             local code, body = t('/apisix/admin/routes/1',
@@ -423,30 +415,22 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                 ngx.say(body)
             end
 
-            -- resgiter jwt sign api
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-            end
-
             -- get JWT token
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=test-jwt-a',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
+            local key = "test-jwt-a"
+            local consumer = {
+                auth_conf = {
+                    exp = 1,
+                    algorithm = "HS256",
+                    base64_secret = false,
+                    secret = "test-jwt-secret",
+                    key = "test-jwt-a",
+                    lifetime_grace_period = 2
+                }
+            }
+            local sign = gen_token(key, nil, consumer)
+            if not sign then
+                ngx.status = 404
+                ngx.say("failed to gen_token")
             end
 
             -- verify JWT token

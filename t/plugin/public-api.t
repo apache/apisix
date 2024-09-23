@@ -37,7 +37,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local test_cases = {
-                {uri = "/apisix/plugin/jwt/sign"},
+                {uri = "/apisix/plugin/wolf-rbac/user_info"},
                 {uri = 3233}
             }
             local plugin = require("apisix.plugins.public-api")
@@ -156,7 +156,11 @@ GET /wrong-public-api
                             "public-api": {
                                 "uri": "/apisix/plugin/wolf-rbac/user_info"
                             },
-                            "key-auth": {}
+                            "key-auth": {},
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions": ["return function(conf, ctx) require(\"apisix.core\").log.warn(\"direct-wolf-rbac-userinfo was triggered\"); end"]
+                            }
                         },
                         "uri": "/get_user_info"
                     }]],
@@ -182,6 +186,9 @@ GET /wrong-public-api
 GET /get_user_info?key=user-key
 --- more_headers
 apikey: testkey
+--- error_code: 401
+--- error_log
+direct-wolf-rbac-userinfo was triggered
 
 
 
@@ -189,3 +196,5 @@ apikey: testkey
 --- request
 GET /get_user_info?key=user-key
 --- error_code: 401
+--- response_body
+{"message":"Missing API key in request"}

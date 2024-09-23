@@ -387,4 +387,11 @@ function _M.rewrite(conf, ctx)
 end
 
 
+function _M.gen_token(key, payload, consumer)
+    local sign_handler = algorithm_handler(consumer, true)
+    local jwt_token = sign_handler(key, consumer, payload)
+    return jwt_token
+end
+
+
 return _M
