@@ -177,7 +177,7 @@ GET /wrong-public-api
     }
 --- response_body
 201passed
-200passed
+201passed
 
 
 

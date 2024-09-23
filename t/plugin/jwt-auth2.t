@@ -151,7 +151,6 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local jwt_sign = require("apisix.plugins.jwt-auth").gen_token
 
             -- in order to modify the system_leeway in jwt-validators module
             local code, body = t('/apisix/admin/routes/1',
@@ -258,6 +257,7 @@ hello world
                 ngx.say(body)
             end
 
+            local gen_token = require("apisix.plugins.jwt-auth").gen_token
             local key = "test-jwt-a"
             local consumer = {
                 auth_conf = {
@@ -268,7 +268,7 @@ hello world
                     key = "test-jwt-a"
                 }
             }
-            local sign = gen_token(key, nil, consumer)
+            local sign = gen_token(key, consumer)
             if not sign then
                 ngx.status = 404
                 ngx.say("failed to gen_token")
@@ -307,7 +307,6 @@ qr/ailed to verify jwt: 'exp' claim expired at/
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
 
             -- in order to modify the system_leeway in jwt-validators module
             local code, body = t('/apisix/admin/routes/1',
@@ -416,6 +415,7 @@ qr/ailed to verify jwt: 'exp' claim expired at/
             end
 
             -- get JWT token
+            local gen_token = require("apisix.plugins.jwt-auth").gen_token
             local key = "test-jwt-a"
             local consumer = {
                 auth_conf = {
@@ -427,7 +427,7 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                     lifetime_grace_period = 2
                 }
             }
-            local sign = gen_token(key, nil, consumer)
+            local sign = gen_token(key, consumer)
             if not sign then
                 ngx.status = 404
                 ngx.say("failed to gen_token")
