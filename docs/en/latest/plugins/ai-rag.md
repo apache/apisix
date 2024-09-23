@@ -69,7 +69,6 @@ The following fields must be present in the request body.
   | encoding_format | No           | string          | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
   | dimensions      | No           | integer         | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
 
-
 For other parameters please refer the Azure OpenAI embeddings documentation.
 
 - Contents of ai_rag.vector_search
@@ -173,7 +172,7 @@ Now send a request:
 curl http://127.0.0.1:9080/rag -XPOST  -H 'Content-Type: application/json' -d '{"ai_rag":{"vector_search":{"fields":"contentVector"},"embeddings":{"input":"which service is good for devops","dimensions":1024}}}'
 ```
 
-You will recieve a response like this:
+You will receive a response like this:
 
 ```json
 {
