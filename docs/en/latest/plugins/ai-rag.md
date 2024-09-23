@@ -62,12 +62,15 @@ The following fields must be present in the request body.
 
   - Azure OpenAI
 
-  | **Field** | **Required** | **Type** | **Description**             |
-  | --------- | ------------ | -------- | --------------------------- |
-  | input     | Yes          | String   | Query string for embeddings |
-  ## TODO: copy more fields from azure docs
+  | **Name**        | **Required** | **Type**        | **Description**                                                                                                            |
+  | --------------- | ------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
+  | input           | Yes          | string or array | Input text to get embeddings for, encoded as a string.                                                                     |
+  | user            | No           | string          | A unique identifier representing your end-user, which can help in monitoring and detecting abuse.                          |
+  | encoding_format | No           | string          | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
+  | dimensions      | No           | integer         | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
 
-  For other parameters please refer the Azure OpenAI embeddings documentation.
+
+For other parameters please refer the Azure OpenAI embeddings documentation.
 
 - Contents of ai_rag.vector_search
 
@@ -76,9 +79,8 @@ The following fields must be present in the request body.
   | **Field** | **Required** | **Type** | **Description**              |
   | --------- | ------------ | -------- | ---------------------------- |
   | fields    | Yes          | String   | Fields for the vector search |
-  ## TODO: copy more fields from azure docs
 
-  For other parameters please refer the Azure AI Search documentation.
+  For other parameters please refer the [Azure AI Search documentation](https://learn.microsoft.com/en-us/rest/api/searchservice/documents/search-post).
 
 Example request body:
 
@@ -169,4 +171,31 @@ Now send a request:
 
 ```shell
 curl http://127.0.0.1:9080/rag -XPOST  -H 'Content-Type: application/json' -d '{"ai_rag":{"vector_search":{"fields":"contentVector"},"embeddings":{"input":"which service is good for devops","dimensions":1024}}}'
+```
+
+You will recieve a response like this:
+
+```json
+{
+  "choices": [
+    {
+      "finish_reason": "length",
+      "index": 0,
+      "message": {
+        "content": "Here are the details for some of the services you inquired about from your Azure search context:\n\n### 1. Azure DevOps\n* ... <rest of the response>",
+        "role": "assistant"
+      }
+    }
+  ],
+  "created": 1727079764,
+  "id": "chatcmpl-AAYdA40YjOaeIHfgFBkaHkUFCWxfc",
+  "model": "gpt-4o-2024-05-13",
+  "object": "chat.completion",
+  "system_fingerprint": "fp_67802d9a6d",
+  "usage": {
+    "completion_tokens": 512,
+    "prompt_tokens": 6560,
+    "total_tokens": 7072
+  }
+}
 ```
