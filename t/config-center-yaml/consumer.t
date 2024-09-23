@@ -83,7 +83,7 @@ plugin jwt-auth err: property "key" is required
 === TEST 3: provide default value for the plugin
 --- apisix_yaml
 routes:
-  - uri: /apisix/plugin/jwt/sign
+  - uri: /apisix/plugin/wolf-rbac/user_info
     plugins:
         public-api: {}
 consumers:
@@ -94,7 +94,7 @@ consumers:
             secret: my-secret-key
 #END
 --- request
-GET /apisix/plugin/jwt/sign?key=user-key
+GET /apisix/plugin/wolf-rbac/user_info?key=user-key
 --- error_code: 200
 
 

@@ -150,15 +150,15 @@ GET /wrong-public-api
                     }]]
                 },
                 {
-                    uri = "/apisix/admin/routes/custom-jwt-sign",
+                    uri = "/apisix/admin/routes/custom-user-info",
                     data = [[{
                         "plugins": {
                             "public-api": {
-                                "uri": "/apisix/plugin/jwt/sign"
+                                "uri": "/apisix/plugin/wolf-rbac/user_info"
                             },
                             "key-auth": {}
                         },
-                        "uri": "/gen_token"
+                        "uri": "/get_user_info"
                     }]],
                 }
             }
@@ -179,7 +179,7 @@ GET /wrong-public-api
 
 === TEST 8: hit route (with key-auth header)
 --- request
-GET /gen_token?key=user-key
+GET /get_user_info?key=user-key
 --- more_headers
 apikey: testkey
 
@@ -187,5 +187,5 @@ apikey: testkey
 
 === TEST 9: hit route (without key-auth header)
 --- request
-GET /gen_token?key=user-key
+GET /get_user_info?key=user-key
 --- error_code: 401

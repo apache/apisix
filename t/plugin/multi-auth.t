@@ -575,6 +575,13 @@ passed
                 return
             end
             ngx.sleep(0.1)
+
+            local code, _, res = t('/hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs',
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
         }
     }
 --- request
