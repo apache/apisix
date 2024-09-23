@@ -22,34 +22,11 @@ local http     = require("resty.http")
 local core     = require("apisix.core")
 local decorate = require("apisix.plugins.ai-prompt-decorator").__decorate
 
+local azure_openai_embeddings = require("apisix.plugins.ai-rag.embeddings.azure_openai").schema
+local azure_ai_search_schema = require("apisix.plugins.ai-rag.vector-search.azure_ai_search").schema
+
 local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local BAD_REQUEST = ngx.HTTP_BAD_REQUEST
-
-local azure_ai_search_schema = {
-    type = "object",
-    properties = {
-        endpoint = {
-            type = "string",
-        },
-        api_key = {
-            type = "string",
-        },
-    }
-}
-
-local azure_openai_embeddings = {
-    type = "object",
-    properties = {
-        endpoint = {
-            type = "string",
-        },
-        api_key = {
-            type = "string",
-        },
-    },
-    required = { "endpoint", "api_key" }
-}
-
 
 local schema = {
     type = "object",
@@ -116,7 +93,7 @@ function _M.access(conf, ctx)
     end
 
     local embeddings_provider = next(conf.embeddings_provider)
-    local embeddings_provider_conf = conf.embeddings_provider[next(conf.embeddings_provider)]
+    local embeddings_provider_conf = conf.embeddings_provider[embeddings_provider]
     local embeddings_driver = require("apisix.plugins.ai-rag.embeddings." .. embeddings_provider)
 
     local vector_search_provider = next(conf.vector_search_provider)
