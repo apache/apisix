@@ -31,6 +31,8 @@ description: This document contains information about the Apache APISIX ai-conte
 
 The `ai-content-moderation` plugin processes the request body to check for toxicity and rejects the request if it exceeds the configured threshold.
 
+**_This plugin must be used in routes that proxy requests to LLMs only._**
+
 ## Plugin Attributes
 
 | **Field**                                 | **Required** | **Type** | **Description**                                                                                                                          |
@@ -41,10 +43,11 @@ The `ai-content-moderation` plugin processes the request body to check for toxic
 | provider.aws_comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                     |
 | moderation_categories                     | No           | Object   | Configuration for moderation categories. Must be one of: PROFANITY, HATE_SPEECH, INSULT, HARASSMENT_OR_ABUSE, SEXUAL, VIOLENCE_OR_THREAT |
 | toxicity_level                            | No           | Number   | Threshold for overall toxicity detection. Range: 0 - 1. Default: 0.5                                                                     |
+| llm_provider                              | Yes          | String   | Name of the LLM provider that this route will proxy requests to.                                                                         |
 
 ## Example usage
 
-Create a route with the `ai-content-moderation` plugin like so:
+Create a route with the `ai-content-moderation` and `ai-proxy` plugin like so:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -55,13 +58,29 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
       "ai-content-moderation": {
         "provider": {
           "aws_comprehend": {
-            "access_key_id": "access",
-            "secret_access_key": "ea+secret",
+            "access_key_id": "some_access_key",
+            "secret_access_key": "some_secret_key",
             "region": "us-east-1"
           }
         },
         "moderation_categories": {
           "PROFANITY": 0.5
+        },
+        "llm_provider": "openai"
+      },
+      "ai-proxy": {
+        "auth": {
+          "header": {
+            "Authorization": "Bearer token"
+          }
+        },
+        "model": {
+          "provider": "openai",
+          "name": "gpt-4",
+          "options": {
+            "max_tokens": 512,
+            "temperature": 1.0
+          }
         }
       }
     },
@@ -73,6 +92,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     }
   }'
 ```
+
+The `ai-proxy` plugin is used here as it simplifies access to LLMs. However, you may configure the LLM in the upstream configuration as well.
 
 Now send a request:
 
