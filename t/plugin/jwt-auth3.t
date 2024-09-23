@@ -575,22 +575,6 @@ Success! Data written to: kv/apisix/rsa1
                 return ngx.say(body)
             end
 
-            -- create public API route (jwt-auth sign)
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return ngx.say(body)
-            end
-
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
@@ -615,35 +599,6 @@ Success! Data written to: kv/apisix/rsa1
     }
 --- response_body
 passed
-
-
-
-=== TEST 21: sign a jwt with with rsa key pair and access /hello
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=rsa1',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
 
 
 

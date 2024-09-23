@@ -108,49 +108,6 @@ passed
 
 
 
-=== TEST 3: sign and verify
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code, err = t('/apisix/admin/routes/jwt',
-                ngx.HTTP_PUT,
-                [[{
-                    "uri": "/apisix/plugin/jwt/sign",
-                    "plugins": { "public-api": {} }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
 === TEST 4: delete /* and define route for /apisix/plugin/blah
 --- config
     location /t {

@@ -72,21 +72,6 @@ property "uri" validation failed: wrong type: expected string, got number
                     }]]
                 },
                 {
-                    uri = "/apisix/admin/routes/custom-jwt-sign",
-                    data = [[{
-                        "plugins": {
-                            "public-api": {
-                                "uri": "/apisix/plugin/jwt/sign"
-                            },
-                            "serverless-pre-function": {
-                                "phase": "rewrite",
-                                "functions": ["return function(conf, ctx) require(\"apisix.core\").log.warn(\"custom-jwt-sign was triggered\"); end"]
-                            }
-                        },
-                        "uri": "/gen_token"
-                    }]],
-                },
-                {
                     uri = "/apisix/admin/routes/direct-wolf-rbac-userinfo",
                     data = [[{
                         "plugins": {
@@ -121,34 +106,7 @@ property "uri" validation failed: wrong type: expected string, got number
         }
     }
 --- response_body eval
-"201passed\n" x 4
-
-
-
-=== TEST 3: hit route (custom-jwt-sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code, body, jwt = t("/gen_token?key=user-key", ngx.HTTP_GET, "", nil, {apikey = "testkey"})
-            if code >= 300 then
-                ngx.status = code
-            end
-
-            local header = string.sub(jwt, 1, 36)
-
-            if header == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" or
-               header == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" then
-                ngx.say("passed")
-                return
-            end
-
-            ngx.say("failed")
-        }
-    }
---- response_body
-passed
+"201passed\n" x 3
 
 
 

@@ -135,67 +135,6 @@ passed
 
 
 
-=== TEST 5: create public API route (jwt-auth sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 6: sign / verify in argument
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
-=== TEST 7: test for unsupported method
---- request
-PATCH /apisix/plugin/jwt/sign?key=user-key
---- error_code: 404
-
-
-
 === TEST 8: verify, missing token
 --- request
 GET /hello
@@ -318,15 +257,9 @@ JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
             code, body = t('/apisix/admin/consumers/jack',
                 ngx.HTTP_DELETE)
             ngx.say("code: ", code < 300, " body: ", body)
-
-            ngx.sleep(1)
-            code, body = t('/apisix/plugin/jwt/sign?key=chen-key',
-                ngx.HTTP_GET)
-            ngx.say("code: ", code < 300, " body: ", body)
         }
     }
 --- response_body
-code: true body: passed
 code: true body: passed
 code: true body: passed
 code: true body: passed
@@ -391,34 +324,6 @@ passed
     }
 --- response_body
 passed
-
-
-
-=== TEST 19: sign / verify
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
 
 
 
@@ -597,36 +502,6 @@ passed
 
 
 
-=== TEST 29: sign/verify use RS256 algorithm(private_key numbits = 512)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
---- skip_eval
-1: $ENV{OPENSSL_FIPS} eq 'yes'
-
-
-
 === TEST 30: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
 --- config
     location /t {
@@ -688,66 +563,6 @@ passed
     }
 --- response_body
 passed
---- skip_eval
-1: $ENV{OPENSSL_FIPS} eq 'yes'
-
-
-
-=== TEST 32: sign/verify use RS256 algorithm(private_key numbits = 1024)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
---- skip_eval
-1: $ENV{OPENSSL_FIPS} eq 'yes'
-
-
-
-=== TEST 33: sign/verify use RS256 algorithm(private_key numbits = 1024,with extra payload)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256&payload=%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
 --- skip_eval
 1: $ENV{OPENSSL_FIPS} eq 'yes'
 
@@ -816,62 +631,6 @@ passed
 
 
 
-=== TEST 36: sign/verify use RS256 algorithm(private_key numbits = 2048)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
-=== TEST 37: sign/verify use RS256 algorithm(private_key numbits = 2048,with extra payload)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-rs256&payload=%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
 === TEST 38: JWT sign with the public key when using the RS256 algorithm
 --- config
     location /t {
@@ -929,15 +688,6 @@ passed
     }
 --- response_body
 passed
-
-
-
-=== TEST 40: sign failed
---- request
-GET /apisix/plugin/jwt/sign?key=user-key-rs256
---- error_code: 500
---- response_body eval
-qr/failed to sign jwt/
 
 
 
@@ -1022,62 +772,6 @@ passed
 
 
 
-=== TEST 44: sign / verify (algorithm = HS512)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-HS512',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
-=== TEST 45: sign / verify (algorithm = HS512,with extra payload)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-HS512&payload=%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
 === TEST 46: test for unsupported algorithm
 --- config
     location /t {
@@ -1149,27 +843,6 @@ base64_secret required but the secret is not in base64 format
     }
 --- response_body
 passed
-
-
-
-=== TEST 49: when the exp value is not set, sign jwt use the default value(86400)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body, res_data = t('/apisix/plugin/jwt/sign?key=exp-not-set',
-                ngx.HTTP_GET)
-
-            local jwt = require("resty.jwt")
-            local jwt_obj = jwt:load_jwt(res_data)
-            local exp_in_jwt = jwt_obj.payload.exp
-            local ngx_time = ngx.time
-            local use_default_exp = ngx_time() + 86400 - 1 <= exp_in_jwt and exp_in_jwt <= ngx_time() + 86400
-            ngx.say(use_default_exp)
-        }
-    }
---- response_body
-true
 
 
 
@@ -1288,35 +961,5 @@ passed
     }
 --- response_body
 passed
---- skip_eval
-1: $ENV{OPENSSL_FIPS} eq 'yes'
-
-
-
-=== TEST 54: sign/verify use ES256 algorithm(private_key numbits = 512)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key-es256',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
 --- skip_eval
 1: $ENV{OPENSSL_FIPS} eq 'yes'

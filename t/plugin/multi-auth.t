@@ -485,34 +485,6 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 19: create public API route (jwt-auth sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
 === TEST 20: add consumer with username and jwt-auth plugins
 --- config
     location /t {
@@ -541,36 +513,6 @@ passed
 GET /t
 --- response_body
 passed
-
-
-
-=== TEST 21: sign / verify jwt-auth
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
-        }
-    }
---- request
-GET /t
---- response_body
-hello world
 
 
 
@@ -633,23 +575,6 @@ hello world
                 return
             end
             ngx.sleep(0.1)
-
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-
-            ngx.status = code
-            ngx.print(res)
         }
     }
 --- request
