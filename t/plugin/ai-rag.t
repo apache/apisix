@@ -49,6 +49,7 @@ add_block_preprocessor(sub {
                     if ngx.req.get_method() ~= "POST" then
                         ngx.status = 400
                         ngx.say("Unsupported request method: ", ngx.req.get_method())
+                        return
                     end
                     ngx.req.read_body()
                     local body, err = ngx.req.get_body_data()
@@ -62,12 +63,8 @@ add_block_preprocessor(sub {
                         return
                     end
 
-                    if header_auth == "key" then
-                        ngx.status = 200
-                        ngx.say([[$embeddings]])
-                    else
-                        ngx.status = 401
-                    end
+                    ngx.status = 200
+                    ngx.say([[$embeddings]])
                 }
             }
 

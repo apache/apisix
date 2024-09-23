@@ -15,23 +15,41 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
+local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local type = type
 
 local _M = {}
 
+_M.schema = {
+    type = "object",
+    properties = {
+        endpoint = {
+            type = "string",
+        },
+        api_key = {
+            type = "string",
+        },
+    },
+    required = { "endpoint", "api_key" }
+}
 
 function _M.get_embeddings(conf, body, httpc)
+    local body_tab, err = core.json.encode(body)
+    if not body_tab then
+        return nil, INTERNAL_SERVER_ERROR, err
+    end
+
     local res, err = httpc:request_uri(conf.endpoint, {
         method = "POST",
         headers = {
             ["Content-Type"] = "application/json",
             ["api-key"] = conf.api_key,
         },
-        body = core.json.encode(body)
+        body = body_tab
     })
+
     if not res or not res.body then
-        return nil, err
+        return nil, res.status or INTERNAL_SERVER_ERROR, err
     end
 
     if res.status ~= 200 then
@@ -40,16 +58,16 @@ function _M.get_embeddings(conf, body, httpc)
 
     local res_tab, err = core.json.decode(res.body)
     if not res_tab then
-        return nil, internal_server_error, err
+        return nil, INTERNAL_SERVER_ERROR, err
     end
 
-    if type(res_tab.data) ~= "table" or #res_tab.data < 1 then
-        return nil, internal_server_error, res.body
+    if type(res_tab.data) ~= "table" or core.table.isempty(res_tab.data) then
+        return nil, INTERNAL_SERVER_ERROR, res.body
     end
 
     local embeddings, err = core.json.encode(res_tab.data[1].embedding)
     if not embeddings then
-        return nil, internal_server_error, err
+        return nil, INTERNAL_SERVER_ERROR, err
     end
 
     return res_tab.data[1].embedding

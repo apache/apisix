@@ -14,12 +14,16 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local http = require("resty.http")
-local ngx_req = ngx.req
-local core = require("apisix.core")
-local decorate = require("apisix.plugins.ai-prompt-decorator").__decorate
-local next = next
+local next    = next
 local require = require
+local ngx_req = ngx.req
+
+local http     = require("resty.http")
+local core     = require("apisix.core")
+local decorate = require("apisix.plugins.ai-prompt-decorator").__decorate
+
+local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 
 local azure_ai_search_schema = {
     type = "object",
@@ -56,7 +60,8 @@ local schema = {
             properties = {
                 azure_openai = azure_openai_embeddings
             },
-            -- change to enum while implementing support for other search services
+            -- ensure only one provider can be configured while implementing support for
+            -- other providers
             required = { "azure_openai" },
         },
         vector_search_provider = {
@@ -64,7 +69,8 @@ local schema = {
             properties = {
                 azure_ai_search = azure_ai_search_schema
             },
-            -- change to enum while implementing support for other search services
+            -- ensure only one provider can be configured while implementing support for
+            -- other providers
             required = { "azure_ai_search" }
         },
     },
@@ -102,11 +108,11 @@ function _M.access(conf, ctx)
     local httpc = http.new()
     local body_tab, err = core.request.get_json_request_body_table()
     if not body_tab then
-        return 400, err
+        return BAD_REQUEST, err
     end
     if not body_tab["ai_rag"] then
         core.log.error("request body must have \"ai-rag\" field")
-        return 400
+        return BAD_REQUEST
     end
 
     local embeddings_provider = next(conf.embeddings_provider)
@@ -127,7 +133,7 @@ function _M.access(conf, ctx)
     local ok, err = core.schema.check(request_schema, body_tab)
     if not ok then
         core.log.error("request body fails schema check: ", err)
-        return 400
+        return BAD_REQUEST
     end
 
     local embeddings, status, err = embeddings_driver.get_embeddings(embeddings_provider_conf,
@@ -146,7 +152,10 @@ function _M.access(conf, ctx)
         return status, err
     end
 
+    -- remove ai_rag from request body because their purpose is served
+    -- also, these values will cause failure when proxying requests to LLM.
     body_tab["ai_rag"] = nil
+
     local prepend = {
         {
             role = "user",
@@ -160,7 +169,11 @@ function _M.access(conf, ctx)
         body_tab.messages = {}
     end
     decorate(decorator_conf, body_tab)
-    local req_body_json = core.json.encode(body_tab)
+    local req_body_json, err = core.json.encode(body_tab)
+    if not req_body_json then
+        return INTERNAL_SERVER_ERROR, err
+    end
+
     ngx_req.set_body_data(req_body_json)
 end
 

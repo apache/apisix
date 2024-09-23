@@ -15,9 +15,21 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
+local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local _M = {}
+
+_M.schema = {
+    type = "object",
+    properties = {
+        endpoint = {
+            type = "string",
+        },
+        api_key = {
+            type = "string",
+        },
+    }
+}
 
 
 function _M.search(conf, search_body, httpc)
@@ -30,7 +42,11 @@ function _M.search(conf, search_body, httpc)
             }
         }
     }
-    local final_body = core.json.encode(body)
+    local final_body, err = core.json.encode(body)
+    if not final_body then
+        return nil, INTERNAL_SERVER_ERROR, err
+    end
+
     local res, err = httpc:request_uri(conf.endpoint, {
         method = "POST",
         headers = {
@@ -41,7 +57,7 @@ function _M.search(conf, search_body, httpc)
     })
 
     if not res or not res.body then
-        return nil, internal_server_error, err
+        return nil, INTERNAL_SERVER_ERROR, err
     end
 
     if res.status ~= 200 then
