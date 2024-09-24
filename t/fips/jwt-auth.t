@@ -33,7 +33,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
 --- config
     location /t {
