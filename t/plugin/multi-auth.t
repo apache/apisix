@@ -522,14 +522,11 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local gen_token = require("apisix.plugins.jwt-auth").gen_token
-            local key = "user-key"
-            local consumer = {
-                auth_conf = {
-                    key = "user-key",
-                    secret = "my-secret-key"
-                }
+            local auth_conf = {
+                key = "user-key",
+                secret = "my-secret-key"
             }
-            local sign = gen_token(key, consumer)
+            local sign = gen_token(auth_conf)
             if not sign then
                 ngx.status = 500
                 ngx.say("failed to gen_token")
@@ -612,14 +609,11 @@ hello world
             ngx.sleep(0.1)
 
             local gen_token = require("apisix.plugins.jwt-auth").gen_token
-            local key = "user-key"
-            local consumer = {
-                auth_conf = {
-                    key = "user-key",
-                    secret = "my-secret-key"
-                }
+            local auth_conf = {
+                key = "user-key",
+                secret = "my-secret-key"
             }
-            local sign = gen_token(key, consumer)
+            local sign = gen_token(auth_conf)
             if not sign then
                 ngx.status = 500
                 ngx.say("failed to gen_token")

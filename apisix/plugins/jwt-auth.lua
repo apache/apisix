@@ -268,7 +268,7 @@ local function sign_jwt_with_HS(key, consumer, payload)
         }
     )
     if not ok then
-        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
+        core.log.error("failed to sign jwt, err: ", jwt_token.reason)
         return nil, "failed to sign jwt"
     end
     return jwt_token
@@ -381,19 +381,19 @@ function _M.rewrite(conf, ctx)
 end
 
 
-function _M.gen_token(key, consumer, payload)
-    if not consumer.auth_conf then
-        return nil, "missing auth_conf in consumer"
+function _M.gen_token(auth_conf, payload)
+    if not auth_conf.exp then
+        auth_conf.exp = 86400
     end
-    if not consumer.auth_conf.exp then
-        consumer.auth_conf.exp = 86400
+    if not auth_conf.lifetime_grace_period then
+        auth_conf.lifetime_grace_period = 0
     end
-    if not consumer.auth_conf.lifetime_grace_period then
-        consumer.auth_conf.lifetime_grace_period = 0
+    if not auth_conf.algorithm then
+        auth_conf.algorithm = "HS256"
     end
-    local sign_handler = algorithm_handler(consumer, true)
-    local jwt_token = sign_handler(key, consumer, payload)
-    return jwt_token
+    local sign_handler = algorithm_handler({ auth_conf = auth_conf }, true)
+    local jwt_token, err = sign_handler(auth_conf.key, { auth_conf = auth_conf }, payload)
+    return jwt_token, err
 end
 
 

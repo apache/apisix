@@ -258,17 +258,14 @@ hello world
             end
 
             local gen_token = require("apisix.plugins.jwt-auth").gen_token
-            local key = "test-jwt-a"
-            local consumer = {
-                auth_conf = {
-                    exp = 1,
-                    algorithm = "HS256",
-                    base64_secret = false,
-                    secret = "test-jwt-secret",
-                    key = "test-jwt-a"
-                }
+            local auth_conf = {
+                exp = 1,
+                algorithm = "HS256",
+                base64_secret = false,
+                secret = "test-jwt-secret",
+                key = "test-jwt-a"
             }
-            local sign = gen_token(key, consumer)
+            local sign = gen_token(auth_conf)
             if not sign then
                 ngx.status = 500
                 ngx.say("failed to gen_token")
@@ -416,18 +413,15 @@ qr/ailed to verify jwt: 'exp' claim expired at/
 
             -- get JWT token
             local gen_token = require("apisix.plugins.jwt-auth").gen_token
-            local key = "test-jwt-a"
-            local consumer = {
-                auth_conf = {
-                    exp = 1,
-                    algorithm = "HS256",
-                    base64_secret = false,
-                    secret = "test-jwt-secret",
-                    key = "test-jwt-a",
-                    lifetime_grace_period = 2
-                }
+            local auth_conf = {
+                exp = 1,
+                algorithm = "HS256",
+                base64_secret = false,
+                secret = "test-jwt-secret",
+                key = "test-jwt-a",
+                lifetime_grace_period = 2
             }
-            local sign = gen_token(key, consumer)
+            local sign = gen_token(auth_conf)
             if not sign then
                 ngx.status = 500
                 ngx.say("failed to gen_token")
