@@ -90,17 +90,16 @@ local consumer_schema = {
                 {
                     properties = {
                         public_key = {type = "string"},
-                        private_key= {type = "string"},
                         algorithm = {
                             enum = {"RS256", "ES256"},
                         },
                     },
-                    required = {"public_key", "private_key"},
+                    required = {"public_key"},
                 },
             }
         }
     },
-    encrypt_fields = {"secret", "private_key"},
+    encrypt_fields = {"secret"},
     required = {"key"},
 }
 
@@ -138,13 +137,9 @@ function _M.check_schema(conf, schema_type)
     end
 
     if conf.algorithm == "RS256" or conf.algorithm == "ES256" then
-        -- Possible options are a) public key is missing
-        -- b) private key is missing
+        -- Possible options is: public key is missing
         if not conf.public_key then
             return false, "missing valid public key"
-        end
-        if not conf.private_key then
-            return false, "missing valid private key"
         end
     end
 
@@ -235,15 +230,10 @@ local function get_rsa_or_ecdsa_keypair(conf)
     local public_key = conf.public_key
     local private_key = conf.private_key
 
-    if public_key and private_key then
-        return public_key, private_key
-    elseif public_key and not private_key then
-        return nil, nil, "missing private key"
-    elseif not public_key and private_key then
+    if not public_key then
         return nil, nil, "missing public key"
-    else
-        return nil, nil, "public and private keys are missing"
     end
+    return public_key, private_key
 end
 
 
@@ -264,8 +254,7 @@ end
 local function sign_jwt_with_HS(key, consumer, payload)
     local auth_secret, err = get_secret(consumer.auth_conf)
     if not auth_secret then
-        core.log.error("failed to sign jwt, err: ", err)
-        core.response.exit(503, "failed to sign jwt")
+        return nil, "failed to sign jwt: failed to get auth_secret"
     end
     local ok, jwt_token = pcall(jwt.sign, _M,
         auth_secret,
@@ -278,8 +267,10 @@ local function sign_jwt_with_HS(key, consumer, payload)
         }
     )
     if not ok then
-        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
-        core.response.exit(500, "failed to sign jwt")
+        if jwt_token and jwt_token.reason then
+            return nil, "failed to sign jwt: " .. jwt_token.reason
+        end
+        return nil, "failed to sign jwt"
     end
     return jwt_token
 end
@@ -290,8 +281,10 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
         consumer.auth_conf
     )
     if not public_key then
-        core.log.error("failed to sign jwt, err: ", err)
-        core.response.exit(503, "failed to sign jwt")
+        return nil, "missing public_key"
+    end
+    if not private_key then
+        return nil, "missing private_key"
     end
 
     local ok, jwt_token = pcall(jwt.sign, _M,
@@ -308,8 +301,10 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
         }
     )
     if not ok then
-        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
-        core.response.exit(500, "failed to sign jwt")
+        if jwt_token and jwt_token.reason then
+            return nil, "failed to sign jwt: " .. jwt_token.reason
+        end
+        return nil, "failed to sign jwt"
     end
     return jwt_token
 end

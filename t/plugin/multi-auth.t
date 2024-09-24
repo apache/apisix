@@ -516,6 +516,41 @@ passed
 
 
 
+=== TEST 21: sign / verify jwt-auth
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local key = "user-key"
+            local consumer = {
+                auth_conf = {
+                    key = "user-key",
+                    secret = "my-secret-key"
+                }
+            }
+            local sign = gen_token(key, consumer)
+            if not sign then
+                ngx.status = 500
+                ngx.say("failed to gen_token")
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
+                ngx.HTTP_GET
+            )
+
+            ngx.status = code
+            ngx.print(res)
+        }
+    }
+--- request
+GET /t
+--- response_body
+hello world
+
+
+
 === TEST 20: verify multi-auth with plugin config will cause the conf_version change
 --- config
     location /t {
@@ -576,7 +611,22 @@ passed
             end
             ngx.sleep(0.1)
 
-            local code, _, res = t('/hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTg3OTMxODU0MX0.fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnVFSYjs',
+            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local key = "user-key"
+            local consumer = {
+                auth_conf = {
+                    key = "user-key",
+                    secret = "my-secret-key"
+                }
+            }
+            local sign = gen_token(key, consumer)
+            if not sign then
+                ngx.status = 500
+                ngx.say("failed to gen_token")
+                return
+            end
+
+            local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
 

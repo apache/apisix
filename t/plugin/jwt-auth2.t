@@ -270,7 +270,7 @@ hello world
             }
             local sign = gen_token(key, consumer)
             if not sign then
-                ngx.status = 404
+                ngx.status = 500
                 ngx.say("failed to gen_token")
             end
 
@@ -429,7 +429,7 @@ qr/ailed to verify jwt: 'exp' claim expired at/
             }
             local sign = gen_token(key, consumer)
             if not sign then
-                ngx.status = 404
+                ngx.status = 500
                 ngx.say("failed to gen_token")
             end
 
