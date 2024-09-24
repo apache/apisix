@@ -17,7 +17,6 @@
 
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
-local connection_util = require("apisix.utils.connection-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
@@ -39,6 +38,10 @@ local schema = {
         service_instance_name = {type = "string", default = "APISIX Instance Name"},
         log_format = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1, default = 60},
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
+        ssl_verify = {type = "boolean", default = false},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
             type = "array",
@@ -98,8 +101,34 @@ local function send_http_data(conf, log_message)
 
     core.log.info("sending a batch logs to ", conf.endpoint_addr)
 
+    if ((not port) and url_decoded.scheme == "https") then
+        port = 443
+    elseif not port then
+        port = 80
+    end
+
+    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port) .. "/v3/logs"
+
+    local auth_headers = {
+         ["Host"] = host,
+         ["Content-Type"] = "application/json",
+    }
+
+    local params = {
+        headers = auth_headers,
+        keepalive = conf.keepalive,
+        method = "POST",
+        body = log_message,
+    }
+
     local httpc = http.new()
     httpc:set_timeout(conf.timeout * 1000)
+
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout * 1000
+        params.keepalive_pool = conf.keepalive_pool
+    end
+
     local ok, err = httpc:connect(host, port)
 
     if not ok then
@@ -107,17 +136,16 @@ local function send_http_data(conf, log_message)
             .. tostring(port) .. "] " .. err
     end
 
-    local httpc_res, httpc_err = httpc:request({
-        method = "POST",
-        path = "/v3/logs",
-        body = log_message,
-        headers = {
-            ["Host"] = url_decoded.host,
-            ["Content-Type"] = "application/json",
-        }
-    })
+    if url_decoded.scheme == "https" then
+        ok, err = httpc:ssl_handshake(true, host, conf.ssl_verify)
+        if not ok then
+            return false, "failed to perform SSL with host[" .. host .. "] "
+                .. "port[" .. tostring(port) .. "] " .. err
+        end
+    end
 
-    connection_util.close_http_connection(httpc)
+    local httpc_res, httpc_err = httpc:request_uri(request_uri, params)
+
     if not httpc_res then
         return false, "error while sending data to [" .. host .. "] port["
             .. tostring(port) .. "] " .. httpc_err

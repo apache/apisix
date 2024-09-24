@@ -17,7 +17,6 @@
 local core      = require("apisix.core")
 local http      = require("resty.http")
 local plugin    = require("apisix.plugin")
-local connection_util = require("apisix.utils.connection-util")
 local ngx       = ngx
 local ipairs    = ipairs
 local pairs     = pairs
@@ -250,6 +249,7 @@ local function batch_requests(ctx)
     httpc:set_timeout(data.timeout)
     local ok, err = httpc:connect("127.0.0.1", ngx.var.server_port)
     if not ok then
+        httpc:close()
         return 500, {error_msg = "connect to apisix failed: " .. err}
     end
 
@@ -259,7 +259,7 @@ local function batch_requests(ctx)
 
     local responses, err = httpc:request_pipeline(data.pipeline)
     if not responses then
-        connection_util.close_http_connection(httpc)
+        httpc:close()
         return 400, {error_msg = "request failed: " .. err}
     end
 
@@ -288,7 +288,7 @@ local function batch_requests(ctx)
         end
         core.table.insert(aggregated_resp, sub_resp)
     end
-    connection_util.close_http_connection(httpc)
+    httpc:close()
     return 200, aggregated_resp
 end
 

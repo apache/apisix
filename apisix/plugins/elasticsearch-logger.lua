@@ -18,7 +18,6 @@
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
-local connection_util = require("apisix.utils.connection-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 
 local ngx             = ngx
@@ -179,8 +178,6 @@ local function send_to_elasticsearch(conf, entries)
         headers = headers,
         body = body
     })
-
-    connection_util.close_http_connection(httpc)
     if not resp then
         return false, err
     end

@@ -17,7 +17,6 @@
 
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local log_util        = require("apisix.utils.log-util")
-local connection_util = require("apisix.utils.connection-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
@@ -34,6 +33,9 @@ local schema = {
         uri = core.schema.uri_def,
         auth_header = {type = "string"},
         timeout = {type = "integer", minimum = 1, default = 3},
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1, default = 60},
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
         log_format = {type = "object"},
         include_req_body = {type = "boolean", default = false},
         include_req_body_expr = {
@@ -134,20 +136,31 @@ local function send_http_data(conf, log_message)
         content_type = "text/plain"
     end
 
-    local httpc_res, httpc_err = httpc:request({
+    local auth_headers = {
+         ["Host"] = host,
+         ["Content-Type"] = content_type,
+         ["Authorization"] = conf.auth_header
+    }
+
+    local params = {
+        headers = auth_headers,
+        keepalive = conf.keepalive,
+        ssl_verify = conf.ssl_verify,
         method = "POST",
-        path = #url_decoded.path ~= 0 and url_decoded.path or "/",
         query = url_decoded.query,
         body = log_message,
-        headers = {
-            ["Host"] = url_decoded.host,
-            ["Content-Type"] = content_type,
-            ["Authorization"] = conf.auth_header
-        }
-    })
+    }
+
+    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port) .. (#url_decoded.path ~= 0 and url_decoded.path or "/")
+
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout * 1000
+        params.keepalive_pool = conf.keepalive_pool
+    end
+
+    local httpc_res, httpc_err = httpc:request_uri(request_uri, params)
 
     if not httpc_res then
-        connection_util.close_http_connection(httpc)
         return false, "error while sending data to [" .. host .. "] port["
             .. tostring(port) .. "] " .. httpc_err
     end
@@ -160,7 +173,6 @@ local function send_http_data(conf, log_message)
             .. "body[" .. httpc_res:read_body() .. "]"
     end
 
-    connection_util.close_http_connection(httpc)
     return res, err_msg
 end
 
