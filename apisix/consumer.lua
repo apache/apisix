@@ -106,8 +106,8 @@ local function plugin_consumer()
                 end
 
                 -- if the val is a Consumer, clone it to the local consumer;
-                -- if the val is a Credential, to get the Consumer by consumer_name and then clone it to
-                -- the local consumer.
+                -- if the val is a Credential, to get the Consumer by consumer_name and then clone
+                -- it to the local consumer.
                 local consumer
                 if is_credential_etcd_key(val.key) then
                     local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
@@ -116,8 +116,10 @@ local function plugin_consumer()
                         consumer = core.table.clone(the_consumer.value)
                         consumer.credential_id = get_credential_id_from_etcd_key(val.key)
                     else
-                        -- Normally wouldn't get here: it should belong to a consumer for any credential.
-                        core.log.error("failed to get the consumer for the credential, a wild credential has appeared!",
+                        -- Normally wouldn't get here:
+                        -- it should belong to a consumer for any credential.
+                        core.log.error("failed to get the consumer for the credential,",
+                            " a wild credential has appeared!",
                             " credential key: ", val.key, ", consumer name: ", consumer_name)
                         goto CONTINUE
                     end

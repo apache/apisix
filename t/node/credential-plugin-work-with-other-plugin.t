@@ -102,7 +102,7 @@ passed
                     "value":{
                         "id":"34010989-ce4e-4d61-9493-b54cca8edb31",
                         "plugins":{
-                            "key-auth": {"key": "p7a3k6r4t9"}
+                            "key-auth": {"key": "fsFPtg7BtXMXkvSnS9e1zw=="}
                         }
                     },
                     "key":"/apisix/consumers/jack/credentials/34010989-ce4e-4d61-9493-b54cca8edb31"
