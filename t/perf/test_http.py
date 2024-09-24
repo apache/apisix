@@ -58,12 +58,6 @@ def create_conf():
         i = str(i)
         consumers.append({
             "username": "jack" + i,
-            "plugins": {
-                "jwt-auth": {
-                    "key": "user-key-" + i,
-                    "secret": "my-secret-key"
-                }
-            }
         })
         routes.append({
             "upstream_id": 1,
@@ -73,8 +67,6 @@ def create_conf():
                 "limit-count": {
                     "count": 1e8,
                     "time_window": 3600,
-                },
-                "jwt-auth": {
                 },
                 "proxy-rewrite": {
                     "uri": "/" + i,
@@ -96,16 +88,6 @@ def create_conf():
         },
         "type": "roundrobin"
     }]
-
-    # expose public api
-    routes.append({
-        "uri": "/gen_token",
-        "plugins": {
-            "public-api": {
-                "uri": "/apisix/plugin/jwt/sign"
-            }
-        },
-    })
 
     conf = {}
     conf["routes"] = routes
@@ -155,31 +137,16 @@ class TestHTTP(unittest.TestCase):
         self.tempdir = tempdir
 
     def test_perf(self):
-        signs = []
-        conn = http.client.HTTPConnection("127.0.0.1", port=9080)
-        for i in range(RULE_SIZE):
-            i = str(i)
-            conn.request("GET", "/gen_token?key=user-key-" + i)
-            response = conn.getresponse()
-            if response.status >= 300:
-                print("failed to sign, got: %s" % response.read())
-                conn.close()
-                return
-            signs.append('"' + response.read().decode() + '"')
-        conn.close()
-
         script = os.path.join(self.tempdir, "wrk.lua")
         with open(script, "w") as f:
             sign_list = ",\n".join(signs)
             s = """
-                signs = {%s}
                 function request()
                     local i = math.random(%s) - 1
                     wrk.headers["Host"] = "test" .. i .. ".com"
-                    wrk.headers["Authorization"] = signs[i+1]
                     return wrk.format()
                 end
-            """ % (sign_list, RULE_SIZE)
+            """ % (RULE_SIZE)
             f.write(s)
         # We use https://github.com/giltene/wrk2
         subprocess.run(["wrk",

@@ -60,46 +60,7 @@ property "username" validation failed
 
 
 
-=== TEST 2: validate the plugin under consumer
---- apisix_yaml
-routes:
-  - uri: /apisix/status
-    plugins:
-        public-api: {}
-consumers:
-  - username: jwt
-    plugins:
-        jwt-auth:
-            secret: my-secret-key
-#END
---- request
-GET /apisix/status?key=user-key
---- error_log
-plugin jwt-auth err: property "key" is required
---- error_code: 404
-
-
-
-=== TEST 3: provide default value for the plugin
---- apisix_yaml
-routes:
-  - uri: /apisix/status
-    plugins:
-        public-api: {}
-consumers:
-  - username: jwt
-    plugins:
-        jwt-auth:
-            key: user-key
-            secret: my-secret-key
-#END
---- request
-GET /apisix/status?key=user-key
---- error_code: 200
-
-
-
-=== TEST 4: consumer restriction
+=== TEST 2: consumer restriction
 --- apisix_yaml
 consumers:
   - username: jack

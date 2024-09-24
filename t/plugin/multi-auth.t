@@ -485,7 +485,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 20: add consumer with username and jwt-auth plugins
+=== TEST 19: add consumer with username and jwt-auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -516,7 +516,7 @@ passed
 
 
 
-=== TEST 22: verify multi-auth with plugin config will cause the conf_version change
+=== TEST 20: verify multi-auth with plugin config will cause the conf_version change
 --- config
     location /t {
         content_by_lua_block {

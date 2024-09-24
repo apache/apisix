@@ -135,7 +135,7 @@ passed
 
 
 
-=== TEST 8: verify, missing token
+=== TEST 5: verify, missing token
 --- request
 GET /hello
 --- error_code: 401
@@ -144,7 +144,7 @@ GET /hello
 
 
 
-=== TEST 9: verify: invalid JWT token
+=== TEST 6: verify: invalid JWT token
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -155,7 +155,7 @@ JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
-=== TEST 10: verify: expired JWT token
+=== TEST 7: verify: expired JWT token
 --- request
 GET /hello?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -166,7 +166,7 @@ failed to verify jwt: 'exp' claim expired at Tue, 23 Jul 2019 08:28:21 GMT
 
 
 
-=== TEST 11: verify (in header)
+=== TEST 8: verify (in header)
 --- request
 GET /hello
 --- more_headers
@@ -176,7 +176,7 @@ hello world
 
 
 
-=== TEST 12: verify (in cookie)
+=== TEST 9: verify (in cookie)
 --- request
 GET /hello
 --- more_headers
@@ -186,7 +186,7 @@ hello world
 
 
 
-=== TEST 13: verify (in header without Bearer)
+=== TEST 10: verify (in header without Bearer)
 --- request
 GET /hello
 --- more_headers
@@ -196,7 +196,7 @@ hello world
 
 
 
-=== TEST 14: verify (header with bearer)
+=== TEST 11: verify (header with bearer)
 --- request
 GET /hello
 --- more_headers
@@ -206,7 +206,7 @@ hello world
 
 
 
-=== TEST 15: verify (invalid bearer token)
+=== TEST 12: verify (invalid bearer token)
 --- request
 GET /hello
 --- more_headers
@@ -219,7 +219,7 @@ JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
-=== TEST 16: delete a exist consumer
+=== TEST 13: delete a exist consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +266,7 @@ code: true body: passed
 
 
 
-=== TEST 17: add consumer with username and plugins with base64 secret
+=== TEST 14: add consumer with username and plugins with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -296,7 +296,7 @@ passed
 
 
 
-=== TEST 18: enable jwt auth plugin with base64 secret
+=== TEST 15: enable jwt auth plugin with base64 secret
 --- config
     location /t {
         content_by_lua_block {
@@ -327,7 +327,7 @@ passed
 
 
 
-=== TEST 20: verify: invalid JWT token
+=== TEST 16: verify: invalid JWT token
 --- request
 GET /hello?jwt=invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
 --- error_code: 401
@@ -338,7 +338,7 @@ JWT token invalid: invalid header: invalid-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9
 
 
 
-=== TEST 21: verify: invalid signature
+=== TEST 17: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
@@ -351,7 +351,7 @@ failed to verify jwt: signature mismatch: fNtFJnNmJgzbiYmGB0Yjvm-l6A6M4jRV1l4mnV
 
 
 
-=== TEST 22: verify: happy path
+=== TEST 18: verify: happy path
 --- request
 GET /hello
 --- more_headers
@@ -361,7 +361,7 @@ hello world
 
 
 
-=== TEST 23: without key
+=== TEST 19: without key
 --- config
     location /t {
         content_by_lua_block {
@@ -381,7 +381,7 @@ property "key" is required
 
 
 
-=== TEST 24: get the schema by schema_type
+=== TEST 20: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -399,7 +399,7 @@ property "key" is required
 
 
 
-=== TEST 25: get the schema by error schema_type
+=== TEST 21: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -417,7 +417,7 @@ property "key" is required
 
 
 
-=== TEST 26: get the schema by default schema_type
+=== TEST 22: get the schema by default schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -435,7 +435,7 @@ property "key" is required
 
 
 
-=== TEST 27: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
+=== TEST 23: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -468,7 +468,7 @@ passed
 
 
 
-=== TEST 28: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 24: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -502,7 +502,7 @@ passed
 
 
 
-=== TEST 30: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
+=== TEST 25: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -534,7 +534,7 @@ passed
 
 
 
-=== TEST 31: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 26: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -568,7 +568,7 @@ passed
 
 
 
-=== TEST 34: add consumer with username and plugins with public_key, private_key(private_key numbits = 2048)
+=== TEST 27: add consumer with username and plugins with public_key, private_key(private_key numbits = 2048)
 --- config
     location /t {
         content_by_lua_block {
@@ -599,7 +599,7 @@ passed
 
 
 
-=== TEST 35: JWT sign and verify use RS256 algorithm(private_key numbits = 2048)
+=== TEST 28: JWT sign and verify use RS256 algorithm(private_key numbits = 2048)
 --- config
     location /t {
         content_by_lua_block {
@@ -631,7 +631,7 @@ passed
 
 
 
-=== TEST 41: sanity(algorithm = HS512)
+=== TEST 29: sanity(algorithm = HS512)
 --- config
     location /t {
         content_by_lua_block {
@@ -652,7 +652,7 @@ qr/{"algorithm":"HS512","base64_secret":false,"exp":86400,"key":"123","lifetime_
 
 
 
-=== TEST 46: test for unsupported algorithm
+=== TEST 30: test for unsupported algorithm
 --- config
     location /t {
         content_by_lua_block {
@@ -673,7 +673,7 @@ qr/property "algorithm" validation failed/
 
 
 
-=== TEST 47: wrong format of secret
+=== TEST 31: wrong format of secret
 --- config
     location /t {
         content_by_lua_block {
@@ -696,7 +696,7 @@ base64_secret required but the secret is not in base64 format
 
 
 
-=== TEST 48: when the exp value is not set, make sure the default value(86400) works
+=== TEST 32: when the exp value is not set, make sure the default value(86400) works
 --- config
     location /t {
         content_by_lua_block {
@@ -726,7 +726,7 @@ passed
 
 
 
-=== TEST 50: RS256 without public key
+=== TEST 33: RS256 without public key
 --- config
     location /t {
         content_by_lua_block {
@@ -753,7 +753,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 51: RS256 without private key
+=== TEST 34: RS256 without private key
 --- config
     location /t {
         content_by_lua_block {
@@ -781,7 +781,7 @@ qr/failed to validate dependent schema for \\"algorithm\\"/
 
 
 
-=== TEST 52: add consumer with username and plugins with public_key, private_key(ES256)
+=== TEST 35: add consumer with username and plugins with public_key, private_key(ES256)
 --- config
     location /t {
         content_by_lua_block {

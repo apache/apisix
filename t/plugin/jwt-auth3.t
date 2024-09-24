@@ -602,7 +602,7 @@ passed
 
 
 
-=== TEST 22: set jwt-auth conf with the token in an env var: secret uses secret ref
+=== TEST 21: set jwt-auth conf with the token in an env var: secret uses secret ref
 --- request
 GET /t
 --- config
@@ -671,7 +671,7 @@ passed
 
 
 
-=== TEST 23: verify (in header) not hiding credentials
+=== TEST 22: verify (in header) not hiding credentials
 --- request
 GET /echo
 --- more_headers

@@ -34,7 +34,7 @@ run_tests;
 __DATA__
 
 
-=== TEST 2: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
+=== TEST 1: add consumer with username and plugins with public_key, private_key(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -65,7 +65,7 @@ passed
 
 
 
-=== TEST 3: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 2: JWT sign and verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -97,7 +97,7 @@ passed
 
 
 
-=== TEST 4: sign/verify use RS256 algorithm(private_key numbits = 512)
+=== TEST 3: sign/verify use RS256 algorithm(private_key numbits = 512)
 --- config
     location /t {
         content_by_lua_block {
@@ -133,7 +133,7 @@ JWT token invalid: invalid jwt string
 
 
 
-=== TEST 5: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
+=== TEST 4: add consumer with username and plugins with public_key, private_key(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -163,7 +163,7 @@ passed
 
 
 
-=== TEST 6: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 5: JWT sign and verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -195,7 +195,7 @@ passed
 
 
 
-=== TEST 7: sign/verify use RS256 algorithm(private_key numbits = 1024)
+=== TEST 6: sign/verify use RS256 algorithm(private_key numbits = 1024)
 --- config
     location /t {
         content_by_lua_block {
@@ -231,7 +231,7 @@ JWT token invalid: invalid jwt string
 
 
 
-=== TEST 8: sign/verify use RS256 algorithm(private_key numbits = 1024,with extra payload)
+=== TEST 7: sign/verify use RS256 algorithm(private_key numbits = 1024,with extra payload)
 --- config
     location /t {
         content_by_lua_block {

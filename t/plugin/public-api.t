@@ -110,7 +110,7 @@ property "uri" validation failed: wrong type: expected string, got number
 
 
 
-=== TEST 4: hit route (direct-wolf-rbac-userinfo)
+=== TEST 3: hit route (direct-wolf-rbac-userinfo)
 --- request
 GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
@@ -119,21 +119,21 @@ direct-wolf-rbac-userinfo was triggered
 
 
 
-=== TEST 5: missing route (non-exist public API)
+=== TEST 4: missing route (non-exist public API)
 --- request
 GET /apisix/plugin/balalbala
 --- error_code: 404
 
 
 
-=== TEST 6: hit route (wrong public-api uri)
+=== TEST 5: hit route (wrong public-api uri)
 --- request
 GET /wrong-public-api
 --- error_code: 404
 
 
 
-=== TEST 7: setup route (protect public API)
+=== TEST 6: setup route (protect public API)
 --- config
     location /t {
         content_by_lua_block {
@@ -181,7 +181,7 @@ GET /wrong-public-api
 
 
 
-=== TEST 8: hit route (with key-auth header)
+=== TEST 7: hit route (with key-auth header)
 --- request
 GET /get_user_info?key=user-key
 --- more_headers
@@ -192,7 +192,7 @@ direct-wolf-rbac-userinfo was triggered
 
 
 
-=== TEST 9: hit route (without key-auth header)
+=== TEST 8: hit route (without key-auth header)
 --- request
 GET /get_user_info?key=user-key
 --- error_code: 401
