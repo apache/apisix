@@ -710,6 +710,20 @@ _M.consumer = {
     additionalProperties = false,
 }
 
+_M.credential = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        plugins = {
+            type = "object",
+            maxProperties = 1,
+        },
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+        desc = desc_def,
+    },
+}
 
 _M.upstream = upstream_schema
 
