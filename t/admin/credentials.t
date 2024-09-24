@@ -193,14 +193,14 @@ GET /t
 --- config
     location /t {
         content_by_lua_block {
-	        local json = require("toolkit.json")
+            local json = require("toolkit.json")
             local t = require("lib.test_admin").test
             local code, body, res = t('/apisix/admin/consumers', ngx.HTTP_GET)
 
             ngx.status = code
-	        res = json.decode(res)
-	        assert(res.total == 1)
-	        assert(res.list[1].key == "/apisix/consumers/jack")
+            res = json.decode(res)
+            assert(res.total == 1)
+            assert(res.list[1].key == "/apisix/consumers/jack")
         }
     }
 --- request
