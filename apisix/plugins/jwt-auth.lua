@@ -280,9 +280,11 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
         consumer.auth_conf
     )
     if not public_key then
+        core.log.error("failed to sign jwt, err: ", err)
         return nil, "missing public_key"
     end
     if not private_key then
+        core.log.error("failed to sign jwt, err: ", err)
         return nil, "missing private_key"
     end
 
@@ -300,9 +302,7 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
         }
     )
     if not ok then
-        if jwt_token and jwt_token.reason then
-            return nil, "failed to sign jwt: " .. jwt_token.reason
-        end
+        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
         return nil, "failed to sign jwt"
     end
     return jwt_token
