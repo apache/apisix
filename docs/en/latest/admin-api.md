@@ -1459,7 +1459,7 @@ Secret resource request address: /apisix/admin/secrets/{secretmanager}/{id}
 
 ### Request Body Parameters
 
-When `{secretmanager}` is `vault`:
+#### When Secret Manager is Vault
 
 | Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
@@ -1495,6 +1495,102 @@ HTTP/1.1 200 OK
 ...
 
 {"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+```
+
+#### When Secret Manager is AWS
+
+| Parameter         | Required | Type   | Description                             |
+| ----------------- | -------- | ------ | --------------------------------------- |
+| access_key_id     | True     | string | AWS Access Key ID                       |
+| secret_access_key | True     | string | AWS Secret Access Key                   |
+| session_token     | False    | string | Temporary access credential information |
+| region            | False    | string | AWS Region                              |
+| endpoint_url      | False    | URI    | AWS Secret Manager URL                  |
+
+Example Configuration:
+
+```json
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}
+```
+
+Example API usage:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/aws/test3 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"value":{"create_time":1726069970,"endpoint_url":"http://127.0.0.1:4566","region":"us-east-1","access_key_id":"access","secret_access_key":"secret","id":"aws/test3","update_time":1726069970,"session_token":"token"},"key":"/apisix/secrets/aws/test3"}
+```
+
+#### When Secret Manager is GCP
+
+| Parameter                | Required | Type    | Description                                                                                                                                               | Example                                                                                          |
+| ------------------------ | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| auth_config              | True     | object  | Either `auth_config` or `auth_file` must be provided.                                                                                                     |                                                                                                  |
+| auth_config.client_email | True     | string  | Email address of the Google Cloud service account.                                                                                                        |                                                                                                  |
+| auth_config.private_key  | True     | string  | Private key of the Google Cloud service account.                                                                                                          |                                                                                                  |
+| auth_config.project_id   | True     | string  | Project ID in the Google Cloud service account.                                                                                                           |                                                                                                  |
+| auth_config.token_uri    | False    | string  | Token URI of the Google Cloud service account.                                                                                                            | [https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token)                       |
+| auth_config.entries_uri  | False    | string  | The API access endpoint for the Google Secrets Manager.                                                                                                   | [https://secretmanager.googleapis.com/v1](https://secretmanager.googleapis.com/v1)               |
+| auth_config.scope        | False    | string  | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) | [https://www.googleapis.com/auth/cloud-platform](https://www.googleapis.com/auth/cloud-platform) |
+| auth_file                | True     | string  | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided.                                  |                                                                                                  |
+| ssl_verify               | False    | boolean | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).         | true                                                                                             |
+
+Example Configuration:
+
+```json
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}
+```
+
+Example API usage:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/gcp/test4 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"value":{"id":"gcp/test4","ssl_verify":true,"auth_config":{"token_uri":"https://oauth2.googleapis.com/token","scope":["https://www.googleapis.com/auth/cloud-platform"],"entries_uri":"https://secretmanager.googleapis.com/v1","client_email":"email@apisix.iam.gserviceaccount.com","private_key":"private_key","project_id":"apisix-project"},"create_time":1726070161,"update_time":1726070161},"key":"/apisix/secrets/gcp/test4"}
 ```
 
 ### Response Parameters
