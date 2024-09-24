@@ -516,7 +516,7 @@ passed
 
 
 
-=== TEST 21: sign / verify jwt-auth
+=== TEST 20: sign / verify jwt-auth
 --- config
     location /t {
         content_by_lua_block {
@@ -551,7 +551,7 @@ hello world
 
 
 
-=== TEST 20: verify multi-auth with plugin config will cause the conf_version change
+=== TEST 21: verify multi-auth with plugin config will cause the conf_version change
 --- config
     location /t {
         content_by_lua_block {

@@ -378,7 +378,7 @@ IRWpPjbDq5BCgHyIllnOMA==
 
 
 
-=== TEST 16: set jwt-auth conf: secret uses secret ref
+=== TEST 15: set jwt-auth conf: secret uses secret ref
 --- request
 GET /t
 --- config
@@ -451,7 +451,7 @@ passed
 
 
 
-=== TEST 17: store secret into vault
+=== TEST 16: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack secret=my-secret-key
 --- response_body
@@ -459,7 +459,7 @@ Success! Data written to: kv/apisix/jack
 
 
 
-=== TEST 18: verify (in header) not hiding credentials
+=== TEST 17: verify (in header) not hiding credentials
 --- request
 GET /echo
 --- more_headers
@@ -469,7 +469,7 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 19: store rsa key pairs and secret into vault from local filesystem
+=== TEST 18: store rsa key pairs and secret into vault from local filesystem
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 secret=$3nsitiv3-c8d3 public_key=@t/certs/public.pem
 --- response_body
@@ -477,7 +477,7 @@ Success! Data written to: kv/apisix/rsa1
 
 
 
-=== TEST 20: create consumer for RS256 algorithm with public key fetched from vault and public key in consumer schema
+=== TEST 19: create consumer for RS256 algorithm with public key fetched from vault and public key in consumer schema
 --- config
     location /t {
         content_by_lua_block {
@@ -530,7 +530,7 @@ passed
 
 
 
-=== TEST 21: set jwt-auth conf with the token in an env var: secret uses secret ref
+=== TEST 20: set jwt-auth conf with the token in an env var: secret uses secret ref
 --- request
 GET /t
 --- config
@@ -599,7 +599,7 @@ passed
 
 
 
-=== TEST 22: verify (in header) not hiding credentials
+=== TEST 21: verify (in header) not hiding credentials
 --- request
 GET /echo
 --- more_headers
