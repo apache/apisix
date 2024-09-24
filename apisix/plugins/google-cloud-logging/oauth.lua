@@ -58,7 +58,6 @@ function _M:refresh_access_token()
         },
     })
 
-
     if not res then
         core.log.error("failed to refresh google oauth access token, ", err)
         return
