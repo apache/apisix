@@ -254,6 +254,7 @@ end
 local function sign_jwt_with_HS(key, consumer, payload)
     local auth_secret, err = get_secret(consumer.auth_conf)
     if not auth_secret then
+        core.log.error("failed to sign jwt, err: ", err)
         return nil, "failed to sign jwt: failed to get auth_secret"
     end
     local ok, jwt_token = pcall(jwt.sign, _M,
@@ -267,9 +268,7 @@ local function sign_jwt_with_HS(key, consumer, payload)
         }
     )
     if not ok then
-        if jwt_token and jwt_token.reason then
-            return nil, "failed to sign jwt: " .. jwt_token.reason
-        end
+        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
         return nil, "failed to sign jwt"
     end
     return jwt_token
