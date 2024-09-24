@@ -382,6 +382,15 @@ end
 
 
 function _M.gen_token(key, consumer, payload)
+    if not consumer.auth_conf then
+        return nil, "missing auth_conf in consumer"
+    end
+    if not consumer.auth_conf.exp then
+        consumer.auth_conf.exp = 86400
+    end
+    if not consumer.auth_conf.lifetime_grace_period then
+        consumer.auth_conf.lifetime_grace_period = 0
+    end
     local sign_handler = algorithm_handler(consumer, true)
     local jwt_token = sign_handler(key, consumer, payload)
     return jwt_token
