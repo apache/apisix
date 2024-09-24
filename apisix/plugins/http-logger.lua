@@ -151,7 +151,8 @@ local function send_http_data(conf, log_message)
         body = log_message,
     }
 
-    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port) .. (#url_decoded.path ~= 0 and url_decoded.path or "/")
+    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port)
+    .. (#url_decoded.path ~= 0 and url_decoded.path or "/")
 
     if conf.keepalive then
         params.keepalive_timeout = conf.keepalive_timeout * 1000

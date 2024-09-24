@@ -123,7 +123,8 @@ local function send_http_data(conf, log_message)
         end
     end
 
-    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port) .. (#url_decoded.path ~= 0 and url_decoded.path or "/")
+    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port)
+    .. (#url_decoded.path ~= 0 and url_decoded.path or "/")
 
     local auth_headers = {
          ["Host"] = host,
