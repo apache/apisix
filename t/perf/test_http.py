@@ -57,7 +57,7 @@ def create_conf():
     for i in range(RULE_SIZE):
         i = str(i)
         consumers.append({
-            "username": "jack" + i,
+            "username": "jack" + i
         })
         routes.append({
             "upstream_id": 1,
@@ -139,7 +139,6 @@ class TestHTTP(unittest.TestCase):
     def test_perf(self):
         script = os.path.join(self.tempdir, "wrk.lua")
         with open(script, "w") as f:
-            sign_list = ",\n".join(signs)
             s = """
                 function request()
                     local i = math.random(%s) - 1
