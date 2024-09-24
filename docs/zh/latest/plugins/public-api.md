@@ -30,7 +30,7 @@ description: 本文介绍了 public-api 的相关操作，你可以使用 public
 
 `public-api` 插件可用于通过创建路由的方式暴露用户自定义的 API。
 
-你可以通过在路由中添加 `public-api` 插件，来保护**自定义插件为了实现特定功能**而暴露的 API。例如，你可以使用 [`jwt-auth`](./jwt-auth.md) 插件创建一个公共 API 端点 `/apisix/plugin/jwt/sign` 用于 JWT 认证。
+你可以通过在路由中添加 `public-api` 插件，来保护**自定义插件为了实现特定功能**而暴露的 API。例如，你可以使用 [`wolf-rbac`](./wolf-rbac.md) 插件创建一个公共 API 端点 `/apisix/plugin/wolf-rbac/login` 用于登录获取 wolf rbac_token。
 
 :::note 注意
 
@@ -46,11 +46,13 @@ description: 本文介绍了 public-api 的相关操作，你可以使用 public
 
 ## 启用插件
 
-`public-api` 插件需要与授权插件一起配合使用，以下示例分别用到了 [`jwt-auth`](./jwt-auth.md) 插件和 [`key-auth`](./key-auth.md) 插件。
+`public-api` 插件需要与授权插件一起配合使用，以下示例分别用到了 [wolf-rbac](./wolf-rbac.md) 插件和 [`key-auth`](./key-auth.md)
+
+注意：使用 [wolf-rbac](./wolf-rbac.md) 需要实现一些前提条件 [wolf-rbac](./wolf-rbac.md#前提条件)
 
 ### 基本用法
 
-首先，你需要启用并配置 `jwt-auth` 插件，详细使用方法请参考 [`jwt-auth`](./jwt-auth.md) 插件文档。
+首先，你需要启用并配置 `wolf-rbac` 插件，详细使用方法请参考 [wolf-rbac](./wolf-rbac.md) 插件文档。
 
 然后，使用以下命令在指定路由上启用并配置 `public-api` 插件：
 
@@ -69,7 +71,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/apisix/plugin/jwt/sign",
+    "uri": "/apisix/plugin/wolf-rbac/login",
     "plugins": {
         "public-api": {}
     }
@@ -78,14 +80,12 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
 
 **测试插件**
 
-向配置的 URI 发出访问请求，如果返回一个包含 JWT Token 的响应，则代表插件生效：
+向配置的 URI 发出访问请求，会返回一个包含 wolf rbac_token 的响应：
 
 ```shell
-curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
-```
-
-```shell
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1MzIsImtleSI6InVzZXIta2V5In0.NhrWrO-da4kXezxTLdgFBX2rJA2dF1qESs8IgmwhNd0
+curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ### 使用自定义 URI
@@ -99,10 +99,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/gen_token",
+    "uri": "/wolf-rbac-login",
     "plugins": {
         "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
+            "uri": "/apisix/plugin/wolf-rbac/login"
         }
     }
 }'
@@ -113,11 +113,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 向自定义的 URI 发出访问请求，如果返回一个包含 JWT Token 的响应，则代表插件生效：
 
 ```shell
-curl 'http://127.0.0.1:9080/gen_token?key=user-key'
-```
-
-```shell
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1NjIsImtleSI6InVzZXIta2V5In0.UVkXWbyGb8ajBNtxs0iAaFb2jTEWIlqTR125xr1ZMLc
+curl http://127.0.0.1:9080/wolf-rbac-login -i \
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ### 确保 Route 安全
@@ -129,10 +127,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/gen_token",
+    "uri": "/wolf-rbac-login",
     "plugins": {
         "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
+            "uri": "/apisix/plugin/wolf-rbac/login"
         },
         "key-auth": {
             "key": "test-apikey"
@@ -148,8 +146,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 发出访问请求并指定 `apikey`，如果返回 `200` HTTP 状态码，则说明请求被允许：
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key' \
+curl http://127.0.0.1:9080/wolf-rbac-login -i \
     -H "apikey: test-apikey"
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ```shell
@@ -159,7 +159,9 @@ HTTP/1.1 200 OK
 发出访问请求，如果返回 `401` HTTP 状态码，则说明请求被阻止，插件生效：
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl http://127.0.0.1:9080/wolf-rbac-login -i \
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ```shell

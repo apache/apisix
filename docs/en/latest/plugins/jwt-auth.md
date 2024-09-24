@@ -62,14 +62,6 @@ For Route:
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
-## API
-
-This Plugin adds `/apisix/plugin/jwt/sign` as an endpoint.
-
-:::note
-
-You may need to use the [public-api](public-api.md) plugin to expose this endpoint.
-
 :::
 
 ## Enable Plugin
@@ -148,53 +140,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 
 ## Example usage
 
-You need to first setup a Route for an API that signs the token using the [public-api](public-api.md) Plugin:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jas -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/apisix/plugin/jwt/sign",
-    "plugins": {
-        "public-api": {}
-    }
-}'
-```
-
-Now, we can get a token:
-
-- Without extension payload:
-
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-```
-
-```
-HTTP/1.1 200 OK
-Date: Wed, 24 Jul 2019 10:33:31 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
-```
-
-- With extension payload:
-
-```shell
-curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-```
-
-```
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:43:59 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
-```
+You need first to issue a JWT token using some tool such as [JWT.io's debugger](https://jwt.io/#debugger-io) or a programming language.
 
 You can now use this token while making requests:
 

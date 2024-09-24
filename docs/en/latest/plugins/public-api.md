@@ -30,7 +30,7 @@ description: The public-api is used for exposing an API endpoint through a gener
 
 The `public-api` is used for exposing an API endpoint through a general HTTP API router.
 
-When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/plugin/jwt/sign` for JWT authentication using the [jwt-auth](./jwt-auth.md) Plugin.
+When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/plugin/wolf-rbac/login` for wolf-rbac using the [wolf-rbac](./wolf-rbac.md) Plugin.
 
 :::note
 
@@ -46,7 +46,9 @@ The public API added in a custom Plugin is not exposed by default and the user s
 
 ## Example usage
 
-The example below uses the [jwt-auth](./jwt-auth.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for it configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
+The example below uses the [wolf-rbac](./wolf-rbac.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for its configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
+
+Note: 使用 [wolf-rbac](./wolf-rbac.md) 插件的需要一些前提条件 [wolf-rbac](./wolf-rbac.md#pre-requisites)
 
 ### Basic usage
 
@@ -57,17 +59,19 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/apisix/plugin/jwt/sign",
+    "uri": "/apisix/plugin/wolf-rbac/login",
     "plugins": {
         "public-api": {}
     }
 }'
 ```
 
-Now, if you make a request to the configured URI, you will receive a JWT response:
+Now, if you make a request to the configured URI, you will receive a rbac_token response:
 
 ```shell
-curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
+curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ### Using custom URI
@@ -79,10 +83,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/gen_token",
+    "uri": "/wolf-rbac-login",
     "plugins": {
         "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
+            "uri": "/apisix/plugin/wolf-rbac/login"
         }
     }
 }'
@@ -91,7 +95,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 Now you can make requests to this new endpoint:
 
 ```shell
-curl 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl http://127.0.0.1:9080/wolf-rbac-login -i \
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ### Securing the Route
@@ -103,10 +109,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/gen_token",
+    "uri": "/wolf-rbac-login",
     "plugins": {
         "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
+            "uri": "/apisix/plugin/wolf-rbac/login"
         },
         "key-auth": {}
     }
@@ -116,8 +122,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 Now, only authenticated requests are allowed:
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key' \
+curl http://127.0.0.1:9080/wolf-rbac-login -i \
     -H "apikey: test-apikey"
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ```shell
@@ -127,7 +135,9 @@ HTTP/1.1 200 OK
 The below request will fail:
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl http://127.0.0.1:9080/wolf-rbac-login -i \
+    -H "Content-Type: application/json" \
+    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
 ```
 
 ```shell

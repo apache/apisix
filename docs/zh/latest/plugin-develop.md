@@ -417,20 +417,21 @@ end
 
 ## 注册公共接口
 
-插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口：
+插件可以注册暴露给公网的接口。以 wolf-rbac 插件为例，这个插件为了让客户端能够登录获取 wolf rbac_token，注册了 `POST /apisix/plugin/wolf-rbac/login` 等接口：
 
 ```lua
-local function gen_token()
+function wolf_rbac_login()
     -- ...
 end
 
 function _M.api()
     return {
         {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
-        }
+            methods = {"POST"},
+            uri = "/apisix/plugin/wolf-rbac/login",
+            handler = wolf_rbac_login,
+        },
+        -- ...
     }
 end
 ```

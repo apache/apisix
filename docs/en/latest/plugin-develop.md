@@ -439,20 +439,21 @@ end
 
 ## register public API
 
-A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
+A plugin can register API which exposes to the public. Take wolf-rbac plugin as an example, this plugin registers `POST /apisix/plugin/wolf-rbac/login` to allow a client to login and get the wolf rbac_token:
 
 ```lua
-local function gen_token()
-    --...
+function wolf_rbac_login()
+    -- ...
 end
 
 function _M.api()
     return {
         {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
-        }
+            methods = {"POST"},
+            uri = "/apisix/plugin/wolf-rbac/login",
+            handler = wolf_rbac_login,
+        },
+        -- ...
     }
 end
 ```
