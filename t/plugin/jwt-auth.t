@@ -332,20 +332,9 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key",
-                secret = "fo4XKdZ1xSrIZyms4q2BwPrW5lMpls9qqy5tiAk2esc=",
-                base64_secret = true
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
-
+            -- sign is generated via https://jwt.io/#debugger-io. This is the case for all other test cases and is not specified further
+            local sign = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30._Z8b_Asb2ROvGX4R5sNMbgJNQXB6x7aQeuVjmjY21Nw"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -538,21 +527,10 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-rs256",
-                algorithm = "RS256",
-                public_key = "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----",
-                private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----"
 
+            local sign = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30.FaV6N-bWaSXkRrF2ec28hH5QENl-8I0LCONdNnQpB1YOb4akP-lKnwtABgfsQ_eKaEIf1PWNoghyByLejXaPbQ"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -637,21 +615,10 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-rs256",
-                algorithm = "RS256",
-                public_key = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDGxOfVe/seP5T/V8pkS5YNAPRC\n3Ffxxedi7v0pyZh/4d4p9Qx0P9wOmALwlOq4Ftgks311pxG0zL0LcTJY4ikbc3r0\nh8SM0yhj9UV1VGtuia4YakobvpM9U+kq3lyIMO9ZPRez0cP3AJIYCt5yf8E7bNYJ\njbJNjl8WxvM1tDHqVQIDAQAB\n-----END PUBLIC KEY-----",
-                private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDGxOfVe/seP5T/V8pkS5YNAPRC3Ffxxedi7v0pyZh/4d4p9Qx0\nP9wOmALwlOq4Ftgks311pxG0zL0LcTJY4ikbc3r0h8SM0yhj9UV1VGtuia4Yakob\nvpM9U+kq3lyIMO9ZPRez0cP3AJIYCt5yf8E7bNYJjbJNjl8WxvM1tDHqVQIDAQAB\nAoGAYFy9eAXvLC7u8QuClzT9vbgksvVXvWKQVqo+GbAeOoEpz3V5YDJFYN3ZLwFC\n+ZQ5nTFXNV6Veu13CMEMA4NBIa8I4r3aYzSjq7X7UEBkLDBtEUge52mYakNfXD8D\nqViHkyJqvtVnBl7jNZVqbBderQnXA0kigaeZPL3+hkYKBgECQQDmiDbUL3FBynLy\nNX6/JdAbO4g1Nl/1RsGg8svhb6vRM8WQyIQWt5EKi7yoP/9nIRXcIgdwpVO6wZRU\nDojL0oy1AkEA3LpjqXxIRzcy2ALsqKN3hoNPGAlkPyG3Mlph91mqSZ2jYpXCX9LW\nhhQdf9GmfO8jZtYhYAJqEMOJrKeZHToLIQJBAJbrJbnTNTn05ztZehh5ELxDRPBR\nIJDaOXi8emyjRsA2PGiEXLTih7l3sZIUE4fYSQ9L18MO+LmScSB2Q2fr9uECQFc7\nIh/dCgN7ARD1Nun+kEIMqrlpHMEGZgv0RDsoqG+naOaRINwVysn6MR5OkGlXaLo/\nbbkvuxMc88/T/GLciYECQQC4oUveCOic4Qs6TQfMUKKv/kJ09slbD70HkcBzA5nY\nyro4RT4z/SN6T3SD+TuWn2//I5QxiQEIbOCTySci7yuh\n-----END RSA PRIVATE KEY-----"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDGxOfVe/seP5T/V8pkS5YNAPRC3Ffxxedi7v0pyZh/4d4p9Qx0\nP9wOmALwlOq4Ftgks311pxG0zL0LcTJY4ikbc3r0h8SM0yhj9UV1VGtuia4Yakob\nvpM9U+kq3lyIMO9ZPRez0cP3AJIYCt5yf8E7bNYJjbJNjl8WxvM1tDHqVQIDAQAB\nAoGAYFy9eAXvLC7u8QuClzT9vbgksvVXvWKQVqo+GbAeOoEpz3V5YDJFYN3ZLwFC\n+ZQ5nTFXNV6Veu13CMEMA4NBIa8I4r3aYzSjq7X7UEBkLDBtEUge52mYakNfXD8D\nqViHkyJqvtVnBl7jNZVqbBderQnXA0kigaeZPL3+hkYKBgECQQDmiDbUL3FBynLy\nNX6/JdAbO4g1Nl/1RsGg8svhb6vRM8WQyIQWt5EKi7yoP/9nIRXcIgdwpVO6wZRU\nDojL0oy1AkEA3LpjqXxIRzcy2ALsqKN3hoNPGAlkPyG3Mlph91mqSZ2jYpXCX9LW\nhhQdf9GmfO8jZtYhYAJqEMOJrKeZHToLIQJBAJbrJbnTNTn05ztZehh5ELxDRPBR\nIJDaOXi8emyjRsA2PGiEXLTih7l3sZIUE4fYSQ9L18MO+LmScSB2Q2fr9uECQFc7\nIh/dCgN7ARD1Nun+kEIMqrlpHMEGZgv0RDsoqG+naOaRINwVysn6MR5OkGlXaLo/\nbbkvuxMc88/T/GLciYECQQC4oUveCOic4Qs6TQfMUKKv/kJ09slbD70HkcBzA5nY\nyro4RT4z/SN6T3SD+TuWn2//I5QxiQEIbOCTySci7yuh\n-----END RSA PRIVATE KEY-----"
 
+            local sign = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30.FG-PAyscR-pFyw1a5ZiRxHLxzSI1jyVyZxm-fj3-u5igjacJY7UByCUKDnieV9-Ft81X15gdHAcrumUsTbu-77F50Bp5A1sxzdL_PXVLJ1cc8UP2ltvQwf1YWdutK7CI_uNLaeCYPZd9tWPhnfpsv4AdTdaCWeFyoaZSNOdw4oA"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -672,22 +639,11 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-rs256",
-                algorithm = "RS256",
-                public_key = "-----BEGIN PUBLIC KEY-----\nMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDGxOfVe/seP5T/V8pkS5YNAPRC\n3Ffxxedi7v0pyZh/4d4p9Qx0P9wOmALwlOq4Ftgks311pxG0zL0LcTJY4ikbc3r0\nh8SM0yhj9UV1VGtuia4YakobvpM9U+kq3lyIMO9ZPRez0cP3AJIYCt5yf8E7bNYJ\njbJNjl8WxvM1tDHqVQIDAQAB\n-----END PUBLIC KEY-----",
-                private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDGxOfVe/seP5T/V8pkS5YNAPRC3Ffxxedi7v0pyZh/4d4p9Qx0\nP9wOmALwlOq4Ftgks311pxG0zL0LcTJY4ikbc3r0h8SM0yhj9UV1VGtuia4Yakob\nvpM9U+kq3lyIMO9ZPRez0cP3AJIYCt5yf8E7bNYJjbJNjl8WxvM1tDHqVQIDAQAB\nAoGAYFy9eAXvLC7u8QuClzT9vbgksvVXvWKQVqo+GbAeOoEpz3V5YDJFYN3ZLwFC\n+ZQ5nTFXNV6Veu13CMEMA4NBIa8I4r3aYzSjq7X7UEBkLDBtEUge52mYakNfXD8D\nqViHkyJqvtVnBl7jNZVqbBderQnXA0kigaeZPL3+hkYKBgECQQDmiDbUL3FBynLy\nNX6/JdAbO4g1Nl/1RsGg8svhb6vRM8WQyIQWt5EKi7yoP/9nIRXcIgdwpVO6wZRU\nDojL0oy1AkEA3LpjqXxIRzcy2ALsqKN3hoNPGAlkPyG3Mlph91mqSZ2jYpXCX9LW\nhhQdf9GmfO8jZtYhYAJqEMOJrKeZHToLIQJBAJbrJbnTNTn05ztZehh5ELxDRPBR\nIJDaOXi8emyjRsA2PGiEXLTih7l3sZIUE4fYSQ9L18MO+LmScSB2Q2fr9uECQFc7\nIh/dCgN7ARD1Nun+kEIMqrlpHMEGZgv0RDsoqG+naOaRINwVysn6MR5OkGlXaLo/\nbbkvuxMc88/T/GLciYECQQC4oUveCOic4Qs6TQfMUKKv/kJ09slbD70HkcBzA5nY\nyro4RT4z/SN6T3SD+TuWn2//I5QxiQEIbOCTySci7yuh\n-----END RSA PRIVATE KEY-----"
-            }
-            local payload = ngx.unescape_uri("%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D")
-            local sign = gen_token(auth_conf, payload)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIICXQIBAAKBgQDGxOfVe/seP5T/V8pkS5YNAPRC3Ffxxedi7v0pyZh/4d4p9Qx0\nP9wOmALwlOq4Ftgks311pxG0zL0LcTJY4ikbc3r0h8SM0yhj9UV1VGtuia4Yakob\nvpM9U+kq3lyIMO9ZPRez0cP3AJIYCt5yf8E7bNYJjbJNjl8WxvM1tDHqVQIDAQAB\nAoGAYFy9eAXvLC7u8QuClzT9vbgksvVXvWKQVqo+GbAeOoEpz3V5YDJFYN3ZLwFC\n+ZQ5nTFXNV6Veu13CMEMA4NBIa8I4r3aYzSjq7X7UEBkLDBtEUge52mYakNfXD8D\nqViHkyJqvtVnBl7jNZVqbBderQnXA0kigaeZPL3+hkYKBgECQQDmiDbUL3FBynLy\nNX6/JdAbO4g1Nl/1RsGg8svhb6vRM8WQyIQWt5EKi7yoP/9nIRXcIgdwpVO6wZRU\nDojL0oy1AkEA3LpjqXxIRzcy2ALsqKN3hoNPGAlkPyG3Mlph91mqSZ2jYpXCX9LW\nhhQdf9GmfO8jZtYhYAJqEMOJrKeZHToLIQJBAJbrJbnTNTn05ztZehh5ELxDRPBR\nIJDaOXi8emyjRsA2PGiEXLTih7l3sZIUE4fYSQ9L18MO+LmScSB2Q2fr9uECQFc7\nIh/dCgN7ARD1Nun+kEIMqrlpHMEGZgv0RDsoqG+naOaRINwVysn6MR5OkGlXaLo/\nbbkvuxMc88/T/GLciYECQQC4oUveCOic4Qs6TQfMUKKv/kJ09slbD70HkcBzA5nY\nyro4RT4z/SN6T3SD+TuWn2//I5QxiQEIbOCTySci7yuh\n-----END RSA PRIVATE KEY-----"
+            -- payload = {"aaa":"11","bb":"222"}
 
+            local sign = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30.FG-PAyscR-pFyw1a5ZiRxHLxzSI1jyVyZxm-fj3-u5igjacJY7UByCUKDnieV9-Ft81X15gdHAcrumUsTbu-77F50Bp5A1sxzdL_PXVLJ1cc8UP2ltvQwf1YWdutK7CI_uNLaeCYPZd9tWPhnfpsv4AdTdaCWeFyoaZSNOdw4oA"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -769,21 +725,10 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-rs256",
-                algorithm = "RS256",
-                public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv5LHjZ4FxQ9jk6eQGDRt\noRwFVkLq+dUBebs97hrzirokVr2B+RoxqdLfKAM+AsN2DadawZ2GqlCV9DL0/gz6\nnWSqTQpWbQ8c7CrF31EkIHUYRzZvWy17K3WC9Odk/gM1FVd0HbZ2Rjuqj9ADeeqx\nnj9npDqKrMODOENy31SqZNerWZsdgGkML5JYbX5hbI2L9LREvRU21fDgSfGL6Mw4\nNaxnnzcvll4yqwrBELSeDZEAt0+e/p1dO7moxF+b1pFkh9vQl6zGvnvf8fOqn5Ex\ntLHXVzgx752PHMwmuj9mO1ko6p8FOM0JHDnooI+5rwK4j3I27Ho5nnatVWUaxK4U\n8wIDAQAB\n-----END PUBLIC KEY-----",
-                private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAv5LHjZ4FxQ9jk6eQGDRtoRwFVkLq+dUBebs97hrzirokVr2B\n+RoxqdLfKAM+AsN2DadawZ2GqlCV9DL0/gz6nWSqTQpWbQ8c7CrF31EkIHUYRzZv\nWy17K3WC9Odk/gM1FVd0HbZ2Rjuqj9ADeeqxnj9npDqKrMODOENy31SqZNerWZsd\ngGkML5JYbX5hbI2L9LREvRU21fDgSfGL6Mw4Naxnnzcvll4yqwrBELSeDZEAt0+e\n/p1dO7moxF+b1pFkh9vQl6zGvnvf8fOqn5ExtLHXVzgx752PHMwmuj9mO1ko6p8F\nOM0JHDnooI+5rwK4j3I27Ho5nnatVWUaxK4U8wIDAQABAoIBAFsFQC73H8KrNyKW\ngI4fit77U0XS8ZXWMKdH4XrZ71DAdDeKPtC+M05+1GxMbhAeEl8WXraTQ8J0G2s1\nMtXqEMDrbUbBXKLghVtoTy91e/a369sZ7/qgN19Eq/30WzWdDIGhVZgwcy2Xd8hw\nitZIPi/z7ChJcE35bsUytseJkJPsWeMJNq4mLbHqMSBQWze/vNvIeGYr2xfqXc6H\nywGWGlk46RI28mOf7PecU0DxFoTBNcntZrpOwaIrTDsC7E6uNvhVbtsneseTlQuj\nihS7DAH72Zx3CXc9+SL3b5QNRD1Rnp+gKM6itjW1yduOj2dS0p8YzcUYNtxnw5Gv\nuLoHwuECgYEA58NhvnHn10YLBEMYxb30tDobdGfOjBSfih8K53+/SJhqF5mv4qZX\nUfw3o5R+CkkrhbZ24yst7wqKFYZ+LfazOqljOPOrBsgIIry/sXBlcbGLCw9MYFfB\nejKTt/xZjqLdDCcEbiSB0L2xNuyF/TZOu8V5Nu55LXKBqeW4yISQ5FkCgYEA05t1\n2cq8gE1jMfGXQNFIpUDG2j4wJXAPqnJZSUF/BICa55mH/HYRKoP2uTSvAnqNrdGt\nsnjnnMA7T+fGogB4STif1POWfj+BTKVa/qhUX9ytH6TeI4aqPXSZdTVEPRfR7bG1\nIB/j2lyPkiNi2VijMx33xqxIaQUUsvxIT95GSisCgYAdaJFylQmSK3UiaVEvZlcy\nt1zcfH+dDtDfueisT216TLzJmdrTq7/Qy2xT+Xe03mwDX4/ea5A8kN3MtXA1bOR5\nQR0yENlW1vMRVVoNrfFxZ9H46UwLvZbzZo+P/RlwHAJolFrfjwpZ7ngaPBEUfFup\nP/mNmt0Ng0YoxNmZuBiaoQKBgQCa2d4RRgpRvdAEYW41UbHetJuQZAfprarZKZrr\nP9HKoq45I6Je/qurOCzZ9ZLItpRtic6Zl16u2AHPhKZYMQ3VT2mvdZ5AvwpI44zG\nZLpx+FR8nrKsvsRf+q6+Ff/c0Uyfq/cHDi84wZmS8PBKa1Hqe1ix+6t1pvEx1eq4\n/8jiRwKBgGOZzt5H5P0v3cFG9EUPXtvf2k81GmZjlDWu1gu5yWSYpqCfYr/K/1Md\ndaQ/YCKTc12SYL7hZ2j+2/dGFXNXwknIyKNj76UxjUpJywWI5mUaXJZJDkLCRvxF\nkk9nWvPorpjjjxaIVN+TkGgDd/60at/tI6HxzZitVyla5rB8hoPm\n-----END RSA PRIVATE KEY-----"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAv5LHjZ4FxQ9jk6eQGDRtoRwFVkLq+dUBebs97hrzirokVr2B\n+RoxqdLfKAM+AsN2DadawZ2GqlCV9DL0/gz6nWSqTQpWbQ8c7CrF31EkIHUYRzZv\nWy17K3WC9Odk/gM1FVd0HbZ2Rjuqj9ADeeqxnj9npDqKrMODOENy31SqZNerWZsd\ngGkML5JYbX5hbI2L9LREvRU21fDgSfGL6Mw4Naxnnzcvll4yqwrBELSeDZEAt0+e\n/p1dO7moxF+b1pFkh9vQl6zGvnvf8fOqn5ExtLHXVzgx752PHMwmuj9mO1ko6p8F\nOM0JHDnooI+5rwK4j3I27Ho5nnatVWUaxK4U8wIDAQABAoIBAFsFQC73H8KrNyKW\ngI4fit77U0XS8ZXWMKdH4XrZ71DAdDeKPtC+M05+1GxMbhAeEl8WXraTQ8J0G2s1\nMtXqEMDrbUbBXKLghVtoTy91e/a369sZ7/qgN19Eq/30WzWdDIGhVZgwcy2Xd8hw\nitZIPi/z7ChJcE35bsUytseJkJPsWeMJNq4mLbHqMSBQWze/vNvIeGYr2xfqXc6H\nywGWGlk46RI28mOf7PecU0DxFoTBNcntZrpOwaIrTDsC7E6uNvhVbtsneseTlQuj\nihS7DAH72Zx3CXc9+SL3b5QNRD1Rnp+gKM6itjW1yduOj2dS0p8YzcUYNtxnw5Gv\nuLoHwuECgYEA58NhvnHn10YLBEMYxb30tDobdGfOjBSfih8K53+/SJhqF5mv4qZX\nUfw3o5R+CkkrhbZ24yst7wqKFYZ+LfazOqljOPOrBsgIIry/sXBlcbGLCw9MYFfB\nejKTt/xZjqLdDCcEbiSB0L2xNuyF/TZOu8V5Nu55LXKBqeW4yISQ5FkCgYEA05t1\n2cq8gE1jMfGXQNFIpUDG2j4wJXAPqnJZSUF/BICa55mH/HYRKoP2uTSvAnqNrdGt\nsnjnnMA7T+fGogB4STif1POWfj+BTKVa/qhUX9ytH6TeI4aqPXSZdTVEPRfR7bG1\nIB/j2lyPkiNi2VijMx33xqxIaQUUsvxIT95GSisCgYAdaJFylQmSK3UiaVEvZlcy\nt1zcfH+dDtDfueisT216TLzJmdrTq7/Qy2xT+Xe03mwDX4/ea5A8kN3MtXA1bOR5\nQR0yENlW1vMRVVoNrfFxZ9H46UwLvZbzZo+P/RlwHAJolFrfjwpZ7ngaPBEUfFup\nP/mNmt0Ng0YoxNmZuBiaoQKBgQCa2d4RRgpRvdAEYW41UbHetJuQZAfprarZKZrr\nP9HKoq45I6Je/qurOCzZ9ZLItpRtic6Zl16u2AHPhKZYMQ3VT2mvdZ5AvwpI44zG\nZLpx+FR8nrKsvsRf+q6+Ff/c0Uyfq/cHDi84wZmS8PBKa1Hqe1ix+6t1pvEx1eq4\n/8jiRwKBgGOZzt5H5P0v3cFG9EUPXtvf2k81GmZjlDWu1gu5yWSYpqCfYr/K/1Md\ndaQ/YCKTc12SYL7hZ2j+2/dGFXNXwknIyKNj76UxjUpJywWI5mUaXJZJDkLCRvxF\nkk9nWvPorpjjjxaIVN+TkGgDd/60at/tI6HxzZitVyla5rB8hoPm\n-----END RSA PRIVATE KEY-----"
 
+            local sign = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30.Zvp8dXefvGXrKgeoaNsA3sbV_3fw1w6Te7a0B_UANzef7gGJwvlnD6c3-f4yAy7GPgNzP_H1-atcF-sgLHAYpUa14XKe22a9S_BJSoQszoZuqGgpnGcjSzDMK9JX3FLUtzOFMQR5C4_3d7_z0NlepNo2xdQ6IQj0SvS1jrNwydpA9L89N07id3EO739uNw339g78N9QHP-j8nWItfbjo31xefCWTHtcloGkfaJOhcr06qmSbrivBU1AuPA8T3ZVumqw6fcRJzrvQJdKEfVyP-IPUtUy8SM1yLqstaKojJtU3A2HKaeb4fycwHXxtl52xhzIshr_I3iUhX_ak-z7m0A"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -802,22 +747,11 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-rs256",
-                algorithm = "RS256",
-                public_key = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAv5LHjZ4FxQ9jk6eQGDRt\noRwFVkLq+dUBebs97hrzirokVr2B+RoxqdLfKAM+AsN2DadawZ2GqlCV9DL0/gz6\nnWSqTQpWbQ8c7CrF31EkIHUYRzZvWy17K3WC9Odk/gM1FVd0HbZ2Rjuqj9ADeeqx\nnj9npDqKrMODOENy31SqZNerWZsdgGkML5JYbX5hbI2L9LREvRU21fDgSfGL6Mw4\nNaxnnzcvll4yqwrBELSeDZEAt0+e/p1dO7moxF+b1pFkh9vQl6zGvnvf8fOqn5Ex\ntLHXVzgx752PHMwmuj9mO1ko6p8FOM0JHDnooI+5rwK4j3I27Ho5nnatVWUaxK4U\n8wIDAQAB\n-----END PUBLIC KEY-----",
-                private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAv5LHjZ4FxQ9jk6eQGDRtoRwFVkLq+dUBebs97hrzirokVr2B\n+RoxqdLfKAM+AsN2DadawZ2GqlCV9DL0/gz6nWSqTQpWbQ8c7CrF31EkIHUYRzZv\nWy17K3WC9Odk/gM1FVd0HbZ2Rjuqj9ADeeqxnj9npDqKrMODOENy31SqZNerWZsd\ngGkML5JYbX5hbI2L9LREvRU21fDgSfGL6Mw4Naxnnzcvll4yqwrBELSeDZEAt0+e\n/p1dO7moxF+b1pFkh9vQl6zGvnvf8fOqn5ExtLHXVzgx752PHMwmuj9mO1ko6p8F\nOM0JHDnooI+5rwK4j3I27Ho5nnatVWUaxK4U8wIDAQABAoIBAFsFQC73H8KrNyKW\ngI4fit77U0XS8ZXWMKdH4XrZ71DAdDeKPtC+M05+1GxMbhAeEl8WXraTQ8J0G2s1\nMtXqEMDrbUbBXKLghVtoTy91e/a369sZ7/qgN19Eq/30WzWdDIGhVZgwcy2Xd8hw\nitZIPi/z7ChJcE35bsUytseJkJPsWeMJNq4mLbHqMSBQWze/vNvIeGYr2xfqXc6H\nywGWGlk46RI28mOf7PecU0DxFoTBNcntZrpOwaIrTDsC7E6uNvhVbtsneseTlQuj\nihS7DAH72Zx3CXc9+SL3b5QNRD1Rnp+gKM6itjW1yduOj2dS0p8YzcUYNtxnw5Gv\nuLoHwuECgYEA58NhvnHn10YLBEMYxb30tDobdGfOjBSfih8K53+/SJhqF5mv4qZX\nUfw3o5R+CkkrhbZ24yst7wqKFYZ+LfazOqljOPOrBsgIIry/sXBlcbGLCw9MYFfB\nejKTt/xZjqLdDCcEbiSB0L2xNuyF/TZOu8V5Nu55LXKBqeW4yISQ5FkCgYEA05t1\n2cq8gE1jMfGXQNFIpUDG2j4wJXAPqnJZSUF/BICa55mH/HYRKoP2uTSvAnqNrdGt\nsnjnnMA7T+fGogB4STif1POWfj+BTKVa/qhUX9ytH6TeI4aqPXSZdTVEPRfR7bG1\nIB/j2lyPkiNi2VijMx33xqxIaQUUsvxIT95GSisCgYAdaJFylQmSK3UiaVEvZlcy\nt1zcfH+dDtDfueisT216TLzJmdrTq7/Qy2xT+Xe03mwDX4/ea5A8kN3MtXA1bOR5\nQR0yENlW1vMRVVoNrfFxZ9H46UwLvZbzZo+P/RlwHAJolFrfjwpZ7ngaPBEUfFup\nP/mNmt0Ng0YoxNmZuBiaoQKBgQCa2d4RRgpRvdAEYW41UbHetJuQZAfprarZKZrr\nP9HKoq45I6Je/qurOCzZ9ZLItpRtic6Zl16u2AHPhKZYMQ3VT2mvdZ5AvwpI44zG\nZLpx+FR8nrKsvsRf+q6+Ff/c0Uyfq/cHDi84wZmS8PBKa1Hqe1ix+6t1pvEx1eq4\n/8jiRwKBgGOZzt5H5P0v3cFG9EUPXtvf2k81GmZjlDWu1gu5yWSYpqCfYr/K/1Md\ndaQ/YCKTc12SYL7hZ2j+2/dGFXNXwknIyKNj76UxjUpJywWI5mUaXJZJDkLCRvxF\nkk9nWvPorpjjjxaIVN+TkGgDd/60at/tI6HxzZitVyla5rB8hoPm\n-----END RSA PRIVATE KEY-----"
-            }
-            local payload = ngx.unescape_uri("%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D")
-            local sign = gen_token(auth_conf, payload)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- private_key = "-----BEGIN RSA PRIVATE KEY-----\nMIIEowIBAAKCAQEAv5LHjZ4FxQ9jk6eQGDRtoRwFVkLq+dUBebs97hrzirokVr2B\n+RoxqdLfKAM+AsN2DadawZ2GqlCV9DL0/gz6nWSqTQpWbQ8c7CrF31EkIHUYRzZv\nWy17K3WC9Odk/gM1FVd0HbZ2Rjuqj9ADeeqxnj9npDqKrMODOENy31SqZNerWZsd\ngGkML5JYbX5hbI2L9LREvRU21fDgSfGL6Mw4Naxnnzcvll4yqwrBELSeDZEAt0+e\n/p1dO7moxF+b1pFkh9vQl6zGvnvf8fOqn5ExtLHXVzgx752PHMwmuj9mO1ko6p8F\nOM0JHDnooI+5rwK4j3I27Ho5nnatVWUaxK4U8wIDAQABAoIBAFsFQC73H8KrNyKW\ngI4fit77U0XS8ZXWMKdH4XrZ71DAdDeKPtC+M05+1GxMbhAeEl8WXraTQ8J0G2s1\nMtXqEMDrbUbBXKLghVtoTy91e/a369sZ7/qgN19Eq/30WzWdDIGhVZgwcy2Xd8hw\nitZIPi/z7ChJcE35bsUytseJkJPsWeMJNq4mLbHqMSBQWze/vNvIeGYr2xfqXc6H\nywGWGlk46RI28mOf7PecU0DxFoTBNcntZrpOwaIrTDsC7E6uNvhVbtsneseTlQuj\nihS7DAH72Zx3CXc9+SL3b5QNRD1Rnp+gKM6itjW1yduOj2dS0p8YzcUYNtxnw5Gv\nuLoHwuECgYEA58NhvnHn10YLBEMYxb30tDobdGfOjBSfih8K53+/SJhqF5mv4qZX\nUfw3o5R+CkkrhbZ24yst7wqKFYZ+LfazOqljOPOrBsgIIry/sXBlcbGLCw9MYFfB\nejKTt/xZjqLdDCcEbiSB0L2xNuyF/TZOu8V5Nu55LXKBqeW4yISQ5FkCgYEA05t1\n2cq8gE1jMfGXQNFIpUDG2j4wJXAPqnJZSUF/BICa55mH/HYRKoP2uTSvAnqNrdGt\nsnjnnMA7T+fGogB4STif1POWfj+BTKVa/qhUX9ytH6TeI4aqPXSZdTVEPRfR7bG1\nIB/j2lyPkiNi2VijMx33xqxIaQUUsvxIT95GSisCgYAdaJFylQmSK3UiaVEvZlcy\nt1zcfH+dDtDfueisT216TLzJmdrTq7/Qy2xT+Xe03mwDX4/ea5A8kN3MtXA1bOR5\nQR0yENlW1vMRVVoNrfFxZ9H46UwLvZbzZo+P/RlwHAJolFrfjwpZ7ngaPBEUfFup\nP/mNmt0Ng0YoxNmZuBiaoQKBgQCa2d4RRgpRvdAEYW41UbHetJuQZAfprarZKZrr\nP9HKoq45I6Je/qurOCzZ9ZLItpRtic6Zl16u2AHPhKZYMQ3VT2mvdZ5AvwpI44zG\nZLpx+FR8nrKsvsRf+q6+Ff/c0Uyfq/cHDi84wZmS8PBKa1Hqe1ix+6t1pvEx1eq4\n/8jiRwKBgGOZzt5H5P0v3cFG9EUPXtvf2k81GmZjlDWu1gu5yWSYpqCfYr/K/1Md\ndaQ/YCKTc12SYL7hZ2j+2/dGFXNXwknIyKNj76UxjUpJywWI5mUaXJZJDkLCRvxF\nkk9nWvPorpjjjxaIVN+TkGgDd/60at/tI6HxzZitVyla5rB8hoPm\n-----END RSA PRIVATE KEY-----"
+            -- payload = {"aaa":"11","bb":"222"}
 
+            local sign = "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1yczI1NiIsIm5iZiI6MTcyNzI3NDk4M30.Zvp8dXefvGXrKgeoaNsA3sbV_3fw1w6Te7a0B_UANzef7gGJwvlnD6c3-f4yAy7GPgNzP_H1-atcF-sgLHAYpUa14XKe22a9S_BJSoQszoZuqGgpnGcjSzDMK9JX3FLUtzOFMQR5C4_3d7_z0NlepNo2xdQ6IQj0SvS1jrNwydpA9L89N07id3EO739uNw339g78N9QHP-j8nWItfbjo31xefCWTHtcloGkfaJOhcr06qmSbrivBU1AuPA8T3ZVumqw6fcRJzrvQJdKEfVyP-IPUtUy8SM1yLqstaKojJtU3A2HKaeb4fycwHXxtl52xhzIshr_I3iUhX_ak-z7m0A"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -976,20 +910,8 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-HS512",
-                algorithm = "HS512",
-                secret = "my-secret-key"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
-
+            local sign = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1IUzUxMiIsIm5iZiI6MTcyNzI3NDk4M30.emzmjIbFqkRAr55YW5YobdXDxYWiMuUNLPooE5G_bbme1ul19p1dKW7ESrlqvr4BPJRKThm4PnkNC4h9xSJpBQ"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -1008,21 +930,10 @@ hello world
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-HS512",
-                algorithm = "HS512",
-                secret = "my-secret-key"
-            }
-            local payload = ngx.unescape_uri("%7B%22aaa%22%3A%2211%22%2C%22bb%22%3A%22222%22%7D")
-            local sign = gen_token(auth_conf, payload)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- payload = {"aaa":"11","bb":"222"}
 
+            local sign = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhYWEiOiIxMSIsImJiIjoiMjIyIiwia2V5IjoidXNlci1rZXktSFM1MTIiLCJuYmYiOjE3MjcyNzQ5ODN9.s6E3-wNJypgJL71MxoyTTHBDeqdrGQddFjkhLlh3ZN6IZwgpFRlFT1_8suQg9dWUDHGQqgejULyLPhmBMIbw2A"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -1232,21 +1143,10 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
-            local auth_conf = {
-                key = "user-key-es256",
-                algorithm = "ES256",
-                public_key = "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEEVs/o5+uQbTjL3chynL4wXgUg2R9\nq9UU8I5mEovUf86QZ7kOBIjJwqnzD1omageEHWwHdBO6B+dFabmdT9POxg==\n-----END PUBLIC KEY-----",
-                private_key = "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\nOF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r\n1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G\n-----END PRIVATE KEY-----"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
+            -- private_key = "-----BEGIN PRIVATE KEY-----\nMIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgevZzL1gdAFr88hb2\nOF/2NxApJCzGCEDdfSp6VQO30hyhRANCAAQRWz+jn65BtOMvdyHKcvjBeBSDZH2r\n1RTwjmYSi9R/zpBnuQ4EiMnCqfMPWiZqB4QdbAd0E7oH50VpuZ1P087G\n-----END PRIVATE KEY-----"
 
+            local sign = "eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleS1lczI1NiIsIm5iZiI6MTcyNzI3NDk4M30.t-CZzJRSxIuVVjU3m8_zDtb7h9x2R2s3BJWmerh0hw-RMIklBqLJ3V9kYAWl7DIyXlp0jQCPDZ_M7mhr1Q3HPw"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )

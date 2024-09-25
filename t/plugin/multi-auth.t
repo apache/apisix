@@ -521,18 +521,8 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
-            local auth_conf = {
-                key = "user-key",
-                secret = "my-secret-key"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
 
+            local sign = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -608,18 +598,7 @@ hello world
             end
             ngx.sleep(0.1)
 
-            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
-            local auth_conf = {
-                key = "user-key",
-                secret = "my-secret-key"
-            }
-            local sign = gen_token(auth_conf)
-            if not sign then
-                ngx.status = 500
-                ngx.say("failed to gen_token")
-                return
-            end
-
+            local sign = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
