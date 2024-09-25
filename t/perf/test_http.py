@@ -28,6 +28,7 @@ import tempfile
 import time
 import unittest
 import yaml
+import jwt
 
 
 RULE_SIZE = 100
@@ -57,7 +58,13 @@ def create_conf():
     for i in range(RULE_SIZE):
         i = str(i)
         consumers.append({
-            "username": "jack" + i
+            "username": "jack" + i,
+            "plugins": {
+                "jwt-auth": {
+                    "key": "user-key-" + i,
+                    "secret": "my-secret-key"
+                }
+            }
         })
         routes.append({
             "upstream_id": 1,
@@ -67,6 +74,8 @@ def create_conf():
                 "limit-count": {
                     "count": 1e8,
                     "time_window": 3600,
+                },
+                "jwt-auth": {
                 },
                 "proxy-rewrite": {
                     "uri": "/" + i,
@@ -122,6 +131,9 @@ def create_env():
     os.mkdir(os.path.join(temp, "logs"))
     return temp
 
+def gen_jwt_token(key, secret):
+    return jwt.encode(payload={"key": key}, key=secret, algorithm="HS256", headers={"typ": "JWT", "alg": "HS256"})
+
 
 class TestHTTP(unittest.TestCase):
 
@@ -137,15 +149,20 @@ class TestHTTP(unittest.TestCase):
         self.tempdir = tempdir
 
     def test_perf(self):
+        signs = ['"'+gen_jwt_token("user-key-" + str(i), "my-secret-key")+'"' for i in range (0, RULE_SIZE)]
+
         script = os.path.join(self.tempdir, "wrk.lua")
         with open(script, "w") as f:
+            sign_list = ",\n".join(signs)
             s = """
+                signs = {%s}
                 function request()
                     local i = math.random(%s) - 1
                     wrk.headers["Host"] = "test" .. i .. ".com"
+                    wrk.headers["Authorization"] = signs[i+1]
                     return wrk.format()
                 end
-            """ % (RULE_SIZE)
+            """ % (sign_list, RULE_SIZE)
             f.write(s)
         # We use https://github.com/giltene/wrk2
         subprocess.run(["wrk",
