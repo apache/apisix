@@ -35,6 +35,8 @@ augments the AI's responses with that data, improving the accuracy and context o
 
 **_This plugin must be used in routes that proxy requests to LLMs only._**
 
+**_As of now only Azure OpenAI and Azure AI Search services are supported for generating embeddings and performing vector search respectively, PRs for introducing support for other service providers are welcome._**
+
 ## Plugin Attributes
 
 | **Field**                                       | **Required** | **Type** | **Description**                              |
