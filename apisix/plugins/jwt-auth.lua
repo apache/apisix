@@ -367,6 +367,7 @@ local function gen_token(auth_conf, payload)
     return jwt_token, err
 end
 
+-- only for test
 _M.gen_token = gen_token
 
 
