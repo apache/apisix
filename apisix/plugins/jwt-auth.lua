@@ -136,12 +136,6 @@ function _M.check_schema(conf, schema_type)
         end
     end
 
-    if conf.algorithm == "RS256" or conf.algorithm == "ES256" then
-        if not conf.public_key then
-            return false, "missing valid public key"
-        end
-    end
-
     return true
 end
 
