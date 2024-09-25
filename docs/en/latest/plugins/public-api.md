@@ -30,7 +30,7 @@ description: The public-api is used for exposing an API endpoint through a gener
 
 The `public-api` is used for exposing an API endpoint through a general HTTP API router.
 
-When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/plugin/wolf-rbac/login` for wolf-rbac using the [wolf-rbac](./wolf-rbac.md) Plugin.
+When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/batch-requests` for grouping multiple API requests in one request using the [batch-requests](./batch-requests.md) Plugin.
 
 :::note
 
@@ -46,9 +46,7 @@ The public API added in a custom Plugin is not exposed by default and the user s
 
 ## Example usage
 
-The example below uses the [wolf-rbac](./wolf-rbac.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for its configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
-
-Note: 使用 [wolf-rbac](./wolf-rbac.md) 插件的需要一些前提条件 [wolf-rbac](./wolf-rbac.md#pre-requisites)
+The example below uses the [batch-requests](./batch-requests.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for its configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
 
 ### Basic usage
 
@@ -59,19 +57,66 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/apisix/plugin/wolf-rbac/login",
-    "plugins": {
+      "uri": "/apisix/batch-requests",
+      "plugins": {
         "public-api": {}
     }
 }'
 ```
 
-Now, if you make a request to the configured URI, you will receive a rbac_token response:
+Now, if you make a request to the configured URI, you will receive a batch-requests response:
 
 ```shell
-curl http://127.0.0.1:9080/apisix/plugin/wolf-rbac/login -i \
-    -H "Content-Type: application/json" \
-    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
+--header 'Content-Type: application/json' \
+--data '{
+    "headers": {
+        "Content-Type": "application/json",
+        "admin-jwt":"xxxx"
+    },
+    "timeout": 500,
+    "pipeline": [
+        {
+            "method": "POST",
+            "path": "/community.GiftSrv/GetGifts",
+            "body": "test"
+        },
+        {
+            "method": "POST",
+            "path": "/community.GiftSrv/GetGifts",
+            "body": "test2"
+        }
+    ]
+}'
+```
+
+```shell
+[
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
+    }
+  },
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
+    }
+  }
+]
 ```
 
 ### Using custom URI
@@ -83,10 +128,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/wolf-rbac-login",
-    "plugins": {
+      "uri": "/batch-requests-gifs",
+      "plugins": {
         "public-api": {
-            "uri": "/apisix/plugin/wolf-rbac/login"
+            "uri": "/apisix/batch-requests"
         }
     }
 }'
@@ -95,9 +140,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 Now you can make requests to this new endpoint:
 
 ```shell
-curl http://127.0.0.1:9080/wolf-rbac-login -i \
-    -H "Content-Type: application/json" \
-    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
+curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
+--header 'Content-Type: application/json' \
+--data '{...}'
 ```
 
 ### Securing the Route
@@ -109,11 +154,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/wolf-rbac-login",
+    "uri": "/batch-requests-gifs",
     "plugins": {
-        "public-api": {
-            "uri": "/apisix/plugin/wolf-rbac/login"
-        },
+        "public-api": {},
         "key-auth": {}
     }
 }'
@@ -122,10 +165,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 Now, only authenticated requests are allowed:
 
 ```shell
-curl http://127.0.0.1:9080/wolf-rbac-login -i \
+curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
     -H "apikey: test-apikey"
-    -H "Content-Type: application/json" \
-    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
+    -H 'Content-Type: application/json' \
+    --data '{...}'
 ```
 
 ```shell
@@ -135,9 +178,9 @@ HTTP/1.1 200 OK
 The below request will fail:
 
 ```shell
-curl http://127.0.0.1:9080/wolf-rbac-login -i \
-    -H "Content-Type: application/json" \
-    -d '{"appid": "restful", "username":"test", "password":"user-password", "authType":1}'
+curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
+    -H 'Content-Type: application/json' \
+    --data '{...}'
 ```
 
 ```shell

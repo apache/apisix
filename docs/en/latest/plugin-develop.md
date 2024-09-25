@@ -439,21 +439,21 @@ end
 
 ## register public API
 
-A plugin can register API which exposes to the public. Take wolf-rbac plugin as an example, this plugin registers `POST /apisix/plugin/wolf-rbac/login` to allow a client to login and get the wolf rbac_token:
+A plugin can register API which exposes to the public. Take batch-requests plugin as an example, this plugin registers `POST /apisix/batch-requests` to allow developers to group multiple API requests into a single HTTP request/response cycle:
 
 ```lua
-function wolf_rbac_login()
+function batch_requests()
     -- ...
 end
 
 function _M.api()
+    -- ...
     return {
         {
             methods = {"POST"},
-            uri = "/apisix/plugin/wolf-rbac/login",
-            handler = wolf_rbac_login,
-        },
-        -- ...
+            uri = "/apisix/batch-requests",
+            handler = batch_requests,
+        }
     }
 end
 ```

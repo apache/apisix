@@ -417,21 +417,21 @@ end
 
 ## 注册公共接口
 
-插件可以注册暴露给公网的接口。以 wolf-rbac 插件为例，这个插件为了让客户端能够登录获取 wolf rbac_token，注册了 `POST /apisix/plugin/wolf-rbac/login` 等接口：
+插件可以注册暴露给公网的接口。以 batch-requests 插件为例，这个插件注册了 `POST /apisix/batch-requests` 接口，让客户端可以将多个 API 请求组合在一个请求/响应中：
 
 ```lua
-function wolf_rbac_login()
+function batch_requests()
     -- ...
 end
 
 function _M.api()
+    -- ...
     return {
         {
             methods = {"POST"},
-            uri = "/apisix/plugin/wolf-rbac/login",
-            handler = wolf_rbac_login,
-        },
-        -- ...
+            uri = "/apisix/batch-requests",
+            handler = batch_requests,
+        }
     }
 end
 ```
