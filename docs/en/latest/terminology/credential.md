@@ -27,23 +27,23 @@ description: 本文介绍了 Apache APISIX Credential 对象的作用以及如�
 #
 -->
 
-## 描述
+## Description
 
-Credential 是存放 [Consumer](./consumer.md) 凭证配置的对象。
-一个 Consumer 可以使用不同类型的多个凭证。
-当你需要为一个 Consumer 配置不同类型的多个凭证时，就会用到 Credential。
+Credential is the object that holds the [Consumer](./consumer.md) credential configuration.
+A Consumer can use multiple credentials of different types.
+Credentials are used when you need to configure multiple credentials for a Consumer.
 
-目前，Credential 可以配置的身份认证插件包括 `basic-auth`、`hmac-auth`、`jwt-auth` 以及 `key-auth`。
+Currently, Credential can be configured with the authentication plugins `basic-auth`, `hmac-auth`, `jwt-auth`, and `key-auth`.
 
-## 配置选项
+### Configuration options
 
- 定义 Credential 的字段如下：
+The fields for defining a Credential are defined as below.
 
-| 名称      | 必选项 | 描述                                                  |
-|---------|-----|-----------------------------------------------------|
-| desc    | 否   | Credential 描述。                                      |
-| labels  | 否   | Credential 标签。                                      |
-| plugins | 否   | Credential 对应的插件配置。详细信息，请参考 [Plugins](./plugin.md)。 |
+| Field      | Required | Description                                                                                             |
+|---------|-----|---------------------------------------------------------------------------------------------------------|
+| desc    | 否   | Decriptiion of the Credential.                                                                          |
+| labels  | 否   | Labels of the Credential.                                                                               |
+| plugins | 否   | The plugin configuration corresponding to Credential. For more information, see [Plugins](./plugin.md). |
 
 :::note
 
@@ -51,15 +51,14 @@ Credential 是存放 [Consumer](./consumer.md) 凭证配置的对象。
 
 :::
 
-## 使用示例
+## Example
 
-[Consumer 使用示例](./consumer.md#使用示例) 介绍了如何对 Consumer 配置认证插件，并介绍了如何配合其他插件使用。
-在该示例中，该 Consumer 只有一个 key-auth 类型的凭证。
-现在假设用户需要为该 Consumer 配置多个凭证，你可以使用 Credential 来支持这一点。
+[Consumer Example](./consumer.md#example) describes how to configure the auth plugin for Consumer and how to use it with other plugins.
+In this example, the Consumer has only one credential of type key-auth.
+Now suppose the user needs to configure multiple credentials for that Consumer, you can use Credential to support this.
 
 :::note
-
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -67,7 +66,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-1. 创建 Consumer。不指定认证插件，而是稍后使用 Credential 来配置认证插件。
+1. Create the Consumer without specifying the auth plug-n, but use Credential to configure the auth plugin later.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -77,7 +76,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     }'
     ```
 
-2. 为 Consumer 配置 2 个 启用 `key-auth` 的 Credential。
+2. Create 2 `key-auth` 的 Credentials for the Consumer.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers/jack/key-auth-one \
@@ -103,7 +102,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     }'
     ```
 
-3. 创建路由，设置路由规则和启用插件配置。
+3. Create a route and enable `key-auth` plugin on it.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
@@ -122,16 +121,16 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     }'
     ```
 
-4. 测试插件
+4. Test.
 
-分别使用 `auth-one` 和 `auth-two` 两个 key 来测试请求，都响应正常。
+Test the request with the `auth-one` and `auth-two` keys, and they both respond correctly.
 
     ```shell
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-two' -I
     ```
 
-为该 Consumer 启用 `limit-count` 插件。
+Enable the `limit-count` plugin for the Consumer.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -149,4 +148,4 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     }'
     ```
 
-分别使用这两个 key 连续 3 次以上请求该路由，测试返回 `503`，请求被限制。
+Requesting the route more than 3 times in a row with each of the two keys, the test returns `503` and the request is restricted.
