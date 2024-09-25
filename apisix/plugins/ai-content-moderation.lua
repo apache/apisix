@@ -15,19 +15,18 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local aws = require("resty.aws")
+local aws_instance = require("resty.aws")()
 local http = require("resty.http")
 local fetch_secrets = require("apisix.secret").fetch_secrets
 
-local aws_instance = aws()
 local next = next
 local pairs = pairs
 local unpack = unpack
 local type = type
 local ipairs = ipairs
 local require = require
-local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
-local BAD_REQUEST = ngx.HTTP_BAD_REQUEST
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 
 
 local aws_comprehend_schema = {
@@ -99,17 +98,17 @@ end
 function _M.rewrite(conf, ctx)
     conf = fetch_secrets(conf, true, conf, "")
     if not conf then
-        return INTERNAL_SERVER_ERROR, "failed to retrieve secrets from conf"
+        return HTTP_INTERNAL_SERVER_ERROR, "failed to retrieve secrets from conf"
     end
 
     local body, err = core.request.get_json_request_body_table()
     if not body then
-        return BAD_REQUEST, err
+        return HTTP_BAD_REQUEST, err
     end
 
     local msgs = body.messages
     if type(msgs) ~= "table" or #msgs < 1 then
-        return BAD_REQUEST, "messages not found in request body"
+        return HTTP_BAD_REQUEST, "messages not found in request body"
     end
 
     local provider = conf.provider[next(conf.provider)]
@@ -145,12 +144,12 @@ function _M.rewrite(conf, ctx)
 
     if not res then
         core.log.error("failed to send request to ", provider, ": ", err)
-        return INTERNAL_SERVER_ERROR, err
+        return HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     local results = res.body and res.body.ResultList
     if type(results) ~= "table" or core.table.isempty(results) then
-        return INTERNAL_SERVER_ERROR, "failed to get moderation results from response"
+        return HTTP_INTERNAL_SERVER_ERROR, "failed to get moderation results from response"
     end
 
     for _, result in ipairs(results) do
@@ -160,14 +159,14 @@ function _M.rewrite(conf, ctx)
                     goto continue
                 end
                 if item.Score > conf.moderation_categories[item.Name] then
-                    return BAD_REQUEST, "request body exceeds " .. item.Name .. " threshold"
+                    return HTTP_BAD_REQUEST, "request body exceeds " .. item.Name .. " threshold"
                 end
                 ::continue::
             end
         end
 
         if result.Toxicity > conf.toxicity_level then
-            return BAD_REQUEST, "request body exceeds toxicity threshold"
+            return HTTP_BAD_REQUEST, "request body exceeds toxicity threshold"
         end
     end
 end
