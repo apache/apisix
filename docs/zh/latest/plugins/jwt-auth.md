@@ -138,9 +138,9 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 :::note
 
-生成 JWT token 时, payload 中 `key` 字段是必要的，值为所要用到的凭证的 key; 且 `exp` 或 `nbf` 至少填写其中一个，值为 UNIX 时间戳.
+生成 JWT token 时，payload 中 `key` 字段是必要的，值为所要用到的凭证的 key; 且 `exp` 或 `nbf` 至少填写其中一个，值为 UNIX 时间戳。
 
-示例： payload=`{"key": "user-key", "exp": 1727274983}`
+示例：payload=`{"key": "user-key", "exp": 1727274983}`
 
 :::
 
