@@ -125,3 +125,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
     }
 }'
 ```
+
+## 备注
+
+基于现在浏览器工作模式，配置`cors` 插件后需要检查对应路由配置中`HTTP方法`是否开启了`OPTIONS`。如果未开启`OPTIONS`方法，浏览器将无法按照`cors` 插件的配置正常工作。
