@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local _M = {}
 
@@ -44,7 +44,7 @@ function _M.search(conf, search_body, httpc)
     }
     local final_body, err = core.json.encode(body)
     if not final_body then
-        return nil, INTERNAL_SERVER_ERROR, err
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     local res, err = httpc:request_uri(conf.endpoint, {
@@ -57,7 +57,7 @@ function _M.search(conf, search_body, httpc)
     })
 
     if not res or not res.body then
-        return nil, INTERNAL_SERVER_ERROR, err
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     if res.status ~= 200 then

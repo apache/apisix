@@ -20,13 +20,12 @@ local ngx_req = ngx.req
 
 local http     = require("resty.http")
 local core     = require("apisix.core")
-local decorate = require("apisix.plugins.ai-prompt-decorator").__decorate
 
 local azure_openai_embeddings = require("apisix.plugins.ai-rag.embeddings.azure_openai").schema
 local azure_ai_search_schema = require("apisix.plugins.ai-rag.vector-search.azure_ai_search").schema
 
-local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
-local BAD_REQUEST = ngx.HTTP_BAD_REQUEST
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 
 local schema = {
     type = "object",
@@ -70,7 +69,7 @@ local request_schema = {
 
 local _M = {
     version = 0.1,
-    priority = 1060, -- TODO check with other ai plugins
+    priority = 1060,
     name = "ai-rag",
     schema = schema,
 }
@@ -85,11 +84,11 @@ function _M.access(conf, ctx)
     local httpc = http.new()
     local body_tab, err = core.request.get_json_request_body_table()
     if not body_tab then
-        return BAD_REQUEST, err
+        return HTTP_BAD_REQUEST, err
     end
     if not body_tab["ai_rag"] then
         core.log.error("request body must have \"ai-rag\" field")
-        return BAD_REQUEST
+        return HTTP_BAD_REQUEST
     end
 
     local embeddings_provider = next(conf.embeddings_provider)
@@ -110,7 +109,7 @@ function _M.access(conf, ctx)
     local ok, err = core.schema.check(request_schema, body_tab)
     if not ok then
         core.log.error("request body fails schema check: ", err)
-        return BAD_REQUEST
+        return HTTP_BAD_REQUEST
     end
 
     local embeddings, status, err = embeddings_driver.get_embeddings(embeddings_provider_conf,
@@ -133,22 +132,19 @@ function _M.access(conf, ctx)
     -- also, these values will cause failure when proxying requests to LLM.
     body_tab["ai_rag"] = nil
 
-    local prepend = {
-        {
-            role = "user",
-            content = res
-        }
-    }
-    local decorator_conf = {
-        prepend = prepend
-    }
     if not body_tab.messages then
         body_tab.messages = {}
     end
-    decorate(decorator_conf, body_tab)
+
+    local augment = {
+        role = "user",
+        content = res
+    }
+    core.table.insert_tail(body_tab.messages, augment)
+
     local req_body_json, err = core.json.encode(body_tab)
     if not req_body_json then
-        return INTERNAL_SERVER_ERROR, err
+        return HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     ngx_req.set_body_data(req_body_json)

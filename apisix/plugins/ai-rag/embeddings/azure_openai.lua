@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local type = type
 
 local _M = {}
@@ -36,7 +36,7 @@ _M.schema = {
 function _M.get_embeddings(conf, body, httpc)
     local body_tab, err = core.json.encode(body)
     if not body_tab then
-        return nil, INTERNAL_SERVER_ERROR, err
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     local res, err = httpc:request_uri(conf.endpoint, {
@@ -49,7 +49,7 @@ function _M.get_embeddings(conf, body, httpc)
     })
 
     if not res or not res.body then
-        return nil, INTERNAL_SERVER_ERROR, err
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     if res.status ~= 200 then
@@ -58,16 +58,16 @@ function _M.get_embeddings(conf, body, httpc)
 
     local res_tab, err = core.json.decode(res.body)
     if not res_tab then
-        return nil, INTERNAL_SERVER_ERROR, err
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     if type(res_tab.data) ~= "table" or core.table.isempty(res_tab.data) then
-        return nil, INTERNAL_SERVER_ERROR, res.body
+        return nil, HTTP_INTERNAL_SERVER_ERROR, res.body
     end
 
     local embeddings, err = core.json.encode(res_tab.data[1].embedding)
     if not embeddings then
-        return nil, INTERNAL_SERVER_ERROR, err
+        return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     return res_tab.data[1].embedding
