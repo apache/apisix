@@ -329,7 +329,7 @@ local function sign_jwt_with_RS256_ES256(key, auth_conf, payload)
             {
                 header = {
                     typ = "JWT",
-                    alg = consumer.auth_conf.algorithm,
+                    alg = auth_conf.algorithm,
                     x5c = {
                         auth_conf.public_key,
                     }
