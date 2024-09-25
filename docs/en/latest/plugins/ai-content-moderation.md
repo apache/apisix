@@ -33,6 +33,8 @@ The `ai-content-moderation` plugin processes the request body to check for toxic
 
 **_This plugin must be used in routes that proxy requests to LLMs only._**
 
+**_As of now only the AWS Comprehend service is supported for content moderation, PRs for introducing support for other service providers are welcome._**
+
 ## Plugin Attributes
 
 | **Field**                                 | **Required** | **Type** | **Description**                                                                                                                          |
