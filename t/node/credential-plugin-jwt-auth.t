@@ -24,7 +24,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: enable jwt-auth on the route /hello
 --- config
     location /t {

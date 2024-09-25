@@ -246,6 +246,7 @@ GET /t
 --- response_body
 
 
+
 === TEST 8: get a credential
 --- config
     location /t {

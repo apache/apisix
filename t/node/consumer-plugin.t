@@ -124,7 +124,7 @@ apikey: auth-one
 
 
 
-=== TEST 7: use the new configuration after the consumer's configuration is updated
+=== TEST 6: use the new configuration after the consumer's configuration is updated
 --- config
     location /t {
         content_by_lua_block {
@@ -189,7 +189,7 @@ GET /t
 
 
 
-=== TEST 8: consumer with multiple auth plugins
+=== TEST 7: consumer with multiple auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -226,7 +226,7 @@ passed
 
 
 
-=== TEST 9: bind to routes
+=== TEST 8: bind to routes
 --- config
     location /t {
         content_by_lua_block {
@@ -283,7 +283,7 @@ passed
 
 
 
-=== TEST 10: hit consumer, key-auth
+=== TEST 9: hit consumer, key-auth
 --- request
 GET /hello
 --- more_headers
@@ -295,7 +295,7 @@ find consumer John_Doe
 
 
 
-=== TEST 11: hit consumer, hmac-auth
+=== TEST 10: hit consumer, hmac-auth
 --- config
 location /t {
     content_by_lua_block {
@@ -351,7 +351,7 @@ find consumer John_Doe
 
 
 
-=== TEST 12: the plugins bound on the service should use the latest configuration
+=== TEST 11: the plugins bound on the service should use the latest configuration
 --- config
     location /t {
         content_by_lua_block {
