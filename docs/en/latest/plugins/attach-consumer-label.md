@@ -32,10 +32,9 @@ The `attach-consumer-label` plugin attaches custom consumer-related labels, in a
 
 ## Attributes
 
-| Name     | Type   | Required | Default | Valid values | Description                                                                                                                                                                                                                                  |
-|----------|--------|----------|---------|--------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| headers  | object | True     |         |              | Key-value pairs of consumer labels to be attached to request headers, where key is the request header name, such as `X-Consumer-Role`, and the value is a reference to the custome label key, such as `$role`. Note that the value should always start with a dollar sign (`$`). If a referenced consumer value is not configured on the consumer, the corresponding header will not be attached to the request.  |
-
+| Name     | Type   | Required | Default | Valid values | Description                                                                                                                                                                                                                                                                                                                                                                                                     |
+|----------|--------|----------|---------|--------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| headers  | object | True     |         |              | Key-value pairs of consumer labels to be attached to request headers, where key is the request header name, such as `X-Consumer-Role`, and the value is a reference to the custom label key, such as `$role`. Note that the value should always start with a dollar sign (`$`). If a referenced consumer value is not configured on the consumer, the corresponding header will not be attached to the request. |
 
 ## Enable Plugin
 

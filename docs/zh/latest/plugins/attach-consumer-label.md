@@ -39,7 +39,7 @@ description: 本文介绍了 Apache APISIX attach-consumer-label 插件的相关
 
 ## 启用插件
 
-下面的示例演示了如何在通过身份验证的请求转发到上游服务之前，将自定义标签附加到请求标头。如果请求被拒绝，就不会在请求标头上附加任何消费者标签。如果某个标签值未在消费者上配置，但在 “attach-consumer-label ”插件中被引用，相应的标头也不会被附加。
+下面的示例演示了如何在通过身份验证的请求转发到上游服务之前，将自定义标签附加到请求标头。如果请求被拒绝，就不会在请求标头上附加任何消费者标签。如果某个标签值未在消费者上配置，但在“attach-consumer-label”插件中被引用，相应的标头也不会被附加。
 
 :::note
 
@@ -69,9 +69,9 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-❶ Consumer 的 `department` 标签信息.
+❶ Consumer 的 `department` 标签信息。
 
-❷ Consumer 的 `company` 标签信息.
+❷ Consumer 的 `company` 标签信息。
 
 为 Consumer `john` 配置 `key-auth`:
 
@@ -88,7 +88,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-创建路由并启用 `key-auth` 和 `attach-consumer-label` 插件:
+创建路由并启用 `key-auth` 和 `attach-consumer-label` 插件：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -124,7 +124,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 ❷ 将 Consumer 标签 `company` 的值附加到请求头的 `X-Consumer-Company` 字段。
 
-❸ 将 Consumer 标签 `role` 的值附加到请求头的 `X-Consumer-Role` 字段。由于 Consumer 标签中没有配置 `role` 这个标签, 该字段不会出现在发往上游的请求头中。
+❸ 将 Consumer 标签 `role` 的值附加到请求头的 `X-Consumer-Role` 字段。由于 Consumer 标签中没有配置 `role` 这个标签，该字段不会出现在发往上游的请求头中。
 
 :::tip
 
