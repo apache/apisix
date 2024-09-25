@@ -100,7 +100,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
             local auth_conf = {
                 key = "user-key-rs256",
@@ -193,7 +193,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
             local auth_conf = {
                 key = "user-key-rs256",
@@ -226,7 +226,7 @@ JWT token invalid: invalid jwt string
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
 
             local auth_conf = {
                 key = "user-key-rs256",

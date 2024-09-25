@@ -521,7 +521,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
             local auth_conf = {
                 key = "user-key",
                 secret = "my-secret-key"
@@ -608,7 +608,7 @@ hello world
             end
             ngx.sleep(0.1)
 
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
             local auth_conf = {
                 key = "user-key",
                 secret = "my-secret-key"

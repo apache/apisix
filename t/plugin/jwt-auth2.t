@@ -257,7 +257,7 @@ hello world
                 ngx.say(body)
             end
 
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
             local auth_conf = {
                 exp = 1,
                 algorithm = "HS256",
@@ -412,7 +412,7 @@ qr/ailed to verify jwt: 'exp' claim expired at/
             end
 
             -- get JWT token
-            local gen_token = require("apisix.plugins.jwt-auth").gen_token
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
             local auth_conf = {
                 exp = 1,
                 algorithm = "HS256",

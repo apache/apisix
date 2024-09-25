@@ -23,13 +23,11 @@ local new_tab = require ("table.new")
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ngx      = ngx
-local ngx_time = ngx.time
 local sub_str  = string.sub
 local table_insert = table.insert
 local table_concat = table.concat
 local ngx_re_gmatch = ngx.re.gmatch
 local plugin_name = "jwt-auth"
-local pcall = pcall
 
 
 local schema = {
@@ -279,90 +277,6 @@ function _M.rewrite(conf, ctx)
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit jwt-auth rewrite")
 end
-
-
-local function get_real_payload(key, exp, payload)
-    local real_payload = {
-        key = key,
-        exp = ngx_time() + exp
-    }
-    if payload then
-        local extra_payload = core.json.decode(payload)
-        core.table.merge(extra_payload, real_payload)
-        return extra_payload
-    end
-    return real_payload
-end
-
-local function sign_jwt_with_HS(key, auth_conf, payload)
-    local auth_secret, err = get_secret(auth_conf)
-    if not auth_secret then
-        core.log.error("failed to sign jwt, err: ", err)
-        return nil, "failed to sign jwt: failed to get auth_secret"
-    end
-    local ok, jwt_token = pcall(jwt.sign, _M,
-            auth_secret,
-            {
-                header = {
-                    typ = "JWT",
-                    alg = auth_conf.algorithm
-                },
-                payload = get_real_payload(key, auth_conf.exp, payload)
-            }
-    )
-    if not ok then
-        core.log.error("failed to sign jwt, err: ", jwt_token.reason)
-        return nil, "failed to sign jwt"
-    end
-    return jwt_token
-end
-
-local function sign_jwt_with_RS256_ES256(key, auth_conf, payload)
-    local ok, jwt_token = pcall(jwt.sign, _M,
-            auth_conf.private_key,
-            {
-                header = {
-                    typ = "JWT",
-                    alg = auth_conf.algorithm,
-                    x5c = {
-                        auth_conf.public_key,
-                    }
-                },
-                payload = get_real_payload(key, auth_conf.exp, payload)
-            }
-    )
-    if not ok then
-        core.log.warn("failed to sign jwt, err: ", jwt_token.reason)
-        return nil, "failed to sign jwt"
-    end
-    return jwt_token
-end
-
-local function get_sign_handler(algorithm)
-    if not algorithm or algorithm == "HS256" or algorithm == "HS512" then
-        return sign_jwt_with_HS
-    elseif algorithm == "RS256" or algorithm == "ES256" then
-        return sign_jwt_with_RS256_ES256
-    end
-end
-
-local function gen_token(auth_conf, payload)
-    if not auth_conf.exp then
-        auth_conf.exp = 86400
-    end
-    if not auth_conf.lifetime_grace_period then
-        auth_conf.lifetime_grace_period = 0
-    end
-    if not auth_conf.algorithm then
-        auth_conf.algorithm = "HS256"
-    end
-    local sign_handler = get_sign_handler(auth_conf.algorithm)
-    local jwt_token, err = sign_handler(auth_conf.key, auth_conf, payload)
-    return jwt_token, err
-end
-
--- only for test
-_M.gen_token = gen_token
 
 
 return _M
