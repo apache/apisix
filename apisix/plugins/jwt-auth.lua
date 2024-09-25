@@ -224,7 +224,6 @@ local function get_secret(conf)
     return secret
 end
 
--- introducing method_only flag (returns respective signing method) to save http API calls.
 local function get_auth_secret(auth_conf)
     if not auth_conf.algorithm or auth_conf.algorithm == "HS256"
             or auth_conf.algorithm == "HS512" then
