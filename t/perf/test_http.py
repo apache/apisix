@@ -132,7 +132,7 @@ def create_env():
     return temp
 
 def gen_jwt_token(key, secret):
-    return jwt.encode(payload={"key": key}, key=secret, algorithm="HS256", headers={"typ": "JWT", "alg": "HS256"})
+    return jwt.encode(payload={"key": key, "exp": int(time.time())+86400}, key=secret, algorithm="HS256", headers={"typ": "JWT", "alg": "HS256"})
 
 
 class TestHTTP(unittest.TestCase):

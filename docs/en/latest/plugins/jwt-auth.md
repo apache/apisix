@@ -43,13 +43,12 @@ For Consumer:
 | key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                                                                  |
 | secret        | string  | False                                                 |         |                             | The encryption key. If unspecified, auto generated in the background. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
-| private_key   | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA private key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
 | algorithm     | string  | False                                                 | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
 | base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Define the leeway in seconds to account for clock skew between the server that generated the jwt and the server validating it. Value should be zero (0) or a positive integer. |
 
-NOTE: `encrypt_fields = {"secret", "private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+NOTE: `encrypt_fields = {"secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 For Route:
 
@@ -61,8 +60,6 @@ For Route:
 | hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
-
-:::
 
 ## Enable Plugin
 
@@ -94,7 +91,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
 
 :::note
 
-The `jwt-auth` Plugin uses the HS256 algorithm by default. To use the RS256 algorithm, you can configure the public key and private key and specify the algorithm:
+The `jwt-auth` Plugin uses the HS256 algorithm by default. To use the RS256 algorithm, you can configure the public key and specify the algorithm:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
@@ -104,7 +101,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
         "jwt-auth": {
             "key": "user-key",
             "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
-            "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
             "algorithm": "RS256"
         }
     }
@@ -141,6 +137,14 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 ## Example usage
 
 You need first to issue a JWT token using some tool such as [JWT.io's debugger](https://jwt.io/#debugger-io) or a programming language.
+
+:::note
+
+When you are issuing a JWT token, you have to update the payload with `key` matching the credential key you would like to use; and `exp` or `nbf` in UNIX timestamp.
+
+e.g. payload=`{"key": "user-key", "exp": 1727274983}`
+
+:::
 
 You can now use this token while making requests:
 
