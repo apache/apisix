@@ -882,6 +882,70 @@ Consumer 对象 JSON 配置示例：
 
 目前是直接返回与 etcd 交互后的结果。
 
+## Credential
+
+Credential 用以存放 Consumer 的认证凭证。当需要为 Consumer 配置多个凭证时，可以使用 Credential。
+
+### 请求地址 {#credential-uri}
+
+Credential 资源请求地址：/apisix/admin/consumers/{username}/credentials/{credential_id}
+
+### 请求方法 {#consumer-request-methods}
+
+| 名称   | 请求 URI                                                         | 请求 body | 描述          |
+| ------ |----------------------------------------------------------------| --------- | ------------- |
+| GET    | /apisix/admin/consumers/{username}/credentials                 | 无        | 获取资源列表。|
+| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | 无        | 获取资源。    |
+| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}     | 创建资源。    |
+| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | 无        | 删除资源。    |
+
+### body 请求参数 {#credential-body-request-methods}
+
+| 名称        | 必选项 | 类型     | 描述                    | 示例值                                             |
+| ----------- |-----| ------- |-----------------------| ------------------------------------------------ |
+| plugins     | 是   | Plugin   | 该 Credential 对应的插件配置。 |                                                  |
+| desc        | 否   | 辅助     | Credential 描述。        |                                                  |
+| labels      | 否   | 匹配规则  | 标识附加属性的键值对。           | {"version":"v2","build":"16","env":"production"} |
+
+Credential 对象 JSON 配置示例：
+
+```shell
+{
+    "plugins": {
+      "key-auth": {
+        "key": "auth-one"
+      }
+    },
+    "desc": "hello world"
+}
+```
+
+### 使用示例 {#credential-example}
+
+前提：已创建 Consumer `jack`。
+
+创建 Credential，并启用认证插件 `key-auth`：
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
+    {
+        "plugins": {
+            "key-auth": {
+                "key": "auth-one"
+            }
+        }
+    }'
+    ```
+
+    ```
+    HTTP/1.1 200 OK
+    Date: Thu, 26 Dec 2019 08:17:49 GMT
+    ...
+
+    {"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
+    ```
+
 ## Upstream
 
 Upstream 是虚拟主机抽象，对给定的多个服务节点按照配置规则进行负载均衡。Upstream 的地址信息可以直接配置到 `Route`（或 `Service`) 上，当 Upstream 有重复时，需要用“引用”方式避免重复。
