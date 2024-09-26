@@ -868,6 +868,71 @@ Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 
 Currently, the response is returned from etcd.
 
+## Credential
+
+Credential is used to hold the authentication credentials for the Consumer.
+Credentials are used when multiple credentials need to be configured for a Consumer.
+
+### Credential API
+
+Credential resource request address：/apisix/admin/consumers/{username}/credentials/{credential_id}
+
+### Request Methods
+
+| Method | Request URI                        | Request Body | Description                                    |
+| ------ |----------------------------------------------------------------|--------------|------------------------------------------------|
+| GET    | /apisix/admin/consumers/{username}/credentials                 | NUll         | Fetches list of all credentials of the Consumer |
+| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Fetches the Credential by `credential_id`      |
+| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}        | Create or update a Creddential                 |
+| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Delete the Credential                          |
+
+### Request Body Parameters
+
+| Parameter   | Required | Type        | Description                                                | Example                                         |
+| ----------- |-----| ------- |------------------------------------------------------------|-------------------------------------------------|
+| plugins     | False    | Plugin      | Auth plugins configuration.                                |                                                 |
+| desc        | False    | Auxiliary   | Description of usage scenarios.                            | credential xxxx                                 |
+| labels      | False    | Match Rules | Attributes of the Credential specified as key-value pairs. | {"version":"v2","build":"16","env":"production"} |
+
+Example Configuration:
+
+```shell
+{
+    "plugins": {
+      "key-auth": {
+        "key": "auth-one"
+      }
+    },
+    "desc": "hello world"
+}
+```
+
+### Example API usage
+
+Prerequisite: Consumer `jack` has been created.
+
+Create the `key-auth` Credential for consumer `jack`:
+
+    ```shell
+    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
+    {
+        "plugins": {
+            "key-auth": {
+                "key": "auth-one"
+            }
+        }
+    }'
+    ```
+
+    ```
+    HTTP/1.1 200 OK
+    Date: Thu, 26 Dec 2019 08:17:49 GMT
+    ...
+
+    {"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
+    ```
+
 ## Upstream
 
 Upstream is a virtual host abstraction that performs load balancing on a given set of service nodes according to the configured rules.

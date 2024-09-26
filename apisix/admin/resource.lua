@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
+local apisix_consumer = require("apisix.consumer")
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
@@ -157,6 +158,12 @@ function _M:get(id, conf, sub_path)
         key = key .. "/" .. id
     end
 
+    -- some resources(consumers) have sub resources(credentials),
+    -- the key format of sub resources will differ from the main resource
+    if self.get_resource_etcd_key then
+        key = self.get_resource_etcd_key(id, conf, sub_path)
+    end
+
     local res, err = core.etcd.get(key, not id)
     if not res then
         core.log.error("failed to get ", self.kind, "[", key, "] from etcd: ", err)
@@ -168,6 +175,12 @@ function _M:get(id, conf, sub_path)
         if res.body and res.body.node and res.body.node.value then
             res.body.node.value.key = nil
         end
+    end
+
+    -- consumers etcd range response will include credentials, so need to filter out them
+    if self.name == "consumers" and res.body.list then
+        res.body.list = apisix_consumer.filter_consumers_list(res.body.list)
+        res.body.total = #res.body.list
     end
 
     utils.fix_count(res.body, id)
@@ -249,6 +262,26 @@ function _M:put(id, conf, sub_path, args)
 
     key = key .. "/" .. id
 
+    if self.get_resource_etcd_key then
+        key = self.get_resource_etcd_key(id, conf, sub_path, args)
+    end
+
+    if self.name == "credentials" then
+        local consumer_key = apisix_consumer.get_consumer_key_from_credential_key(key)
+        local res, err = core.etcd.get(consumer_key, false)
+        if not res then
+            return 503, {error_msg = err}
+        end
+        if res.status == 404 then
+            return res.status, {error_msg = "consumer not found"}
+        end
+        if res.status ~= 200 then
+            core.log.debug("failed to get consumer for the credential, credential key: ", key,
+                ", consumer key: ", consumer_key, ", res.status: ", res.status)
+            return res.status, {error_msg = "failed to get the consumer"}
+        end
+    end
+
     if self.name ~= "plugin_metadata" then
         local ok, err = utils.inject_conf_with_prev_conf(self.kind, key, conf)
         if not ok then
@@ -296,10 +329,21 @@ function _M:delete(id, conf, sub_path, uri_args)
 
     key = key .. "/" .. id
 
+    if self.get_resource_etcd_key then
+        key = self.get_resource_etcd_key(id, conf, sub_path, uri_args)
+    end
+
     if self.delete_checker and uri_args.force ~= "true" then
         local code, err = self.delete_checker(id)
         if err then
             return code, err
+        end
+    end
+
+    if self.name == "consumers" then
+        local res, err = core.etcd.rmdir(key .. "/credentials/")
+        if not res then
+            return 503, {error_msg = err}
         end
     end
 

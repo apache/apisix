@@ -109,6 +109,7 @@ apikey: auth-jack
 host: localhost
 x-api-engine: APISIX
 x-consumer-id: 1
+x-consumer-username: jack
 x-real-ip: 127.0.0.1
 
 
@@ -206,6 +207,7 @@ apikey: auth-jack
 host: localhost
 x-api-engine: APISIX
 x-consumer-id: 1
+x-consumer-username: jack
 x-real-ip: 127.0.0.1
 
 
