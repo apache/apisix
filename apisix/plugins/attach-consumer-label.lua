@@ -16,6 +16,7 @@
 --
 
 local core = require("apisix.core")
+local pairs = pairs
 local plugin_name = "attach-consumer-label"
 
 local schema = {
