@@ -38,7 +38,7 @@ if [[ -e $OR_EXEC && "$OR_VER" -ge 119 ]]; then
     # OpenResty version is >= 1.19, use luajit by default
     ROOT=$(${OR_EXEC} -V 2>&1 | grep prefix | grep -Eo 'prefix=(.*)/nginx\s+--' | grep -Eo '/.*/')
     # find the luajit binary of openresty
-    LUAJIT_BIN="$ROOT"/luajit/bin/luajit
+    LUAJIT_BIN="$ROOT"luajit/bin/luajit
 
     # use the luajit of openresty
     echo "$LUAJIT_BIN $APISIX_LUA $*"
