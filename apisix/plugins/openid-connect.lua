@@ -473,7 +473,6 @@ local function required_scopes_present(required_scopes, http_scopes)
 end
 
 function _M.rewrite(plugin_conf, ctx)
-    local conf = core.table.clone(plugin_conf)
     local conf = fetch_secrets(plugin_conf)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
