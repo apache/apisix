@@ -40,6 +40,7 @@ APISIX currently supports storing secrets in the following ways:
 - [Environment Variables](#use-environment-variables-to-manage-secrets)
 - [HashiCorp Vault](#use-hashicorp-vault-to-manage-secrets)
 - [AWS Secrets Manager](#use-aws-secrets-manager-to-manage-secrets)
+- [GCP Secrets Manager](#use-gcp-secrets-manager-to-manage-secrets)
 
 You can use APISIX Secret functions by specifying format variables in the consumer configuration of the following plugins, such as `key-auth`.
 
@@ -293,3 +294,56 @@ curl -i http://127.0.0.1:9080/your_route -H 'apikey: value'
 ```
 
 This will verify whether the `key-auth` plugin is correctly using the key from AWS Secrets Manager.
+
+## Use GCP Secrets Manager to manage secrets
+
+Using the GCP Secrets Manager to manage secrets means you can store the secret information in the GCP service, and reference it using a specific format of variables when configuring plugins. APISIX currently supports integration with the GCP Secrets Manager, and the supported authentication method is [OAuth 2.0](https://developers.google.com/identity/protocols/oauth2).
+
+### Reference Format
+
+```
+$secret://$manager/$id/$secret_name/$key
+```
+
+The reference format is the same as before:
+
+- manager: secrets management service, could be the HashiCorp Vault, AWS, GCP etc.
+- id: APISIX Secrets resource ID, which needs to be consistent with the one specified when adding the APISIX Secrets resource
+- secret_name: the secret name in the secrets management service
+- key: get the value of a property when the value of the secret is a JSON string
+
+### Required Parameters
+
+| Name                    | Required | Default                                                                                                                                                                                              | Description                                                                                                                                                        |
+|-------------------------|----------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| auth_config             | True     |                                                                                                                                                                                                      | Either `auth_config` or `auth_file` must be provided.                                                                                                              |
+| auth_config.client_email | True     |                                                                                                                                                                                                    | Email address of the Google Cloud service account.                                                                                                                   |
+| auth_config.private_key | True     |                                                                                                                                                                                                      | Private key of the Google Cloud service account.                                                                                                                   |
+| auth_config.project_id  | True     |                                                                                                                                                                                                      | Project ID in the Google Cloud service account.                                                                                                                    |
+| auth_config.token_uri   | False    | https://oauth2.googleapis.com/token                                                                                                                                                                    | Token URI of the Google Cloud service account.                                                                                                                     |
+| auth_config.entries_uri | False    | https://secretmanager.googleapis.com/v1                                                                                                                                                      | 	The API access endpoint for the Google Secrets Manager.                                                                                                                                |
+| auth_config.scope      | False    | https://www.googleapis.com/auth/cloud-platform | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) |
+| auth_file               | True     |                                                                                                                                                                                                      | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided.                                           |
+| ssl_verify              | False    | true                                                                                                                                                                                                 | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                  |
+
+You need to configure the corresponding authentication parameters, or specify the authentication file through auth_file, where the content of auth_file is in JSON format.
+
+### Example
+
+Here is a correct configuration example:
+
+```
+curl http://127.0.0.1:9180/apisix/admin/secrets/gcp/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}'
+
+```

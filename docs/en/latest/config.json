@@ -49,6 +49,7 @@
         "terminology/api-gateway",
         "terminology/consumer",
         "terminology/consumer-group",
+        "terminology/credential",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -96,7 +97,8 @@
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",
-            "plugins/body-transformer"
+            "plugins/body-transformer",
+            "plugins/ai-proxy"
           ]
         },
         {
