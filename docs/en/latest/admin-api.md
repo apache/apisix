@@ -909,9 +909,9 @@ Example Configuration:
 
 ### Example API usage
 
-Prerequisite: Consumer has been created.
+Prerequisite: Consumer `jack` has been created.
 
-Create Credential and specify the authentication plugin `key-auth`:
+Create the `key-auth` Credential for consumer `jack`:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \

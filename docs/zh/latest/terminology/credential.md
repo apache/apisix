@@ -47,7 +47,7 @@ Credential 是存放 [Consumer](./consumer.md) 凭证配置的对象。
 
 :::note
 
-如需了解更多关于 Consumer 对象的信息，你可以参考 [Admin API Credential](../admin-api.md#credential) 资源介绍。
+如需了解更多关于 Credential 对象的信息，你可以参考 [Admin API Credential](../admin-api.md#credential) 资源介绍。
 
 :::
 

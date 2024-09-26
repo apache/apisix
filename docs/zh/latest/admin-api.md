@@ -922,9 +922,9 @@ Credential 对象 JSON 配置示例：
 
 ### 使用示例 {#credential-example}
 
-前提：已创建 Consumer。
+前提：已创建 Consumer `jack`。
 
-创建 Credential，并指定认证插件 `key-auth`：
+创建 Credential，并启用认证插件 `key-auth`：
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \

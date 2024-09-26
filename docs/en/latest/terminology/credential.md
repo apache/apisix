@@ -47,7 +47,7 @@ The fields for defining a Credential are defined as below.
 
 :::note
 
-如需了解更多关于 Consumer 对象的信息，你可以参考 [Admin API Credential](../admin-api.md#credential) 资源介绍。
+For more information about the Credential object, you can refer to the [Admin API Credential](../admin-api.md#credential) resource guide.
 
 :::
 
@@ -76,7 +76,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     }'
     ```
 
-2. Create 2 `key-auth` 的 Credentials for the Consumer.
+2. Create 2 `key-auth` Credentials for the Consumer.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers/jack/key-auth-one \
