@@ -2,10 +2,10 @@
 title: Credential
 keywords:
   - APISIX
-  - API 网关
-  - 凭证
+  - API Gateway
+  - Consumer
   - Credential
-description: 本文介绍了 Apache APISIX Credential 对象的作用以及如何使用 Credential。
+description: This article describes what the Apache APISIX Credential object does and how to use it.
 ---
 
 <!--
@@ -40,10 +40,10 @@ Currently, Credential can be configured with the authentication plugins `basic-a
 The fields for defining a Credential are defined as below.
 
 | Field      | Required | Description                                                                                             |
-|---------|-----|---------------------------------------------------------------------------------------------------------|
-| desc    | 否   | Decriptiion of the Credential.                                                                          |
-| labels  | 否   | Labels of the Credential.                                                                               |
-| plugins | 否   | The plugin configuration corresponding to Credential. For more information, see [Plugins](./plugin.md). |
+|---------|----------|---------------------------------------------------------------------------------------------------------|
+| desc    | False    | Decriptiion of the Credential.                                                                          |
+| labels  | False    | Labels of the Credential.                                                                               |
+| plugins | False    | The plugin configuration corresponding to Credential. For more information, see [Plugins](./plugin.md). |
 
 :::note
 
