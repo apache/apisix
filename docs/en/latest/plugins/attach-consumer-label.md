@@ -2,9 +2,9 @@
 title: attach-consumer-label
 keywords:
   - Apache APISIX
-  - API 网关
+  - API Gateway
   - API Consumer
-description: 本文介绍了 Apache APISIX attach-consumer-label 插件的相关操作，你可以使用此插件向上游服务传递自定义的 Consumer labels。
+description: This article describes the Apache APISIX attach-consumer-label plugin, which you can use to pass custom consumer labels to upstream services.
 ---
 
 <!--
