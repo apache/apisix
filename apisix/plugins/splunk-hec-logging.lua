@@ -51,6 +51,12 @@ local schema = {
                     type = "integer",
                     minimum = 1,
                     default = 10
+                },
+                keepalive_timeout = {
+                    type = "integer",
+                    minimum = 1000,
+                    default = 60000,
+                    description = "keepalive timeout in milliseconds",
                 }
             },
             required = { "uri", "token" }
