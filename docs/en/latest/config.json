@@ -98,7 +98,8 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/ai-proxy"
+            "plugins/ai-proxy",
+            "plugins/attach-consumer-label"
           ]
         },
         {
