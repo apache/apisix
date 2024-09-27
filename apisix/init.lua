@@ -135,18 +135,71 @@ function _M.http_init_worker()
         end
     end
 
-    plugin.init_worker()
-    router.http_init_worker()
-    require("apisix.http.service").init_worker()
-    plugin_config.init_worker()
-    require("apisix.consumer").init_worker()
-    consumer_group.init_worker()
-    apisix_secret.init_worker()
+    local res_init_err_shdict = ngx.shared["res_init_err"]
+    local err_set = false
 
-    apisix_global_rules.init_worker()
+    local ok, err = plugin.init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
 
-    apisix_upstream.init_worker()
-    require("apisix.plugins.ext-plugin.init").init_worker()
+    ok, err = router.http_init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+    ok, err = require("apisix.http.service").init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+    ok, err = plugin_config.init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+    ok, err = require("apisix.consumer").init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+    ok, err = consumer_group.init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+    ok, err = apisix_secret.init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+
+    ok, err = apisix_global_rules.init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+
+    ok, err = apisix_upstream.init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
+    ok, err = require("apisix.plugins.ext-plugin.init").init_worker()
+    if not ok and not err_set then
+        err_set = true
+        res_init_err_shdict:set("err", err)
+    end
+
 
     control_api_router.init_worker()
     local_conf = core.config.local_conf()
