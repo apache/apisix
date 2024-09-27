@@ -43,13 +43,12 @@ Consumer 端：
 | key           | string  | 是    |         |                             | Consumer 的 `access_key` 必须是唯一的。如果不同 Consumer 使用了相同的 `access_key` ，将会出现请求匹配异常。 |
 | secret        | string  | 否    |         |                             | 加密秘钥。如果未指定，后台将会自动生成。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
 | public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
-| private_key   | string  | 否    |         |                             | RSA 或 ECDSA 私钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
 | algorithm     | string  | 否    | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 定义生成 JWT 的服务器和验证 JWT 的服务器之间的时钟偏移。该值应该是零（0）或一个正整数。 |
 
-注意：schema 中还定义了 `encrypt_fields = {"secret", "private_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
+注意：schema 中还定义了 `encrypt_fields = {"secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 Route 端：
 
@@ -61,16 +60,6 @@ Route 端：
 | hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将含有认证信息的 header\query\cookie 传递给 Upstream。|
 
 您可以使用 [HashiCorp Vault](https://www.vaultproject.io/) 实施 `jwt-auth`，以从其[加密的 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv) 使用 [APISIX Secret](../terminology/secret.md) 资源。
-
-## 接口
-
-该插件会增加 `/apisix/plugin/jwt/sign` 接口。
-
-:::note
-
-你需要通过 [public-api](../../../en/latest/plugins/public-api.md) 插件来暴露它。
-
-:::
 
 ## 启用插件
 
@@ -104,7 +93,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 :::note
 
-`jwt-auth` 默认使用 `HS256` 算法，如果使用 `RS256` 算法，需要指定算法，并配置公钥与私钥，示例如下：
+`jwt-auth` 默认使用 `HS256` 算法，如果使用 `RS256` 算法，需要指定算法，并配置公钥，示例如下：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -115,7 +104,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
         "jwt-auth": {
             "key": "user-key",
             "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
-            "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
             "algorithm": "RS256"
         }
     }
@@ -146,54 +134,15 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ## 测试插件
 
-首先，你需要为签发 token 的 API 配置一个 Route，该路由将使用 [public-api](../../../en/latest/plugins/public-api.md) 插件。
+首先你需要使用诸如 [JWT.io's debugger](https://jwt.io/#debugger-io) 等工具或编程语言来生成一个 JWT token。
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jas \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/apisix/plugin/jwt/sign",
-    "plugins": {
-        "public-api": {}
-    }
-}'
-```
+:::note
 
-之后就可以通过调用它来获取 token 了。
+生成 JWT token 时，payload 中 `key` 字段是必要的，值为所要用到的凭证的 key; 且 `exp` 或 `nbf` 至少填写其中一个，值为 UNIX 时间戳。
 
-* 没有额外的 payload:
+示例：payload=`{"key": "user-key", "exp": 1727274983}`
 
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-```
-
-```
-HTTP/1.1 200 OK
-Date: Wed, 24 Jul 2019 10:33:31 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMXx.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
-```
-
-* 有额外的 payload:
-
-```shell
-curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-```
-
-```
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:43:59 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
-```
+:::
 
 现在你可以使用获取到的 token 进行请求尝试
 

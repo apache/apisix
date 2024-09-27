@@ -37,7 +37,7 @@ __DATA__
     location /t {
         content_by_lua_block {
             local test_cases = {
-                {uri = "/apisix/plugin/jwt/sign"},
+                {uri = "/apisix/plugin/wolf-rbac/user_info"},
                 {uri = 3233}
             }
             local plugin = require("apisix.plugins.public-api")
@@ -70,21 +70,6 @@ property "uri" validation failed: wrong type: expected string, got number
                             }
                         }
                     }]]
-                },
-                {
-                    uri = "/apisix/admin/routes/custom-jwt-sign",
-                    data = [[{
-                        "plugins": {
-                            "public-api": {
-                                "uri": "/apisix/plugin/jwt/sign"
-                            },
-                            "serverless-pre-function": {
-                                "phase": "rewrite",
-                                "functions": ["return function(conf, ctx) require(\"apisix.core\").log.warn(\"custom-jwt-sign was triggered\"); end"]
-                            }
-                        },
-                        "uri": "/gen_token"
-                    }]],
                 },
                 {
                     uri = "/apisix/admin/routes/direct-wolf-rbac-userinfo",
@@ -121,38 +106,11 @@ property "uri" validation failed: wrong type: expected string, got number
         }
     }
 --- response_body eval
-"201passed\n" x 4
+"201passed\n" x 3
 
 
 
-=== TEST 3: hit route (custom-jwt-sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code, body, jwt = t("/gen_token?key=user-key", ngx.HTTP_GET, "", nil, {apikey = "testkey"})
-            if code >= 300 then
-                ngx.status = code
-            end
-
-            local header = string.sub(jwt, 1, 36)
-
-            if header == "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9" or
-               header == "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9" then
-                ngx.say("passed")
-                return
-            end
-
-            ngx.say("failed")
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 4: hit route (direct-wolf-rbac-userinfo)
+=== TEST 3: hit route (direct-wolf-rbac-userinfo)
 --- request
 GET /apisix/plugin/wolf-rbac/user_info
 --- error_code: 401
@@ -161,21 +119,21 @@ direct-wolf-rbac-userinfo was triggered
 
 
 
-=== TEST 5: missing route (non-exist public API)
+=== TEST 4: missing route (non-exist public API)
 --- request
 GET /apisix/plugin/balalbala
 --- error_code: 404
 
 
 
-=== TEST 6: hit route (wrong public-api uri)
+=== TEST 5: hit route (wrong public-api uri)
 --- request
 GET /wrong-public-api
 --- error_code: 404
 
 
 
-=== TEST 7: setup route (protect public API)
+=== TEST 6: setup route (protect public API)
 --- config
     location /t {
         content_by_lua_block {
@@ -192,15 +150,19 @@ GET /wrong-public-api
                     }]]
                 },
                 {
-                    uri = "/apisix/admin/routes/custom-jwt-sign",
+                    uri = "/apisix/admin/routes/custom-user-info",
                     data = [[{
                         "plugins": {
                             "public-api": {
-                                "uri": "/apisix/plugin/jwt/sign"
+                                "uri": "/apisix/plugin/wolf-rbac/user_info"
                             },
-                            "key-auth": {}
+                            "key-auth": {},
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions": ["return function(conf, ctx) require(\"apisix.core\").log.warn(\"direct-wolf-rbac-userinfo was triggered\"); end"]
+                            }
                         },
-                        "uri": "/gen_token"
+                        "uri": "/get_user_info"
                     }]],
                 }
             }
@@ -215,19 +177,24 @@ GET /wrong-public-api
     }
 --- response_body
 201passed
-200passed
+201passed
 
 
 
-=== TEST 8: hit route (with key-auth header)
+=== TEST 7: hit route (with key-auth header)
 --- request
-GET /gen_token?key=user-key
+GET /get_user_info?key=user-key
 --- more_headers
 apikey: testkey
-
-
-
-=== TEST 9: hit route (without key-auth header)
---- request
-GET /gen_token?key=user-key
 --- error_code: 401
+--- error_log
+direct-wolf-rbac-userinfo was triggered
+
+
+
+=== TEST 8: hit route (without key-auth header)
+--- request
+GET /get_user_info?key=user-key
+--- error_code: 401
+--- response_body
+{"message":"Missing API key in request"}
