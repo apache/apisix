@@ -148,6 +148,7 @@ local function send_to_splunk(conf, entries)
         method = "POST",
         body = table_concat(t),
         headers = request_headers,
+        keepalive_timeout = conf.endpoint.keepalive_timeout
     })
 
     if not res then
