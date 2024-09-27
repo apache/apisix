@@ -17,8 +17,6 @@
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local resource = require("apisix.admin.resource")
-local plugin  = require("apisix.plugin")
-local pairs   = pairs
 
 
 local function check_conf(username, conf, need_username, schema)
@@ -35,18 +33,6 @@ local function check_conf(username, conf, need_username, schema)
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
-        end
-
-        local count_auth_plugin = 0
-        for name, conf in pairs(conf.plugins) do
-            local plugin_obj = plugin.get(name)
-            if plugin_obj.type == 'auth' then
-                count_auth_plugin = count_auth_plugin + 1
-            end
-        end
-
-        if count_auth_plugin == 0 then
-            return nil, {error_msg = "require one auth plugin"}
         end
     end
 

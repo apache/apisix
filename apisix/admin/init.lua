@@ -49,6 +49,7 @@ local resources = {
     services        = require("apisix.admin.services"),
     upstreams       = require("apisix.admin.upstreams"),
     consumers       = require("apisix.admin.consumers"),
+    credentials     = require("apisix.admin.credentials"),
     schema          = require("apisix.admin.schema"),
     ssls            = require("apisix.admin.ssl"),
     plugins         = require("apisix.admin.plugins"),
@@ -184,6 +185,12 @@ local function run()
         end
     end
 
+    if seg_res == "consumers" and #uri_segs >= 6 and uri_segs[6] == "credentials" then
+        seg_sub_path = seg_id .. "/" .. seg_sub_path
+        seg_res = uri_segs[6]
+        seg_id = uri_segs[7]
+    end
+
     local resource = resources[seg_res]
     if not resource then
         core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
@@ -228,7 +235,7 @@ local function run()
 
     if code then
         if method == "get" and plugin.enable_data_encryption then
-            if seg_res == "consumers" then
+            if seg_res == "consumers" or seg_res == "credentials" then
                 utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
             elseif seg_res == "plugin_metadata" then
                 utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
