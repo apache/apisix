@@ -1159,3 +1159,59 @@ passed
 hello world
 --- skip_eval
 1: $ENV{OPENSSL_FIPS} eq 'yes'
+
+
+
+=== TEST 50: add consumer missing public_key (algorithm=RS256)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-res256",
+                            "algorithm": "RS256"
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin jwt-auth err: failed to validate dependent schema for \"algorithm\": value should match only one schema, but matches none"}
+
+
+
+=== TEST 51: add consumer missing public_key (algorithm=RS256)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "kerouac",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "user-key-es256",
+                            "algorithm": "ES256"
+                        }
+                    }
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin jwt-auth err: failed to validate dependent schema for \"algorithm\": value should match only one schema, but matches none"}
