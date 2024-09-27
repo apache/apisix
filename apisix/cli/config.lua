@@ -208,6 +208,7 @@ local _M = {
     "jwe-decrypt",
     "key-auth",
     "consumer-restriction",
+    "attach-consumer-label",
     "forward-auth",
     "opa",
     "authz-keycloak",
