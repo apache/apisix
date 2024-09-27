@@ -43,13 +43,12 @@ For Consumer:
 | key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                                                                  |
 | secret        | string  | False                                                 |         |                             | The encryption key. If unspecified, auto generated in the background. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
-| private_key   | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA private key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
 | algorithm     | string  | False                                                 | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
 | base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Define the leeway in seconds to account for clock skew between the server that generated the jwt and the server validating it. Value should be zero (0) or a positive integer. |
 
-NOTE: `encrypt_fields = {"secret", "private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+NOTE: `encrypt_fields = {"secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 For Route:
 
@@ -61,16 +60,6 @@ For Route:
 | hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
-
-## API
-
-This Plugin adds `/apisix/plugin/jwt/sign` as an endpoint.
-
-:::note
-
-You may need to use the [public-api](public-api.md) plugin to expose this endpoint.
-
-:::
 
 ## Enable Plugin
 
@@ -102,7 +91,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
 
 :::note
 
-The `jwt-auth` Plugin uses the HS256 algorithm by default. To use the RS256 algorithm, you can configure the public key and private key and specify the algorithm:
+The `jwt-auth` Plugin uses the HS256 algorithm by default. To use the RS256 algorithm, you can configure the public key and specify the algorithm:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
@@ -112,7 +101,6 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X 
         "jwt-auth": {
             "key": "user-key",
             "public_key": "-----BEGIN PUBLIC KEY-----\n……\n-----END PUBLIC KEY-----",
-            "private_key": "-----BEGIN RSA PRIVATE KEY-----\n……\n-----END RSA PRIVATE KEY-----",
             "algorithm": "RS256"
         }
     }
@@ -148,53 +136,15 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
 
 ## Example usage
 
-You need to first setup a Route for an API that signs the token using the [public-api](public-api.md) Plugin:
+You need first to issue a JWT token using some tool such as [JWT.io's debugger](https://jwt.io/#debugger-io) or a programming language.
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jas -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/apisix/plugin/jwt/sign",
-    "plugins": {
-        "public-api": {}
-    }
-}'
-```
+:::note
 
-Now, we can get a token:
+When you are issuing a JWT token, you have to update the payload with `key` matching the credential key you would like to use; and `exp` or `nbf` in UNIX timestamp.
 
-- Without extension payload:
+e.g. payload=`{"key": "user-key", "exp": 1727274983}`
 
-```shell
-curl http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-```
-
-```
-HTTP/1.1 200 OK
-Date: Wed, 24 Jul 2019 10:33:31 GMT
-Content-Type: text/plain
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX web server
-
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2NDA1MDgxMX0.Us8zh_4VjJXF-TmR5f8cif8mBU7SuefPlpxhH0jbPVI
-```
-
-- With extension payload:
-
-```shell
-curl -G --data-urlencode 'payload={"uid":10000,"uname":"test"}' http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key -i
-```
-
-```
-HTTP/1.1 200 OK
-Date: Wed, 21 Apr 2021 06:43:59 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/2.4
-
-eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ1bmFtZSI6InRlc3QiLCJ1aWQiOjEwMDAwLCJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTYxOTA3MzgzOX0.jI9-Rpz1gc3u8Y6lZy8I43RXyCu0nSHANCvfn0YZUCY
-```
+:::
 
 You can now use this token while making requests:
 

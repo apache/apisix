@@ -439,19 +439,20 @@ end
 
 ## register public API
 
-A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
+A plugin can register API which exposes to the public. Take batch-requests plugin as an example, this plugin registers `POST /apisix/batch-requests` to allow developers to group multiple API requests into a single HTTP request/response cycle:
 
 ```lua
-local function gen_token()
-    --...
+function batch_requests()
+    -- ...
 end
 
 function _M.api()
+    -- ...
     return {
         {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
+            methods = {"POST"},
+            uri = "/apisix/batch-requests",
+            handler = batch_requests,
         }
     }
 end

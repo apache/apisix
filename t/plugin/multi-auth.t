@@ -485,35 +485,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin multi-auth err: pr
 
 
 
-=== TEST 19: create public API route (jwt-auth sign)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 20: add consumer with username and jwt-auth plugins
+=== TEST 19: add consumer with username and jwt-auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -544,21 +516,13 @@ passed
 
 
 
-=== TEST 21: sign / verify jwt-auth
+=== TEST 20: sign / verify jwt-auth
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
 
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
+            local sign = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
@@ -574,7 +538,7 @@ hello world
 
 
 
-=== TEST 22: verify multi-auth with plugin config will cause the conf_version change
+=== TEST 21: verify multi-auth with plugin config will cause the conf_version change
 --- config
     location /t {
         content_by_lua_block {
@@ -634,16 +598,7 @@ hello world
             end
             ngx.sleep(0.1)
 
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=user-key',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
+            local sign = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo"
             local code, _, res = t('/hello?jwt=' .. sign,
                 ngx.HTTP_GET
             )
