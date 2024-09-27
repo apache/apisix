@@ -50,6 +50,10 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false
+        },
+        key_claim_name = {
+            type = "string",
+            default = "key"
         }
     },
 }
@@ -247,9 +251,9 @@ local function get_rsa_or_ecdsa_keypair(conf)
 end
 
 
-local function get_real_payload(key, auth_conf, payload)
+local function get_real_payload(key, auth_conf, payload, key_claim_name)
     local real_payload = {
-        key = key,
+        [key_claim_name] = key,
         exp = ngx_time() + auth_conf.exp
     }
     if payload then
@@ -261,7 +265,7 @@ local function get_real_payload(key, auth_conf, payload)
 end
 
 
-local function sign_jwt_with_HS(key, consumer, payload)
+local function sign_jwt_with_HS(key, consumer, payload, key_claim_name)
     local auth_secret, err = get_secret(consumer.auth_conf)
     if not auth_secret then
         core.log.error("failed to sign jwt, err: ", err)
@@ -274,7 +278,7 @@ local function sign_jwt_with_HS(key, consumer, payload)
                 typ = "JWT",
                 alg = consumer.auth_conf.algorithm
             },
-            payload = get_real_payload(key, consumer.auth_conf, payload)
+            payload = get_real_payload(key, consumer.auth_conf, payload, key_claim_name)
         }
     )
     if not ok then
@@ -285,7 +289,7 @@ local function sign_jwt_with_HS(key, consumer, payload)
 end
 
 
-local function sign_jwt_with_RS256_ES256(key, consumer, payload)
+local function sign_jwt_with_RS256_ES256(key, consumer, payload, key_claim_name)
     local public_key, private_key, err = get_rsa_or_ecdsa_keypair(
         consumer.auth_conf
     )
@@ -304,7 +308,7 @@ local function sign_jwt_with_RS256_ES256(key, consumer, payload)
                     public_key,
                 }
             },
-            payload = get_real_payload(key, consumer.auth_conf, payload)
+            payload = get_real_payload(key, consumer.auth_conf, payload, key_claim_name)
         }
     )
     if not ok then
@@ -348,9 +352,10 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "JWT token invalid"}
     end
 
-    local user_key = jwt_obj.payload and jwt_obj.payload.key
+    local key_claim_name = conf.key_claim_name
+    local user_key = jwt_obj.payload and jwt_obj.payload[key_claim_name]
     if not user_key then
-        return 401, {message = "missing user key in JWT token"}
+        return 401, {message = "missing " .. key_claim_name .. " claim in JWT token"}
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
@@ -395,6 +400,8 @@ local function gen_token()
 
     local key = args.key
     local payload = args.payload
+    local key_claim_name = args.key_claim_name or "key"
+
     if payload then
         payload = ngx.unescape_uri(payload)
     end
@@ -415,7 +422,7 @@ local function gen_token()
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local sign_handler = algorithm_handler(consumer, true)
-    local jwt_token = sign_handler(key, consumer, payload)
+    local jwt_token = sign_handler(key, consumer, payload, key_claim_name)
     if jwt_token then
         return core.response.exit(200, jwt_token)
     end

@@ -58,7 +58,8 @@ For Route:
 | header | string | False    | authorization | The header to get the token from.                                   |
 | query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
 | cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
-| hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
+| hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream. |
+| key_claim_name | string | False     | key  | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
