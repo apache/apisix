@@ -936,6 +936,7 @@ hello world
         content_by_lua_block {
             local t = require("lib.test_admin").test
 
+            -- the jwt signature is encoded with this payload
             -- payload = {"aaa":"11","bb":"222"}
 
             local sign = "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJhYWEiOiIxMSIsImJiIjoiMjIyIiwia2V5IjoidXNlci1rZXktSFM1MTIiLCJuYmYiOjE3MjcyNzQ5ODN9.s6E3-wNJypgJL71MxoyTTHBDeqdrGQddFjkhLlh3ZN6IZwgpFRlFT1_8suQg9dWUDHGQqgejULyLPhmBMIbw2A"
@@ -1196,7 +1197,7 @@ hello world
 
 
 
-=== TEST 51: add consumer missing public_key (algorithm=RS256)
+=== TEST 51: add consumer missing public_key (algorithm=ES256)
 --- config
     location /t {
         content_by_lua_block {
