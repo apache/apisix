@@ -81,7 +81,8 @@
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
-            "plugins/mocking"
+            "plugins/mocking",
+            "plugins/attach-consumer-label"
           ]
         },
         {
