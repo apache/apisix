@@ -39,16 +39,16 @@ augments the AI's responses with that data, improving the accuracy and context o
 
 ## Plugin Attributes
 
-| **Field**                                       | **Required** | **Type** | **Description**                              |
-| ----------------------------------------------- | ------------ | -------- | -------------------------------------------- |
-| embeddings_provider                             | Yes          | Object   | Configurations of the embedding models provider    |
-| embeddings_provider.azure_openai                | Yes          | Object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider.   |
-| embeddings_provider.azure_openai.endpoint       | Yes          | String   | Azure OpenAI endpoint                        |
-| embeddings_provider.azure_openai.api_key        | Yes          | String   | Azure OpenAI API key                         |
-| vector_search_provider                          | Yes          | Object   | Configuration for the vector search provider |
-| vector_search_provider.azure_ai_search          | Yes          | Object   | Configuration for Azure AI Search            |
-| vector_search_provider.azure_ai_search.endpoint | No           | String   | Azure AI Search endpoint                     |
-| vector_search_provider.azure_ai_search.api_key  | No           | String   | Azure AI Search API key                      |
+| **Field**                                       | **Required** | **Type** | **Description**                                                                                                                           |
+| ----------------------------------------------- | ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| embeddings_provider                             | Yes          | Object   | Configurations of the embedding models provider                                                                                           |
+| embeddings_provider.azure_openai                | Yes          | Object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider. |
+| embeddings_provider.azure_openai.endpoint       | Yes          | String   | Azure OpenAI endpoint                                                                                                                     |
+| embeddings_provider.azure_openai.api_key        | Yes          | String   | Azure OpenAI API key                                                                                                                      |
+| vector_search_provider                          | Yes          | Object   | Configuration for the vector search provider                                                                                              |
+| vector_search_provider.azure_ai_search          | Yes          | Object   | Configuration for Azure AI Search                                                                                                         |
+| vector_search_provider.azure_ai_search.endpoint | Yes          | String   | Azure AI Search endpoint                                                                                                                  |
+| vector_search_provider.azure_ai_search.api_key  | Yes          | String   | Azure AI Search API key                                                                                                                   |
 
 ## Request Body Format
 
@@ -56,20 +56,20 @@ The following fields must be present in the request body.
 
 | **Field**            | **Type** | **Description**                                                                                                                 |
 | -------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ai_rag               | Object   | Configuration for AI-RAG (Retrieval Augmented Generation)                                                                       |
-| ai_rag.embeddings    | Object   | Request parameters required to generate embeddings. Contents will depend on the API specification of the configured provider.   |
-| ai_rag.vector_search | Object   | Request parameters required to perform vector search. Contents will depend on the API specification of the configured provider. |
+| ai_rag               | object   | Configuration for AI-RAG (Retrieval Augmented Generation)                                                                       |
+| ai_rag.embeddings    | object   | Request parameters required to generate embeddings. Contents will depend on the API specification of the configured provider.   |
+| ai_rag.vector_search | object   | Request parameters required to perform vector search. Contents will depend on the API specification of the configured provider. |
 
 - Parameters of `ai_rag.embeddings`
 
   - Azure OpenAI
 
-  | **Name**        | **Required** | **Type**        | **Description**                                                                                                            |
-  | --------------- | ------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-  | input           | Yes          | string | Input text used to compute embeddings, encoded as a string.                                                                     |
-  | user            | No           | string          | A unique identifier representing your end-user, which can help in monitoring and detecting abuse.                          |
-  | encoding_format | No           | string          | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
-  | dimensions      | No           | integer         | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
+  | **Name**        | **Required** | **Type** | **Description**                                                                                                            |
+  | --------------- | ------------ | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+  | input           | Yes          | string   | Input text used to compute embeddings, encoded as a string.                                                                |
+  | user            | No           | string   | A unique identifier representing your end-user, which can help in monitoring and detecting abuse.                          |
+  | encoding_format | No           | string   | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
+  | dimensions      | No           | integer  | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
 
 For other parameters please refer to the [Azure OpenAI embeddings documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings).
 
