@@ -41,8 +41,8 @@ augments the AI's responses with that data, improving the accuracy and context o
 
 | **Field**                                       | **Required** | **Type** | **Description**                              |
 | ----------------------------------------------- | ------------ | -------- | -------------------------------------------- |
-| embeddings_provider                             | Yes          | Object   | Configuration for the embeddings provider    |
-| embeddings_provider.azure_openai                | Yes          | Object   | Configuration for Azure OpenAI embeddings    |
+| embeddings_provider                             | Yes          | Object   | Configurations of the embedding models provider    |
+| embeddings_provider.azure_openai                | Yes          | Object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider.   |
 | embeddings_provider.azure_openai.endpoint       | Yes          | String   | Azure OpenAI endpoint                        |
 | embeddings_provider.azure_openai.api_key        | Yes          | String   | Azure OpenAI API key                         |
 | vector_search_provider                          | Yes          | Object   | Configuration for the vector search provider |
@@ -60,20 +60,20 @@ The following fields must be present in the request body.
 | ai_rag.embeddings    | Object   | Request parameters required to generate embeddings. Contents will depend on the API specification of the configured provider.   |
 | ai_rag.vector_search | Object   | Request parameters required to perform vector search. Contents will depend on the API specification of the configured provider. |
 
-- Contents of ai_rag.embeddings
+- Parameters of `ai_rag.embeddings`
 
   - Azure OpenAI
 
   | **Name**        | **Required** | **Type**        | **Description**                                                                                                            |
   | --------------- | ------------ | --------------- | -------------------------------------------------------------------------------------------------------------------------- |
-  | input           | Yes          | string or array | Input text to get embeddings for, encoded as a string.                                                                     |
+  | input           | Yes          | string | Input text used to compute embeddings, encoded as a string.                                                                     |
   | user            | No           | string          | A unique identifier representing your end-user, which can help in monitoring and detecting abuse.                          |
   | encoding_format | No           | string          | The format to return the embeddings in. Can be either `float` or `base64`. Defaults to `float`.                            |
   | dimensions      | No           | integer         | The number of dimensions the resulting output embeddings should have. Only supported in text-embedding-3 and later models. |
 
-For other parameters please refer the Azure OpenAI embeddings documentation.
+For other parameters please refer to the [Azure OpenAI embeddings documentation](https://learn.microsoft.com/en-us/azure/ai-services/openai/reference#embeddings).
 
-- Contents of ai_rag.vector_search
+- Parameters of `ai_rag.vector_search`
 
   - Azure AI Search
 
@@ -166,7 +166,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
 }'
 ```
 
-The `ai-proxy` plugin is used here as it simplifies access to LLMs. However, you may configure the LLM in the upstream configuration as well.
+The `ai-proxy` plugin is used here as it simplifies access to LLMs. Alternatively, you may configure the LLM service address in the upstream configuration and update the route URI as well.
 
 Now send a request:
 
