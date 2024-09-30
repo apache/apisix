@@ -103,12 +103,12 @@ First initialise these shell variables:
 
 ```shell
 ADMIN_API_KEY=edd1c9f034335f136f87ad84b625c8f1
-azure_openai_endpoint=https://name.openai.azure.com/openai/deployments/gpt-4o/chat/completions
-vector_search_endpoint=https://name.search.windows.net/indexes/indexname/docs/search?api-version=2024-07-01
-embeddings_endpoint=https://name.openai.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15
-embeddings_key=secret-azure-openai-embeddings-key
-search_key=secret-azureai-search-key
-azure_openai_key=secret-azure-openai-key
+AZURE_OPENAI_ENDPOINT=https://name.openai.azure.com/openai/deployments/gpt-4o/chat/completions
+VECTOR_SEARCH_ENDPOINT=https://name.search.windows.net/indexes/indexname/docs/search?api-version=2024-07-01
+EMBEDDINGS_ENDPOINT=https://name.openai.azure.com/openai/deployments/text-embedding-3-small/embeddings?api-version=2023-05-15
+EMBEDDINGS_KEY=secret-azure-openai-embeddings-key
+SEARCH_KEY=secret-azureai-search-key
+AZURE_OPENAI_KEY=secret-azure-openai-key
 ```
 
 Create a route with the `ai-rag` and `ai-proxy` plugin like so:
