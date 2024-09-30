@@ -124,39 +124,7 @@ apikey: auth-one
 
 
 
-=== TEST 6: missing auth plugins (not allow)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jack",
-                    "plugins": {
-                        "limit-count": {
-                            "count": 2,
-                            "time_window": 60,
-                            "rejected_code": 503,
-                            "key": "remote_addr"
-                        }
-                    }
-                }]]
-                )
-
-            ngx.status = code
-            ngx.print(body)
-        }
-    }
---- request
-GET /t
---- error_code: 400
---- response_body
-{"error_msg":"require one auth plugin"}
-
-
-
-=== TEST 7: use the new configuration after the consumer's configuration is updated
+=== TEST 6: use the new configuration after the consumer's configuration is updated
 --- config
     location /t {
         content_by_lua_block {
@@ -221,7 +189,7 @@ GET /t
 
 
 
-=== TEST 8: consumer with multiple auth plugins
+=== TEST 7: consumer with multiple auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -237,7 +205,7 @@ GET /t
                                 "key": "consumer-plugin-John_Doe"
                             },
                             "hmac-auth": {
-                                "access_key": "my-access-key",
+                                "key_id": "my-access-key",
                                 "secret_key": "my-secret-key",
                                 "clock_skew": 1
                             }
@@ -258,7 +226,7 @@ passed
 
 
 
-=== TEST 9: bind to routes
+=== TEST 8: bind to routes
 --- config
     location /t {
         content_by_lua_block {
@@ -315,7 +283,7 @@ passed
 
 
 
-=== TEST 10: hit consumer, key-auth
+=== TEST 9: hit consumer, key-auth
 --- request
 GET /hello
 --- more_headers
@@ -327,7 +295,7 @@ find consumer John_Doe
 
 
 
-=== TEST 11: hit consumer, hmac-auth
+=== TEST 10: hit consumer, hmac-auth
 --- config
 location /t {
     content_by_lua_block {
@@ -341,18 +309,16 @@ location /t {
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key"
+        local key_id = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         local signing_string = {
-            "GET",
-            "/status",
-            "",
-            access_key,
-            gmt,
-            "x-custom-header-a:" .. custom_header_a,
-            "x-custom-header-b:" .. custom_header_b
+            key_id,
+            "GET /status",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a,
+            "x-custom-header-b: " .. custom_header_b
         }
         signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
@@ -360,11 +326,8 @@ location /t {
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
-        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["Date"] = gmt
-        headers["X-HMAC-ACCESS-KEY"] = access_key
-        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
 
@@ -388,7 +351,7 @@ find consumer John_Doe
 
 
 
-=== TEST 12: the plugins bound on the service should use the latest configuration
+=== TEST 11: the plugins bound on the service should use the latest configuration
 --- config
     location /t {
         content_by_lua_block {

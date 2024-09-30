@@ -470,6 +470,7 @@ plugins:                           # plugin list (sorted by priority)
   - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - attach-consumer-label          # priority: 2399
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000

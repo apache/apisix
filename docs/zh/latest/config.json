@@ -38,6 +38,7 @@
         "terminology/api-gateway",
         "terminology/consumer",
         "terminology/consumer-group",
+        "terminology/credential",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -80,7 +81,8 @@
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
-            "plugins/mocking"
+            "plugins/mocking",
+            "plugins/attach-consumer-label"
           ]
         },
         {

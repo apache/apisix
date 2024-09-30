@@ -558,6 +558,192 @@ function _M.google_logging_entries()
     ngx.say(data)
 end
 
+function _M.google_secret_token()
+    local args = ngx.req.get_uri_args()
+    local args_token_type = args.token_type or "Bearer"
+    ngx.req.read_body()
+    local data = ngx.decode_args(ngx.req.get_body_data())
+    local jwt = require("resty.jwt")
+    local access_scopes = "https://www.googleapis.com/auth/cloud"
+    local verify = jwt:verify(rsa_public_key, data["assertion"])
+    if not verify.verified then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "identity authentication failed" }))
+        return
+    end
+
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
+    if not scopes_valid then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "no access to this scope" }))
+        return
+    end
+
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    if expire_time <= 0 then
+        expire_time = 0
+    end
+
+    local jwt_token = jwt:sign(rsa_private_key, {
+        header = { typ = "JWT", alg = "RS256" },
+        payload = { exp = verify.payload.exp, scope = access_scopes }
+    })
+
+    ngx.say(json_encode({
+        access_token = jwt_token,
+        expires_in = expire_time,
+        token_type = args_token_type
+    }))
+end
+
+function _M.google_secret_apisix_jack()
+    local args = ngx.req.get_uri_args()
+    local args_token_type = args.token_type or "Bearer"
+    local jwt = require("resty.jwt")
+    local access_scopes = "https://www.googleapis.com/auth/cloud"
+
+    local headers = ngx.req.get_headers()
+    local token = headers["Authorization"]
+    if not token then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "authentication header not exists" }))
+        return
+    end
+
+    token = string.sub(token, #args_token_type + 2)
+    local verify = jwt:verify(rsa_public_key, token)
+    if not verify.verified then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "identity authentication failed" }))
+        return
+    end
+
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
+    if not scopes_valid then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "no access to this scope" }))
+        return
+    end
+
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    if expire_time <= 0 then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "token has expired" }))
+        return
+    end
+
+    local response = {
+        name = "projects/647037004838/secrets/apisix/versions/1",
+        payload = {
+          data = "eyJrZXkiOiJ2YWx1ZSJ9",
+          dataCrc32c = "2296192492"
+        }
+      }
+
+    ngx.status = 200
+    ngx.say(json_encode(response))
+end
+
+function _M.google_secret_apisix_error_jack()
+    local args = ngx.req.get_uri_args()
+    local args_token_type = args.token_type or "Bearer"
+    local jwt = require("resty.jwt")
+    local access_scopes = "https://www.googleapis.com/auth/root/cloud"
+
+    local headers = ngx.req.get_headers()
+    local token = headers["Authorization"]
+    if not token then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "authentication header not exists" }))
+        return
+    end
+
+    token = string.sub(token, #args_token_type + 2)
+    local verify = jwt:verify(rsa_public_key, token)
+    if not verify.verified then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "identity authentication failed" }))
+        return
+    end
+
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
+    if not scopes_valid then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "no access to this scope" }))
+        return
+    end
+
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    if expire_time <= 0 then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "token has expired" }))
+        return
+    end
+
+    local response = {
+        name = "projects/647037004838/secrets/apisix_error/versions/1",
+        payload = {
+          data = "eyJrZXkiOiJ2YWx1ZSJ9",
+          dataCrc32c = "2296192492"
+        }
+      }
+
+    ngx.status = 200
+    ngx.say(json_encode(response))
+end
+
+function _M.google_secret_apisix_mysql()
+    local args = ngx.req.get_uri_args()
+    local args_token_type = args.token_type or "Bearer"
+    local jwt = require("resty.jwt")
+    local access_scopes = "https://www.googleapis.com/auth/cloud"
+
+    local headers = ngx.req.get_headers()
+    local token = headers["Authorization"]
+    if not token then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "authentication header not exists" }))
+        return
+    end
+
+    token = string.sub(token, #args_token_type + 2)
+    local verify = jwt:verify(rsa_public_key, token)
+    if not verify.verified then
+        ngx.status = 401
+        ngx.say(json_encode({ error = "identity authentication failed" }))
+        return
+    end
+
+    local scopes_valid = type(verify.payload.scope) == "string" and
+            verify.payload.scope:find(access_scopes)
+    if not scopes_valid then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "no access to this scope" }))
+        return
+    end
+
+    local expire_time = (verify.payload.exp or ngx.time()) - ngx.time()
+    if expire_time <= 0 then
+        ngx.status = 403
+        ngx.say(json_encode({ error = "token has expired" }))
+        return
+    end
+
+    local response = {
+        name = "projects/647037004838/secrets/apisix/versions/1",
+        payload = {
+          data = "c2VjcmV0",
+          dataCrc32c = "0xB03C4D4D"
+        }
+      }
+
+    ngx.status = 200
+    ngx.say(json_encode(response))
+end
+
 function _M.plugin_proxy_rewrite_resp_header()
     ngx.req.read_body()
     local s = "plugin_proxy_rewrite_resp_header"
