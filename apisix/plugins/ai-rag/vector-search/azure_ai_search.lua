@@ -28,7 +28,8 @@ _M.schema = {
         api_key = {
             type = "string",
         },
-    }
+    },
+    required = {"endpoint", "api_key"}
 }
 
 
