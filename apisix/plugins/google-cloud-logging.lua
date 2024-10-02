@@ -58,6 +58,15 @@ local schema = {
                         "https://www.googleapis.com/auth/cloud-platform"
                     }
                 },
+                scopes = {
+                    type = "array",
+                    items = {
+                        description = "Google OAuth2 Authorization Scopes",
+                        type = "string",
+                    },
+                    minItems = 1,
+                    uniqueItems = true
+                },
                 entries_uri = {
                     type = "string",
                     default = "https://logging.googleapis.com/v2/entries:write"
@@ -167,6 +176,8 @@ local function create_oauth_object(conf)
     if not auth_conf then
         return nil, err
     end
+
+    auth_conf.scope = auth_conf.scopes or auth_conf.scope  
 
     return google_oauth.new(auth_conf, conf.ssl_verify)
 end

@@ -42,7 +42,8 @@ description: API 网关 Apache APISIX 的 google-cloud-logging 插件可用于�
 | auth_config.project_id  | 是       |                                                  | 谷歌服务帐号的项目 ID。                                                                                                            |
 | auth_config.token_uri   | 是       | https://oauth2.googleapis.com/token              | 请求谷歌服务帐户的令牌的 URI。                                                                                                     |
 | auth_config.entries_uri | 否       | https://logging.googleapis.com/v2/entries:write  | 谷歌日志服务写入日志条目的 API。                                                                                                   |
-| auth_config.scope      | 否       |                                                  | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging)。可选项："https://www.googleapis.com/auth/logging.read"、"https://www.googleapis.com/auth/logging.write"、"https://www.googleapis.com/auth/logging.admin"、"https://www.googleapis.com/auth/cloud-platform"。|
+| auth_config.scope       | 否       |                                                  | 谷歌服务账号的访问范围，可参考 [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging)。可选项："https://www.googleapis.com/auth/logging.read"、"https://www.googleapis.com/auth/logging.write"、"https://www.googleapis.com/auth/logging.admin"、"https://www.googleapis.com/auth/cloud-platform"。|
+| auth_config.scopes      | 废弃     |                                                  | 谷歌服务账号的访问范围，推荐使用 `auth_config.scope`                                                                               |
 | auth_file               | 是       |                                                  | `auth_config` 和 `auth_file` 必须配置一个。                                                                 |
 | ssl_verify              | 否       | true                                             | 当设置为 `true` 时，启用 `SSL` 验证。                 |
 | resource                | 否       | {"type": "global"}                               | 谷歌监控资源，请参考 [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource)。             |
@@ -142,7 +143,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
                 "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
-                "scope":[
+                "scopes":[
                     "https://www.googleapis.com/auth/logging.admin"
                 ],
                 "entries_uri":"https://logging.googleapis.com/v2/entries:write"
