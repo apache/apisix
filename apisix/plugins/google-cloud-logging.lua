@@ -177,7 +177,7 @@ local function create_oauth_object(conf)
         return nil, err
     end
 
-    auth_conf.scope = auth_conf.scopes or auth_conf.scope  
+    auth_conf.scope = auth_conf.scopes or auth_conf.scope
 
     return google_oauth.new(auth_conf, conf.ssl_verify)
 end
