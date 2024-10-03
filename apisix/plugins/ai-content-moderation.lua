@@ -53,6 +53,7 @@ local schema = {
             properties = {
                 aws_comprehend = aws_comprehend_schema
             },
+            maxProperties = 1,
             -- ensure only one provider can be configured while implementing support for
             -- other providers
             required = { "aws_comprehend" }
@@ -94,6 +95,7 @@ local _M = {
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
+
 
 function _M.rewrite(conf, ctx)
     conf = fetch_secrets(conf, true, conf, "")
