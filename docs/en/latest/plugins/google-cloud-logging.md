@@ -142,7 +142,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X P
                 "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
-                "scopes":[
+                "scope":[
                     "https://www.googleapis.com/auth/logging.admin"
                 ],
                 "entries_uri":"https://logging.googleapis.com/v2/entries:write"
