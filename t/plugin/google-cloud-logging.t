@@ -44,7 +44,7 @@ __DATA__
                 resource = {
                     type = "global"
                 },
-                scopes = {
+                scope = {
                     "https://www.googleapis.com/auth/logging.admin"
                 },
                 log_id = "syslog",
@@ -82,7 +82,7 @@ passed
                 resource = {
                     type = "global"
                 },
-                scopes = {
+                scope = {
                     "https://www.googleapis.com/auth/logging.admin"
                 },
                 log_id = "syslog",
@@ -205,7 +205,7 @@ tBXLQH7fw5H8RaxBN91yQUZombw6JnRBXKKohWHZ3Q==
 -----END RSA PRIVATE KEY-----]],
                             project_id = "apisix",
                             token_uri = "http://127.0.0.1:1980/google/logging/token",
-                            scopes = {
+                            scope = {
                                 "https://apisix.apache.org/logs:admin"
                             },
                             entries_uri = "http://127.0.0.1:1980/google/logging/entries",
@@ -382,7 +382,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                             project_id = "apisix",
                             token_uri = "http://127.0.0.1:1980/google/logging/token",
-                            scopes = {
+                            scope = {
                                 "https://apisix.apache.org/logs:admin"
                             },
                             entries_uri = "http://127.0.0.1:1980/google/logging/entries",
@@ -465,7 +465,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                             project_id = "apisix",
                             token_uri = "http://127.0.0.1:1980/google/logging/token?token_type=Basic",
-                            scopes = {
+                            scope = {
                                 "https://apisix.apache.org/logs:admin"
                             },
                             entries_uri = "http://127.0.0.1:1980/google/logging/entries?token_type=Basic",
@@ -548,7 +548,7 @@ kEJQcmfVew5mFXyxuEn3zA==
 -----END PRIVATE KEY-----]],
                             project_id = "apisix",
                             token_uri = "http://127.0.0.1:1980/google/logging/token?token_type=Basic",
-                            scopes = {
+                            scope = {
                                 "https://apisix.apache.org/logs:admin"
                             },
                             entries_uri = "http://127.0.0.1:1980/google/logging/entries",

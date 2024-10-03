@@ -305,9 +305,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
-	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
 
