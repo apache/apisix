@@ -31,24 +31,22 @@ description: This document contains information about the Apache APISIX ai-rag P
 
 The `ai-rag` plugin integrates Retrieval-Augmented Generation (RAG) capabilities with AI models.
 It allows efficient retrieval of relevant documents or information from external data sources and
-augments the AI's responses with that data, improving the accuracy and context of generated outputs.
+augments the LLM responses with that data, improving the accuracy and context of generated outputs.
 
-**_This plugin must be used in routes that proxy requests to LLMs only._**
-
-**_As of now only Azure OpenAI and Azure AI Search services are supported for generating embeddings and performing vector search respectively, PRs for introducing support for other service providers are welcome._**
+**_As of now only [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services are supported for generating embeddings and performing vector search respectively. PRs for introducing support for other service providers are welcomed._**
 
 ## Plugin Attributes
 
 | **Field**                                       | **Required** | **Type** | **Description**                                                                                                                           |
 | ----------------------------------------------- | ------------ | -------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| embeddings_provider                             | Yes          | Object   | Configurations of the embedding models provider                                                                                           |
-| embeddings_provider.azure_openai                | Yes          | Object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider. |
-| embeddings_provider.azure_openai.endpoint       | Yes          | String   | Azure OpenAI endpoint                                                                                                                     |
-| embeddings_provider.azure_openai.api_key        | Yes          | String   | Azure OpenAI API key                                                                                                                      |
-| vector_search_provider                          | Yes          | Object   | Configuration for the vector search provider                                                                                              |
-| vector_search_provider.azure_ai_search          | Yes          | Object   | Configuration for Azure AI Search                                                                                                         |
-| vector_search_provider.azure_ai_search.endpoint | Yes          | String   | Azure AI Search endpoint                                                                                                                  |
-| vector_search_provider.azure_ai_search.api_key  | Yes          | String   | Azure AI Search API key                                                                                                                   |
+| embeddings_provider                             | Yes          | object   | Configurations of the embedding models provider                                                                                           |
+| embeddings_provider.azure_openai                | Yes          | object   | Configurations of [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) as the embedding models provider. |
+| embeddings_provider.azure_openai.endpoint       | Yes          | string   | Azure OpenAI endpoint                                                                                                                     |
+| embeddings_provider.azure_openai.api_key        | Yes          | string   | Azure OpenAI API key                                                                                                                      |
+| vector_search_provider                          | Yes          | object   | Configuration for the vector search provider                                                                                              |
+| vector_search_provider.azure_ai_search          | Yes          | object   | Configuration for Azure AI Search                                                                                                         |
+| vector_search_provider.azure_ai_search.endpoint | Yes          | string   | Azure AI Search endpoint                                                                                                                  |
+| vector_search_provider.azure_ai_search.api_key  | Yes          | string   | Azure AI Search API key                                                                                                                   |
 
 ## Request Body Format
 
@@ -122,21 +120,21 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "ai-rag": {
       "embeddings_provider": {
         "azure_openai": {
-          "endpoint": "'"$embeddings_endpoint"'",
-          "api_key": "'"$embeddings_key"'"
+          "endpoint": "'"$EMBEDDINGS_ENDPOINT"'",
+          "api_key": "'"$EMBEDDINGS_KEY"'"
         }
       },
       "vector_search_provider": {
         "azure_ai_search": {
-          "endpoint": "'"$vector_search_endpoint"'",
-          "api_key": "'"$search_key"'"
+          "endpoint": "'"$VECTOR_SEARCH_ENDPOINT"'",
+          "api_key": "'"$SEARCH_KEY"'"
         }
       }
     },
     "ai-proxy": {
       "auth": {
         "header": {
-          "api-key": "'"$azure_openai_key"'"
+          "api-key": "'"$AZURE_OPENAI_KEY"'"
         },
         "query": {
           "api-version": "2023-03-15-preview"
@@ -151,7 +149,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
         }
       },
       "override": {
-        "endpoint": "'"$azure_openai_endpoint"'"
+        "endpoint": "'"$AZURE_OPENAI_ENDPOINT"'"
       }
     }
   },
