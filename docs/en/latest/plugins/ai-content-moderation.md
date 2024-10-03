@@ -42,8 +42,8 @@ The `ai-content-moderation` plugin processes the request body to check for toxic
 | provider.aws_comprehend.secret_access_key | Yes          | String   | AWS secret access key                                                                                                                    |
 | provider.aws_comprehend.region            | Yes          | String   | AWS region                                                                                                                               |
 | provider.aws_comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                     |
-| moderation_categories                     | No           | Object   | Configuration for moderation categories. Must be one of: PROFANITY, HATE_SPEECH, INSULT, HARASSMENT_OR_ABUSE, SEXUAL, VIOLENCE_OR_THREAT |
-| toxicity_level                            | No           | Number   | Threshold for overall toxicity detection. Range: 0 - 1. Default: 0.5                                                                     |
+| moderation_categories                     | No           | Object   | Key-value pairs of moderation category and their score. In each pair, the key should be one of the `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the value should be between 0 and 1 (inclusive). |
+| toxicity_level                            | No           | Number   | The degree to which content is harmful, offensive, or inappropriate. A higher value indicates more toxic content allowed. Range: 0 - 1. Default: 0.5                                                                     |
 | llm_provider                              | Yes          | String   | Name of the LLM provider that this route will proxy requests to.                                                                         |
 
 ## Example usage
@@ -131,7 +131,7 @@ Server: APISIX/3.10.0
 request body exceeds PROFANITY threshold
 ```
 
-Send a request with normal request body:
+Send a request with compliant content in the request body:
 
 ```shell
 curl http://127.0.0.1:9080/post -i -XPOST  -H 'Content-Type: application/json' -d '{
