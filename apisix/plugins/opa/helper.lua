@@ -65,7 +65,7 @@ local function build_http_request(conf, ctx)
     if conf.with_body then
         http.body = get_body_for_request()
     end
-    
+
     return http
 end
 
