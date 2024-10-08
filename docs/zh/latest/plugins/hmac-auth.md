@@ -125,7 +125,7 @@ request_path = "/get"              # 路由 URI
 algorithm= "hmac-sha256"           # 可以在 allowed_algorithms 中使用其他算法
 
 # 获取当前的 GMT 日期时间
-# 注意：时钟偏差后签名将失效（默认300s）
+# 注意：时钟偏差后签名将失效（默认 300s）
 # 签名失效后可以重新生成，或者增加时钟
 # 倾斜以延长建议的安全边界内的有效性
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
@@ -301,7 +301,7 @@ algorithms= "hmac-sha256"       # 可以在 allowed_algorithms 中使用其他�
 body = '{"name": "world"}'      # 请求正文示例
 
 # 获取当前的 GMT 日期时间
-# 注意：时钟偏差（默认300s）后签名将失效。
+# 注意：时钟偏差（默认 300s）后签名将失效。
 # 签名失效后可以重新生成，或者增加时钟
 # 倾斜以延长建议的安全边界内的有效性
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
@@ -465,7 +465,7 @@ custom_header_a = "hello123"    # 必需的自定义标头
 custom_header_b = "world456"    # 必需的自定义标头
 
 # 获取当前的 GMT 日期时间
-# 注意：时钟偏差后签名将失效（默认300s）
+# 注意：时钟偏差后签名将失效（默认 300s）
 # 签名失效后可以重新生成，或者增加时钟
 # 倾斜以延长建议的安全边界内的有效性
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
