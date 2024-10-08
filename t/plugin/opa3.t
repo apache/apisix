@@ -66,15 +66,15 @@ __DATA__
         }
     }
 --- response_body
-passed
+200passed
 
-=== TEST 3: hit route (with empty request)
+=== TEST 2: hit route (with empty request)
 --- request
 POST /hello
 --- response_body
 200
 
-=== TEST 4: hit route (with json request)
+=== TEST 3: hit route (with json request)
 --- request
 POST /hello
 {
@@ -83,7 +83,7 @@ POST /hello
 --- response_body
 200 {"hello": "world"}
 
-=== TEST 5: hit route (with non-json request)
+=== TEST 4: hit route (with non-json request)
 --- request
 POST /hello
 hello world
