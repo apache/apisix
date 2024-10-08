@@ -83,7 +83,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-创建 `john` 的 `hmac-auth` 凭证:
+创建 `john` 的 `hmac-auth` 凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -266,7 +266,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-创建 `john` 的 `hmac-auth` 凭证:
+创建 `john` 的 `hmac-auth` 凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -439,7 +439,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-创建 `john` 的 `hmac-auth` 凭证:
+创建 `john` 的 `hmac-auth` 凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
