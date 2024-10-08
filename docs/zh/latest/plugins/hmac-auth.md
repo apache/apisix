@@ -202,6 +202,8 @@ curl -X GET "http://127.0.0.1:9080/get" \
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
+    "X-Consumer-Username": "john", 
+    "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "origin": "192.168.65.1, 34.0.34.160",
@@ -247,6 +249,8 @@ curl -X GET "http://127.0.0.1:9080/get" \
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
+    "X-Consumer-Username": "john", 
+    "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "origin": "192.168.65.1, 34.0.34.160",
@@ -377,6 +381,8 @@ curl "http://127.0.0.1:9080/post" -X POST \
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d978c3-49f929ad5237da5340bbbeb4",
+    "X-Consumer-Username": "john", 
+    "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "json": null,
@@ -516,6 +522,8 @@ curl -X GET "http://127.0.0.1:9080/get" \
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d98196-64a58db25ece71c077999ecd",
+    "X-Consumer-Username": "john", 
+    "X-Credential-Identifier": "cred-john-hmac-auth",
     "X-Custom-Header-A": "hello123",
     "X-Custom-Header-B": "world456",
     "X-Forwarded-Host": "127.0.0.1"
