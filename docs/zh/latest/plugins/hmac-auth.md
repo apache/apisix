@@ -207,7 +207,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
--H "X-API-KEY: ${ADMIN_API_KEY}" \
+-H "X-API-KEY: ${admin_key}" \
 -d '{
   "plugins": {
     "hmac-auth": {
@@ -250,7 +250,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "john",
     "plugins": {
@@ -266,7 +266,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "hmac-auth-route",
     "uri": "/post",
@@ -413,7 +413,7 @@ curl "http://127.0.0.1:9080/post" -X POST \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "john",
     "plugins": {
@@ -429,7 +429,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "hmac-auth-route",
     "uri": "/get",

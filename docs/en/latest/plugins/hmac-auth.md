@@ -207,7 +207,7 @@ Update the plugin configuration to set `hide_credentials` to `true`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
--H "X-API-KEY: ${ADMIN_API_KEY}" \
+-H "X-API-KEY: ${admin_key}" \
 -d '{
   "plugins": {
     "hmac-auth": {
@@ -250,7 +250,7 @@ Create a consumer with the `hmac-auth` plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "john",
     "plugins": {
@@ -266,7 +266,7 @@ Create a route with the `hmac-auth` plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "hmac-auth-route",
     "uri": "/post",
@@ -413,7 +413,7 @@ Create a consumer with the `hmac-auth` plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "username": "john",
     "plugins": {
@@ -429,7 +429,7 @@ Create a route with the `hmac-auth` plugin which requires three headers to be pr
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "hmac-auth-route",
     "uri": "/get",
