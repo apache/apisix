@@ -118,21 +118,21 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"                # key id
-secret_key = b"john-secret-key"    # secret key
-request_method = "GET"             # HTTP method
-request_path = "/get"              # route URI
-algorithm= "hmac-sha256"           # can use other algorithms in allowed_algorithms
+key_id = "john-key"                # 密钥 ID
+Secret_key = b"john-secret-key"    # 秘密密钥
+request_method = "GET"             # HTTP 方法
+request_path = "/get"              # 路由 URI
+algorithm= "hmac-sha256"           # 可以在 allowed_algorithms 中使用其他算法
 
-# get current datetime in GMT
-# note: the signature will become invalid after the clock skew (default 300s)
-# you can regenerate the signature after it becomes invalid, or increase the clock
-# skew to prolong the validity within the advised security boundary
+# 获取当前的 GMT 日期时间
+# 注意：时钟偏差后签名将失效（默认300s）
+# 签名失效后可以重新生成，或者增加时钟
+# 倾斜以延长建议的安全边界内的有效性
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-# construct the signing string (ordered)
-# the date and any subsequent custom headers should be lowercased and separated by a
-# single space character, i.e. `<key>:<space><value>`
+# 构造签名字符串（有序）
+# 日期和任何后续的自定义标头应小写并用
+# 单空格字符，即 `<key>:<space><value>`
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
   f"{key_id}\n"
@@ -140,11 +140,11 @@ signing_string = (
   f"date: {gmt_time}\n"
 )
 
-# create signature
+# 创建签名
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# construct the request headers
+# 构造请求头
 headers = {
   "Date": gmt_time,
   "Authorization": (
@@ -154,7 +154,7 @@ headers = {
   )
 }
 
-# print headers
+# 打印
 print(headers)
 ```
 
@@ -293,22 +293,22 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"                # key id
-secret_key = b"john-secret-key"    # secret key
-request_method = "POST"             # HTTP method
-request_path = "/post"              # route URI
-algorithm= "hmac-sha256"            # can use other algorithms in allowed_algorithms
-body = '{"name": "world"}'          # example request body
+key_id = "john-key"             # 密钥 ID
+Secret_key = b"john-secret-key" # 秘密密钥
+request_method = "POST"         # HTTP 方法
+request_path = "/post"          # 路由 URI
+algorithms= "hmac-sha256"       # 可以在 allowed_algorithms 中使用其他算法
+body = '{"name": "world"}'      # 请求正文示例
 
-# get current datetime in GMT
-# note: the signature will become invalid after the clock skew (default 300s).
-# you can regenerate the signature after it becomes invalid, or increase the clock
-# skew to prolong the validity within the advised security boundary
+# 获取当前的 GMT 日期时间
+# 注意：时钟偏差（默认300s）后签名将失效。
+# 签名失效后可以重新生成，或者增加时钟
+# 倾斜以延长建议的安全边界内的有效性
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-# construct the signing string (ordered)
-# the date and any subsequent custom headers should be lowercased and separated by a
-# single space character, i.e. `<key>:<space><value>`
+# 构造签名字符串（有序）
+# 日期和任何后续的自定义标头应小写并用
+# 单空格字符，即 `<key>:<space><value>`
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
     f"{key_id}\n"
@@ -316,15 +316,15 @@ signing_string = (
     f"date: {gmt_time}\n"
 )
 
-# create signature
+# 创建签名
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# create the SHA-256 digest of the request body and base64 encode it
+# 创建请求正文的 SHA-256 digest 并对其进行 Base64 编码
 body_digest = hashlib.sha256(body.encode('utf-8')).digest()
 body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
 
-# construct the request headers
+# 构造请求头
 headers = {
     "Date": gmt_time,
     "Digest": f"SHA-256={body_digest_base64}",
@@ -335,7 +335,7 @@ headers = {
     )
 }
 
-# print headers
+# 打印
 print(headers)
 ```
 
@@ -456,23 +456,23 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"                # key id
-secret_key = b"john-secret-key"    # secret key
-request_method = "GET"             # HTTP method
-request_path = "/get"              # route URI
-algorithm= "hmac-sha256"           # can use other algorithms in allowed_algorithms
-custom_header_a = "hello123"       # required custom header
-custom_header_b = "world456"       # required custom header
+key_id = "john-key"             # 密钥 ID
+Secret_key = b"john-secret-key" # 秘密密钥
+request_method = "GET"          # HTTP 方法
+request_path = "/get"           # 路由 URI
+algorithms= "hmac-sha256"       # 可以在 allowed_algorithms 中使用其他算法
+custom_header_a = "hello123"    # 必需的自定义标头
+custom_header_b = "world456"    # 必需的自定义标头
 
-# get current datetime in GMT
-# note: the signature will become invalid after the clock skew (default 300s)
-# you can regenerate the signature after it becomes invalid, or increase the clock
-# skew to prolong the validity within the advised security boundary
+# 获取当前的 GMT 日期时间
+# 注意：时钟偏差后签名将失效（默认300s）
+# 签名失效后可以重新生成，或者增加时钟
+# 倾斜以延长建议的安全边界内的有效性
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-# construct the signing string (ordered)
-# the date and any subsequent custom headers should be lowercased and separated by a
-# single space character, i.e. `<key>:<space><value>`
+# 构造签名字符串（有序）
+# 日期和任何后续的自定义标头应小写并用
+# 单空格字符，即 `<key>:<space><value>`
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
     f"{key_id}\n"
@@ -482,11 +482,11 @@ signing_string = (
     f"x-custom-header-b: {custom_header_b}\n"
 )
 
-# create signature
+# 创建签名
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# construct the request headers
+# 构造请求头
 headers = {
     "Date": gmt_time,
     "Authorization": (
@@ -498,7 +498,7 @@ headers = {
     "x-custom-header-b": custom_header_b
 }
 
-# print headers
+# 打印
 print(headers)
 ```
 
