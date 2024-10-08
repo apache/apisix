@@ -45,8 +45,31 @@ local function build_http_request(conf, ctx)
         headers = core.request.headers(ctx),
         query   = core.request.get_uri_args(ctx),
     }
+
+
+    if conf.with_body then
+        http.body = get_body()
+    end
+      
+    return http
 end
 
+local function get_body() 
+    local original_body, err = core.request.get_body()
+    if err ~= nil then
+        error("opa - failed to get request body: ", err)
+    end
+    if body = nil then 
+        return nil
+    end
+    -- decode to prevent double encoded json objects
+    body, err = core.json.decode(original_body)
+    if err ~nil then
+        -- if its not json, the body can just be added
+        body = original_body
+    end
+    return body
+end
 
 local function build_http_route(conf, ctx, remove_upstream)
     local route = core.table.deepcopy(ctx.matched_route).value
