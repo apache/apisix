@@ -51,6 +51,7 @@ local schema = {
         with_route = {type = "boolean", default = false},
         with_service = {type = "boolean", default = false},
         with_consumer = {type = "boolean", default = false},
+        with_body = {type = "boolean", default = false},
     },
     required = {"host", "policy"}
 }
