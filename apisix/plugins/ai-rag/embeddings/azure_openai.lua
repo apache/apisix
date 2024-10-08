@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_OK = ngx.HTTP_OK
 local type = type
 
 local _M = {}
@@ -52,7 +53,7 @@ function _M.get_embeddings(conf, body, httpc)
         return nil, HTTP_INTERNAL_SERVER_ERROR, err
     end
 
-    if res.status ~= 200 then
+    if res.status ~= HTTP_OK then
         return nil, res.status, res.body
     end
 

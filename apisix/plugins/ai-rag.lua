@@ -39,6 +39,7 @@ local schema = {
             -- ensure only one provider can be configured while implementing support for
             -- other providers
             required = { "azure_openai" },
+            maxProperties = 1,
         },
         vector_search_provider = {
             type = "object",
@@ -47,7 +48,8 @@ local schema = {
             },
             -- ensure only one provider can be configured while implementing support for
             -- other providers
-            required = { "azure_ai_search" }
+            required = { "azure_ai_search" },
+            maxProperties = 1
         },
     },
     required = { "embeddings_provider", "vector_search_provider" }
