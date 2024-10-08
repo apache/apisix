@@ -62,7 +62,6 @@ local function build_http_request(conf, ctx)
         query   = core.request.get_uri_args(ctx),
     }
 
-
     if conf.with_body then
         http.body = get_body_for_request()
     end
