@@ -73,13 +73,24 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example shows how to implement HMAC authentications on a route using the most minimal configurations.
 
-Create a consumer with the `hmac-auth` plugin as such:
+Create a consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john",
+    "username": "john"
+    }
+  }'
+```
+
+Create `hmac-auth` credential for `john`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
     "plugins": {
       "hmac-auth": {
         "key_id": "john-key",
@@ -246,13 +257,24 @@ You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` head
 
 The following example shows how to enable body validation to ensure the integrity of the request body.
 
-Create a consumer with the `hmac-auth` plugin as such:
+Create a consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john",
+    "username": "john"
+    }
+  }'
+```
+
+Create `hmac-auth` credential for `john`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
     "plugins": {
       "hmac-auth": {
         "key_id": "john-key",
@@ -409,13 +431,24 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following messag
 
 The following example shows how you can mandate certain headers to be signed in the request's HMAC signature.
 
-Create a consumer with the `hmac-auth` plugin as such:
+Create a consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john",
+    "username": "john"
+    }
+  }'
+```
+
+Create `hmac-auth` credential for `john`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
     "plugins": {
       "hmac-auth": {
         "key_id": "john-key",

@@ -71,15 +71,25 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### 在路由上实现 HMAC 身份验证
 
-以下示例展示了如何使用最少的配置在路由上实现 HMAC 身份验证。
+以下示例展示了如何在路由上实现 HMAC 身份验证。
 
-使用 `hmac-auth` 插件创建一个消费者，如下所示：
+创建一个消费者 `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john",
+    "username": "john"
+  }'
+```
+
+创建 `john` 的 `hmac-auth` 凭证:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
     "plugins": {
       "hmac-auth": {
         "key_id": "john-key",
@@ -246,13 +256,23 @@ curl -X GET "http://127.0.0.1:9080/get" \
 
 以下示例显示如何启用主体验证以确保请求主体的完整性。
 
-使用 `hmac-auth` 插件创建一个消费者，如下所示：
+创建一个消费者 `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john",
+    "username": "john"
+  }'
+```
+
+创建 `john` 的 `hmac-auth` 凭证:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
     "plugins": {
       "hmac-auth": {
         "key_id": "john-key",
@@ -409,13 +429,23 @@ curl "http://127.0.0.1:9080/post" -X POST \
 
 以下示例展示了如何强制在请求的 HMAC 签名中对某些标头进行签名。
 
-使用 `hmac-auth` 插件创建一个消费者，如下所示：
+创建一个消费者 `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john",
+    "username": "john"
+  }'
+```
+
+创建 `john` 的 `hmac-auth` 凭证:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
     "plugins": {
       "hmac-auth": {
         "key_id": "john-key",
