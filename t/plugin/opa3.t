@@ -39,13 +39,13 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{    
+                ngx.HTTP_PUT,
+                [[{    
                         "methods": ["POST"],
                         "plugins": {
                             "opa": {
                                 "host": "http://127.0.0.1:8181",
-                                "policy": "example",
+                                "policy": "with_body",
                                 "with_body": true
                             }
                         },
@@ -62,17 +62,17 @@ __DATA__
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.say(code..body)
+            ngx.say(body)
         }
     }
 --- response_body
-200passed
+passed
 
 === TEST 2: hit route (with empty request)
 --- request
 POST /hello
 --- response_body
-200
+hello world
 
 === TEST 3: hit route (with json request)
 --- request
@@ -81,11 +81,11 @@ POST /hello
     "hello": "world"
 }
 --- response_body
-200 {"hello": "world"}
+hello world
 
 === TEST 4: hit route (with non-json request)
 --- request
 POST /hello
 hello world
 --- response_body
-200 hello world
+hello world
