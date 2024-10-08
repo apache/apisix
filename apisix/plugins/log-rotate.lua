@@ -322,7 +322,8 @@ function _M.init()
     if not local_conf then
         local_conf = core.config.local_conf()
     end
-    enable_access_log = core.table.try_read_attr(local_conf, "nginx_config", "http", "enable_access_log")
+    enable_access_log = core.table.try_read_attr(
+        local_conf, "nginx_config", "http", "enable_access_log")
     timers.register_timer("plugin#log-rotate", rotate, true)
 end
 
