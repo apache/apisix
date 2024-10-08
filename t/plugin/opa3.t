@@ -40,7 +40,7 @@ __DATA__
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
-                [[{   
+                [[{  
                         "methods": ["POST"],
                         "plugins": {
                             "opa": {
