@@ -185,13 +185,13 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
   "args": {},
   "headers": {
     "Accept": "*/*",
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM=\"", 
+    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM=\"",
     "Date": "Fri, 06 Sep 2024 06:41:29 GMT",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
     "X-Forwarded-Host": "127.0.0.1"
-  }, 
+  },
   "origin": "192.168.65.1, 34.0.34.160",
   "url": "http://127.0.0.1/get"
 }
