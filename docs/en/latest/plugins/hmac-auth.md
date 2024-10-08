@@ -38,14 +38,14 @@ The plugin implementation is based on [draft-cavage-http-signatures](https://www
 
 ## Attributes
 
-The following attribtues are available for configurations on Consumers or Credentials.
+The following attributes are available for configurations on Consumers or Credentials.
 
 | Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
 |-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | key_id            | string        | True     |               |                                             | Unique identifier for the consumer, which identifies the associated configurations such as the secret key.                                                                                              |
 | secret_key            | string        | True     |               |                                             | Secret key used to generate an HMAC. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                             |
 
-The following attribtues are available for configurations on Routes or Services.
+The following attributes are available for configurations on Routes or Services.
 
 | Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
 |-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -217,7 +217,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
 }'
 ```
 
-Send a request with the route:
+Send a request to the route:
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
