@@ -182,17 +182,17 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
+    "Accept": "*/*",
     "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM=\"", 
-    "Date": "Fri, 06 Sep 2024 06:41:29 GMT", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea", 
+    "Date": "Fri, 06 Sep 2024 06:41:29 GMT",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
     "X-Forwarded-Host": "127.0.0.1"
   }, 
-  "origin": "192.168.65.1, 34.0.34.160", 
+  "origin": "192.168.65.1, 34.0.34.160",
   "url": "http://127.0.0.1/get"
 }
 ```
@@ -229,15 +229,15 @@ You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` head
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea", 
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
     "X-Forwarded-Host": "127.0.0.1"
-  }, 
-  "origin": "192.168.65.1, 34.0.34.160", 
+  },
+  "origin": "192.168.65.1, 34.0.34.160",
   "url": "http://127.0.0.1/get"
 }
 ```
@@ -365,26 +365,26 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
   "form": {
     "{\"name\": \"world\"}": ""
-  }, 
+  },
   "headers": {
-    "Accept": "*/*", 
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE=\"", 
-    "Content-Length": "17", 
-    "Content-Type": "application/x-www-form-urlencoded", 
-    "Date": "Fri, 06 Sep 2024 09:16:16 GMT", 
-    "Digest": "SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-66d978c3-49f929ad5237da5340bbbeb4", 
+    "Accept": "*/*",
+    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date\",signature=\"rjS6NxOBKmzS8CZL05uLiAfE16hXdIpMD/L/HukOTYE=\"",
+    "Content-Length": "17",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Date": "Fri, 06 Sep 2024 09:16:16 GMT",
+    "Digest": "SHA-256=78qzJuLwSpZ8HacsTdFCQJWxzPMOf8bYctRk2ySLpS8=",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66d978c3-49f929ad5237da5340bbbeb4",
     "X-Forwarded-Host": "127.0.0.1"
-  }, 
-  "json": null, 
-  "origin": "192.168.65.1, 34.0.34.160", 
+  },
+  "json": null,
+  "origin": "192.168.65.1, 34.0.34.160",
   "url": "http://127.0.0.1/post"
 }
 ```
@@ -528,19 +528,19 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"MwJR8JOhhRLIyaHlJ3Snbrf5hv0XwdeeRiijvX3A3yE=\"", 
-    "Date": "Fri, 06 Sep 2024 09:58:49 GMT", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-66d98196-64a58db25ece71c077999ecd", 
-    "X-Custom-Header-A": "hello123", 
-    "X-Custom-Header-B": "world456", 
+    "Accept": "*/*",
+    "Authorization": "Signature keyId=\"john-key\",algorithm=\"hmac-sha256\",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"MwJR8JOhhRLIyaHlJ3Snbrf5hv0XwdeeRiijvX3A3yE=\"",
+    "Date": "Fri, 06 Sep 2024 09:58:49 GMT",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66d98196-64a58db25ece71c077999ecd",
+    "X-Custom-Header-A": "hello123",
+    "X-Custom-Header-B": "world456",
     "X-Forwarded-Host": "127.0.0.1"
-  }, 
-  "origin": "192.168.65.1, 103.97.2.206", 
+  },
+  "origin": "192.168.65.1, 103.97.2.206",
   "url": "http://127.0.0.1/get"
 }
 ```
