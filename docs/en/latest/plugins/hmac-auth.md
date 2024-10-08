@@ -528,7 +528,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ## Delete Plugin
 
-To remove the `hmac-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+To remove the `hmac-auth` Plugin on the Route, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
