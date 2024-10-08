@@ -34,13 +34,12 @@ local function build_var(conf, ctx)
     }
 end
 
-
-local function get_body_for_request() 
+local function get_body_for_request()
     local original_body, err = core.request.get_body()
     if err ~= nil then
         error("opa - failed to get request body: ", err)
     end
-    if body == nil then 
+    if body == nil then
         return nil
     end
     -- decode to prevent double encoded json objects
@@ -67,7 +66,7 @@ local function build_http_request(conf, ctx)
     if conf.with_body then
         http.body = get_body_for_request()
     end
-      
+    
     return http
 end
 
