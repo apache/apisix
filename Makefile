@@ -37,7 +37,7 @@ ENV_TAR                ?= tar
 ENV_INSTALL            ?= install
 ENV_RM                 ?= rm -vf
 ENV_DOCKER             ?= docker
-ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
+ENV_DOCKER_COMPOSE     ?= docker compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
@@ -305,9 +305,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
-	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
 
@@ -373,6 +370,12 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/utils
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
+	$(ENV_INSTALL) apisix/plugins/ai-proxy/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy/drivers
+	$(ENV_INSTALL) apisix/plugins/ai-proxy/drivers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy/drivers
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 

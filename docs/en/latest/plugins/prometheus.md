@@ -96,9 +96,9 @@ plugin_attr:
       - 505
 ```
 
-## API
+## Metrics endpoint
 
-This Plugin will add the API endpoint `/apisix/prometheus/metrics` or your custom export URI for exposing the metrics.
+This Plugin will add the metrics endpoint `/apisix/prometheus/metrics` or your custom export URI for exposing the metrics.
 
 These metrics are exposed by a separate Prometheus server address. By default, the address is `127.0.0.1:9091`. You can change it in your configuration file (`conf/config.yaml`):
 

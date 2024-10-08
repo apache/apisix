@@ -21,6 +21,7 @@
 
 local lfs = require("lfs")
 local log = require("apisix.core.log")
+local json = require("apisix.core.json")
 local io = require("apisix.core.io")
 local req_add_header
 if ngx.config.subsystem == "http" then
@@ -331,6 +332,21 @@ function _M.get_body(max_size, ctx)
 
     local req_body, err = io.get_file(file_name)
     return req_body, err
+end
+
+
+function _M.get_json_request_body_table()
+    local body, err = _M.get_body()
+    if not body then
+        return nil, { message = "could not get body: " .. (err or "request body is empty") }
+    end
+
+    local body_tab, err = json.decode(body)
+    if not body_tab then
+        return nil, { message = "could not get parse JSON request body: " .. err }
+    end
+
+    return body_tab
 end
 
 

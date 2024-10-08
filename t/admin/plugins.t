@@ -88,11 +88,14 @@ jwt-auth
 jwe-decrypt
 key-auth
 consumer-restriction
+attach-consumer-label
 forward-auth
 opa
 authz-keycloak
 proxy-cache
 body-transformer
+ai-prompt-template
+ai-prompt-decorator
 proxy-mirror
 proxy-rewrite
 workflow
@@ -100,6 +103,7 @@ api-breaker
 limit-conn
 limit-count
 limit-req
+ai-proxy
 gzip
 server-info
 traffic-split

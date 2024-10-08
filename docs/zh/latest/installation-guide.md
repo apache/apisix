@@ -265,7 +265,7 @@ brew services start etcd
 
 ### 配置 APISIX
 
-通过修改本地 `./conf/config.yaml` 文件，或者在启动 APISIX 时使用 `-c` 或 `--config` 添加文件路径参数 `apisix start -c <path string>`，完成对 APISIX 服务本身的基本配置。
+通过修改本地 `./conf/config.yaml` 文件，或者在启动 APISIX 时使用 `-c` 或 `--config` 添加文件路径参数 `apisix start -c <path string>`，完成对 APISIX 服务本身的基本配置。默认配置不应修改，可以在 `apisix/cli/config.lua` 中找到。
 
 比如将 APISIX 默认监听端口修改为 8000，其他配置保持默认，在 `./conf/config.yaml` 中只需这样配置：
 
@@ -288,11 +288,6 @@ deployment:
     host:
       - "http://foo:2379"
 ```
-
-:::warning
-
-APISIX 的默认配置可以在 `./conf/config-default.yaml` 文件中看到，该文件与 APISIX 源码强绑定，请不要手动修改 `./conf/config-default.yaml` 文件。如果需要自定义任何配置，都应在 `./conf/config.yaml` 文件中完成。
-:::
 
 :::warning
 

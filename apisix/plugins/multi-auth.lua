@@ -50,7 +50,7 @@ function _M.check_schema(conf)
             local auth = require("apisix.plugins." .. auth_plugin_name)
             if auth == nil then
                 return false, auth_plugin_name .. " plugin did not found"
-                else
+            else
                 if auth.type ~= 'auth' then
                     return false, auth_plugin_name .. " plugin is not supported"
                 end

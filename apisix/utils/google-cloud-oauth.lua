@@ -36,7 +36,7 @@ end
 local _M = {}
 
 
-function _M:generate_access_token()
+function _M.generate_access_token(self)
     if not self.access_token or get_timestamp() > self.access_token_expire_time - 60 then
         self:refresh_access_token()
     end
@@ -44,7 +44,7 @@ function _M:generate_access_token()
 end
 
 
-function _M:refresh_access_token()
+function _M.refresh_access_token(self)
     local http_new = http.new()
     local res, err = http_new:request_uri(self.token_uri, {
         ssl_verify = self.ssl_verify,
@@ -80,7 +80,7 @@ function _M:refresh_access_token()
 end
 
 
-function _M:generate_jwt_token()
+function _M.generate_jwt_token(self)
     local payload = core.json.encode({
         iss = self.client_email,
         aud = self.token_uri,
@@ -98,14 +98,14 @@ function _M:generate_jwt_token()
 end
 
 
-function _M:new(config, ssl_verify)
+function _M.new(config, ssl_verify)
     local oauth = {
         client_email = config.client_email,
         private_key = config.private_key,
         project_id = config.project_id,
         token_uri = config.token_uri or "https://oauth2.googleapis.com/token",
         auth_uri = config.auth_uri or "https://accounts.google.com/o/oauth2/auth",
-        entries_uri = config.entries_uri or "https://logging.googleapis.com/v2/entries:write",
+        entries_uri = config.entries_uri,
         access_token = nil,
         access_token_type = nil,
         access_token_expire_time = 0,
@@ -113,24 +113,17 @@ function _M:new(config, ssl_verify)
 
     oauth.ssl_verify = ssl_verify
 
-    if config.scopes then
-        if type(config.scopes) == "string" then
-            oauth.scope = config.scopes
+    if config.scope then
+        if type(config.scope) == "string" then
+            oauth.scope = config.scope
         end
 
-        if type(config.scopes) == "table" then
-            oauth.scope = core.table.concat(config.scopes, " ")
+        if type(config.scope) == "table" then
+            oauth.scope = core.table.concat(config.scope, " ")
         end
-    else
-        -- https://developers.google.com/identity/protocols/oauth2/scopes#logging
-        oauth.scope = core.table.concat({ "https://www.googleapis.com/auth/logging.read",
-                                          "https://www.googleapis.com/auth/logging.write",
-                                          "https://www.googleapis.com/auth/logging.admin",
-                                          "https://www.googleapis.com/auth/cloud-platform" }, " ")
     end
 
-    setmetatable(oauth, { __index = self })
-    return oauth
+    return setmetatable(oauth, { __index = _M })
 end
 
 

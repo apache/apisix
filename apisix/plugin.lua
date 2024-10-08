@@ -934,7 +934,10 @@ local function get_plugin_schema_for_gde(name, schema_type)
 
     local schema
     if schema_type == core.schema.TYPE_CONSUMER then
-        schema = plugin_schema.consumer_schema
+        -- when we use a non-auth plugin in the consumer,
+        -- where the consumer_schema field does not exist,
+        -- we need to fallback to it's schema for encryption and decryption.
+        schema = plugin_schema.consumer_schema or plugin_schema.schema
     elseif schema_type == core.schema.TYPE_METADATA then
         schema = plugin_schema.metadata_schema
     else
@@ -1041,7 +1044,7 @@ check_plugin_metadata = function(item)
     local ok, err = check_single_plugin_schema(item.id, item,
                                                core.schema.TYPE_METADATA, true)
     if ok and enable_gde() then
-        decrypt_conf(item.name, item, core.schema.TYPE_METADATA)
+        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
     return ok, err

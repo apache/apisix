@@ -252,7 +252,7 @@ nginx_config:                     # Config for render the template to generate n
       internal-status: 10m
       plugin-limit-req: 10m
       plugin-limit-count: 10m
-      prometheus-metrics: 10m
+      prometheus-metrics: 10m     # In production, less than 50m is recommended
       plugin-limit-conn: 10m
       upstream-healthcheck: 10m
       worker-events: 10m
@@ -470,12 +470,15 @@ plugins:                           # plugin list (sorted by priority)
   - jwe-decrypt                    # priority: 2509
   - key-auth                       # priority: 2500
   - consumer-restriction           # priority: 2400
+  - attach-consumer-label          # priority: 2399
   - forward-auth                   # priority: 2002
   - opa                            # priority: 2001
   - authz-keycloak                 # priority: 2000
   #- error-log-logger              # priority: 1091
   - proxy-cache                    # priority: 1085
   - body-transformer               # priority: 1080
+  - ai-prompt-template             # priority: 1071
+  - ai-prompt-decorator            # priority: 1070
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
@@ -484,6 +487,7 @@ plugins:                           # plugin list (sorted by priority)
   - limit-count                    # priority: 1002
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
+  - ai-proxy                       # priority: 999
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
   - server-info                    # priority: 990
