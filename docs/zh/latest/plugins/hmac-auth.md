@@ -69,9 +69,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-### 在路由上实现 HMAC 身份验证
-
-以下示例展示了如何在路由上实现 HMAC 身份验证。
+在继续之前，创建一个示例使用者并配置其凭据，该配置将用于下面的所有示例。
 
 创建一个消费者 `john`:
 
@@ -98,6 +96,10 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
     }
   }'
 ```
+
+### 在路由上实现 HMAC 身份验证
+
+以下示例展示了如何在路由上实现 HMAC 身份验证。
 
 使用 `hmac-auth` 插件的默认配置创建路由：
 
@@ -209,7 +211,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
 
 ### 向上游隐藏授权信息
 
-如 [最后一个示例](#implement-hmac-authentication-on-a-route) 所示，传递给上游的 `Authorization` 标头包含签名和所有其他详细信息。这可能会带来安全风险。
+如 [上一个示例](#implement-hmac-authentication-on-a-route) 所示，传递给上游的 `Authorization` 标头包含签名和所有其他详细信息。这可能会带来安全风险。
 
 以下示例展示了如何防止这些信息被发送到上游服务。
 
@@ -255,32 +257,6 @@ curl -X GET "http://127.0.0.1:9080/get" \
 ### 启用主体验证
 
 以下示例显示如何启用主体验证以确保请求主体的完整性。
-
-创建一个消费者 `john`:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "username": "john"
-  }'
-```
-
-创建 `john` 的 `hmac-auth` 凭证：
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "cred-john-hmac-auth",
-    "plugins": {
-      "hmac-auth": {
-        "key_id": "john-key",
-        "secret_key": "john-secret-key"
-      }
-    }
-  }'
-```
 
 使用 `hmac-auth` 插件创建路由，如下所示：
 
@@ -428,32 +404,6 @@ curl "http://127.0.0.1:9080/post" -X POST \
 ### 强制签名标头
 
 以下示例展示了如何强制在请求的 HMAC 签名中对某些标头进行签名。
-
-创建一个消费者 `john`:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "username": "john"
-  }'
-```
-
-创建 `john` 的 `hmac-auth` 凭证：
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
-  -d '{
-    "id": "cred-john-hmac-auth",
-    "plugins": {
-      "hmac-auth": {
-        "key_id": "john-key",
-        "secret_key": "john-secret-key"
-      }
-    }
-  }'
-```
 
 使用 `hmac-auth` 插件创建路由，该路由要求 HMAC 签名中存在三个标头：
 
