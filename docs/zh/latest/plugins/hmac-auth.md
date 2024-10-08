@@ -166,7 +166,7 @@ headers = {
   )
 }
 
-# 打印
+# 打印请求头
 print(headers)
 ```
 
@@ -331,7 +331,7 @@ headers = {
     )
 }
 
-# 打印
+# 打印请求头
 print(headers)
 ```
 
@@ -478,7 +478,7 @@ headers = {
     "x-custom-header-b": custom_header_b
 }
 
-# 打印
+# 打印请求头
 print(headers)
 ```
 
