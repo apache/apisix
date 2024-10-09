@@ -119,7 +119,6 @@ function _M.rewrite(conf, ctx)
 
     local provider = conf.provider[next(conf.provider)]
 
-    -- TODO support secret
     local credentials = aws_instance:Credentials({
         accessKeyId = provider.access_key_id,
         secretAccessKey = provider.secret_access_key,
