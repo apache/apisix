@@ -39,11 +39,11 @@ local function get_body_for_request()
     if err ~= nil then
         error("opa - failed to get request body: ", err)
     end
-    if body == nil then
+    if original_body == nil then
         return nil
     end
     -- decode to prevent double encoded json objects
-    body, err = core.json.decode(original_body)
+    local body, err = core.json.decode(original_body)
     if err ~= nil then
         -- if its not json, the body can just be added
         body = original_body
