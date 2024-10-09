@@ -73,7 +73,7 @@ local schema = {
             },
             additionalProperties = false
         },
-        toxicity_level = {
+        moderation_threshold = {
             type = "number",
             minimum = 0,
             maximum = 1,
@@ -170,7 +170,7 @@ function _M.rewrite(conf, ctx)
             end
         end
 
-        if result.Toxicity > conf.toxicity_level then
+        if result.Toxicity > conf.moderation_threshold then
             return HTTP_BAD_REQUEST, "request body exceeds toxicity threshold"
         end
     end

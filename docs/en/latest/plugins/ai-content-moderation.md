@@ -44,7 +44,7 @@ The `ai-content-moderation` plugin processes the request body to check for toxic
 | provider.aws_comprehend.region            | Yes          | String   | AWS region                                                                                                                                                                                                                                              |
 | provider.aws_comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                                                                                                                                    |
 | moderation_categories                     | No           | Object   | Key-value pairs of moderation category and their score. In each pair, the key should be one of the `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the value should be between 0 and 1 (inclusive). |
-| toxicity_level                            | No           | Number   | The degree to which content is harmful, offensive, or inappropriate. A higher value indicates more toxic content allowed. Range: 0 - 1. Default: 0.5                                                                                                    |
+| moderation_threshold                            | No           | Number   | The degree to which content is harmful, offensive, or inappropriate. A higher value indicates more toxic content allowed. Range: 0 - 1. Default: 0.5                                                                                                    |
 | llm_provider                              | Yes          | String   | Name of the LLM provider that this route will proxy requests to.                                                                                                                                                                                        |
 
 ## Example usage
@@ -208,7 +208,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
 ```
 
 If none of the `moderation_categories` are configured, request bodies will be moderated on the basis of overall toxicity.
-The default `toxicity_level` is 0.5, it can be configured like so.
+The default `moderation_threshold` is 0.5, it can be configured like so.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -224,7 +224,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
           "region": "us-east-1"
         }
       },
-      "toxicity_level": 0.7,
+      "moderation_threshold": 0.7,
       "llm_provider": "openai"
     },
     "ai-proxy": {
