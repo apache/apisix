@@ -181,7 +181,7 @@ You will receive a response like this:
       "finish_reason": "length",
       "index": 0,
       "message": {
-        "content": "Here are the details for some of the services you inquired about from your Azure search context:\n\n### 1. Azure DevOps\n* ... <rest of the response>",
+        "content": "Here are the details for some of the services you inquired about from your Azure search context:\n\n ... <rest of the response>",
         "role": "assistant"
       }
     }
