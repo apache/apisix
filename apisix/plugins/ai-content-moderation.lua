@@ -39,6 +39,10 @@ local aws_comprehend_schema = {
             type = "string",
             pattern = [[^https?://]]
         },
+        ssl_verify = {
+            type = "boolean",
+            default = true
+        }
     },
     required = { "access_key_id", "secret_access_key", "region", }
 }
@@ -126,7 +130,7 @@ function _M.rewrite(conf, ctx)
     local scheme, host, port = unpack(http:parse_uri(provider.endpoint or default_endpoint))
     local endpoint = scheme .. "://" .. host
     aws_instance.config.endpoint = endpoint
-    aws_instance.config.ssl_verify = false
+    aws_instance.config.ssl_verify = provider.ssl_verify
 
     local comprehend = aws_instance:Comprehend({
         credentials = credentials,
