@@ -479,6 +479,7 @@ plugins:                           # plugin list (sorted by priority)
   - body-transformer               # priority: 1080
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
+  - ai-content-moderation          # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006

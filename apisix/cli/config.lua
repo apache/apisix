@@ -216,6 +216,7 @@ local _M = {
     "body-transformer",
     "ai-prompt-template",
     "ai-prompt-decorator",
+    "ai-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
