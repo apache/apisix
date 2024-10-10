@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.11.0](#3110)
 - [3.10.0](#3100)
 - [3.9.0](#390)
 - [3.8.0](#380)
@@ -76,6 +77,33 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.11.0
+
+### Change
+
+- remove JWT signing endpoint and no longer require a private key to be uploaded in the jwt-auth plugin. [#11597](https://github.com/apache/apisix/pull/11597)
+- rewrite hmac-auth plugin for usability [#11581](https://github.com/apache/apisix/pull/11581)
+
+### Plugins
+
+- allow configuring keepalive_timeout in splunk-logger [#11611](https://github.com/apache/apisix/pull/11611)
+- add plugin attach-consmer-label [#11604](https://github.com/apache/apisix/pull/11604)
+- ai-proxy plugin [#11499](https://github.com/apache/apisix/pull/11499)
+- ai-prompt-decorator plugin [#11515](https://github.com/apache/apisix/pull/11515)
+- ai-prompt-template plugin [#11517](https://github.com/apache/apisix/pull/11517)
+
+### Bugfixes
+
+- Fix: adjust the position of enums in pb_option_def [#11448](https://github.com/apache/apisix/pull/11448)
+- Fix: encryption/decryption for non-auth plugins in consumer [#11600](https://github.com/apache/apisix/pull/11600)
+- Fix: confusion when substituting ENV in config file [#11545](https://github.com/apache/apisix/pull/11545)
+
+### Core
+
+- support gcp secret manager [#11436](https://github.com/apache/apisix/pull/11436)
+- support aws secret manager [#11417](https://github.com/apache/apisix/pull/11417)
+- add credential resource and include `X-Consumer-Username`, `X-Credential-Identifier`, and `X-Consumer-Custom-ID` headers in requests to upstream services [#11601](https://github.com/apache/apisix/pull/11601)
 
 ## 3.10.0
 
