@@ -421,7 +421,7 @@ location /t {
 
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -474,7 +474,7 @@ location /t {
         headers["Host"]                 = "examplebucket.s3.amazonaws.com"
         headers["x-amz-date"]           = amzdate
         headers["x-amz-content-sha256"] = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-       
+
 
         local signature = utils.generate_signature(
             method,
@@ -505,7 +505,7 @@ location /t {
 
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -588,7 +588,7 @@ location /t {
 
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -666,7 +666,7 @@ location /t {
 
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -749,7 +749,7 @@ location /t {
 
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -833,7 +833,7 @@ location /t {
 
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,

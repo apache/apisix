@@ -346,10 +346,10 @@ location /t {
         if #query_string_list > 0 then
             query_string_str = "?" .. table.concat(query_string_list, "&")
         end
-        
+
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -431,10 +431,10 @@ location /t {
         if #query_string_list > 0 then
             query_string_str = "?" .. table.concat(query_string_list, "&")
         end
-        
+
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -516,10 +516,10 @@ location /t {
         if #query_string_list > 0 then
             query_string_str = "?" .. table.concat(query_string_list, "&")
         end
-        
+
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -596,10 +596,10 @@ location /t {
         if #query_string_list > 0 then
             query_string_str = "?" .. table.concat(query_string_list, "&")
         end
-        
+
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -681,10 +681,10 @@ location /t {
         if #query_string_list > 0 then
             query_string_str = "?" .. table.concat(query_string_list, "&")
         end
-        
+
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
@@ -766,10 +766,10 @@ location /t {
         if #query_string_list > 0 then
             query_string_str = "?" .. table.concat(query_string_list, "&")
         end
-        
+
         local httpc = http.new()
         local uri = ngx.var.scheme .. "://" .. ngx.var.server_addr
-          .. ":" .. ngx.var.server_port .. path
+        .. ":" .. ngx.var.server_port .. path
         local res, err = httpc:request_uri(uri,
             {
                 method = method,
