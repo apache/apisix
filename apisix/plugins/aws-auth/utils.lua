@@ -28,6 +28,10 @@ local ngx_escape_uri = ngx.escape_uri
 local ngx_re_match   = ngx.re.match
 local ngx_re_gmatch  = ngx.re.gmatch
 local str_strip      = require("pl.stringx").strip
+local assert         = assert
+local error          = error
+local tonumber       = tonumber
+local os             = os
 
 local ALGO           = "AWS4-HMAC-SHA256"
 

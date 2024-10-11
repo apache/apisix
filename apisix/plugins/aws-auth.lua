@@ -27,6 +27,9 @@ local core_schema          = require("apisix.core.schema")
 local consumer             = require("apisix.consumer")
 local pairs                = pairs
 local ipairs               = ipairs
+local tonumber             = tonumber
+local assert               = assert
+local error                = error
 
 local utils                = require("apisix.plugins.aws-auth.utils")
 
