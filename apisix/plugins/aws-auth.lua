@@ -99,15 +99,13 @@ local schema = {
         },
         enable_header_method       = {
             type    = "boolean",
-            title   =
-                "Enable [HTTP authorization header](https://docs.aws.amazon.com/IAM/latest/UserGuide/aws-signing-authentication-methods.html#aws-signing-authentication-methods-http) method. "
+            title   = "Enable HTTP authorization header method. "
                 .. "The default is true.",
             default = true,
         },
         enable_query_string_method = {
             type    = "boolean",
-            title   =
-                "Enable [Query string parameters](https://docs.aws.amazon.com/IAM/latest/UserGuide/aws-signing-authentication-methods.html#aws-signing-authentication-methods-query) method. "
+            title   = "Enable Query string parameters method. "
                 .. "The default is true.",
             default = true,
         },
@@ -268,8 +266,15 @@ local function get_params(ctx, conf)
         if #auth_header_str == 0 then
             return nil, "Authorization header cannot be empty: '" .. auth_header_str .. "'"
         end
+        local signed_headers_regexp = "SignedHeaders=([\\w;\\-]+)"
+        local credential_regexp = "Credential=([\\w\\-\\/]+)"
+        local signature_regexp = "Signature=([\\w\\d]+)"
+        local regexps = signed_headers_regexp .. "|"
+            .. credential_regexp .. "|"
+            .. signature_regexp
         local auth_data = ngx_re_match(auth_header_str,
-            [[([\w\-]+) (?:(?:Credential=([\w\-\/]+)|SignedHeaders=([\w;\-]+)|Signature=([\w\d]+))[, ]*)+]], "oj")
+            "([\\w\\-]+) (?:(?:" .. regexps .. ")[, ]*)+",
+            "oj")
         if (not auth_data) or #auth_data ~= 4 then
             return nil, "Bad Authorization Header"
         end
@@ -380,14 +385,18 @@ local function validate(conf, params)
     end
 
     if conf.region and #conf.region > 0 then
-        if (not params.credential.region) or params.credential.region ~= conf.region then
-            return nil, "Credential should be scoped to a valid Region, not '" .. params.credential.region .. "'"
+        if (not params.credential.region)
+            or params.credential.region ~= conf.region then
+            return nil, "Credential should be scoped to a valid Region, not '"
+                .. params.credential.region .. "'"
         end
     end
 
     if conf.service and #conf.service > 0 then
-        if (not params.credential.service) or params.credential.service ~= conf.service then
-            return nil, "Credential should be scoped to correct service: '" .. params.credential.service .. "'"
+        if (not params.credential.service)
+            or params.credential.service ~= conf.service then
+            return nil, "Credential should be scoped to correct service: '"
+                .. params.credential.service .. "'"
         end
     end
 
@@ -415,14 +424,17 @@ local function validate(conf, params)
     core.log.info("conf.clock_skew: ", conf.clock_skew)
     if (conf.clock_skew and conf.clock_skew > 0) then
         if params.date:sub(1, 8) ~= params.credential.date then
-            return nil, "Date in Credential scope does not match YYYYMMDD from ISO-8601 version of date from HTTP"
+            return nil, "Date in Credential scope does not match YYYYMMDD "
+                .. "from ISO-8601 version of date from HTTP"
         end
 
         core.log.info("Clock skew: ", skew .. "=" .. now .. "-" .. time_to_validate)
         if skew > conf.clock_skew then
-            return nil, "Signature expired: '" .. params.date .. "' is now earlier than '" .. now .. "'"
+            return nil, "Signature expired: '"
+                .. params.date .. "' is now earlier than '" .. now .. "'"
         elseif skew < 0 then
-            return nil, "Signature not yet current: '" .. params.date .. "' is still later than '" .. now .. "'"
+            return nil, "Signature not yet current: '"
+                .. params.date .. "' is still later than '" .. now .. "'"
         end
     end
 
@@ -439,7 +451,8 @@ local function validate(conf, params)
         end
 
         if abs(skew) > params.expires then
-            return nil, "Signature expired: '" .. params.date .. "' is now earlier than '" .. now .. "'"
+            return nil, "Signature expired: '"
+                .. params.date .. "' is now earlier than '" .. now .. "'"
         end
     end
 

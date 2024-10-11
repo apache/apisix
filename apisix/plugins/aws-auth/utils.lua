@@ -36,7 +36,7 @@ local _M             = {}
 
 --- hmac256_bin
 ---
---- @param key string specifies the key to use when calculating the message authentication code (MAC).
+--- @param key string
 --- @param msg string
 --- @return string hash_binary
 function _M.hmac256_bin(key, msg)
@@ -46,7 +46,7 @@ end
 --- sha256
 ---
 --- @param msg string
---- @return string hex lowercase e.g. 2c26b46b68ffc68ff99b453c1d30413413422d706483bfa0f98a5e886266e7ae
+--- @return string hex lowercase hex string
 function _M.sha256(msg)
     local hash = resty_sha256:new()
     assert(hash)
@@ -114,7 +114,10 @@ function _M.aws_uri_encode(value, path)
     -- other to pass
     -- (%[A-Z0-9]{2})      uri encoded
     -- [A-Za-z0-9\-\._\~]  reserved characters
-    local iterator, err = ngx_re_gmatch(encoded, "!|\\*|\\(|\\)|'|%2F|(%[A-Z0-9]{2})|[A-Za-z0-9\\-\\._\\~]", "oj")
+
+    local iterator, err = ngx_re_gmatch(encoded,
+        "!|\\*|\\(|\\)|'|%2F|(%[A-Z0-9]{2})|[A-Za-z0-9\\-\\._\\~]"
+        , "oj")
     if not iterator then
         error(err)
     end
@@ -242,15 +245,16 @@ end
 ---
 --- @param method string
 --- @param uri string
---- @param query_string table<string, string>? The Request Query String should not include Signature like 'X-Amz-Signature'
---- @param headers table<string, string>? The Request Headers should not include Signature like 'X-Amz-Signature'
+--- @param query_string table<string, string>? Should not include Signature like 'X-Amz-Signature'
+--- @param headers table<string, string>? Should not include Signature like 'X-Amz-Signature'
 --- @param body string?
 --- @param secret_key string
 --- @param time integer UTC seconds timestamp
 --- @param region string
 --- @param service string
 --- @return string signature
-function _M.generate_signature(method, uri, query_string, headers, body, secret_key, time, region, service)
+function _M.generate_signature(method, uri, query_string,
+                               headers, body, secret_key, time, region, service)
     -- Step 1: Create a canonical request
 
     -- computing canonical uri
@@ -274,7 +278,7 @@ function _M.generate_signature(method, uri, query_string, headers, body, secret_
         body_hash = _M.sha256(body)
     end
 
-    local canonical_request        = method:upper() .. "\n"
+    local canonical_request = method:upper() .. "\n"
         .. canonical_uri .. "\n"
         .. (canonical_qs or "") .. "\n"
         .. canonical_headers .. "\n"
@@ -284,20 +288,23 @@ function _M.generate_signature(method, uri, query_string, headers, body, secret_
     -- Step 2: Create a hash of the canonical request
     local hashed_canonical_request = _M.sha256(canonical_request)
 
-    -- Step 3: Create a string to sign
-    local amzdate                  = os.date("!%Y%m%dT%H%M%SZ", time) -- ISO 8601 20130524T000000Z
-    local datestamp                = os.date("!%Y%m%d", time)         -- Date w/o time, used in credential scope
 
-    local credential_scope         = datestamp .. "/" .. region .. "/" .. service .. "/aws4_request"
-    local string_to_sign           = ALGO .. "\n"
+    -- Step 3: Create a string to sign
+    local amzdate   = os.date("!%Y%m%dT%H%M%SZ", time) -- ISO 8601 20130524T000000Z
+    local datestamp = os.date("!%Y%m%d", time)         -- Date w/o time, used in credential scope
+
+
+    local credential_scope = datestamp .. "/" .. region .. "/" .. service .. "/aws4_request"
+    local string_to_sign   = ALGO .. "\n"
         .. amzdate .. "\n"
         .. credential_scope .. "\n"
         .. hashed_canonical_request
 
+
     -- Step 4: Calculate the signature
     ---@cast datestamp string
-    local signing_key              = _M.create_signing_key(secret_key, datestamp, region, service)
-    local signature                = hex_encode(_M.hmac256_bin(signing_key, string_to_sign))
+    local signing_key = _M.create_signing_key(secret_key, datestamp, region, service)
+    local signature   = hex_encode(_M.hmac256_bin(signing_key, string_to_sign))
 
     return signature
 end
