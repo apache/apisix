@@ -198,6 +198,7 @@ local _M = {
     "multi-auth",
     "openid-connect",
     "cas-auth",
+    "aws-auth",
     "authz-casbin",
     "authz-casdoor",
     "wolf-rbac",
