@@ -59,6 +59,8 @@ git clone --depth 1 --branch ${APISIX_BRANCH} https://github.com/apache/apisix.g
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
 
+Before installation, install [OpenResty](https://openresty.org/en/installation.html).
+
 Next, navigate to the directory, install dependencies, and build APISIX.
 
 ```shell
