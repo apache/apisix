@@ -78,6 +78,7 @@ chaitin-waf
 multi-auth
 openid-connect
 cas-auth
+aws-auth
 authz-casbin
 authz-casdoor
 wolf-rbac
@@ -319,7 +320,7 @@ qr/\{"metadata_schema":\{"properties":\{"ikey":\{"minimum":0,"type":"number"\},"
         }
     }
 --- response_body eval
-qr/\[\{"name":"multi-auth","priority":2600\},\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"jwe-decrypt","priority":2509\},\{"name":"key-auth","priority":2500\}\]/
+qr/\[\{"name":"multi-auth","priority":2600\},{"name":"aws-auth","priority":2570\},\{"name":"wolf-rbac","priority":2555\},\{"name":"ldap-auth","priority":2540\},\{"name":"hmac-auth","priority":2530\},\{"name":"basic-auth","priority":2520\},\{"name":"jwt-auth","priority":2510\},\{"name":"jwe-decrypt","priority":2509\},\{"name":"key-auth","priority":2500\}\]/
 
 
 
