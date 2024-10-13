@@ -269,11 +269,11 @@ local function get_params(ctx, conf)
         if #auth_header_str == 0 then
             return nil, "Authorization header cannot be empty: '" .. auth_header_str .. "'"
         end
-        local signed_headers_regexp = "SignedHeaders=([\\w;\\-]+)"
         local credential_regexp = "Credential=([\\w\\-\\/]+)"
+        local signed_headers_regexp = "SignedHeaders=([\\w;\\-]+)"
         local signature_regexp = "Signature=([\\w\\d]+)"
-        local regexps = signed_headers_regexp .. "|"
-            .. credential_regexp .. "|"
+        local regexps = credential_regexp .. "|"
+            .. signed_headers_regexp .. "|"
             .. signature_regexp
         local auth_data = ngx_re_match(auth_header_str,
             "([\\w\\-]+) (?:(?:" .. regexps .. ")[, ]*)+",
