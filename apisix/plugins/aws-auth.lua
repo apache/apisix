@@ -150,7 +150,7 @@ local consumer_schema = {
 
 local _M = {
     version         = 0.1,
-    priority        = 50,
+    priority        = 2570,
     type            = 'auth',
     name            = plugin_name,
     schema          = schema,
