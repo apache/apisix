@@ -768,7 +768,7 @@ function _M.access(conf, ctx)
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and
-        headers["content-type"] == "application/x-www-form-urlencoded" and
+        sub_str(headers["content-type"], 1, 11) == "application/x-www-form-urlencoded" and
         core.request.get_method() == "POST"
     if need_grant_token then
         return generate_token_using_password_grant(conf,ctx)
