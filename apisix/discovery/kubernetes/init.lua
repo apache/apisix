@@ -31,6 +31,7 @@ local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
+local cjson = require("cjson")
 
 
 local ctx
@@ -60,9 +61,12 @@ local function on_endpoint_slices_modified(handle, endpoint)
     core.table.clear(endpoint_buffer)
 
     local endpointslices = endpoint.endpoints
+    ngx.log(ngx.WARN,"-----------size of endpintslica",#endpointslices)
+    ngx.log(ngx.WARN, "Type of endpointslices: ", type(endpointslices))
+    ngx.log(ngx.WARN,"-----Data-----",cjson.encode(endpointslices))
     for _, endpointslice in ipairs(endpointslices or {}) do
         if endpointslice.addresses then
-            local addresses = endpointslices.addresses
+            local addresses = endpointslice.addresses
             for _, port in ipairs(endpoint.ports or {}) do
                 local port_name
                 if port.name then
@@ -73,14 +77,14 @@ local function on_endpoint_slices_modified(handle, endpoint)
                     port_name = tostring(port.port)
                 end
 
-                if endpointslice.conditions and endpointslice.condition.ready then
+                if endpointslice.conditions and endpointslice.conditions.ready then
                     local nodes = endpoint_buffer[port_name]
                     if nodes == nil then
                         nodes = core.table.new(0, #endpointslices * #addresses)
                         endpoint_buffer[port_name] = nodes
                     end
 
-                    for _, address in ipairs(endpointslices.addresses) do
+                    for _, address in ipairs(addresses) do
                         core.table.insert(nodes, {
                             host = address.ip,
                             port = port.port,
@@ -448,7 +452,7 @@ local function single_mode_init(conf)
 
     local default_weight = conf.default_weight
     local endpoints_informer, err
-    if conf.watch_endpoint_slices_schema then
+    if conf.watch_endpoint_slices then
         endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1",
                                                        "EndpointSlice", "endpointslices", "")
     else
@@ -462,7 +466,7 @@ local function single_mode_init(conf)
     setup_namespace_selector(conf, endpoints_informer)
     setup_label_selector(conf, endpoints_informer)
 
-    if conf.watch_endpoint_slices_schema then
+    if conf.watch_endpoint_slices then
         endpoints_informer.on_added = on_endpoint_slices_modified
         endpoints_informer.on_modified = on_endpoint_slices_modified
     else
@@ -554,7 +558,7 @@ local function multiple_mode_init(confs)
         local default_weight = conf.default_weight
 
         local endpoints_informer, err
-        if conf.watch_endpoint_slices_schema then
+        if conf.watch_endpoint_slices then
             endpoints_informer, err = informer_factory.new("discovery.k8s.io", "v1",
                                                            "EndpointSlice", "endpointslices", "")
         else
@@ -568,7 +572,7 @@ local function multiple_mode_init(confs)
         setup_namespace_selector(conf, endpoints_informer)
         setup_label_selector(conf, endpoints_informer)
 
-        if conf.watch_endpoint_slices_schema then
+        if conf.watch_endpoint_slices then
             endpoints_informer.on_added = on_endpoint_slices_modified
             endpoints_informer.on_modified = on_endpoint_slices_modified
         else
