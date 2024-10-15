@@ -31,7 +31,6 @@ local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
-local cjson = require("cjson")
 
 
 local ctx
@@ -61,9 +60,6 @@ local function on_endpoint_slices_modified(handle, endpoint)
     core.table.clear(endpoint_buffer)
 
     local endpointslices = endpoint.endpoints
-    ngx.log(ngx.WARN,"-----------size of endpintslica",#endpointslices)
-    ngx.log(ngx.WARN, "Type of endpointslices: ", type(endpointslices))
-    ngx.log(ngx.WARN,"-----Data-----",cjson.encode(endpointslices))
     for _, endpointslice in ipairs(endpointslices or {}) do
         if endpointslice.addresses then
             local addresses = endpointslice.addresses
