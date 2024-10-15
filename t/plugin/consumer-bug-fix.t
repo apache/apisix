@@ -24,6 +24,7 @@ no_root_location();
 run_tests;
 
 __DATA__
+
 === TEST 1: add consumer jack1
 --- config
     location /t {
@@ -51,6 +52,9 @@ __DATA__
 GET /t
 --- response_body
 passed
+
+
+
 === TEST 2: add route
 --- config
     location /t {
@@ -81,6 +85,9 @@ passed
 GET /t
 --- response_body
 passed
+
+
+
 === TEST 3: verify 20 times
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello"]
@@ -88,6 +95,9 @@ passed
 apikey: auth-one
 --- response_body eval
 ["before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change","before change"]
+
+
+
 === TEST 4: modify consumer
 --- config
     location /t {
@@ -115,6 +125,9 @@ apikey: auth-one
 GET /t
 --- response_body
 passed
+
+
+
 === TEST 5: verify 20 times
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello","GET /hello", "GET /hello", "GET /hello", "GET /hello"]
