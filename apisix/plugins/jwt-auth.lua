@@ -254,7 +254,7 @@ local function get_real_payload(key, auth_conf, payload)
     }
     if payload then
         local extra_payload = core.json.decode(payload)
-        core.table.merge(extra_payload, real_payload)
+        core.table.merge(real_payload, extra_payload)
         return extra_payload
     end
     return real_payload
