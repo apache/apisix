@@ -18,12 +18,12 @@
 --- AWS Tools.
 local core = require("apisix.core")
 local http = require("resty.http")
-local aws = require("resty.aws")
+local aws  = require("resty.aws")
 
-local sub = core.string.sub
-local find = core.string.find
-local env = core.env
-local unpack = unpack
+local sub        = core.string.sub
+local rfind_char = core.string.rfind_char
+local env        = core.env
+local unpack     = unpack
 
 local schema = {
     type = "object",
@@ -103,7 +103,7 @@ end
 function _M.get(conf, key)
     core.log.info("fetching data from aws for key: ", key)
 
-    local idx = find(key, '/')
+    local idx = rfind_char(key, '/')
 
     local main_key = idx and sub(key, 1, idx - 1) or key
     if main_key == "" then
@@ -112,23 +112,29 @@ function _M.get(conf, key)
 
     local sub_key = idx and sub(key, idx + 1) or nil
 
-    core.log.info("main: ", main_key, sub_key and ", sub: " .. sub_key or "")
+    core.log.info("key: ", key, ", main: ", main_key, sub_key and ", sub: " .. sub_key or "")
 
-    local res, err = make_request_to_aws(conf, main_key)
+    -- key contains a slash, if secret is json
+    if main_key ~= key then
+        local res = make_request_to_aws(conf, main_key)
+
+        if res then
+            local data, err = core.json.decode(res)
+            if not data then
+                return nil, "failed to decode result, res: " .. res .. ", err: " .. err
+            end
+
+            return data[sub_key]
+        end
+    end
+
+    -- secret is string
+    local res, err = make_request_to_aws(conf, key)
     if not res then
         return nil, "failed to retrtive data from aws secret manager: " .. err
     end
 
-    if not sub_key then
-        return res
-    end
-
-    local data, err = core.json.decode(res)
-    if not data then
-        return nil, "failed to decode result, res: " .. res .. ", err: " .. err
-    end
-
-    return data[sub_key]
+    return res
 end
 
 
