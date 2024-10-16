@@ -201,7 +201,7 @@ passed
 
 
 
-=== TEST 5: set route with right query param
+=== TEST 5: set route without overriding the endpoint_url
 --- config
     location /t {
         content_by_lua_block {
@@ -248,18 +248,7 @@ passed
 
 
 === TEST 6: send request
---- yaml_config
-apisix:
-  node_listen: 1984
-  ssl:
-    lua_ssl_trusted_certificate: /etc/ssl/certs/ca-certificates.crt
-deployment:
-  role: traditional
-  role_traditional:
-    config_provider: etcd
-  etcd:
-    host:
-      - "http://127.0.0.1:2379"
+--- custom_trusted_cert: /etc/ssl/certs/ca-certificates.crt
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
