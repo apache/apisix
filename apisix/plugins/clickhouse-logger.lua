@@ -38,6 +38,9 @@ local schema = {
         database = {type = "string", default = ""},
         logtable = {type = "string", default = ""},
         timeout = {type = "integer", minimum = 1, default = 3},
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1, default = 60},
+        keepalive_pool = {type = "integer", minimum = 1, default = 5},
         name = {type = "string", default = "clickhouse logger"},
         ssl_verify = {type = "boolean", default = true},
         log_format = {type = "object"},
@@ -120,6 +123,25 @@ local function send_http_data(conf, log_message)
         end
     end
 
+    local request_uri = url_decoded.scheme .. "://" .. host .. ":" .. tostring(port)
+    .. (#url_decoded.path ~= 0 and url_decoded.path or "/")
+
+    local auth_headers = {
+         ["Host"] = host,
+         ["Content-Type"] = "application/json",
+         ["X-ClickHouse-User"] = conf.user,
+         ["X-ClickHouse-Key"] = conf.password,
+         ["X-ClickHouse-Database"] = conf.database
+    }
+
+    local params = {
+        headers = auth_headers,
+        keepalive = conf.keepalive,
+        method = "POST",
+        query = url_decoded.query,
+        body = "INSERT INTO " .. conf.logtable .." FORMAT JSONEachRow " .. log_message,
+    }
+
     local httpc = http.new()
     httpc:set_timeout(conf.timeout * 1000)
     local ok, err = httpc:connect(host, port)
@@ -136,20 +158,12 @@ local function send_http_data(conf, log_message)
                 .. "port[" .. tostring(port) .. "] " .. err
         end
     end
+    if conf.keepalive then
+        params.keepalive_timeout = conf.keepalive_timeout * 1000
+        params.keepalive_pool = conf.keepalive_pool
+    end
 
-    local httpc_res, httpc_err = httpc:request({
-        method = "POST",
-        path = url_decoded.path,
-        query = url_decoded.query,
-        body = "INSERT INTO " .. conf.logtable .." FORMAT JSONEachRow " .. log_message,
-        headers = {
-            ["Host"] = url_decoded.host,
-            ["Content-Type"] = "application/json",
-            ["X-ClickHouse-User"] = conf.user,
-            ["X-ClickHouse-Key"] = conf.password,
-            ["X-ClickHouse-Database"] = conf.database
-        }
-    })
+    local httpc_res, httpc_err = httpc:request_uri(request_uri, params)
 
     if not httpc_res then
         return false, "error while sending data to [" .. host .. "] port["
