@@ -460,6 +460,7 @@ plugins:                           # plugin list (sorted by priority)
   - multi-auth                     # priority: 2600
   - openid-connect                 # priority: 2599
   - cas-auth                       # priority: 2597
+  - aws-auth                       # priority: 2570
   - authz-casbin                   # priority: 2560
   - authz-casdoor                  # priority: 2559
   - wolf-rbac                      # priority: 2555
