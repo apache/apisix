@@ -465,6 +465,8 @@ _EOC_
         $block->set_value("stream_config", $stream_config);
     }
 
+    my $custom_trusted_cert = $block->custom_trusted_cert // 'cert/apisix.crt';
+
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     listen 2005 ssl;
     ssl_certificate             cert/apisix.crt;
@@ -737,7 +739,7 @@ _EOC_
         http3 off;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
-        lua_ssl_trusted_certificate cert/apisix.crt;
+        lua_ssl_trusted_certificate $custom_trusted_cert;
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
