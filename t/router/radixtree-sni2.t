@@ -820,3 +820,64 @@ location /t {
 }
 --- response_body
 ssl handshake: true
+
+
+
+=== TEST 22: set ssl conf with secret ref: ENV
+--- request
+GET /t
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- set ssl
+            local code, body = t('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "cert": "$ENV://TEST_ENV_SSL_CRT",
+                    "key": "$ENV://TEST_ENV_SSL_KEY",
+                    "sni": "test3.com"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 23: verify ssl after set with secret ref: ENV
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        do
+            local sock = ngx.socket.tcp()
+
+            sock:settimeout(2000)
+
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            local sess, err = sock:sslhandshake(nil, "test3.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            ngx.say("ssl handshake: ", sess ~= nil)
+        end  -- do
+        -- collectgarbage()
+    }
+}
+--- response_body
+ssl handshake: true
