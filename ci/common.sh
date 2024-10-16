@@ -139,7 +139,7 @@ set_coredns() {
 
     # override DNS configures
     if [ -f "/etc/netplan/50-cloud-init.yaml" ]; then
-        sudo pip3 install yq
+        sudo pip3 install yq --break-system-packages
 
         tmp=$(mktemp)
         yq -y '.network.ethernets.eth0."dhcp4-overrides"."use-dns"=false' /etc/netplan/50-cloud-init.yaml | \

@@ -34,7 +34,7 @@ jobs:
           ./utils/check-category.py
       - name: check Chinese doc
         run: |
-          sudo pip3 install zhon
+          sudo pip3 install zhon --break-system-packages
           ./utils/fix-zh-doc-segment.py > \
             /tmp/check.log 2>&1 || (cat /tmp/check.log && exit 1)
           if grep "find broken newline in file: " /tmp/check.log; then
