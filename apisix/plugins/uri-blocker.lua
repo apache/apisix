@@ -98,7 +98,7 @@ function _M.rewrite(conf, ctx)
     local from = re_find(ctx.var.request_uri, conf.block_rules_concat, "jo")
     if from then
         if conf.rejected_msg then
-            return conf.rejected_code, { error_msg = conf.rejected_msg }
+            return conf.rejected_code, conf.rejected_msg
         end
         return conf.rejected_code
     end
