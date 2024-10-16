@@ -46,6 +46,7 @@ The `opa` Plugin can be used to integrate with [Open Policy Agent (OPA)](https:/
 | with_route        | boolean | False    | false   |               | When set to true, sends information about the current Route.                                                                                                                               |
 | with_service      | boolean | False    | false   |               | When set to true, sends information about the current Service.                                                                                                                             |
 | with_consumer     | boolean | False    | false   |               | When set to true, sends information about the current Consumer. Note that this may send sensitive information like the API key. Make sure to turn it on only when you are sure it is safe. |
+| with_body         | boolean | False    | false   |               | When set to true, sends the request body. |
 
 ## Data definition
 
