@@ -523,7 +523,7 @@ Please modify "admin_key" in conf/config.yaml .
                 end
 
                 table.insert(cert_paths, cert_path)
-            end  
+            end
         end
 
           local combined_cert_filepath = yaml_conf.apisix.ssl.ssl_trusted_combined_path or "/usr/local/apisix/conf/ssl_trusted_combined.pem"
