@@ -47,7 +47,7 @@ import TabItem from '@theme/TabItem';
 首先，我们需要指定需要安装的版本`APISIX_VERSION`:
 
 ```shell
-APISIX_VERSION='3.11.0'
+APISIX_BRANCH='release/3.11.0'
 ```
 
 然后，你可以运行以下命令，从 Github 克隆 APISIX 源码：
