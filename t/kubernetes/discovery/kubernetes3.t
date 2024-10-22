@@ -427,3 +427,63 @@ qr{ 0 0 2 2 0 0 0 0 2 2 0 0 }
 GET /dump
 --- response_body_like
 .*"name":"default/kubernetes".*
+
+=== TEST 5: when endpoint_slices updated, old endpoints all flush_all/flush_expired
+--- yaml_config eval: $::yaml_config
+--- request
+POST /operators
+[
+    {
+        "op": "replace_endpointslices",
+        "namespace": "ns-b",
+        "name": "ep",
+        "endpoints": [
+            {
+                "addresses": [
+                    "10.0.0.1",
+                    "10.0.0.2"
+                    "10.0.0.3"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "kind-control-plane"
+            },
+            {
+                "addresses": [
+                    "20.0.0.1",
+                    "20.0.0.2"
+                    "20.0.0.3"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "kind-control-plane"
+            }
+        ],
+        "ports": [
+            {
+                "name": "p",
+                "port": 5002
+            }
+        ]
+    }
+]
+--- more_headers
+Content-type: application/json
+--- response_body_like
+.*"name":"default/kubernetes".*
+--- request
+GET /queries
+[
+  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
+  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+]
+--- more_headers
+Content-type: application/json
+--- response_body eval
+qr{ 0 0 2 2 0 0 0 0 2 2 0 0 }
