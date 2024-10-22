@@ -378,78 +378,7 @@ IRWpPjbDq5BCgHyIllnOMA==
 
 
 
-=== TEST 15: data encryption for private_key
---- yaml_config
-apisix:
-    data_encryption:
-        enable_encrypt_fields: true
-        keyring:
-            - edd1c9f0985e76a2
---- config
-    location /t {
-        content_by_lua_block {
-            local json = require("toolkit.json")
-            local t = require("lib.test_admin").test
-
-            -- dletet exist consumers
-            t('/apisix/admin/consumers/jack', ngx.HTTP_DELETE)
-
-            local code, body = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "jack",
-                    "plugins": {
-                        "jwt-auth": {
-                            "key": "user-key-rs256",
-                            "algorithm": "RS256",
-                            "public_key": "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----",
-                            "private_key": "-----BEGIN RSA PRIVATE KEY-----\nMIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv\n0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7\n+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL\nwQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF\nIeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb\n2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs\nYvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG\n-----END RSA PRIVATE KEY-----"
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-            ngx.sleep(0.1)
-
-            -- get plugin conf from admin api, password is decrypted
-            local code, message, res = t('/apisix/admin/consumers/jack',
-                ngx.HTTP_GET
-            )
-            res = json.decode(res)
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(message)
-                return
-            end
-
-            ngx.say(res.value.plugins["jwt-auth"].private_key)
-
-            -- get plugin conf from etcd, password is encrypted
-            local etcd = require("apisix.core.etcd")
-            local res = assert(etcd.get('/consumers/jack'))
-            ngx.say(res.body.node.value.plugins["jwt-auth"].private_key)
-        }
-    }
---- response_body
------BEGIN RSA PRIVATE KEY-----
-MIIBOgIBAAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr7noq/0ukiZqVQLSJPMOv
-0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQJAYPWh6YvjwWobVYC45Hz7
-+pqlt1DWeVQMlN407HSWKjdH548ady46xiQuZ5Cfx3YyCcnsfVWaQNbC+jFbY4YL
-wQIhANfASwz8+2sKg1xtvzyaChX5S5XaQTB+azFImBJumixZAiEAxt93Td6JH1RF
-IeQmD/K+DClZMqSrliUzUqJnCPCzy6kCIAekDsRh/UF4ONjAJkKuLedDUfL3rNFb
-2M4BBSm58wnZAiEAwYLMOg8h6kQ7iMDRcI9I8diCHM8yz0SfbfbsvzxIFxECICXs
-YvIufaZvBa8f+E/9CANlVhm5wKAyM8N8GJsiCyEG
------END RSA PRIVATE KEY-----
-HrMHUvE9Esvn7GnZ+vAynaIg/8wlB3r0zm0htmnwofYPZeBpLnpW3iN9UtQG4ZIBYRZih6EBuRK8W3Kychw/SgjIFuzVeTFowBCUfd1wZ4Q+frUOLZ0Xmkh8j3yHUprnh+d9PA8EHCEapdkWY3psJj6rTgrREzjDEVf/TV3EjjfgG16ih5/c3TChApLXwfEwfBp5APSf7kzMccCRbA4bXvMDsQSQAwVsRD8cjJkSdHTvuzfg1g8xoCy4I05DsMM8CybJAd+BDZnJxhrGIQaItu5/0XQJy+uy/niOpzYYN+NDX+8fl65VUxdUtqXF82ChRlmGP3+zKN7epufAsL/36pHOnS73Q7WBKRxyyA16BEBk0wK7rI+KemBfG5YFXjcBnPkxYssSudqhmlcr6e5Tl0LhVj/BIj94fVE3/EJ+NO3BJMrlhjorilrQKAsiCWujWSqAK7gtAp3YEO//yOygh/p8gh22NdIV0ykGAx4QNKINUgdgh+g8DdykNGLGStH8TPUs8GmzV7nxvw/0cbiocLps6uk0VjjVUqUAvOdwpbiRwv6effPUB6cxW3G6QllBbTP8I+eoFIRfYd6cFJPpX1AtISfNZw459WarwZmHrZGOQU4iKlyl2yLcKY634Fx5JykUY5YP+MYYDHbIcD2gxA==
-
-
-
-=== TEST 16: set jwt-auth conf: secret uses secret ref
+=== TEST 15: set jwt-auth conf: secret uses secret ref
 --- request
 GET /t
 --- config
@@ -522,7 +451,7 @@ passed
 
 
 
-=== TEST 17: store secret into vault
+=== TEST 16: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack secret=my-secret-key
 --- response_body
@@ -530,7 +459,7 @@ Success! Data written to: kv/apisix/jack
 
 
 
-=== TEST 18: verify (in header) not hiding credentials
+=== TEST 17: verify (in header) not hiding credentials
 --- request
 GET /echo
 --- more_headers
@@ -540,15 +469,15 @@ jwt-header: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIs
 
 
 
-=== TEST 19: store rsa key pairs and secret into vault from local filesystem
+=== TEST 18: store rsa key pairs and secret into vault from local filesystem
 --- exec
-VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 secret=$3nsitiv3-c8d3 public_key=@t/certs/public.pem private_key=@t/certs/private.pem
+VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/rsa1 secret=$3nsitiv3-c8d3 public_key=@t/certs/public.pem
 --- response_body
 Success! Data written to: kv/apisix/rsa1
 
 
 
-=== TEST 20: create consumer for RS256 algorithm with private/public key fetched from vault and public key in consumer schema
+=== TEST 19: create consumer for RS256 algorithm with public key fetched from vault and public key in consumer schema
 --- config
     location /t {
         content_by_lua_block {
@@ -575,22 +504,6 @@ Success! Data written to: kv/apisix/rsa1
                 return ngx.say(body)
             end
 
-            -- create public API route (jwt-auth sign)
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                return ngx.say(body)
-            end
-
             local code, body = t('/apisix/admin/consumers',
                 ngx.HTTP_PUT,
                 [[{
@@ -600,8 +513,7 @@ Success! Data written to: kv/apisix/rsa1
                             "key": "rsa1",
                             "algorithm": "RS256",
                             "secret": "$secret://vault/test1/rsa1/secret",
-                            "public_key": "$secret://vault/test1/rsa1/public_key",
-                            "private_key": "$secret://vault/test1/rsa1/private_key"
+                            "public_key": "$secret://vault/test1/rsa1/public_key"
                         }
                     }
                 }]]
@@ -618,36 +530,7 @@ passed
 
 
 
-=== TEST 21: sign a jwt with with rsa key pair and access /hello
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=rsa1',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
-            end
-
-            local code, _, res = t('/hello?jwt=' .. sign,
-                ngx.HTTP_GET
-            )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.print(res)
-        }
-    }
---- response_body
-hello world
-
-
-
-=== TEST 22: set jwt-auth conf with the token in an env var: secret uses secret ref
+=== TEST 20: set jwt-auth conf with the token in an env var: secret uses secret ref
 --- request
 GET /t
 --- config
@@ -716,7 +599,7 @@ passed
 
 
 
-=== TEST 23: verify (in header) not hiding credentials
+=== TEST 21: verify (in header) not hiding credentials
 --- request
 GET /echo
 --- more_headers

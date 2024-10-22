@@ -1,5 +1,5 @@
 {
-  "version": "3.10.0",
+  "version": "3.11.0",
   "sidebar": [
     {
       "type": "category",
@@ -81,7 +81,8 @@
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/ocsp-stapling"
+            "plugins/ocsp-stapling",
+            "plugins/ai-content-moderation"
           ]
         },
         {
@@ -98,7 +99,9 @@
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/ai-proxy"
+            "plugins/ai-proxy",
+            "plugins/attach-consumer-label",
+            "plugins/ai-rag"
           ]
         },
         {

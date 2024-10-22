@@ -305,9 +305,6 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
 
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
-	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
-
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
 
@@ -380,6 +377,15 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy/drivers
 	$(ENV_INSTALL) apisix/plugins/ai-proxy/drivers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy/drivers
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
+	$(ENV_INSTALL) apisix/plugins/ai-rag/embeddings/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
+	$(ENV_INSTALL) apisix/plugins/ai-rag/vector-search/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
+
+	# ai-content-moderation plugin
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai
+	$(ENV_INSTALL) apisix/plugins/ai/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai
+
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
 
@@ -432,7 +438,6 @@ compress-tar:
 	./apisix \
 	./bin \
 	./conf \
-	./apisix-$(VERSION)*.rockspec \
 	./apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \

@@ -14,11 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
+local ipairs = ipairs
 
---- Return APISIX current version.
---
--- @module core.version
+local _M = {}
 
-return {
-    VERSION = "3.11.0"
-}
+
+function _M.create_request_text_segments(msgs)
+    local text_segments = {}
+    for _, msg in ipairs(msgs) do
+        core.table.insert_tail(text_segments, {
+            Text = msg.content
+        })
+    end
+    return text_segments
+end
+
+return  _M

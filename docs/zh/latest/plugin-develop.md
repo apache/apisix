@@ -417,19 +417,20 @@ end
 
 ## 注册公共接口
 
-插件可以注册暴露给公网的接口。以 jwt-auth 插件为例，这个插件为了让客户端能够签名，注册了 `GET /apisix/plugin/jwt/sign` 这个接口：
+插件可以注册暴露给公网的接口。以 batch-requests 插件为例，这个插件注册了 `POST /apisix/batch-requests` 接口，让客户端可以将多个 API 请求组合在一个请求/响应中：
 
 ```lua
-local function gen_token()
+function batch_requests()
     -- ...
 end
 
 function _M.api()
+    -- ...
     return {
         {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
+            methods = {"POST"},
+            uri = "/apisix/batch-requests",
+            handler = batch_requests,
         }
     }
 end

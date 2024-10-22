@@ -49,7 +49,6 @@ header:
     - 't/plugin/authz-casbin'
     - 't/coredns'
     - 't/fuzzing/requirements.txt'
-    - 't/perf/requirements.txt'
     - 'autodocs/'
     - 'docs/**/*.md'
     - '.ignore_words'
