@@ -88,7 +88,7 @@ local function remove_namespace(tbl)
         end
         return v
     end
-  
+
     local function remove_namespace_wrapper(old_table, new_table)
         for k, v in pairs(old_table) do
             if type(k) == "string" then
@@ -102,7 +102,7 @@ local function remove_namespace(tbl)
         end
         return new_table
     end
-    
+
     return remove_namespace_wrapper(tbl, {})
 end
 
