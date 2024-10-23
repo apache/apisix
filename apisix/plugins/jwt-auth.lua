@@ -48,6 +48,10 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false
+        },
+        store_in_ctx = {
+            type = "boolean",
+            default = false
         }
     },
 }
@@ -272,6 +276,10 @@ function _M.rewrite(conf, ctx)
     if not jwt_obj.verified then
         core.log.warn("failed to verify jwt: ", jwt_obj.reason)
         return 401, {message = "failed to verify jwt"}
+    end
+
+    if conf.store_in_ctx then
+        ctx.jwt_obj = jwt_obj
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
