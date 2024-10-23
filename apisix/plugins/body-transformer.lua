@@ -78,23 +78,32 @@ end
 
 
 local function remove_namespace(tbl)
-    for k, v in pairs(tbl) do
-        if type(v) == "table" and next(v) == nil then
+
+    local function update_namespace(ns)
+        local v = ns
+        if type(ns) == "table" and next(ns) == nil then
             v = ""
-            tbl[k] = v
+        elseif type(ns) == "table" then
+            v = remove_namespace(ns)
         end
-        if type(k) == "string" then
-            local newk = k:match(".*:(.*)")
-            if newk then
-                tbl[newk] = v
-                tbl[k] = nil
-            end
-            if type(v) == "table" then
-                remove_namespace(v)
-            end
-        end
+        return v
     end
-    return tbl
+  
+    local function remove_namespace_wrapper(old_table, new_table)
+        for k, v in pairs(old_table) do
+            if type(k) == "string" then
+                local newk = k:match(".*:(.*)")
+                if newk then
+                    new_table[newk] = update_namespace(v)
+                else
+                    new_table[k] = update_namespace(v)
+                end
+            end
+        end
+        return new_table
+    end
+    
+    return remove_namespace_wrapper(tbl, {})
 end
 
 
