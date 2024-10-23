@@ -58,6 +58,7 @@ For Route:
 | query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
 | cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
 | hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
+| store_in_ctx | boolean | False     | false  | Set to true will store the JWT in the request context. This allows lower-priority plugins that run afterwards on the same request to retrieve and use the JWT token. |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
