@@ -485,3 +485,19 @@ Triggers a hot reload of the plugins.
 ```shell
 curl "http://127.0.0.1:9090/v1/plugins/reload" -X PUT
 ```
+
+### PUT /v1/hosts/reload
+
+Triggers a hot reload of the hosts.
+
+```shell
+curl "http://127.0.0.1:9090/v1/hosts/reload" -X PUT
+```
+
+### GET /v1/hosts
+
+Get the hosts in the cache.
+
+```shell
+curl "http://127.0.0.1:9090/v1/hosts"
+```

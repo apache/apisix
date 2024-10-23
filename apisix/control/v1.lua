@@ -32,7 +32,8 @@ local events = require("apisix.events")
 
 local _M = {}
 
-_M.RELOAD_EVENT = 'control-api-plugin-reload'
+_M.RELOAD_PLUGINS_EVENT = 'control-api-plugins-reload'
+_M.RELOAD_HOSTS_EVENT = 'control-api-hosts-reload'
 
 function _M.schema()
     local http_plugins, stream_plugins = plugin.get_all({
@@ -404,12 +405,26 @@ function _M.dump_plugin_metadata()
 end
 
 function _M.post_reload_plugins()
-    local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
+    local success, err = events:post(_M.RELOAD_PLUGINS_EVENT, ngx.req.get_method(), ngx.time())
     if not success then
         core.response.exit(503, err)
     end
 
     core.response.exit(200, "done")
+end
+
+function _M.post_reload_hosts()
+    local success, err = events:post(_M.RELOAD_HOSTS_EVENT, ngx.req.get_method(), ngx.time())
+    if not success then
+        core.response.exit(503, err)
+    end
+
+    core.response.exit(200, "done")
+end
+
+function _M.get_hosts()
+    local hosts = core.resolver.get_hosts()
+    return 200, hosts
 end
 
 return {
@@ -491,6 +506,19 @@ return {
         uris = {"/plugins/reload"},
         handler = _M.post_reload_plugins,
     },
+    -- /v1/hosts/reload
+    {
+        methods = {"PUT"},
+        uris = {"/hosts/reload"},
+        handler = _M.post_reload_hosts,
+    },
+    -- /v1/hosts
+    {
+        methods = {"GET"},
+        uris = {"/hosts"},
+        handler = _M.get_hosts,
+    },
     get_health_checkers = _get_health_checkers,
-    reload_event = _M.RELOAD_EVENT,
+    reload_plugins_event = _M.RELOAD_PLUGINS_EVENT,
+    reload_hosts_event = _M.RELOAD_HOSTS_EVENT,
 }
