@@ -101,7 +101,7 @@ end
 
 local function set_header(append, ...)
     if ngx.headers_sent then
-      error("headers have already been sent", 2)
+        error("headers have already been sent", 2)
     end
 
     local count = select('#', ...)
