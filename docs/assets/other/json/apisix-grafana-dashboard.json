@@ -961,12 +961,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(apisix_http_status{instance=~\"$instance\"}[$__rate_interval]))",  
+          "expr": "sum(rate(apisix_http_status{instance=~\"$instance\"}[$__rate_interval]))",
           "format": "time_series",
           "intervalFactor": 1,
           "refId": "A",
           "legendFormat": "Requests/second"
-        } 
+        }
       ],
       "thresholds": [],
       "timeFrom": null,
