@@ -114,6 +114,7 @@ local function plugin_consumer()
                     local the_consumer = consumers:get(consumer_name)
                     if the_consumer and the_consumer.value then
                         consumer = core.table.clone(the_consumer.value)
+                        consumer.modifiedIndex = the_consumer.modifiedIndex
                         consumer.credential_id = get_credential_id_from_etcd_key(val.key)
                     else
                         -- Normally wouldn't get here:
@@ -125,6 +126,7 @@ local function plugin_consumer()
                     end
                 else
                     consumer = core.table.clone(val.value)
+                    consumer.modifiedIndex = val.modifiedIndex
                 end
 
                 -- if the consumer has labels, set the field custom_id to it.
@@ -137,7 +139,6 @@ local function plugin_consumer()
                 -- is 'username' field in admin
                 consumer.consumer_name = consumer.id
                 consumer.auth_conf = config
-                consumer.modifiedIndex = val.modifiedIndex
                 core.log.info("consumer:", core.json.delay_encode(consumer))
                 core.table.insert(plugins[name].nodes, consumer)
             end
