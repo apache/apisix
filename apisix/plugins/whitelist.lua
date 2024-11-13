@@ -56,6 +56,8 @@ local networks = {
     "zetachain-tendermint-http-athens-testnet",
     "zetachain-tendermint-rpc-athens-testnet",
     "zetachain-cosmos-sdk-http-athens-testnet",
+    "sophon-mainnet",
+    "sophon-testnet",
 
 
     -- staging
@@ -88,6 +90,8 @@ local networks = {
     "staging-zetachain-tendermint-http-athens-testnet",
     "staging-zetachain-tendermint-rpc-athens-testnet",
     "staging-zetachain-cosmos-sdk-http-athens-testnet",
+    "staging-sophon-mainnet",
+    "staging-sophon-testnet",
 }
 
 local web3_methods = {
@@ -451,7 +455,9 @@ function _M.init()
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, trace_methods)
         elseif network == "staging-zksync-era-mainnet" or network == "zksync-era-mainnet" or
-            network == "staging-zksync-era-testnet" or network == "zksync-era-testnet" then
+            network == "staging-zksync-era-testnet" or network == "zksync-era-testnet" or
+            network == "staging-sophon-mainnet" or network == "sophon-mainnet" or
+            network == "staging-sophon-testnet" or network == "sophon-testnet" then
             _M.free_list[network] = merge_methods(web3_methods, net_methods, eth_methods, zks_methods)
             _M.paid_list[network] = merge_methods(web3_methods, net_methods, eth_methods, zks_methods, debug_methods)
         elseif network == "arb-mainnet" or network == "opt-mainnet" or
