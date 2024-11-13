@@ -61,7 +61,7 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 
 :::note 注意
 
-目前 `weighted_upstreams.upstream` 的配置不支持 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc`、`scheme`、`labels`、`create_time` 和 `update_time` 等字段。如果你需要使用这些字段，可以在创建上游对象时指定这些字段，然后在该插件中配置 `weighted_upstreams.upstream_id` 属性即可。
+目前 `weighted_upstreams.upstream` 的配置不支持 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc`、`labels`、`create_time` 和 `update_time` 等字段。如果你需要使用这些字段，可以在创建上游对象时指定这些字段，然后在该插件中配置 `weighted_upstreams.upstream_id` 属性即可。
 
 :::
 
