@@ -447,3 +447,133 @@ find ctx.var.a6_labels_zone: Singapore
 --- response_body
 find ctx.var.a6_count: 1
 find ctx.var.a6_count: 2
+
+
+
+=== TEST 20: register custom variable with no cacheable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_count1: ', ctx.var.a6_count1) ngx.say('find ctx.var.a6_count2: ', ctx.var.a6_count2) end"]
+                            },
+                            "serverless-post-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_count1: ', ctx.var.a6_count1) ngx.say('find ctx.var.a6_count2: ', ctx.var.a6_count2) end"]
+                            }
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 21: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require "apisix.core"
+            core.ctx.register_var("a6_", function(ctx, key)
+                if not ctx[key] then
+                    ctx[key] = 0
+                end
+                ctx[key] = ctx[key] + 1
+                return ctx[key]
+            end, {no_cacheable = true, prefix = true})
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res = assert(httpc:request_uri(uri))
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+find ctx.var.a6_count1: 1
+find ctx.var.a6_count2: 1
+find ctx.var.a6_count1: 2
+find ctx.var.a6_count2: 2
+
+
+
+=== TEST 22: register custom variable with cacheable
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [=[{
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "plugins": {
+                            "serverless-pre-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_count1: ', ctx.var.a6_count1) ngx.say('find ctx.var.a6_count2: ', ctx.var.a6_count2) end"]
+                            },
+                            "serverless-post-function": {
+                                "phase": "rewrite",
+                                "functions" : ["return function(conf, ctx) ngx.say('find ctx.var.a6_count1: ', ctx.var.a6_count1) ngx.say('find ctx.var.a6_count2: ', ctx.var.a6_count2) end"]
+                            }
+                        },
+                        "uri": "/hello"
+                }]=]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+
+
+
+=== TEST 23: hit
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local core = require "apisix.core"
+            core.ctx.register_var("a6_", function(ctx, key)
+                if not ctx[key] then
+                    ctx[key] = 0
+                end
+                ctx[key] = ctx[key] + 1
+                return ctx[key]
+            end, {no_cacheable = false, prefix = true})
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            local res = assert(httpc:request_uri(uri))
+            ngx.print(res.body)
+        }
+    }
+--- response_body
+find ctx.var.a6_count1: 1
+find ctx.var.a6_count2: 1
+find ctx.var.a6_count1: 1
+find ctx.var.a6_count2: 1
+
+
