@@ -291,8 +291,7 @@ local _M = {
 }
 
 
-function _M.check_schema(plugin_conf)
-    local conf = fetch_secrets(plugin_conf)
+function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
         conf.ssl_verify = false
