@@ -238,7 +238,7 @@ nginx_config:                     # Config for render the template to generate n
                                   # the requested server name.
 
     upstream:
-      keepalive: 320              # the maximum number of idle keepalive connections to the upstream service of each worker process.
+      keepalive: 320              # Set the maximum number of idle keepalive connections to the upstream service of each worker process.
                                   # When the value is exceeded, the least recently used connection is closed.
       keepalive_requests: 1000    # Set the maximum number of requests that can be served through one
                                   # keep-alive connection.
