@@ -144,7 +144,7 @@ passed
             }
 
             local token = gen_token(payload)
-            
+
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local opt = {method = "POST", headers = {["Authorization"] = "Bearer " .. token}}
