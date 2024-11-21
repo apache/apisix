@@ -23,4 +23,15 @@ RUN apt update && export DEBIAN_FRONTEND=noninteractive \
 COPY Makefile .requirements apisix-master-0.rockspec ./
 COPY utils/install-dependencies.sh utils/linux-install-luarocks.sh utils/
 
-RUN make deps
+RUN make install-runtime
+
+RUN cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
+
+ARG ETCD_VER=v3.5.17
+ARG BUILDARCH
+RUN curl -L https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-${ETCD_VER}-linux-${BUILDARCH}.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-${BUILDARCH}.tar.gz \
+    && mkdir -p /tmp/etcd-download-test \
+    && tar xzvf /tmp/etcd-${ETCD_VER}-linux-${BUILDARCH}.tar.gz -C /tmp/etcd-download-test --strip-components=1 \
+    && mv /tmp/etcd-download-test/etcdctl /usr/bin \
+    && rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz && rm -rf /tmp/etcd-download-test \
+    && rm -rf /tmp/*
