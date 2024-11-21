@@ -1,0 +1,13 @@
+{
+  "name": "APISIX",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "apisix",
+  "workspaceFolder": "/workspace",
+  "postCreateCommand": "bash -c 'cd /workspace && make deps'",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.makefile-tools", "ms-azuretools.vscode-docker", "sumneko.lua"]
+    }
+  },
+  "forwardPorts": [9080, 9180, 2379]
+}
