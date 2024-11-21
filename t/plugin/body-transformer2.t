@@ -67,7 +67,7 @@ __DATA__
             local opt = {method = "POST", body = "body", headers = {["Content-Type"] = "application/json"}}
             local httpc = http.new()
             local res = httpc:request_uri(uri, opt)
-            assert(res.status == 401)            
+            assert(res.status == 401)
             ngx.say(res.reason)
         }
     }
