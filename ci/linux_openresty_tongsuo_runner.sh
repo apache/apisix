@@ -45,6 +45,7 @@ case_opt=$1
 
 case ${case_opt} in
 before_install)
+    # shellcheck disable=SC2218
     before_install
     ;;
 esac
