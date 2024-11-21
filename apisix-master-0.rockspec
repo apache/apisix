@@ -83,6 +83,7 @@ dependencies = {
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0",
     "api7-lua-resty-aws == 2.0.2-1",
+    "multipart = 0.5.9-1",
 }
 
 build = {
