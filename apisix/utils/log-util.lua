@@ -279,7 +279,8 @@ function _M.get_log_entry(plugin_name, conf, ctx)
 
     if conf.log_format or has_meta_log_format then
         customized = true
-        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format, conf.max_req_body_bytes)
+        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format,
+                                      conf.max_req_body_bytes)
     else
         if is_http then
             entry = get_full_log(ngx, conf)
