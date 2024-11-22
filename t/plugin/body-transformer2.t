@@ -31,6 +31,7 @@ add_block_preprocessor(sub {
 run_tests;
 
 __DATA__
+
 === TEST 1: body transformer plugin with key-auth that fails
 --- config
     location /t {
