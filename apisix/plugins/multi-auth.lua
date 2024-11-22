@@ -84,7 +84,7 @@ function _M.rewrite(conf, ctx)
                 core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
                 goto authenticated
             else
-                core.table.insert(errors, auth_plugin_name .. 
+                core.table.insert(errors, auth_plugin_name ..
                         " failed to authenticate the request, code: "
                         .. auth_code .. ". error: " .. err)
             end
