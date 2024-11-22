@@ -83,12 +83,23 @@ local function gen_log_format(format)
 end
 
 
-local function get_custom_format_log(ctx, format)
+local function get_custom_format_log(ctx, format, max_req_body_bytes)
     local log_format = lru_log_format(format or "", nil, gen_log_format, format)
     local entry = core.table.new(0, core.table.nkeys(log_format))
     for k, var_attr in pairs(log_format) do
         if var_attr[1] then
-            entry[k] = ctx.var[var_attr[2]]
+            local key = var_attr[2]
+            if key == "request_body" then
+                local max_req_body_bytes = max_req_body_bytes or MAX_REQ_BODY
+                local req_body, err = get_request_body(max_req_body_bytes)
+                if err then
+                    core.log.error("fail to get request body: ", err)
+                else
+                    entry[k] = req_body
+                end
+            else
+                entry[k] = ctx.var[var_attr[2]]
+            end
         else
             entry[k] = var_attr[2]
         end
@@ -268,7 +279,8 @@ function _M.get_log_entry(plugin_name, conf, ctx)
 
     if conf.log_format or has_meta_log_format then
         customized = true
-        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format)
+        entry = get_custom_format_log(ctx, conf.log_format or metadata.value.log_format,
+                                      conf.max_req_body_bytes)
     else
         if is_http then
             entry = get_full_log(ngx, conf)
