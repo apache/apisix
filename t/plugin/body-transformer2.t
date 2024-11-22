@@ -32,7 +32,65 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: body transformer plugin with key-auth that fails
+=== TEST 1: body transformer with decoded body (keyword: context)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+
+            local req_template = ngx.encode_base64[[
+                {%
+                    local core = require 'apisix.core'
+                    local cjson = require 'cjson'
+                    context.name = "bar"
+                    context.address = nil
+                    context.age = context.age + 1
+                    local body = core.json.encode(context)
+                %}{* body *}
+            ]]
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/echo",
+                    "plugins": {
+                        "body-transformer": {
+                            "request": {
+                                "template": "%s"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]], req_template)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 2: verify the transformed body
+--- request
+POST /echo
+{"name": "foo", "address":"LA", "age": 18}
+-- response_body
+{"name": "bar", "age": 19}
+
+
+
+=== TEST 3: body transformer plugin with key-auth that fails
 --- config
     location /t {
         content_by_lua_block {
