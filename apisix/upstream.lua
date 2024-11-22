@@ -155,10 +155,20 @@ local function create_checker(upstream)
         end
     end
 
+    local check_idx, err = core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+    if not check_idx then
+        upstream.is_creating_checker = nil
+        checker:clear()
+        checker:stop()
+        core.log.error("failed to add clean handler, err:",
+            err, " healthcheck parent:", core.json.delay_encode(healthcheck_parent, true))
+
+        return nil
+    end
+
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
-    healthcheck_parent.checker_idx =
-        core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+    healthcheck_parent.checker_idx = check_idx
 
     upstream.is_creating_checker = nil
 
