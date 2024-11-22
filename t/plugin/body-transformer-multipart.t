@@ -170,13 +170,11 @@ Content-Disposition: form-data; name="age"
                 {%
                     local core = require 'apisix.core'
                     local cjson = require 'cjson'
-                    
                     if tonumber(context.age) > 18 then
                         context._multipart:set_simple("status", "major")
                     else
                         context._multipart:set_simple("status", "minor")
                     end
-                    
                     local body = context._multipart:tostring()
                 %}{* body *}
             ]]
