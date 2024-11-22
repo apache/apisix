@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local require = require
 local pairs = pairs
+local type = type
 
 local schema = {
     type = "object",
@@ -93,7 +94,7 @@ function _M.rewrite(conf, ctx)
 
     :: authenticated ::
     if status_code ~= nil then
-        for _, error in ipairs(errors) do
+        for _, error in pairs(errors) do
             core.log.warn(error)
         end
         return 401, { message = "Authorization Failed" }
