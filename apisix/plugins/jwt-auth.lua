@@ -245,7 +245,6 @@ function _M.rewrite(conf, ctx)
     end
 
     local key_claim_name = conf.key_claim_name
-    core.log.warn("dibag: ", core.json.encode(jwt_obj, true))
     local user_key = jwt_obj.payload and jwt_obj.payload[key_claim_name]
     if not user_key then
         return 401, {message = "missing user key in JWT token"}
@@ -264,7 +263,6 @@ function _M.rewrite(conf, ctx)
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
-    core.log.warn("dibag: ", core.json.encode(consumer.auth_conf))
     local auth_secret, err = get_auth_secret(consumer.auth_conf)
     if not auth_secret then
         core.log.error("failed to retrieve secrets, err: ", err)
