@@ -103,7 +103,7 @@ passed
 
 
 
-=== TEST 5: invalid basic-auth credentials
+=== TEST 3: invalid basic-auth credentials
 --- request
 GET /hello
 --- more_headers
@@ -118,7 +118,7 @@ hmac-auth failed to authenticate the request, code: 401. error: client request c
 
 
 
-=== TEST 6: valid basic-auth creds
+=== TEST 4: valid basic-auth creds
 --- request
 GET /hello
 --- more_headers
@@ -130,7 +130,7 @@ failed to authenticate the request
 
 
 
-=== TEST 7: missing hmac auth authorization header
+=== TEST 5: missing hmac auth authorization header
 --- request
 GET /hello
 --- error_code: 401
@@ -141,7 +141,7 @@ hmac-auth failed to authenticate the request, code: 401. error: client request c
 
 
 
-=== TEST 8: hmac auth missing algorithm
+=== TEST 6: hmac auth missing algorithm
 --- request
 GET /hello
 --- more_headers
@@ -155,7 +155,7 @@ hmac-auth failed to authenticate the request, code: 401. error: client request c
 
 
 
-=== TEST 11: add consumer with username and jwt-auth plugins
+=== TEST 7: add consumer with username and jwt-auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +186,7 @@ passed
 
 
 
-=== TEST 12: test with expired jwt token
+=== TEST 8: test with expired jwt token
 --- request
 GET /hello
 --- error_code: 401
@@ -199,7 +199,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 
 
 
-=== TEST 13: test with jwt token containing wrong signature
+=== TEST 9: test with jwt token containing wrong signature
 --- request
 GET /hello
 --- error_code: 401
@@ -212,7 +212,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 
 
 
-=== TEST 14: verify jwt-auth
+=== TEST 10: verify jwt-auth
 --- request
 GET /hello
 --- more_headers
