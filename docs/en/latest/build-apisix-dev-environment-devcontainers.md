@@ -45,7 +45,7 @@ It only requires that you have an environment running Docker or a similar altern
 - macOS
   - ARM64
   - AMD64
-  
+
 ## Quick Setup of Apache APISIX Development Environment
 
 ### Implementation Idea
