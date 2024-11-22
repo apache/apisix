@@ -237,8 +237,8 @@ function _M.rewrite(conf, ctx)
     local jwt_obj = jwt:load_jwt(jwt_token)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
+        err = "JWT token invalid: " .. jwt_obj.reason
         if auth_utils.is_running_under_multi_auth(ctx) then
-            err = "JWT token invalid: " .. jwt_obj.reason
             return 401, err
         end
         core.log.warn(err)

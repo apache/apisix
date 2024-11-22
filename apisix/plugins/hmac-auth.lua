@@ -330,7 +330,7 @@ function _M.rewrite(conf, ctx)
             return 401, err
         end
         core.log.warn(err)
-        return 401, {message = "client request can't be validated: " .. err}
+        return 401, {message = err}
     end
 
     if conf.hide_credentials then
