@@ -32,7 +32,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: multipart request body to json request body conversion
 --- config
     location /t {
