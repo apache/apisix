@@ -32,7 +32,6 @@ run_tests;
 
 __DATA__
 
-
 === TEST 1: body transformer with decoded body (keyword: context)
 --- config
     location /t {
