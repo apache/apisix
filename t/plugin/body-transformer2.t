@@ -87,3 +87,48 @@ POST /echo
 {"name": "foo", "address":"LA", "age": 18}
 -- response_body
 {"name": "bar", "age": 19}
+
+
+
+=== TEST 3: body transformer plugin with key-auth that fails
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "body-transformer": {
+                            "request": {
+                                "template": "some-template"
+                            }
+                        },
+                        "key-auth": {}
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/foobar"
+            local opt = {method = "POST", body = "body", headers = {["Content-Type"] = "application/json"}}
+            local httpc = http.new()
+            local res = httpc:request_uri(uri, opt)
+            assert(res.status == 401)
+            ngx.say(res.reason)
+        }
+    }
+--- response_body
+Unauthorized
