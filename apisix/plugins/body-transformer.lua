@@ -201,7 +201,7 @@ local function set_input_format(conf, typ, ct, method)
             conf[typ].input_format = "json"
         elseif str_find(ct:lower(), "application/x-www-form-urlencoded", nil, true) then
             conf[typ].input_format = "encoded"
-        elseif str_find(ct:lower(), "multipart/", nil) then
+        elseif str_find(ct:lower(), "multipart/", nil, true) then
             conf[typ].input_format = "multipart"
         end
     end
