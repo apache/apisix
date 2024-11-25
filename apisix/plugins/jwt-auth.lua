@@ -51,7 +51,8 @@ local schema = {
         },
         key_claim_name = {
             type = "string",
-            default = "key"
+            default = "key",
+            minLength = "1",
         },
     },
 }
