@@ -52,7 +52,7 @@ local schema = {
         key_claim_name = {
             type = "string",
             default = "key",
-            minLength = "1",
+            minLength = 1,
         },
     },
 }
