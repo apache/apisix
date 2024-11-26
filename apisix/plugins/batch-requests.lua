@@ -139,6 +139,15 @@ local function check_input(data)
     end
 end
 
+local function tab_is_array(t)
+    local count = 0
+    for k, v in pairs(t) do
+        count = count + 1
+    end
+  
+    return #t == count
+end
+
 local function lowercase_key_or_init(obj)
     if not obj then
         return {}
@@ -245,9 +254,28 @@ local function batch_requests(ctx)
         return code, body
     end
 
+    local server_port = ngx.var.server_port
+    if not server_port or string.len(server_port) < 1 then
+        local node_listen = core.config.local_conf()
+        if node_listen.apisix and node_listen.apisix.node_listen then
+            node_listen = node_listen.apisix.node_listen
+            if type(node_listen) == "table" then
+                if tab_is_array(node_listen) and node_listen[1] then
+                    node_listen = node_listen[1]
+                end
+            end
+            if type(node_listen) == "table"  and node_listen.port then
+                node_listen = node_listen.port
+            end
+        end
+        if node_listen then
+            server_port = node_listen
+        end
+    end
+
     local httpc = http.new()
     httpc:set_timeout(data.timeout)
-    local ok, err = httpc:connect("127.0.0.1", ngx.var.server_port)
+    local ok, err = httpc:connect("127.0.0.1", server_port)
     if not ok then
         return 500, {error_msg = "connect to apisix failed: " .. err}
     end
