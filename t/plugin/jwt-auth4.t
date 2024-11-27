@@ -24,9 +24,11 @@ no_shuffle();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
+
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]");
     }
+
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
         if (!$block->response_body) {
@@ -56,6 +58,7 @@ __DATA__
                     }
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -91,6 +94,7 @@ passed
                     "uri": "/hello"
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -109,34 +113,45 @@ passed
             local function gen_token(payload)
                 local buffer = require "string.buffer"
                 local openssl_mac = require "resty.openssl.mac"
+
                 local base64 = require "ngx.base64"
                 local base64_encode = base64.encode_base64url
+
                 local json = require("cjson")
+
                 local function sign(data, key)
                     return openssl_mac.new(key, "HMAC", nil, "sha256"):final(data)
                 end
                 local header = { typ = "JWT", alg = "HS256" }
                 local buf = buffer.new()
+
                 buf:put(base64_encode(json.encode(header))):put("."):put(base64_encode(json.encode(payload)))
+
                 local ok, signature = pcall(sign, buf:tostring(), "my-secret-key")
                 if not ok then
                     return nil, signature
                 end
+
                 buf:put("."):put(base64_encode(signature))
+
                 return buf:get()
             end
+
             local payload = {
                 sub = "1234567890",
                 iss = "user-key",
                 exp = 9916239022
             }
+
             local token = gen_token(payload)
+
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local opt = {method = "POST", headers = {["Authorization"] = "Bearer " .. token}}
             local httpc = http.new()
             local res = httpc:request_uri(uri, opt)
             assert(res.status == 200)
+
             ngx.print(res.body)
         }
     }
@@ -183,7 +198,8 @@ hello world
                     },
                     "uri": "/jwt-auth-no-ctx"
                 }]]
-            )
+                )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -232,7 +248,8 @@ passed
                     },
                     "uri": "/jwt-auth-ctx"
                 }]]
-            )
+                )
+
             if code >= 300 then
                 ngx.status = code
             end
