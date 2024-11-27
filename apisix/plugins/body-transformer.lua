@@ -29,7 +29,7 @@ local type              = type
 local pcall             = pcall
 local pairs             = pairs
 local next              = next
-
+local setmetatable      = setmetatable
 
 local transform_schema = {
     type = "object",
@@ -155,10 +155,12 @@ local function transform(conf, body, typ, ctx, request_method)
         return nil, 503, err
     end
 
-    out._ctx = ctx
-    out._body = body
-    out._escape_xml = escape_xml
-    out._escape_json = escape_json
+    setmetatable(out, {__index = {
+        _ctx = ctx,
+        _body = body,
+        _escape_xml = escape_xml,
+        _escape_json = escape_json,
+    }})
     local ok, render_out = pcall(render, out)
     if not ok then
         local err = str_format("%s template rendering: %s", typ, render_out)
@@ -217,6 +219,9 @@ end
 
 function _M.body_filter(_, ctx)
     local conf = ctx.body_transformer_conf
+    if not conf then
+        return
+    end
     if conf.response then
         local body = core.response.hold_body_chunk(ctx)
         if ngx.arg[2] == false and not body then
