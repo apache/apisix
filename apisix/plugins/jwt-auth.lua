@@ -48,7 +48,12 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false
-        }
+        },
+        key_claim_name = {
+            type = "string",
+            default = "key",
+            minLength = 1,
+        },
     },
 }
 
@@ -240,7 +245,8 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "JWT token invalid"}
     end
 
-    local user_key = jwt_obj.payload and jwt_obj.payload.key
+    local key_claim_name = conf.key_claim_name
+    local user_key = jwt_obj.payload and jwt_obj.payload[key_claim_name]
     if not user_key then
         return 401, {message = "missing user key in JWT token"}
     end
