@@ -28,6 +28,7 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name   = "hmac-auth"
 local ALLOWED_ALGORITHMS = {"hmac-sha1", "hmac-sha256", "hmac-sha512"}
 local resty_sha256 = require("resty.sha256")
+local auth_utils = require("apisix.utils.auth")
 
 local schema = {
     type = "object",
@@ -324,8 +325,12 @@ end
 function _M.rewrite(conf, ctx)
     local params,err = retrieve_hmac_fields(ctx)
     if err then
-        core.log.warn("client request can't be validated: ", err)
-        return 401, {message = "client request can't be validated: " .. err}
+        err = "client request can't be validated: " .. err
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return 401, err
+        end
+        core.log.warn(err)
+        return 401, {message = err}
     end
 
     if conf.hide_credentials then
@@ -333,7 +338,11 @@ function _M.rewrite(conf, ctx)
     end
     local validated_consumer, err = validate(ctx, conf, params)
     if not validated_consumer then
-        core.log.warn("client request can't be validated: ", err or "Invalid signature")
+        err = "client request can't be validated: " .. (err or "Invalid signature")
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return 401, err
+        end
+        core.log.warn(err)
         return 401, {message = "client request can't be validated"}
     end
 
