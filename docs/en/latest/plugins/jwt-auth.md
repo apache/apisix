@@ -47,18 +47,18 @@ For Consumer:
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
 | base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Define the leeway in seconds to account for clock skew between the server that generated the jwt and the server validating it. Value should be zero (0) or a positive integer. |
-| key_claim_name | string | False                                                 | key     |                             | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
 
 NOTE: `encrypt_fields = {"secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 For Route:
 
-| Name   | Type   | Required | Default       | Description                                                         |
-|--------|--------|----------|---------------|---------------------------------------------------------------------|
-| header | string | False    | authorization | The header to get the token from.                                   |
-| query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
-| cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
-| hide_credentials | boolean | False     | false  | Set to true will not pass the authorization request of header\query\cookie to the Upstream.|
+| Name             | Type    | Required | Default       | Description                                                                                     |
+|------------------|---------|----------|---------------|-------------------------------------------------------------------------------------------------|
+| header           | string  | False    | authorization | The header to get the token from.                                                               |
+| query            | string  | False    | jwt           | The query string to get the token from. Lower priority than header.                             |
+| cookie           | string  | False    | jwt           | The cookie to get the token from. Lower priority than query.                                    |
+| hide_credentials | boolean | False    | false         | Set to true will not pass the authorization request of header\query\cookie to the Upstream.     |
+| key_claim_name   | string  | False    | key           | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 
