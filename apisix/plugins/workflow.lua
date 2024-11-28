@@ -49,7 +49,7 @@ local schema = {
                         }
                     }
                 },
-                required = {"case", "actions"}
+                required = {"actions"}
             }
         }
     },
@@ -117,9 +117,11 @@ function _M.check_schema(conf)
     end
 
     for idx, rule in ipairs(conf.rules) do
-        local ok, err = expr.new(rule.case)
-        if not ok then
-            return false, "failed to validate the 'case' expression: " .. err
+         if rule.case then
+            local ok, err = expr.new(rule.case)
+            if not ok then
+                return false, "failed to validate the 'case' expression: " .. err
+            end   
         end
 
         local actions = rule.actions
@@ -143,10 +145,12 @@ end
 
 
 function _M.access(conf, ctx)
-    local match_result
     for _, rule in ipairs(conf.rules) do
-        local expr, _ = expr.new(rule.case)
-        match_result = expr:eval(ctx.var)
+        local match_result = true
+        if rule.case then
+            local expr, _ = expr.new(rule.case)
+            match_result = expr:eval(ctx.var)
+        end
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]
