@@ -203,10 +203,15 @@ local function reload_plugins()
     plugin_mod.load()
 end
 
+local function reload_hosts()
+    core.log.info("start to hot reload hosts")
+    core.resolver.reload_hosts()
+end
+
 
 function _M.init_worker()
-    -- register reload plugin handler
-    events:register(reload_plugins, builtin_v1_routes.reload_event, "PUT")
+    events:register(reload_plugins, builtin_v1_routes.reload_plugins_event, "PUT")
+    events:register(reload_hosts, builtin_v1_routes.reload_hosts_event, "PUT")
 end
 
 return _M
