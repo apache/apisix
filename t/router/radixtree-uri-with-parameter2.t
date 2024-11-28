@@ -100,7 +100,7 @@ hello world
 
 
 
-=== TEST 2: failing case for the above test
+=== TEST 3: failing case for the above test
 --- request
 GET /name/with%20space/foo
 --- error_code: 404
