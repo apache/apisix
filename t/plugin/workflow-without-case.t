@@ -33,7 +33,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: set plugin
 --- config
     location /t {
