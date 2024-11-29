@@ -34,6 +34,7 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
+local lua_load      = load
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
@@ -47,6 +48,9 @@ local merged_stream_route = core.lrucache.new({
     ttl = 300, count = 512
 })
 local expr_lrucache = core.lrucache.new({
+    ttl = 300, count = 512
+})
+local meta_pre_func_load_lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 local local_conf
@@ -901,10 +905,21 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
                 .. name .. " err: " .. err
         end
 
-        if plugin_conf._meta and plugin_conf._meta.filter then
-            ok, err = expr.new(plugin_conf._meta.filter)
-            if not ok then
-                return nil, "failed to validate the 'vars' expression: " .. err
+        if plugin_conf._meta then
+            if plugin_conf._meta.filter then
+                ok, err = expr.new(plugin_conf._meta.filter)
+                if not ok then
+                    return nil, "failed to validate the 'vars' expression: " .. err
+                end
+            end
+
+            if plugin_conf._meta.pre_function then
+                local pre_function, err = meta_pre_func_load_lrucache(plugin_conf._meta.pre_function, "",
+                                          lua_load,
+                                          plugin_conf._meta.pre_function, "meta pre_function")
+                if not pre_function then
+                    return nil, "failed to load _meta.pre_function in plugin " .. name .. ": " .. err
+                end
             end
         end
     end
@@ -1125,6 +1140,17 @@ function _M.stream_plugin_checker(item, in_cp)
     return true
 end
 
+local function run_meta_pre_function(conf, api_ctx, name)
+    if conf._meta and conf._meta.pre_function then
+        local _, pre_function = pcall(meta_pre_func_load_lrucache(conf._meta.pre_function, "",
+                                lua_load,
+                                conf._meta.pre_function, "meta pre_function"))
+        local ok, err = pcall(pre_function, conf, api_ctx)
+        if not ok then
+            core.log.error("pre_function execution for plugin ", name, " failed: ", err)
+        end
+    end
+end
 
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
@@ -1164,6 +1190,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
                     goto CONTINUE
                 end
 
+                run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
                 plugin_run = true
                 api_ctx._plugin_name = plugins[i]["name"]
                 local code, body = phase_func(conf, api_ctx)
@@ -1202,6 +1229,7 @@ function _M.run_plugin(phase, plugins, api_ctx)
         local conf = plugins[i + 1]
         if phase_func and meta_filter(api_ctx, plugins[i]["name"], conf) then
             plugin_run = true
+            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
             api_ctx._plugin_name = plugins[i]["name"]
             phase_func(conf, api_ctx)
             api_ctx._plugin_name = nil
