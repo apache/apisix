@@ -29,7 +29,7 @@ local plugins_schema = {
 
 _M.anonymous_consumer_schema = {
     type = "string",
-    minLength = "1" 
+    minLength = "1"
 }
 
 local id_schema = {
