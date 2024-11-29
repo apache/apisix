@@ -17,7 +17,7 @@
 local core     = require("apisix.core")
 local consumer_mod = require("apisix.consumer")
 local plugin_name = "key-auth"
-
+local schema_def = require("apisix.schema_def")
 
 local schema = {
     type = "object",
@@ -33,7 +33,8 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false,
-        }
+        },
+        anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
 
@@ -66,7 +67,7 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-function _M.rewrite(conf, ctx)
+local function find_consumer(ctx, conf)
     local from_header = true
     local key = core.request.header(ctx, conf.header)
 
@@ -80,15 +81,10 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing API key in request"}
     end
 
-    local consumer_conf = consumer_mod.plugin(plugin_name)
-    if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
-    end
-
-    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
-    local consumer = consumers[key]
+    local consumer, consumer_conf, err = consumer_mod.find_consumer(plugin_name, "username", username)
     if not consumer then
-        return 401, {message = "Invalid API key in request"}
+        core.log.warn("failed to find user: ", err or "invalid user")
+        return nil, nil, "Invalid user authorization"
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
@@ -101,7 +97,24 @@ function _M.rewrite(conf, ctx)
             core.request.set_uri_args(ctx, args)
         end
     end
+    return consumer, consumer_conf
+end
 
+
+function _M.rewrite(conf, ctx)
+    local consumer, consumer_conf, err = find_consumer(ctx, conf)
+    if not consumer then
+        if not conf.anonymous_consumer then
+            return 401, { message = err}
+        end
+        consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
+        if not consumer then
+            core.log.error(err)
+            return 401, { message = "Invalid user authorization"}
+        end
+    end
+
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit key-auth rewrite")
 end

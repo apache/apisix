@@ -27,6 +27,11 @@ local plugins_schema = {
     type = "object"
 }
 
+_M.anonymous_consumer_schema = {
+    type = "string",
+    minLength = "1" 
+}
+
 local id_schema = {
     anyOf = {
         {
