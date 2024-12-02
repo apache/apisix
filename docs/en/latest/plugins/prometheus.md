@@ -96,6 +96,18 @@ plugin_attr:
       - 505
 ```
 
+### Specifying `expire`
+
+`expire` sets the expiration time of `apisix_http_status`, `apisix_bandwidth`, and `apisix_http_latency` metrics in seconds. When set to 0, metrics will not expire.
+
+Here is a configuration example:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    expire: 86400
+```
+
 ## Metrics endpoint
 
 This Plugin will add the metrics endpoint `/apisix/prometheus/metrics` or your custom export URI for exposing the metrics.
