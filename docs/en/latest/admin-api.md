@@ -913,25 +913,25 @@ Prerequisite: Consumer `jack` has been created.
 
 Create the `key-auth` Credential for consumer `jack`:
 
-    ```shell
-    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
-    -H "X-API-KEY: $admin_key" -X PUT -i -d '
-    {
-        "plugins": {
-            "key-auth": {
-                "key": "auth-one"
-            }
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
         }
-    }'
-    ```
+    }
+}'
+```
 
-    ```
-    HTTP/1.1 200 OK
-    Date: Thu, 26 Dec 2019 08:17:49 GMT
-    ...
+```
+HTTP/1.1 200 OK
+Date: Thu, 26 Dec 2019 08:17:49 GMT
+...
 
-    {"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
-    ```
+{"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
+```
 
 ## Upstream
 
