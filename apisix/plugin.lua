@@ -914,11 +914,13 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
             end
 
             if plugin_conf._meta.pre_function then
-                local pre_function, err = meta_pre_func_load_lrucache(plugin_conf._meta.pre_function, "",
+                local pre_function, err = meta_pre_func_load_lrucache(plugin_conf._meta.pre_function
+                                          , "",
                                           lua_load,
                                           plugin_conf._meta.pre_function, "meta pre_function")
                 if not pre_function then
-                    return nil, "failed to load _meta.pre_function in plugin " .. name .. ": " .. err
+                    return nil, "failed to load _meta.pre_function in plugin " .. name .. ": "
+                                 .. err
                 end
             end
         end
