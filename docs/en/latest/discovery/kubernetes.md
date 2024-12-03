@@ -302,7 +302,7 @@ A: The Kubernetes service discovery only uses privileged processes to [_List-Wat
 
 **Q: What permissions do [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) require?**
 
-A: ServiceAccount requires the permissions of cluster-level [ get, list, watch ] endpoints resources, the declarative definition is as follows:
+A: ServiceAccount requires the permissions of cluster-level [ get, list, watch ] endpoints and endpointslices resources, the declarative definition is as follows:
 
 ```yaml
 kind: ServiceAccount
@@ -315,11 +315,14 @@ metadata:
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
- name: apisix-test
+  name: apisix-test
 rules:
-- apiGroups: [ "" ]
-  resources: [ endpoints,endpointslices ]
-  verbs: [ get,list,watch ]
+  - apiGroups: [ "" ]
+    resources: [ endpoints]
+    verbs: [ get,list,watch ]
+  - apiGroups: [ "discovery.k8s.io" ]
+    resources: [ endpointslices ]
+    verbs: [ get,list,watch ]
 ---
 
 apiVersion: rbac.authorization.k8s.io/v1
