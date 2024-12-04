@@ -24,6 +24,9 @@ local exit = os.exit
 local stderr = io.stderr
 local str_format = string.format
 local tonumber = tonumber
+local io = io
+local ipairs = ipairs
+local assert = assert
 
 local _M = {}
 
