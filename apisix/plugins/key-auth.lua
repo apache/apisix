@@ -81,10 +81,15 @@ local function find_consumer(ctx, conf)
         return 401, {message = "Missing API key in request"}
     end
 
-    local consumer, consumer_conf, err = consumer_mod.find_consumer(plugin_name, "username", username)
+    local consumer_conf = consumer_mod.plugin(plugin_name)
+    if not consumer_conf then
+        return 401, {message = "Missing related consumer"}
+    end
+
+    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
+    local consumer = consumers[key]
     if not consumer then
-        core.log.warn("failed to find user: ", err or "invalid user")
-        return nil, nil, "Invalid user authorization"
+        return 401, {message = "Invalid API key in request"}
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
@@ -97,6 +102,7 @@ local function find_consumer(ctx, conf)
             core.request.set_uri_args(ctx, args)
         end
     end
+
     return consumer, consumer_conf
 end
 

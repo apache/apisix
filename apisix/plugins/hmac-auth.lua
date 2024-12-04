@@ -28,7 +28,6 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name   = "hmac-auth"
 local ALLOWED_ALGORITHMS = {"hmac-sha1", "hmac-sha256", "hmac-sha512"}
 local resty_sha256 = require("resty.sha256")
-local auth_utils = require("apisix.utils.auth")
 local schema_def = require("apisix.schema_def")
 
 local schema = {
