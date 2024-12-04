@@ -141,7 +141,8 @@ local function find_consumer(conf, ctx)
     end
 
     -- 2. get user info from consumer plugin
-    local cur_consumer, consumer_conf, err = consumer.find_consumer(plugin_name, "username", username)
+    local cur_consumer, consumer_conf, err = consumer.find_consumer(plugin_name, "username",
+                                             username)
     if not cur_consumer then
         core.log.warn("failed to find user: ", err or "invalid user")
         return nil, nil, "Invalid user authorization"
