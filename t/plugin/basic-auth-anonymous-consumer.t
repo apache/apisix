@@ -170,7 +170,7 @@ hello world
 
 
 
-=== TEST 4: request without basic-auth header will be from anonymous consumer and different rate limit will apply
+=== TEST 5: request without basic-auth header will be from anonymous consumer and different rate limit will apply
 --- pipelined_requests eval
 ["GET /hello", "GET /hello", "GET /hello", "GET /hello"]
 --- error_code eval
@@ -178,7 +178,7 @@ hello world
 
 
 
-=== TEST 5: add basic auth plugin with non-existent anonymous_consumer
+=== TEST 6: add basic auth plugin with non-existent anonymous_consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -214,7 +214,7 @@ passed
 
 
 
-=== TEST 6: anonymous-consumer configured in the route should not be found
+=== TEST 7: anonymous-consumer configured in the route should not be found
 --- request
 GET /hello
 --- error_code: 401
