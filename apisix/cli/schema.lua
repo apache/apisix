@@ -209,6 +209,9 @@ local config_schema = {
                         ssl_trusted_certificate = {
                             type = "string",
                         },
+                        ssl_trusted_combined_path = {
+                            type = "string",
+                        },
                         listen = {
                             type = "array",
                             items = {
