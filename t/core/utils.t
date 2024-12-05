@@ -393,3 +393,28 @@ res:nil
 res:5
 res:12
 res:7
+
+
+
+=== TEST 13: query_json
+--- config
+    location /t {
+        content_by_lua_block {
+            local query_json = require("apisix.core.utils").query_json
+            local obj = {
+                "a" = "a",
+                "b" = {
+                    "c" = "b.c",
+                    "d" =  {
+                        "e" = "b.d.e"
+                    }
+                }
+            }
+
+            assert(query_json(obj, "$.a") == "a", string.format("obj key %s mismatch value %s", query_json(obj, "$.a"), "a"))
+            assert(query_json(obj, "$.b.c") == "b.c", string.format("obj key %s mismatch value %s", query_json(obj, "$.b.c"), "b.c"))
+            assert(query_json(obj, "$.b.d.e") == "b.d.e", string.format("obj key %s mismatch value %s", query_json(obj, "$.b.d.e"), "b.d.e"))
+        }
+    }
+--- request
+GET /t
