@@ -107,6 +107,10 @@ function _M.access(conf, ctx)
     return
 end
 
+function _M.header_filter(conf, ctx)
+    core.log.warn("plugin header_filter phase, conf: ", core.json.encode(conf))
+end
+
 
 function _M.body_filter(conf, ctx)
     core.log.warn("plugin body_filter phase, eof: ", ngx.arg[2],
@@ -117,6 +121,10 @@ end
 function _M.delayed_body_filter(conf, ctx)
     core.log.warn("plugin delayed_body_filter phase, eof: ", ngx.arg[2],
                   ", conf: ", core.json.encode(conf))
+end
+
+function _M.log(conf, ctx)
+    core.log.warn("plugin log phase, conf: ", core.json.encode(conf))
 end
 
 
