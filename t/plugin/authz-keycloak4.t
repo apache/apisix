@@ -179,7 +179,71 @@ success
 
 
 
-=== TEST 4: set invalid client_secret as a reference to env variable
+=== TEST 4: add charset directive in content-type header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "authz-keycloak": {
+                                "token_endpoint": "https://127.0.0.1:8443/realms/University/protocol/openid-connect/token",
+                                "permissions": ["course_resource"],
+                                "client_id": "course_management",
+                                "client_secret": "$env://CLIENT_SECRET",
+                                "grant_type": "urn:ietf:params:oauth:grant-type:uma-ticket",
+                                "timeout": 3000,
+                                "ssl_verify": false,
+                                "password_grant_token_generation_incoming_uri": "/api/token"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/api/token"
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/api/token"
+            local headers = {
+                ["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8",
+            }
+
+            -- no username
+            local res, err = httpc:request_uri(uri, {
+                method = "POST",
+                headers = headers,
+                body =  ngx.encode_args({
+                    username = "teacher@gmail.com",
+                    password = "123456",
+                }),
+            })
+            if res.status == 200 then
+                ngx.print("success\n")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+success
+
+
+
+=== TEST 5: set invalid client_secret as a reference to env variable
 --- config
     location /t {
         content_by_lua_block {
