@@ -1278,7 +1278,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
-| ssl_protocols | 否    | tls 协议字符串数组               | 用于控制服务器与客户端之间使用的 SSL/TLS 协议版本。更多的配置示例，请参考[SSL 协议](./ssl-protocol.md)。                                  |                                                  |
+| ssl_protocols | 否    | tls 协议字符串数组               | 用于控制服务器与客户端之间使用的 SSL/TLS 协议版本。更多的配置示例，请参考[SSL 协议](./ssl-protocol.md)。                                  |                `["TLSv1.1", "TLSv1.2", "TLSv1.3"]`                                  |
 
 SSL 对象 JSON 配置示例：
 
