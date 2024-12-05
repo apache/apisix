@@ -43,7 +43,7 @@ description:  本文将介绍 API 网关 Apache APISIX 如何通过 prometheus �
 
 :::
 
-## 如何修改暴露指标的 uri
+### 如何修改暴露指标的 `export_uri`
 
 你可以在配置文件 `./conf/config.yaml` 的 `plugin_attr` 列表下修改默认的 URI。
 
@@ -76,6 +76,18 @@ plugin_attr:
       - 105
       - 205
       - 505
+```
+
+### 如何修改指标的 `expire`
+
+`expire` 用于设置 `apisix_http_status`、`apisix_bandwidth` 和 `apisix_http_latency` 指标的过期时间（以秒为单位）。当设置为 0 时，指标不会过期。
+
+配置示例如下：
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    expire: 86400
 ```
 
 ## API
