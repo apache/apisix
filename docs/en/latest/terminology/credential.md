@@ -123,14 +123,14 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 4. Test.
 
-Test the request with the `auth-one` and `auth-two` keys, and they both respond correctly.
+    Test the request with the `auth-one` and `auth-two` keys, and they both respond correctly.
 
     ```shell
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-two' -I
     ```
 
-Enable the `limit-count` plugin for the Consumer.
+    Enable the `limit-count` plugin for the Consumer.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -148,4 +148,4 @@ Enable the `limit-count` plugin for the Consumer.
     }'
     ```
 
-Requesting the route more than 3 times in a row with each of the two keys, the test returns `503` and the request is restricted.
+    Requesting the route more than 3 times in a row with each of the two keys, the test returns `503` and the request is restricted.
