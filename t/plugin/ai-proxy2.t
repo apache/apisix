@@ -198,3 +198,58 @@ POST /anything
 --- error_code: 200
 --- response_body
 passed
+
+
+
+=== TEST 5: set route without overriding the endpoint_url
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "auth": {
+                                "header": {
+                                    "Authorization": "some-key"
+                                }
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "gpt-4",
+                                "options": {
+                                    "max_tokens": 512,
+                                    "temperature": 1.0
+                                }
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: send request
+--- custom_trusted_cert: /etc/ssl/certs/ca-certificates.crt
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 401
