@@ -304,9 +304,8 @@ deployment:
 ```yaml title="./conf/config.yaml"
 deployment:
   admin:
-    admin_key
-      -
-        name: "admin"
+    admin_key:
+      - name: "admin"
         key: newsupersecurekey  # 请修改 key 的值
         role: admin
 ```
