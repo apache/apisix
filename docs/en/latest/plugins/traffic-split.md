@@ -63,7 +63,7 @@ The traffic ratio between Upstream services may be less accurate since round rob
 
 :::note
 
-Some of the configuration fields supported in Upstream are not supported in weighted_upstreams.upstream. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, `scheme`, `labels`, `create_time`, and `update_time`.
+Some of the configuration fields supported in Upstream are not supported in weighted_upstreams.upstream. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, `labels`, `create_time`, and `update_time`.
 
 As a workaround, you can create an Upstream object and configure it in `weighted_upstreams.upstream_id` to achieve these functionalities.
 
