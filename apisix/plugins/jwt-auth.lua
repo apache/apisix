@@ -55,6 +55,10 @@ local schema = {
             default = "key",
             minLength = 1,
         },
+        store_in_ctx = {
+            type = "boolean",
+            default = false
+        },
     },
 }
 
@@ -291,6 +295,10 @@ function _M.rewrite(conf, ctx)
         end
         core.log.warn(err)
         return 401, {message = "failed to verify jwt"}
+    end
+
+    if conf.store_in_ctx then
+        ctx.jwt_obj = jwt_obj
     end
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
