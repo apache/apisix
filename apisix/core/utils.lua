@@ -30,6 +30,7 @@ local ngx_re         = require("ngx.re")
 local ipmatcher      = require("resty.ipmatcher")
 local ffi            = require("ffi")
 local base           = require("resty.core.base")
+local jsonpath       = require("jsonpath")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
@@ -272,6 +273,11 @@ function _M.gethostname()
     end
 
     return hostname
+end
+
+-- get value of nested json
+function _M.query_json(obj, expression)
+    return jsonpath.value(obj, expression)
 end
 
 
