@@ -611,8 +611,9 @@ plugin_attr:          # Plugin attributes
     #   - 100
     #   - 200
     #   - 500
-    # expire: 0                       # The expiration time after metrics become inactive, unit: second.
-                                      # 0 means the metrics will not expire
+    # expire: 0                       # The expiration time of metrics in seconds.
+                                      # 0 means the metrics will not expire.
+                                      # Only affect apisix_http_status, apisix_bandwidth, and apisix_http_latency.
                                       # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
