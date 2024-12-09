@@ -257,6 +257,7 @@ The following metrics are exported by the `prometheus` Plugin:
   | Name     | Description                                                                                                                         |
   |----------|-------------------------------------------------------------------------------------------------------------------------------------|
   | type     | Value can be one of `apisix`, `upstream`, or `request`. This translates to latency caused by APISIX, Upstream, or both (their sum). |
+  | route    | `route_id` of the matched Route with request. Defaults to an empty string if the Routes don't match.                          |
   | service  | `service_id` of the Route matching the request. If the Route does not have a `service_id` configured, it defaults to `$host`.       |
   | consumer | `consumer_name` of the Consumer matching the request. Defaults to an empty string if it does not match.                             |
   | node     | IP address of the Upstream node.                                                                                                    |
