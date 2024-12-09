@@ -42,11 +42,11 @@ function _M.request(conf, request_table, ctx)
     end
 
     local ok, err = httpc:connect({
-        scheme = parsed_url.scheme or "https",
-        host = parsed_url.host or DEFAULT_HOST,
-        port = parsed_url.port or DEFAULT_PORT,
+        scheme = endpoint and parsed_url.scheme or "https",
+        host = endpoint and parsed_url.host or DEFAULT_HOST,
+        port = endpoint and parsed_url.port or DEFAULT_PORT,
         ssl_verify = conf.ssl_verify,
-        ssl_server_name = parsed_url.host or DEFAULT_HOST,
+        ssl_server_name = endpoint and parsed_url.host or DEFAULT_HOST,
         pool_size = conf.keepalive and conf.keepalive_pool,
     })
 
@@ -54,7 +54,7 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
-    local path = (parsed_url.path or DEFAULT_PATH)
+    local path = (endpoint and parsed_url.path or DEFAULT_PATH)
 
     local headers = (conf.auth.header or {})
     headers["Content-Type"] = "application/json"
