@@ -143,6 +143,8 @@ curl --location --request POST 'http://127.0.0.1:9080/api/token' \
 --data-urlencode 'password=<Password>'
 ```
 
+Note: For the value of the `Content-Type` header, it also support the parameterized form which defind in the section [3.1.1.5](https://www.rfc-editor.org/rfc/rfc7231#section-3.1.1.5) of [RFC7231](https://www.rfc-editor.org/rfc/rfc7231). For example `Content-Type: application/json; charset=utf-8`.
+
 ## Enable Plugin
 
 The example below shows how you can enable the `authz-keycloak` Plugin on a specific Route. `${realm}` represents the realm name in Keycloak.
