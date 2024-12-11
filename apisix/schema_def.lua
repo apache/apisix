@@ -549,7 +549,11 @@ _M.route = {
             minItems = 1,
             uniqueItems = true,
         },
-        name = rule_name_def,
+        name = {
+            type = "string",
+            maxLength = rule_name_def.maxLength * 3,
+            minLength = rule_name_def.minLength,
+        },
         desc = desc_def,
         priority = {type = "integer", default = 0},
 
