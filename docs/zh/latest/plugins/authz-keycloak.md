@@ -127,6 +127,8 @@ description: 本文介绍了关于 Apache APISIX `authz-keycloak` 插件的基�
     --data-urlencode 'password=<Password>'
     ```
 
+    注意：对于`Content-Type`头的值，此插件也支持参数化的形式（具体定义在[RFC7231](https://www.rfc-editor.org/rfc/rfc7231)的第[3.1.1.5](https://www.rfc-editor.org/rfc/rfc7231#section-3.1.1.5)小节）。具体示例`Content-Type: application/json; charset=utf-8`。
+
 ## 如何启用
 
 以下示例为你展示了如何在指定 Route 中启用 `authz-keycloak` 插件，其中 `${realm}` 是 Keycloak 中的 `realm` 名称：
