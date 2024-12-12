@@ -96,6 +96,7 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | introspection_expiry_claim      | string  | 否    |               |             | 过期声明的名称，用于控制缓存和内省访问令牌的 TTL。 |
 | introspection_addon_headers     | string[] | 否    |               |             | `introspection_addon_headers` 是字符串列表，用于配置额外添加到内省 HTTP 请求中的请求头，如果配置的请求头不存在于源请求中，它将被忽略。|
 | claim_validator.issuer.valid_issuers     | string[] | 否    |               |             | 将经过审查的 jwt 发行者列入白名单。当用户未传递时，将使用发现端点返回的颁发者。如果两者均缺失，发行人将无法得到验证|
+| claim_schema | object | 否 |  |  | OIDC响应claim的JSON schema |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
