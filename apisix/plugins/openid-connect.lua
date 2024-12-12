@@ -19,6 +19,7 @@ local core    = require("apisix.core")
 local ngx_re  = require("ngx.re")
 local openidc = require("resty.openidc")
 local random  = require("resty.random")
+local jsonschema = require('jsonschema')
 local string  = string
 local ngx     = ngx
 local ipairs  = ipairs
@@ -317,6 +318,11 @@ local schema = {
             items = {
                 type = "string"
             }
+        },
+        claim_schema = {
+            description = "JSON schema of OIDC response claim",
+            type = "object",
+            default = nil,
         }
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
@@ -331,6 +337,7 @@ local _M = {
     schema = schema,
 }
 
+local claim_validator = nil;
 
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
@@ -355,6 +362,14 @@ function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
+    end
+
+    if conf.claim_schema then
+        local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
+        if not ok then
+            return false, "generate claim_schema validator failed"
+        end
+        claim_validator = res
     end
 
     return true
@@ -528,6 +543,18 @@ local function required_scopes_present(required_scopes, http_scopes)
     return true
 end
 
+local function validate_claims_in_oidcauth_response(resp)
+    if not claim_validator then
+        return true, nil
+    end
+    local data = {
+        user  = resp.user,
+        access_token =  resp.access_token,
+        id_token = resp.id_token,
+    }
+    return claim_validator(data)
+end
+
 function _M.rewrite(plugin_conf, ctx)
     local conf = core.table.clone(plugin_conf)
 
@@ -682,6 +709,13 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
+            local ok, err = validate_claims_in_oidcauth_response( response)
+            if not ok then
+                core.log.error("OIDC claim validation failed: ", err)
+                ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
+                        '", error="invalid_token", error_description="' .. err .. '"'
+                return ngx.HTTP_UNAUTHORIZED
+            end
             -- If the openidc module has returned a response, it may contain,
             -- respectively, the access token, the ID token, the refresh token,
             -- and the userinfo.
