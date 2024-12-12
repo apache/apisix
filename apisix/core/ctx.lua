@@ -234,6 +234,7 @@ do
         upstream_connection        = true,
         upstream_uri               = true,
         llm_content_risk_level     = true,
+        apisix_request_id          = true,
 
         request_type               = true,
         apisix_upstream_response_time = true,
