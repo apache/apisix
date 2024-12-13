@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local require = require
 local pairs = pairs
 local type = type
+local plugin = require("apisix.plugin")
 
 local schema = {
     type = "object",
@@ -48,7 +49,7 @@ function _M.check_schema(conf)
     local auth_plugins = conf.auth_plugins
     for k, auth_plugin in pairs(auth_plugins) do
         for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
-            local auth = require("apisix.plugins." .. auth_plugin_name)
+            local auth = plugin.get(auth_plugin_name)
             if auth == nil then
                 return false, auth_plugin_name .. " plugin did not found"
             else
@@ -73,7 +74,7 @@ function _M.rewrite(conf, ctx)
 
     for k, auth_plugin in pairs(auth_plugins) do
         for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
-            local auth = require("apisix.plugins." .. auth_plugin_name)
+            local auth = plugin.get(auth_plugin_name)
             -- returns 401 HTTP status code if authentication failed, otherwise returns nothing.
             local auth_code, err = auth.rewrite(auth_plugin_conf, ctx)
             if type(err) == "table" then

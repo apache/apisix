@@ -47,7 +47,7 @@ dependencies = {
     "lua-resty-cookie = 0.2.0-1",
     "lua-resty-session = 3.10",
     "opentracing-openresty = 0.1",
-    "lua-resty-radixtree = 2.9.1",
+    "lua-resty-radixtree = 2.9.2",
     "lua-protobuf = 0.5.2-1",
     "lua-resty-openidc = 1.7.6-3",
     "luafilesystem = 1.7.0-2",
@@ -83,6 +83,7 @@ dependencies = {
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0",
     "api7-lua-resty-aws == 2.0.2-1",
+    "multipart = 0.5.9-1",
 }
 
 build = {

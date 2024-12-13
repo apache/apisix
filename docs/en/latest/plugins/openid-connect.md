@@ -70,7 +70,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | proxy_opts.http_proxy_authorization  | string   | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `http_proxy`. Can be overridden with custom `Proxy-Authorization` request header.                                                                                                                                                              |
 | proxy_opts.https_proxy_authorization | string   | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `https_proxy`. Cannot be overridden with custom `Proxy-Authorization` request header since with with HTTPS the authorization is completed when connecting.                         |
 | proxy_opts.no_proxy                  | string   | False    |                       |                                  | Comma separated list of hosts that should not be proxied.                                                                                                                                                                             |
-| authorization_params                 | object   | False    |                       |                                  | Additional parameters to send in the in the request to the authorization endpoint.                                                                                                                                                    |
+| authorization_params                 | object   | False    |                       |                                  | Additional parameters to send in the request to the authorization endpoint.                                                                                                                                                    |
 | client_rsa_private_key | string | False |  |  | Client RSA private key used to sign JWT. |
 | client_rsa_private_key_id | string | False |  |  | Client RSA private key ID used to compute a signed JWT. |
 | client_jwt_assertion_expires_in | integer | False | 60 |  | Life duration of the signed JWT in seconds. |
@@ -101,7 +101,7 @@ Tutorial: [Use Keycloak with API Gateway to secure APIs](https://apisix.apache.o
 
 :::
 
-This plugin offers two scenorios:
+This plugin offers two scenarios:
 
 1. Authentication between Services: Set `bearer_only` to `true` and configure the `introspection_endpoint` or `public_key` attribute. In this scenario, APISIX will reject requests without a token or invalid token in the request header.
 
