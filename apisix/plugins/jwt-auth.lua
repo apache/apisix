@@ -238,7 +238,7 @@ local function find_consumer(conf, ctx)
     local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         core.log.info("failed to fetch JWT token: ", err)
-        return 401, {message = "Missing JWT token in request"}
+        return nil, nil, "Missing JWT token in request"
     end
 
     local jwt_obj = jwt:load_jwt(jwt_token)
@@ -246,28 +246,28 @@ local function find_consumer(conf, ctx)
     if not jwt_obj.valid then
         err = "JWT token invalid: " .. jwt_obj.reason
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.warn(err)
-        return 401, {message = "JWT token invalid"}
+        return nil, nil, "JWT token invalid"
     end
 
     local key_claim_name = conf.key_claim_name
     local user_key = jwt_obj.payload and jwt_obj.payload[key_claim_name]
     if not user_key then
-        return 401, {message = "missing user key in JWT token"}
+        return nil, nil, "missing user key in JWT token"
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return nil, nil, "Missing related consumer"
     end
 
     local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
 
     local consumer = consumers[user_key]
     if not consumer then
-        return 401, {message = "Invalid user key in JWT token"}
+        return nil, nil, "Invalid user key in JWT token"
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
@@ -275,10 +275,10 @@ local function find_consumer(conf, ctx)
     if not auth_secret then
         err = "failed to retrieve secrets, err: " .. err
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.error(err)
-        return 503, {message = "failed to verify jwt"}
+        return nil, nil, "failed to verify jwt"
     end
     local claim_specs = jwt:get_default_validation_options(jwt_obj)
     claim_specs.lifetime_grace_period = consumer.auth_conf.lifetime_grace_period
@@ -289,10 +289,10 @@ local function find_consumer(conf, ctx)
     if not jwt_obj.verified then
         err = "failed to verify jwt: " .. jwt_obj.reason
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.warn(err)
-        return 401, {message = "failed to verify jwt"}
+        return nil, nil, err
     end
 
     return consumer, consumer_conf

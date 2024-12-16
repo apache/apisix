@@ -19,6 +19,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
 local auth_utils = require("apisix.utils.auth")
+local schema_def = require("apisix.schema_def")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -33,6 +34,8 @@ local schema = {
             default = false,
         }
     },
+    anonymous_consumer = schema_def.anonymous_consumer_schema,
+
 }
 
 local consumer_schema = {
@@ -128,16 +131,16 @@ local function find_consumer(conf, ctx)
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
         core.response.set_header("WWW-Authenticate", "Basic realm='.'")
-        return 401, { message = "Missing authorization in request" }
+        return nil, nil, "Missing authorization in request"
     end
 
     local username, password, err = extract_auth_header(auth_header)
     if err then
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.warn(err)
-        return 401, { message = "Invalid authorization in request" }
+        return nil, nil, "Invalid authorization in request"
     end
 
     -- 2. get user info from consumer plugin
@@ -152,11 +155,12 @@ local function find_consumer(conf, ctx)
 
     -- 4. check the password is correct
     if cur_consumer.auth_conf.password ~= password then
-        return 401, { message = "Invalid user authorization" }
+        return nil, nil, "Invalid user authorization"
     end
 
     return cur_consumer, consumer_conf, nil
 end
+
 function _M.rewrite(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 

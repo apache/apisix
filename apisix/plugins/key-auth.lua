@@ -78,18 +78,18 @@ local function find_consumer(ctx, conf)
     end
 
     if not key then
-        return 401, {message = "Missing API key in request"}
+        return nil, nil, "Missing API key in request"
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return nil, nil, "Missing related consumer"
     end
 
     local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
     local consumer = consumers[key]
     if not consumer then
-        return 401, {message = "Invalid API key in request"}
+        return nil, nil, "Invalid API key in request"
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
