@@ -136,9 +136,9 @@ function _M.http_init(prometheus_enabled_in_stream)
         metric_prefix = attr.metric_prefix
     end
 
-    local status_metrics_exptime = core.table.try_read_attr(attr, "metrics", "http_status", "expire")
+    local status_exptime = core.table.try_read_attr(attr, "metrics", "http_status", "expire")
     local latency_metrics_exptime = core.table.try_read_attr(attr, "metrics", "http_latency", "expire")
-    local bandwidth_metrics_exptime = core.table.try_read_attr(attr, "metrics", "bandwidth", "expire")
+    local bandwidth_exptime = core.table.try_read_attr(attr, "metrics", "bandwidth", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -171,7 +171,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.upstream_status = prometheus:gauge("upstream_status",
             "Upstream status from health check",
             {"name", "ip", "port"},
-            status_metrics_exptime)
+            status_exptime)
 
     -- per service
 
@@ -182,7 +182,7 @@ function _M.http_init(prometheus_enabled_in_stream)
             "HTTP status codes per service in APISIX",
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
             unpack(extra_labels("http_status"))},
-            status_metrics_exptime)
+            status_exptime)
 
     local buckets = DEFAULT_BUCKETS
     if attr and attr.default_buckets then
@@ -197,7 +197,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
             {"type", "route", "service", "consumer", "node", unpack(extra_labels("bandwidth"))},
-            bandwidth_metrics_exptime)
+            bandwidth_exptime)
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
