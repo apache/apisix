@@ -137,7 +137,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
 
     local status_exptime = core.table.try_read_attr(attr, "metrics", "http_status", "expire")
-    local latency_metrics_exptime = core.table.try_read_attr(attr, "metrics", "http_latency", "expire")
+    local latency_exptime = core.table.try_read_attr(attr, "metrics", "http_latency", "expire")
     local bandwidth_exptime = core.table.try_read_attr(attr, "metrics", "bandwidth", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
@@ -192,7 +192,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
         {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
-        buckets, latency_metrics_exptime)
+        buckets, latency_exptime)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
