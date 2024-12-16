@@ -599,22 +599,34 @@ plugin_attr:          # Plugin attributes
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status  # The label name does not need to be the same as the variable name.
+    #    expire: 0                        # The expiration time of metrics in seconds.
+                                          # 0 means the metrics will not expire.
+                                          # Only affect apisix_http_status, apisix_bandwidth, and apisix_http_latency.
+                                          # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
     #  http_latency:
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
+    #    expire: 0                        # The expiration time of metrics in seconds.
+                                          # 0 means the metrics will not expire.
+                                          # Only affect apisix_http_status, apisix_bandwidth, and apisix_http_latency.
+                                          # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
     #  bandwidth:
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
+    #    expire: 0                        # The expiration time of metrics in seconds.
+                                          # 0 means the metrics will not expire.
+                                          # Only affect apisix_http_status, apisix_bandwidth, and apisix_http_latency.
+                                          # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
     # default_buckets:
     #   - 10
     #   - 50
     #   - 100
     #   - 200
     #   - 500
-    # expire: 0                       # The expiration time of metrics in seconds.
-                                      # 0 means the metrics will not expire.
-                                      # Only affect apisix_http_status, apisix_bandwidth, and apisix_http_latency.
-                                      # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
+        # expire: 0                       # The expiration time of metrics in seconds.
+                                          # 0 means the metrics will not expire.
+                                          # Only affect apisix_http_status, apisix_bandwidth, and apisix_http_latency.
+                                          # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.
