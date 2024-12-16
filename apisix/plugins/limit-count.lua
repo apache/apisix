@@ -26,8 +26,8 @@ local _M = {
 }
 
 
-function _M.check_schema(conf)
-    return limit_count.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    return limit_count.check_schema(conf, schema_type)
 end
 
 
