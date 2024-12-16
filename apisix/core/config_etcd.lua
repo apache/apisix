@@ -289,7 +289,8 @@ local function run_watch(premature)
 
     local ok, err = ngx_thread_wait(run_watch_th, check_worker_th)
     if not ok then
-        log.error("run_watch or check_worker thread terminates failed, retart those threads, error: " .. inspect(err))
+        log.error("run_watch or check_worker thread terminates failed"
+        .. " restart those threads, error: ".. inspect(err))
     end
 
     ngx_thread_kill(run_watch_th)
