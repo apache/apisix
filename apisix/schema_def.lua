@@ -1034,7 +1034,8 @@ _M.plugin_injected_schema = {
                               "to two arguments: `conf` and `ctx`.",
                 type = "string",
             },
-        }
+        },
+        additionalProperties = false,
     }
 }
 
