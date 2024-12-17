@@ -136,10 +136,14 @@ function _M.http_init(prometheus_enabled_in_stream)
         metric_prefix = attr.metric_prefix
     end
 
-    local status_metrics_exptime = core.table.try_read_attr(attr, "metrics", "http_status", "expire")
-    local latency_metrics_exptime = core.table.try_read_attr(attr, "metrics", "http_latency", "expire")
-    local bandwidth_metrics_exptime = core.table.try_read_attr(attr, "metrics", "bandwidth", "expire")
-    local upstream_status_exptime = core.table.try_read_attr(attr, "metrics", "upstream_status", "expire")
+    local status_metrics_exptime = core.table.try_read_attr(attr, "metrics",
+                                   "http_status", "expire")
+    local latency_metrics_exptime = core.table.try_read_attr(attr, "metrics",
+                                   "http_latency", "expire")
+    local bandwidth_metrics_exptime = core.table.try_read_attr(attr, "metrics",
+                                   "bandwidth", "expire")
+    local upstream_status_exptime = core.table.try_read_attr(attr, "metrics",
+                                   "upstream_status", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
