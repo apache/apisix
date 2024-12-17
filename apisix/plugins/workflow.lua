@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
-local limit_count = require("apisix.plugins.limit-count.init")
 local expr        = require("resty.expr.v1")
 local ipairs      = ipairs
 
@@ -93,22 +92,21 @@ local function exit(conf)
 end
 
 
-local function rate_limit(conf, ctx)
-    return limit_count.rate_limit(conf, ctx, "limit-count", 1)
-end
-
 
 local support_action = {
     ["return"] = {
         handler        = exit,
         check_schema   = check_return_schema,
-    },
-    ["limit-count"] = {
-        handler        = rate_limit,
-        check_schema   = limit_count.check_schema,
     }
 }
 
+
+function _M.register(plugin_name, handler, check_schema)
+    support_action[plugin_name] = {
+        handler        = handler,
+        check_schema   = check_schema
+    }
+end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)

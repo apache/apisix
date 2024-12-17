@@ -16,6 +16,7 @@
 --
 local fetch_secrets = require("apisix.secret").fetch_secrets
 local limit_count = require("apisix.plugins.limit-count.init")
+local workflow = require("apisix.plugins.workflow")
 
 local plugin_name = "limit-count"
 local _M = {
@@ -36,5 +37,14 @@ function _M.access(conf, ctx)
     return limit_count.rate_limit(conf, ctx, plugin_name, 1)
 end
 
+function _M.workflow_handler()
+    workflow.register(plugin_name,
+    function (conf, ctx)
+        return limit_count.rate_limit(conf, ctx, plugin_name, 1)
+    end,
+    function (conf)
+        return limit_count.check_schema(conf)
+    end)
+end
 
 return _M
