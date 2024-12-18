@@ -24,11 +24,12 @@ local _M = {
     priority = 1002,
     name = plugin_name,
     schema = limit_count.schema,
+    metadata_schema = limit_count.metadata_schema,
 }
 
 
-function _M.check_schema(conf)
-    return limit_count.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    return limit_count.check_schema(conf, schema_type)
 end
 
 
