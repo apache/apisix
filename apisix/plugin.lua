@@ -35,7 +35,7 @@ local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
 -- make linter happy to avoid error: getting the Lua global "load"
--- luacheck: global
+-- luacheck: ignore
 local lua_load          = load
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
