@@ -34,7 +34,9 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
-local load          = load
+-- make linter happy to avoid error: getting the Lua global "load"
+-- luacheck: ignore
+local lua_load          = load
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
@@ -193,7 +195,7 @@ local function load_plugin(name, plugins_list, plugin_type)
 end
 
 
-local function plugin_load(plugin_names, wasm_plugin_names)
+local function load(plugin_names, wasm_plugin_names)
     local processed = {}
     for _, name in ipairs(plugin_names) do
         if processed[name] == nil then
@@ -346,7 +348,7 @@ function _M.load(config)
                 wasm_plugin_names = local_conf.wasm.plugins
             end
 
-            local ok, err = plugin_load(http_plugin_names, wasm_plugin_names)
+            local ok, err = load(http_plugin_names, wasm_plugin_names)
             if not ok then
                 core.log.error("failed to load plugins: ", err)
             end
@@ -916,7 +918,7 @@ local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_d
             if plugin_conf._meta.pre_function then
                 local pre_function, err = meta_pre_func_load_lrucache(plugin_conf._meta.pre_function
                                           , "",
-                                          load,
+                                          lua_load,
                                           plugin_conf._meta.pre_function, "meta pre_function")
                 if not pre_function then
                     return nil, "failed to load _meta.pre_function in plugin " .. name .. ": "
@@ -1145,7 +1147,7 @@ end
 local function run_meta_pre_function(conf, api_ctx, name)
     if conf._meta and conf._meta.pre_function then
         local _, pre_function = pcall(meta_pre_func_load_lrucache(conf._meta.pre_function, "",
-                                load,
+                                lua_load,
                                 conf._meta.pre_function, "meta pre_function"))
         local ok, err = pcall(pre_function, conf, api_ctx)
         if not ok then
