@@ -80,7 +80,10 @@ local function filter_consumers_list(data_list)
     return list
 end
 
-local function plugin_consumer()
+local plugin_consumer
+do
+    local consumers_id_cache = {} 
+function plugin_consumer()
     local plugins = {}
 
     if consumers.values == nil then
@@ -101,10 +104,19 @@ local function plugin_consumer()
                 if not plugins[name] then
                     plugins[name] = {
                         nodes = {},
+                        len = 0,
                         conf_version = consumers.conf_version
                     }
                 end
 
+                local cached_consumer = consumers_id_cache[val.value.id]
+                if cached_consumer and 
+                    cached_consumer.modifiedIndex == val.modifiedIndex then
+                    plugins[name].len = plugins[name].len + 1
+                    core.table.insert(plugins[name].nodes, plugins[name].len,
+                                        cached_consumer)
+                    goto CONTINUE_INTERNAL
+                end
                 -- if the val is a Consumer, clone it to the local consumer;
                 -- if the val is a Credential, to get the Consumer by consumer_name and then clone
                 -- it to the local consumer.
@@ -141,7 +153,10 @@ local function plugin_consumer()
                 consumer.auth_conf = config
                 core.log.info("consumer:", core.json.delay_encode(consumer))
                 core.table.insert(plugins[name].nodes, consumer)
+                consumers_id_cache[val.value.id] = consumer
             end
+
+            ::CONTINUE_INTERNAL::
         end
 
         ::CONTINUE::
@@ -149,6 +164,9 @@ local function plugin_consumer()
 
     return plugins
 end
+
+end
+
 
 _M.filter_consumers_list = filter_consumers_list
 
@@ -186,15 +204,23 @@ function _M.consumers()
 end
 
 
-local function create_consume_cache(consumers_conf, key_attr)
+local consumers_plugin_key_cache = {}
+local function create_consume_cache(consumers_conf, key_attr, cache)
     local consumer_names = {}
 
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
-        local new_consumer = core.table.clone(consumer)
-        new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, true,
-                                                        new_consumer.auth_conf, "")
-        consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
+        if cache and cache[consumer.auth_conf[key_attr]] and
+            cache[consumer.auth_conf[key_attr]].modifiedIndex == 
+            consumer.modifiedIndex then
+            consumer_names[consumer.auth_conf[key_attr]] = 
+                cache[consumer.auth_conf[key_attr]]
+        else
+            local new_consumer = core.table.clone(consumer)
+            new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, true,
+                                                            new_consumer.auth_conf, "")
+            consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
+        end
     end
 
     return consumer_names
@@ -203,8 +229,10 @@ end
 
 function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     local consumers = lrucache("consumers_key#" .. plugin_name, consumer_conf.conf_version,
-        create_consume_cache, consumer_conf, key_attr)
+        create_consume_cache, consumer_conf, key_attr,
+        consumers_plugin_key_cache[plugin_name])
 
+    consumers_plugin_key_cache[plugin_name] = consumers
     return consumers
 end
 
