@@ -19,6 +19,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
 local auth_utils = require("apisix.utils.auth")
+local schema_def = require("apisix.schema_def")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
@@ -33,6 +34,8 @@ local schema = {
             default = false,
         }
     },
+    anonymous_consumer = schema_def.anonymous_consumer_schema,
+
 }
 
 local consumer_schema = {
@@ -121,48 +124,60 @@ local function extract_auth_header(authorization)
 
 end
 
-
-function _M.rewrite(conf, ctx)
+local function find_consumer(conf, ctx)
     core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
 
     -- 1. extract authorization from header
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then
         core.response.set_header("WWW-Authenticate", "Basic realm='.'")
-        return 401, { message = "Missing authorization in request" }
+        return nil, nil, "Missing authorization in request"
     end
 
     local username, password, err = extract_auth_header(auth_header)
     if err then
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.warn(err)
-        return 401, { message = "Invalid authorization in request" }
+        return nil, nil, "Invalid authorization in request"
     end
 
     -- 2. get user info from consumer plugin
-    local consumer_conf = consumer.plugin(plugin_name)
-    if not consumer_conf then
-        return 401, { message = "Missing related consumer" }
-    end
-
-    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "username")
-
-    -- 3. check user exists
-    local cur_consumer = consumers[username]
+    local cur_consumer, consumer_conf, err = consumer.find_consumer(plugin_name, "username",
+                                             username)
     if not cur_consumer then
-        return 401, { message = "Invalid user authorization" }
+        core.log.warn("failed to find user: ", err or "invalid user")
+        return nil, nil, "Invalid user authorization"
     end
     core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
 
 
     -- 4. check the password is correct
     if cur_consumer.auth_conf.password ~= password then
-        return 401, { message = "Invalid user authorization" }
+        return nil, nil, "Invalid user authorization"
     end
 
-    -- 5. hide `Authorization` request header if `hide_credentials` is `true`
+    return cur_consumer, consumer_conf, nil
+end
+
+function _M.rewrite(conf, ctx)
+    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
+
+    local cur_consumer, consumer_conf, err = find_consumer(ctx)
+    if not cur_consumer then
+        if not conf.anonymous_consumer then
+            return 401, { message = err }
+        end
+        cur_consumer, consumer_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
+        if not cur_consumer then
+            core.log.error(err)
+            return 401, { message = "Invalid user authorization" }
+        end
+    end
+
+    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
+
     if conf.hide_credentials then
         core.request.set_header(ctx, "Authorization", nil)
     end
