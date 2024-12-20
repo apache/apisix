@@ -314,3 +314,55 @@ GET /t
     }
 --- response_body
 all done
+
+
+
+=== TEST 9: get string value from aws, secret name has /
+--- config
+    location /t {
+        content_by_lua_block {
+            local aws = require("apisix.secret.aws")
+            local conf = {
+                endpoint_url = "http://127.0.0.1:4566",
+                region = "us-east-1",
+                access_key_id = "$ENV://AWS_ACCESS_KEY_ID",
+                secret_access_key = "$ENV://AWS_SECRET_ACCESS_KEY",
+                session_token = "$ENV://AWS_SESSION_TOKEN",
+            }
+            local data, err = aws.get(conf, "apisix/string")
+            if err then
+                return ngx.say(err)
+            end
+            ngx.say(data)
+        }
+    }
+--- request
+GET /t
+--- response_body
+secret
+
+
+
+=== TEST 10: get json value from aws, secret name has /
+--- config
+    location /t {
+        content_by_lua_block {
+            local aws = require("apisix.secret.aws")
+            local conf = {
+                endpoint_url = "http://127.0.0.1:4566",
+                region = "us-east-1",
+                access_key_id = "$ENV://AWS_ACCESS_KEY_ID",
+                secret_access_key = "$ENV://AWS_SECRET_ACCESS_KEY",
+                session_token = "$ENV://AWS_SESSION_TOKEN",
+            }
+            local data, err = aws.get(conf, "apisix/json/jack")
+            if err then
+                return ngx.say(err)
+            end
+            ngx.say(data)
+        }
+    }
+--- request
+GET /t
+--- response_body
+value
