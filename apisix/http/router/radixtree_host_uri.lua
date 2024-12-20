@@ -143,7 +143,7 @@ local function create_radixtree_router(routes)
 end
 
 function _M.match(api_ctx)
-    local user_routes = core.table.deepcopy(_M.user_routes)
+    local user_routes = _M.user_routes
     local _, service_version = get_services()
     if not cached_router_version or cached_router_version ~= user_routes.conf_version
         or not cached_service_version or cached_service_version ~= service_version

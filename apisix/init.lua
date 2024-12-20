@@ -493,7 +493,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
             api_ctx.matched_route = route
         end
 
-        local route_val = route.value
+        local route_val = core.table.deepcopy(route.value)
 
         api_ctx.matched_upstream = (route.dns_value and
                                     route.dns_value.upstream)
