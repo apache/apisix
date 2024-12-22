@@ -85,9 +85,7 @@ do
                             body.checker = nil
                             body.checker_idx = nil
                             body.checker_upstream = nil
-                            if body.clean_handlers then
-                                body.clean_handlers = {}
-                            end
+                            body.clean_handlers = nil
                         end
                         core.response.exit(code, body)
                     end
