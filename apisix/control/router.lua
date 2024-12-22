@@ -81,11 +81,13 @@ do
                         if type(body) == "table" and ngx.header["Content-Type"] == nil then
                             core.response.set_header("Content-Type", "application/json")
                         end
-                        if type(body) then
+                        if type(body) == "table" then
                             body.checker = nil
                             body.checker_idx = nil
                             body.checker_upstream = nil
-                            body.clean_handlers = nil
+                            if body.clean_handlers then
+                                body.clean_handlers = {}
+                            end
                         end
                         core.response.exit(code, body)
                     end
