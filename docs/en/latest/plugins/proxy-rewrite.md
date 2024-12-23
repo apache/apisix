@@ -30,33 +30,28 @@ description: This document contains information about the Apache APISIX proxy-re
 
 ## Description
 
-The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`, `uri` and `host`.
+The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwards to upstream services. With this plugin, you can modify the HTTP methods, request destination upstream address, request headers, and more.
 
 ## Attributes
 
 | Name                        | Type          | Required | Default | Valid values                                                                                                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 |-----------------------------|---------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| uri                         | string        | False    |         |                                                                                                                                        | New Upstream forwarding address. Value supports [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
-| method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | Rewrites the HTTP method.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions can be used to match the URL from client. If it matches, the URL template is forwarded to the upstream. Otherwise, the URL from the client is forwarded. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. Multiple regular expressions are currently supported for pattern matching, and the plugin will try to match them one by one until they succeed or all fail. For example: `["^/iresty/(. *)/(. *)/(. *)", "/$1-$2-$3", ^/theothers/(. *)/(. *)", "/theothers/$1-$2"]`, the element with the odd index represents the uri regular expression that matches the request from the client, and the element with the even index represents the `uri` template that is forwarded upstream upon a successful match. Please note that the length of this value must be an **even number**. |
-| host                        | string        | False    |         |                                                                                                                                        | New Upstream host address.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| headers                     | object        | False    |         |                                                                                                                                   |                   |
-| headers.add     | object   | false     |        |                 | Append the new headers. The format is `{"name": "value",...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. It also supports referencing the match result of `regex_uri` as a variable like `$1-$2-$3`.                                                                                              |
-| headers.set     | object  | false     |        |                 | Overwrite the headers. If the header does not exist, it will be added. The format is  `{"name": "value", ...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. It also supports referencing the match result of `regex_uri` as a variable like `$1-$2-$3`. Note that if you would like to set the `Host` header, use the `host` attribute instead.                                                                                       |
-| headers.remove  | array   | false     |        |                 | Remove the headers. The format is `["name", ...]`.
-| use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | Use real_request_uri (original $request_uri in nginx) to bypass URI normalization. **Enabling this is considered unsafe as it bypasses all URI normalization steps**.                                                                                                                                                                                                                                                                                                     |
+| uri                         | string        | False    |         |                                                                                                                                        |  New upstream URI path. Value supports [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
+| method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | HTTP method to rewrite requests to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the upstream URI path to `/theothers`. |
+| host                        | string        | False    |         |                                                                                                                                        | Set [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) request header.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| headers                     | object        | False    |         |                                                                                                                                   |   Header actions to be executed. Can be set to objects of action verbs `add`, `remove`, and/or `set`; or an object consisting of headers to be `set`. When multiple action verbs are configured, actions are executed in the order of `add`, `remove`, and `set`.                |
+| headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`.                                                                                              |
+| headers.set     | object  | False     |        |                 | Headers to set to requests. If a header already present in the request, the header value will be overwritten. Header value could be set to a constant, one or more [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`. Should not be used to set `Host`.                                                                                       |
+| headers.remove  | array[string]   | False     |        |                 | Headers to remove from requests.
+| use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | If true, bypass URI normalization and allow for the full original request URI. Enabling this option is considered unsafe.         |
 
-## Header Priority
+## Examples
 
-Header configurations are executed according to the following priorities:
-
-`add` > `remove` > `set`
-
-## Enable Plugin
-
-The example below enables the `proxy-rewrite` Plugin on a specific Route:
+The examples below demonstrate how you can configure `proxy-rewrite` on a Route in different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -65,68 +60,446 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Rewrite Host Header
+
+The following example demonstrates how you can modify the `Host` header in a request. Note that you should not use `headers.set` to set the `Host` header.
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
     "methods": ["GET"],
-    "uri": "/test/index.html",
+    "uri": "/headers",
     "plugins": {
-        "proxy-rewrite": {
-            "uri": "/test/home.html",
-            "host": "iresty.com",
-            "headers": {
-               "set": {
-                    "X-Api-Version": "v1",
-                    "X-Api-Engine": "apisix",
-                    "X-Api-useless": ""
-                },
-                "add": {
-                    "X-Request-ID": "112233"
-                },
-                "remove":[
-                    "X-test"
-                ]
-            }
-        }
+      "proxy-rewrite": {
+        "host": "myapisix.demo"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## Example usage
-
-Once you have enabled the Plugin as mentioned below, you can test the Route:
+Send a request to `/headers` to check all the request headers sent to upstream:
 
 ```shell
-curl -X GET http://127.0.0.1:9080/test/index.html
+curl "http://127.0.0.1:9080/headers"
 ```
 
-Once you send the request, you can check the Upstream `access.log` for its output:
+You should see a response similar to the following:
 
-```
-127.0.0.1 - [26/Sep/2019:10:52:20 +0800] iresty.com GET /test/home.html HTTP/1.1 200 38 - curl/7.29.0 - 0.000 199 107
-```
-
-## Delete Plugin
-
-To remove the `proxy-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
+```text
 {
-    "methods": ["GET"],
-    "uri": "/test/index.html",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
-        }
-    }
-}'
+  "headers": {
+    "Accept": "*/*",
+    "Host": "myapisix.demo",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fef198-29da0970383150175bd2d76d",
+    "X-Forwarded-Host": "127.0.0.1"
+  }
+}
 ```
+
+### Rewrite URI And Set Headers
+
+The following example demonstrates how you can rewrite the request upstream URI and set additional header values. If the same headers present in the client request, the corresponding header values set in the Plugin will overwrite the values present in the client request.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/anything",
+        "headers": {
+          "set": {
+            "X-Api-Version": "v1",
+            "X-Api-Engine": "apisix"
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to verify:
+
+```shell
+curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
+```
+
+You should see a response similar to the following:
+
+```text
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
+    "X-Api-Engine": "apisix",
+    "X-Api-Version": "v1",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "::1, 103.248.35.179",
+  "url": "http://localhost/anything"
+}
+```
+
+Note that both headers present and the header value of `X-Api-Version` configured in the Plugin overwrites the header value passed in the request.
+
+### Rewrite URI And Append Headers
+
+The following example demonstrates how you can rewrite the request upstream URI and append additional header values. If the same headers present in the client request, their headers values will append to the configured header values in the plugin.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/headers",
+        "headers": {
+          "add": {
+            "X-Api-Version": "v1",
+            "X-Api-Engine": "apisix"
+          }
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to verify:
+
+```shell
+curl "http://127.0.0.1:9080/" -H '"X-Api-Version": "v2"'
+```
+
+You should see a response similar to the following:
+
+```text
+{
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fed73a-59cd3bd640d76ab16c97f1f1",
+    "X-Api-Engine": "apisix",
+    "X-Api-Version": "v1,v2",
+    "X-Forwarded-Host": "127.0.0.1"
+  }
+}
+```
+
+Note that both headers present and the header value of `X-Api-Version` configured in the Plugin is appended by the header value passed in the request.
+
+### Remove Existing Header
+
+The following example demonstrates how you can remove an existing header `User-Agent`.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/headers",
+    "plugins": {
+      "proxy-rewrite": {
+        "headers": {
+          "remove":[
+            "User-Agent"
+          ]
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to verify if the specified header is removed:
+
+```shell
+curl "http://127.0.0.1:9080/headers"
+```
+
+You should see a response similar to the following, where the `User-Agent` header is not present:
+
+```text
+{
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    "X-Amzn-Trace-Id": "Root=1-64fef302-07f2b13e0eb006ba776ad91d",
+    "X-Forwarded-Host": "127.0.0.1"
+  }
+}
+```
+
+### Rewrite URI Using RegEx
+
+The following example demonstrates how you can parse text from the original upstream URI path and use them to compose a new upstream URI path. In this example, APISIX is configured to forward all requests from `/test/user/agent` to `/user-agent`.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "uri": "/test/*",
+    "plugins": {
+      # highlight-start
+      "proxy-rewrite": {
+        "regex_uri": ["^/test/(.*)/(.*)", "/$1-$2"]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to `/test/user/agent` to check if it is redirected to `/user-agent`:
+
+```shell
+curl "http://127.0.0.1:9080/test/user/agent"
+```
+
+You should see a response similar to the following:
+
+```text
+{
+  "user-agent": "curl/8.2.1"
+}
+```
+
+### Add URL Parameters
+
+The following example demonstrates how you can add URL parameters to the request.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/get",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/get?arg1=apisix&arg2=plugin"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to verify if the URL parameters are also forwarded to upstream:
+
+```shell
+curl "http://127.0.0.1:9080/get"
+```
+
+You should see a response similar to the following:
+
+```text
+{
+  "args": {
+    "arg1": "apisix",
+    "arg2": "plugin"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fef6dc-2b0e09591db7353a275cdae4",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "127.0.0.1, 103.248.35.148",
+  # highlight-next-line
+  "url": "http://127.0.0.1/get?arg1=apisix&arg2=plugin"
+}
+```
+
+### Rewrite HTTP Method
+
+The following example demonstrates how you can rewrite a GET request into a POST request.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/get",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/anything",
+        "method":"POST"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a GET request to `/get` to verify if it is transformed into a POST request to `/anything`:
+
+```shell
+curl "http://127.0.0.1:9080/get"
+```
+
+You should see a response similar to the following:
+
+```text
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id": "Root=1-64fef7de-0c63387645353998196317f2",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "method": "POST",
+  "origin": "::1, 103.248.35.179",
+  "url": "http://localhost/anything"
+}
+```
+
+### Forward Consumer Names to Upstream
+
+The following example demonstrates how you can forward the name of consumers who authenticates successfully to upstream services. As an example, you will be using `key-auth` as the authentication method.
+
+Create a consumer `JohnDoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "JohnDoe"
+  }'
+```
+
+Create `key-auth` credential for the consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+Next, create a Route with key authentication enabled, configure `proxy-rewrite` to add consumer name to the header, and remove the authentication key so that it is not visible to the upstream service:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "consumer-restricted-route",
+    "uri": "/get",
+    "plugins": {
+      "key-auth": {},
+      "proxy-rewrite": {
+        "headers": {
+          "set": {
+            "X-Apisix-Consumer": "$consumer_name"
+          },
+          "remove": [ "Apikey" ]
+        }
+      }
+    },
+    "upstream" : {
+      "nodes": {
+        "httpbin.org":1
+      }
+    }
+  }'
+```
+
+Send a request to the Route as consumer `JohnDoe`:
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
+```
+
+You should receive an `HTTP/1.1 200 OK` response with the following body:
+
+```text
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.4.0",
+    "X-Amzn-Trace-Id": "Root=1-664b01a6-2163c0156ed4bff51d87d877",
+    "X-Apisix-Consumer": "JohnDoe",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "172.19.0.1, 203.12.12.12",
+  "url": "http://127.0.0.1/get"
+}
+```
+
+Send another request to the Route without the valid credential:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response.
