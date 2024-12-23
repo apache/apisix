@@ -41,6 +41,16 @@ local function init_hosts_ip()
 end
 
 
+function _M.reload_hosts()
+    init_hosts_ip()
+end
+
+
+function _M.get_hosts()
+    return HOSTS_IP_MATCH_CACHE
+end
+
+
 function _M.init_resolver(args)
     --  initialize /etc/hosts
     init_hosts_ip()
