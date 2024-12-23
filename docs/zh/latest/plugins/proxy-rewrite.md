@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
-description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本信息及使用方法。
+description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请求。使用此插件，您可以修改 HTTP 方法、请求目标上游地址、请求标头等。
 ---
 
 <!--
