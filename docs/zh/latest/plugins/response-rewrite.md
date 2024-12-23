@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Response Rewrite
   - response-rewrite
-description: 本文介绍了关于 Apache APISIX `response-rewrite` 插件的基本信息及使用方法。
+description: response-rewrite 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用该插件，您可以修改 HTTP 状态代码、请求标头、响应正文等。
 ---
 
 <!--
@@ -30,12 +30,12 @@ description: 本文介绍了关于 Apache APISIX `response-rewrite` 插件的基
 
 ## 描述
 
-`response-rewrite` 插件支持修改上游服务或 APISIX 返回的 Body 和 Header 信息。
+`response-rewrite` 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用此插件，您可以修改 HTTP 状态代码、请求标头、响应正文等。
 
-该插件可以应用在以下场景中：
+例如，您可以使用此插件来：
 
-- 通过设置 `Access-Control-Allow-*` 字段实现 CORS（跨域资源共享）的功能。
-- 通过设置标头中的 `status_code` 和 `Location` 字段实现重定向。
+- 通过设置 `Access-Control-Allow-*` 标头来支持 [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS)。
+- 通过设置 HTTP 状态代码和 `Location` 标头来指示重定向。
 
 :::tip
 
@@ -48,28 +48,22 @@ description: 本文介绍了关于 Apache APISIX `response-rewrite` 插件的基
 | 名称            | 类型    | 必选项 | 默认值 | 有效值          | 描述                                                                                                                                                                                                                      |
 |-----------------|---------|--------|--------|-----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | status_code     | integer | 否     |        | [200, 598]      | 修改上游返回状态码，默认保留原始响应代码。                                                                                                                                                                                |
-| body            | string  | 否     |        |                 | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 content-length 字段也会被去掉。                                                                                                                               |
-| body_base64     | boolean | 否     | false  |                 | 当设置时，在写给客户端之前，在`body`中传递的主体将被解码，这在一些图像和 Protobuffer 场景中使用。注意，这个字段只允许对插件配置中传递的主体进行解码，并不对上游响应进行解码。                                                                                                                                 |
-| headers         | object  | 否     |        |                 |                                                                                                                                                                                                                           |
-| headers.add     | array   | 否     |        |                 | 添加新的响应头。格式为 `["name: value", ...]`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                              |
-| headers.set     | object  | 否     |        |                 | 改写响应头。格式为 `{"name": "value", ...}`。这个值能够以 `$var` 的格式包含 NGINX 变量，比如 `$remote_addr $balancer_ip`。                                                                                                |
-| headers.remove  | array   | 否     |        |                 | 移除响应头。格式为 `["name", ...]`。                                                                                                                                                                                      |
-| vars            | array[] | 否     |        |                 | `vars` 是一个表达式列表，只有满足条件的请求和响应才会修改 body 和 header 信息，来自 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。如果 `vars` 字段为空，那么所有的重写动作都会被无条件的执行。 |
-| filters         | array[] | 否     |        |                 | 一组过滤器，采用指定字符串表达式修改响应体。                                                                                                                                                                              |
-| filters.regex   | string  | 是     |        |                 | 用于匹配响应体正则表达式。                                                                                                                                                                                                |
-| filters.scope   | string  | 否     | "once" | "once","global" | 替换范围，"once" 表达式 `filters.regex` 仅替换首次匹配上响应体的内容，"global" 则进行全局替换。                                                                                                                           |
-| filters.replace | string  | 是     |        |                 | 替换后的内容。                                                                                                                                                                                                            |
-| filters.options | string  | 否     | "jo"   |                 | 正则匹配有效参数，可选项见 [ngx.re.match](https://github.com/openresty/lua-nginx-module#ngxrematch)。                                                                                                                     |
+| body            | string  | 否     |        |                 | 修改上游返回的 `body` 内容，如果设置了新内容，header 里面的 `Content-Length` 字段也会被去掉。                                                                                                                               |
+| body_base64     | boolean | 否     | false  |                 | 如果为 true，则在发送到客户端之前解码`body` 中配置的响应主体，这对于图像和 protobuf 解码很有用。请注意，此配置不能用于解码上游响应。                                                                                                                                 |
+| headers | object | 否 | | | 按照 `add`、`remove` 和 `set` 的顺序执行的操作。 |
+| headers.add | array[string] | 否 | | | 要附加到请求的标头。如果请求中已经存在标头，则会附加标头值。标头值可以设置为常量，也可以设置为一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
+| headers.set | object | 否 | | |要设置到请求的标头。如果请求中已经存在标头，则会覆盖标头值。标头值可以设置为常量，也可以设置为一个或多个[Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)。 |
+| headers.remove | array[string] | 否 | | | 要从请求中删除的标头。 |
+| vars | array[array] | 否 | | | 以 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的形式包含一个或多个匹配条件的数组。 |
+| filters | array[object] | 否 | | | 通过将一个指定字符串替换为另一个指定字符串来修改响应主体的过滤器列表。不应与 `body` 一起配置。 |
+| filters.regex | string | True | | | 用于匹配响应主体的 RegEx 模式。 |
+| filters.scope | string | 否 | "once" | ["once","global"] | 替换范围。`once` 替换第一个匹配的实例，`global` 全局替换。 |
+| filters.replace | string | True | | | 要替换的内容。 |
+| filters.options | string | 否 | "jo" | | 用于控制如何执行匹配操作的 RegEx 选项。请参阅[Lua NGINX 模块](https://github.com/openresty/lua-nginx-module#ngxrematch)以了解可用选项。|
 
-:::note
+## 示例
 
-`body` 和 `filters` 属性只能配置其中一个。
-
-:::
-
-## 启用插件
-
-你可以通过如下命令在指定路由上启用 `response-rewrite` 插件：
+以下示例演示了如何在不同场景中在路由上配置 `response-rewrite`。
 
 :::note
 
@@ -81,175 +75,235 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 重写标头和正文
+
+以下示例演示了如何添加响应正文和标头，仅适用于具有 `200` HTTP 状态代码的响应。
+
+创建一个带有 `response-rewrite` 插件的路由：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "response-rewrite-route",
     "methods": ["GET"],
-    "uri": "/test/index.html",
+    "uri": "/headers",
     "plugins": {
-        "response-rewrite": {
-            "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
-            "headers": {
-                "set": {
-                    "X-Server-id": 3,
-                    "X-Server-status": "on",
-                    "X-Server-balancer-addr": "$balancer_ip:$balancer_port"
-                }
-            },
-            "vars":[
-                [ "status","==",200 ]
-            ]
-        }
+      "response-rewrite": {
+        "body": "{\"code\":\"ok\",\"message\":\"new json body\"}",
+        "headers": {
+          "set": {
+            "X-Server-id": 3,
+            "X-Server-status": "on",
+            "X-Server-balancer-addr": "$balancer_ip:$balancer_port"
+          }
+        },
+        "vars": [
+          [ "status","==",200 ]
+        ]
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-在上述命令中，通过配置 `vars` 参数可以让该插件仅在具有 200 状态码的响应上运行插件。
-
-除了 `set` 操作，你也可以像这样增加或移除响应头：
-
-```json
-"headers": {
-    "add": [
-        "X-Server-balancer-addr: $balancer_ip:$balancer_port"
-    ],
-    "remove": [
-        "X-TO-BE-REMOVED"
-    ]
-}
-```
-
-这些操作的执行顺序为 ["add", "set", "remove"]。
-
-我们不再对直接在 `headers` 下面设置响应头的方式提供支持。
-如果你的配置是把响应头设置到 `headers` 的下一层，你需要将这些配置移到 `headers.set`。
-
-## 测试插件
-
-通过上述命令启用插件后，可以使用如下命令测试插件是否启用成功：
+发送请求以验证：
 
 ```shell
-curl -X GET -i http://127.0.0.1:9080/test/index.html
+curl -i "http://127.0.0.1:9080/headers"
 ```
 
-无论来自上游的响应是什么，返回结果都是相同的：
+您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```shell
-HTTP/1.1 200 OK
-Date: Sat, 16 Nov 2019 09:15:12 GMT
-Transfer-Encoding: chunked
-Connection: keep-alive
+```text
+...
 X-Server-id: 3
 X-Server-status: on
-X-Server-balancer-addr: 127.0.0.1:80
+X-Server-balancer-addr: 50.237.103.220:80
 
-{"code":"ok","message":"new json body"}
+{"code":"ok","message":"new json body"} 
 ```
 
-:::info IMPORTANT
+### 使用 RegEx 过滤器重写标头
 
-[ngx.exit](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) 将会中断当前请求的执行并将其状态码返回给 NGINX。
+以下示例演示如何使用 RegEx 过滤器匹配替换响应中的 `X-Amzn-Trace-Id`。
 
-如果你在 `access` 阶段执行了 `ngx.exit`，该操作只是中断了请求处理阶段，响应阶段仍然会处理。如果你配置了 `response-rewrite` 插件，它会强制覆盖你的响应信息（如响应代码）。
-
-| Phase         | rewrite  | access   | header_filter | body_filter |
-|---------------|----------|----------|---------------|-------------|
-| rewrite       | ngx.exit | √        | √             | √           |
-| access        | ×        | ngx.exit | √             | √           |
-| header_filter | √        | √        | ngx.exit      | √           |
-| body_filter   | √        | √        | ×             | ngx.exit    |
-
-:::
-
-使用 `filters` 正则匹配将返回 body 的 X-Amzn-Trace-Id 替换为 X-Amzn-Trace-Id-Replace。
+创建一个带有 `response-rewrite` 插件的路由：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-  "plugins":{
-    "response-rewrite":{
-      "headers":{
-        "set": {
-            "X-Server-id":3,
-            "X-Server-status":"on",
-            "X-Server-balancer-addr":"$balancer_ip:$balancer_port"
-        }
-      },
-      "filters":[
-        {
-          "regex":"X-Amzn-Trace-Id",
-          "scope":"global",
-          "replace":"X-Amzn-Trace-Id-Replace"
-        }
-      ],
-      "vars":[
-        [
-          "status",
-          "==",
-          200
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "response-rewrite-route",
+    "methods": ["GET"],
+    "uri": "/headers",
+    "plugins":{
+      "response-rewrite":{
+        "filters":[
+          {
+            "regex":"X-Amzn-Trace-Id",
+            "scope":"global",
+            "replace":"X-Amzn-Trace-Id-Replace"
+          }
         ]
-      ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-  },
-  "upstream":{
-    "type":"roundrobin",
-    "scheme":"https",
-    "nodes":{
-      "httpbin.org:443":1
-    }
-  },
-  "uri":"/*"
-}'
+  }'
 ```
 
+发送请求以验证：
+
 ```shell
-curl -X GET -i  http://127.0.0.1:9080/get
+curl -i "http://127.0.0.1:9080/headers"
 ```
 
-```shell
-HTTP/1.1 200 OK
-Transfer-Encoding: chunked
-X-Server-status: on
-X-Server-balancer-addr: 34.206.80.189:443
-X-Server-id: 3
+您应该会看到类似以下内容的响应：
 
+```text
 {
-  "args": {},
   "headers": {
     "Accept": "*/*",
     "Host": "127.0.0.1",
-    "User-Agent": "curl/7.29.0",
-    "X-Amzn-Trace-Id-Replace": "Root=1-629e0b89-1e274fdd7c23ca6e64145aa2",
+    "User-Agent": "curl/8.2.1",
+    "X-Amzn-Trace-Id-Replace": "Root=1-6500095d-1041b05e2ba9c6b37232dbc7",
     "X-Forwarded-Host": "127.0.0.1"
-  },
-  "origin": "127.0.0.1, 117.136.46.203",
-  "url": "https://127.0.0.1/get"
+  }
 }
-
 ```
 
-## 删除插件
+### 从 Base64 解码正文
 
-当你需要禁用 `response-rewrite` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+以下示例演示如何从 Base64 格式解码正文。
+
+创建一个带有 `response-rewrite` 插件的路由：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "response-rewrite-route",
     "methods": ["GET"],
-    "uri": "/test/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:80": 1
+    "uri": "/get",
+    "plugins":{
+      "response-rewrite": {
+        "body": "SGVsbG8gV29ybGQ=",
+        "body_base64": true
         }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
+
+发送请求以验证：
+
+```shell
+curl "http://127.0.0.1:9080/get"
+```
+
+您应该看到以下响应：
+
+```text
+Hello World
+```
+
+### 重写响应及其与执行阶段的联系
+
+以下示例通过使用 `key-auth` 插件配置插件，演示了 `response-rewrite` 插件与 [执行阶段](/apisix/key-concepts/plugins#plugins-execution-lifecycle) 之间的联系，并查看在未经身份验证的请求的情况下，响应仍如何重写为 `200 OK`。
+
+创建消费者 `jack`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jack"
+  }'
+```
+
+为消费者创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jack-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jack-key"
+      }
+    }
+  }'
+```
+
+创建一个带有 `key-auth` 的路由，并配置 `response-rewrite` 来重写响应状态码和主体：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+   -H "X-API-KEY: ${admin_key}" \
+   -d '{
+    "id": "response-rewrite-route",
+    "uri": "/get",
+    "plugins": {
+      "key-auth": {},
+      "response-rewrite": {
+        "status_code": 200,
+        "body": "{\"code\": 200, \"msg\": \"success\"}"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+使用有效密钥向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: jack-key'
+```
+
+您应该收到以下 `HTTP/1.1 200 OK` 响应：
+
+```text
+{"code": 200, "msg": "success"}
+```
+
+向路由发送一个没有任何键的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您仍应收到相同的 `HTTP/1.1 200 OK` 响应，而不是来自 `key-auth` 插件的 `HTTP/1.1 401 Unauthorized`。这表明 `response-rewrite` 插件仍在重写响应。
+
+这是因为 `response-rewrite` 插件的 **header_filter** 和 **body_filter** 阶段逻辑将在 [`ngx.exit`](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) 之后在其他插件的 **access** 或 **rewrite** 阶段继续运行。
+
+下表总结了 `ngx.exit` 对执行阶段的影响。
+
+| 阶段         | rewrite  | access   | header_filter | body_filter |
+|---------------|----------|----------|---------------|-------------|
+| **rewrite**       | ngx.exit |          |               |           |
+| **access**        | ×        | ngx.exit |               |           |
+| **header_filter** | ✓        | ✓        | ngx.exit      |           |
+| **body_filter**   | ✓        | ✓        | ×             | ngx.exit  |
+
+例如，如果 `ngx.exit` 发生在 **rewrite** 阶段，它将中断 **access** 阶段的执行，但不会干扰 **header_filter** 和 **body_filter** 阶段。
