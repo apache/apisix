@@ -273,7 +273,6 @@ local function iter_add_get_routes_info(values, route_id)
         new_route.checker = nil
         new_route.checker_idx = nil
         new_route.checker_upstream = nil
-
         if new_route.clean_handlers then
             new_route.clean_handlers = {}
         end

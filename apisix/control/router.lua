@@ -81,6 +81,7 @@ do
                         if type(body) == "table" and ngx.header["Content-Type"] == nil then
                             core.response.set_header("Content-Type", "application/json")
                         end
+
                         core.response.exit(code, body)
                     end
                 end
