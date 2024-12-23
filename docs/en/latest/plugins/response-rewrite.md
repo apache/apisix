@@ -126,7 +126,7 @@ X-Server-id: 3
 X-Server-status: on
 X-Server-balancer-addr: 50.237.103.220:80
 
-{"code":"ok","message":"new json body"} 
+{"code":"ok","message":"new json body"}
 ```
 
 ### Rewrite Header With RegEx Filter
@@ -297,7 +297,7 @@ You should still receive an `HTTP/1.1 200 OK` response of the same, instead of `
 
 This is because **header_filter** and **body_filter** phase logics of the `response-rewrite` Plugin will continue to run after [`ngx.exit`](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) in the **access** or **rewrite** phases from other plugins.
 
-The following table summarizes the impact of `ngx.exit` on execution phases. 
+The following table summarizes the impact of `ngx.exit` on execution phases.
 
 | Phase         | rewrite  | access   | header_filter | body_filter |
 |---------------|----------|----------|---------------|-------------|

@@ -126,7 +126,7 @@ X-Server-id: 3
 X-Server-status: on
 X-Server-balancer-addr: 50.237.103.220:80
 
-{"code":"ok","message":"new json body"} 
+{"code":"ok","message":"new json body"}
 ```
 
 ### 使用 RegEx 过滤器重写标头
