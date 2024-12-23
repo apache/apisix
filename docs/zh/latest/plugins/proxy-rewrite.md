@@ -41,7 +41,10 @@ description: 本文介绍了关于 Apache APISIX `proxy-rewrite` 插件的基本
 | regex_uri | array[string] | 否 | | | 用于匹配客户端请求的 URI 路径并组成新的上游 URI 路径的正则表达式。当同时配置 `uri` 和 `regex_uri` 时，`uri` 具有更高的优先级。该数组应包含一个或多个 **键值对**，其中键是用于匹配 URI 的正则表达式，值是新的上游 URI 路径。例如，对于 `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`，如果请求最初发送到 `/iresty/hello/world`，插件会将上游 URI 路径重写为 `/iresty/hello-world`；如果请求最初发送到 `/theothers/hello/world`，插件会将上游 URI 路径重写为 `/theothers`。|
 | host | string | 否 | | | 设置 [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) 请求标头。|
 | headers | object | 否 | | | 要执行的标头操作。可以设置为动作动词 `add`、`remove` 和/或 `set` 的对象；或由要 `set` 的标头组成的对象。当配置了多个动作动词时，动作将按照“添加”、“删除”和“设置”的顺序执行。|
-| headers.add | object | 否 | | | 要附加到请求的标头。如果请求中已经存在标头，则会附加标头值。标头值可以设置为常量、一个或多个
+| headers.add | object | 否 | | | 要附加到请求的标头。如果请求中已经存在标头，则会附加标头值。标头值可以设置为常量、一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `regex_uri` 的匹配结果（使用变量，例如 `$1-$2-$3`）。|
+| headers.set | object | 否 | | | 要设置请求的标头。如果请求中已经存在标头，则会覆盖标头值。标头值可以设置为常量、一个或多个 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)，或者 `regex_uri` 的匹配结果（使用变量，例如 `$1-$2-$3`）。不应将其用于设置 `Host`。|
+| headers.remove | array[string] | 否 | | | 从请求中删除的标头。
+| use_real_request_uri_unsafe | boolean | 否 | false | | 如果为 True，则绕过 URI 规范化并允许完整的原始请求 URI。启用此选项被视为不安全。|
 
 ## 示例
 
