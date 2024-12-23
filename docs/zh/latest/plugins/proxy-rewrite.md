@@ -48,7 +48,7 @@ description: proxy-rewrite 插件支持重写 APISIX 转发到上游服务的请
 
 ## 示例
 
-下面的示例说明如何在不同场景中在路由上配置 `proxy-rewrite`：
+下面的示例说明如何在不同场景中在路由上配置 `proxy-rewrite`。
 
 :::note
 
