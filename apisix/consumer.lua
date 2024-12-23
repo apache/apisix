@@ -82,7 +82,7 @@ end
 
 local plugin_consumer
 do
-    local consumers_id_cache = {} 
+    local consumers_id_cache = {}
 function plugin_consumer()
     local plugins = {}
 
@@ -110,7 +110,7 @@ function plugin_consumer()
                 end
 
                 local cached_consumer = consumers_id_cache[val.value.id]
-                if cached_consumer and 
+                if cached_consumer and
                     cached_consumer.modifiedIndex == val.modifiedIndex then
                     plugins[name].len = plugins[name].len + 1
                     core.table.insert(plugins[name].nodes, plugins[name].len,
@@ -204,35 +204,44 @@ function _M.consumers()
 end
 
 
-local consumers_plugin_key_cache = {}
-local function create_consume_cache(consumers_conf, key_attr, cache)
+local create_consume_cache
+do
+    local consumers_plugin_key_lrucache_tab = {}
+
+local function create_new_consumer(consumer)
+    local new_consumer = core.table.clone(consumer)
+    new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, false)
+    return new_consumer
+end
+
+
+function create_consume_cache(consumers_conf, key_attr, plugin_name)
     local consumer_names = {}
+    local lru_cache = consumers_plugin_key_lrucache_tab[plugin_name]
+    if lru_cache == nil then
+        lru_cache = core.lrucache.new({
+            ttl = 60 * 60 * 24, count = 20480
+        })
+        consumers_plugin_key_lrucache_tab[plugin_name] = lru_cache
+    end
 
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
-        if cache and cache[consumer.auth_conf[key_attr]] and
-            cache[consumer.auth_conf[key_attr]].modifiedIndex == 
-            consumer.modifiedIndex then
-            consumer_names[consumer.auth_conf[key_attr]] = 
-                cache[consumer.auth_conf[key_attr]]
-        else
-            local new_consumer = core.table.clone(consumer)
-            new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, true,
-                                                            new_consumer.auth_conf, "")
-            consumer_names[new_consumer.auth_conf[key_attr]] = new_consumer
-        end
+        local new_consumer = lru_cache(consumer.auth_conf[key_attr],
+                    consumer.modifiedIndex, create_new_consumer, consumer)
+        consumer_names[consumer.auth_conf[key_attr]] = new_consumer
     end
 
     return consumer_names
 end
 
+end
+
 
 function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     local consumers = lrucache("consumers_key#" .. plugin_name, consumer_conf.conf_version,
-        create_consume_cache, consumer_conf, key_attr,
-        consumers_plugin_key_cache[plugin_name])
+        create_consume_cache, consumer_conf, key_attr, plugin_name)
 
-    consumers_plugin_key_cache[plugin_name] = consumers
     return consumers
 end
 
