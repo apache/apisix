@@ -30,7 +30,7 @@ description: This document contains information about the Apache APISIX proxy-re
 
 ## Description
 
-The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwards to upstream services. With this plugin, you can modify the HTTP methods, request destination upstream address, request headers, and more.
+The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwards to upstream services. With this plugin, you can modify the HTTP methods, request destination upstream addresses, request headers, and more.
 
 ## Attributes
 
