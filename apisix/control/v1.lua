@@ -269,6 +269,14 @@ local function iter_add_get_routes_info(values, route_id)
         if new_route.value.upstream and new_route.value.upstream.parent then
             new_route.value.upstream.parent = nil
         end
+        -- remove healthcheck info
+        new_route.checker = nil
+        new_route.checker_idx = nil
+        new_route.checker_upstream = nil
+
+        if new_route.clean_handlers then
+            new_route.clean_handlers = {}
+        end
         core.table.insert(infos, new_route)
         -- check the route id
         if route_id and route.value.id == route_id then
