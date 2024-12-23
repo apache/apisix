@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
-description: This document contains information about the Apache APISIX proxy-rewrite Plugin.
+description: The proxy-rewrite Plugin offers options to rewrite requests that APISIX forwards to upstream services. With this plugin, you can modify the HTTP methods, request destination upstream addresses, request headers, and more.
 ---
 
 <!--
