@@ -118,16 +118,20 @@ end
 local deepcopy
 do
     local function _deepcopy(orig, copied)
-        -- prevent infinite loop when a field refers its parent
-        copied[orig] = true
         -- If the array-like table contains nil in the middle,
         -- the len might be smaller than the expected.
         -- But it doesn't affect the correctness.
         local len = #orig
         local copy = new_tab(len, nkeys(orig) - len)
+        -- prevent infinite loop when a field refers its parent
+        copied[orig] = copy
         for orig_key, orig_value in pairs(orig) do
-            if type(orig_value) == "table" and not copied[orig_value] then
-                copy[orig_key] = _deepcopy(orig_value, copied)
+            if type(orig_value) == "table" then
+                if copied[orig_value] then
+                    copy[orig_key] = copied[orig_value]
+                else
+                    copy[orig_key] = _deepcopy(orig_value, copied)
+                end
             else
                 copy[orig_key] = orig_value
             end
