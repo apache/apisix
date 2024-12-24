@@ -326,4 +326,3 @@ GET /t
 --- response_body
 table copied: {"a":{"a2":"a2"},"b":{"a2":"a2"}}
 tab_copied.a == tab_copied.b: true
-
