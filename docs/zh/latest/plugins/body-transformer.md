@@ -601,7 +601,7 @@ curl -X POST \
   "headers": {
     "Accept": "*/*",
     "Content-Length": "361",
-    "Content-Type": "multipart/form-data; boundary=------------------------qtPjk4c8ZjmGOXNKzhqnOP", 
+    "Content-Type": "multipart/form-data; boundary=------------------------qtPjk4c8ZjmGOXNKzhqnOP",
     ...
   },
   ...

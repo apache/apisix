@@ -67,7 +67,7 @@ The transformation template uses [lua-resty-template](https://github.com/bungle/
 
 You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.
 
-In all cases, you should ensure that the transformation template is a valid JSON string. 
+In all cases, you should ensure that the transformation template is a valid JSON string.
 
 ### Transform between JSON and XML SOAP
 
@@ -601,7 +601,7 @@ You should see a response similar to the following:
   "headers": {
     "Accept": "*/*",
     "Content-Length": "361",
-    "Content-Type": "multipart/form-data; boundary=------------------------qtPjk4c8ZjmGOXNKzhqnOP", 
+    "Content-Type": "multipart/form-data; boundary=------------------------qtPjk4c8ZjmGOXNKzhqnOP",
     ...
   },
   ...
