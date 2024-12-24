@@ -407,15 +407,15 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
   "form": {
     "{\"foo\":\"hello world\",\"bar\":30}": ""
-  }, 
+  },
   "headers": {
     ...
-  }, 
+  },
   ...
 }
 ```
@@ -459,7 +459,7 @@ curl "http://127.0.0.1:9080/anything?name=john"
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "data": "{\"message\": \"hello john\"}",
   "files": {},
   "form": {},
@@ -468,7 +468,7 @@ curl "http://127.0.0.1:9080/anything?name=john"
   },
   "json": {
     "message": "hello john"
-  }, 
+  },
   "method": "GET",
   ...
 }
@@ -515,15 +515,15 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
   "form": {
     "{\"message\": \"actually json\"}": ""
   },
   "headers": {
     ...
-  }, 
+  },
   ...
 }
 ```
@@ -590,20 +590,20 @@ curl -X POST \
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
   "form": {
-    "age": "10", 
-    "name": "john", 
+    "age": "10",
+    "name": "john",
     "status": "minor"
-  }, 
+  },
   "headers": {
-    "Accept": "*/*", 
-    "Content-Length": "361", 
+    "Accept": "*/*",
+    "Content-Length": "361",
     "Content-Type": "multipart/form-data; boundary=------------------------qtPjk4c8ZjmGOXNKzhqnOP", 
     ...
-  }, 
+  },
   ...
 }
 ```
