@@ -28,6 +28,10 @@ description: The response-rewrite Plugin offers options to rewrite responses tha
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/response-rewrite" />
+</head>
+
 ## Description
 
 The `response-rewrite` Plugin offers options to rewrite responses that APISIX and its Upstream services return to clients. With the plugin, you can modify HTTP status codes, request headers, response body, and more.

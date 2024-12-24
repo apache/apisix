@@ -28,6 +28,10 @@ description: response-rewrite 插件提供了重写 APISIX 及其上游服务返
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/response-rewrite" />
+</head>
+
 ## 描述
 
 `response-rewrite` 插件提供了重写 APISIX 及其上游服务返回给客户端的响应的选项。使用此插件，您可以修改 HTTP 状态代码、请求标头、响应正文等。
