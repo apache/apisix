@@ -472,8 +472,8 @@ local function required_scopes_present(required_scopes, http_scopes)
 end
 
 function _M.rewrite(plugin_conf, ctx)
-    local conf = core.table.clone(plugin_conf)
-    local conf = fetch_secrets(plugin_conf)
+    local conf_clone = core.table.clone(plugin_conf)
+    local conf = fetch_secrets(conf_clone)
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.
