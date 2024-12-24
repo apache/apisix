@@ -146,14 +146,12 @@ do
     end
 
 
-    local copied_recorder = {}
-
     function deepcopy(orig)
+        local copied_recorder = {}
         local orig_type = type(orig)
         if orig_type ~= 'table' then
             return orig
         end
-
         local res = _deepcopy(orig, copied_recorder)
         _M.clear(copied_recorder)
         return res
