@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - BODY TRANSFORMER
   - body-transformer
-description: The body-transformer plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
+description: The body-transformer Plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: The body-transformer plugin performs template-based transformations
 
 ## Description
 
-The `body-transformer` plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
+The `body-transformer` Plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
 
 ## Attributes
 
@@ -71,7 +71,7 @@ In all cases, you should ensure that the transformation template is a valid JSON
 
 ### Transform between JSON and XML SOAP
 
-The following example demonstrates how to transform the request body from JSON to XML and the response body from XML to JSON when working with a SOAP upstream service.
+The following example demonstrates how to transform the request body from JSON to XML and the response body from XML to JSON when working with a SOAP Upstream service.
 
 Start the sample SOAP service:
 
@@ -121,7 +121,7 @@ EOF
 
 `awk` and `tr` are used above to manipulate the template such that the template would be a valid JSON string.
 
-Create a route with `body-transformer` using the templates created previously. In the plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the upstream service to respond properly:
+Create a Route with `body-transformer` using the templates created previously. In the plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the Upstream service to respond properly:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -181,7 +181,7 @@ Send a request with a valid JSON body:
 curl "http://127.0.0.1:9080/ws" -X POST -d '{"name": "Spain"}'
 ```
 
-The JSON body sent in the request will be transformed into XML before being forwarded to the upstream SOAP service, and the response body will be transformed back from XML to JSON.
+The JSON body sent in the request will be transformed into XML before being forwarded to the Upstream SOAP service, and the response body will be transformed back from XML to JSON.
 
 You should see a response similar to the following:
 
@@ -199,7 +199,7 @@ You should see a response similar to the following:
 
 The following example demonstrates how to dynamically modify the request body.
 
-Create a route with `body-transformer`, in which the template appends the word `world` to the `name` and adds `10` to the `age` to set them as values to `foo` and `bar` respectively:
+Create a Route with `body-transformer`, in which the template appends the word `world` to the `name` and adds `10` to the `age` to set them as values to `foo` and `bar` respectively:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -252,7 +252,7 @@ You should see a response of the following:
 
 The following example demonstrates how to generate request body dynamically using the `ctx` context variables.
 
-Create a route with `body-transformer`, in which the template accesses the request argument using the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) `arg_name`:
+Create a Route with `body-transformer`, in which the template accesses the request argument using the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) `arg_name`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -276,7 +276,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route with `name` argument:
+Send a request to the Route with `name` argument:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything?name=hello"
@@ -314,7 +314,7 @@ EOF
 )
 ```
 
-Create a route with `body-transformer` that uses the template:
+Create a Route with `body-transformer` that uses the template:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -338,7 +338,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route with a YAML body:
+Send a request to the Route with a YAML body:
 
 ```shell
 body='
@@ -370,7 +370,7 @@ You should see a response similar to the following, which verifies that the YAML
 
 The following example demonstrates how to transform `form-urlencoded` body to JSON.
 
-Create a route with `body-transformer` which sets the `input_format` to `encoded` and configures a template that appends string `world` to the `name` input, add `10` to the `age` input:
+Create a Route with `body-transformer` which sets the `input_format` to `encoded` and configures a template that appends string `world` to the `name` input, add `10` to the `age` input:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -395,7 +395,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route with an encoded body:
+Send a POST request to the Route with an encoded body:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -424,7 +424,7 @@ You should see a response similar to the following:
 
 The following example demonstrates how to transform a GET request query parameter to request body. Note that this does not transform the HTTP method. To transform the method, see [`proxy-rewrite`](./proxy-rewrite.md).
 
-Create a route with `body-transformer`, which sets the `input_format` to `args` and configures a template that adds a message to the request:
+Create a Route with `body-transformer`, which sets the `input_format` to `args` and configures a template that adds a message to the request:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -478,7 +478,7 @@ You should see a response similar to the following:
 
 The following example demonstrates how to transform requests with `plain` media type.
 
-Create a route with `body-transformer`, which sets the `input_format` to `plain` and configures a template to remove `not` and a subsequent space from the body string:
+Create a Route with `body-transformer`, which sets the `input_format` to `plain` and configures a template to remove `not` and a subsequent space from the body string:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -552,7 +552,7 @@ EOF
 )
 ```
 
-Create a route with `body-transformer`, which sets the `input_format` to `multipart` and uses the previously created request template for transformation:
+Create a Route with `body-transformer`, which sets the `input_format` to `multipart` and uses the previously created request template for transformation:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
