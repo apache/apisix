@@ -2,11 +2,11 @@
 title: body-transformer
 keywords:
   - Apache APISIX
-  - API Gateway
+  - API 网关
   - Plugin
   - BODY TRANSFORMER
   - body-transformer
-description: The body-transformer plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
+description: body-transformer 插件执行基于模板的转换，将请求和/或响应主体从一种格式转换为另一种格式，例如从 JSON 到 JSON、从 JSON 到 HTML 或从 XML 到 YAML。
 ---
 
 <!--
@@ -32,30 +32,30 @@ description: The body-transformer plugin performs template-based transformations
   <link rel="canonical" href="https://docs.api7.ai/hub/body-transformer" />
 </head>
 
-## Description
+## 描述
 
-The `body-transformer` plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
+`body-transformer` 插件执行基于模板的转换，将请求和/或响应主体从一种格式转换为另一种格式，例如从 JSON 到 JSON、从 JSON 到 HTML 或从 XML 到 YAML。
 
-## Attributes
+## 属性
 
-| Name          | Type    | Required | Default | Valid values | Description                                |
-| ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
-| `request`      | object       | False      | | | Request body transformation configuration.      |
-| `request.input_format`      | string       | False      | | [`xml`,`json`,`encoded`,`args`,`plain`,`multipart`] | Request body original media type. If unspecified, the value would be determined by the `Content-Type` header to apply the corresponding decoder. The `xml` option corresponds to `text/xml` media type. The `json` option corresponds to `application/json` media type. The `encoded` option corresponds to `application/x-www-form-urlencoded` media type. The `args` option corresponds to GET requests. The `plain` option corresponds to `text/plain` media type. The `multipart` option corresponds to `multipart/related` media type. If the media type is neither type, the value would be left unset and the transformation template will be directly applied.      |
-| `request.template`      | string       | True      | | | Request body transformation template. The template uses [lua-resty-template](https://github.com/bungle/lua-resty-template) syntax. See the [template syntax](https://github.com/bungle/lua-resty-template#template-syntax) for more details. You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.    |
-| `request.template_is_base64`      | boolean       | False    | false | | Set to true if the template is base64 encoded.      |
-| `response`      | object       | False      | | | Response body transformation configuration.     |
-| `response.input_format`      | string       | False      | | [`xml`,`json`] | Response body original media type. If unspecified, the value would be determined by the `Content-Type` header to apply the corresponding decoder. If the media type is neither `xml` nor `json`, the value would be left unset and the transformation template will be directly applied.       |
-| `response.template`      | string       | True      | | | Response body transformation template.       |
-| `response.template_is_base64`      | boolean       | False     | false | | Set to true if the template is base64 encoded.       |
+| 名称           | 类型                   | 必选项   | 默认值           | 有效值 | 描述                                                                                                                                         |
+|--------------|----------------------|-------|---------------|--------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `request` | object | 否 | | | 请求体转换配置。 |
+| `request.input_format` | string | 否 | | [`xml`,`json`,`encoded`,`args`,`plain`,`multipart`] | 请求体原始媒体类型。若未指定，则该值将由 `Content-Type` 标头确定以应用相应的解码器。`xml` 选项对应于 `text/xml` 媒体类型。`json` 选项对应于 `application/json` 媒体类型。`encoded` 选项对应于 `application/x-www-form-urlencoded` 媒体类型。`args` 选项对应于 GET 请求。`plain` 选项对应于 `text/plain` 媒体类型。`multipart` 选项对应于 `multipart/related` 媒体类型。如果媒体类型不是这两种类型，则该值将保留未设置状态并直接应用转换模板。 |
+| `request.template` | string | True | | | 请求体转换模板。模板使用 [lua-resty-template](https://github.com/bungle/lua-resty-template) 语法。有关更多详细信息，请参阅 [模板语法](https://github.com/bungle/lua-resty-template#template-syntax)。您还可以使用辅助函数 `_escape_json()` 和 `_escape_xml()` 转义双引号等特殊字符，使用 `_body` 访问请求正文，使用 `_ctx` 访问上下文变量。|
+| `request.template_is_base64` | boolean | 否 | false | | 如果模板是 base64 编码的，则设置为 true。|
+| `response` | object | 否 | | | 响应体转换配置。|
+| `response.input_format` | string | 否 | | [`xml`,`json`] | 响应体原始媒体类型。如果未指定，则该值将由 `Content-Type` 标头确定以应用相应的解码器。如果媒体类型既不是 `xml` 也不是 `json`，则该值将保留未设置状态，并直接应用转换模板。|
+| `response.template` | string | True | | | 响应主体转换模板。|
+| `response.template_is_base64` | boolean | 否 | false | | 如果模板是 base64 编码的，则设置为 true。|
 
-## Examples
+## 示例
 
-The examples below demonstrate how you can configure `body-transformer` for different scenarios.
+以下示例演示了如何针对不同场景配置 `body-transformer`。
 
 :::note
 
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -63,17 +63,17 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-The transformation template uses [lua-resty-template](https://github.com/bungle/lua-resty-template) syntax. See the [template syntax](https://github.com/bungle/lua-resty-template#template-syntax) to learn more.
+转换模板使用 [lua-resty-template](https://github.com/bungle/lua-resty-template) 语法。请参阅 [模板语法](https://github.com/bungle/lua-resty-template#template-syntax) 了解更多信息。
 
-You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.
+您还可以使用辅助函数 `_escape_json()` 和 `_escape_xml()` 转义特殊字符（例如双引号）、`_body` 访问请求正文以及 `_ctx` 访问上下文变量。
 
-In all cases, you should ensure that the transformation template is a valid JSON string. 
+在所有情况下，您都应确保转换模板是有效的 JSON 字符串。
 
-### Transform between JSON and XML SOAP
+### JSON 和 XML SOAP 之间的转换
 
-The following example demonstrates how to transform the request body from JSON to XML and the response body from XML to JSON when working with a SOAP upstream service.
+以下示例演示了在使用 SOAP 上游服务时如何将请求主体从 JSON 转换为 XML，将响应主体从 XML 转换为 JSON。
 
-Start the sample SOAP service:
+启动示例 SOAP 服务：
 
 ```shell
 cd /tmp
@@ -82,7 +82,7 @@ cd gs-soap-service/complete
 ./mvnw spring-boot:run
 ```
 
-Create the request and response transformation templates:
+创建请求和响应转换模板：
 
 ```shell
 req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
@@ -119,9 +119,9 @@ EOF
 )
 ```
 
-`awk` and `tr` are used above to manipulate the template such that the template would be a valid JSON string.
+上面使用了 `awk` 和 `tr` 来操作模板，使模板成为有效的 JSON 字符串。
 
-Create a route with `body-transformer` using the templates created previously. In the plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the upstream service to respond properly:
+使用之前创建的模板创建带有 `body-transformer` 的路由。在插件中，将请求输入格式设置为 JSON，将响应输入格式设置为 XML，并将 `Content-Type` 标头设置为 `text/xml`，以便上游服务正确响应：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -160,7 +160,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 :::tip
 
-If it is cumbersome to adjust complex text files to be valid transformation templates, you can use the base64 utility to encode the files, such as the following:
+如果将复杂的文本文件调整为有效的转换模板很麻烦，则可以使用 base64 实用程序对文件进行编码，例如以下内容：
 
 ```json
 "body-transformer": {
@@ -175,15 +175,15 @@ If it is cumbersome to adjust complex text files to be valid transformation temp
 
 :::
 
-Send a request with a valid JSON body:
+发送具有有效 JSON 主体的请求：
 
 ```shell
 curl "http://127.0.0.1:9080/ws" -X POST -d '{"name": "Spain"}'
 ```
 
-The JSON body sent in the request will be transformed into XML before being forwarded to the upstream SOAP service, and the response body will be transformed back from XML to JSON.
+请求中发送的 JSON 主体将在转发到上游 SOAP 服务之前转换为 XML，响应主体将从 XML 转换回 JSON。
 
-You should see a response similar to the following:
+您应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -195,11 +195,11 @@ You should see a response similar to the following:
 }
 ```
 
-### Modify Request Body
+### 修改请求体
 
-The following example demonstrates how to dynamically modify the request body.
+以下示例演示了如何动态修改请求体。
 
-Create a route with `body-transformer`, in which the template appends the word `world` to the `name` and adds `10` to the `age` to set them as values to `foo` and `bar` respectively:
+使用 `body-transformer` 创建一个路由，其中​​模板将单词 `world` 附加到 `name`，并将 `10` 添加到 `age`，以将它们分别设置为 `foo` 和 `bar` 的值：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -223,7 +223,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+向路线发送请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -232,7 +232,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   -i
 ```
 
-You should see a response of the following:
+您应该看到以下响应：
 
 ```json
 {
@@ -248,11 +248,11 @@ You should see a response of the following:
 }
 ```
 
-### Generate Request Body Using Variables
+### 使用变量生成请求主体
 
-The following example demonstrates how to generate request body dynamically using the `ctx` context variables.
+以下示例演示如何使用 `ctx` 上下文变量动态生成请求主体。
 
-Create a route with `body-transformer`, in which the template accesses the request argument using the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) `arg_name`:
+使用 `body-transformer` 创建路由，其中​​模板使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html) `arg_name` 访问请求参数：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -276,13 +276,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route with `name` argument:
+使用 `name` 参数向路由发送请求：
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything?name=hello"
 ```
 
-You should see a response like this:
+您应该看到如下响应：
 
 ```json
 {
@@ -297,11 +297,11 @@ You should see a response like this:
 }
 ```
 
-### Transform Body from YAML to JSON
+### 将正文从 YAML 转换为 JSON
 
-The following example demonstrates how to transform request body from YAML to JSON.
+以下示例演示如何将请求正文从 YAML 转换为 JSON。
 
-Create the request transformation template:
+创建请求转换模板：
 
 ```shell
 req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1'
@@ -314,7 +314,7 @@ EOF
 )
 ```
 
-Create a route with `body-transformer` that uses the template:
+使用以下模板创建一个带有 `body-transformer` 的路由：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -338,7 +338,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route with a YAML body:
+使用 YAML 主体向路由发送请求：
 
 ```shell
 body='
@@ -352,7 +352,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   -i
 ```
 
-You should see a response similar to the following, which verifies that the YAML body was appropriately transformed to JSON:
+您应该会看到类似以下内容的响应，这验证了 YAML 主体已适当地转换为 JSON：
 
 ```json
 {
@@ -366,11 +366,11 @@ You should see a response similar to the following, which verifies that the YAML
 }
 ```
 
-### Transform Form URL Encoded Body to JSON
+### 将表单 URL 编码主体转换为 JSON
 
-The following example demonstrates how to transform `form-urlencoded` body to JSON.
+以下示例演示如何将 `form-urlencoded` 主体转换为 JSON。
 
-Create a route with `body-transformer` which sets the `input_format` to `encoded` and configures a template that appends string `world` to the `name` input, add `10` to the `age` input:
+使用 `body-transformer` 创建路由，将 `input_format` 设置为 `encoded`，并配置一个模板，将字符串 `world` 附加到 `name` 输入，将 `10` 添加到 `age` 输入：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -395,7 +395,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route with an encoded body:
+向路由发送一个带有编码主体的 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -403,7 +403,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   -d 'name=hello&age=20'
 ```
 
-You should see a response similar to the following:
+您应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -420,11 +420,11 @@ You should see a response similar to the following:
 }
 ```
 
-### Transform GET Request Query Parameter to Body
+### 将 GET 请求查询参数转换为正文
 
-The following example demonstrates how to transform a GET request query parameter to request body. Note that this does not transform the HTTP method. To transform the method, see [`proxy-rewrite`](./proxy-rewrite.md).
+以下示例演示如何将 GET 请求查询参数转换为请求正文。请注意，这不会转换 HTTP 方法。要转换方法，请参阅 [`proxy-rewrite`](./proxy-rewrite.md)。
 
-Create a route with `body-transformer`, which sets the `input_format` to `args` and configures a template that adds a message to the request:
+使用 `body-transformer` 创建路由，将 `input_format` 设置为 `args`，并配置一个向请求添加消息的模板：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -449,13 +449,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a GET request to the route:
+向路线发送 GET 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything?name=john"
 ```
 
-You should see a response similar to the following:
+您应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -474,11 +474,11 @@ You should see a response similar to the following:
 }
 ```
 
-### Transform Plain Media Type
+### 转换纯文本媒体类型
 
-The following example demonstrates how to transform requests with `plain` media type.
+以下示例演示如何转换具有 `plain` 媒体类型的请求。
 
-Create a route with `body-transformer`, which sets the `input_format` to `plain` and configures a template to remove `not` and a subsequent space from the body string:
+使用 `body-transformer` 创建路由，将 `input_format` 设置为 `plain`，并配置模板以从正文字符串中删除 `not` 和后续空格：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -503,7 +503,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route:
+向路由发送 POST 请求：
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -511,7 +511,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
   -i
 ```
 
-You should see a response similar to the following:
+您应该会看到类似以下内容的响应：
 
 ```json
 {
@@ -528,11 +528,11 @@ You should see a response similar to the following:
 }
 ```
 
-### Transform Multipart Media Type
+### 转换多部分媒体类型
 
-The following example demonstrates how to transform requests with `multipart` media type.
+以下示例演示如何转换具有 `multipart` 媒体类型的请求。
 
-Create a request transformation template which adds a `status` to the body based on the `age` provided in the request body:
+创建一个请求转换模板，该模板根据请求正文中提供的 `age` 向正文添加 `status`：
 
 ```shell
 req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1'
@@ -552,7 +552,7 @@ EOF
 )
 ```
 
-Create a route with `body-transformer`, which sets the `input_format` to `multipart` and uses the previously created request template for transformation:
+创建一个带有 `body-transformer` 的路由，将 `input_format` 设置为 `multipart`，并使用之前创建的请求模板进行转换：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -577,7 +577,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a multipart POST request to the route:
+向路由发送多部分 POST 请求：
 
 ```shell
 curl -X POST \
@@ -586,7 +586,7 @@ curl -X POST \
   "http://127.0.0.1:9080/anything"
 ```
 
-You should see a response similar to the following:
+您应该会看到类似以下内容的响应：
 
 ```json
 {
