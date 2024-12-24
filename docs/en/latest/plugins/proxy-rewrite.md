@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Proxy Rewrite
   - proxy-rewrite
-description: This document contains information about the Apache APISIX proxy-rewrite Plugin.
+description: The proxy-rewrite Plugin offers options to rewrite requests that APISIX forwards to Upstream services. With this plugin, you can modify the HTTP methods, request destination Upstream addresses, request headers, and more.
 ---
 
 <!--
@@ -34,15 +34,15 @@ description: This document contains information about the Apache APISIX proxy-re
 
 ## Description
 
-The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwards to upstream services. With this plugin, you can modify the HTTP methods, request destination upstream addresses, request headers, and more.
+The `proxy-rewrite` Plugin offers options to rewrite requests that APISIX forwards to Upstream services. With this plugin, you can modify the HTTP methods, request destination Upstream addresses, request headers, and more.
 
 ## Attributes
 
 | Name                        | Type          | Required | Default | Valid values                                                                                                                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 |-----------------------------|---------------|----------|---------|----------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| uri                         | string        | False    |         |                                                                                                                                        |  New upstream URI path. Value supports [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
+| uri                         | string        | False    |         |                                                                                                                                        |  New Upstream URI path. Value supports [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html). For example, `$arg_name`.                                                                                                                                                                                                                                                                                                                       |
 | method                      | string        | False    |         | ["GET", "POST", "PUT", "HEAD", "DELETE", "OPTIONS","MKCOL", "COPY", "MOVE", "PROPFIND", "PROPFIND","LOCK", "UNLOCK", "PATCH", "TRACE"] | HTTP method to rewrite requests to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the upstream URI path to `/theothers`. |
+| regex_uri                   | array[string] | False    |         |                                                                                                                                        | Regular expressions used to match the URI path from client requests and compose a new Upstream URI path. When both `uri` and `regex_uri` are configured, `uri` has a higher priority. The array should contain one or more **key-value pairs**, with the key being the regular expression to match URI against and value being the new Upstream URI path. For example, with `["^/iresty/(. *)/(. *)", "/$1-$2", ^/theothers/*", "/theothers"]`, if a request is originally sent to `/iresty/hello/world`, the Plugin will rewrite the Upstream URI path to `/iresty/hello-world`; if a request is originally sent to `/theothers/hello/world`, the Plugin will rewrite the Upstream URI path to `/theothers`. |
 | host                        | string        | False    |         |                                                                                                                                        | Set [`Host`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Host) request header.                                                                                                                                                                                                                                                                                                                                                                                                                                 |
 | headers                     | object        | False    |         |                                                                                                                                   |   Header actions to be executed. Can be set to objects of action verbs `add`, `remove`, and/or `set`; or an object consisting of headers to be `set`. When multiple action verbs are configured, actions are executed in the order of `add`, `remove`, and `set`.                |
 | headers.add     | object   | False     |        |                 | Headers to append to requests. If a header already present in the request, the header value will be appended. Header value could be set to a constant, one or more [Nginx variables](https://nginx.org/en/docs/http/ngx_http_core_module.html), or the matched result of `regex_uri` using variables such as `$1-$2-$3`.                                                                                              |
@@ -111,7 +111,7 @@ You should see a response similar to the following:
 
 ### Rewrite URI And Set Headers
 
-The following example demonstrates how you can rewrite the request upstream URI and set additional header values. If the same headers present in the client request, the corresponding header values set in the Plugin will overwrite the values present in the client request.
+The following example demonstrates how you can rewrite the request Upstream URI and set additional header values. If the same headers present in the client request, the corresponding header values set in the Plugin will overwrite the values present in the client request.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -174,7 +174,7 @@ Note that both headers present and the header value of `X-Api-Version` configure
 
 ### Rewrite URI And Append Headers
 
-The following example demonstrates how you can rewrite the request upstream URI and append additional header values. If the same headers present in the client request, their headers values will append to the configured header values in the plugin.
+The following example demonstrates how you can rewrite the request Upstream URI and append additional header values. If the same headers present in the client request, their headers values will append to the configured header values in the plugin.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -277,7 +277,7 @@ You should see a response similar to the following, where the `User-Agent` heade
 
 ### Rewrite URI Using RegEx
 
-The following example demonstrates how you can parse text from the original upstream URI path and use them to compose a new upstream URI path. In this example, APISIX is configured to forward all requests from `/test/user/agent` to `/user-agent`.
+The following example demonstrates how you can parse text from the original Upstream URI path and use them to compose a new Upstream URI path. In this example, APISIX is configured to forward all requests from `/test/user/agent` to `/user-agent`.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -422,7 +422,7 @@ You should see a response similar to the following:
 
 ### Forward Consumer Names to Upstream
 
-The following example demonstrates how you can forward the name of consumers who authenticates successfully to upstream services. As an example, you will be using `key-auth` as the authentication method.
+The following example demonstrates how you can forward the name of consumers who authenticates successfully to Upstream services. As an example, you will be using `key-auth` as the authentication method.
 
 Create a consumer `JohnDoe`:
 
@@ -449,7 +449,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
   }'
 ```
 
-Next, create a Route with key authentication enabled, configure `proxy-rewrite` to add consumer name to the header, and remove the authentication key so that it is not visible to the upstream service:
+Next, create a Route with key authentication enabled, configure `proxy-rewrite` to add consumer name to the header, and remove the authentication key so that it is not visible to the Upstream service:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
