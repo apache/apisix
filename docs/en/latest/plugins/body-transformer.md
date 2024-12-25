@@ -539,13 +539,13 @@ req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1'
 {%
   local core = require 'apisix.core'
   local cjson = require 'cjson'
-  
+
   if tonumber(context.age) > 18 then
       context._multipart:set_simple("status", "adult")
   else
       context._multipart:set_simple("status", "minor")
   end
-  
+
   local body = context._multipart:tostring()
 %}{* body *}
 EOF
