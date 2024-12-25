@@ -87,7 +87,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` credential for the consumer:
+Create `key-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -174,7 +174,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` credential for the consumer:
+Create `key-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -245,7 +245,7 @@ You should see an `HTTP/1.1 200 OK` response with the following:
 }
 ```
 
-Note that the credential `jack-key` is visible to the Upstream service.
+Note that the Credential `jack-key` is visible to the Upstream service.
 
 #### Hide Credentials
 
@@ -293,7 +293,7 @@ You should see an `HTTP/1.1 200 OK` response with the following:
 }
 ```
 
-Note that the credential `jack-key` is no longer visible to the Upstream service.
+Note that the Credential `jack-key` is no longer visible to the Upstream service.
 
 ### Demonstrate Priority of Keys in Header and Query
 
@@ -309,7 +309,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` credential for the consumer:
+Create `key-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -397,7 +397,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` credential for the consumer:
+Create `key-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -486,7 +486,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create the `key-auth` credential for the Consumer `jack`:
+Create the `key-auth` Credential for the Consumer `jack`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
