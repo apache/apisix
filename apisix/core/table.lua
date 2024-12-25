@@ -23,6 +23,7 @@ local newproxy     = newproxy
 local getmetatable = getmetatable
 local setmetatable = setmetatable
 local select       = select
+local tostring     = tostring
 local new_tab      = require("table.new")
 local nkeys        = require("table.nkeys")
 local ipairs       = ipairs
