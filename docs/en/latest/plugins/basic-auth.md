@@ -84,7 +84,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `basic-auth` credential for the consumer:
+Create `basic-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -191,7 +191,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `basic-auth` credential for the consumer:
+Create `basic-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -339,7 +339,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `basic-auth` credential for the consumer:
+Create `basic-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
@@ -428,7 +428,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create the `basic-auth` credential for the Consumer `johndoe`:
+Create the `basic-auth` Credential for the Consumer `johndoe`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
