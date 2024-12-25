@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Basic Auth
   - basic-auth
-description: This document contains information about the Apache APISIX basic-auth Plugin.
+description: The basic-auth plugin adds basic access authentication for Consumers to authenticate themselves before being able to access Upstream resources.
 ---
 
 <!--
@@ -28,20 +28,24 @@ description: This document contains information about the Apache APISIX basic-au
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/basic-auth" />
+</head>
+
 ## Description
 
-The `basic-auth` Plugin is used to add [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) to a Route or a Service.
+The `basic-auth` plugin adds [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) for [Consumers](../terminology/consumer.md) to authenticate themselves before being able to access Upstream resources.
 
-This works well with a [Consumer](../terminology/consumer.md). Consumers of the API can then add their key to the header to authenticate their requests.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
 ## Attributes
 
-For Consumer:
+For Consumer/Credentials:
 
 | Name     | Type   | Required | Description                                                                                                            |
 |----------|--------|----------|------------------------------------------------------------------------------------------------------------------------|
-| username | string | True     | Unique username for a Consumer. If multiple Consumers use the same `username`, a request matching exception is raised. |
-| password | string | True     | Password of the user. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
+| username | string | True     | Unique basic auth username for a consumer. |
+| password | string | True     | Basic auth password for the consumer.  |
 
 NOTE: `encrypt_fields = {"password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -49,13 +53,15 @@ For Route:
 
 | Name             | Type    | Required | Default | Description                                                            |
 |------------------|---------|----------|---------|------------------------------------------------------------------------|
-| hide_credentials | boolean | False    | false   | Set to true will not pass the authorization request headers to the Upstream. |
+| hide_credentials | boolean | False    | false   | If true, do not pass the authorization request header to Upstream services. |
+| anonymous_consumer | boolean | False    | false | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication. |
 
-## Enable Plugin
+## Examples
 
-To enable the Plugin, you have to create a Consumer object with the authentication configuration:
+The examples below demonstrate how you can work with the `basic-auth` plugin for different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -64,91 +70,445 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Implement Basic Authentication on Route
+
+The following example demonstrates how to implement basic authentication on a route.
+
+Create a Consumer `johndoe`:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "foo",
-    "plugins": {
-        "basic-auth": {
-            "username": "foo",
-            "password": "bar"
-        }
-    }
-}'
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "johndoe"
+  }'
 ```
 
-You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
-
-<!--
-![auth-1](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-1.png)
-
-![auth-2](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/basic-auth-2.png)
--->
-
-Once you have created a Consumer object, you can then configure a Route or a Service to authenticate requests:
+Create `basic-auth` credential for the consumer:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
+curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-basic-auth",
     "plugins": {
-        "basic-auth": {}
+      "basic-auth": {
+        "username": "johndoe",
+        "password": "john-key"
+      }
+    }
+  }'
+```
+
+Create a Route with `basic-auth`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "basic-auth-route",
+    "uri": "/anything",
+    "plugins": {
+      "basic-auth": {}
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## Example usage
+#### Verify with a Valid Key
 
-After you have configured the Plugin as mentioned above, you can make a request to the Route as shown below:
+Send a request to with the valid key:
 
 ```shell
-curl -i -ufoo:bar http://127.0.0.1:9080/hello
+curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
 ```
 
-```
-HTTP/1.1 200 OK
-...
-hello, world
+You should see an `HTTP/1.1 200 OK` response similar to the following:
+
+```json
+{
+  "args": {},
+  "headers": {
+    "Accept": "*/*",
+    "Apikey": "john-key",
+    "Authorization": "Basic am9obmRvZTpqb2huLWtleQ==",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66e5107c-5bb3e24f2de5baf733aec1cc",
+    "X-Consumer-Username": "john",
+    "X-Credential-Indentifier": "cred-john-basic-auth",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "origin": "192.168.65.1, 205.198.122.37",
+  "url": "http://127.0.0.1/get"
+}
 ```
 
-If the request is not authorized, an error will be thrown:
+#### Verify with an Invalid Key
+
+Send a request with an invalid key:
 
 ```shell
-HTTP/1.1 401 Unauthorized
-...
-{"message":"Missing authorization in request"}
+curl -i "http://127.0.0.1:9080/anything" -u johndoe:invalid-key
 ```
 
-And if the user or password is not valid:
+You should see an `HTTP/1.1 401 Unauthorized` response with the following:
 
-```shell
-HTTP/1.1 401 Unauthorized
-...
+```text
 {"message":"Invalid user authorization"}
 ```
 
-## Delete Plugin
+#### Verify without a Key
 
-To remove the `basic-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+Send a request to without a key:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should see an `HTTP/1.1 401 Unauthorized` response with the following:
+
+```text
+{"message":"Missing authorization in request"}
+```
+
+### Hide Authentication Information From Upstream
+
+The following example demonstrates how to prevent the key from being sent to the Upstream services by configuring `hide_credentials`. In APISIX, the authentication key is forwarded to the Upstream services by default, which might lead to security risks in some circumstances and you should consider updating `hide_credentials`.
+
+Create a Consumer `johndoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "johndoe"
+  }'
+```
+
+Create `basic-auth` credential for the consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-basic-auth",
+    "plugins": {
+      "basic-auth": {
+        "username": "johndoe",
+        "password": "john-key"
+      }
     }
+  }'
+```
+
+#### Without Hiding Credentials
+
+Create a Route with `basic-auth` and configure `hide_credentials` to `false`, which is the default configuration:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+-H "X-API-KEY: ${admin_key}" \
+-d '{
+  "id": "basic-auth-route",
+  "uri": "/anything",
+  "plugins": {
+    "basic-auth": {
+      "hide_credentials": false
+    }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
 }'
+```
+
+Send a request with the valid key:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
+```
+
+You should see an `HTTP/1.1 200 OK` response with the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Authorization": "Basic am9obmRvZTpqb2huLWtleQ==",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66cc2195-22bd5f401b13480e63c498c6",
+    "X-Consumer-Username": "john",
+    "X-Credential-Indentifier": "cred-john-basic-auth",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "192.168.65.1, 43.228.226.23",
+  "url": "http://127.0.0.1/anything"
+}
+```
+
+Note that the credentials are visible to the Upstream service in base64-encoded format.
+
+:::tip
+
+You can also pass the base64-encoded credentials in the request using the `Authorization` header as such:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H "Authorization: Basic am9obmRvZTpqb2huLWtleQ=="
+```
+
+:::
+
+#### Hide Credentials
+
+Update the plugin's `hide_credentials` to `true`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/basic-auth-route" -X PATCH \
+-H "X-API-KEY: ${admin_key}" \
+-d '{
+  "plugins": {
+    "basic-auth": {
+      "hide_credentials": true
+    }
+  }
+}'
+```
+
+Send a request with the valid key:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
+```
+
+You should see an `HTTP/1.1 200 OK` response with the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66cc21a7-4f6ac87946e25f325167d53a",
+    "X-Consumer-Username": "john",
+    "X-Credential-Indentifier": "cred-john-basic-auth",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "192.168.65.1, 43.228.226.23",
+  "url": "http://127.0.0.1/anything"
+}
+```
+
+Note that the credentials are no longer visible to the Upstream service.
+
+### Add Consumer Custom ID to Header
+
+The following example demonstrates how you can attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+
+Create a Consumer `johndoe` with a custom ID label:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "johndoe",
+    "labels": {
+      "custom_id": "495aec6a"
+    }
+  }'
+```
+
+Create `basic-auth` credential for the consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-basic-auth",
+    "plugins": {
+      "basic-auth": {
+        "username": "johndoe",
+        "password": "john-key"
+      }
+    }
+  }'
+```
+
+Create a Route with `basic-auth`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "basic-auth-route",
+    "uri": "/anything",
+    "plugins": {
+      "basic-auth": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+To verify, send a request to the Route with the valid key:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -u johndoe:john-key
+```
+
+You should see an `HTTP/1.1 200 OK` response with the `X-Consumer-Custom-Id` similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Authorization": "Basic am9obmRvZTpqb2huLWtleQ==",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66ea8d64-33df89052ae198a706e18c2a",
+    "X-Consumer-Username": "johndoe",
+    "X-Credential-Identifier": "cred-john-basic-auth",
+    "X-Consumer-Custom-Id": "495aec6a",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "method": "GET",
+  "origin": "192.168.65.1, 205.198.122.37",
+  "url": "http://127.0.0.1/anything"
+}
+```
+
+### Rate Limit with Anonymous Consumer
+
+The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
+
+Create a regular Consumer `johndoe` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "johndoe",
+    "plugins": {
+      "limit-count": {
+        "count": 3,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+Create the `basic-auth` credential for the Consumer `johndoe`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-basic-auth",
+    "plugins": {
+      "basic-auth": {
+        "username": "johndoe",
+        "password": "john-key"
+      }
+    }
+  }'
+```
+
+Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "anonymous",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+Create a Route and configure the `basic-auth` plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "basic-auth-route",
+    "uri": "/anything",
+    "plugins": {
+      "basic-auth": {
+        "anonymous_consumer": "anonymous"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+To verify, send five consecutive requests with `john`'s key:
+
+```shell
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -u johndoe:john-key -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+You should see the following response, showing that out of the 5 requests, 3 requests were successful (status code 200) while the others were rejected (status code 429).
+
+```text
+200:    3, 429:    2
+```
+
+Send five anonymous requests:
+
+```shell
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+You should see the following response, showing that only one request was successful:
+
+```text
+200:    1, 429:    4
 ```
