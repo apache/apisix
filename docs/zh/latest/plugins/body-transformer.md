@@ -125,7 +125,7 @@ EOF
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "methods": ["POST"],
@@ -203,7 +203,7 @@ curl "http://127.0.0.1:9080/ws" -X POST -d '{"name": "Spain"}'
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -256,7 +256,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -318,7 +318,7 @@ EOF
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -374,7 +374,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -428,7 +428,7 @@ curl "http://127.0.0.1:9080/anything" -X POST \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -482,7 +482,7 @@ curl "http://127.0.0.1:9080/anything?name=john"
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -556,7 +556,7 @@ EOF
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",

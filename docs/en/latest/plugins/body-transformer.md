@@ -125,7 +125,7 @@ Create a Route with `body-transformer` using the templates created previously. I
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "methods": ["POST"],
@@ -203,7 +203,7 @@ Create a Route with `body-transformer`, in which the template appends the word `
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -256,7 +256,7 @@ Create a Route with `body-transformer`, in which the template accesses the reque
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -318,7 +318,7 @@ Create a Route with `body-transformer` that uses the template:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -374,7 +374,7 @@ Create a Route with `body-transformer` which sets the `input_format` to `encoded
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -428,7 +428,7 @@ Create a Route with `body-transformer`, which sets the `input_format` to `args` 
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -482,7 +482,7 @@ Create a Route with `body-transformer`, which sets the `input_format` to `plain`
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
@@ -556,7 +556,7 @@ Create a Route with `body-transformer`, which sets the `input_format` to `multip
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "body-transformer-route",
     "uri": "/anything",
