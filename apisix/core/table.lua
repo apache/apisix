@@ -127,7 +127,7 @@ do
         -- prevent infinite loop when a field refers its parent
         copied[orig] = copy
         for orig_key, orig_value in pairs(orig) do
-            local path = parent .. "." .. orig_key
+            local path = parent .. "." .. tostring(orig_key)
             if opts and array_find(opts.shallows, path) then
                 copy[orig_key] = orig_value
             else
