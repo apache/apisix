@@ -73,7 +73,7 @@ add_block_preprocessor(sub {
             }
 
 
-            location /test/params/in/overriden/endpoint {
+            location /test/params/in/overridden/endpoint {
                 content_by_lua_block {
                     local json = require("cjson.safe")
                     local core = require("apisix.core")
@@ -306,7 +306,7 @@ POST /anything
                                 }
                             },
                             "override": {
-                                "endpoint": "http://localhost:6724/test/params/in/overriden/endpoint?some_query=yes"
+                                "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"
                             },
                             "ssl_verify": false
                         }
