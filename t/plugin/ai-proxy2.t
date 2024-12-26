@@ -71,6 +71,31 @@ add_block_preprocessor(sub {
                     ngx.say("passed")
                 }
             }
+
+
+            location /test/params/in/overriden/endpoint {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+                    local core = require("apisix.core")
+
+                    if ngx.req.get_method() ~= "POST" then
+                        ngx.status = 400
+                        ngx.say("Unsupported request method: ", ngx.req.get_method())
+                    end
+
+                    local query_auth = ngx.req.get_uri_args()["api_key"]
+                    ngx.log(ngx.INFO, "found query params: ", core.json.stably_encode(ngx.req.get_uri_args()))
+
+                    if query_auth ~= "apikey" then
+                        ngx.status = 401
+                        ngx.say("Unauthorized")
+                        return
+                    end
+
+                    ngx.status = 200
+                    ngx.say("passed")
+                }
+            }
         }
 _EOC_
 
@@ -253,3 +278,65 @@ passed
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- error_code: 401
+
+
+
+=== TEST 7: query params in override.endpoint should be sent to LLM
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "gpt-35-turbo-instruct",
+                                "options": {
+                                    "max_tokens": 512,
+                                    "temperature": 1.0
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/test/params/in/overriden/endpoint?some_query=yes"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 200
+--- error_log
+found query params: {"api_key":"apikey","some_query":"yes"}
+--- response_body
+passed
