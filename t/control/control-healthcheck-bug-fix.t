@@ -38,7 +38,7 @@ __DATA__
                     "upstream": {
                         "nodes": {
                             "httpbin.org:80": 1,
-														"mockbin.org:80": 1
+			    "mockbin.org:80": 1
                         },
                         "type": "roundrobin"
                     },
