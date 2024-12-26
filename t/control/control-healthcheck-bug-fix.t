@@ -38,7 +38,7 @@ __DATA__
                     "upstream": {
                         "nodes": {
                             "httpbin.org:80": 1,
-			    "mockbin.org:80": 1
+                            "mockbin.org:80": 1
                         },
                         "type": "roundrobin"
                     },
@@ -66,15 +66,15 @@ GET /status/403
 
 
 
-=== TEST 3: hit control api 
+=== TEST 3: hit control api
 --- config
     location /t {
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
-            
+
             local passed = true
-            
+
             for i = 1, 40 do
                 local code, body, res = t.test('/v1/routes/1', ngx.HTTP_GET)
                 if code ~= ngx.HTTP_OK then
@@ -82,7 +82,7 @@ GET /status/403
                     break
                 end
             end
-            
+
             if passed then
                 ngx.say("passed")
             else
@@ -104,15 +104,15 @@ GET /status/403
 
 
 
-=== TEST 5: hit control api 
+=== TEST 5: hit control api
 --- config
     location /t {
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
-            
+
             local passed = true
-            
+
             for i = 1, 40 do
                 local code, body, res = t.test('/v1/routes/1', ngx.HTTP_GET)
                 if code ~= ngx.HTTP_OK then
@@ -120,7 +120,7 @@ GET /status/403
                     break
                 end
             end
-            
+
             if passed then
                 ngx.say("passed")
             else
