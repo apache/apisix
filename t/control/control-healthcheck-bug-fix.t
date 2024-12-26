@@ -56,7 +56,6 @@ __DATA__
 GET /t
 --- response_body
 passed
---- timeout: 10
 
 
 
@@ -64,7 +63,6 @@ passed
 --- request
 GET /status/403
 --- error_code: 403
---- timeout: 10
 
 
 
@@ -96,7 +94,6 @@ GET /status/403
 GET /t
 --- response_body
 passed
---- timeout: 10
 
 
 
@@ -104,7 +101,6 @@ passed
 --- request
 GET /status/403
 --- error_code: 403
---- timeout: 10
 
 
 
@@ -136,4 +132,3 @@ GET /status/403
 GET /t
 --- response_body
 passed
---- timeout: 10
