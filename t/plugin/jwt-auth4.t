@@ -160,3 +160,73 @@ GET /t
 --- more_headers
 --- response_body
 hello world
+
+
+
+=== TEST 4: ensure secret is non empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- prepare consumer with a custom key claim name
+            local csm_code, csm_body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "mike",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "custom-user-key",
+                            "secret": ""
+                        }
+                    }
+                }]]
+            )
+            if csm_code == 200 then
+                ngx.status = 500
+                ngx.say("error")
+                return
+            end
+            ngx.status = csm_code
+            ngx.say(csm_body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/\\"secret\\" validation failed: string too short, expected at least 1, got 0/
+
+
+
+=== TEST 5: ensure key is non empty
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local t = require("lib.test_admin").test
+            -- prepare consumer with a custom key claim name
+            local csm_code, csm_body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "mike",
+                    "plugins": {
+                        "jwt-auth": {
+                            "key": "",
+                            "algorithm": "RS256",
+                            "public_key": "somekey",
+                            "private_key": "someprivkey"
+                        }
+                    }
+                }]]
+            )
+            if csm_code == 200 then
+                ngx.status = 500
+                ngx.say("error")
+                return
+            end
+            ngx.status = csm_code
+            ngx.say(csm_body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/\\"key\\" validation failed: string too short, expected at least 1, got 0/
