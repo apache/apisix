@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - HMAC Authentication
   - hmac-auth
-description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信息及使用方法。
+description: hmac-auth 插件支持 HMAC（基于哈希的消息认证码）认证，作为一种确保请求完整性的机制，防止它们在传输过程中被修改。
 ---
 
 <!--
@@ -30,11 +30,13 @@ description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信�
 
 ## 描述
 
-`hmac-auth` 插件支持 HMAC（基于哈希的消息认证码）身份验证，作为一种确保请求完整性的机制，防止它们在传输过程中被修改。要使用该插件，您需要在 [Consumers](../terminology/consumer.md) 上配置 HMAC 密钥，并在 Routes 或 Services 上启用该插件。
+`hmac-auth` 插件支持 HMAC（基于哈希的消息认证码）认证，作为一种确保请求完整性的机制，防止它们在传输过程中被修改。要使用该插件，您需要在 [Consumers](../terminology/consumer.md) 上配置 HMAC 密钥，并在 Routes 或 Services 上启用该插件。
 
-启用后，插件会验证请求的 `Authorization` 标头中的 HMAC 签名，并检查传入请求是否来自可信来源。具体来说，当 APISIX 收到 HMAC 签名的请求时，会从 `Authorization` 标头中提取密钥 ID。然后，APISIX 会检索相应的消费者配置，包括密钥。如果密钥 ID 有效且存在，APISIX 会使用请求的 `Date` 标头和密钥生成 HMAC 签名。如果生成的签名与 `Authorization` 标头中提供的签名匹配，则请求经过身份验证并转发到上游服务。
+当消费者成功通过身份验证后，APISIX 会在将请求代理到上游服务之前向请求添加其他标头，例如 `X-Consumer-Username`、`X-Credential-Indentifier` 和其他消费者自定义标头（如果已配置）。上游服务将能够区分消费者并根据需要实现其他逻辑。如果这些值中的任何一个不可用，则不会添加相应的标头。
 
-该插件实现基于 [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt)。
+启用后，插件会验证请求的 `Authorization` 标头中的 HMAC 签名，并检查传入的请求是否来自受信任的来源。具体来说，当 APISIX 收到 HMAC 签名的请求时，会从 `Authorization` 标头中提取密钥 ID。然后，APISIX 会检索相应的消费者配置，包括密钥。如果密钥 ID 有效且存在，APISIX 将使用请求的 `Date` 标头和密钥生成 HMAC 签名。如果生成的签名与 `Authorization` 标头中提供的签名匹配，则请求通过身份验证并转发到上游服务。
+
+插件实现基于 [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt)。
 
 ## 属性
 
@@ -57,7 +59,9 @@ description: 本文介绍了关于 Apache APISIX `hmac-auth` 插件的基本信�
 
 注意：schema 中还定义了 `encrypt_fields = {"secret_key"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
-## 例子
+## 示例
+
+下面的示例说明了如何在不同场景中使用“hmac-auth”插件。
 
 :::note
 
@@ -69,19 +73,24 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-在继续之前，创建一个示例使用者并配置其凭据，该配置将用于下面的所有示例。
+### 在路由上实现 HMAC 身份验证
 
-创建一个消费者 `john`:
+以下示例演示如何在路由上实现 HMAC 身份验证。您还将在 `Consumer-Custom-Id` 标头中将消费者自定义 ID 附加到经过身份验证的请求，该 ID 可用于根据需要实现其他逻辑。
+
+创建一个带有自定义 ID 标签的消费者 `john`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${admin_key}" \
   -d '{
-    "username": "john"
+    "username": "john",
+    "labels": {
+      "custom_id": "495aec6a"
+    }
   }'
 ```
 
-创建 `john` 的 `hmac-auth` 凭证：
+为消费者创建 `hmac-auth` 凭证：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -96,10 +105,6 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
     }
   }'
 ```
-
-### 在路由上实现 HMAC 身份验证
-
-以下示例展示了如何在路由上实现 HMAC 身份验证。
 
 使用 `hmac-auth` 插件的默认配置创建路由：
 
@@ -122,7 +127,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-生成签名。您可以使用以下 Python 代码片段或您选择的其他技术栈：
+生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
 ```python title="hmac-sig-header-gen.py"
 import hmac
@@ -130,21 +135,21 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"                # 密钥 ID
-Secret_key = b"john-secret-key"    # 秘密密钥
-request_method = "GET"             # HTTP 方法
-request_path = "/get"              # 路由 URI
-algorithm= "hmac-sha256"           # 可以在 allowed_algorithms 中使用其他算法
+key_id = "john-key"                # key id
+secret_key = b"john-secret-key"    # secret key
+request_method = "GET"             # HTTP method
+request_path = "/get"              # Route URI
+algorithm= "hmac-sha256"           # can use other algorithms in allowed_algorithms
 
-# 获取当前的 GMT 日期时间
-# 注意：时钟偏差后签名将失效（默认 300s）
-# 签名失效后可以重新生成，或者增加时钟
-# 倾斜以延长建议的安全边界内的有效性
+# get current datetime in GMT
+# note: the signature will become invalid after the clock skew (default 300s)
+# you can regenerate the signature after it becomes invalid, or increase the clock
+# skew to prolong the validity within the advised security boundary
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-# 构造签名字符串（有序）
-# 日期和任何后续的自定义标头应小写并用
-# 单空格字符，即 `<key>:<space><value>`
+# construct the signing string (ordered)
+# the date and any subsequent custom headers should be lowercased and separated by a
+# single space character, i.e. `<key>:<space><value>`
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
   f"{key_id}\n"
@@ -152,11 +157,11 @@ signing_string = (
   f"date: {gmt_time}\n"
 )
 
-# 创建签名
+# create signature
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# 构造请求头
+# construct the request headers
 headers = {
   "Date": gmt_time,
   "Authorization": (
@@ -166,7 +171,7 @@ headers = {
   )
 }
 
-# 打印请求头
+# print headers
 print(headers)
 ```
 
@@ -204,6 +209,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
     "X-Amzn-Trace-Id": "Root=1-66d96513-2e52d4f35c9b6a2772d667ea",
     "X-Consumer-Username": "john",
     "X-Credential-Identifier": "cred-john-hmac-auth",
+    "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
   },
   "origin": "192.168.65.1, 34.0.34.160",
@@ -211,13 +217,13 @@ curl -X GET "http://127.0.0.1:9080/get" \
 }
 ```
 
-### 向上游隐藏授权信息
+### Hide Authorization Information From Upstream
 
-如 [上一个示例](#implement-hmac-authentication-on-a-route) 所示，传递给上游的 `Authorization` 标头包含签名和所有其他详细信息。这可能会带来安全风险。
+As seen the in the [last example](#implement-hmac-authentication-on-a-route), the `Authorization` header passed to the Upstream includes the signature and all other details. This could potentially introduce security risks.
 
-以下示例展示了如何防止这些信息被发送到上游服务。
+The following example demonstrates how to prevent these information from being sent to the Upstream service.
 
-更新插件配置以将 `hide_credentials` 设置为 `true`：
+Update the plugin configuration to set `hide_credentials` to `true`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
@@ -231,7 +237,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
 }'
 ```
 
-发送以下请求：
+Send a request to the route:
 
 ```shell
 curl -X GET "http://127.0.0.1:9080/get" \
@@ -239,7 +245,7 @@ curl -X GET "http://127.0.0.1:9080/get" \
   -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="wWfKQvPDr0wHQ4IHdluB4IzeNZcj0bGJs2wvoCOT5rM="'
 ```
 
-您应该看到 `HTTP/1.1 200 OK` 响应，并注意到 `Authorization` 标头已被完全删除：
+You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` header is entirely removed:
 
 ```json
 {
@@ -258,11 +264,37 @@ curl -X GET "http://127.0.0.1:9080/get" \
 }
 ```
 
-### 启用主体验证
+### Enable Body Validation
 
-以下示例显示如何启用主体验证以确保请求主体的完整性。
+The following example demonstrates how to enable body validation to ensure the integrity of the request body.
 
-使用 `hmac-auth` 插件创建路由，如下所示：
+Create a consumer `john`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john"
+  }'
+```
+
+为消费者创建 `hmac-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
+    "plugins": {
+      "hmac-auth": {
+        "key_id": "john-key",
+        "secret_key": "john-secret-key"
+      }
+    }
+  }'
+```
+
+Create a Route with the `hmac-auth` plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -285,7 +317,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-生成签名。您可以使用以下 Python 代码片段或您选择的其他技术栈：
+生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
 ```python title="hmac-sig-digest-header-gen.py"
 import hmac
@@ -293,22 +325,22 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"             # 密钥 ID
-Secret_key = b"john-secret-key" # 秘密密钥
-request_method = "POST"         # HTTP 方法
-request_path = "/post"          # 路由 URI
-algorithms= "hmac-sha256"       # 可以在 allowed_algorithms 中使用其他算法
-body = '{"name": "world"}'      # 请求正文示例
+key_id = "john-key"                 # key id
+secret_key = b"john-secret-key"     # secret key
+request_method = "POST"             # HTTP method
+request_path = "/post"              # Route URI
+algorithm= "hmac-sha256"            # can use other algorithms in allowed_algorithms
+body = '{"name": "world"}'          # example request body
 
-# 获取当前的 GMT 日期时间
-# 注意：时钟偏差（默认 300s）后签名将失效。
-# 签名失效后可以重新生成，或者增加时钟
-# 倾斜以延长建议的安全边界内的有效性
+# get current datetime in GMT
+# note: the signature will become invalid after the clock skew (default 300s).
+# you can regenerate the signature after it becomes invalid, or increase the clock
+# skew to prolong the validity within the advised security boundary
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-# 构造签名字符串（有序）
-# 日期和任何后续的自定义标头应小写并用
-# 单空格字符，即 `<key>:<space><value>`
+# construct the signing string (ordered)
+# the date and any subsequent custom headers should be lowercased and separated by a
+# single space character, i.e. `<key>:<space><value>`
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
     f"{key_id}\n"
@@ -316,15 +348,15 @@ signing_string = (
     f"date: {gmt_time}\n"
 )
 
-# 创建签名
+# create signature
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# 创建请求正文的 SHA-256 digest 并对其进行 Base64 编码
+# create the SHA-256 digest of the request body and base64 encode it
 body_digest = hashlib.sha256(body.encode('utf-8')).digest()
 body_digest_base64 = base64.b64encode(body_digest).decode('utf-8')
 
-# 构造请求头
+# construct the request headers
 headers = {
     "Date": gmt_time,
     "Digest": f"SHA-256={body_digest_base64}",
@@ -335,7 +367,7 @@ headers = {
     )
 }
 
-# 打印请求头
+# print headers
 print(headers)
 ```
 
@@ -391,7 +423,7 @@ curl "http://127.0.0.1:9080/post" -X POST \
 }
 ```
 
-如果您发送的请求没有 digest 或 digest 无效：
+如果您发送的请求没有摘要或摘要无效：
 
 ```shell
 curl "http://127.0.0.1:9080/post" -X POST \
@@ -409,9 +441,35 @@ curl "http://127.0.0.1:9080/post" -X POST \
 
 ### 强制签名标头
 
-以下示例展示了如何强制在请求的 HMAC 签名中对某些标头进行签名。
+以下示例演示了如何强制在请求的 HMAC 签名中对某些标头进行签名。
 
-使用 `hmac-auth` 插件创建路由，该路由要求 HMAC 签名中存在三个标头：
+创建消费者 `john`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john"
+  }'
+```
+
+为消费者创建 `hmac-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
+    "plugins": {
+      "hmac-auth": {
+        "key_id": "john-key",
+        "secret_key": "john-secret-key"
+      }
+    }
+  }'
+```
+
+使用 `hmac-auth` 插件创建路由，该插件要求 HMAC 签名中存在三个标头：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -422,7 +480,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["GET"],
     "plugins": {
       "hmac-auth": {
-        "signed_headers": ["date","x-custom-header-a", "x-custom-header-b"]
+        "signed_headers": ["date","x-custom-header-a","x-custom-header-b"]
       }
     },
     "upstream": {
@@ -434,7 +492,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-生成签名。您可以使用以下 Python 代码片段或您选择的其他技术栈：
+生成签名。您可以使用以下 Python 代码片段或其他技术栈：
 
 ```python title="hmac-sig-req-header-gen.py"
 import hmac
@@ -442,23 +500,23 @@ import hashlib
 import base64
 from datetime import datetime, timezone
 
-key_id = "john-key"             # 密钥 ID
-Secret_key = b"john-secret-key" # 秘密密钥
-request_method = "GET"          # HTTP 方法
-request_path = "/get"           # 路由 URI
-algorithms= "hmac-sha256"       # 可以在 allowed_algorithms 中使用其他算法
-custom_header_a = "hello123"    # 必需的自定义标头
-custom_header_b = "world456"    # 必需的自定义标头
+key_id = "john-key"                # key id
+secret_key = b"john-secret-key"    # secret key
+request_method = "GET"             # HTTP method
+request_path = "/get"              # Route URI
+algorithm= "hmac-sha256"           # can use other algorithms in allowed_algorithms
+custom_header_a = "hello123"       # required custom header
+custom_header_b = "world456"       # required custom header
 
-# 获取当前的 GMT 日期时间
-# 注意：时钟偏差后签名将失效（默认 300s）
-# 签名失效后可以重新生成，或者增加时钟
-# 倾斜以延长建议的安全边界内的有效性
+# get current datetime in GMT
+# note: the signature will become invalid after the clock skew (default 300s)
+# you can regenerate the signature after it becomes invalid, or increase the clock
+# skew to prolong the validity within the advised security boundary
 gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
 
-# 构造签名字符串（有序）
-# 日期和任何后续的自定义标头应小写并用
-# 单空格字符，即 `<key>:<space><value>`
+# construct the signing string (ordered)
+# the date and any subsequent custom headers should be lowercased and separated by a
+# single space character, i.e. `<key>:<space><value>`
 # https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
 signing_string = (
     f"{key_id}\n"
@@ -468,11 +526,11 @@ signing_string = (
     f"x-custom-header-b: {custom_header_b}\n"
 )
 
-# 创建签名
+# create signature
 signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
 signature_base64 = base64.b64encode(signature).decode('utf-8')
 
-# 构造请求头
+# construct the request headers
 headers = {
     "Date": gmt_time,
     "Authorization": (
@@ -484,7 +542,7 @@ headers = {
     "x-custom-header-b": custom_header_b
 }
 
-# 打印请求头
+# print headers
 print(headers)
 ```
 
@@ -533,21 +591,169 @@ curl -X GET "http://127.0.0.1:9080/get" \
 }
 ```
 
-## 删除插件
+### 匿名消费者的速率限制
 
-当你需要在路由上删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+以下示例演示了如何为常规消费者和匿名消费者配置不同的速率限制策略，其中匿名消费者不需要进行身份验证，配额较少。
+
+创建常规消费者 `john`，并配置 `limit-count` 插件，以允许 30 秒内的配额为 3：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john",
+    "plugins": {
+      "limit-count": {
+        "count": 3,
+        "time_window": 30,
+        "rejected_code": 429
+      }
     }
-}'
+  }'
+```
+
+为消费者 `john` 创建 `hmac-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-hmac-auth",
+    "plugins": {
+      "hmac-auth": {
+        "key_id": "john-key",
+        "secret_key": "john-secret-key"
+      }
+    }
+  }'
+```
+
+创建匿名用户 `anonymous`，并配置 `limit-count` 插件，以允许 30 秒内配额为 1：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "anonymous",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+创建路由并配置 `hmac-auth` 插件以接受匿名消费者 `anonymous` 绕过身份验证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "hmac-auth-route",
+    "uri": "/get",
+    "methods": ["GET"],
+    "plugins": {
+      "hmac-auth": {
+        "anonymous_consumer": "anonymous"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+生成签名。您可以使用以下 Python 代码片段或其他技术栈：
+
+```python title="hmac-sig-header-gen.py"
+import hmac
+import hashlib
+import base64
+from datetime import datetime, timezone
+
+key_id = "john-key"                # key id
+secret_key = b"john-secret-key"    # secret key
+request_method = "GET"             # HTTP method
+request_path = "/get"              # Route URI
+algorithm= "hmac-sha256"           # can use other algorithms in allowed_algorithms
+
+# get current datetime in GMT
+# note: the signature will become invalid after the clock skew (default 300s)
+# you can regenerate the signature after it becomes invalid, or increase the clock
+# skew to prolong the validity within the advised security boundary
+gmt_time = datetime.now(timezone.utc).strftime('%a, %d %b %Y %H:%M:%S GMT')
+
+# construct the signing string (ordered)
+# the date and any subsequent custom headers should be lowercased and separated by a
+# single space character, i.e. `<key>:<space><value>`
+# https://datatracker.ietf.org/doc/html/draft-cavage-http-signatures-12#section-2.1.6
+signing_string = (
+  f"{key_id}\n"
+  f"{request_method} {request_path}\n"
+  f"date: {gmt_time}\n"
+)
+
+# create signature
+signature = hmac.new(secret_key, signing_string.encode('utf-8'), hashlib.sha256).digest()
+signature_base64 = base64.b64encode(signature).decode('utf-8')
+
+# construct the request headers
+headers = {
+  "Date": gmt_time,
+  "Authorization": (
+    f'Signature keyId="{key_id}",algorithm="{algorithm}",'
+    f'headers="@request-target date",'
+    f'signature="{signature_base64}"'
+  )
+}
+
+# print headers
+print(headers)
+```
+
+运行脚本：
+
+```shell
+python3 hmac-sig-header-gen.py
+```
+
+您应该看到打印的请求标头：
+
+```text
+{'Date': 'Mon, 21 Oct 2024 17:31:18 GMT', 'Authorization': 'Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="ztFfl9w7LmCrIuPjRC/DWSF4gN6Bt8dBBz4y+u1pzt8="'}
+```
+
+使用生成的标头发送五个连续的请求：
+
+```shell
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H "Date: Mon, 21 Oct 2024 17:31:18 GMT" -H 'Authorization: Signature keyId="john-key",algorithm="hmac-sha256",headers="@request-target date",signature="ztFfl9w7LmCrIuPjRC/DWSF4gN6Bt8dBBz4y+u1pzt8="' -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+
+```text
+200:    3, 429:    2
+```
+
+发送五个匿名请求：
+
+```shell
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+您应该看到以下响应，表明只有一个请求成功：
+
+```text
+200:    1, 429:    4
 ```
