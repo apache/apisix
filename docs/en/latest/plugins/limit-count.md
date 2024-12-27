@@ -344,6 +344,65 @@ Server: APISIX web server
 {"error_msg":"Requests are too frequent, please try again later."}
 ```
 
+### Customize Rate Limiting Headers
+
+The following example demonstrates how you can use plugin metadata to customize the rate limiting response header names, which are by default `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`.
+
+Configure the plugin metadata for this plugin and update the headers:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/limit-count" -X PUT -d '
+{
+  "log_format": {
+    "limit_header": "X-Custom-RateLimit-Limit",
+    "remaining_header": "X-Custom-RateLimit-Remaining",
+    "reset_header": "X-Custom-RateLimit-Reset"
+  }
+}'
+```
+
+Create a route with `limit-count` plugin that allows for a quota of 1 within a 30-second window per remote address:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key_type": "var",
+        "key": "remote_addr",
+        "window_type": "sliding"
+      }
+      # highlight-end
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to verify:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should receive an `HTTP/1.1 200 OK` response and see the following headers:
+
+```text
+X-Custom-RateLimit-Limit: 1
+X-Custom-RateLimit-Remaining: 0
+X-Custom-RateLimit-Reset: 28
+```
+
 ## Delete Plugin
 
 To remove the `limit-count` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.

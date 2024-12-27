@@ -60,7 +60,7 @@ qr/(connection refused){1,}/
 apisix:
   node_listen: 1984
   ssl:
-    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
+    ssl_trusted_combined_path: t/servroot/conf/cert/etcd.pem
 deployment:
   role: traditional
   role_traditional:

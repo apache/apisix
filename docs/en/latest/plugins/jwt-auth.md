@@ -51,7 +51,7 @@ For Consumer/Credential:
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
 | algorithm     | string  | False                                                 | HS256 | ["HS256", "HS512", "RS256", "ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
-| base64_secret | boolean | False                                                 | false   |                             | If true, encode the secret with base64.                                                                                                                                                |
+| base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Grace period in seconds. Used to account for clock skew between the server generating the JWT and the server validating the JWT.  |
 | key_claim_name | string | False                                                 | key     |                             | The claim in the JWT payload that identifies the associated secret, such as `iss`. |
 
@@ -64,8 +64,9 @@ For Route:
 | header | string | False    | authorization | The header to get the token from.                                   |
 | query  | string | False    | jwt           | The query string to get the token from. Lower priority than header. |
 | cookie | string | False    | jwt           | The cookie to get the token from. Lower priority than query.        |
-| hide_credentials | boolean | False     | false  | If true, do not pass the header, query, or cookie with JWT to Upstream services.  |
-| anonymous_consumer | string | False     | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.   |
+| hide_credentials| boolean | False    | false  | If true, do not pass the header, query, or cookie with JWT to Upstream services.  |
+| key_claim_name  | string  | False    | key     | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
+| anonymous_consumer | string | False  | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.   |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 

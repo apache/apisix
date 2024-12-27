@@ -69,7 +69,9 @@ local default_keepalive_pool = {}
 
 local function create_router_matching_cache(api_ctx)
     orig_router_http_matching(api_ctx)
-    return core.table.deepcopy(api_ctx)
+    return core.table.deepcopy(api_ctx, {
+        shallows = { "self.matched_route.value.upstream.parent" }
+    })
 end
 
 
