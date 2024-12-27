@@ -275,7 +275,7 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
-```text           
+```text
 {
   "args": {},
   "headers": {
@@ -421,7 +421,7 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
-```text           
+```text
 {
   "args": {},
   "headers": {

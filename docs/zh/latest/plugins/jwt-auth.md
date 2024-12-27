@@ -60,7 +60,7 @@ Route 端：
 | header | string | 否     | authorization | 设置我们从哪个 header 获取 token。                         |
 | query  | string | 否     | jwt           | 设置我们从哪个 query string 获取 token，优先级低于 header。  |
 | cookie | string | 否     | jwt           | 设置我们从哪个 cookie 获取 token，优先级低于 query。        |
-| hide_credentials | boolean | 否     | false  | 如果为 true ，则不要将 header、query 或带有 JWT 的 cookie 传递给上游服务。 |
+| hide_credentials | boolean | 否     | false  | 如果为 true，则不要将 header、query 或带有 JWT 的 cookie 传递给上游服务。 |
 | key_claim_name | string  | 否     | key           | 包含用户密钥（对应消费者的密钥属性）的 JWT 声明的名称。|
 | anonymous_consumer | string | 否     | false  | 匿名消费者名称。如果已配置，则允许匿名用户绕过身份验证。  |
 
@@ -244,7 +244,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 * 在 __Algorithm__ 下拉菜单中选择 __HS256__。
 * 将 __Verify Signature__ 部分中的密钥更新为 `jack-hs256-secret`。
-* 使用消费者密钥 `jack-key` 更新有效 payload ；并在 UNIX 时间戳中添加 `exp` 或 `nbf`。
+* 使用消费者密钥 `jack-key` 更新有效 payload；并在 UNIX 时间戳中添加 `exp` 或 `nbf`。
 
   您的有效 payload 应类似于以下内容：
 
@@ -271,7 +271,7 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 
 您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```text           
+```text
 {
   "args": {},
   "headers": {
@@ -417,7 +417,7 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 
 您应该收到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
 
-```text           
+```text
 {
   "args": {},
   "headers": {
@@ -569,7 +569,7 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 }
 ```
 
-### 使用RS256算法签署JWT
+### 使用 RS256 算法签署 JWT
 
 以下示例演示了在实施 JWT 进行消费者身份验证时如何使用非对称算法（例如 RS256）来签名和验证 JWT。您将使用 [openssl](https://openssl-library.org/source/) 生成 RSA 密钥对，并使用 [JWT.io](https://jwt.io/#debugger-io) 生成 JWT，以更好地了解 JWT 的组成。
 
@@ -815,7 +815,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
   }'
 ```
 
-创建匿名用户 `anonymous`，并配置 `limit-count` 插件，以允许 30 秒内配额为1：
+创建匿名用户 `anonymous`，并配置 `limit-count` 插件，以允许 30 秒内配额为 1：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
