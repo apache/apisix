@@ -36,6 +36,11 @@ local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
 
+-- Please calculate and set the value of the "consumers_count_for_lrucache"
+-- variable based on the number of consumers in the current environment,
+-- taking into account the appropriate adjustment coefficient.
+local consumers_count_for_lrucache = 4096
+
 local function remove_etcd_prefix(key)
     local prefix = ""
     local local_conf = config_local.local_conf()
@@ -82,7 +87,50 @@ end
 
 local plugin_consumer
 do
-    local consumers_id_cache = {}
+    local consumers_id_lrucache = core.lrucache.new({
+            count = consumers_count_for_lrucache
+        })
+
+local function construct_consumer_data(val, plugin_config)
+    -- if the val is a Consumer, clone it to the local consumer;
+    -- if the val is a Credential, to get the Consumer by consumer_name and then clone
+    -- it to the local consumer.
+    local consumer
+    if is_credential_etcd_key(val.key) then
+        local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
+        local the_consumer = consumers:get(consumer_name)
+        if the_consumer and the_consumer.value then
+            consumer = core.table.clone(the_consumer.value)
+            consumer.modifiedIndex = the_consumer.modifiedIndex
+            consumer.credential_id = get_credential_id_from_etcd_key(val.key)
+        else
+            -- Normally wouldn't get here:
+            -- it should belong to a consumer for any credential.
+            core.log.error("failed to get the consumer for the credential,",
+                " a wild credential has appeared!",
+                " credential key: ", val.key, ", consumer name: ", consumer_name)
+            return nil, "failed to get the consumer for the credential"
+        end
+    else
+        consumer = core.table.clone(val.value)
+        consumer.modifiedIndex = val.modifiedIndex
+    end
+
+    -- if the consumer has labels, set the field custom_id to it.
+    -- the custom_id is used to set in the request headers to the upstream.
+    if consumer.labels then
+        consumer.custom_id = consumer.labels["custom_id"]
+    end
+
+    -- Note: the id here is the key of consumer data, which
+    -- is 'username' field in admin
+    consumer.consumer_name = consumer.id
+    consumer.auth_conf = plugin_config
+
+    return consumer
+end
+
+
 function plugin_consumer()
     local plugins = {}
 
@@ -109,54 +157,17 @@ function plugin_consumer()
                     }
                 end
 
-                local cached_consumer = consumers_id_cache[val.value.id]
-                if cached_consumer and
-                    cached_consumer.modifiedIndex == val.modifiedIndex then
-                    plugins[name].len = plugins[name].len + 1
-                    core.table.insert(plugins[name].nodes, plugins[name].len,
-                                        cached_consumer)
-                    goto CONTINUE_INTERNAL
-                end
-                -- if the val is a Consumer, clone it to the local consumer;
-                -- if the val is a Credential, to get the Consumer by consumer_name and then clone
-                -- it to the local consumer.
-                local consumer
-                if is_credential_etcd_key(val.key) then
-                    local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
-                    local the_consumer = consumers:get(consumer_name)
-                    if the_consumer and the_consumer.value then
-                        consumer = core.table.clone(the_consumer.value)
-                        consumer.modifiedIndex = the_consumer.modifiedIndex
-                        consumer.credential_id = get_credential_id_from_etcd_key(val.key)
-                    else
-                        -- Normally wouldn't get here:
-                        -- it should belong to a consumer for any credential.
-                        core.log.error("failed to get the consumer for the credential,",
-                            " a wild credential has appeared!",
-                            " credential key: ", val.key, ", consumer name: ", consumer_name)
-                        goto CONTINUE
-                    end
-                else
-                    consumer = core.table.clone(val.value)
-                    consumer.modifiedIndex = val.modifiedIndex
+                local consumer, err = consumers_id_lrucache(val.value.id,
+                        val.modifiedIndex, construct_consumer_data, val, config)
+                if consumer == nil then
+                    goto CONTINUE
                 end
 
-                -- if the consumer has labels, set the field custom_id to it.
-                -- the custom_id is used to set in the request headers to the upstream.
-                if consumer.labels then
-                    consumer.custom_id = consumer.labels["custom_id"]
-                end
-
-                -- Note: the id here is the key of consumer data, which
-                -- is 'username' field in admin
-                consumer.consumer_name = consumer.id
-                consumer.auth_conf = config
+                plugins[name].len = plugins[name].len + 1
+                core.table.insert(plugins[name].nodes, plugins[name].len,
+                                    consumer)
                 core.log.info("consumer:", core.json.delay_encode(consumer))
-                core.table.insert(plugins[name].nodes, consumer)
-                consumers_id_cache[val.value.id] = consumer
             end
-
-            ::CONTINUE_INTERNAL::
         end
 
         ::CONTINUE::
@@ -206,29 +217,24 @@ end
 
 local create_consume_cache
 do
-    local consumers_plugin_key_lrucache_tab = {}
+    local consumer_lrucache = core.lrucache.new({
+            count = consumers_count_for_lrucache
+        })
 
-local function create_new_consumer(consumer)
+local function fill_consumer_secret(consumer)
     local new_consumer = core.table.clone(consumer)
     new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, false)
     return new_consumer
 end
 
 
-function create_consume_cache(consumers_conf, key_attr, plugin_name)
+function create_consume_cache(consumers_conf, key_attr)
     local consumer_names = {}
-    local lru_cache = consumers_plugin_key_lrucache_tab[plugin_name]
-    if lru_cache == nil then
-        lru_cache = core.lrucache.new({
-            ttl = 60 * 60 * 24, count = 20480
-        })
-        consumers_plugin_key_lrucache_tab[plugin_name] = lru_cache
-    end
 
     for _, consumer in ipairs(consumers_conf.nodes) do
         core.log.info("consumer node: ", core.json.delay_encode(consumer))
-        local new_consumer = lru_cache(consumer.auth_conf[key_attr],
-                    consumer.modifiedIndex, create_new_consumer, consumer)
+        local new_consumer = consumer_lrucache(consumer, nil,
+                                fill_consumer_secret, consumer)
         consumer_names[consumer.auth_conf[key_attr]] = new_consumer
     end
 
@@ -240,7 +246,7 @@ end
 
 function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     local consumers = lrucache("consumers_key#" .. plugin_name, consumer_conf.conf_version,
-        create_consume_cache, consumer_conf, key_attr, plugin_name)
+        create_consume_cache, consumer_conf, key_attr)
 
     return consumers
 end
