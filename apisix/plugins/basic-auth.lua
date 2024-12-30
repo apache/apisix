@@ -124,9 +124,7 @@ local function extract_auth_header(authorization)
 
 end
 
-local function find_consumer(conf, ctx)
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(conf))
-
+local function find_consumer(ctx)
     -- 1. extract authorization from header
     local auth_header = core.request.header(ctx, "Authorization")
     if not auth_header then

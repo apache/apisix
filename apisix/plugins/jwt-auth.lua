@@ -289,10 +289,10 @@ local function find_consumer(conf, ctx)
     if not jwt_obj.verified then
         err = "failed to verify jwt: " .. jwt_obj.reason
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return nil, nil, err
+            return nil, nil, "failed to verify jwt"
         end
         core.log.warn(err)
-        return nil, nil, err
+        return nil, nil, "failed to verify jwt"
     end
 
     return consumer, consumer_conf

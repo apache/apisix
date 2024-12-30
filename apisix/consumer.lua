@@ -164,6 +164,11 @@ function _M.plugin(plugin_name)
 end
 
 
+function _M.consumers_conf(plugin_name)
+    return _M.plugin(plugin_name)
+end
+
+
 -- attach chosen consumer to the ctx, used in auth plugin
 function _M.attach_consumer(ctx, consumer, conf)
     ctx.consumer = consumer
