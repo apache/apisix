@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Limit Count
   - 速率限制
-description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，你可以使用此插件限制客户端在指定的时间范围内对服务的总请求数。
+description: limit-count 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
 ---
 
 <!--
@@ -27,40 +27,50 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/limit-count" />
+</head>
+
 ## 描述
 
-`limit-count` 插件使用固定时间窗口算法，主要用于限制**单个客户端**在指定的时间范围内对服务的总请求数，并且会在 HTTP 响应头中返回剩余可以请求的个数。该插件原理与 [GitHub API 的速率限制](https://docs.github.com/en/rest/reference/rate-limit)类似。
+`limit-count` 插件使用固定窗口算法，通过给定时间间隔内的请求数量来限制请求速率。超过配置配额的请求将被拒绝。
+
+您可能会在响应中看到以下速率限制标头：
+
+* `X-RateLimit-Limit`：总配额
+* `X-RateLimit-Remaining`：剩余配额
+* `X-RateLimit-Reset`：计数器重置的剩余秒数
 
 ## 属性
 
 | 名称                | 类型    | 必选项      | 默认值        | 有效值                                   | 描述                                                                                                                                                                                                                                 |
 | ------------------- | ------- | ---------- | ------------- | --------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count               | integer | 是        |                | count > 0                               | 每个客户端在指定时间窗口内的总请求数量阈值。|
-| time_window         | integer | 是        |                | time_window > 0                         | 时间窗口的大小（以秒为单位）。超过该属性定义的时间，则会重新开始计数。|
-| key_type            | string | 否         |  "var"         | ["var", "var_combination", "constant"] | key 的类型。 |
-| key                 | string  | 否        |  "remote_addr" |                                        | 用来做请求计数的依据。如果 `key_type` 为 `constant`，那么 key 会被当作常量；如果 `key_type` 为 `var`，那么 key 会被当作变量；如果 `key_type` 为 `var_combination`，那么 key 会被当作变量组合，如 `$remote_addr $consumer_name`，插件会同时受 `$remote_addr` 和 `$consumer_name` 两个变量的约束；如果 `key` 的值为空，`$remote_addr` 会被作为默认 `key`。 |
-| rejected_code       | integer | 否        | 503            | [200,...,599]                          | 当请求超过阈值被拒绝时，返回的 HTTP 状态码。|
-| rejected_msg        | string  | 否        |                | 非空                                   | 当请求超过阈值被拒绝时，返回的响应体。|
-| policy              | string  | 否        | "local"        | ["local", "redis", "redis-cluster"]    | 用于检索和增加限制计数的策略。当设置为 `local` 时，计数器被以内存方式保存在节点本地；当设置为 `redis` 时，计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速；当设置为 `redis-cluster` 时，使用 Redis 集群而不是单个实例。|
-| allow_degradation   | boolean | 否        | false          |                                         | 当插件功能临时不可用时（例如 Redis 超时），当设置为 `true` 时，则表示可以允许插件降级并进行继续请求的操作。 |
-| show_limit_quota_header | boolean | 否    | true          |                                          | 当设置为 `true` 时，在响应头中显示 `X-RateLimit-Limit`（限制的总请求数）和 `X-RateLimit-Remaining`（剩余还可以发送的请求数）字段。 |
-| group               | string | 否         |               | 非空                                    | 配置相同 group 的路由将共享相同的限流计数器。请勿使用先前使用过的值进行配置，插件将报错。 |
-| redis_host          | string  | 否        |               |                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**|
-| redis_port          | integer | 否        | 6379          | [1,...]                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。|
-| redis_username      | string  | 否        |               |                                         | 若使用 Redis ACL 进行身份验证（适用于 Redis 版本 >=6.0），则需要提供 Redis 用户名。若使用 Redis legacy 方式 `requirepass` 进行身份验证，则只需将密码配置在 `redis_password`。当 `policy` 设置为 `redis` 时使用。|
-| redis_password      | string  | 否        |               |                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。|
-| redis_ssl           | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis` |
-| redis_ssl_verify    | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性，具体请参考 [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
-| redis_database      | integer | 否        | 0             | redis_database >= 0                     | 当使用 `redis` 限速策略时，Redis 服务节点中使用的 `database`，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。|
-| redis_timeout       | integer | 否        | 1000          | [1,...]                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。|
-| redis_cluster_nodes | array   | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**|
-| redis_cluster_name  | string  | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**|
-| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis-cluster` |
-| redis_cluster_ssl_verify  | boolean  | 否        |     false        |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性 |
+| count | integer | 是 | | > 0 | 给定时间间隔内允许的最大请求数。 |
+| time_window | integer | 是 | | > 0 | 速率限制 `count` 对应的时间间隔（以秒为单位）。 |
+| key_type | string | 否 | var | ["var","var_combination","constant"] | key 的类型。如果`key_type` 为 `var`，则 `key` 将被解释为变量。如果 `key_type` 为 `var_combination`，则 `key` 将被解释为变量的组合。如果 `key_type` 为 `constant`，则 `key` 将被解释为常量。 |
+| key | string | 否 | remote_addr | | 用于计数请求的key 。如果 `key_type` 为 `var`，则 `key` 将被解释为变量。变量不需要以美元符号（`$`）为前缀。如果 `key_type` 为 `var_combination`，则 `key` 会被解释为变量的组合。所有变量都应该以美元符号 (`$`) 为前缀。例如，要配置 `key` 使用两个请求头 `custom-a` 和 `custom-b` 的组合，则 `key` 应该配置为 `$http_custom_a $http_custom_b`。如果 `key_type` 为 `constant`，则 `key` 会被解释为常量值。|
+| rejection_code | integer | 否 | 503 | [200,...,599] | 请求因超出阈值而被拒绝时返回的 HTTP 状态代码。|
+| rejection_msg | string | 否 | | 非空 | 请求因超出阈值而被拒绝时返回的响应主体。|
+| policy | string | 否 | local | ["local","re​​dis","re​​dis-cluster"] | 速率限制计数器的策略。如果是 `local`，则计数器存储在本地内存中。如果是 `redis`，则计数器存储在 Redis 实例上。如果是 `redis-cluster`，则计数器存储在 Redis 集群中。|
+| allow_degradation | boolean | 否 | false | | 如果为 true，则允许 APISIX 在插件或其依赖项不可用时继续处理没有插件的请求。|
+| show_limit_quota_header | boolean | 否 | true | | 如果为 true，则在响应标头中包含 `X-RateLimit-Limit` 以显示总配额和 `X-RateLimit-Remaining` 以显示剩余配额。|
+| group | string | 否 | | 非空 | 插件的 `group` ID，以便同一 `group` 的路由可以共享相同的速率限制计数器。 |
+| redis_host | string | 否 | | | Redis 节点的地址。当 `policy` 为 `redis` 时必填。 |
+| redis_port | integer | 否 | 6379 | [1,...] | 当 `policy` 为 `redis` 时，Redis 节点的端口。 |
+| redis_username | string | 否 | | | 如果使用 Redis ACL，则为 Redis 的用户名。如果使用旧式身份验证方法 `requirepass`，则仅配置 `redis_password`。当 `policy` 为 `redis` 时使用。 |
+| redis_password | string | 否 | | | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 节点的密码。 |
+| redis_ssl | 布尔值 | 否 | false |如果为 true，则在 `policy` 为 `redis` 时使用 SSL 连接到 Redis 集群。|
+| redis_ssl_verify | boolean | 否 | false | | 如果为 true，则在 `policy` 为 `redis` 时验证服务器 SSL 证书。|
+| redis_database | integer | 否 | 0 | >= 0 | 当 `policy` 为 `redis` 时，Redis 中的数据库编号。|
+| redis_timeout | integer | 否 | 1000 | [1,...] | 当 `policy` 为 `redis` 或 `redis-cluster` 时，Redis 超时值（以毫秒为单位）。 |
+| redis_cluster_nodes | array[string] | 否 | | | 具有至少两个地址的 Redis 群集节点列表。当 policy 为 redis-cluster 时必填。 |
+redis_cluster_name | string | 否 | | | | Redis 集群的名称。当 `policy` 为 `redis-cluster` 时必须使用。|
+| redis_cluster_ssl | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster`时，使用 SSL 连接 Redis 集群。|
+| redis_cluster_ssl_verify | boolean | 否 | false | | 如果为 `true`，当 `policy` 为 `redis-cluster` 时，验证服务器 SSL 证书。  |
 
-## 启用插件
+# 示例
 
-以下示例展示了如何在指定路由上启用 `limit-count` 插件，并设置 `key_type` 为 `"var"`：
+下面的示例演示了如何在不同情况下配置 `limit-count` 。
 
 :::note
 
@@ -72,289 +82,427 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 按远程地址应用速率限制
+
+下面的示例演示了通过单一变量 `remote_addr` 对请求进行速率限制。
+
+创建一个带有 `limit-count` 插件的路由，允许在 30 秒窗口内为每个远程地址设置 1 个配额：
+
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
     "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key_type": "var",
-            "key": "remote_addr"
-        }
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key_type": "var",
+        "key": "remote_addr"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-你也可以设置 `key_type` 为 `"var_combination"`：
+发送验证请求：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该会看到 `HTTP/1.1 200 OK` 响应。
+
+该请求已消耗了时间窗口允许的所有配额。如果您在相同的 30 秒时间间隔内再次发送该请求，您应该会收到 `HTTP/1.1 429 Too Many Requests` 响应，表示该请求超出了配额阈值。
+
+### 通过远程地址和消费者名称应用速率限制
+
+以下示例演示了通过变量 `remote_addr` 和 `consumer_name` 的组合对请求进行速率限制。它允许每个远程地址和每个消费者在 30 秒窗口内有 1 个配额。
+
+创建消费者 `john`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john"
+  }'
+```
+
+为消费者创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
     "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key_type": "var_combination",
-            "key": "$consumer_name $remote_addr"
-        }
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+创建第二个消费者 `jane`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jane"
+  }'
+```
+
+为消费者创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jane-key"
+      }
+    }
+  }'
+```
+
+创建一个带有 `key-auth` 和 `limit-count` 插件的路由，并在 `limit-count` 插件中指定使用变量组合作为速率限制键：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "key-auth": {},
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key_type": "var_combination",
+        "key": "$remote_addr $consumer_name"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:9001": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-支持在多个路由间共享同一个限流计数器。首先通过以下命令创建一个服务：
+以消费者 `jane` 的身份发送请求：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key'
+```
+
+您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+
+此请求已消耗了为时间窗口设置的所有配额。如果您在相同的 30 秒时间间隔内向消费者 `jane` 发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，表示请求超出了配额阈值。
+
+在相同的 30 秒时间间隔内向消费者 `john` 发送相同的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
+```
+
+您应该看到一个 `HTTP/1.1 200 OK` 响应和相应的响应主体，表明请求不受速率限制。
+
+在相同的 30 秒时间间隔内再次以消费者 `john` 的身份发送相同的请求，您应该收到一个 `HTTP/1.1 429 Too Many Requests` 响应。
+
+这通过变量 `remote_addr` 和 `consumer_name` 的组合验证了插件速率限制。
+
+### 在路由之间共享配额
+
+以下示例通过配置 `limit-count` 插件的 `group` 演示了在多个路由之间共享速率限制配额。
+
+请注意，同一 `group` 的 `limit-count` 插件的配置应该相同。 为了避免更新异常和重复配置，您可以创建一个带有 `limit-count` 插件和上游的服务，以供路由连接。
+
+创建服务：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-service",
     "plugins": {
-        "limit-count": {
-            "count": 1,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "group": "services_1#1640140620"
-        }
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "group": "srv1"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-然后为路由配置 `service_id` 为 `1` ，不同路由将共享同一个计数器：
+创建两个路由，并将其 `service_id` 配置为 `limit-count-service`，以便它们对插件和上游共享相同的配置：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "service_id": "1",
-    "uri": "/hello"
-}'
-```
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "service_id": "1",
-    "uri": "/hello2"
-}'
-```
-
-通过将 `key_type` 设置为 `"constant"`，你也可以在所有请求间共享同一个限流计数器：
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route-1",
+    "service_id": "limit-count-service",
+    "uri": "/get1",
     "plugins": {
-        "limit-count": {
-            "count": 1,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "key_type": "constant",
-            "group": "services_1#1640140621"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
     }
-}'
+  }'
 ```
 
-以上配置表示：当多个路由中 `limit-count` 插件的 `group` 属性均配置为 `services_1#1640140620` 时，访问这些路由的请求将会共享同一个计数器，即使这些请求来自于不同的 IP 地址。
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route-2",
+    "service_id": "limit-count-service",
+    "uri": "/get2",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
+    }
+  }'
+```
 
-:::note 注意
+:::note
 
-同一个 `group` 里面的 `limit-count` 的配置必须保持一致。如果修改配置，需要同时更新对应的 `group` 的值。
+[`proxy-rewrite`](./proxy-rewrite.md) 插件用于将 URI 重写为 `/get`，以便将请求转发到正确的端点。
 
 :::
 
-如果你需要一个集群级别的流量控制，我们可以借助 Redis 服务器来完成。不同的 APISIX 节点之间将共享流量限速结果，实现集群流量限速。
-
-以下示例展示了如何在指定路由上启用 `redis` 策略：
+向路由 `/get1` 发送请求：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl -i "http://127.0.0.1:9080/get1"
+```
+
+您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+
+在相同的 30 秒时间间隔内向路由 `/get2` 发送相同的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get2"
+```
+
+您应该收到 `HTTP/1.1 429 Too Many Requests` 响应，这验证两个路由共享相同的速率限制配额。
+
+### 使用 Redis 服务器在 APISIX 节点之间共享配额
+
+以下示例演示了使用 Redis 服务器对多个 APISIX 节点之间的请求进行速率限制，以便不同的 APISIX 节点共享相同的速率限制配额。
+
+在每个 APISIX 实例上，使用以下配置创建一个路由。相应地调整管理 API 的地址、Redis 主机、端口、密码和数据库。
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
     "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "policy": "redis",
-            "redis_host": "127.0.0.1",
-            "redis_port": 6379,
-            "redis_password": "password",
-            "redis_database": 1,
-            "redis_timeout": 1001
-        }
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis",
+        "redis_host": "192.168.xxx.xxx",
+        "redis_port": 6379,
+        "redis_password": "p@ssw0rd",
+        "redis_database": 1
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-你也可以使用 `redis-cluster` 策略：
+向 APISIX 实例发送请求：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+
+在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
+
+### 使用 Redis 集群在 APISIX 节点之间共享配额
+
+您还可以使用 Redis 集群在多个 APISIX 节点之间应用相同的配额，以便不同的 APISIX 节点共享相同的速率限制配额。
+
+确保您的 Redis 实例在 [集群模式](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster) 下运行。`limit-count` 插件配置至少需要两个节点。
+
+在每个 APISIX 实例上，使用以下配置创建路由。相应地调整管理 API 的地址、Redis 集群节点、密码、集群名称和 SSL 验证。
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
     "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "policy": "redis-cluster",
-            "redis_cluster_nodes": [
-                "127.0.0.1:5000",
-                "127.0.0.1:5001"
-            ],
-            "redis_password": "password",
-            "redis_cluster_name": "redis-cluster-1"
-        }
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis-cluster",
+        "redis_cluster_nodes": [
+          "192.168.xxx.xxx:6379",
+          "192.168.xxx.xxx:16379"
+        ],
+        "redis_password": "p@ssw0rd",
+        "redis_cluster_name": "redis-cluster-1",
+        "redis_cluster_ssl": true
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-此外，插件中的属性值可以引用 APISIX 中的密钥。APISIX 当前支持两种存储密钥的方式 - [环境变量和 HashiCorp Vault](../terminology/secret.md)。
-如果您设置了环境变量 `REDIS_HOST` 和 `REDIS_PASSWORD` ，如下所示，您可以在插件配置中使用它们：
+向 APISIX 实例发送请求：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该会看到一个 `HTTP/1.1 200 OK` 响应以及相应的响应主体。
+
+在相同的 30 秒时间间隔内向不同的 APISIX 实例发送相同的请求，您应该会收到一个 `HTTP/1.1 429 Too Many Requests` 响应，验证在不同 APISIX 节点中配置的路由是否共享相同的配额。
+
+### 使用匿名消费者进行速率限制
+
+以下示例演示了如何为常规和匿名消费者配置不同的速率限制策略，其中匿名消费者不需要进行身份验证并且配额较少。虽然此示例使用 [`key-auth`](./key-auth.md) 进行身份验证，但匿名消费者也可以使用 [`basic-auth`](./basic-auth.md)、[`jwt-auth`](./jwt-auth.md) 和 [`hmac-auth`](./hmac-auth.md) 进行配置。
+
+创建一个消费者 `john`，并配置 `limit-count` 插件，以允许30秒内配额为3：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john",
     "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "policy": "redis",
-            "redis_host": "$ENV://REDIS_HOST",
-            "redis_port": 6379,
-            "redis_password": "$ENV://REDIS_PASSWORD",
-            "redis_database": 1,
-            "redis_timeout": 1001
-        }
+      "limit-count": {
+        "count": 3,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+为消费者 `john` 创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+创建匿名用户 `anonymous`，并配置 `limit-count` 插件，以允许 30 秒内配额为 1：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "anonymous",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+创建路由并配置 `key-auth` 插件以接受匿名消费者 `anonymous` 绕过身份验证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "key-auth-route",
+    "uri": "/anything",
+    "plugins": {
+      "key-auth": {
+        "anonymous_consumer": "anonymous"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## 测试插件
-
-在上文提到的配置中，其限制了 60 秒内请求只能访问 2 次，可通过如下 `curl` 命令测试请求访问：
+使用 `john` 的密钥发送五个连续的请求：
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: john-key' -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
 ```
 
-在执行测试命令的前两次都会正常访问。其中响应头中包含了 `X-RateLimit-Limit` 和 `X-RateLimit-Remaining` 和 `X-RateLimit-Reset` 字段，分别代表限制的总请求数和剩余还可以发送的请求数以及计数器剩余重置的秒数：
+您应该看到以下响应，显示在 5 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
 
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 58
-Server: APISIX web server
+```text
+200:    3, 429:    2
 ```
 
-当第三次进行测试访问时，会收到包含 `503` HTTP 状态码的响应头，目前在拒绝的情况下，也会返回相关的头，表示插件生效：
+发送五个匿名请求：
 
 ```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 58
-Server: APISIX web server
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
 ```
 
-如果你设置了属性 `rejected_msg` 的值为 `"Requests are too frequent, please try again later."`，当第三次访问时，就会收到如下带有 `error_msg` 返回信息的响应体：
+您应该看到以下响应，表明只有一个请求成功：
 
-```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 58
-Server: APISIX web server
-
-{"error_msg":"Requests are too frequent, please try again later."}
-```
-
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
+```text
+200:    1, 429:    4
 ```
