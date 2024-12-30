@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Limit Request
   - limit-req
-description: The limit-req plugin uses the leaky bucket algorithm to rate limit the number of the requests and allow for throttling.
+description: The limit-req Plugin uses the leaky bucket algorithm to rate limit the number of the requests and allow for throttling.
 ---
 
 <!--
@@ -33,7 +33,7 @@ description: The limit-req plugin uses the leaky bucket algorithm to rate limit 
 
 ## Description
 
-The `limit-req` plugin uses the [leaky bucket](https://en.wikipedia.org/wiki/Leaky_bucket) algorithm to rate limit the number of the requests and allow for throttling.
+The `limit-req` Plugin uses the [leaky bucket](https://en.wikipedia.org/wiki/Leaky_bucket) algorithm to rate limit the number of the requests and allow for throttling.
 
 ## Attributes
 
@@ -46,7 +46,7 @@ The `limit-req` plugin uses the [leaky bucket](https://en.wikipedia.org/wiki/Lea
 | rejected_code     | integer | False    | 503     | [200,...,599]              | The HTTP status code returned when a request is rejected for exceeding the threshold.                                                                   |
 | rejected_msg      | string  | False    |         | non-empty                  | The response body returned when a request is rejected for exceeding the threshold.                                                              |
 | nodelay           | boolean | False    | false   |                            | If true, do not delay requests within the burst threshold.                                                                        |
-| allow_degradation | boolean | False    | false   |                            | If true, allow APISIX to continue handling requests without the plugin when the plugin or its dependencies become unavailable.                                                                                                                                                                                                                                                                             |
+| allow_degradation | boolean | False    | false   |                            | If true, allow APISIX to continue handling requests without the Plugin when the Plugin or its dependencies become unavailable.                                                                                                                                                                                                                                                                             |
 | policy            | string  | False                                     | local   | ["local", "redis", "redis-cluster"] | The policy for rate limiting counter. If it is `local`, the counter is stored in memory locally. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster.                                                                                                            |
 | redis_host        | string  | False         |         |                            | The address of the Redis node. Required when `policy` is `redis`.                                                                  |
 | redis_port        | integer | False                                     | 6379    | [1,...]                    | The port of the Redis node when `policy` is `redis`.                                                                     |
@@ -76,7 +76,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates the rate limiting of HTTP requests by a single variable, `remote_addr`.
 
-Create a Route with `limit-req` plugin that allows for 1 QPS per remote address:
+Create a Route with `limit-req` Plugin that allows for 1 QPS per remote address:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -118,7 +118,7 @@ The request has consumed all the quota allowed for the time window. If you send 
 
 The following example demonstrates how to configure `burst` to allow overrun of the rate limiting threshold by the configured value and achieve request throttling. You will also see a comparison against when throttling is not implemented.
 
-Create a Route with `limit-req` plugin that allows for 1 QPS per remote address, with a `burst` of 1 to allow for 1 request exceeding the `rate` to be delayed for processing:
+Create a Route with `limit-req` Plugin that allows for 1 QPS per remote address, with a `burst` of 1 to allow for 1 request exceeding the `rate` to be delayed for processing:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -191,7 +191,7 @@ You should see a response similar to the following, showing requests surpassing 
 
 The following example demonstrates the rate limiting of requests by a combination of variables, `remote_addr` and `consumer_name`.
 
-Create a Route with `limit-req` plugin that allows for 1 QPS per remote address and for each Consumer.
+Create a Route with `limit-req` Plugin that allows for 1 QPS per remote address and for each Consumer.
 
 Create a Consumer `john`:
 
@@ -243,7 +243,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
   }'
 ```
 
-Create a Route with `key-auth` and `limit-req` plugins, and specify in the `limit-req` plugin to use a combination of variables as the rate limiting key:
+Create a Route with `key-auth` and `limit-req` plugins, and specify in the `limit-req` Plugin to use a combination of variables as the rate limiting key:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -281,4 +281,4 @@ You should receive `HTTP/1.1 200 OK` for both requests, indicating the request h
 
 If you send more requests as either Consumer within the same second, you should receive an `HTTP/1.1 429 Too Many Requests` response.
 
-This verifies the plugin rate limits by the combination of variables, `remote_addr` and `consumer_name`.
+This verifies the Plugin rate limits by the combination of variables, `remote_addr` and `consumer_name`.
