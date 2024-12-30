@@ -55,5 +55,6 @@ header:
     - '.luacheckrc'
     # Exclude file contains certificate revocation information
     - 't/certs/ocsp/index.txt'
+    - 'utils/lj-releng'
 
   comment: on-failure
