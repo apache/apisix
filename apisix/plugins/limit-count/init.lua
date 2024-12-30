@@ -42,6 +42,30 @@ local group_conf_lru = core.lrucache.new({
     type = 'plugin',
 })
 
+local metadata_defaults = {
+    limit_header = "X-RateLimit-Limit",
+    remaining_header = "X-RateLimit-Remaining",
+    reset_header = "X-RateLimit-Reset",
+}
+
+local metadata_schema = {
+    type = "object",
+    properties = {
+        limit_header = {
+            type = "string",
+            default = metadata_defaults.limit_header,
+        },
+        remaining_header = {
+            type = "string",
+            default = metadata_defaults.remaining_header,
+        },
+        reset_header = {
+            type = "string",
+            default = metadata_defaults.reset_header,
+        },
+    },
+}
+
 local schema = {
     type = "object",
     properties = {
@@ -91,7 +115,8 @@ local schema = {
 local schema_copy = core.table.deepcopy(schema)
 
 local _M = {
-    schema = schema
+    schema = schema,
+    metadata_schema = metadata_schema,
 }
 
 
@@ -100,7 +125,12 @@ local function group_conf(conf)
 end
 
 
-function _M.check_schema(conf)
+
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err
@@ -250,14 +280,22 @@ function _M.rate_limit(conf, ctx, name, cost)
         delay, remaining, reset = lim:incoming(key, cost)
     end
 
+    local metadata = apisix_plugin.plugin_metadata("limit-count")
+    if metadata then
+        metadata = metadata.value
+    else
+        metadata = metadata_defaults
+    end
+    core.log.info("limit-count plugin-metadata: ", core.json.delay_encode(metadata))
+
     if not delay then
         local err = remaining
         if err == "rejected" then
             -- show count limit header when rejected
             if conf.show_limit_quota_header then
-                core.response.set_header("X-RateLimit-Limit", conf.count,
-                    "X-RateLimit-Remaining", 0,
-                    "X-RateLimit-Reset", reset)
+                core.response.set_header(metadata.limit_header, conf.count,
+                    metadata.remaining_header, 0,
+                    metadata.reset_header, reset)
             end
 
             if conf.rejected_msg then
@@ -274,9 +312,9 @@ function _M.rate_limit(conf, ctx, name, cost)
     end
 
     if conf.show_limit_quota_header then
-        core.response.set_header("X-RateLimit-Limit", conf.count,
-            "X-RateLimit-Remaining", remaining,
-            "X-RateLimit-Reset", reset)
+        core.response.set_header(metadata.limit_header, conf.count,
+            metadata.remaining_header, remaining,
+            metadata.reset_header, reset)
     end
 end
 
