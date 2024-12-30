@@ -336,7 +336,7 @@ local function find_consumer(conf, ctx)
     local validated_consumer, err = validate(ctx, conf, params)
     if not validated_consumer then
         core.log.warn("client request can't be validated: ", err or "Invalid signature")
-        return nil, nil, "client request can't be validated"
+        return nil, nil, "client request can't be validated: " .. err
     end
 
     local consumers_conf = consumer.consumers_conf(plugin_name)
