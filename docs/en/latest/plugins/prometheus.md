@@ -33,22 +33,21 @@ description: The prometheus plugin provides the capability to integrate APISIX w
 
 ## Description
 
-The `prometheus` plugin provides the capability to integrate APISIX with [Prometheus](https://prometheus.io).
+The `prometheus` Plugin provides the capability to integrate APISIX with [Prometheus](https://prometheus.io).
 
-After enabling the plugin, APISIX will start collecting relevant metrics, such as API requests and latencies, and exporting them in a [text-based exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/#exposition-formats) to Prometheus. You can then create event monitoring and alerting in Prometheus to monitor the health of your API gateway and APIs.
+After enabling the Plugin, APISIX will start collecting relevant metrics, such as API requests and latencies, and exporting them in a [text-based exposition format](https://prometheus.io/docs/instrumenting/exposition_formats/#exposition-formats) to Prometheus. You can then create event monitoring and alerting in Prometheus to monitor the health of your API gateway and APIs.
 
 ## Attributes
 
 There are different types of metrics in Prometheus. To understand their differences, see [metrics types](https://prometheus.io/docs/concepts/metric_types/).
 
-The following metrics are exported by the `prometheus` plugin by default. See [get APISIX metrics](#get-apisix-metrics) for an example. Note that some metrics, such as `apisix_batch_process_entries`, are not readily visible if there are no data.
-
+The following metrics are exported by the `prometheus` Plugin by default. See [get APISIX metrics](https://docs.api7.ai/hub/prometheus#get-apisix-metrics) for an example. Note that some metrics, such as `apisix_batch_process_entries`, are not readily visible if there are no data.
 
 | Name                    | Type      | Description                                                                                                                                                                   |
 | ------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | apisix_bandwidth                      | counter   | Total amount of traffic flowing through APISIX in bytes.                                                       |
 | apisix_etcd_modify_indexes            | gauge     | Number of changes to etcd by APISIX keys.                                                                                                                                         |
-| apisix_batch_process_entries          | gauge     | Number of remaining entries in a batch when sending data in batches, such as with `http logger`, and other logging plugins.  |
+| apisix_batch_process_entries          | gauge     | Number of remaining entries in a batch when sending data in batches, such as with `http logger`, and other logging Plugins.  |
 | apisix_etcd_reachable                 | gauge     | Whether APISIX can reach etcd. A value of `1` represents reachable and `0` represents unreachable.                                          |
 | apisix_http_status                    | counter   | HTTP status codes returned from upstream services.                                                            |
 | apisix_http_requests_total            | gauge     | Number of HTTP requests from clients.                                                                                                                                     |
@@ -152,15 +151,15 @@ The following labels are used to differentiate `apisix_upstream_status` metrics.
 
 ## Examples
 
-The examples below demonstrate how you can work with the `prometheus` plugin for different scenarios.
+The examples below demonstrate how you can work with the `prometheus` Plugin for different scenarios.
 
 ### Get APISIX Metrics
 
 The following example demonstrates how you can get metrics from APISIX.
 
-The default Prometheus metrics endpoint and other Prometheus related configurations can be found in the [static configuration](#static-configurations). If you would like to customize these configuration, see [configuration files](/apisix/reference/configuration-files#configyaml-and-configyamlexample).
+The default Prometheus metrics endpoint and other Prometheus related configurations can be found in the [static configuration](#static-configurations). If you would like to customize these configuration, see [configuration based on environments](https://apisix.apache.org/docs/apisix/profile/).
 
-If you deploy APISIX In a containerized environment and would like to access the Prometheus metrics endpoint externally, update the configuration file as follows and [reload APISIX](/apisix/reference/apisix-cli#apisix-reload):
+If you deploy APISIX in a containerized environment and would like to access the Prometheus metrics endpoint externally, update the configuration file as follows and reload APISIX:
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -198,15 +197,7 @@ apisix_etcd_modify_indexes{key="global_rules"} 0
 
 The following example demonstrates how you can disable the Prometheus export server that, by default, exposes an endpoint on port `9091`, and expose APISIX Prometheus metrics on a new public API endpoint on port `9080`, which APISIX uses to listen to other client requests.
 
-:::caution
-
-If a large quantity of metrics are being collected, the plugin could take up a significant amount of CPU resources for metric computations and negatively impact the processing of regular requests.
-
-To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads the metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured in the configuration files, as demonstrated [above](#get-apisix-metrics). If you expose the metric endpoint with the `public-api` plugin, you will not benefit from this optimization.
-
-:::
-
-Disable the Prometheus export server in the configuration file and [reload APISIX](/apisix/reference/apisix-cli#apisix-reload) for changes to take effect:
+Disable the Prometheus export server in the configuration file and reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
@@ -214,11 +205,11 @@ plugin_attr:
     enable_export_server: false
 ```
 
-Next, create a route with [`public-api`](/hub/public-api) plugin and expose a public API endpoint for APISIX metrics:
+Next, create a route with [`public-api`](./public-api.md) Plugin and expose a public API endpoint for APISIX metrics:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/prometheus-metrics" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/apisix/prometheus/metrics",
     "plugins": {
@@ -258,11 +249,11 @@ To learn about how to collect APISIX metrics with Prometheus and visualize them 
 
 The following example demonstrates how to monitor the health status of upstream nodes.
 
-Create a route with the `prometheus` plugin and configure upstream active health checks:
+Create a route with the `prometheus` Plugin and configure upstream active health checks:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "prometheus-route",
     "uri": "/get",
@@ -321,11 +312,11 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="20001"} 0
 
 This shows that the upstream node `httpbin.org:80` is healthy and the upstream node `127.0.0.1:20001` is unhealthy.
 
-To learn more about how to configure active and passive health checks, see [health checks](/apisix/how-to-guide/traffic-management/health-check).
+To learn more about how to configure active and passive health checks, see [health checks](/docs/apisix/tutorials/health-check/).
 
 ### Add Extra Labels for Metrics
 
-The following example demonstrates how to add additional labels to metrics and use [built-in variables](/apisix/reference/built-in-variables) in label values.
+The following example demonstrates how to add additional labels to metrics and use the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) in label values.
 
 Currently, only the following metrics support extra labels:
 
@@ -333,25 +324,25 @@ Currently, only the following metrics support extra labels:
 * apisix_http_latency
 * apisix_bandwidth
 
-Include the following configurations in the [configuration file](/apisix/reference/configuration-files#configyaml-and-configyamlexample) to add labels for metrics and [reload APISIX](/apisix/reference/apisix-cli#apisix-reload) for changes to take effect:
+Include the following configurations in the [configuration based on environments](https://apisix.apache.org/docs/apisix/profile/) to add labels for metrics and reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
   prometheus:                                # Plugin: prometheus
-    metrics:                                 # Create extra labels from built-in variables.
+    metrics:                                 # Create extra labels from the NGINX variables.
       http_status:
         extra_labels:                        # Set the extra labels for http_status metrics.
           - upstream_addr: $upstream_addr    # Add an extra upstream_addr label with value being the NGINX variable $upstream_addr.
           - route_name: $route_name          # Add an extra route_name label with value being the APISIX variable $route_name.
 ```
 
-Note that if you define a variable in the label value but it does not correspond to any existing  [built-in variables](/apisix/reference/built-in-variables), the label value will default to an empty string.
+Note that if you define a variable in the label value but it does not correspond to any existing [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html), the label value will default to an empty string.
 
-Create a route with the `prometheus` plugin:
+Create a route with the `prometheus` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "prometheus-route",
     "uri": "/get",
@@ -393,7 +384,7 @@ apisix_http_status{code="200",route="1",matched_uri="/get",matched_host="",servi
 
 The following example demonstrates how to collect TCP/UDP traffic metrics in APISIX.
 
-Include the following configurations in the [configuration file](/apisix/reference/configuration-files#configyaml-and-configyamlexample) to enable stream proxy and `prometheus` plugin for stream proxy. [Reload APISIX](/apisix/reference/apisix-cli#apisix-reload) for changes to take effect:
+Include the following configurations in the [configuration based on environments](https://apisix.apache.org/docs/apisix/profile/) to enable stream proxy and `prometheus` Plugin for stream proxy. Reload APISIX for changes to take effect:
 
 ```yaml title="conf/config.yaml"
 apisix:
@@ -408,11 +399,11 @@ stream_plugins:
   - prometheus              # Enable prometheus for stream proxy
 ```
 
-Create a [stream route](/apisix/key-concepts/stream-routes) with the `prometheus` plugin:
+Create a stream route with the `prometheus` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/stream_routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "prometheus-route",
     "plugins": {
