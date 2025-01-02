@@ -54,7 +54,7 @@ plugin_attr:
       port: 9091                            # 设置端口。
     # metrics:                              # 为指标创建额外的标签。
     #  http_status:                         # 这些指标将以 `apisix_` 为前缀。
-    #    extra_labels:                      # 设置 http_status 指标的额外标签。  
+    #    extra_labels:                      # 设置 http_status 指标的额外标签。
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status
     #    expire: 0                          # 指标的过期时间（秒）。

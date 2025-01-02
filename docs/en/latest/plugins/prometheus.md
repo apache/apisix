@@ -54,7 +54,7 @@ plugin_attr:
       port: 9091                            # Set the port.
     # metrics:                              # Create extra labels for metrics.
     #  http_status:                         # These metrics will be prefixed with `apisix_`.
-    #    extra_labels:                      # Set the extra labels for http_status metrics.  
+    #    extra_labels:                      # Set the extra labels for http_status metrics.
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status
     #    expire: 0                          # The expiration time of metrics in seconds.
