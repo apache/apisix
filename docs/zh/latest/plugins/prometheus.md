@@ -45,7 +45,7 @@ description:  本文将介绍 prometheus 插件，以及将 APISIX 与 Prometheu
 
 ```yaml
 plugin_attr:
-  prometheus:                               # 插件: prometheus 属性
+  prometheus:                               # 插件：prometheus 属性
     export_uri: /apisix/prometheus/metrics  # 设置 Prometheus 指标端点的 URI。
     metric_prefix: apisix_                  # 设置 APISIX 生成的 Prometheus 指标的前缀。
     enable_export_server: true              # 启用 Prometheus 导出服务器。
@@ -363,7 +363,7 @@ apisix_upstream_status{name="/apisix/routes/1",ip="127.0.0.1",port="20001"} 0
 
 ```yaml title="conf/config.yaml"
 plugin_attr:
-  prometheus:                                # 插件: prometheus
+  prometheus:                                # 插件：prometheus
     metrics:                                 # 根据 NGINX 变量创建额外标签。
       http_status:
         extra_labels:                        # 设置 `http_status` 指标的额外标签。

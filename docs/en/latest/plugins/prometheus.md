@@ -59,7 +59,7 @@ plugin_attr:
     #      - status: $upstream_status
     #    expire: 0                          # The expiration time of metrics in seconds.
                                             # 0 means the metrics will not expire.
-    #  http_latency:                        
+    #  http_latency:
     #    extra_labels:                      # Set the extra labels for http_latency metrics.
     #      - upstream_addr: $upstream_addr
     #    expire: 0                          # The expiration time of metrics in seconds.
