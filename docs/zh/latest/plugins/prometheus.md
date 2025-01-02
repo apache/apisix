@@ -84,7 +84,7 @@ plugin_attr:
     #   - 500
 ```
 
-您可以使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)创建 `extra_labels`。请参见[添加额外标签](#add-extra-labels-for-metrics)。
+您可以使用 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html)创建 `extra_labels`。请参见[为指标添加额外标签](#为指标添加额外标签)。
 
 重新加载 APISIX 以使更改生效。
 
@@ -98,7 +98,7 @@ plugin_attr:
 
 Prometheus 中有不同类型的指标。要了解它们之间的区别，请参见[指标类型](https://prometheus.io/docs/concepts/metric_types/)。
 
-以下是 `prometheus` 插件默认导出的指标。有关示例，请参见[获取 APISIX 指标](#get-apisix-metrics)。请注意，一些指标，例如 `apisix_batch_process_entries`，如果没有数据，将不可见。
+以下是 `prometheus` 插件默认导出的指标。有关示例，请参见[获取 APISIX 指标](#获取 APISIX 指标)。请注意，一些指标，例如 `apisix_batch_process_entries`，如果没有数据，将不可见。
 
 | 名称                    | 类型      | 描述                                                                                                                                                                   |
 | ----------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -115,7 +115,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
-| apisix_stream_connection_total | counter   | 每个流路由处理的总连接数。                                                                                                                                         |
+| apisix_stream_connection_total | counter   | 每个 Stream Route 处理的总连接数。                                                                                                                                         |
 
 ## 标签
 
@@ -157,7 +157,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 
 | 名称   | 描述                                                                                                                   |
 | ------ | ---------------------------------------------------------------------------------------------------------------------- |
-| type   | 延迟类型。有关详细信息，请参见 [延迟类型](#latency-types)。                                                            |
+| type   | 延迟类型。有关详细信息，请参见 [延迟类型](#延迟类型)。                                                            |
 | route  | 延迟对应的路由 ID，当 `prefer_name` 为 `false`（默认）时，使用路由 ID，当 `prefer_name` 为 `true` 时，使用路由名称。如果请求不匹配任何路由，则默认为空字符串。 |
 | service | 延迟对应的服务 ID，当 `prefer_name` 为 `false`（默认）时，使用服务 ID，当 `prefer_name` 为 `true` 时，使用服务名称。如果匹配的路由不属于任何服务，则默认为路由上配置的主机值。 |
 | consumer | 与延迟关联的消费者名称。如果请求没有与之关联的消费者，则默认为空字符串。                                             |
@@ -246,7 +246,7 @@ plugin_attr:
     enable_export_server: false
 ```
 
-接下来，使用 [`public-api`](../../../en/latest/plugins/public-api.md) 插件创建一个路由，并为 APISIX 指标公开一个公共 API 端点：
+接下来，使用 [`public-api`](../../../zh/latest/plugins/public-api.md) 插件创建一个路由，并为 APISIX 指标公开一个公共 API 端点：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/prometheus-metrics" -X PUT \
@@ -371,7 +371,7 @@ plugin_attr:
           - route_name: $route_name          # 添加一个额外的 `route_name` 标签，其值为 APISIX 变量 $route_name。
 ```
 
-请注意，如果您在标签值中定义了一个变量，但它与任何现有的 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/) 和 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html) 不对应，则标签值将默认为空字符串。
+请注意，如果您在标签值中定义了一个变量，但它与任何现有的 [APISIX 变量](https://apisix.apache.org/zh/docs/apisix/apisix-variable/) 和 [Nginx 变量](https://nginx.org/en/docs/http/ngx_http_core_module.html) 不对应，则标签值将默认为空字符串。
 
 使用 `prometheus` 插件创建一个路由：
 
@@ -418,7 +418,7 @@ apisix_http_status{code="200",route="1",matched_uri="/get",matched_host="",servi
 
 以下示例演示如何在 APISIX 中收集 TCP/UDP 流量指标。
 
-在 `config.yaml` 中包含以下配置以启用流代理和 `prometheus` 插件。重新加载 APISIX 以使更改生效：
+在 `config.yaml` 中包含以下配置以启用 Stream proxy 和 `prometheus` 插件。重新加载 APISIX 以使更改生效：
 
 ```yaml title="conf/config.yaml"
 apisix:
@@ -468,7 +468,7 @@ curl "http://127.0.0.1:9091/apisix/prometheus/metrics"
 您应该看到类似以下的输出：
 
 ```text
-# HELP apisix_stream_connection_total APISIX 中每个流路由处理的总连接数
+# HELP apisix_stream_connection_total APISIX 中每个 Stream Route 处理的总连接数
 # TYPE apisix_stream_connection_total counter
 apisix_stream_connection_total{route="1"} 1
 ```
