@@ -63,6 +63,7 @@ t/lib/dubbo*/**/target/
 *.iml
 \.*
 !.github/
+!.devcontainer/
 !.gitmodules
 !.markdownlint.yml
 !.licenserc.yaml
