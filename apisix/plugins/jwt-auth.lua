@@ -29,7 +29,7 @@ local table_insert = table.insert
 local table_concat = table.concat
 local ngx_re_gmatch = ngx.re.gmatch
 local plugin_name = "jwt-auth"
-
+local schema_def = require("apisix.schema_def")
 
 local schema = {
     type = "object",
@@ -55,6 +55,7 @@ local schema = {
             default = "key",
             minLength = 1,
         },
+        anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
 
@@ -237,12 +238,13 @@ local function get_auth_secret(auth_conf)
     end
 end
 
-function _M.rewrite(conf, ctx)
+
+local function find_consumer(conf, ctx)
     -- fetch token and hide credentials if necessary
     local jwt_token, err = fetch_jwt_token(conf, ctx)
     if not jwt_token then
         core.log.info("failed to fetch JWT token: ", err)
-        return 401, {message = "Missing JWT token in request"}
+        return nil, nil, "Missing JWT token in request"
     end
 
     local jwt_obj = jwt:load_jwt(jwt_token)
@@ -250,28 +252,28 @@ function _M.rewrite(conf, ctx)
     if not jwt_obj.valid then
         err = "JWT token invalid: " .. jwt_obj.reason
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.warn(err)
-        return 401, {message = "JWT token invalid"}
+        return nil, nil, "JWT token invalid"
     end
 
     local key_claim_name = conf.key_claim_name
     local user_key = jwt_obj.payload and jwt_obj.payload[key_claim_name]
     if not user_key then
-        return 401, {message = "missing user key in JWT token"}
+        return nil, nil, "missing user key in JWT token"
     end
 
     local consumer_conf = consumer_mod.plugin(plugin_name)
     if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
+        return nil, nil, "Missing related consumer"
     end
 
     local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
 
     local consumer = consumers[user_key]
     if not consumer then
-        return 401, {message = "Invalid user key in JWT token"}
+        return nil, nil, "Invalid user key in JWT token"
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
 
@@ -279,10 +281,10 @@ function _M.rewrite(conf, ctx)
     if not auth_secret then
         err = "failed to retrieve secrets, err: " .. err
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, err
         end
         core.log.error(err)
-        return 503, {message = "failed to verify jwt"}
+        return nil, nil, "failed to verify jwt"
     end
     local claim_specs = jwt:get_default_validation_options(jwt_obj)
     claim_specs.lifetime_grace_period = consumer.auth_conf.lifetime_grace_period
@@ -293,11 +295,29 @@ function _M.rewrite(conf, ctx)
     if not jwt_obj.verified then
         err = "failed to verify jwt: " .. jwt_obj.reason
         if auth_utils.is_running_under_multi_auth(ctx) then
-            return 401, err
+            return nil, nil, "failed to verify jwt"
         end
         core.log.warn(err)
-        return 401, {message = "failed to verify jwt"}
+        return nil, nil, "failed to verify jwt"
     end
+
+    return consumer, consumer_conf
+end
+
+function _M.rewrite(conf, ctx)
+    local consumer, consumer_conf, err = find_consumer(conf, ctx)
+    if not consumer then
+        if not conf.anonymous_consumer then
+            return 401, { message = err }
+        end
+        consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
+        if not consumer then
+            core.log.error(err)
+            return 401, { message = "Invalid user authorization"}
+        end
+    end
+
+    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     consumer_mod.attach_consumer(ctx, consumer, consumer_conf)
     core.log.info("hit jwt-auth rewrite")
