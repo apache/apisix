@@ -275,6 +275,21 @@ upstream sent too big header while reading response header from upstream
 
 If so, try adjusting `proxy_buffers`, `proxy_buffer_size`, and `proxy_busy_buffers_size` to larger values.
 
+Another option is to set the `session_content` attribute:
+
+```yaml
+openid-connect:
+  ...
+  bearer_only: false
+  # this comes from https://github.com/zmartzone/lua-resty-openidc, if this is missing, all information will be stored in the session. This
+  # causes the cookies to be too large and the request to fail. We have control over id_token, user, enc_id_token, and access_token.
+  # We currently include only access_token in the session. If this gets too big we can remove it as well.
+  session_contents: 
+    access_token: true
+  session:
+    secret: "NTgzZWY1MzAtOTcyNi00MzA5LWI1MjItNjFhMzI2NzRkZWQxCg==" # used `uuidgen|base64` to generate this secret
+```
+
 #### 5. Invalid Client Secret
 
 Verify if `client_secret` is valid and correct. An invalid `client_secret` would lead to an authentication failure and no token shall be returned and stored in session.
