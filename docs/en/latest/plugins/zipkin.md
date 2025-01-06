@@ -53,7 +53,7 @@ Reload APISIX for changes to take effect.
 
 ## Attributes
 
-See Plugin common configurations for configuration options available to all Plugins.
+See configuration file for configuration options available to all Plugins.
 
 | Name         | Type    | Required | Default        | Valid values | Description                                                                     |
 |--------------|---------|----------|----------------|--------------|---------------------------------------------------------------------------------|
