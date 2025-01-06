@@ -131,7 +131,7 @@ Open a separate terminal to follow the steps and define related shell variables.
 
 ### Get Discovery Endpoint
 
-Click __Realm Settings__, then right click __OpenID Endpoints Configuration__ and copy the link. 
+Click __Realm Settings__, then right click __OpenID Endpoints Configuration__ and copy the link.
 
 ![get-discovery](https://static.api7.ai/uploads/2023/03/30/526lbJbg_get-discovery.png)
 

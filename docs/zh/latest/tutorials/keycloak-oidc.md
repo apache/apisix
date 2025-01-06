@@ -85,7 +85,7 @@ Client `apisix-quickstart-client` 已创建。重定向到详细信息页面后�
 
 ![config-client](https://static.api7.ai/uploads/2023/03/30/v70c8y9F_config-client.png)
 
-当用户在 SSO 期间登录成功时，Keycloak 会携带状态和代码将客户端重定向到 __Valid Redirect URIs__ 中的地址。为简化操作，输入通配符 `*` 以将任何 URI 视为有效:
+当用户在 SSO 期间登录成功时，Keycloak 会携带状态和代码将客户端重定向到 __Valid Redirect URIs__ 中的地址。为简化操作，输入通配符 `*` 以将任何 URI 视为有效：
 
 ![client-redirect](https://static.api7.ai/uploads/2023/03/30/xLxcyVkn_client-redirect.png)
 
