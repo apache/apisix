@@ -21,7 +21,6 @@ local http = require("resty.http")
 local url  = require("socket.url")
 
 local pairs = pairs
-local type  = type
 
 -- globals
 local DEFAULT_HOST = "api.openai.com"
@@ -55,15 +54,6 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
-    local query_params = conf.auth.query or {}
-
-    if type(parsed_url) == "table" and parsed_url.query and #parsed_url.query > 0 then
-        local args_tab = core.string.decode_args(parsed_url.query)
-        if type(args_tab) == "table" then
-            core.table.merge(query_params, args_tab)
-        end
-    end
-
     local path = (endpoint and parsed_url.path or DEFAULT_PATH)
 
     local headers = (conf.auth.header or {})
@@ -74,7 +64,7 @@ function _M.request(conf, request_table, ctx)
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
         path = path,
-        query = query_params
+        query = conf.auth.query
     }
 
     if conf.model.options then

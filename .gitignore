@@ -56,6 +56,7 @@ uwsgi_temp
 proxy_temp
 fastcgi_temp
 client_body_temp
+utils/lj-releng
 utils/reindex
 *.etcd/
 t/lib/dubbo*/**/target/
