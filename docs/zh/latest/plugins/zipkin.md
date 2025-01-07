@@ -33,7 +33,7 @@ description: 本文介绍了关于 Apache APISIX zipkin 插件的基本信息及
 
 ## 描述
 
-[Zipkin](https://github.com/openzipkin/zipkin) 是一个开源的分布式追踪系统。`zipkin` 插件为 APISIX 提供了追踪功能，并根据 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html) 将追踪数据上报给 Zipkin。
+[Zipkin](https://github.com/openzipkin/zipkin) 是一个开源的分布式链路追踪系统。`zipkin` 插件为 APISIX 提供了追踪功能，并根据 [Zipkin API 规范](https://zipkin.io/pages/instrumenting.html) 将追踪数据上报给 Zipkin。
 
 该插件还支持将追踪数据发送到其他兼容的收集器，例如 [Jaeger](https://www.jaegertracing.io/docs/1.51/getting-started/#migrating-from-zipkin) 和 [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver)，这两者都支持 Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) 和 [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) API。
 
@@ -130,15 +130,15 @@ curl "http://127.0.0.1:9080/anything"
 }
 ```
 
-导航到 Zipkin Web UI [http://127.0.0.1:9411/zipkin](http://127.0.0.1:9411/zipkin) 并点击 __Run Query__，你应该看到一个与请求对应的追踪：
+导航到 Zipkin Web UI [http://127.0.0.1:9411/zipkin](http://127.0.0.1:9411/zipkin) 并点击 __Run Query__，你应该看到一个与请求对应的 trace：
 
 ![来自请求的追踪](https://static.api7.ai/uploads/2024/01/23/MaXhacYO_zipkin-run-query.png)
 
-点击 __Show__ 查看更多追踪细节：
+点击 __Show__ 查看更多 trace 细节：
 
-![v2 追踪 span](https://static.api7.ai/uploads/2024/01/23/3SmfFq9f_trace-details.png)
+![v2 trace span](https://static.api7.ai/uploads/2024/01/23/3SmfFq9f_trace-details.png)
 
-请注意，使用 span 版本 2 时，每个被追踪的请求会创建以下 span：
+请注意，使用 span 版本 2 时，每个被 trace 的请求会创建以下 span：
 
 ```text
 request
@@ -168,9 +168,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/zipkin-tracing-route"  -X PATCH 
 curl "http://127.0.0.1:9080/anything" 
 ```
 
-在 Zipkin Web UI 中，你应该看到一个具有以下细节的新追踪：
+在 Zipkin Web UI 中，你应该看到一个具有以下细节的新 trace：
 
-![v1 追踪 span](https://static.api7.ai/uploads/2024/01/23/OPw2sTPa_v1-trace-spans.png)
+![v1 trace span](https://static.api7.ai/uploads/2024/01/23/OPw2sTPa_v1-trace-spans.png)
 
 请注意，使用较旧的 span 版本 1 时，每个被追踪的请求会创建以下 span：
 
@@ -227,9 +227,9 @@ curl "http://127.0.0.1:9080/anything"
 
 你应该收到一个 `HTTP/1.1 200 OK` 响应。
 
-导航到 Jaeger Web UI [http://127.0.0.1:16686](http://127.0.0.1:16686)，选择 APISIX 作为服务，并点击 __Find Traces__，您应该看到一个与请求对应的追踪：
+导航到 Jaeger Web UI [http://127.0.0.1:16686](http://127.0.0.1:16686)，选择 APISIX 作为服务，并点击 __Find Traces__，您应该看到一个与请求对应的 trace：
 
-![jaeger 追踪](https://static.api7.ai/uploads/2024/01/23/X6QdLN3l_jaeger.png)
+![jaeger trace](https://static.api7.ai/uploads/2024/01/23/X6QdLN3l_jaeger.png)
 
 同样地，一旦点击进入一个追踪，你应该会找到更多 span 细节：
 
@@ -239,11 +239,11 @@ curl "http://127.0.0.1:9080/anything"
 
 以下示例演示了如何配置 `zipkin` 插件以设置以下内置变量，这些变量可以在日志插件或访问日志中使用：
 
-- `zipkin_context_traceparent`: [追踪上下文](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format) ID
-- `zipkin_trace_id`: 当前 span 的追踪 ID
-- `zipkin_span_id`: 当前 span 的 span ID
+- `zipkin_context_traceparent`: [W3C trace context](https://www.w3.org/TR/trace-context/#trace-context-http-headers-format)
+- `zipkin_trace_id`: 当前 span 的 trace_id
+- `zipkin_span_id`: 当前 span 的 span_id
 
-按照以下方式更新配置文件。你可以自定义访问日志格式以使用 `zipkin` 插件变量，并在 `set_ngx_var` 字段中设置 `zipkin` 变量。
+按照以下方式更新配置文件（`./conf/config.yaml`）。你可以自定义访问日志格式以使用 `zipkin` 插件变量，并在 `set_ngx_var` 字段中设置 `zipkin` 变量。
 
 ```yaml title="conf/config.yaml"
 nginx_config:
