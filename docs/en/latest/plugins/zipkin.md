@@ -11,7 +11,7 @@ description: This document contains information about the Apache zipkin Plugin.
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
+# contributor license agreements. See the NOTICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
 # (the "License"); you may not use this file except in compliance with
@@ -111,21 +111,21 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
-  "form": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/7.64.1", 
-    "X-Amzn-Trace-Id": "Root=1-65af2926-497590027bcdb09e34752b78", 
-    "X-B3-Parentspanid": "347dddedf73ec176", 
-    "X-B3-Sampled": "1", 
-    "X-B3-Spanid": "429afa01d0b0067c", 
-    "X-B3-Traceid": "aea58f4b490766eccb08275acd52a13a", 
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/7.64.1",
+    "X-Amzn-Trace-Id": "Root=1-65af2926-497590027bcdb09e34752b78",
+    "X-B3-Parentspanid": "347dddedf73ec176",
+    "X-B3-Sampled": "1",
+    "X-B3-Spanid": "429afa01d0b0067c",
+    "X-B3-Traceid": "aea58f4b490766eccb08275acd52a13a",
     "X-Forwarded-Host": "127.0.0.1"
-  }, 
+  },
   ...
 }
 ```
