@@ -35,7 +35,7 @@ description: This document contains information about the Apache zipkin Plugin.
 
 [Zipkin](https://github.com/openzipkin/zipkin) is an open-source distributed tracing system. The `zipkin` Plugin instruments APISIX and sends traces to Zipkin based on the [Zipkin API specification](https://zipkin.io/pages/instrumenting.html).
 
-The Plugin can also sends traces to other compatible collectors, such as [Jaeger](https://www.jaegertracing.io/docs/1.51/getting-started/#migrating-from-zipkin) and [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver), both of which support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) and [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) APIs.
+The Plugin can also send traces to other compatible collectors, such as [Jaeger](https://www.jaegertracing.io/docs/1.51/getting-started/#migrating-from-zipkin) and [Apache SkyWalking](https://skywalking.apache.org/docs/main/latest/en/setup/backend/zipkin-trace/#zipkin-receiver), both of which support Zipkin [v1](https://zipkin.io/zipkin-api/zipkin-api.yaml) and [v2](https://zipkin.io/zipkin-api/zipkin2-api.yaml) APIs.
 
 ## Static Configurations
 
@@ -53,7 +53,7 @@ Reload APISIX for changes to take effect.
 
 ## Attributes
 
-See configuration file for configuration options available to all Plugins.
+See the configuration file for configuration options available to all Plugins.
 
 | Name         | Type    | Required | Default        | Valid values | Description                                                                     |
 |--------------|---------|----------|----------------|--------------|---------------------------------------------------------------------------------|
@@ -65,7 +65,7 @@ See configuration file for configuration options available to all Plugins.
 
 ## Examples
 
-The examples below shows different use cases for using the `zipkin` Plugin.
+The examples below show different use cases for using the `zipkin` Plugin.
 
 ### Send Traces to Zipkin
 
@@ -77,11 +77,11 @@ Start a Zipkin instance in Docker:
 docker run -d --name zipkin -p 9411:9411 openzipkin/zipkin
 ```
 
-Create a Route with `zipkin` and use the default span version 2. You should Adjust the IP address as needed for Zipkin HTTP endpoint, configure the sample ratio to 1 to trace every request, and set span version to 2.
+Create a Route with `zipkin` and use the default span version 2. You should adjust the IP address as needed for the Zipkin HTTP endpoint, and configure the sample ratio to `1` to trace every request.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "zipkin-tracing-route",
     "uri": "/anything",
@@ -168,7 +168,7 @@ Send another request to the Route:
 curl "http://127.0.0.1:9080/anything"
 ```
 
-In the Zipkin web UI, you should a new trace with details similar to the following:
+In the Zipkin web UI, you should see a new trace with details similar to the following:
 
 ![v1-trace-spans](https://static.api7.ai/uploads/2024/01/23/OPw2sTPa_v1-trace-spans.png)
 
@@ -196,7 +196,7 @@ docker run -d --name jaeger \
   jaegertracing/all-in-one
 ```
 
-Create a Route with `zipkin`. Please adjust the IP address as needed for Zipkin HTTP endpoint, and configure the sample ratio to 1 to trace every request.
+Create a Route with `zipkin`. Please adjust the IP address as needed for Zipkin HTTP endpoint, and configure the sample ratio to `1` to trace every request.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -243,7 +243,7 @@ The following example demonstrates how to configure the `zipkin` Plugin to set t
 - `zipkin_trace_id`: trace ID of the current span
 - `zipkin_span_id`: span ID of the current span
 
-Update the [configuration file](/apisix/reference/configuration-files#configyaml-and-configyamlexample) as below. You can customize the access log format to use the `zipkin` Plugin variables, and set `zipkin` variables in the `set_ngx_var` field.
+Update the configuration file as below. You can customize the access log format to use the `zipkin` Plugin variables, and set `zipkin` variables in the `set_ngx_var` field.
 
 ```yaml title="conf/config.yaml"
 nginx_config:
@@ -256,7 +256,7 @@ plugin_attr:
     set_ngx_var: true
 ```
 
-[Reload APISIX](/apisix/reference/apisix-cli#apisix-reload) for configuration changes to take effect.
+Reload APISIX for configuration changes to take effect.
 
 You should see access log entries similar to the following when you generate requests:
 
