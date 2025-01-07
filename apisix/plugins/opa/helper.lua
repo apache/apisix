@@ -37,7 +37,7 @@ end
 local function get_body_for_request()
     local original_body, err = core.request.get_body()
     if err ~= nil then
-        error("opa - failed to get request body: " .. err)
+        return nil, "failed to get request body: " .. err
     end
     if original_body == nil then
         return nil
