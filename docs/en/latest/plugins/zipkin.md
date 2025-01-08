@@ -61,7 +61,7 @@ See the configuration file for configuration options available to all Plugins.
 |`sample_ratio`| number  | True     |                | [0.00001, 1] | Frequency to sample requests. Setting to `1` means sampling every request.      |
 |`service_name`| string  | False    | "APISIX"       |              | Service name for the Zipkin reporter to be displayed in Zipkin.                 |
 |`server_addr` | string  | False    |the value of `$server_addr` | IPv4 address | IPv4 address for the Zipkin reporter. For example, you can set this to your external IP address. |
-|`span_version`| integer | False    | `2`              | [1, 2]       | Version of the span type.                                                       |
+| span_version | integer | False    | 2             | [1, 2]       | Version of the span type.                                                       |
 
 ## Examples
 
