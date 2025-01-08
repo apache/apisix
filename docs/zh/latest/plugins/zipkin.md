@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - Zipkin
-description: 本文介绍了关于 Apache APISIX zipkin 插件的基本信息及使用方法。
+description: Zipkin 是一个开源的分布式链路追踪系统。`zipkin` 插件为 APISIX 提供了追踪功能，并根据 Zipkin API 规范将追踪数据上报给 Zipkin。
 ---
 
 <!--
@@ -57,11 +57,11 @@ plugin_attr:
 
 | 名称          | 类型     | 是否必需    | 默认值        | 有效值      |      描述     |
 |--------------|---------|----------|----------------|-------------|------------------|
-| `string`     | 字符串   | 是       |                |            | 要 POST 的 Zipkin span 端点，例如 `http://127.0.0.1:9411/api/v2/spans`。 |
-|`sample_ratio`| 数字    | 是       |                | [0.00001, 1] | 请求采样频率。设置为 `1` 表示对每个请求进行采样。    |
-|`service_name`| 字符串  | 否       | "APISIX"       |              | 在 Zipkin 中显示的服务名称。   |
-|`server_addr` | 字符串  | 否       | `$server_addr` 的值 | IPv4 地址 | Zipkin 报告器的 IPv4 地址。例如，可以将其设置为你的外部 IP 地址。 |
-|`span_version`| 整数    | 否       | `2`            | [1, 2]       | span 类型的版本。    |
+| endpoint     | string   | 是       |                |            | 要 POST 的 Zipkin span 端点，例如 `http://127.0.0.1:9411/api/v2/spans`。 |
+|sample_ratio| number    | 是       |                | [0.00001, 1] | 请求采样频率。设置为 `1` 表示对每个请求进行采样。    |
+|service_name| string  | 否       | "APISIX"       |              | 在 Zipkin 中显示的服务名称。   |
+|server_addr | string  | 否       | `$server_addr` 的值 | IPv4 地址 | Zipkin 报告器的 IPv4 地址。例如，可以将其设置为你的外部 IP 地址。 |
+|span_version| integer    | 否       | `2`            | [1, 2]       | span 类型的版本。    |
 
 ## 示例
 
@@ -243,7 +243,7 @@ curl "http://127.0.0.1:9080/anything"
 - `zipkin_trace_id`: 当前 span 的 trace_id
 - `zipkin_span_id`: 当前 span 的 span_id
 
-按照以下方式更新配置文件（`./conf/config.yaml`）。你可以自定义访问日志格式以使用 `zipkin` 插件变量，并在 `set_ngx_var` 字段中设置 `zipkin` 变量。
+按照以下方式更新配置文件。你可以自定义访问日志格式以使用 `zipkin` 插件变量，并在 `set_ngx_var` 字段中设置 `zipkin` 变量。
 
 ```yaml title="conf/config.yaml"
 nginx_config:
