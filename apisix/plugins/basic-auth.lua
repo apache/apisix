@@ -18,6 +18,8 @@ local core = require("apisix.core")
 local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
+local auth_utils = require("apisix.utils.auth")
+
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
 })
@@ -132,6 +134,9 @@ function _M.rewrite(conf, ctx)
 
     local username, password, err = extract_auth_header(auth_header)
     if err then
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return 401, err
+        end
         core.log.warn(err)
         return 401, { message = "Invalid authorization in request" }
     end

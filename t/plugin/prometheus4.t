@@ -192,95 +192,7 @@ apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",nod
 
 
 
-=== TEST 9: set route with prometheus ttl
---- yaml_config
-plugin_attr:
-    prometheus:
-        default_buckets:
-            - 15
-            - 55
-            - 105
-            - 205
-            - 505
-        expire: 1
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            local code = t('/apisix/admin/routes/metrics',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "public-api": {}
-                    },
-                    "uri": "/apisix/prometheus/metrics"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-                return
-            end
-
-            local code, body = t('/apisix/admin/routes/1',
-                ngx.HTTP_PUT,
-                [[{
-                    "plugins": {
-                        "prometheus": {}
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/hello1"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body = t('/hello1',
-                ngx.HTTP_GET,
-                "",
-                nil,
-                nil
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.sleep(2)
-
-            local code, pass, body = t('/apisix/prometheus/metrics',
-                ngx.HTTP_GET,
-                "",
-                nil,
-                nil
-            )
-            ngx.status = code
-            ngx.say(body)
-        }
-    }
---- request
-GET /t
---- response_body_unlike eval
-qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="15"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="55"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="105"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="205"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="505"\} \d+/
-
-
-
-=== TEST 10: set sys plugins
+=== TEST 9: set sys plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -332,7 +244,7 @@ passed
 
 
 
-=== TEST 11: remove prometheus -> reload -> send batch request -> add prometheus for next tests
+=== TEST 10: remove prometheus -> reload -> send batch request -> add prometheus for next tests
 --- yaml_config
 deployment:
   role: traditional
@@ -366,7 +278,7 @@ qr/404 Not Found/
 
 
 
-=== TEST 12: fetch prometheus metrics -> batch_process_entries metrics should not be present
+=== TEST 11: fetch prometheus metrics -> batch_process_entries metrics should not be present
 --- yaml_config
 deployment:
   role: traditional
@@ -387,14 +299,14 @@ qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127
 
 
 
-=== TEST 13: hit batch-process-metrics with prometheus enabled from TEST 11
+=== TEST 12: hit batch-process-metrics with prometheus enabled from TEST 11
 --- request
 GET /batch-process-metrics
 --- error_code: 404
 
 
 
-=== TEST 14: batch_process_entries metrics should be present now
+=== TEST 13: batch_process_entries metrics should be present now
 --- request
 GET /apisix/prometheus/metrics
 --- error_code: 200

@@ -113,7 +113,7 @@ local schema = {
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
-            description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
+            description = "when set to true the PKCE(Proof Key for Code Exchange) will be used.",
             type = "boolean",
             default = false
         },

@@ -99,8 +99,9 @@ apisix:
       # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
       #   port: 9445
       #   enable_http3: true
-    # ssl_trusted_certificate: /path/to/ca-cert   # Set the path to CA certificates used to verify client
-                                                  # certificates in the PEM format.
+    ssl_trusted_combined_path: /usr/local/apisix/conf/ssl_trusted_combined.pem # All the trusted certificates will be combined into a single file
+    #ssl_trusted_certificate: system              # Specifies comma separated list of trusted CA. Value can be either "system"(for using system available ca certs) or
+                                                # a file path with trusted CA certificates in the PEM format
     ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
@@ -479,6 +480,8 @@ plugins:                           # plugin list (sorted by priority)
   - body-transformer               # priority: 1080
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
+  - ai-rag                         # priority: 1060
+  - ai-content-moderation          # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
@@ -593,24 +596,29 @@ plugin_attr:          # Plugin attributes
       port: 9091                            # Set the port.
     # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
     #  http_status:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
+    #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
     #      - status: $upstream_status  # The label name does not need to be the same as the variable name.
     #  http_latency:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
+    #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
     #  bandwidth:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
+    #              # 0 means the metrics will not expire
     #    extra_labels:
     #      - upstream_addr: $upstream_addr
+    #  upstream_status:
+    #    expire: 0 # The expiration time after which metrics are removed. unit: second.
     # default_buckets:
     #   - 10
     #   - 50
     #   - 100
     #   - 200
     #   - 500
-    # expire: 0                       # The expiration time after metrics become inactive, unit: second.
-                                      # 0 means the metrics will not expire
-                                      # If you need to set the expiration time, it is recommended to use 600, which is 10 minutes.
   server-info:                        # Plugin: server-info
     report_ttl: 60                    # Set the TTL in seconds for server info in etcd.
                                       # Maximum: 86400. Minimum: 3.

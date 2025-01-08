@@ -19,6 +19,7 @@ local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
 local resty_random = require("resty.random")
 local new_tab = require ("table.new")
+local auth_utils = require("apisix.utils.auth")
 
 local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
@@ -48,7 +49,12 @@ local schema = {
         hide_credentials = {
             type = "boolean",
             default = false
-        }
+        },
+        key_claim_name = {
+            type = "string",
+            default = "key",
+            minLength = 1,
+        },
     },
 }
 
@@ -56,8 +62,14 @@ local consumer_schema = {
     type = "object",
     -- can't use additionalProperties with dependencies
     properties = {
-        key = {type = "string"},
-        secret = {type = "string"},
+        key = {
+            type = "string",
+            minLength = 1,
+        },
+        secret = {
+            type = "string",
+            minLength = 1,
+        },
         algorithm = {
             type = "string",
             enum = {"HS256", "HS512", "RS256", "ES256"},
@@ -236,11 +248,16 @@ function _M.rewrite(conf, ctx)
     local jwt_obj = jwt:load_jwt(jwt_token)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
     if not jwt_obj.valid then
-        core.log.warn("JWT token invalid: ", jwt_obj.reason)
+        err = "JWT token invalid: " .. jwt_obj.reason
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return 401, err
+        end
+        core.log.warn(err)
         return 401, {message = "JWT token invalid"}
     end
 
-    local user_key = jwt_obj.payload and jwt_obj.payload.key
+    local key_claim_name = conf.key_claim_name
+    local user_key = jwt_obj.payload and jwt_obj.payload[key_claim_name]
     if not user_key then
         return 401, {message = "missing user key in JWT token"}
     end
@@ -260,7 +277,11 @@ function _M.rewrite(conf, ctx)
 
     local auth_secret, err = get_auth_secret(consumer.auth_conf)
     if not auth_secret then
-        core.log.error("failed to retrieve secrets, err: ", err)
+        err = "failed to retrieve secrets, err: " .. err
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return 401, err
+        end
+        core.log.error(err)
         return 503, {message = "failed to verify jwt"}
     end
     local claim_specs = jwt:get_default_validation_options(jwt_obj)
@@ -270,7 +291,11 @@ function _M.rewrite(conf, ctx)
     core.log.info("jwt object: ", core.json.delay_encode(jwt_obj))
 
     if not jwt_obj.verified then
-        core.log.warn("failed to verify jwt: ", jwt_obj.reason)
+        err = "failed to verify jwt: " .. jwt_obj.reason
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return 401, err
+        end
+        core.log.warn(err)
         return 401, {message = "failed to verify jwt"}
     end
 

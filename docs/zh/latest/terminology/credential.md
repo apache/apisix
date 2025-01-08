@@ -124,14 +124,14 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 4. 测试插件
 
-分别使用 `auth-one` 和 `auth-two` 两个 key 来测试请求，都响应正常。
+    分别使用 `auth-one` 和 `auth-two` 两个 key 来测试请求，都响应正常。
 
     ```shell
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -I
     curl http://127.0.0.1:9080/hello -H 'apikey: auth-two' -I
     ```
 
-为该 Consumer 启用 `limit-count` 插件。
+    为该 Consumer 启用 `limit-count` 插件。
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
@@ -149,4 +149,4 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     }'
     ```
 
-分别使用这两个 key 连续 3 次以上请求该路由，测试返回 `503`，请求被限制。
+    分别使用这两个 key 连续 3 次以上请求该路由，测试返回 `503`，请求被限制。
