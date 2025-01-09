@@ -66,8 +66,14 @@ local consumer_schema = {
     type = "object",
     -- can't use additionalProperties with dependencies
     properties = {
-        key = {type = "string"},
-        secret = {type = "string"},
+        key = {
+            type = "string",
+            minLength = 1,
+        },
+        secret = {
+            type = "string",
+            minLength = 1,
+        },
         algorithm = {
             type = "string",
             enum = {"HS256", "HS512", "RS256", "ES256"},

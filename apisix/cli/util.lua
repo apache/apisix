@@ -24,6 +24,9 @@ local exit = os.exit
 local stderr = io.stderr
 local str_format = string.format
 local tonumber = tonumber
+local io = io
+local ipairs = ipairs
+local assert = assert
 
 local _M = {}
 
@@ -132,5 +135,55 @@ function _M.file_exists(file_path)
     local f = open(file_path, "r")
     return f ~= nil and close(f)
 end
+
+do
+    local trusted_certs_paths = {
+        "/etc/ssl/certs/ca-certificates.crt",                -- Debian/Ubuntu/Gentoo
+        "/etc/pki/tls/certs/ca-bundle.crt",                  -- Fedora/RHEL 6
+        "/etc/ssl/ca-bundle.pem",                            -- OpenSUSE
+        "/etc/pki/tls/cacert.pem",                           -- OpenELEC
+        "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem", -- CentOS/RHEL 7
+        "/etc/ssl/cert.pem",                                 -- OpenBSD, Alpine
+    }
+
+    -- Check if a file exists using Lua's built-in `io.open`
+    local function file_exists(path)
+        local file = io.open(path, "r")
+        if file then
+            file:close()
+            return true
+        else
+            return false
+        end
+    end
+
+    function _M.get_system_trusted_certs_filepath()
+        for _, path in ipairs(trusted_certs_paths) do
+            if file_exists(path) then
+                return path
+            end
+        end
+
+        return nil,
+            "Could not find trusted certs file in " ..
+            "any of the `system`-predefined locations. " ..
+            "Please install a certs file there or set " ..
+            "`lua_ssl_trusted_certificate` to a " ..
+            "specific file path instead of `system`"
+    end
+end
+
+
+function _M.gen_trusted_certs_combined_file(combined_filepath, paths)
+    local combined_file = assert(io.open(combined_filepath, "w"))
+    for _, path in ipairs(paths) do
+        local cert_file = assert(io.open(path, "r"))
+        combined_file:write(cert_file:read("*a"))
+        combined_file:write("\n")
+        cert_file:close()
+    end
+    combined_file:close()
+end
+
 
 return _M

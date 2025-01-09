@@ -269,6 +269,11 @@ local function iter_add_get_routes_info(values, route_id)
         if new_route.value.upstream and new_route.value.upstream.parent then
             new_route.value.upstream.parent = nil
         end
+        -- remove healthcheck info
+        new_route.checker = nil
+        new_route.checker_idx = nil
+        new_route.checker_upstream = nil
+        new_route.clean_handlers = nil
         core.table.insert(infos, new_route)
         -- check the route id
         if route_id and route.value.id == route_id then
@@ -352,6 +357,11 @@ local function iter_add_get_services_info(values, svc_id)
         if new_svc.value.upstream and new_svc.value.upstream.parent then
             new_svc.value.upstream.parent = nil
         end
+        -- remove healthcheck info
+        new_svc.checker = nil
+        new_svc.checker_idx = nil
+        new_svc.checker_upstream = nil
+        new_svc.clean_handlers = nil
         core.table.insert(infos, new_svc)
         -- check the service id
         if svc_id and svc.value.id == svc_id then
