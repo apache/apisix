@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Zipkin
-description: Zipkin is an open-source distributed tracing system. The `zipkin` Plugin instruments APISIX and sends traces to Zipkin based on the Zipkin API specification.
+description: Zipkin is an open-source distributed tracing system. The zipkin Plugin instruments APISIX and sends traces to Zipkin based on the Zipkin API specification.
 ---
 
 <!--
