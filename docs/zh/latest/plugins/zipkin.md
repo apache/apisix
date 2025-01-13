@@ -87,7 +87,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes"  -X PUT \
     "uri": "/anything",
     "plugins": {
       "zipkin": {
-        "endpoint": "http://127.0.0.1:9411/api/v2/spans", 
+        "endpoint": "http://127.0.0.1:9411/api/v2/spans",
         "sample_ratio": 1,
         "span_version": 2
       }
@@ -104,7 +104,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes"  -X PUT \
 向路由发送请求：
 
 ```shell
-curl "http://127.0.0.1:9080/anything" 
+curl "http://127.0.0.1:9080/anything"
 ```
 
 你应该收到一个类似于以下的 `HTTP/1.1 200 OK` 响应：
@@ -165,7 +165,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/zipkin-tracing-route"  -X PATCH 
 向路由发送另一个请求：
 
 ```shell
-curl "http://127.0.0.1:9080/anything" 
+curl "http://127.0.0.1:9080/anything"
 ```
 
 在 Zipkin Web UI 中，你应该看到一个具有以下细节的新 trace：
@@ -222,7 +222,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 向路由发送请求：
 
 ```shell
-curl "http://127.0.0.1:9080/anything" 
+curl "http://127.0.0.1:9080/anything"
 ```
 
 你应该收到一个 `HTTP/1.1 200 OK` 响应。
