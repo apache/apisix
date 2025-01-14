@@ -73,7 +73,7 @@ Reload APISIX for changes to take effect.
 | Name                                  | Type          | Required | Default      | Valid Values | Description |
 |---------------------------------------|---------------|----------|--------------|--------------|-------------|
 | sampler                               | object        | False    | -            | -            | Sampling configuration. |
-| sampler.name                          | string        | False    | `always_off` | `always_on`, `always_off`, `trace_id_ratio`, or `parent_base` | Sampling strategy.<br>To always sample, use `always_on`.<br>To never sample, use `always_off`.<br>To randomly sample based on a given ratio, use `trace_id_ratio`.<br>To use the sampling decision of the span's parent, use `parent_base`. If there is no parent, use the root sampler. |
+| sampler.name                          | string        | False    | `always_off` | ["always_on", "always_off", "trace_id_ratio", "parent_base"]  | Sampling strategy.<br>To always sample, use `always_on`.<br>To never sample, use `always_off`.<br>To randomly sample based on a given ratio, use `trace_id_ratio`.<br>To use the sampling decision of the span's parent, use `parent_base`. If there is no parent, use the root sampler. |
 | sampler.options                       | object        | False    | -            | -            | Parameters for sampling strategy. |
 | sampler.options.fraction              | number        | False    | 0            | [0, 1]       | Sampling ratio when the sampling strategy is `trace_id_ratio`. |
 | sampler.options.root                  | object        | False    | -            | -            | Root sampler when the sampling strategy is `parent_base` strategy. |
