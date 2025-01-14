@@ -1,10 +1,10 @@
 ---
 title: proxy-cache
 keywords:
-  - APISIX
+  - Apache APISIX
   - API 网关
-  - Request Validation
-description: 本文介绍了 Apache APISIX proxy-cache 插件的相关操作，你可以使用此插件缓存来自上游的响应。
+  - Proxy Cache
+description: proxy-cache 插件提供了根据缓存键缓存响应并从缓存中检索响应的功能。该插​​件支持基于磁盘和基于内存的缓存选项，用于缓存 GET、POST 和 HEAD 请求。
 ---
 
 <!--
@@ -28,57 +28,57 @@ description: 本文介绍了 Apache APISIX proxy-cache 插件的相关操作，�
 
 ## 描述
 
-`proxy-cache` 插件提供缓存后端响应数据的能力，它可以和其他插件一起使用。该插件支持基于磁盘和内存的缓存。目前可以根据响应码和请求模式来指定需要缓存的数据，也可以通过 `no_cache` 和 `cache_bypass`属性配置更复杂的缓存策略。
+`proxy-cache` 插件提供了根据缓存键缓存响应的功能。该插​​件支持基于磁盘和基于内存的缓存选项，用于缓存 [GET](https://anything.org/learn/serving-over-http/#get-request)、[POST](https://anything.org/learn/serving-over-http/#post-request) 和 [HEAD](https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/HEAD) 请求。
+
+可以根据请求 HTTP 方法、响应状态代码、请求标头值等有条件地缓存响应。
 
 ## 属性
 
 | 名称               | 类型           | 必选项 | 默认值                    | 有效值                                                                          | 描述                                                                                                                               |
 | ------------------ | -------------- | ------ | ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| cache_strategy     | string         | 否   | disk                      | ["disk","memory"]                                                               | 缓存策略，指定缓存数据存储在磁盘还是内存中。 |
-| cache_zone         | string         | 否   | disk_cache_one     |                                                                                 | 指定使用哪个缓存区域，不同的缓存区域可以配置不同的路径，在 `conf/config.yaml` 文件中可以预定义使用的缓存区域。如果指定的缓存区域与配置文件中预定义的缓存区域不一致，那么缓存无效。   |
-| cache_key          | array[string]  | 否   | ["$host", "$request_uri"] |                                                                                 | 缓存 key，可以使用变量。例如：`["$host", "$uri", "-cache-id"]`。                                                                        |
-| cache_bypass       | array[string]  | 否   |                           |                                                                                 | 当该属性的值不为空或者非 `0` 时则会跳过缓存检查，即不在缓存中查找数据，可以使用变量，例如：`["$arg_bypass"]`。 |
-| cache_method       | array[string]  | 否   | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | 根据请求 method 决定是否需要缓存。                                                                                                     |
-| cache_http_status  | array[integer] | 否   | [200, 301, 404]           | [200, 599]                                                                      | 根据 HTTP 响应码决定是否需要缓存。                                                                                                         |
-| hide_cache_headers | boolean        | 否   | false                     |                                                                                 | 当设置为 `true` 时不将 `Expires` 和 `Cache-Control` 响应头返回给客户端。                                                                                 |
-| cache_control      | boolean        | 否   | false                     |                                                                                 | 当设置为 `true` 时遵守 HTTP 协议规范中的 `Cache-Control` 的行为。                                 |
-| no_cache           | array[string]  | 否   |                           |                                                                                 | 当此参数的值不为空或非 `0` 时将不会缓存数据，可以使用变量。                                                      |
-| cache_ttl          | integer        | 否   | 300 秒                    |                                                                                 | 当选项 `cache_control` 未开启或开启以后服务端没有返回缓存控制头时，提供的默认缓存时间。    |
+| cache_strategy | string | False | disk | ["disk","memory"] | 缓存策略。缓存在磁盘还是内存中。 |
+| cache_zone | string | False | disk_cache_one | | 与缓存策略一起使用的缓存区域。该值应与[配置文件](#static-configurations)中定义的缓存区域之一匹配，并与缓存策略相对应。例如，当使用内存缓存策略时，应该使用内存缓存区域。 |
+| cache_key | array[string] | False | ["$host", "$request_uri"] | | 用于缓存的键。支持[Nginx 变量](https://nginx.org/en/docs/varindex.html)和值中的常量字符串。变量应该以 `$` 符号为前缀。 |
+| cache_bypass | array[string] | False | | |一个或多个用于解析值的参数，如果任何值不为空且不等于 `0`，则不会从缓存中检索响应。支持值中的 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和常量字符串。变量应该以 `$` 符号为前缀。|
+| cache_method | array[string] | False | ["GET", "HEAD"] | ["GET", "POST", "HEAD"] | 应缓存响应的请求方法。|
+| cache_http_status | array[integer] | False | [200, 301, 404] | [200, 599] | 应缓存响应的响应 HTTP 状态代码。|
+| hide_cache_headers | boolean | False | false | | 如果为 true，则隐藏 `Expires` 和 `Cache-Control` 响应标头。|
+| cache_control | boolean | False | false | | 如果为 true，则遵守 HTTP 规范中的 `Cache-Control` 行为。仅对内存中策略有效。 |
+| no_cache | array[string] | False | | | 用于解析值的一个或多个参数，如果任何值不为空且不等于 `0`，则不会缓存响应。支持 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。 |
+| cache_ttl | integer | False | 300 | >=1 | 在内存中缓存时的缓存生存时间 (TTL)，以秒为单位。要调整在磁盘上缓存时的 TTL，请更新[配置文件](#static-configurations) 中的 `cache_ttl`。 TTL 值与从上游服务收到的响应标头 [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 和 [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) 中的值一起评估。|
 
-:::note 注意
+## 静态配置
 
-- 对于基于磁盘的缓存，不能动态配置缓存的过期时间，只能通过后端服务响应头 `Expires` 或 `Cache-Control` 来设置过期时间，当后端响应头中没有 `Expires` 或 `Cache-Control` 时，默认缓存时间为 10 秒钟
-- 当上游服务不可用时，APISIX 将返回 `502` 或 `504` HTTP 状态码，默认缓存时间为 10 秒钟；
-- 变量以 `$` 开头，不存在时等价于空字符串。也可以使用变量和字符串的结合，但是需要以数组的形式分开写，最终变量被解析后会和字符串拼接在一起。
+默认情况下，磁盘缓存时的 `cache_ttl` 和缓存 `zones` 等值已在 [默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua) 中预先配置。
 
-:::
+要自定义这些值，请将相应的配置添加到 `config.yaml`。例如：
 
-## 启用插件
-
-你可以在 APISIX 配置文件 `conf/config.yaml` 中添加你的缓存配置，示例如下：
-
-```yaml title="conf/config.yaml"
+```yaml
 apisix:
   proxy_cache:
-    cache_ttl: 10s  # 如果上游未指定缓存时间，则为默认磁盘缓存时间
+    cache_ttl: 10s  # 仅当 `Expires` 和 `Cache-Control` 响应标头均不存在，或者 APISIX 返回
+                    # 由于上游不可用导致 `502 Bad Gateway` 或 `504 Gateway Timeout` 时
+                    # 才会在磁盘上缓存时使用默认缓存 TTL
     zones:
       - name: disk_cache_one
         memory_size: 50m
         disk_size: 1G
         disk_path: /tmp/disk_cache_one
         cache_levels: 1:2
-    #   - name: disk_cache_two
-    #     memory_size: 50m
-    #     disk_size: 1G
-    #     disk_path: "/tmp/disk_cache_two"
-    #     cache_levels: "1:2"
+      # - name: disk_cache_two
+      #   memory_size: 50m
+      #   disk_size: 1G
+      #   disk_path: "/tmp/disk_cache_two"
+      #   cache_levels: "1:2"
       - name: memory_cache
         memory_size: 50m
 ```
 
-### 使用基于磁盘的缓存
+重新加载 APISIX 以使更改生效。
 
-以下示例展示了如何在路由上启用 `proxy-cache` 插件。该插件默认使用基于磁盘的 `cache_strategy` 和默认使用`disk_cache_one` 为 `cache_zone`：
+## 示例
+
+以下示例演示了如何为不同场景配置 `proxy-cache`。
 
 :::note
 
@@ -90,122 +90,286 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 在磁盘上缓存数据
+
+磁盘缓存策略具有系统重启时数据持久性以及与内存缓存相比具有更大存储容量的优势。它适用于优先考虑耐用性且可以容忍稍大的缓存访问延迟的应用程序。
+
+以下示例演示了如何在路由上使用 `proxy-cache` 插件将数据缓存在磁盘上。
+
+使用磁盘缓存策略时，缓存 TTL 由响应标头 `Expires` 或 `Cache-Control` 中的值确定。如果这些标头均不存在，或者 APISIX 由于上游不可用而返回 `502 Bad Gateway` 或 `504 Gateway Timeout`，则缓存 TTL 默认为 [配置文件](#static-configuration) 中配置的值。
+
+使用 `proxy-cache` 插件创建路由以将数据缓存在磁盘上：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/ip",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-cache-route",
+    "uri": "/anything",
     "plugins": {
-        "proxy-cache": {
-            "cache_key":  ["$uri", "-cache-id"],
-            "cache_bypass": ["$arg_bypass"],
-            "cache_method": ["GET"],
-            "cache_http_status": [200],
-            "hide_cache_headers": true,
-            "no_cache": ["$arg_test"]
-        }
+      "proxy-cache": {
+        "cache_strategy": "disk"
+      }
     },
     "upstream": {
-        "nodes": {
-            "httpbin.org": 1
-        },
-        "type": "roundrobin"
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
 ```
 
-### 使用基于内存的缓存
-
-以下示例展示了如何在路由上启用 `proxy-cache` 插件，并使用基于内存的 `cache_strategy` 和相应的基于内存的 `cache_zone`。
+向路由发送请求：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/ip",
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应，表明插件已成功启用：
+
+```text
+Apisix-Cache-Status: MISS
+```
+
+由于在第一次响应之前没有可用的缓存，因此显示 `Apisix-Cache-Status: MISS`。
+
+在缓存 TTL 窗口内再次发送相同的请求。您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应，显示缓存已命中：
+
+```text
+Apisix-Cache-Status: HIT
+```
+
+等待缓存在 TTL 之后过期，然后再次发送相同的请求。您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应，表明缓存已过期：
+
+```text
+Apisix-Cache-Status: EXPIRED
+```
+
+### 在内存中缓存数据
+
+内存缓存策略具有低延迟访问缓存数据的优势，因为从 RAM 检索数据比从磁盘存储检索数据更快。它还适用于存储不需要长期保存的临时数据，从而可以高效缓存频繁更改的数据。
+
+以下示例演示了如何在路由上使用 `proxy-cache` 插件在内存中缓存数据。
+
+使用 `proxy-cache` 创建路由并将其配置为使用基于内存的缓存：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-cache-route",
+    "uri": "/anything",
     "plugins": {
-        "proxy-cache": {
-            "cache_strategy": "memory",
-            "cache_zone": "memory_cache",
-            "cache_ttl": 10
-        }
+      "proxy-cache": {
+        "cache_strategy": "memory",
+        "cache_zone": "memory_cache",
+        "cache_ttl": 10
+      }
     },
     "upstream": {
-        "nodes": {
-            "httpbin.org": 1
-        },
-        "type": "roundrobin"
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
 ```
 
-## 测试插件
-
-按上述配置启用插件后，使用 `curl` 命令请求该路由：
+向路由发送请求：
 
 ```shell
-curl http://127.0.0.1:9080/ip -i
+curl -i "http://127.0.0.1:9080/anything"
 ```
 
-如果返回 `200` HTTP 状态码，并且响应头中包含 `Apisix-Cache-Status`字段，则表示该插件已启用：
+您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应，表明插件已成功启用：
+
+```text
+Apisix-Cache-Status: MISS
+```
+
+由于在第一次响应之前没有可用的缓存，因此显示 `Apisix-Cache-Status: MISS`。
+
+在缓存 TTL 窗口内再次发送相同的请求。您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应，显示缓存已命中：
+
+```text
+Apisix-Cache-Status: HIT
+```
+
+### 有条件地缓存响应
+
+以下示例演示了如何配置 `proxy-cache` 插件以有条件地缓存响应。
+
+使用 `proxy-cache` 插件创建路由并配置 `no_cache` 属性，这样如果 URL 参数 `no_cache` 和标头 `no_cache` 的值中至少有一个不为空且不等于 `0`，则不会缓存响应：
 
 ```shell
-HTTP/1.1 200 OK
-···
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-cache-route",
+    "uri": "/anything",
+    "plugins": {
+      "proxy-cache": {
+        "no_cache": ["$arg_no_cache", "$http_no_cache"]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+向路由发送一些请求，其中 URL 参数的 `no_cache` 值表示绕过缓存：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?no_cache=1"
+```
+
+您应该收到所有请求的 `HTTP/1.1 200 OK` 响应，并且每次都观察到以下标头：
+
+```text
+Apisix-Cache-Status: EXPIRED
+```
+
+向路由发送一些其他请求，其中 URL 参数 `no_cache` 值为零：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?no_cache=0"
+```
+
+您应该收到所有请求的 `HTTP/1.1 200 OK` 响应，并开始看到缓存被命中：
+
+```text
+Apisix-Cache-Status: HIT
+```
+
+您还可以在 `no_cache` 标头中指定以下值：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H "no_cache: 1"
+```
+
+响应不应该被缓存：
+
+```text
+Apisix-Cache-Status: EXPIRED
+```
+
+### 有条件地从缓存中检索响应
+
+以下示例演示了如何配置 `proxy-cache` 插件以有条件地从缓存中检索响应。
+
+使用 `proxy-cache` 插件创建路由并配置 `cache_bypass` 属性，这样如果 URL 参数 `bypass` 和标头 `bypass` 的值中至少有一个不为空且不等于 `0`，则不会从缓存中检索响应：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-cache-route",
+    "uri": "/anything",
+    "plugins": {
+      "proxy-cache": {
+        "cache_bypass": ["$arg_bypass", "$http_bypass"]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+向路由发送一个请求，其中 URL 参数值为 `bypass`，表示绕过缓存：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?bypass=1"
+```
+
+您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应：
+
+```text
+Apisix-Cache-Status: BYPASS
+```
+
+向路由发送另一个请求，其中 URL 参数 `bypass` 值为零：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?bypass=0"
+```
+
+您应该看到带有以下标头的 `HTTP/1.1 200 OK` 响应：
+
+```text
+Apisix-Cache-Status: MISS
+```
+
+您还可以在 `bypass` 标头中指定以下值：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H "bypass: 1"
+```
+
+响应应该显示绕过缓存：
+
+```text
+Apisix-Cache-Status: BYPASS
+```
+
+### 缓存 502 和 504 错误响应代码
+
+当上游服务返回 500 范围内的服务器错误时，`proxy-cache` 插件将缓存响应，当且仅当返回的状态为 `502 Bad Gateway` 或 `504 Gateway Timeout`。
+
+以下示例演示了当上游服务返回 `504 Gateway Timeout` 时 `proxy-cache` 插件的行为。
+
+使用 `proxy-cache` 插件创建路由并配置虚拟上游服务：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "proxy-cache-route",
+    "uri": "/timeout",
+    "plugins": {
+      "proxy-cache": { }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "12.34.56.78": 1
+      }
+    }
+  }'
+```
+
+生成一些对路由的请求：
+
+```shell
+seq 4 | xargs -I{} curl -I "http://127.0.0.1:9080/timeout"
+```
+
+您应该会看到类似以下内容的响应：
+
+```text
+HTTP/1.1 504 Gateway Time-out
+...
 Apisix-Cache-Status: MISS
 
-hello
-```
-
-如果你是第一次请求该路由，数据未缓存，那么 `Apisix-Cache-Status` 字段应为 `MISS`。此时再次请求该路由：
-
-```shell
-curl http://127.0.0.1:9080/ip -i
-```
-
-如果返回的响应头中 `Apisix-Cache-Status` 字段变为 `HIT`，则表示数据已被缓存，插件生效：
-
-```shell
-HTTP/1.1 200 OK
-···
+HTTP/1.1 504 Gateway Time-out
+...
 Apisix-Cache-Status: HIT
 
-hello
+HTTP/1.1 504 Gateway Time-out
+...
+Apisix-Cache-Status: HIT
+
+HTTP/1.1 504 Gateway Time-out
+...
+Apisix-Cache-Status: HIT
 ```
 
-如果你设置 `"cache_zone": "invalid_disk_cache"` 属性为无效值，即与配置文件 `conf/config.yaml` 中指定的缓存区域不一致，那么它将返回 `404` HTTP 响应码。
-
-:::tip 提示
-
-为了清除缓存数据，你只需要指定请求的 method 为 `PURGE`：
-
-```shell
-curl -i http://127.0.0.1:9080/ip -X PURGE
-```
-
-HTTP 响应码为 `200` 即表示删除成功，如果缓存的数据未找到将返回 `404`：
-
-```shell
-HTTP/1.1 200 OK
-```
-
-:::
-
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/ip",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "httpbin.org": 1
-        }
-    }
-}'
-```
+但是，如果上游服务返回 `503 Service Temporarily Unavailable`，则响应将不会被缓存。
