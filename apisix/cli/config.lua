@@ -113,7 +113,7 @@ local _M = {
       enable_access_log = false,
       access_log = "logs/access_stream.log",
       -- luacheck: push max code line length 300
-      access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time",
+      access_log_format = "$remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received $session_time $apisix_request_id",
       -- luacheck: pop
       access_log_format_escape = "default",
       lua_shared_dict = {
