@@ -77,7 +77,7 @@ Reload APISIX for changes to take effect.
 | sampler.options                       | object        | False    | -            | -            | Parameters for sampling strategy. |
 | sampler.options.fraction              | number        | False    | 0            | [0, 1]       | Sampling ratio when the sampling strategy is `trace_id_ratio`. |
 | sampler.options.root                  | object        | False    | -            | -            | Root sampler when the sampling strategy is `parent_base` strategy. |
-| sampler.options.root.name             | string        | False    | -            | `always_on`, `always_off`, or `trace_id_ratio` | Root sampling strategy. |
+| sampler.options.root.name             | string        | False    | -            | ["always_on", "always_off", "trace_id_ratio"] | Root sampling strategy. |
 | sampler.options.root.options          | object        | False    | -            | -            | Root sampling strategy parameters. |
 | sampler.options.root.options.fraction | number        | False    | 0            | [0, 1]       | Root sampling ratio when the sampling strategy is `trace_id_ratio`. |
 | additional_attributes                 | array[string] | False    | -            | -            | Additional attributes appended to the trace span. Support [built-in variables](https://apisix.apache.org/docs/apisix/apisix-variable/) in values. |
@@ -147,7 +147,7 @@ In OpenTelemetry collector's log, you should see information similar to the foll
 
 ```text
 2024-02-18T17:14:03.825Z info ResourceSpans #0
-Resource SchemaURL: 
+Resource SchemaURL:
 Resource attributes:
      -> telemetry.sdk.language: Str(lua)
      -> telemetry.sdk.name: Str(opentelemetry-lua)
@@ -155,18 +155,18 @@ Resource attributes:
      -> hostname: Str(e34673e24631)
      -> service.name: Str(APISIX)
 ScopeSpans #0
-ScopeSpans SchemaURL: 
-InstrumentationScope opentelemetry-lua 
+ScopeSpans SchemaURL:
+InstrumentationScope opentelemetry-lua
 Span #0
     Trace ID       : fbd0a38d4ea4a128ff1a688197bc58b0
-    Parent ID      : 
+    Parent ID      :
     ID             : af3dc7642104748a
     Name           : GET /anything
     Kind           : Server
     Start time     : 2024-02-18 17:14:03.763244032 +0000 UTC
     End time       : 2024-02-18 17:14:03.920229888 +0000 UTC
     Status code    : Unset
-    Status message : 
+    Status message :
 Attributes:
      -> net.host.name: Str(127.0.0.1)
      -> http.method: Str(GET)
