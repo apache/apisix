@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - OpenTelemetry
-description: The `opentelemetry` Plugin instruments APISIX and sends traces to OpenTelemetry collector based on the OpenTelemetry specification, in binary-encoded OLTP over HTTP.
+description: The opentelemetry Plugin instruments APISIX and sends traces to OpenTelemetry collector based on the OpenTelemetry specification, in binary-encoded OLTP over HTTP.
 
 ---
 <!--
