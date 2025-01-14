@@ -45,7 +45,7 @@ description: proxy-cache 插件提供了根据缓存键缓存响应并从缓存�
 | hide_cache_headers | boolean | False | false | | 如果为 true，则隐藏 `Expires` 和 `Cache-Control` 响应标头。|
 | cache_control | boolean | False | false | | 如果为 true，则遵守 HTTP 规范中的 `Cache-Control` 行为。仅对内存中策略有效。 |
 | no_cache | array[string] | False | | | 用于解析值的一个或多个参数，如果任何值不为空且不等于 `0`，则不会缓存响应。支持 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。 |
-| cache_ttl | integer | False | 300 | >=1 | 在内存中缓存时的缓存生存时间 (TTL)，以秒为单位。要调整在磁盘上缓存时的 TTL，请更新[配置文件](#static-configurations) 中的 `cache_ttl`。 TTL 值与从上游服务收到的响应标头 [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 和 [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) 中的值一起评估。|
+| cache_ttl | integer | False | 300 | >=1 | 在内存中缓存时的缓存生存时间 (TTL)，以秒为单位。要调整在磁盘上缓存时的 TTL，请更新[配置文件](#static-configurations) 中的 `cache_ttl`。TTL 值与从上游服务收到的响应标头 [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 和 [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) 中的值一起评估。|
 
 ## 静态配置
 
