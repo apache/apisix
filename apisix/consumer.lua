@@ -163,6 +163,10 @@ function _M.plugin(plugin_name)
     return plugin_conf[plugin_name]
 end
 
+function _M.consumers_conf(plugin_name)
+    return _M.plugin(plugin_name)
+end
+
 
 -- attach chosen consumer to the ctx, used in auth plugin
 function _M.attach_consumer(ctx, consumer, conf)
@@ -207,6 +211,20 @@ function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
 
     return consumers
 end
+
+
+function _M.find_consumer(plugin_name, key, key_value)
+    local consumer
+    local consumer_conf
+    consumer_conf = _M.plugin(plugin_name)
+    if not consumer_conf then
+        return nil, nil, "Missing related consumer"
+    end
+    local consumers = _M.consumers_kv(plugin_name, consumer_conf, key)
+    consumer = consumers[key_value]
+    return consumer, consumer_conf
+end
+
 
 local function check_consumer(consumer, key)
     local data_valid

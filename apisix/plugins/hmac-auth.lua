@@ -124,19 +124,13 @@ local function get_consumer(key_id)
         return nil, "missing key_id"
     end
 
-    local consumer_conf = consumer.plugin(plugin_name)
-    if not consumer_conf then
-        return nil, "Missing related consumer"
+    local cur_consumer, _, err = consumer.find_consumer(plugin_name, "key_id", key_id)
+    if not cur_consumer then
+        return nil, err or "Invalid key_id"
     end
+    core.log.info("consumer: ", core.json.delay_encode(consumer, true))
 
-    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "key_id")
-    local consumer = consumers[key_id]
-    if not consumer then
-        return nil, "Invalid key_id"
-    end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
-
-    return consumer
+    return cur_consumer
 end
 
 
@@ -346,8 +340,8 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "client request can't be validated"}
     end
 
-    local consumer_conf = consumer.plugin(plugin_name)
-    consumer.attach_consumer(ctx, validated_consumer, consumer_conf)
+    local consumers_conf = consumer.consumers_conf(plugin_name)
+    consumer.attach_consumer(ctx, validated_consumer, consumers_conf)
     core.log.info("hit hmac-auth rewrite")
 end
 

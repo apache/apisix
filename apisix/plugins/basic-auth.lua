@@ -142,16 +142,11 @@ function _M.rewrite(conf, ctx)
     end
 
     -- 2. get user info from consumer plugin
-    local consumer_conf = consumer.plugin(plugin_name)
-    if not consumer_conf then
-        return 401, { message = "Missing related consumer" }
-    end
-
-    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "username")
+    local cur_consumer, consumer_conf, err = consumer.find_consumer(plugin_name, "username", username)
 
     -- 3. check user exists
-    local cur_consumer = consumers[username]
     if not cur_consumer then
+        core.log.warn("failed to find user: ", err or "invalid user")
         return 401, { message = "Invalid user authorization" }
     end
     core.log.info("consumer: ", core.json.delay_encode(cur_consumer))

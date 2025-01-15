@@ -80,14 +80,9 @@ function _M.rewrite(conf, ctx)
         return 401, {message = "Missing API key in request"}
     end
 
-    local consumer_conf = consumer_mod.plugin(plugin_name)
-    if not consumer_conf then
-        return 401, {message = "Missing related consumer"}
-    end
-
-    local consumers = consumer_mod.consumers_kv(plugin_name, consumer_conf, "key")
-    local consumer = consumers[key]
+    local consumer, consumer_conf, err = consumer_mod.find_consumer(plugin_name, "key", key)
     if not consumer then
+        core.log.warn("failed to find consumer: ", err or "invalid api key")
         return 401, {message = "Invalid API key in request"}
     end
     core.log.info("consumer: ", core.json.delay_encode(consumer))
