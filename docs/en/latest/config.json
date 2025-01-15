@@ -1,5 +1,5 @@
 {
-  "version": "3.7.0",
+  "version": "3.11.0",
   "sidebar": [
     {
       "type": "category",
@@ -49,9 +49,11 @@
         "terminology/api-gateway",
         "terminology/consumer",
         "terminology/consumer-group",
+        "terminology/credential",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
+        "terminology/plugin-metadata",
         "terminology/route",
         "terminology/router",
         "terminology/script",
@@ -72,27 +74,34 @@
             "plugins/redirect",
             "plugins/echo",
             "plugins/gzip",
+            "plugins/brotli",
             "plugins/real-ip",
             "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/workflow"
+            "plugins/ocsp-stapling",
+            "plugins/ai-content-moderation"
           ]
         },
         {
           "type": "category",
           "label": "Transformation",
           "items": [
+            "plugins/ai-prompt-decorator",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
+            "plugins/ai-prompt-template",
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",
-            "plugins/body-transformer"
+            "plugins/body-transformer",
+            "plugins/ai-proxy",
+            "plugins/attach-consumer-label",
+            "plugins/ai-rag"
           ]
         },
         {
@@ -146,7 +155,8 @@
             "plugins/traffic-split",
             "plugins/request-id",
             "plugins/proxy-control",
-            "plugins/client-control"
+            "plugins/client-control",
+            "plugins/workflow"
           ]
         },
         {
@@ -214,7 +224,8 @@
           "items": [
             "plugins/dubbo-proxy",
             "plugins/mqtt-proxy",
-            "plugins/kafka-proxy"
+            "plugins/kafka-proxy",
+            "plugins/http-dubbo"
           ]
         }
       ]
@@ -240,6 +251,10 @@
         {
           "type": "doc",
           "id": "building-apisix"
+        },
+        {
+          "type": "doc",
+          "id": "build-apisix-dev-environment-on-mac"
         },
         {
           "type": "doc",
@@ -373,6 +388,10 @@
         {
           "type": "doc",
           "id": "ssl-protocol"
+        },
+        {
+          "type": "doc",
+          "id": "http3"
         }
       ]
     },

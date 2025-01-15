@@ -37,21 +37,50 @@ APISIX 提供了许多现有的插件，可以定制和编排以满足你的需�
 
 ## 插件安装
 
-APISIX 附带一个`config-default.yaml`的默认配置文件和一个 `config.yaml` 的用户自定义配置文件。这些文件位于`conf`目录中。如果两个文件中都存在相同的键 (例如`plugins`)，则`config.yaml`文件中该键的配置值将覆盖`config-default.yaml`文件中的配置值。
+默认情况下，大多数 APISIX 插件都已[安装](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)：
 
-例如：
+```lua title="apisix/cli/config.lua"
+local _M = {
+  ...
+  plugins = {
+    "real-ip",
+    "ai",
+    "client-control",
+    "proxy-control",
+    "request-id",
+    "zipkin",
+    "ext-plugin-pre-req",
+    "fault-injection",
+    "mocking",
+    "serverless-pre-function",
+    ...
+  },
+  ...
+}
+```
+
+如果您想调整插件安装，请将自定义的 `plugins` 配置添加到 `config.yaml` 中。例如：
 
 ```yaml
 plugins:
-  - real-ip         # 安装
+  - real-ip                   # 安装
+  - ai
+  - real-ip
   - ai
   - client-control
   - proxy-control
   - request-id
   - zipkin
-  # - skywalking    # 未安装
-...
+  - ext-plugin-pre-req
+  - fault-injection
+  # - mocking                 # 不安装
+  - serverless-pre-function
+  ...                         # 其它插件
 ```
+
+完整配置参考请参见 [`config.yaml.example`](https://github.com/apache/apisix/blob/master/conf/config.yaml.example)。
+
+重新加载 APISIX 以使配置更改生效。
 
 ## 插件执行生命周期
 
@@ -294,8 +323,18 @@ APISIX 的插件是热加载的，不管你是新增、删除还是修改插件�
 
 只需要通过 Admin API 发送一个 HTTP 请求即可：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```
 
 :::note 注意

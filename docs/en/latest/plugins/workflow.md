@@ -36,7 +36,7 @@ The `workflow` plugin is used to introduce [lua-resty-expr](https://github.com/a
 
 | Name                         | Type          | Required | Default | Valid values | Description                                                  |
 | ---------------------------- | ------------- | -------- | ------- | ------------ | ------------------------------------------------------------ |
-| rules.case                   | array[array]  | True     |         |              | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with NGINX internal variables. For details on supported operators, you can refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
+| rules.case                   | array[array]  | False     |         |              | List of variables to match for filtering requests for conditional traffic split. It is in the format `{variable operator value}`. For example, `{"arg_name", "==", "json"}`. The variables here are consistent with NGINX internal variables. For details on supported operators, you can refer to [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list). |
 | rules.actions                | array[object] | True     |         |              | The action to be performed when the case matches successfully. Currently, only one element is supported in actions. The first child element of the actions' only element can be `return` or `limit-count`. |
 
 ### `actions` Attributes
@@ -58,6 +58,7 @@ The `workflow` plugin is used to introduce [lua-resty-expr](https://github.com/a
 :::note
 
 In `rules`, match `case` in order according to the index of the `rules`, and execute `actions` directly if `case` match.
+If `case` is missing, the default behavior is to match.
 
 :::
 
@@ -65,9 +66,18 @@ In `rules`, match `case` in order according to the index of the `rules`, and exe
 
 You can configure the `workflow` plugin on a Route as shown below:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri":"/hello/*",
     "plugins":{
@@ -126,24 +136,24 @@ HTTP/1.1 403 Forbidden
 **Example 2: if the request uri is `/hello/v2/appid`, the `workflow` plugin would execute the `limit-count` plugin**
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 200 OK
 ```
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 200 OK
 ```
 
 ```shell
-curl http://127.0.0.1:0080/hello/v2/appid -i
+curl http://127.0.0.1:9080/hello/v2/appid -i
 HTTP/1.1 429 Too Many Requests
 ```
 
 **Example 3: if the request can not match any `case` in the `rules`, the `workflow` plugin would do nothing**
 
 ```shell
-curl http://127.0.0.1:0080/hello/fake -i
+curl http://127.0.0.1:9080/hello/fake -i
 HTTP/1.1 200 OK
 ```
 
@@ -153,7 +163,7 @@ To remove the `workflow` plugin, you can delete the corresponding JSON configura
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri":"/hello/*",
     "upstream": {

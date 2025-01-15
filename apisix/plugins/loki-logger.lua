@@ -104,7 +104,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -122,6 +124,10 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+
+    local check = {"endpoint_addrs"}
+    core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
 
     local ok, err = core.schema.check(schema, conf)
     if not ok then

@@ -42,16 +42,60 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 | field         | array   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |                             | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
 | ssl_verify    | boolean | False    | true                        | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
 | timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
+| include_req_body       | boolean       | False    | false   | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                               |
+| include_req_body_expr  | array         | False    |         | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
+| include_resp_body      | boolean       | False    | false   | When set to `true` includes the response body in the log.                                                                                                                                                                      |
+| include_resp_body_expr | array         | False    |         | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
 
 NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+```json
+{
+    "upstream_latency": 2,
+    "apisix_latency": 100.9999256134,
+    "request": {
+        "size": 59,
+        "url": "http://localhost:1984/hello",
+        "method": "GET",
+        "querystring": {},
+        "headers": {
+            "host": "localhost",
+            "connection": "close"
+        },
+        "uri": "/hello"
+    },
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "client_ip": "127.0.0.1",
+    "upstream": "127.0.0.1:1980",
+    "response": {
+        "status": 200,
+        "headers": {
+            "content-length": "12",
+            "connection": "close",
+            "content-type": "text/plain",
+            "server": "APISIX/3.7.0"
+        },
+        "size": 118
+    },
+    "start_time": 1704524807607,
+    "route_id": "1",
+    "service_id": "",
+    "latency": 102.9999256134
+}
+```
 
 ## Enable Plugin
 
@@ -59,9 +103,18 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 The example below shows a complete configuration of the Plugin on a specific Route:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "elasticsearch-logger":{
@@ -100,7 +153,7 @@ The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "elasticsearch-logger":{
@@ -195,7 +248,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                      | Description                                                  |
 | ---------- | ------ | -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -207,7 +260,7 @@ The example below shows how you can configure through the Admin API:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -268,7 +321,7 @@ curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+-H "X-API-KEY: $admin_key" -X DELETE
 ```
 
 ## Delete Plugin
@@ -277,7 +330,7 @@ To remove the `elasticsearch-logger` Plugin, you can delete the corresponding JS
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{},
     "upstream":{

@@ -20,6 +20,7 @@
 
 do_install() {
     linux_get_dependencies
+    install_brotli
 
     export_or_prefix
 

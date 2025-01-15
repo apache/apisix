@@ -106,6 +106,7 @@ done
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "client_rsa_private_key": "89ae4c8edadf1cd1c9f034335f136f87ad84b625c8f1",
                                 "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
@@ -135,7 +136,27 @@ passed
 
 
 
-=== TEST 5: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider.
+=== TEST 5: verify encrypted field
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+
+
+            -- get plugin conf from etcd, client_rsa_private_key is encrypted
+            local etcd = require("apisix.core.etcd")
+            local res = assert(etcd.get('/routes/1'))
+            ngx.say(res.body.node.value.plugins["openid-connect"].client_rsa_private_key)
+
+        }
+    }
+--- response_body
+qO8TJbXcxCUnkkaTs3PxWDk5a54lv7FmngKQaxuXV4cL+7Kp1R4D8NS4w88so4e+
+
+
+
+=== TEST 6: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider.
 --- config
     location /t {
         content_by_lua_block {
@@ -161,7 +182,7 @@ true
 
 
 
-=== TEST 6: Modify route to match catch-all URI `/*` and point plugin to local Keycloak instance.
+=== TEST 7: Modify route to match catch-all URI `/*` and point plugin to local Keycloak instance.
 --- config
     location /t {
         content_by_lua_block {
@@ -208,7 +229,7 @@ passed
 
 
 
-=== TEST 7: Access route w/o bearer token and go through the full OIDC Relying Party authentication process.
+=== TEST 8: Access route w/o bearer token and go through the full OIDC Relying Party authentication process.
 --- config
     location /t {
         content_by_lua_block {
@@ -266,7 +287,7 @@ x-userinfo: ey.*
 
 
 
-=== TEST 8: Re-configure plugin with respect to headers that get sent to upstream.
+=== TEST 9: Re-configure plugin with respect to headers that get sent to upstream.
 --- config
     location /t {
         content_by_lua_block {
@@ -312,7 +333,7 @@ passed
 
 
 
-=== TEST 9: Access route w/o bearer token and go through the full OIDC Relying Party authentication process.
+=== TEST 10: Access route w/o bearer token and go through the full OIDC Relying Party authentication process.
 --- config
     location /t {
         content_by_lua_block {
@@ -367,7 +388,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 10: Update plugin with `bearer_only=true`.
+=== TEST 11: Update plugin with `bearer_only=true`.
 --- config
     location /t {
         content_by_lua_block {
@@ -408,7 +429,7 @@ passed
 
 
 
-=== TEST 11: Access route w/o bearer token. Should return 401 (Unauthorized).
+=== TEST 12: Access route w/o bearer token. Should return 401 (Unauthorized).
 --- timeout: 10s
 --- request
 GET /hello
@@ -420,7 +441,7 @@ OIDC introspection failed: No bearer token found in request.
 
 
 
-=== TEST 12: Access route with invalid Authorization header value. Should return 400 (Bad Request).
+=== TEST 13: Access route with invalid Authorization header value. Should return 400 (Bad Request).
 --- timeout: 10s
 --- request
 GET /hello
@@ -432,7 +453,7 @@ OIDC introspection failed: Invalid Authorization header format.
 
 
 
-=== TEST 13: Update plugin with ID provider public key, so tokens can be validated locally.
+=== TEST 14: Update plugin with ID provider public key, so tokens can be validated locally.
 --- config
     location /t {
         content_by_lua_block {
@@ -482,7 +503,7 @@ passed
 
 
 
-=== TEST 14: Access route with valid token.
+=== TEST 15: Access route with valid token.
 --- config
     location /t {
         content_by_lua_block {
@@ -506,7 +527,7 @@ true
 
 
 
-=== TEST 15: Update route URI to '/uri' where upstream endpoint returns request headers in response body.
+=== TEST 16: Update route URI to '/uri' where upstream endpoint returns request headers in response body.
 --- config
     location /t {
         content_by_lua_block {
@@ -556,7 +577,7 @@ passed
 
 
 
-=== TEST 16: Access route with valid token in `Authorization` header. Upstream should additionally get the token in the `X-Access-Token` header.
+=== TEST 17: Access route with valid token in `Authorization` header. Upstream should additionally get the token in the `X-Access-Token` header.
 --- request
 GET /uri HTTP/1.1
 --- more_headers
@@ -572,7 +593,7 @@ x-userinfo: ey.*
 
 
 
-=== TEST 17: Update plugin to only use `Authorization` header.
+=== TEST 18: Update plugin to only use `Authorization` header.
 --- config
     location /t {
         content_by_lua_block {
@@ -626,7 +647,7 @@ passed
 
 
 
-=== TEST 18: Access route with valid token in `Authorization` header. Upstream should not get the additional `X-Access-Token` header.
+=== TEST 19: Access route with valid token in `Authorization` header. Upstream should not get the additional `X-Access-Token` header.
 --- request
 GET /uri HTTP/1.1
 --- more_headers
@@ -640,7 +661,7 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 19: Switch route URI back to `/hello`.
+=== TEST 20: Switch route URI back to `/hello`.
 --- config
     location /t {
         content_by_lua_block {
@@ -690,7 +711,7 @@ passed
 
 
 
-=== TEST 20: Access route with invalid token. Should return 401.
+=== TEST 21: Access route with invalid token. Should return 401.
 --- config
     location /t {
         content_by_lua_block {
@@ -719,7 +740,7 @@ jwt signature verification failed
 
 
 
-=== TEST 21: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
+=== TEST 22: Update route with Keycloak introspection endpoint and public key removed. Should now invoke introspection endpoint to validate tokens.
 --- config
     location /t {
         content_by_lua_block {
@@ -762,7 +783,7 @@ passed
 
 
 
-=== TEST 22: Obtain valid token and access route with it.
+=== TEST 23: Obtain valid token and access route with it.
 --- config
     location /t {
         content_by_lua_block {
@@ -822,7 +843,7 @@ token validate successfully by introspection
 
 
 
-=== TEST 23: Access route with an invalid token.
+=== TEST 24: Access route with an invalid token.
 --- config
     location /t {
         content_by_lua_block {
@@ -851,7 +872,7 @@ OIDC introspection failed: invalid token
 
 
 
-=== TEST 24: Check defaults.
+=== TEST 25: Check defaults.
 --- config
     location /t {
         content_by_lua_block {
@@ -876,11 +897,11 @@ OIDC introspection failed: invalid token
         }
     }
 --- response_body
-{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","refresh_session_interval":900,"renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
+{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
 
 
 
-=== TEST 25: Update plugin with ID provider jwks endpoint for token verification.
+=== TEST 26: Update plugin with ID provider jwks endpoint for token verification.
 --- config
     location /t {
         content_by_lua_block {
@@ -924,7 +945,7 @@ passed
 
 
 
-=== TEST 26: Obtain valid token and access route with it.
+=== TEST 27: Obtain valid token and access route with it.
 --- config
     location /t {
         content_by_lua_block {
@@ -984,7 +1005,7 @@ token validate successfully by jwks
 
 
 
-=== TEST 27: Access route with an invalid token.
+=== TEST 28: Access route with an invalid token.
 --- config
     location /t {
         content_by_lua_block {
@@ -1013,7 +1034,7 @@ OIDC introspection failed: invalid jwt: invalid jwt string
 
 
 
-=== TEST 28: Modify route to match catch-all URI `/*` and add post_logout_redirect_uri option.
+=== TEST 29: Modify route to match catch-all URI `/*` and add post_logout_redirect_uri option.
 --- config
     location /t {
         content_by_lua_block {
@@ -1060,7 +1081,7 @@ passed
 
 
 
-=== TEST 29: Access route w/o bearer token and request logout to redirect to post_logout_redirect_uri.
+=== TEST 30: Access route w/o bearer token and request logout to redirect to post_logout_redirect_uri.
 --- config
     location /t {
         content_by_lua_block {
@@ -1126,7 +1147,7 @@ http://127.0.0.1:.*/hello
 
 
 
-=== TEST 30: Switch route URI back to `/hello` and enable pkce.
+=== TEST 31: Switch route URI back to `/hello` and enable pkce.
 --- config
     location /t {
         content_by_lua_block {
@@ -1167,7 +1188,7 @@ passed
 
 
 
-=== TEST 31: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider with code_challenge parameters.
+=== TEST 32: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider with code_challenge parameters.
 --- config
     location /t {
         content_by_lua_block {
@@ -1195,7 +1216,7 @@ true
 
 
 
-=== TEST 32: set use_jwks and set_userinfo_header to validate "x-userinfo" in request header
+=== TEST 33: set use_jwks and set_userinfo_header to validate "x-userinfo" in request header
 --- config
     location /t {
         content_by_lua_block {
@@ -1241,7 +1262,7 @@ passed
 
 
 
-=== TEST 33: Access route to validate "x-userinfo" in request header
+=== TEST 34: Access route to validate "x-userinfo" in request header
 --- config
     location /t {
         content_by_lua_block {
@@ -1303,3 +1324,229 @@ passed
     }
 --- response_body_like
 x-userinfo: ey.*
+
+
+
+=== TEST 35: Set up new route with plugin matching URI `/*`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                                "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "post_logout_redirect_uri": "https://iresty.com",
+                                "scope": "openid profile"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 36: Check whether auth0 can redirect normally using post_logout_redirect_uri configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://iresty.com') ~= -1 and
+                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 37: Set up new route with plugin matching URI `/*`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{ "plugins": {
+                            "openid-connect": {
+                                "client_id": "942299072001-vhduu1uljmdhhbbp7g22m3qsmo246a75.apps.googleusercontent.com",
+                                "client_secret": "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",
+                                "discovery": "https://accounts.google.com/.well-known/openid-configuration",
+                                "redirect_uri": "https://iresty.com",
+                                "post_logout_redirect_uri": "https://iresty.com",
+                                "scope": "openid profile"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 38: Check whether google can redirect normally using post_logout_redirect_uri configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/logout"
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.status = res.status
+            local location = res.headers['Location']
+            if location and string.find(location, 'https://iresty.com') ~= -1 and
+                string.find(location, 'post_logout_redirect_uri=https://iresty.com') ~= -1 then
+                ngx.say(true)
+            end
+        }
+    }
+--- timeout: 10s
+--- response_body
+true
+--- error_code: 302
+
+
+
+=== TEST 39: Update plugin config to use_jwk and bear_only false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "redirect_uri": "http://localhost:3000",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "bearer_only": false,
+                                "use_jwks": true,
+                                "realm": "University",
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 40: Test that jwt with bearer_only false still allows a valid Authorization header
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Obtain valid access token from Keycloak using known username and password.
+            local json_decode = require("toolkit.json").decode
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
+            local res, err = httpc:request_uri(uri, {
+                    method = "POST",
+                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
+                    headers = {
+                        ["Content-Type"] = "application/x-www-form-urlencoded"
+                    }
+                })
+
+            -- Check response from keycloak and fail quickly if there's no response.
+            if not res then
+                ngx.say(err)
+                return
+            end
+
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
+
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
+
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
+        }
+    }
+--- response_body
+true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by jwks

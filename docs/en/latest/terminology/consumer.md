@@ -60,7 +60,7 @@ The process of identifying a Consumer in APISIX is described below:
 
 Consumers are useful when you have different consumers requesting the same API and you need to execute different Plugin and Upstream configurations based on the consumer. These need to be used in conjunction with the user authentication system.
 
-Authentcation plugins that can be configured with a Consumer include `basic-auth`, `hmac-auth`, `jwt-auth`, `key-auth`, `ldap-auth`, and `wolf-rbac`.
+Authentication plugins that can be configured with a Consumer include `basic-auth`, `hmac-auth`, `jwt-auth`, `key-auth`, `ldap-auth`, and `wolf-rbac`.
 
 Refer to the documentation for the [key-auth](../plugins/key-auth.md) authentication Plugin to further understand the concept of a Consumer.
 
@@ -74,11 +74,20 @@ For more information about the Consumer object, you can refer to the [Admin API 
 
 The example below shows how you can enable a Plugin for a specific Consumer.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 1. Create a Consumer, specify the authentication plugin `key-auth`, and enable the specific plugin `limit-count`.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "username": "jack",
         "plugins": {
@@ -99,7 +108,7 @@ The example below shows how you can enable a Plugin for a specific Consumer.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {}
@@ -133,7 +142,7 @@ We can use the [consumer-restriction](../plugins/consumer-restriction.md) Plugin
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
             "key-auth": {},

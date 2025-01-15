@@ -51,6 +51,12 @@ local schema = {
                     type = "integer",
                     minimum = 1,
                     default = 10
+                },
+                keepalive_timeout = {
+                    type = "integer",
+                    minimum = 1000,
+                    default = 60000,
+                    description = "keepalive timeout in milliseconds",
                 }
             },
             required = { "uri", "token" }
@@ -67,7 +73,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -140,6 +148,7 @@ local function send_to_splunk(conf, entries)
         method = "POST",
         body = table_concat(t),
         headers = request_headers,
+        keepalive_timeout = conf.endpoint.keepalive_timeout
     })
 
     if not res then

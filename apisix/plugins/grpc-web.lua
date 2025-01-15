@@ -21,6 +21,8 @@ local req_set_uri       = ngx.req.set_uri
 local req_set_body_data = ngx.req.set_body_data
 local decode_base64     = ngx.decode_base64
 local encode_base64     = ngx.encode_base64
+local bit               = require("bit")
+local string            = string
 
 
 local ALLOW_METHOD_OPTIONS = "OPTIONS"
@@ -30,6 +32,7 @@ local CONTENT_ENCODING_BINARY = "binary"
 local DEFAULT_CORS_ALLOW_ORIGIN = "*"
 local DEFAULT_CORS_ALLOW_METHODS = ALLOW_METHOD_POST
 local DEFAULT_CORS_ALLOW_HEADERS = "content-type,x-grpc-web,x-user-agent"
+local DEFAULT_CORS_EXPOSE_HEADERS = "grpc-message,grpc-status"
 local DEFAULT_PROXY_CONTENT_TYPE = "application/grpc"
 
 
@@ -37,7 +40,14 @@ local plugin_name = "grpc-web"
 
 local schema = {
     type = "object",
-    properties = {},
+    properties = {
+        cors_allow_headers = {
+            description =
+                "multiple header use ',' to split. default: content-type,x-grpc-web,x-user-agent.",
+            type = "string",
+            default = DEFAULT_CORS_ALLOW_HEADERS
+        }
+    }
 }
 
 local grpc_web_content_encoding = {
@@ -87,7 +97,7 @@ function _M.access(conf, ctx)
     -- set grpc path
     if not (ctx.curr_req_matched and ctx.curr_req_matched[":ext"]) then
         core.log.error("routing configuration error, grpc-web plugin only supports ",
-                       "`prefix matching` pattern routing")
+            "`prefix matching` pattern routing")
         return 400
     end
 
@@ -123,13 +133,14 @@ function _M.header_filter(conf, ctx)
     local method = core.request.get_method()
     if method == ALLOW_METHOD_OPTIONS then
         core.response.set_header("Access-Control-Allow-Methods", DEFAULT_CORS_ALLOW_METHODS)
-        core.response.set_header("Access-Control-Allow-Headers", DEFAULT_CORS_ALLOW_HEADERS)
+        core.response.set_header("Access-Control-Allow-Headers", conf.cors_allow_headers)
     end
 
     if not ctx.cors_allow_origins then
         core.response.set_header("Access-Control-Allow-Origin", DEFAULT_CORS_ALLOW_ORIGIN)
     end
     core.response.set_header("Content-Type", ctx.grpc_web_mime)
+    core.response.set_header("Access-Control-Expose-Headers", DEFAULT_CORS_EXPOSE_HEADERS)
 end
 
 function _M.body_filter(conf, ctx)
@@ -146,6 +157,50 @@ function _M.body_filter(conf, ctx)
         local chunk = ngx_arg[1]
         chunk = encode_base64(chunk)
         ngx_arg[1] = chunk
+    end
+
+    --[[
+    upstream_trailer_* available since NGINX version 1.13.10 :
+    https://nginx.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_trailer_
+
+    grpc-web trailer format reference:
+    envoyproxy/envoy/source/extensions/filters/http/grpc_web/grpc_web_filter.cc
+
+    Format for grpc-web trailer
+        1 byte: 0x80
+        4 bytes: length of the trailer
+        n bytes: trailer
+
+    --]]
+    local status = ctx.var.upstream_trailer_grpc_status
+    local message = ctx.var.upstream_trailer_grpc_message
+    if status ~= "" and status ~= nil then
+        local status_str = "grpc-status:" .. status
+        local status_msg = "grpc-message:" .. ( message or "")
+        local grpc_web_trailer = status_str .. "\r\n" .. status_msg .. "\r\n"
+        local len = #grpc_web_trailer
+
+        -- 1 byte: 0x80
+        local trailer_buf = string.char(0x80)
+        -- 4 bytes: length of the trailer
+        trailer_buf = trailer_buf .. string.char(
+            bit.band(bit.rshift(len, 24), 0xff),
+            bit.band(bit.rshift(len, 16), 0xff),
+            bit.band(bit.rshift(len, 8), 0xff),
+            bit.band(len, 0xff)
+        )
+        -- n bytes: trailer
+        trailer_buf = trailer_buf .. grpc_web_trailer
+
+        if ctx.grpc_web_encoding == CONTENT_ENCODING_BINARY then
+            ngx_arg[1] = ngx_arg[1] .. trailer_buf
+        else
+            ngx_arg[1] = ngx_arg[1] .. encode_base64(trailer_buf)
+        end
+
+        -- clear trailer
+        ctx.var.upstream_trailer_grpc_status = nil
+        ctx.var.upstream_trailer_grpc_message = nil
     end
 end
 

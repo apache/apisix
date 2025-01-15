@@ -39,7 +39,7 @@ The `cors` Plugins lets you enable [CORS](https://developer.mozilla.org/en-US/do
 | allow_origins             | string  | False    | "*"     | Origins to allow CORS. Use the `scheme://host:port` format. For example, `https://somedomain.com:8081`. If you have multiple origins, use a `,` to list them. If `allow_credential` is set to `false`, you can enable CORS for all origins by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all origins by using `**` but it will pose some security issues. |
 | allow_methods             | string  | False    | "*"     | Request methods to enable CORS on. For example `GET`, `POST`. Use `,` to add multiple methods. If `allow_credential` is set to `false`, you can enable CORS for all methods by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all methods by using `**` but it will pose some security issues.                                                                |
 | allow_headers             | string  | False    | "*"     | Headers in the request allowed when accessing a cross-origin resource. Use `,` to add multiple headers. If `allow_credential` is set to `false`, you can enable CORS for all request headers by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all request headers by using `**` but it will pose some security issues.                                       |
-| expose_headers            | string  | False    | "*"     | Headers in the response allowed when accessing a cross-origin resource. Use `,` to add multiple headers. If `allow_credential` is set to `false`, you can enable CORS for all response headers by using `*`. If `allow_credential` is set to `true`, you can forcefully allow CORS on all response headers by using `**` but it will pose some security issues.                                    |
+| expose_headers            | string  | False    |         | Headers in the response allowed when accessing a cross-origin resource. Use `,` to add multiple headers. If `allow_credential` is set to `false`, you can enable CORS for all response headers by using `*`. If not specified, the plugin will not modify the `Access-Control-Expose-Headers header`. See [Access-Control-Expose-Headers - MDN](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Expose-Headers) for more details.  |
 | max_age                   | integer | False    | 5       | Maximum time in seconds the result is cached. If the time is within this limit, the browser will check the cached result. Set to `-1` to disable caching. Note that the maximum value is browser dependent. See [Access-Control-Max-Age](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Access-Control-Max-Age#Directives) for more details.                                            |
 | allow_credential          | boolean | False    | false   | When set to `true`, allows requests to include credentials like cookies. According to CORS specification, if you set this to `true`, you cannot use '*' to allow all for the other attributes.                                                                                                                                                                                                     |
 | allow_origins_by_regex    | array   | False    | nil     | Regex to match origins that allow CORS. For example, `[".*\.test.com$"]` can match all subdomains of `test.com`. When set to specified range, only domains in this range will be allowed, no matter what `allow_origins` is.                                                                                                                                                                   |
@@ -80,8 +80,17 @@ So, you have to set the CORS headers first, then access the `domain-B.com` URL, 
 
 You can enable the Plugin on a specific Route or Service:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -110,7 +119,6 @@ curl http://127.0.0.1:9080/hello -v
 < Access-Control-Allow-Origin: *
 < Access-Control-Allow-Methods: *
 < Access-Control-Allow-Headers: *
-< Access-Control-Expose-Headers: *
 < Access-Control-Max-Age: 5
 ...
 ```
@@ -120,7 +128,7 @@ curl http://127.0.0.1:9080/hello -v
 To remove the `cors` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

@@ -91,6 +91,9 @@ discovery:
 
     # reserved lua shared memory size, 1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 如果 Kubernetes 服务发现运行在 Pod 内，你可以使用如下最简配置：
@@ -219,6 +222,9 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 多集群模式 Kubernetes 服务发现没有为 `service` 和 `client` 域填充默认值，你需要根据集群配置情况自行填充。
@@ -310,7 +316,7 @@ metadata:
  name: apisix-test
 rules:
 - apiGroups: [ "" ]
-  resources: [ endpoints ]
+  resources: [ endpoints,endpointslices ]
   verbs: [ get,list,watch ]
 ---
 
@@ -343,3 +349,55 @@ A: 假定你指定的 [_ServiceAccount_](https://kubernetes.io/docs/tasks/config
  ```shell
  kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
  ```
+
+## 调试 API
+
+它还提供了用于调试的控制 api。
+
+### 内存 Dump API
+
+```shell
+GET /v1/discovery/kubernetes/dump
+```
+
+例子
+
+```shell
+# curl http://127.0.0.1:9090/v1/discovery/kubernetes/dump | jq
+{
+  "endpoints": [
+    {
+      "endpoints": [
+        {
+          "value": "{\"https\":[{\"host\":\"172.18.164.170\",\"port\":6443,\"weight\":50},{\"host\":\"172.18.164.171\",\"port\":6443,\"weight\":50},{\"host\":\"172.18.164.172\",\"port\":6443,\"weight\":50}]}",
+          "name": "default/kubernetes"
+        },
+        {
+          "value": "{\"metrics\":[{\"host\":\"172.18.164.170\",\"port\":2379,\"weight\":50},{\"host\":\"172.18.164.171\",\"port\":2379,\"weight\":50},{\"host\":\"172.18.164.172\",\"port\":2379,\"weight\":50}]}",
+          "name": "kube-system/etcd"
+        },
+        {
+          "value": "{\"http-85\":[{\"host\":\"172.64.89.2\",\"port\":85,\"weight\":50}]}",
+          "name": "test-ws/testing"
+        }
+      ],
+      "id": "first"
+    }
+  ],
+  "config": [
+    {
+      "default_weight": 50,
+      "id": "first",
+      "client": {
+        "token": "xxx"
+      },
+      "service": {
+        "host": "172.18.164.170",
+        "port": "6443",
+        "schema": "https"
+      },
+      "shared_size": "1m"
+    }
+  ]
+}
+```

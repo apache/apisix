@@ -56,11 +56,9 @@ uwsgi_temp
 proxy_temp
 fastcgi_temp
 client_body_temp
-utils/lj-releng
 utils/reindex
 *.etcd/
-t/lib/dubbo-backend/dubbo-backend-interface/target/
-t/lib/dubbo-backend/dubbo-backend-provider/target/
+t/lib/dubbo*/**/target/
 .idea/
 *.iml
 \.*
@@ -88,3 +86,5 @@ pack-v*-linux.tgz*
 # release tar package
 *.tgz
 release/*
+
+

@@ -68,6 +68,12 @@ description: API 网关 Apache APISIX error-log-logger 插件用于将 APISIX �
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
+### 默认日志格式示例
+
+```text
+["2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:205: load(): new plugins: {"error-log-logger":true}, context: init_worker_by_lua*","\n","2024/01/06 16:04:30 [warn] 11786#9692271: *1 [lua] plugin.lua:255: load_stream(): new plugins: {"limit-conn":true,"ip-restriction":true,"syslog":true,"mqtt-proxy":true}, context: init_worker_by_lua*","\n"]
+```
+
 ## 启用插件
 
 该插件默认为禁用状态，你可以在 `./conf/config.yaml` 中启用 `error-log-logger` 插件。你可以参考如下示例启用插件：
@@ -93,9 +99,19 @@ plugins:                          # plugin list
 
 你可以通过配置插件元数据来设置 TCP 服务器地址，如下所示：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "tcp": {
     "host": "127.0.0.1",
@@ -111,7 +127,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "skywalking": {
     "endpoint_addr": "http://127.0.0.1:12800/v3/logs"
@@ -128,7 +144,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "clickhouse": {
       "user": "default",
@@ -146,7 +162,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/error-log-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "kafka":{
       "brokers":[

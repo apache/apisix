@@ -30,7 +30,7 @@ description: The public-api is used for exposing an API endpoint through a gener
 
 The `public-api` is used for exposing an API endpoint through a general HTTP API router.
 
-When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/plugin/jwt/sign` for JWT authentication using the [jwt-auth](./jwt-auth.md) Plugin.
+When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/batch-requests` for grouping multiple API requests in one request using the [batch-requests](./batch-requests.md) Plugin.
 
 :::note
 
@@ -46,7 +46,7 @@ The public API added in a custom Plugin is not exposed by default and the user s
 
 ## Example usage
 
-The example below uses the [jwt-auth](./jwt-auth.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for it configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
+The example below uses the [batch-requests](./batch-requests.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for its configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
 
 ### Basic usage
 
@@ -57,17 +57,66 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/apisix/plugin/jwt/sign",
-    "plugins": {
+      "uri": "/apisix/batch-requests",
+      "plugins": {
         "public-api": {}
     }
 }'
 ```
 
-Now, if you make a request to the configured URI, you will receive a JWT response:
+Now, if you make a request to the configured URI, you will receive a batch-requests response:
 
 ```shell
-curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
+curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
+--header 'Content-Type: application/json' \
+--data '{
+    "headers": {
+        "Content-Type": "application/json",
+        "admin-jwt":"xxxx"
+    },
+    "timeout": 500,
+    "pipeline": [
+        {
+            "method": "POST",
+            "path": "/community.GiftSrv/GetGifts",
+            "body": "test"
+        },
+        {
+            "method": "POST",
+            "path": "/community.GiftSrv/GetGifts",
+            "body": "test2"
+        }
+    ]
+}'
+```
+
+```shell
+[
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
+    }
+  },
+  {
+    "status": 200,
+    "reason": "OK",
+    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
+    "headers": {
+      "Connection": "keep-alive",
+      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
+      "Content-Type": "application/json",
+      "Content-Length": "81",
+      "Server": "APISIX web server"
+    }
+  }
+]
 ```
 
 ### Using custom URI
@@ -79,10 +128,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/gen_token",
-    "plugins": {
+      "uri": "/batch-requests-gifs",
+      "plugins": {
         "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
+            "uri": "/apisix/batch-requests"
         }
     }
 }'
@@ -91,7 +140,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 Now you can make requests to this new endpoint:
 
 ```shell
-curl 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
+--header 'Content-Type: application/json' \
+--data '{...}'
 ```
 
 ### Securing the Route
@@ -103,11 +154,9 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
     -H 'X-API-KEY: <api-key>' \
     -H 'Content-Type: application/json' \
     -d '{
-    "uri": "/gen_token",
+    "uri": "/batch-requests-gifs",
     "plugins": {
-        "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
-        },
+        "public-api": {},
         "key-auth": {}
     }
 }'
@@ -116,8 +165,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
 Now, only authenticated requests are allowed:
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key' \
+curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
     -H "apikey: test-apikey"
+    -H 'Content-Type: application/json' \
+    --data '{...}'
 ```
 
 ```shell
@@ -127,7 +178,9 @@ HTTP/1.1 200 OK
 The below request will fail:
 
 ```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
+curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
+    -H 'Content-Type: application/json' \
+    --data '{...}'
 ```
 
 ```shell
@@ -138,8 +191,17 @@ HTTP/1.1 401 Unauthorized
 
 To remove the `public-api` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/hello",
   "upstream": {

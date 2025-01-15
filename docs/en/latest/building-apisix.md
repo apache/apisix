@@ -45,19 +45,13 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 
 ## Building APISIX from source
 
-Install dependencies using the script provided by APISIX:
+First of all, we need to specify the version `APISIX_VERSION` to be installed:
 
 ```shell
-curl https://raw.githubusercontent.com/apache/apisix/master/utils/install-dependencies.sh -sL | bash -
+APISIX_VERSION='3.11.0'
 ```
 
-Save the APISIX version to an environment variable to be used next:
-
-```shell
-APISIX_VERSION='3.7.0'
-```
-
-Clone the APISIX source code of this version into a new directory `apisix-APISIX_VERSION`:
+Then, you can run the following command to clone the APISIX source code from Github:
 
 ```shell
 git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
@@ -73,7 +67,7 @@ make deps
 make install
 ```
 
-This will install the runtime-dependent Lua libraries and the `apisix` CLI tool.
+This will install the runtime-dependent Lua libraries and `apisix-runtime` the `apisix` CLI tool.
 
 :::note
 
@@ -258,12 +252,6 @@ For the error `Error unknown directive "lua_package_path" in /API_ASPIX/apisix/t
 
   ```shell
   export PATH=/usr/local/openresty/nginx/sbin:$PATH
-  ```
-
-- macOS default installation path (view homebrew):
-
-  ```shell
-  export PATH=/usr/local/opt/openresty/nginx/sbin:$PATH
   ```
 
 #### Running a specific test case

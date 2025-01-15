@@ -25,11 +25,14 @@ local collectgarbage = collectgarbage
 local ipairs = ipairs
 local pcall = pcall
 local str_format = string.format
+local ngx = ngx
 local ngx_var = ngx.var
+local events = require("apisix.events")
 
 
 local _M = {}
 
+_M.RELOAD_EVENT = 'control-api-plugin-reload'
 
 function _M.schema()
     local http_plugins, stream_plugins = plugin.get_all({
@@ -130,7 +133,7 @@ local HTML_TEMPLATE = [[
 {% for _, stat in ipairs(stats) do %}
 {% for _, node in ipairs(stat.nodes) do %}
 {% i = i + 1 %}
-  {% if node.status == "healthy" then %}
+  {% if node.status == "healthy" or node.status == "mostly_healthy" then %}
   <tr>
   {% else %}
   <tr bgcolor="#FF0000">
@@ -266,6 +269,11 @@ local function iter_add_get_routes_info(values, route_id)
         if new_route.value.upstream and new_route.value.upstream.parent then
             new_route.value.upstream.parent = nil
         end
+        -- remove healthcheck info
+        new_route.checker = nil
+        new_route.checker_idx = nil
+        new_route.checker_upstream = nil
+        new_route.clean_handlers = nil
         core.table.insert(infos, new_route)
         -- check the route id
         if route_id and route.value.id == route_id then
@@ -349,6 +357,11 @@ local function iter_add_get_services_info(values, svc_id)
         if new_svc.value.upstream and new_svc.value.upstream.parent then
             new_svc.value.upstream.parent = nil
         end
+        -- remove healthcheck info
+        new_svc.checker = nil
+        new_svc.checker_idx = nil
+        new_svc.checker_upstream = nil
+        new_svc.clean_handlers = nil
         core.table.insert(infos, new_svc)
         -- check the service id
         if svc_id and svc.value.id == svc_id then
@@ -400,6 +413,14 @@ function _M.dump_plugin_metadata()
     return 200, metadata.value
 end
 
+function _M.post_reload_plugins()
+    local success, err = events:post(_M.RELOAD_EVENT, ngx.req.get_method(), ngx.time())
+    if not success then
+        core.response.exit(503, err)
+    end
+
+    core.response.exit(200, "done")
+end
 
 return {
     -- /v1/schema
@@ -474,5 +495,12 @@ return {
         uris = {"/plugin_metadata/*"},
         handler = _M.dump_plugin_metadata,
     },
+    -- /v1/plugins/reload
+    {
+        methods = {"PUT"},
+        uris = {"/plugins/reload"},
+        handler = _M.post_reload_plugins,
+    },
     get_health_checkers = _get_health_checkers,
+    reload_event = _M.RELOAD_EVENT,
 }

@@ -78,10 +78,15 @@ if ($custom_dns_server) {
 }
 
 
-my $default_yaml_config = read_file("conf/config-default.yaml");
-# enable example-plugin as some tests require it
-$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
-$default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
+my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
+my $test_default_config = <<_EOC_;
+    -- read the default configuration, modify it, and the Lua package
+    -- cache will persist it for loading by other entrypoints
+    -- it is used to replace the test::nginx implementation
+    local default_config = require("apisix.cli.config")
+    default_config.plugin_attr.prometheus.enable_export_server = false
+    default_config.apisix.events.module = "$events_module"
+_EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -260,7 +265,7 @@ env ENABLE_ETCD_AUTH;
 env APISIX_PROFILE;
 env PATH; # for searching external plugin runner's binary
 env TEST_NGINX_HTML_DIR;
-env OPENSSL111_BIN;
+env OPENSSL_BIN;
 _EOC_
 
 
@@ -427,6 +432,7 @@ _EOC_
 
     $stream_config .= <<_EOC_;
     init_by_lua_block {
+        $test_default_config
         $stream_init_by_lua_block
         $stream_extra_init_by_lua
     }
@@ -436,6 +442,14 @@ _EOC_
     }
 
     $extra_stream_config
+
+    server {
+        listen unix:$apisix_home/t/servroot/logs/stream_worker_events.sock;
+        access_log off;
+        content_by_lua_block {
+            require("resty.events.compat").run()
+        }
+    }
 
     # fake server, only for test
     server {
@@ -450,6 +464,8 @@ _EOC_
     if (defined $stream_enable) {
         $block->set_value("stream_config", $stream_config);
     }
+
+    my $custom_trusted_cert = $block->custom_trusted_cert // 'cert/apisix.crt';
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     listen 2005 ssl;
@@ -549,7 +565,9 @@ _EOC_
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
     lua_shared_dict balancer-ewma-last-touched-at 1m;
+    lua_shared_dict plugin-limit-req-redis-cluster-slot-lock 1m;
     lua_shared_dict plugin-limit-count-redis-cluster-slot-lock 1m;
+    lua_shared_dict plugin-limit-conn-redis-cluster-slot-lock 1m;
     lua_shared_dict tracing_buffer 10m;    # plugin skywalking
     lua_shared_dict access-tokens 1m;    # plugin authz-keycloak
     lua_shared_dict discovery 1m;    # plugin authz-keycloak
@@ -561,6 +579,7 @@ _EOC_
     lua_shared_dict kubernetes-first 1m;
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
+    lua_shared_dict ocsp-stapling 10m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;
@@ -608,6 +627,7 @@ _EOC_
     $dubbo_upstream
 
     init_by_lua_block {
+        $test_default_config
         $init_by_lua_block
     }
 
@@ -689,6 +709,18 @@ _EOC_
 
 _EOC_
 
+    $http_config .= <<_EOC_;
+    server {
+        listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
+        access_log off;
+        location / {
+            content_by_lua_block {
+                require("resty.events.compat").run()
+            }
+        }
+    }
+_EOC_
+
     $block->set_value("http_config", $http_config);
 
     my $TEST_NGINX_HTML_DIR = $ENV{TEST_NGINX_HTML_DIR} ||= html_dir();
@@ -701,10 +733,13 @@ _EOC_
     $config .= <<_EOC_;
         $ipv6_listen_conf
 
-        listen 1994 ssl http2;
+        listen 1994 quic reuseport;
+        listen 1994 ssl;
+        http2 on;
+        http3 off;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
-        lua_ssl_trusted_certificate cert/apisix.crt;
+        lua_ssl_trusted_certificate $custom_trusted_cert;
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
@@ -884,8 +919,6 @@ _EOC_
     $user_files .= <<_EOC_;
 >>> ../conf/$debug_file
 $user_debug_config
->>> ../conf/config-default.yaml
-$default_yaml_config
 >>> ../conf/$config_file
 $yaml_config
 >>> ../conf/cert/apisix.crt

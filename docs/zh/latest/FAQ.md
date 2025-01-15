@@ -126,8 +126,18 @@ make deps ENV_LUAROCKS_SERVER=https://luarocks.cn
 
 1. 创建一个[Route](terminology/route.md)并配置 `vars` 字段：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -140,7 +150,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335
     }
 }'
 
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/2 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "vars": [
@@ -167,7 +177,7 @@ Apache APISIX 提供了几种不同的方法来实现：
 1. 在 [redirect](plugins/redirect.md) 插件中将 `http_to_https` 设置为 `true`：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -182,7 +192,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 2. 结合高级路由规则 `vars` 和 `redirect` 插件一起使用：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "host": "foo.com",
@@ -205,7 +215,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 3. 使用 `serverless` 插件：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -396,7 +406,7 @@ deployment:
 2、添加 APISIX Dashboard 的代理路由：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uris":[ "/*" ],
     "name":"apisix_proxy_dashboard",
@@ -420,7 +430,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f03433
 你可以在 Route 中使用 `vars` 字段来匹配正则表达式：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/*",
     "vars": [
@@ -456,7 +466,7 @@ HTTP/1.1 404 Not Found
 这是支持的，下面是一个 `FQDN` 为 `httpbin.default.svc.cluster.local`（一个 Kubernetes Service）的示例：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/ip",
     "upstream": {
@@ -556,7 +566,7 @@ acme.sh --renew --domain demo.domain
 在转发至上游之前移除请求路径中的前缀，比如说从 `/foo/get` 改成 `/get`，可以通过 `[proxy-rewrite](plugins/proxy-rewrite.md)` 插件来实现：
 
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/foo/*",
     "plugins": {
@@ -750,15 +760,15 @@ deployment:
     password: etcd_password     # password for etcd
 ```
 
-关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config-default.yaml` 文件中的 `ETCD` 部分。
+关于 ETCD 的其他配置，比如过期时间、重试次数等等，你可以参考 `conf/config.yaml.example` 文件中的 `etcd` 部分。
 
-## SSLs 对象与 `upstream` 对象中的 `tls.client_cert` 以及 `config-default.yaml` 中的 `ssl_trusted_certificate` 区别是什么？
+## SSLs 对象与 `upstream` 对象中的 `tls.client_cert` 以及 `config.yaml` 中的 `ssl_trusted_certificate` 区别是什么？
 
 Admin API 中 `/apisix/admin/ssls` 用于管理 SSL 对象，如果 APISIX 需要接收来自外网的 HTTPS 请求，那就需要用到存放在这里的证书完成握手。SSL 对象中支持配置多个证书，不同域名的证书 APISIX 将使用 Server Name Indication (SNI) 进行区分。
 
 Upstream 对象中的 `tls.client_cert`、`tls.client_key` 与 `tls.client_cert_id` 用于存放客户端的证书，适用于需要与上游进行 [mTLS 通信](https://apisix.apache.org/zh/docs/apisix/tutorials/client-to-apisix-mtls/)的情况。
 
-`config-default.yaml` 中的 `ssl_trusted_certificate` 用于配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务时，避免提示拒绝对方的 SSL 证书。注意：它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，APISIX 仍然可以与其通信，而无需配置根证书。
+`config.yaml` 中的 `ssl_trusted_certificate` 用于配置一个受信任的根证书。它仅用于在 APISIX 内部访问某些具有自签名证书的服务时，避免提示拒绝对方的 SSL 证书。注意：它不用于信任 APISIX 上游的证书，因为 APISIX 不会验证上游证书的合法性。因此，即使上游使用了无效的 TLS 证书，APISIX 仍然可以与其通信，而无需配置根证书。
 
 ## 如果在使用 APISIX 过程中遇到问题，我可以在哪里寻求更多帮助？
 

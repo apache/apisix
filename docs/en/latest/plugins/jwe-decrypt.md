@@ -38,32 +38,47 @@ This Plugin adds an endpoint `/apisix/plugin/jwe/encrypt` for JWE encryption. Fo
 
 For Consumer:
 
-| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                                                                 |
-|---------------|---------|-------------------------------------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                                                                  |
-| secret        | string  | True                                                 |         |                             | The decryption key. The key could be saved in a secret manager using the [Secret](../terminology/secret.md) resource.       |
-| is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
+| Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                  |
+|---------------|---------|-------------------------------------------------------|---------|-----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------|
+| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                   |
+| secret        | string  | True                                                 |         |                             | The decryption key. Must be 32 characters. The key could be saved in a secret manager using the [Secret](../terminology/secret.md) resource. |
+| is_base64_encoded | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                 |
+
+:::note
+
+After enabling `is_base64_encoded`, your `secret` length may exceed 32 chars. You only need to make sure that the length after decoding is still 32 chars.
+
+:::
 
 For Route:
 
 | Name   | Type   | Required | Default       | Description                                                         |
 |--------|--------|----------|---------------|---------------------------------------------------------------------|
-| header | string | False    | authorization | The header to get the token from.                                   |
-| forward_header | string | False     | authorization  | Set the header name that passes the plaintext to the Upstream.   |
+| header | string | True    | Authorization | The header to get the token from.                                   |
+| forward_header | string | True     | Authorization  | Set the header name that passes the plaintext to the Upstream.   |
 | strict | boolean | False     | true  | If true, throw a 403 error if JWE token is missing from the request. If false, do not throw an error if JWE token cannot be found.  |
 
 ## Example usage
 
 First, create a Consumer with `jwe-decrypt` and configure the decryption key:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "jack",
     "plugins": {
         "jwe-decrypt": {
             "key": "user-key",
-            "secret": "key-length-must-be-at-least-32-bytes"
+            "secret": "-secret-length-must-be-32-chars-"
         }
     }
 }'
@@ -72,7 +87,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Next, create a Route with `jwe-decrypt` enabled to decrypt the authorization header:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything*",
@@ -93,7 +108,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The Plugin creates an internal endpoint `/apisix/plugin/jwe/encrypt` to encrypt data with JWE. To expose it publicly, create a Route with the [public-api](public-api.md) Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/jwenew -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/jwenew -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/apisix/plugin/jwe/encrypt",
     "plugins": {
@@ -168,7 +183,7 @@ Apisix-Plugins: jwe-decrypt
 To remove the `jwe-decrypt` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/anything*",

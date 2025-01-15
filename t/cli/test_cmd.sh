@@ -24,7 +24,7 @@ git checkout conf/config.yaml
 # check restart with old nginx.pid exist
 echo "-1" > logs/nginx.pid
 out=$(./bin/apisix start 2>&1 || true)
-if echo "$out" | grep "APISIX is running"; then
+if echo "$out" | grep "the old APISIX is still running"; then
     rm logs/nginx.pid
     echo "failed: should reject bad nginx.pid"
     exit 1
@@ -50,7 +50,7 @@ echo "pass: no corresponding process"
 
 # check running when run repeatedly
 out=$(make run; make run || true)
-if ! echo "$out" | grep "APISIX is running"; then
+if ! echo "$out" | grep "the old APISIX is still running"; then
     echo "failed: should find APISIX running"
     exit 1
 fi
@@ -80,6 +80,12 @@ deployment:
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+        admin_key_required: true   # Enable Admin API authentication by default for security.
+        admin_key:
+        -
+            name: admin                             # admin: write access to configurations.
+            key: edd1c9f034335f136f87ad84b625c8f1
+            role: admin
 " > conf/customized_config.yaml
 
 ./bin/apisix start -c conf/customized_config.yaml
@@ -92,7 +98,7 @@ if [ ! -e conf/.customized_config_path ]; then
 fi
 
 # check if the custom config is used
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: customized config.yaml not be used"
@@ -119,8 +125,10 @@ fi
 
 # check if apisix can be started use correctly default config. (https://github.com/apache/apisix/issues/9700)
 ./bin/apisix start
-
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+sleep 1
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+echo "look here" $admin_key
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: should use default config"
@@ -157,11 +165,17 @@ deployment:
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+        admin_key_required: true   # Enable Admin API authentication by default for security.
+        admin_key:
+        -
+            name: admin                             # admin: write access to configurations.
+            key: edd1c9f034335f136f87ad84b625c8f1
+            role: admin
 " > conf/customized_config.yaml
 
 ./bin/apisix start -c conf/customized_config.yaml
 
-code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1')
+code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1")
 if [ ! $code -eq 200 ]; then
     rm conf/customized_config.yaml
     echo "failed: should use default config"
@@ -181,7 +195,7 @@ fi
 
 bin/apisix quit
 
-sleep 0.5
+sleep 2
 
 if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
     echo "all workers should exited"
@@ -200,7 +214,7 @@ fi
 
 bin/apisix reload
 
-sleep 0.5
+sleep 3
 
 if ps -ef | grep "worker process is shutting down" | grep -v "grep"; then
     echo "old workers should exited"

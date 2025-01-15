@@ -122,24 +122,33 @@ By default, the Admin API checks for references between resources and will refus
 
 You can make a force deletion by adding the request argument `force=true` to the delete request, for example:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
 ```bash
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H "X-API-KEY: $admin_key" -X PUT -d '{
     "nodes": {
         "127.0.0.1:8080": 1
     },
     "type": "roundrobin"
 }'
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '{
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '{
     "uri": "/*",
     "upstream_id": 1
 }'
 {"value":{"priority":0,"upstream_id":1,"uri":"/*","create_time":1689038794,"id":"1","status":1,"update_time":1689038916},"key":"/apisix/routes/1"}
 
-$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl http://127.0.0.1:9180/apisix/admin/upstreams/1 -H "X-API-KEY: $admin_key" -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=anyvalue" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=anyvalue" -H "X-API-KEY: $admin_key" -X DELETE
 {"error_msg":"can not delete this upstream, route [1] is still using it now"}
-$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=true" -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X DELETE
+$ curl "http://127.0.0.1:9180/apisix/admin/upstreams/1?force=true" -H "X-API-KEY: $admin_key" -X DELETE
 {"deleted":"1","key":"/apisix/upstreams/1"}
 ```
 
@@ -207,7 +216,7 @@ The example is as follows:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes?page=1&page_size=10" \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+-H "X-API-KEY: $admin_key" -X GET
 ```
 
 ```json
@@ -255,7 +264,7 @@ The following example will return a list of routes, and all routes in the list s
 
 ```shell
 curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X GET
+-H "X-API-KEY: $admin_key" -X GET
 ```
 
 ```json
@@ -356,7 +365,7 @@ Example configuration:
 - Create a route
 
     ```shell
-    curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uri": "/index.html",
         "hosts": ["foo.com", "*.bar.com"],
@@ -382,7 +391,7 @@ Example configuration:
 
     ```shell
     curl 'http://127.0.0.1:9180/apisix/admin/routes/2?ttl=60' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "uri": "/aa/index.html",
         "upstream": {
@@ -404,7 +413,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -432,7 +441,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -460,7 +469,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -487,7 +496,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '{
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '{
         "methods": ["GET", "POST"]
     }'
     ```
@@ -507,7 +516,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1/upstream/nodes \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -530,7 +539,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1/methods \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d'["POST", "DELETE", " PATCH"]'
     ```
 
     ```shell
@@ -548,7 +557,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "status": 0
     }'
@@ -571,7 +580,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "status": 1
     }'
@@ -650,7 +659,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+    -H "X-API-KEY: $admin_key" -X PUT -i -d '
     {
         "plugins": {
             "limit-count": {
@@ -679,7 +688,7 @@ Example configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/services/201 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "upstream": {
             "nodes": {
@@ -828,7 +837,7 @@ When bound to a Route or Service, the Authentication Plugin infers the Consumer 
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "username": "jack",
     "plugins": {
@@ -858,6 +867,71 @@ Since `v2.2`, we can bind multiple authentication plugins to the same consumer.
 ### Response Parameters
 
 Currently, the response is returned from etcd.
+
+## Credential
+
+Credential is used to hold the authentication credentials for the Consumer.
+Credentials are used when multiple credentials need to be configured for a Consumer.
+
+### Credential API
+
+Credential resource request address：/apisix/admin/consumers/{username}/credentials/{credential_id}
+
+### Request Methods
+
+| Method | Request URI                        | Request Body | Description                                    |
+| ------ |----------------------------------------------------------------|--------------|------------------------------------------------|
+| GET    | /apisix/admin/consumers/{username}/credentials                 | NUll         | Fetches list of all credentials of the Consumer |
+| GET    | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Fetches the Credential by `credential_id`      |
+| PUT    | /apisix/admin/consumers/{username}/credentials/{credential_id} | {...}        | Create or update a Creddential                 |
+| DELETE | /apisix/admin/consumers/{username}/credentials/{credential_id} | NUll         | Delete the Credential                          |
+
+### Request Body Parameters
+
+| Parameter   | Required | Type        | Description                                                | Example                                         |
+| ----------- |-----| ------- |------------------------------------------------------------|-------------------------------------------------|
+| plugins     | False    | Plugin      | Auth plugins configuration.                                |                                                 |
+| desc        | False    | Auxiliary   | Description of usage scenarios.                            | credential xxxx                                 |
+| labels      | False    | Match Rules | Attributes of the Credential specified as key-value pairs. | {"version":"v2","build":"16","env":"production"} |
+
+Example Configuration:
+
+```shell
+{
+    "plugins": {
+      "key-auth": {
+        "key": "auth-one"
+      }
+    },
+    "desc": "hello world"
+}
+```
+
+### Example API usage
+
+Prerequisite: Consumer `jack` has been created.
+
+Create the `key-auth` Credential for consumer `jack`:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/auth-one  \
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "plugins": {
+        "key-auth": {
+            "key": "auth-one"
+        }
+    }
+}'
+```
+
+```
+HTTP/1.1 200 OK
+Date: Thu, 26 Dec 2019 08:17:49 GMT
+...
+
+{"key":"\/apisix\/consumers\/jack\/credentials\/auth-one","value":{"update_time":1666260780,"plugins":{"key-auth":{"key":"auth-one"}},"create_time":1666260780}}
+```
 
 ## Upstream
 
@@ -969,7 +1043,7 @@ Example Configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100  \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+    -H "X-API-KEY: $admin_key" -i -X PUT -d '
     {
         "type":"roundrobin",
         "nodes":{
@@ -987,7 +1061,7 @@ Example Configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1981": 1
@@ -1039,7 +1113,7 @@ Example Configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "nodes": {
             "127.0.0.1:1980": null
@@ -1064,7 +1138,7 @@ Example Configuration:
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/upstreams/100/nodes \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PATCH -i -d '
+    -H "X-API-KEY: $admin_key" -X PATCH -i -d '
     {
         "127.0.0.1:1982": 1
     }'
@@ -1089,7 +1163,7 @@ Example Configuration:
 
     ```shell
     curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "uri": "/get",
         "upstream": {
@@ -1195,8 +1269,8 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | ------------ | -------- | ------------------------ | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ |
 | cert         | True     | Certificate              | HTTPS certificate. This field supports saving the value in Secret Manager using the [APISIX Secret](./terminology/secret.md) resource.                                                                                             |                                                  |
 | key          | True     | Private key              | HTTPS private key. This field supports saving the value in Secret Manager using the [APISIX Secret](./terminology/secret.md) resource.                                                                                             |                                                  |
-| certs        | False    | An array of certificates | Used for configuring multiple certificates for the same domain excluding the one provided in the `cert` field. |                                                  |
-| keys         | False    | An array of private keys | Private keys to pair with the `certs`.                                                                         |                                                  |
+| certs        | False    | An array of certificates | Used for configuring multiple certificates for the same domain excluding the one provided in the `cert` field. This field supports saving the value in Secret Manager using the [APISIX Secret](./terminology/secret.md) resource.  |                                                  |
+| keys         | False    | An array of private keys | Private keys to pair with the `certs`. This field supports saving the value in Secret Manager using the [APISIX Secret](./terminology/secret.md) resource.                                                                   |                                                  |
 | client.ca    | False    | Certificate              | Sets the CA certificate that verifies the client. Requires OpenResty 1.19+.                                    |                                                  |
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
 | client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
@@ -1204,7 +1278,7 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
-| ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.2", "TLSv2.3"]`                                  |
+| ssl_protocols | False    | An array of ssl protocols               | It is used to control the SSL/TLS protocol version used between servers and clients. See [SSL Protocol](./ssl-protocol.md) for more examples.                  |                `["TLSv1.1", "TLSv1.2", "TLSv1.3"]`                                  |
 
 Example Configuration:
 
@@ -1320,7 +1394,7 @@ Example Configuration:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/example-plugin  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -i -X PUT -d '
+-H "X-API-KEY: $admin_key" -i -X PUT -d '
 {
     "skey": "val",
     "ikey": 1
@@ -1450,13 +1524,14 @@ Secret resource request address: /apisix/admin/secrets/{secretmanager}/{id}
 
 ### Request Body Parameters
 
-When `{secretmanager}` is `vault`:
+#### When Secret Manager is Vault
 
 | Parameter   | Required | Type        | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ----------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | uri    | True     | URI        | URI of the vault server.                                                                                              |                                                  |
 | prefix    | True    | string        | key prefix
 | token     | True    | string      | vault token. |                                                  |
+| namespace | False   | string       | Vault namespace, no default value | `admin` |
 
 Example Configuration:
 
@@ -1472,7 +1547,7 @@ Example API usage:
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/secrets/vault/test2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "http://xxx/get",
     "prefix" : "apisix",
@@ -1485,6 +1560,102 @@ HTTP/1.1 200 OK
 ...
 
 {"key":"\/apisix\/secrets\/vault\/test2","value":{"id":"vault\/test2","token":"apisix","prefix":"apisix","update_time":1669625828,"create_time":1669625828,"uri":"http:\/\/xxx\/get"}}
+```
+
+#### When Secret Manager is AWS
+
+| Parameter         | Required | Type   | Description                             |
+| ----------------- | -------- | ------ | --------------------------------------- |
+| access_key_id     | True     | string | AWS Access Key ID                       |
+| secret_access_key | True     | string | AWS Secret Access Key                   |
+| session_token     | False    | string | Temporary access credential information |
+| region            | False    | string | AWS Region                              |
+| endpoint_url      | False    | URI    | AWS Secret Manager URL                  |
+
+Example Configuration:
+
+```json
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}
+```
+
+Example API usage:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/aws/test3 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "endpoint_url": "http://127.0.0.1:4566",
+    "region": "us-east-1",
+    "access_key_id": "access",
+    "secret_access_key": "secret",
+    "session_token": "token"
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"value":{"create_time":1726069970,"endpoint_url":"http://127.0.0.1:4566","region":"us-east-1","access_key_id":"access","secret_access_key":"secret","id":"aws/test3","update_time":1726069970,"session_token":"token"},"key":"/apisix/secrets/aws/test3"}
+```
+
+#### When Secret Manager is GCP
+
+| Parameter                | Required | Type    | Description                                                                                                                                               | Example                                                                                          |
+| ------------------------ | -------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| auth_config              | True     | object  | Either `auth_config` or `auth_file` must be provided.                                                                                                     |                                                                                                  |
+| auth_config.client_email | True     | string  | Email address of the Google Cloud service account.                                                                                                        |                                                                                                  |
+| auth_config.private_key  | True     | string  | Private key of the Google Cloud service account.                                                                                                          |                                                                                                  |
+| auth_config.project_id   | True     | string  | Project ID in the Google Cloud service account.                                                                                                           |                                                                                                  |
+| auth_config.token_uri    | False    | string  | Token URI of the Google Cloud service account.                                                                                                            | [https://oauth2.googleapis.com/token](https://oauth2.googleapis.com/token)                       |
+| auth_config.entries_uri  | False    | string  | The API access endpoint for the Google Secrets Manager.                                                                                                   | [https://secretmanager.googleapis.com/v1](https://secretmanager.googleapis.com/v1)               |
+| auth_config.scope        | False    | string  | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes) | [https://www.googleapis.com/auth/cloud-platform](https://www.googleapis.com/auth/cloud-platform) |
+| auth_file                | True     | string  | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided.                                  |                                                                                                  |
+| ssl_verify               | False    | boolean | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).         | true                                                                                             |
+
+Example Configuration:
+
+```json
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}
+```
+
+Example API usage:
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/secrets/gcp/test4 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "auth_config" : {
+        "client_email": "email@apisix.iam.gserviceaccount.com",
+        "private_key": "private_key",
+        "project_id": "apisix-project",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "entries_uri": "https://secretmanager.googleapis.com/v1",
+        "scope": ["https://www.googleapis.com/auth/cloud-platform"]
+    }
+}'
+```
+
+```shell
+HTTP/1.1 200 OK
+...
+
+{"value":{"id":"gcp/test4","ssl_verify":true,"auth_config":{"token_uri":"https://oauth2.googleapis.com/token","scope":["https://www.googleapis.com/auth/cloud-platform"],"entries_uri":"https://secretmanager.googleapis.com/v1","client_email":"email@apisix.iam.gserviceaccount.com","private_key":"private_key","project_id":"apisix-project"},"create_time":1726070161,"update_time":1726070161},"key":"/apisix/secrets/gcp/test4"}
 ```
 
 ### Response Parameters
@@ -1542,7 +1713,7 @@ Example:
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/schema/validate/routes \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X POST -i -d '{
+    -H "X-API-KEY: $admin_key" -X POST -i -d '{
     "uri": 1980,
     "upstream": {
         "scheme": "https",

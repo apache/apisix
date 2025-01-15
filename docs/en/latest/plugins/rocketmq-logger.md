@@ -40,12 +40,12 @@ It might take some time to receive the log data. It will be automatically sent a
 | topic                  | string  | True     |                                                                               |                      | Target topic to push the data to.                                                                                                                                                                                              |
 | key                    | string  | False    |                                                                               |                      | Key of the messages.                                                                                                                                                                                                           |
 | tag                    | string  | False    |                                                                               |                      | Tag of the messages.                                                                                                                                                                                                           |
-| log_format             | object  | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |                      | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format             | object  | False    |  |                      | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | timeout                | integer | False    | 3                                                                             | [1,...]              | Timeout for the upstream to send data.                                                                                                                                                                                         |
 | use_tls                | boolean | False    | false                                                                         |                      | When set to `true`, uses TLS.                                                                                                                                                                                                  |
 | access_key             | string  | False    | ""                                                                            |                      | Access key for ACL. Setting to an empty string will disable the ACL.                                                                                                                                                           |
 | secret_key             | string  | False    | ""                                                                            |                      | secret key for ACL.                                                                                                                                                                                                            |
-| name                   | string  | False    | "rocketmq logger"                                                             |                      | Unique identifier for the batch processor.                                                                                                                                                                                     |
+| name                   | string  | False    | "rocketmq logger"                                                             |                      | Unique identifier for the batch processor. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. processor.                                                                                                                                                                                     |
 | meta_format            | enum    | False    | "default"                                                                     | ["default"，"origin"] | Format to collect the request information. Setting to `default` collects the information in JSON format and `origin` collects the information with the original HTTP request. See [examples](#meta_format-example) below.      |
 | include_req_body       | boolean | False    | false                                                                         | [false, true]        | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                               |
 | include_req_body_expr  | array   | False    |                                                                               |                      | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
@@ -63,6 +63,61 @@ The data is first written to a buffer. When the buffer exceeds the `batch_max_si
 If the process is successful, it will return `true` and if it fails, returns `nil` with a string with the "buffer overflow" error.
 
 :::
+
+### meta_format example
+
+- default:
+
+```json
+    {
+     "upstream": "127.0.0.1:1980",
+     "start_time": 1619414294760,
+     "client_ip": "127.0.0.1",
+     "service_id": "",
+     "route_id": "1",
+     "request": {
+       "querystring": {
+         "ab": "cd"
+       },
+       "size": 90,
+       "uri": "/hello?ab=cd",
+       "url": "http://localhost:1984/hello?ab=cd",
+       "headers": {
+         "host": "localhost",
+         "content-length": "6",
+         "connection": "close"
+       },
+       "method": "GET"
+     },
+     "response": {
+       "headers": {
+         "connection": "close",
+         "content-type": "text/plain; charset=utf-8",
+         "date": "Mon, 26 Apr 2021 05:18:14 GMT",
+         "server": "APISIX/2.5",
+         "transfer-encoding": "chunked"
+       },
+       "size": 190,
+       "status": 200
+     },
+     "server": {
+       "hostname": "localhost",
+       "version": "2.5"
+     },
+     "latency": 0
+    }
+```
+
+- origin:
+
+```http
+    GET /hello?ab=cd HTTP/1.1
+    host: localhost
+    content-length: 6
+    connection: close
+
+    abcdef
+```
 
 ### meta_format example
 
@@ -126,7 +181,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                    |
 |------------|--------|----------|-------------------------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -136,8 +191,17 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 
 The example below shows how you can configure through the Admin API:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/rocketmq-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -159,7 +223,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows how you can enable the `rocketmq-logger` Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
        "rocketmq-logger": {
@@ -201,7 +265,7 @@ curl -i http://127.0.0.1:9080/hello
 To remove the `rocketmq-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload, and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

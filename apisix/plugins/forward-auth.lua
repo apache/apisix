@@ -24,6 +24,7 @@ local schema = {
     properties = {
         uri = {type = "string"},
         allow_degradation = {type = "boolean", default = false},
+        status_on_error = {type = "integer", minimum = 200, maximum = 599, default = 403},
         ssl_verify = {
             type = "boolean",
             default = true,
@@ -77,6 +78,10 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"uri"}
+    core.utils.check_https(check, conf, _M.name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
+
     return core.schema.check(schema, conf)
 end
 
@@ -88,10 +93,14 @@ function _M.access(conf, ctx)
         ["X-Forwarded-Host"] = core.request.get_host(ctx),
         ["X-Forwarded-Uri"] = ctx.var.request_uri,
         ["X-Forwarded-For"] = core.request.get_remote_client_ip(ctx),
-        ["Expect"] = core.request.header(ctx, "expect"),
-        ["Content-Length"] = core.request.header(ctx, "content-length"),
-        ["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
     }
+
+    if conf.request_method == "POST" then
+        auth_headers["Content-Length"] = core.request.header(ctx, "content-length")
+        auth_headers["Expect"] = core.request.header(ctx, "expect")
+        auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
+        auth_headers["Content-Encoding"] = core.request.header(ctx, "content-encoding")
+    end
 
     -- append headers that need to be get from the client request header
     if #conf.request_headers > 0 then
@@ -131,8 +140,8 @@ function _M.access(conf, ctx)
     if not res and conf.allow_degradation then
         return
     elseif not res then
-        core.log.error("failed to process forward auth, err: ", err)
-        return 403
+        core.log.warn("failed to process forward auth, err: ", err)
+        return conf.status_on_error
     end
 
     if res.status >= 300 then

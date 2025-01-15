@@ -454,7 +454,7 @@ check elasticsearch custom body success
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -668,3 +668,136 @@ hello world
 --- wait: 2
 --- error_log
 check elasticsearch custom body success
+
+
+
+=== TEST 17: using unsupported field (type) for elasticsearch v8 should work normally
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services",
+                            type = "collector"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: test route (auth success)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- no_error_log
+Action/metadata line [1] contains an unknown parameter [_type]
+
+
+
+=== TEST 19: add plugin with 'include_req_body' setting, collect request log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/elasticsearch-logger', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1,
+                        include_req_body = true
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- error_log
+"body":"{\"sample_payload\":\"hello\"}"
+
+
+
+=== TEST 20: add plugin with 'include_resp_body' setting, collect response log
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/elasticsearch-logger', ngx.HTTP_DELETE)
+
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9201",
+                        field = {
+                            index = "services"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1,
+                        include_req_body = true,
+                        include_resp_body = true
+                    }
+                }
+            })
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            local code, _, body = t("/hello", "POST", "{\"sample_payload\":\"hello\"}")
+        }
+    }
+--- error_log
+"body":"hello world\n"

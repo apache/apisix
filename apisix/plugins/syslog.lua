@@ -34,7 +34,22 @@ local schema = {
         pool_size = {type = "integer", minimum = 5, default = 5},
         tls = {type = "boolean", default = false},
         log_format = {type = "object"},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     required = {"host", "port"}
 }
@@ -45,7 +60,9 @@ local schema = batch_processor_manager:wrap_schema(schema)
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -63,7 +80,13 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+    core.utils.check_tls_bool({"tls"}, conf, plugin_name)
     return core.schema.check(schema, conf)
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

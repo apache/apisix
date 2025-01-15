@@ -51,8 +51,18 @@ title: 压力测试
 
 如果你需要在本地服务器上运行基准测试，你需要同时运行另一个 NGINX 实例来监听 80 端口：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -96,7 +106,7 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 如果你需要在本地服务器上运行基准测试，你需要同时运行另一个 NGINX 实例来监听 80 端口：
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -129,7 +139,7 @@ wrk -d 60 --latency http://127.0.0.1:9080/hello
 
 :::tip
 
-如果你想测试大量连接的基准测试，你可能需要更新 [`./conf/config-default.yaml`](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242) 中的 **keepalive** 配置项，否则超过配置数量的连接将成为短连接。你可以使用以下命令运行大量连接的基准测试：
+如果您想使用大量连接运行基准测试，您可能需要更新 [**keepalive**](https://github.com/apache/apisix/blob/master/conf/config.yaml.example#L241) 配置，将配置添加到 [`config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) 并重新加载 APISIX。否则超过配置数量的连接将成为短连接。你可以使用以下命令运行大量连接的基准测试：
 
 ```bash
 wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello

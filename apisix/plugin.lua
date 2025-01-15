@@ -185,6 +185,10 @@ local function load_plugin(name, plugins_list, plugin_type)
         plugin.init()
     end
 
+    if plugin.workflow_handler then
+        plugin.workflow_handler()
+    end
+
     return
 end
 
@@ -331,6 +335,8 @@ function _M.load(config)
         return local_plugins
     end
 
+    local exporter = require("apisix.plugins.prometheus.exporter")
+
     if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
@@ -343,6 +349,15 @@ function _M.load(config)
             local ok, err = load(http_plugin_names, wasm_plugin_names)
             if not ok then
                 core.log.error("failed to load plugins: ", err)
+            end
+
+            local enabled = core.table.array_find(http_plugin_names, "prometheus") ~= nil
+            local active  = exporter.get_prometheus() ~= nil
+            if not enabled then
+                exporter.destroy()
+            end
+            if enabled and not active then
+                exporter.http_init()
             end
         end
     end
@@ -569,7 +584,7 @@ end
 
 
 local function merge_service_route(service_conf, route_conf)
-    local new_conf = core.table.deepcopy(service_conf)
+    local new_conf = core.table.deepcopy(service_conf, { shallows = {"self.value.upstream.parent"}})
     new_conf.value.service_id = new_conf.value.id
     new_conf.value.id = route_conf.value.id
     new_conf.modifiedIndex = route_conf.modifiedIndex
@@ -643,7 +658,7 @@ end
 local function merge_service_stream_route(service_conf, route_conf)
     -- because many fields in Service are not supported by stream route,
     -- so we copy the stream route as base object
-    local new_conf = core.table.deepcopy(route_conf)
+    local new_conf = core.table.deepcopy(route_conf, { shallows = {"self.value.upstream.parent"}})
     if service_conf.value.plugins then
         for name, conf in pairs(service_conf.value.plugins) do
             if not new_conf.value.plugins then
@@ -691,7 +706,8 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    local new_route_conf = core.table.deepcopy(route_conf)
+    local new_route_conf = core.table.deepcopy(route_conf,
+                            { shallows = {"self.value.upstream.parent"}})
 
     if consumer_group_conf then
         for name, conf in pairs(consumer_group_conf.value.plugins) do
@@ -906,7 +922,8 @@ local enable_data_encryption
 local function enable_gde()
     if enable_data_encryption == nil then
         enable_data_encryption =
-            core.table.try_read_attr(local_conf, "apisix", "data_encryption", "enable")
+            core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+                    "enable_encrypt_fields") and (core.config.type == "etcd")
         _M.enable_data_encryption = enable_data_encryption
     end
 
@@ -922,7 +939,10 @@ local function get_plugin_schema_for_gde(name, schema_type)
 
     local schema
     if schema_type == core.schema.TYPE_CONSUMER then
-        schema = plugin_schema.consumer_schema
+        -- when we use a non-auth plugin in the consumer,
+        -- where the consumer_schema field does not exist,
+        -- we need to fallback to it's schema for encryption and decryption.
+        schema = plugin_schema.consumer_schema or plugin_schema.schema
     elseif schema_type == core.schema.TYPE_METADATA then
         schema = plugin_schema.metadata_schema
     else
@@ -1029,7 +1049,7 @@ check_plugin_metadata = function(item)
     local ok, err = check_single_plugin_schema(item.id, item,
                                                core.schema.TYPE_METADATA, true)
     if ok and enable_gde() then
-        decrypt_conf(item.name, item, core.schema.TYPE_METADATA)
+        decrypt_conf(item.id, item, core.schema.TYPE_METADATA)
     end
 
     return ok, err

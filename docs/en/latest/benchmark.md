@@ -52,8 +52,17 @@ The result of Flame Graph:
 
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -98,7 +107,7 @@ The result of Flame Graph:
 And if you want to run the benchmark test in your machine, you should run another Nginx to listen 80 port.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -131,7 +140,7 @@ For more reference on how to run the benchmark test, you can see this [PR](https
 
 :::tip
 
-If you want to run the benchmark with a large number of connections, You may have to update the **keepalive** config in the [conf/config-default.yaml](https://github.com/apache/apisix/blob/master/conf/config-default.yaml#L242). Connections exceeding this number will become short connections. You can run the following command to test the benchmark with a large number of connections:
+If you want to run the benchmark with a large number of connections, You may have to update the [**keepalive**](https://github.com/apache/apisix/blob/master/conf/config.yaml.example#L241) config by adding the configuration to [`config.yaml`](https://github.com/apache/apisix/blob/master/conf/config.yaml) and reload APISIX. Connections exceeding this number will become short connections. You can run the following command to test the benchmark with a large number of connections:
 
 ```bash
 wrk -t200 -c5000 -d30s http://127.0.0.1:9080/hello

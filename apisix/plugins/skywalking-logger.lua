@@ -39,6 +39,21 @@ local schema = {
         log_format = {type = "object"},
         timeout = {type = "integer", minimum = 1, default = 3},
         include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     required = {"endpoint_addr"},
 }
@@ -47,7 +62,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -65,6 +82,8 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+    local check = {"endpoint_addr"}
+    core.utils.check_https(check, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 
@@ -111,6 +130,11 @@ local function send_http_data(conf, log_message)
     end
 
     return res, err_msg
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

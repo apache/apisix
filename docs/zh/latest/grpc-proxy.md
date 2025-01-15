@@ -39,8 +39,18 @@ title: gRPC 代理
 * 注意：APISIX 也支持通过纯文本的 HTTP/2 暴露 gRPC 服务，这不需要依赖 SSL，通常用于内网环境代理 gRPC 服务
 * 下面例子所代理的 gRPC 服务可供参考：[grpc_server_example](https://github.com/api7/grpc_server_example)。
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",
@@ -78,9 +88,8 @@ grpcurl -insecure -import-path /pathtoprotos  -proto helloworld.proto  \
 apisix:
     node_listen:
         - port: 9080
-          enable_http2: false
         - port: 9081
-          enable_http2: true
+    enable_http2: true
 ```
 
 访问上面配置的 Route：
@@ -100,7 +109,7 @@ grpcurl -plaintext -import-path /pathtoprotos  -proto helloworld.proto  \
 如果你的 gRPC 服务使用了自己的 TLS 加密，即所谓的 `gPRCS` (gRPC + TLS)，那么需要修改 scheme 为 `grpcs`。继续上面的例子，50052 端口上跑的是 gPRCS 的服务，这时候应该这么配置：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST", "GET"],
     "uri": "/helloworld.Greeter/SayHello",

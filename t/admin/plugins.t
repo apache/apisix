@@ -88,11 +88,16 @@ jwt-auth
 jwe-decrypt
 key-auth
 consumer-restriction
+attach-consumer-label
 forward-auth
 opa
 authz-keycloak
 proxy-cache
 body-transformer
+ai-prompt-template
+ai-prompt-decorator
+ai-rag
+ai-content-moderation
 proxy-mirror
 proxy-rewrite
 workflow
@@ -100,6 +105,7 @@ api-breaker
 limit-conn
 limit-count
 limit-req
+ai-proxy
 gzip
 server-info
 traffic-split
@@ -109,6 +115,7 @@ degraphql
 kafka-proxy
 grpc-transcode
 grpc-web
+http-dubbo
 public-api
 prometheus
 datadog

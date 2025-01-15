@@ -57,15 +57,9 @@ do
     fi
 done
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    sed  -i "" "s/\- proxy-mirror .*/#\- proxy-mirror/g" conf/config-default.yaml
-    sed  -i "" "s/\- proxy-cache .*/#\- proxy-cache/g" conf/config-default.yaml
-    sed  -i "" "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
-else
-    sed  -i "s/\- proxy-mirror/#\- proxy-mirror/g" conf/config-default.yaml
-    sed  -i "s/\- proxy-cache/#\- proxy-cache/g" conf/config-default.yaml
-    sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
-fi
+sed  -i "s/\- proxy-mirror/#\- proxy-mirror/g" conf/config-default.yaml
+sed  -i "s/\- proxy-cache/#\- proxy-cache/g" conf/config-default.yaml
+sed  -i "s/listen .*;/$nginx_listen/g" benchmark/server/conf/nginx.conf
 
 echo "
 nginx_config:
@@ -80,8 +74,8 @@ sleep 3
 
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + no plugin"
-
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -106,8 +100,8 @@ sleep 1
 
 #############################################
 echo -e "\n\napisix: $worker_cnt worker + $upstream_cnt upstream + 2 plugins (limit-count + prometheus)"
-
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {
@@ -144,11 +138,7 @@ echo -e "\n\nfake empty apisix server: $worker_cnt worker"
 
 sleep 1
 
-if [[ "$(uname)" == "Darwin" ]]; then
-    sed  -i "" "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
-else
-    sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
-fi
+sed  -i "s/worker_processes [0-9]*/worker_processes $worker_cnt/g" benchmark/fake-apisix/conf/nginx.conf
 
 sudo ${fake_apisix_cmd} || exit 1
 

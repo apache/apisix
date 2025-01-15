@@ -1,5 +1,5 @@
 ---
-title: Debug Mode
+title: 调试模式
 ---
 
 <!--

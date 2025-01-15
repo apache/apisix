@@ -133,15 +133,14 @@ apisix:
       port: 9081
     - ip: 127.0.0.2
       port: 9082
-      enable_http2: true
   ssl:
-    enable_http2: false
     listen:
       - ip: 127.0.0.3
         port: 9444
       - ip: 127.0.0.4
         port: 9445
-        enable_http2: true
+        enable_http3: true
+  enable_http2: true
 " > conf/config.yaml
 
 make init
@@ -152,25 +151,71 @@ if [ $count_http_specific_ip -ne 2 ]; then
     exit 1
 fi
 
-count_http_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:908. default_server http2" conf/nginx.conf || true`
-if [ $count_http_specific_ip_and_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP and enable http2 listen in http"
-    exit 1
-fi
-
 count_https_specific_ip=`grep -c "listen 127.0.0..:944. ssl" conf/nginx.conf || true`
 if [ $count_https_specific_ip -ne 2 ]; then
     echo "failed: failed to support specific IP listen in https"
     exit 1
 fi
 
-count_https_specific_ip_and_enable_http2=`grep -c "listen 127.0.0..:944. ssl default_server http2" conf/nginx.conf || true`
-if [ $count_https_specific_ip_and_enable_http2 -ne 1 ]; then
-    echo "failed: failed to support specific IP and enable http2 listen in https"
+count_enable_http2=`grep -c "http2 on" conf/nginx.conf || true`
+if [ $count_enable_http2 -ne 1 ]; then
+    echo "failed: failed to enable http2"
+    exit 1
+fi
+
+count_https_specific_ip_and_enable_quic=`grep -c "listen 127.0.0..:944. quic" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_quic -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable quic listen in https"
+    exit 1
+fi
+
+count_https_specific_ip_and_enable_http3=`grep -c "http3 on" conf/nginx.conf || true`
+if [ $count_https_specific_ip_and_enable_http3 -ne 1 ]; then
+    echo "failed: failed to support specific IP and enable http3 listen in https"
     exit 1
 fi
 
 echo "passed: support specific IP listen in http and https"
+
+# check deprecated enable_http2 in node_listen
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+      enable_http2: true
+" > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'port level enable_http2 in node_listen is deprecated'; then
+    echo "failed: failed to detect deprecated enable_http2 in node_listen"
+    exit 1
+fi
+
+echo "passed: check deprecated enable_http2 in node_listen"
+
+
+# check deprecated enable_http2 in ssl.listen
+echo "
+apisix:
+  node_listen:
+    - ip: 127.0.0.1
+      port: 9081
+  ssl:
+    enable: true
+    listen:
+      - ip: 127.0.0.1
+        port: 9444
+        enable_http2: true
+" > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'port level enable_http2 in ssl.listen is deprecated'; then
+    echo "failed: failed to detect deprecated enable_http2 in ssl.listen"
+    exit 1
+fi
+
+echo "passed: check deprecated enable_http2 in node_listen"
 
 # check default env
 echo "
@@ -303,7 +348,7 @@ deployment:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if ! grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+if ! grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
@@ -324,7 +369,7 @@ nginx_config:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+if grep "env ETCD_HOST=.*;" conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
@@ -349,7 +394,7 @@ nginx_config:
 
 ETCD_HOST=127.0.0.1 ETCD_PORT=2379 make init
 
-if grep "env ETCD_HOST=127.0.0.1;" conf/nginx.conf > /dev/null; then
+if grep "env ETCD_HOST;" conf/nginx.conf > /dev/null; then
     echo "failed: support environment variables in local_conf"
     exit 1
 fi
@@ -369,7 +414,7 @@ tests:
 
 make init
 
-if ! grep "env TEST_ENV=1.1.1.1;" conf/nginx.conf > /dev/null; then
+if ! grep "env TEST_ENV;" conf/nginx.conf > /dev/null; then
     echo "failed: should use default value when environment not set"
     exit 1
 fi
@@ -381,7 +426,7 @@ tests:
 
 make init
 
-if ! grep "env TEST_ENV=very-long-domain-with-many-symbols.absolutely-non-exists-123ss.com:1234/path?param1=value1;" conf/nginx.conf > /dev/null; then
+if ! grep "env TEST_ENV;" conf/nginx.conf > /dev/null; then
     echo "failed: should use default value when environment not set"
     exit 1
 fi
@@ -393,7 +438,7 @@ tests:
 
 TEST_ENV=127.0.0.1 make init
 
-if ! grep "env TEST_ENV=127.0.0.1;" conf/nginx.conf > /dev/null; then
+if ! grep "env TEST_ENV;" conf/nginx.conf > /dev/null; then
     echo "failed: should use environment variable when environment is set"
     exit 1
 fi
@@ -619,8 +664,8 @@ echo "passed: disable ssl_session_tickets by default"
 # support 3rd-party plugin
 echo '
 apisix:
-    extra_lua_path: "\$prefix/example/?.lua"
-    extra_lua_cpath: "\$prefix/example/?.lua"
+    extra_lua_path: "$prefix/example/?.lua"
+    extra_lua_cpath: "$prefix/example/?.lua"
 plugins:
     - 3rd-party
 stream_plugins:
@@ -671,7 +716,7 @@ echo "passed: bad lua_module_hook should be rejected"
 echo '
 apisix:
     proxy_mode: http&stream
-    extra_lua_path: "\$prefix/example/?.lua"
+    extra_lua_path: "$prefix/example/?.lua"
     lua_module_hook: "my_hook"
     stream_proxy:
         tcp:
@@ -793,7 +838,7 @@ apisix:
         disk_path: /tmp/disk_cache_one
         disk_size: 100m
         memory_size: 20m
-        cache_levels: 1:2
+        cache_levels: "1:2"
 ' > conf/config.yaml
 
 make init

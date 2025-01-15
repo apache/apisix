@@ -42,16 +42,47 @@ This plugin also allows to push logs as a batch to your Google Cloud Logging Ser
 | auth_config.project_id  | True     |                                                                                                                                                                                                      | Project ID in the Google Cloud service account.                                                                                                                    |
 | auth_config.token_uri   | True    | https://oauth2.googleapis.com/token                                                                                                                                                                  | Token URI of the Google Cloud service account.                                                                                                                     |
 | auth_config.entries_uri | False    | https://logging.googleapis.com/v2/entries:write                                                                                                                                                      | Google Cloud Logging Service API.                                                                                                                                  |
-| auth_config.scopes      | False    | ["https://www.googleapis.com/auth/logging.read", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/logging.admin", "https://www.googleapis.com/auth/cloud-platform"] | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging). |
+| auth_config.scope       | False    | ["https://www.googleapis.com/auth/logging.read", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/logging.admin", "https://www.googleapis.com/auth/cloud-platform"] | Access scopes of the Google Cloud service account. See [OAuth 2.0 Scopes for Google APIs](https://developers.google.com/identity/protocols/oauth2/scopes#logging). |
+| auth_config.scopes      | Deprecated    | ["https://www.googleapis.com/auth/logging.read", "https://www.googleapis.com/auth/logging.write", "https://www.googleapis.com/auth/logging.admin", "https://www.googleapis.com/auth/cloud-platform"] | Access scopes of the Google Cloud service account. Use `auth_config.scope` instead.                                                                           |
 | auth_file               | True     |                                                                                                                                                                                                      | Path to the Google Cloud service account authentication JSON file. Either `auth_config` or `auth_file` must be provided.                                           |
 | ssl_verify              | False    | true                                                                                                                                                                                                 | When set to `true`, enables SSL verification as mentioned in [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                  |
 | resource                | False    | {"type": "global"}                                                                                                                                                                                   | Google monitor resource. See [MonitoredResource](https://cloud.google.com/logging/docs/reference/v2/rest/v2/MonitoredResource) for more details.                   |
 | log_id                  | False    | apisix.apache.org%2Flogs                                                                                                                                                                             | Google Cloud logging ID. See [LogEntry](https://cloud.google.com/logging/docs/reference/v2/rest/v2/LogEntry) for details.                                          |
-| log_format       | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format              | False    |                            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 NOTE: `encrypt_fields = {"auth_config.private_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+```json
+{
+    "insertId": "0013a6afc9c281ce2e7f413c01892bdc",
+    "labels": {
+        "source": "apache-apisix-google-cloud-logging"
+    },
+    "logName": "projects/apisix/logs/apisix.apache.org%2Flogs",
+    "httpRequest": {
+        "requestMethod": "GET",
+        "requestUrl": "http://localhost:1984/hello",
+        "requestSize": 59,
+        "responseSize": 118,
+        "status": 200,
+        "remoteIp": "127.0.0.1",
+        "serverIp": "127.0.0.1:1980",
+        "latency": "0.103s"
+    },
+    "resource": {
+        "type": "global"
+    },
+    "jsonPayload": {
+        "service_id": "",
+        "route_id": "1"
+    },
+    "timestamp": "2024-01-06T03:34:45.065Z"
+}
+```
 
 ## Metadata
 
@@ -59,7 +90,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -69,8 +100,17 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 
 The example below shows how you can configure through the Admin API:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/google-cloud-logging -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -93,7 +133,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows a complete configuration of the Plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "google-cloud-logging": {
@@ -102,7 +142,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
                 "client_email":"your service account email@apisix.iam.gserviceaccount.com",
                 "private_key":"-----BEGIN RSA PRIVATE KEY-----your private key-----END RSA PRIVATE KEY-----",
                 "token_uri":"https://oauth2.googleapis.com/token",
-                "scopes":[
+                "scope":[
                     "https://www.googleapis.com/auth/logging.admin"
                 ],
                 "entries_uri":"https://logging.googleapis.com/v2/entries:write"
@@ -133,7 +173,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 The example below shows a bare minimum configuration of the Plugin on a Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "google-cloud-logging": {
@@ -169,7 +209,7 @@ You can then login and view the logs in [Google Cloud Logging Service](https://c
 To remove the `google-cloud-logging` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

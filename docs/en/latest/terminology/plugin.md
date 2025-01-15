@@ -38,21 +38,50 @@ If existing APISIX Plugins do not meet your needs, you can also write your own p
 
 ## Plugins installation
 
-APISIX comes with a default configuration file called `config-default.yaml` and a user-defined configuration file called `config.yaml`. These files are located in the `conf` directory. If the same key (e.g. `plugins`) exists in both files, the configuration values for the key in `config.yaml` will overwrite those in `config-default.yaml`.
+By default, most APISIX plugins are [installed](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua):
 
-The `plugins` block is where you can declare the Plugins loaded to your APISIX instance:
+```lua title="apisix/cli/config.lua"
+local _M = {
+  ...
+  plugins = {
+    "real-ip",
+    "ai",
+    "client-control",
+    "proxy-control",
+    "request-id",
+    "zipkin",
+    "ext-plugin-pre-req",
+    "fault-injection",
+    "mocking",
+    "serverless-pre-function",
+    ...
+  },
+  ...
+}
+```
+
+If you would like to make adjustments to plugins installation, add the customized `plugins` configuration to `config.yaml`. For example:
 
 ```yaml
 plugins:
-  - real-ip         # loaded
+  - real-ip                   # installed
+  - ai
+  - real-ip
   - ai
   - client-control
   - proxy-control
   - request-id
   - zipkin
-  # - skywalking    # not loaded
-...
+  - ext-plugin-pre-req
+  - fault-injection
+  # - mocking                 # not install
+  - serverless-pre-function
+  ...                         # other plugins
 ```
+
+See `config.yaml.example`(https://github.com/apache/apisix/blob/master/conf/config.yaml.example) for a complete configuration reference.
+
+You should reload APISIX for configuration changes to take effect.
 
 ## Plugins execution lifecycle
 
@@ -293,8 +322,17 @@ curl -v /dev/null http://127.0.0.1:9080/get?version=v2 -H"host:httpbin.org"
 
 APISIX Plugins are hot-loaded. This means that there is no need to restart the service if you add, delete, modify plugins, or even if you update the plugin code. To hot-reload, you can send an HTTP request through the [Admin API](../admin-api.md):
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT
+curl http://127.0.0.1:9180/apisix/admin/plugins/reload -H "X-API-KEY: $admin_key" -X PUT
 ```
 
 :::note

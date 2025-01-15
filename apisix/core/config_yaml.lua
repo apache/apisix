@@ -21,7 +21,7 @@
 
 local config_local = require("apisix.core.config_local")
 local config_util  = require("apisix.core.config_util")
-local yaml         = require("tinyyaml")
+local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
@@ -63,7 +63,7 @@ local mt = {
 
 
 local apisix_yaml
-local apisix_yaml_ctime
+local apisix_yaml_mtime
 local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
@@ -74,9 +74,8 @@ local function read_apisix_yaml(premature, pre_mtime)
         return
     end
 
-    -- log.info("change: ", json.encode(attributes))
-    local last_change_time = attributes.change
-    if apisix_yaml_ctime == last_change_time then
+    local last_modification_time = attributes.modification
+    if apisix_yaml_mtime == last_modification_time then
         return
     end
 
@@ -101,7 +100,7 @@ local function read_apisix_yaml(premature, pre_mtime)
     local yaml_config = f:read("*a")
     f:close()
 
-    local apisix_yaml_new = yaml.parse(yaml_config)
+    local apisix_yaml_new = yaml.load(yaml_config)
     if not apisix_yaml_new then
         log.error("failed to parse the content of file " .. apisix_yaml_path)
         return
@@ -114,7 +113,7 @@ local function read_apisix_yaml(premature, pre_mtime)
     end
 
     apisix_yaml = apisix_yaml_new
-    apisix_yaml_ctime = last_change_time
+    apisix_yaml_mtime = last_modification_time
     log.warn("config file ", apisix_yaml_path, " reloaded.")
 end
 
@@ -124,12 +123,12 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if not apisix_yaml_ctime then
+    if not apisix_yaml_mtime then
         log.warn("wait for more time")
         return nil, "failed to read local file " .. apisix_yaml_path
     end
 
-    if self.conf_version == apisix_yaml_ctime then
+    if self.conf_version == apisix_yaml_mtime then
         return true
     end
 
@@ -138,7 +137,7 @@ local function sync_data(self)
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
-        self.conf_version = apisix_yaml_ctime
+        self.conf_version = apisix_yaml_mtime
         return true
     end
 
@@ -155,7 +154,7 @@ local function sync_data(self)
         self.values_hash = new_tab(0, 1)
 
         local item = items
-        local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
+        local conf_item = {value = item, modifiedIndex = apisix_yaml_mtime,
                            key = "/" .. self.key}
 
         local data_valid = true
@@ -202,7 +201,7 @@ local function sync_data(self)
             end
 
             local key = item.id or "arr_" .. i
-            local conf_item = {value = item, modifiedIndex = apisix_yaml_ctime,
+            local conf_item = {value = item, modifiedIndex = apisix_yaml_mtime,
                             key = "/" .. self.key .. "/" .. key}
 
             if data_valid and self.item_schema then
@@ -236,7 +235,7 @@ local function sync_data(self)
         end
     end
 
-    self.conf_version = apisix_yaml_ctime
+    self.conf_version = apisix_yaml_mtime
     return true
 end
 

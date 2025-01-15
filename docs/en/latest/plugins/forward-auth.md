@@ -49,6 +49,7 @@ This Plugin moves the authentication and authorization logic to a dedicated exte
 | keepalive_timeout | integer       | False    | 60000ms | [1000, ...]ms  | Idle time after which the connection is closed.                                                                                                            |
 | keepalive_pool    | integer       | False    | 5       | [1, ...]ms     | Connection pool limit.                                                                                                                           |
 | allow_degradation | boolean       | False    | false   |                | When set to `true`, allows authentication to be skipped when authentication server is unavailable. |
+| status_on_error   | integer       | False    | 403     | [200,...,599]  | Sets the HTTP status that is returned to the client when there is a network error to the authorization service. The default status is “403” (HTTP Forbidden). |
 
 ## Data definition
 
@@ -62,9 +63,18 @@ APISIX will generate and send the request headers listed below to the authorizat
 
 First, you need to setup your external authorization service. The example below uses Apache APISIX's [serverless](./serverless.md) Plugin to mock the service:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+    -H "X-API-KEY: $admin_key" \
     -H 'Content-Type: application/json' \
     -d '{
     "uri": "/auth",
@@ -94,7 +104,7 @@ Now you can configure the `forward-auth` Plugin to a specific Route:
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' \
+    -H "X-API-KEY: $admin_key" \
     -d '{
     "uri": "/headers",
     "plugins": {
@@ -161,7 +171,7 @@ Location: http://example.com/auth
 To remove the `forward-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

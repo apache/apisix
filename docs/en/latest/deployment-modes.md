@@ -151,6 +151,23 @@ routes:
 
 *WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end.
 
+Environment variables can also be used like so:
+
+```yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+        nodes:
+            "${{UPSTREAM_ADDR}}": 1
+        type: roundrobin
+#END
+```
+
+*WARNING*: When using docker to deploy APISIX in standalone mode. New environment variables added to `apisix.yaml` while APISIX has been initialized will only take effect after a reload.
+
+More information about using environment variables can be found [here](./admin-api.md#using-environment-variables).
+
 ### How to configure Route
 
 Single Route：
@@ -247,6 +264,26 @@ plugins:
   - name: jwt-auth
   - name: mqtt-proxy
     stream: true # set 'stream' to true for stream plugins
+#END
+```
+
+### How to configure Plugin Configs
+
+```yml
+plugin_configs:
+    -
+        id: 1
+        plugins:
+            response-rewrite:
+                body: "hello\n"
+routes:
+    - id: 1
+      uri: /hello
+      plugin_config_id: 1
+      upstream:
+        nodes:
+          "127.0.0.1:1980": 1
+        type: roundrobin
 #END
 ```
 

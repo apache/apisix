@@ -40,8 +40,9 @@ This will allow the ability to send log data requests as JSON objects to monitor
 | uri                    | string  | True     |               |                      | URI of the HTTP/HTTPS server.                                                                                                                                                                                            |
 | auth_header            | string  | False    |               |                      | Authorization headers if required.                                                                                                                                                                                       |
 | timeout                | integer | False    | 3             | [1,...]              | Time to keep the connection alive for after sending a request.                                                                                                                                                           |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |               | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |     |               | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | include_req_body       | boolean | False    | false         | [false, true]        | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                         |
+| include_req_body_expr  | array   | False    |               |                      | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
 | include_resp_body      | boolean | False    | false         | [false, true]        | When set to `true` includes the response body in the log.                                                                                                                                                                |
 | include_resp_body_expr | array   | False    |               |                      | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`. |
 | concat_method          | string  | False    | "json"        | ["json", "new_line"] | Sets how to concatenate logs. When set to `json`, uses `json.encode` for all pending logs and when set to `new_line`, also uses `json.encode` but uses the newline (`\n`) to concatenate lines.                          |
@@ -53,13 +54,57 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 :::
 
+### Example of default log format
+
+  ```json
+  {
+    "service_id": "",
+    "apisix_latency": 100.99999809265,
+    "start_time": 1703907485819,
+    "latency": 101.99999809265,
+    "upstream_latency": 1,
+    "client_ip": "127.0.0.1",
+    "route_id": "1",
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "request": {
+        "headers": {
+            "host": "127.0.0.1:1984",
+            "content-type": "application/x-www-form-urlencoded",
+            "user-agent": "lua-resty-http/0.16.1 (Lua) ngx_lua/10025",
+            "content-length": "12"
+        },
+        "method": "POST",
+        "size": 194,
+        "url": "http://127.0.0.1:1984/hello?log_body=no",
+        "uri": "/hello?log_body=no",
+        "querystring": {
+            "log_body": "no"
+        }
+    },
+    "response": {
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "content-length": "12",
+            "server": "APISIX/3.7.0"
+        },
+        "status": 200,
+        "size": 123
+    },
+    "upstream": "127.0.0.1:1982"
+ }
+  ```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -69,9 +114,18 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 
 The example below shows how you can configure through the Admin API:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/http-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -94,7 +148,7 @@ The example below shows how you can enable the Plugin on a specific Route:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "http-logger": {
@@ -126,7 +180,7 @@ curl -i http://127.0.0.1:9080/hello
 To disable this Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
+local events = require("apisix.events")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -110,10 +111,18 @@ local function create_checker(upstream)
     end
     upstream.is_creating_checker = true
 
+    core.log.debug("events module used by the healthcheck: ", events.events_module,
+                    ", module name: ",events:get_healthcheck_events_modele())
+
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
         shm_name = "upstream-healthcheck",
         checks = upstream.checks,
+        -- the events.init_worker will be executed in the init_worker phase,
+        -- events.healthcheck_events_module is set
+        -- while the healthcheck object is executed in the http access phase,
+        -- so it can be used here
+        events_module = events:get_healthcheck_events_modele(),
     })
 
     if not checker then
@@ -146,10 +155,20 @@ local function create_checker(upstream)
         end
     end
 
+    local check_idx, err = core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+    if not check_idx then
+        upstream.is_creating_checker = nil
+        checker:clear()
+        checker:stop()
+        core.log.error("failed to add clean handler, err:",
+            err, " healthcheck parent:", core.json.delay_encode(healthcheck_parent, true))
+
+        return nil
+    end
+
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
-    healthcheck_parent.checker_idx =
-        core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+    healthcheck_parent.checker_idx = check_idx
 
     upstream.is_creating_checker = nil
 
@@ -282,6 +301,8 @@ function _M.set_by_route(route, api_ctx)
             end
 
             up_conf.nodes = new_nodes
+            up_conf.original_nodes = up_conf.nodes
+
             local new_up_conf = core.table.clone(up_conf)
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
@@ -438,6 +459,18 @@ local function check_upstream_conf(in_dp, conf)
         local ok, err = core.schema.check(core.schema.upstream, conf)
         if not ok then
             return false, "invalid configuration: " .. err
+        end
+
+        if conf.nodes and not core.table.isarray(conf.nodes) then
+            local port
+            for addr,_ in pairs(conf.nodes) do
+                _, port = core.utils.parse_addr(addr)
+                if port then
+                    if port < 1 or port > 65535 then
+                        return false, "invalid port " .. tostring(port)
+                    end
+                end
+            end
         end
 
         local ssl_id = conf.tls and conf.tls.client_cert_id

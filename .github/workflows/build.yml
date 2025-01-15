@@ -28,6 +28,9 @@ jobs:
           - ubuntu-20.04
         os_name:
           - linux_openresty
+        events_module:
+          - lua-resty-worker-events
+          - lua-resty-events
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
@@ -52,7 +55,7 @@ jobs:
           go-version: "1.17"
 
       - name: Cache deps
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-deps
         with:
@@ -104,7 +107,7 @@ jobs:
 
       - name: Cache images
         id: cache-images
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         env:
           cache-name: cache-apisix-docker-images
         with:
@@ -138,11 +141,17 @@ jobs:
       - name: Start Dubbo Backend
         if: matrix.os_name == 'linux_openresty' && (steps.test_env.outputs.type == 'plugin' || steps.test_env.outputs.type == 'last')
         run: |
+          cur_dir=$(pwd)
+          sudo apt update
           sudo apt install -y maven
           cd t/lib/dubbo-backend
           mvn package
           cd dubbo-backend-provider/target
           java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+          cd $cur_dir/t/lib/dubbo-serialization-backend
+          mvn package
+          cd dubbo-serialization-backend-provider/target
+          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
 
       - name: Build xDS library
         if: steps.test_env.outputs.type == 'last'
@@ -169,6 +178,7 @@ jobs:
       - name: Linux Script
         env:
           TEST_FILE_SUB_DIR: ${{ matrix.test_dir }}
+          TEST_EVENTS_MODULE: ${{ matrix.events_module }}
         run: sudo -E ./ci/${{ matrix.os_name }}_runner.sh script
 
       - if: ${{ steps.cache-images.outputs.cache-hit != 'true' }}

@@ -23,8 +23,11 @@ install_dependencies() {
 
     # install build & runtime deps
     yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms \
-    wget tar gcc automake autoconf libtool make unzip git sudo openldap-devel hostname \
-    which ca-certificates openssl-devel
+    wget tar gcc gcc-c++ automake autoconf libtool make unzip git sudo openldap-devel hostname patch \
+    which ca-certificates pcre pcre-devel xz \
+    openssl-devel
+    yum install -y libyaml-devel
+    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
 
     # install newer curl
     yum makecache
@@ -33,15 +36,14 @@ install_dependencies() {
 
     # install apisix-runtime to make apisix's rpm test work
     yum install -y yum-utils && yum-config-manager --add-repo https://openresty.org/package/centos/openresty.repo
-    rpm --import https://repos.apiseven.com/KEYS
-    yum install -y openresty-openssl111 openresty-openssl111-devel pcre pcre pcre-devel xz
-    yum -y install https://repos.apiseven.com/packages/centos/apache-apisix-repo-1.0-1.noarch.rpm
+    yum install -y openresty-pcre-devel openresty-zlib-devel
 
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime-debug-centos7.sh"
-    wget "https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/build-apisix-runtime.sh"
-    chmod +x build-apisix-runtime.sh
-    chmod +x build-apisix-runtime-debug-centos7.sh
-    ./build-apisix-runtime-debug-centos7.sh
+    install_apisix_runtime
+    curl -o /usr/local/openresty/openssl3/ssl/openssl.cnf \
+        https://raw.githubusercontent.com/api7/apisix-build-tools/apisix-runtime/${APISIX_RUNTIME}/conf/openssl3/openssl.cnf
+
+    # patch lua-resty-events
+    sed -i 's/log(ERR, "event worker failed: ", perr)/log(ngx.WARN, "event worker failed: ", perr)/' /usr/local/openresty/lualib/resty/events/worker.lua
 
     # install luarocks
     ./utils/linux-install-luarocks.sh
@@ -52,8 +54,11 @@ install_dependencies() {
     # install vault cli capabilities
     install_vault_cli
 
+    # install brotli
+    yum install -y cmake3
+    install_brotli
+
     # install test::nginx
-    yum install -y --disablerepo=* --enablerepo=ubi-8-appstream-rpms --enablerepo=ubi-8-baseos-rpms cpanminus perl
     cpanm --notest Test::Nginx IPC::Run > build.log 2>&1 || (cat build.log && exit 1)
 
     # add go1.15 binary to the path
@@ -71,6 +76,8 @@ install_dependencies() {
 
     yum install -y iproute procps
     start_grpc_server_example
+
+    start_sse_server_example
 
     # installing grpcurl
     install_grpcurl
@@ -94,7 +101,7 @@ run_case() {
     make init
     set_coredns
     # run test cases
-    FLUSH_ETCD=1 prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
+    FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r ${TEST_FILE_SUB_DIR} | tee /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

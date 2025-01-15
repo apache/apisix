@@ -43,15 +43,58 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 tcp-logger �
 | log_format       | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | tls              | boolean | 否     | false  |         | 用于控制是否执行 SSL 验证。                        |
 | tls_options      | string  | 否     |        |         | TLS 选项。                                        |
-| include_req_body | boolean | 否     |        |         | 当设置为 `true` 时，日志中将包含请求体。           |
+| include_req_body | boolean | 否     |        | [false, true] | 当设置为 `true` 时，日志中将包含请求体。           |
+| include_req_body_expr | array | 否 |       |           | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
+| include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
+| include_resp_body_expr | array | 否 |       |           | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+### 默认日志格式示例
+
+```json
+{
+  "response": {
+    "status": 200,
+    "headers": {
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "content-length": "12",
+      "connection": "close"
+    },
+    "size": 118
+  },
+  "server": {
+    "version": "3.7.0",
+    "hostname": "localhost"
+  },
+  "start_time": 1704527628474,
+  "client_ip": "127.0.0.1",
+  "service_id": "",
+  "latency": 102.9999256134,
+  "apisix_latency": 100.9999256134,
+  "upstream_latency": 2,
+  "request": {
+    "headers": {
+      "connection": "close",
+      "host": "localhost"
+    },
+    "size": 59,
+    "method": "GET",
+    "uri": "/hello",
+    "url": "http://localhost:1984/hello",
+    "querystring": {}
+  },
+  "upstream": "127.0.0.1:1980",
+  "route_id": "1"
+}
+```
 
 ## 插件元数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 注意
 
@@ -61,9 +104,19 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 tcp-logger �
 
 以下示例展示了如何通过 Admin API 配置插件元数据：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/tcp-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -85,7 +138,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/tcp-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "tcp-logger": {
@@ -126,7 +179,7 @@ hello, world
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

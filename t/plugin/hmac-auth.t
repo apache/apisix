@@ -35,9 +35,8 @@ __DATA__
                     "username": "jack",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "my-access-key",
-                            "secret_key": "my-secret-key",
-                            "clock_skew": 10
+                            "key_id": "my-access-key",
+                            "secret_key": "my-secret-key"
                         }
                     }
                 }]]
@@ -67,7 +66,7 @@ passed
                     "username": "foo",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "user-key"
+                            "key_id": "user-key"
                         }
                     }
                 }]])
@@ -84,7 +83,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 
 
 
-=== TEST 3: add consumer with plugin hmac-auth - missing access key
+=== TEST 3: add consumer with plugin hmac-auth - missing key_id
 --- config
     location /t {
         content_by_lua_block {
@@ -108,11 +107,11 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"access_key\\" is required"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"key_id\\" is required"\}/
 
 
 
-=== TEST 4: add consumer with plugin hmac-auth - access key exceeds the length limit
+=== TEST 4: add consumer with plugin hmac-auth - key id exceeds the length limit
 --- config
     location /t {
         content_by_lua_block {
@@ -123,7 +122,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
                     "username": "li",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "akeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakey",
+                            "key_id": "akeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakeyakey",
                             "secret_key": "skey"
                         }
                     }
@@ -137,11 +136,11 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"access_key\\" validation failed: string too long, expected at most 256, got 320"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"key_id\\" validation failed: string too long, expected at most 256, got 320"\}/
 
 
 
-=== TEST 5: add consumer with plugin hmac-auth - access key exceeds the length limit
+=== TEST 5: add consumer with plugin hmac-auth - secret key exceeds the length limit
 --- config
     location /t {
         content_by_lua_block {
@@ -152,7 +151,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
                     "username": "zhang",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "akey",
+                            "key_id": "akey",
                             "secret_key": "skeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskeyskey"
                         }
                     }
@@ -204,16 +203,16 @@ passed
 
 
 
-=== TEST 7: verify, missing signature
+=== TEST 7: verify,missing Authorization header
 --- request
 GET /hello
 --- error_code: 401
 --- response_body
-{"message":"client request can't be validated"}
+{"message":"client request can't be validated: missing Authorization header"}
 --- grep_error_log eval
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
-client request can't be validated: access key or signature missing
+client request can't be validated: missing Authorization header
 
 
 
@@ -221,34 +220,31 @@ client request can't be validated: access key or signature missing
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
+Authorization: Signature keyId="my-access-key",headers="@request-target date" ,signature="asdf"
 Date: Thu, 24 Sep 2020 06:39:52 GMT
-X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
 --- grep_error_log eval
-qr/client request can't be validated: [^,]+/
+qr/client request can't be validated[^,]+/
 --- grep_error_log_out
 client request can't be validated: algorithm missing
 
 
 
-=== TEST 9: verify: invalid access key
+=== TEST 9: verify: invalid key_id
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
-X-HMAC-ALGORITHM: hmac-sha256
+Authorization: Signature keyId="sdf",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
 Date: Thu, 24 Sep 2020 06:39:52 GMT
-X-HMAC-ACCESS-KEY: sdf
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
 --- grep_error_log eval
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
-client request can't be validated: Invalid access key
+client request can't be validated: Invalid key_id
 
 
 
@@ -256,17 +252,15 @@ client request can't be validated: Invalid access key
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
-X-HMAC-ALGORITHM: ljlj
+Authorization: Signature keyId="my-access-key",algorithm="ljlj",headers="@request-target date",signature="asdf"
 Date: Thu, 24 Sep 2020 06:39:52 GMT
-X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
 --- grep_error_log eval
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
-client request can't be validated: algorithm ljlj not supported
+client request can't be validated: Invalid algorithm
 
 
 
@@ -274,10 +268,8 @@ client request can't be validated: algorithm ljlj not supported
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
-X-HMAC-ALGORITHM: hmac-sha256
+Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
 Date: Thu, 24 Sep 2020 06:39:52 GMT
-X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
@@ -292,16 +284,14 @@ client request can't be validated: Clock skew exceeded
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
-X-HMAC-ALGORITHM: hmac-sha256
-X-HMAC-ACCESS-KEY: my-access-key
+Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
 --- grep_error_log eval
-qr/client request can't be validated: [^,]+/
+qr/client request can't be validated: Date header missing/
 --- grep_error_log_out
-client request can't be validated: Invalid GMT format time
+client request can't be validated: Date header missing
 
 
 
@@ -309,10 +299,8 @@ client request can't be validated: Invalid GMT format time
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
-X-HMAC-ALGORITHM: hmac-sha256
+Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
 Date: adfsdf
-X-HMAC-ACCESS-KEY: my-access-key
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
@@ -337,18 +325,16 @@ location /t {
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key"
+        local key_id = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         local signing_string = {
-            "GET",
-            "/hello",
-            "",
-            access_key,
-            gmt,
-            "x-custom-header-a:" .. custom_header_a,
-            "x-custom-header-b:" .. custom_header_b
+             key_id,
+            "GET /hello",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a,
+            "x-custom-header-b: " .. custom_header_b
         }
         signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
@@ -356,11 +342,8 @@ location /t {
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
-        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["Date"] = gmt
-        headers["X-HMAC-ACCESS-KEY"] = access_key
-        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["Authorization"] = "Signature algorithm=\"hmac-sha256\"" .. ",keyId=\"" .. key_id .. "\",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
 
@@ -382,28 +365,68 @@ passed
 
 
 
-=== TEST 15: add consumer with 0 clock skew
+=== TEST 15: add route with 0 clock skew
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "robin",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "my-access-key3",
-                            "secret_key": "my-secret-key3",
-                            "clock_skew": 0
+                            "clock_skew":  0
                         }
-                    }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
-            if code >= 300 then
-                ngx.status = code
+            if code == 400 then
+                ngx.say(body)
             end
-            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+-- error_code: 400
+--- response_body eval
+qr/.*failed to check the configuration of plugin hmac-auth err.*/
+
+
+
+=== TEST 16: add route with valid clock skew
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "key_id": "my-access-key3",
+                            "secret_key": "my-secret-key3",
+                            "clock_skew":  1000000000000
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code == 200 then
+                ngx.say(body)
+            end
         }
     }
 --- request
@@ -413,14 +436,12 @@ passed
 
 
 
-=== TEST 16: verify: invalid signature
+=== TEST 17: verify: invalid signature
 --- request
 GET /hello
 --- more_headers
-X-HMAC-SIGNATURE: asdf
-X-HMAC-ALGORITHM: hmac-sha256
+Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
 Date: Thu, 24 Sep 2020 06:39:52 GMT
-X-HMAC-ACCESS-KEY: my-access-key3
 --- error_code: 401
 --- response_body
 {"message":"client request can't be validated"}
@@ -431,29 +452,47 @@ client request can't be validated: Invalid signature
 
 
 
-=== TEST 17: add consumer with 1 clock skew
+=== TEST 18: verify: invalid signature
+--- request
+GET /hello
+--- more_headers
+Authorization: Signature keyId="my-access-key",algorithm="hmac-sha256",headers="@request-target date",signature="asdf"
+Date: Thu, 24 Sep 2020 06:39:52 GMT
+--- error_code: 401
+--- response_body
+{"message":"client request can't be validated"}
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
+
+
+
+=== TEST 19: add route with 1 clock skew
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "pony",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "my-access-key2",
-                            "secret_key": "my-secret-key2",
-                            "clock_skew": 1
+                            "clock_skew":  1
                         }
-                    }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
-
-            if code >= 300 then
-                ngx.status = code
+            if code == 200 then
+                ngx.say(body)
             end
-            ngx.say(body)
         }
     }
 --- request
@@ -463,7 +502,7 @@ passed
 
 
 
-=== TEST 18: verify: Invalid GMT format time
+=== TEST 20: verify: Invalid GMT format time
 --- config
 location /t {
     content_by_lua_block {
@@ -474,26 +513,23 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
 
-        local secret_key = "my-secret-key2"
+        local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key2"
+        local key_id = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         ngx.sleep(2)
 
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_b
+            key_id .. gmt .. custom_header_a .. custom_header_b
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
-        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["Date"] = gmt
-        headers["X-HMAC-ACCESS-KEY"] = access_key
-        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
 
@@ -520,7 +556,39 @@ client request can't be validated: Clock skew exceeded
 
 
 
-=== TEST 19: verify: put ok
+=== TEST 21: update route with default clock skew
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+            if code == 200 then
+                ngx.say(body)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: verify: put ok
 --- config
 location /t {
     content_by_lua_block {
@@ -538,18 +606,16 @@ location /t {
         local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key"
+        local key_id = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_b = "23879fmsldfk"
 
         local signing_string = {
-            "PUT",
-            "/hello",
-            "",
-            access_key,
-            gmt,
-            "x-custom-header-a:" .. custom_header_a,
-            "x-custom-header-b:" .. custom_header_b
+            key_id,
+            "PUT /hello",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a,
+            "x-custom-header-b: " .. custom_header_b
         }
         signing_string = core.table.concat(signing_string, "\n") .. "\n"
         core.log.info("signing_string:", signing_string)
@@ -557,11 +623,8 @@ location /t {
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
-        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["Date"] = gmt
-        headers["X-HMAC-ACCESS-KEY"] = access_key
-        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-b"
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-b"] = custom_header_b
 
@@ -583,97 +646,26 @@ passed
 
 
 
-=== TEST 20: verify: put ok (pass auth data by header `Authorization`)
---- config
-location /t {
-    content_by_lua_block {
-        local ngx_time = ngx.time
-        local ngx_http_time   = ngx.http_time
-        local core = require("apisix.core")
-        local t = require("lib.test_admin")
-        local hmac = require("resty.hmac")
-        local ngx_encode_base64 = ngx.encode_base64
-
-        local data = {cert = "ssl_cert", key = "ssl_key", sni = "test.com"}
-        local req_body = core.json.encode(data)
-        req_body = req_body or ""
-
-        local secret_key = "my-secret-key"
-        local timestamp = ngx_time()
-        local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key"
-        local custom_header_a = "asld$%dfasf"
-        local custom_header_b = "23879fmsldfk"
-
-        local signing_string = {
-            "PUT",
-            "/hello",
-            "",
-            access_key,
-            gmt,
-            "x-custom-header-a:" .. custom_header_a,
-            "x-custom-header-b:" .. custom_header_b
-        }
-        signing_string = core.table.concat(signing_string, "\n") .. "\n"
-
-        core.log.info("signing_string:", signing_string)
-        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
-        core.log.info("signature:", ngx_encode_base64(signature))
-        local auth_string = "hmac-auth-v1#" .. access_key .. "#" .. ngx_encode_base64(signature) .. "#" ..
-        "hmac-sha256#" .. gmt .. "#x-custom-header-a;x-custom-header-b"
-
-        local headers = {}
-        headers["Authorization"] = auth_string
-        headers["x-custom-header-a"] = custom_header_a
-        headers["x-custom-header-b"] = custom_header_b
-
-        local code, body = t.test('/hello',
-            ngx.HTTP_PUT,
-            req_body,
-            nil,
-            headers
-        )
-
-        ngx.status = code
-        ngx.say(body)
-    }
-}
---- request
-GET /t
---- response_body
-passed
-
-
-
-=== TEST 21: hit route without auth info
---- request
-GET /hello
---- error_code: 401
---- response_body
-{"message":"client request can't be validated"}
---- grep_error_log eval
-qr/client request can't be validated: [^,]+/
---- grep_error_log_out
-client request can't be validated: access key or signature missing
-
-
-
-=== TEST 22: add consumer with signed_headers
+=== TEST 23: update route with signed_headers
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/consumers',
+            local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
-                    "username": "cook",
                     "plugins": {
                         "hmac-auth": {
-                            "access_key": "my-access-key5",
-                            "secret_key": "my-secret-key5",
-                            "signed_headers": ["x-custom-header-a", "x-custom-header-b"]
+                            "signed_headers": ["date","x-custom-header-a", "x-custom-header-b"]
                         }
-                    }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
                 }]]
                 )
 
@@ -690,7 +682,7 @@ passed
 
 
 
-=== TEST 23: verify with invalid signed header
+=== TEST 24: verify with invalid signed header
 --- config
 location /t {
     content_by_lua_block {
@@ -701,24 +693,21 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
 
-        local secret_key = "my-secret-key5"
+        local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key5"
+        local key_id = "my-access-key"
         local custom_header_a = "asld$%dfasf"
         local custom_header_c = "23879fmsldfk"
 
         local signing_string = "GET" .. "/hello" ..  "" ..
-            access_key .. gmt .. custom_header_a .. custom_header_c
+            key_id .. gmt .. custom_header_a .. custom_header_c
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
-        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["Date"] = gmt
-        headers["X-HMAC-ACCESS-KEY"] = access_key
-        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a;x-custom-header-c"
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-c\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         headers["x-custom-header-a"] = custom_header_a
         headers["x-custom-header-c"] = custom_header_c
 
@@ -741,11 +730,11 @@ qr/{"message":"client request can't be validated"}/
 --- grep_error_log eval
 qr/client request can't be validated: [^,]+/
 --- grep_error_log_out
-client request can't be validated: Invalid signed header x-custom-header-c
+client request can't be validated: expected header "x-custom-header-b" missing in signing
 
 
 
-=== TEST 24: verify ok with signed headers
+=== TEST 25: verify ok with signed headers
 --- config
 location /t {
     content_by_lua_block {
@@ -756,32 +745,29 @@ location /t {
         local hmac = require("resty.hmac")
         local ngx_encode_base64 = ngx.encode_base64
 
-        local secret_key = "my-secret-key5"
+        local secret_key = "my-secret-key"
         local timestamp = ngx_time()
         local gmt = ngx_http_time(timestamp)
-        local access_key = "my-access-key5"
+        local key_id = "my-access-key"
         local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "asld$%dfasf"
 
         local signing_string = {
-            "GET",
-            "/hello",
-            "",
-            access_key,
-            gmt,
-            "x-custom-header-a:" .. custom_header_a
+            key_id,
+            "GET /hello",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a,
+            "x-custom-header-b: " .. custom_header_b
         }
         signing_string = core.table.concat(signing_string, "\n") .. "\n"
 
         local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
         core.log.info("signature:", ngx_encode_base64(signature))
         local headers = {}
-        headers["X-HMAC-SIGNATURE"] = ngx_encode_base64(signature)
-        headers["X-HMAC-ALGORITHM"] = "hmac-sha256"
         headers["date"] = gmt
-        headers["X-HMAC-ACCESS-KEY"] = access_key
-        headers["X-HMAC-SIGNED-HEADERS"] = "x-custom-header-a"
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
         headers["x-custom-header-a"] = custom_header_a
-
+        headers["x-custom-header-b"] = custom_header_b
         local code, body = t.test('/hello',
             ngx.HTTP_GET,
             "",
@@ -800,7 +786,7 @@ passed
 
 
 
-=== TEST 25: add consumer with plugin hmac-auth - empty configuration
+=== TEST 26: add consumer with plugin hmac-auth - empty configuration
 --- config
     location /t {
         content_by_lua_block {
@@ -823,4 +809,366 @@ passed
 GET /t
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"(access|secret)_key\\" is required"\}/
+qr/\{"error_msg":"invalid plugins configuration: failed to check the configuration of plugin hmac-auth err: property \\"(key_id|secret_key)\\" is required"\}/
+
+
+
+=== TEST 27: add route with no allowed algorithms
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "allowed_algorithms": []
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body eval
+qr/validation failed: expect array to have at least 1 items/
+
+
+
+=== TEST 28: update route with signed_headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "hide_credentials": true
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/headers"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 29: verify Authorization header missing
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local key_id = "my-access-key"
+
+        local signing_string = {
+            key_id,
+            "GET /headers",
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["date"] = gmt
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+        local code, _, body = t.test('/headers',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        if string.find(body,"Authorization") then
+            ngx.say("failed")
+        else
+            ngx.say("passed")
+        end
+    }
+}
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 30 : update route with signed_headers
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "signed_headers": ["date","x-custom-header-a", "x-custom-header-b"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 31: verify error with the client only sends one in the request, but there are two in the signature
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local key_id = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "asld$%dfasf"
+
+        local signing_string = {
+            key_id,
+            "GET /hello",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a,
+            "x-custom-header-b: " .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["date"] = gmt
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+        headers["x-custom-header-a"] = custom_header_a
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/client request can't be validated/
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
+
+
+
+=== TEST 32: verify error with the client sends two in the request, but there is only one in the signature
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local key_id = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "asld$%dfasf"
+
+        local signing_string = {
+            key_id,
+            "GET /hello",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA256):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["date"] = gmt
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha256\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/client request can't be validated/
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid signature
+
+
+
+=== TEST 33 : update route with allowed_algorithms
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "hmac-auth": {
+                            "allowed_algorithms": ["hmac-sha256"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 34: verify with hmac-sha1 algorithm, not part of allowed_algorithms
+--- config
+location /t {
+    content_by_lua_block {
+        local ngx_time = ngx.time
+        local ngx_http_time = ngx.http_time
+        local core = require("apisix.core")
+        local t = require("lib.test_admin")
+        local hmac = require("resty.hmac")
+        local ngx_encode_base64 = ngx.encode_base64
+
+        local secret_key = "my-secret-key"
+        local timestamp = ngx_time()
+        local gmt = ngx_http_time(timestamp)
+        local key_id = "my-access-key"
+        local custom_header_a = "asld$%dfasf"
+        local custom_header_b = "asld$%dfasf"
+
+        local signing_string = {
+            key_id,
+            "GET /hello",
+            "date: " .. gmt,
+            "x-custom-header-a: " .. custom_header_a,
+            "x-custom-header-b: " .. custom_header_b
+        }
+        signing_string = core.table.concat(signing_string, "\n") .. "\n"
+
+        local signature = hmac:new(secret_key, hmac.ALGOS.SHA1):final(signing_string)
+        core.log.info("signature:", ngx_encode_base64(signature))
+        local headers = {}
+        headers["date"] = gmt
+        headers["Authorization"] = "Signature keyId=\"" .. key_id .. "\",algorithm=\"hmac-sha1\"" .. ",headers=\"@request-target date x-custom-header-a x-custom-header-b\",signature=\"" .. ngx_encode_base64(signature) .. "\""
+        headers["x-custom-header-a"] = custom_header_a
+        headers["x-custom-header-b"] = custom_header_b
+        local code, body = t.test('/hello',
+            ngx.HTTP_GET,
+            "",
+            nil,
+            headers
+        )
+
+        ngx.status = code
+        ngx.say(body)
+    }
+}
+--- request
+GET /t
+--- error_code: 401
+--- response_body eval
+qr/client request can't be validated/
+--- grep_error_log eval
+qr/client request can't be validated: [^,]+/
+--- grep_error_log_out
+client request can't be validated: Invalid algorithm

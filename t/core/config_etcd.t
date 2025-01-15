@@ -36,7 +36,7 @@ deployment:
   etcd:
     prefix: "/apisix"
     host:
-      - "http://127.0.0.1:7777"  -- wrong etcd port
+      - "http://127.0.0.1:7777" # wrong etcd port
     timeout: 1
 --- config
     location /t {
@@ -60,7 +60,7 @@ qr/(connection refused){1,}/
 apisix:
   node_listen: 1984
   ssl:
-    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
+    ssl_trusted_combined_path: t/servroot/conf/cert/etcd.pem
 deployment:
   role: traditional
   role_traditional:
@@ -208,10 +208,10 @@ deployment:
     config_provider: etcd
   etcd:
     host:
-      - "http://127.0.0.1:1980" -- fake server port
+      - "http://127.0.0.1:1980" # fake server port
     timeout: 1
-    user: root                    # root username for etcd
-    password: 5tHkHhYkjr6cQY      # root password for etcd
+    user: root                  # root username for etcd
+    password: 5tHkHhYkjr6cQY    # root password for etcd
 --- extra_init_by_lua
 local health_check = require("resty.etcd.health_check")
 health_check.get_target_status = function()
@@ -486,3 +486,33 @@ passed
 hello world
 passed
 {"error_msg":"404 Route Not Found"}
+
+
+
+=== TEST 13: the main watcher should be initialised once
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  admin:
+    admin_key: null
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    watch_timeout: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            ngx.sleep(1)
+        }
+    }
+--- request
+GET /t
+--- grep_error_log eval
+qr/main etcd watcher initialised, revision=/
+--- grep_error_log_out
+main etcd watcher initialised, revision=
+main etcd watcher initialised, revision=

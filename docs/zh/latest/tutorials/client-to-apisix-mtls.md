@@ -205,9 +205,19 @@ APISIX 允许配置 URI 白名单以便绕过 MTLS。如果请求的 URI 在白�
 
 1. 配置路由和证书
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/*",
     "upstream": {
@@ -218,7 +228,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "cert": "'"$(<t/certs/mtls_server.crt)"'",
     "key": "'"$(<t/certs/mtls_server.key)"'",
@@ -233,7 +243,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
         ]
     }
 }'
-
+```
 
 2. 如果没提供客户端证书，而 URI 又不在白名单内，会得到 HTTP 400 响应。
 
@@ -296,7 +306,7 @@ curl https://admin.apisix.dev:9443/uuid -v \
 <p><em>Powered by <a href="https://apisix.apache.org/">APISIX</a>.</em></p></body>
 </html>
 * Connection #0 to host admin.apisix.dev left intact
-
+```
 
 3. 虽然没提供客户端证书，但是 URI 在白名单内，请求会被成功处理和响应。
 

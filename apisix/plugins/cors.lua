@@ -75,11 +75,9 @@ local schema = {
         },
         expose_headers = {
             description =
-                "you can use '*' to expose all header when no credentials," ..
-                "'**' to allow forcefully(it will bring some security risks, be carefully)," ..
-                "multiple header use ',' to split. default: *.",
-            type = "string",
-            default = "*"
+                "multiple header use ',' to split." ..
+                "If not specified, no custom headers are exposed.",
+            type = "string"
         },
         max_age = {
             description =
@@ -226,7 +224,9 @@ local function set_cors_headers(conf, ctx)
     core.response.set_header("Access-Control-Allow-Origin", ctx.cors_allow_origins)
     core.response.set_header("Access-Control-Allow-Methods", allow_methods)
     core.response.set_header("Access-Control-Max-Age", conf.max_age)
-    core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
+    if conf.expose_headers ~= nil and conf.expose_headers ~= "" then
+        core.response.set_header("Access-Control-Expose-Headers", conf.expose_headers)
+    end
     if conf.allow_headers == "**" then
         core.response.set_header("Access-Control-Allow-Headers",
             core.request.header(ctx, "Access-Control-Request-Headers"))
@@ -341,15 +341,32 @@ function _M.header_filter(conf, ctx)
     local req_origin =  ctx.original_request_origin
     -- If allow_origins_by_regex is not nil, should be matched to it only
     local allow_origins
-    if conf.allow_origins_by_regex == nil then
-        allow_origins = process_with_allow_origins(
-            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins, ctx, req_origin
+    local allow_origins_local = false
+    if conf.allow_origins_by_metadata then
+        allow_origins = process_with_allow_origins_by_metadata(
+            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_metadata, ctx, req_origin
         )
+        if not match_origins(req_origin, allow_origins) then
+            if conf.allow_origins and conf.allow_origins ~= "*" then
+                allow_origins_local = true
+            end
+        end
     else
-        allow_origins = process_with_allow_origins_by_regex(
-            TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_regex,
-            conf, ctx, req_origin
-        )
+        allow_origins_local = true
+    end
+    if conf.allow_origins_by_regex == nil then
+        if allow_origins_local then
+            allow_origins = process_with_allow_origins(
+                TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins, ctx, req_origin
+            )
+        end
+    else
+        if allow_origins_local then
+            allow_origins = process_with_allow_origins_by_regex(
+                TYPE_ACCESS_CONTROL_ALLOW_ORIGIN, conf.allow_origins_by_regex,
+                conf, ctx, req_origin
+            )
+        end
     end
     if not match_origins(req_origin, allow_origins) then
         allow_origins = process_with_allow_origins_by_metadata(

@@ -32,13 +32,29 @@ description: 本文介绍了关于 Apache APISIX `grpc-web` 插件的基本信�
 
 `grpc-web` 插件是一个代理插件，可以处理从 JavaScript 客户端到 gRPC Service 的 [gRPC Web](https://github.com/grpc/grpc-web) 请求。
 
+## 属性
+
+| 名称                  | 类型    | 必选项 | 默认值                                     | 描述                                                             |
+|---------------------| ------- |----|-----------------------------------------|----------------------------------------------------------------|
+| cors_allow_headers  | string  | 否  | "content-type,x-grpc-web,x-user-agent"  | 允许跨域访问时请求方携带哪些非 `CORS 规范` 以外的 Header。如果你有多个 Header，请使用 `,` 分割。 |
+
 ## 启用插件
 
 你可以通过如下命令在指定路由上启用 `gRPC-web` 插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri":"/grpc/web/*",
     "plugins":{
@@ -82,7 +98,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri":"/grpc/web/*",
     "plugins":{},

@@ -199,10 +199,17 @@ local config_schema = {
                 dns_resolver_valid = {
                     type = "integer",
                 },
+                enable_http2 = {
+                    type = "boolean",
+                    default = true
+                },
                 ssl = {
                     type = "object",
                     properties = {
                         ssl_trusted_certificate = {
+                            type = "string",
+                        },
+                        ssl_trusted_combined_path = {
                             type = "string",
                         },
                         listen = {
@@ -218,13 +225,18 @@ local config_schema = {
                                         minimum = 1,
                                         maximum = 65535
                                     },
-                                    enable_http2 = {
+                                    enable_http3 = {
                                         type = "boolean",
-                                    }
+                                    },
                                 }
                             }
                         },
-                        key_encrypt_salt = {
+                    }
+                },
+                data_encryption = {
+                    type = "object",
+                    properties = {
+                        keyring = {
                             anyOf = {
                                 {
                                     type = "array",

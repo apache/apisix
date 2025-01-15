@@ -122,8 +122,8 @@ routes:
         nodes:
             "127.0.0.1:1983": 1
         type: roundrobin
-        pass_host: "rewrite",
-        upstream_host: "www.test.com",
+        pass_host: "rewrite"
+        upstream_host: "www.test.com"
 #END
 --- request
 GET /uri
@@ -149,7 +149,7 @@ routes:
         nodes:
             "localhost:1983": 1
         type: roundrobin
-        pass_host: "node",
+        pass_host: "node"
 #END
 --- request
 GET /uri

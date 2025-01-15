@@ -40,12 +40,72 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 | endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                            |
 | service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
 | service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |   |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 | timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
-| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger.                                                                    |
+| name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                    |
 | include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                     |
+| include_req_body_expr  | array         | False    |         |               | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
+| include_resp_body      | boolean       | False    | false   | [false, true] | When set to `true` includes the response body in the log.                                                                                                                                                                      |
+| include_resp_body_expr | array         | False    |         |               | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+
+### Example of default log format
+
+  ```json
+   {
+      "serviceInstance": "APISIX Instance Name",
+      "body": {
+        "json": {
+          "json": "body-json"
+        }
+      },
+      "endpoint": "/opentracing",
+      "service": "APISIX"
+    }
+  ```
+
+For body-json data, it is an escaped json string
+
+  ```json
+    {
+      "response": {
+        "status": 200,
+        "headers": {
+          "server": "APISIX/3.7.0",
+          "content-type": "text/plain",
+          "transfer-encoding": "chunked",
+          "connection": "close"
+        },
+        "size": 136
+      },
+      "route_id": "1",
+      "upstream": "127.0.0.1:1982",
+      "upstream_latency": 8,
+      "apisix_latency": 101.00020599365,
+      "client_ip": "127.0.0.1",
+      "service_id": "",
+      "server": {
+        "hostname": "localhost",
+        "version": "3.7.0"
+      },
+      "start_time": 1704429712768,
+      "latency": 109.00020599365,
+      "request": {
+        "headers": {
+          "content-length": "9",
+          "host": "localhost",
+          "connection": "close"
+        },
+        "method": "POST",
+        "body": "body-data",
+        "size": 94,
+        "querystring": {},
+        "url": "http://localhost:1984/opentracing",
+        "uri": "/opentracing"
+      }
+    }
+  ```
 
 ## Metadata
 
@@ -53,7 +113,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -63,8 +123,17 @@ Configuring the Plugin metadata is global in scope. This means that it will take
 
 The example below shows how you can configure through the Admin API:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -86,7 +155,7 @@ With this configuration, your logs would be formatted as shown below:
 Once you have set up your SkyWalking OAP server, you can enable the Plugin on a specific Route as shown below:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "skywalking-logger": {
@@ -116,7 +185,7 @@ curl -i http://127.0.0.1:9080/hello
 To remove the `skywalking-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

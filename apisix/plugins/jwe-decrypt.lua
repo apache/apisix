@@ -47,10 +47,11 @@ local consumer_schema = {
     type = "object",
     properties = {
         key = { type = "string" },
-        secret = { type = "string", minLength = 32 },
+        secret = { type = "string" },
         is_base64_encoded = { type = "boolean" },
     },
     required = { "key", "secret" },
+    encrypt_fields = { "key", "secret" },
 }
 
 
@@ -66,7 +67,35 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
-        return core.schema.check(consumer_schema, conf)
+        local ok, err = core.schema.check(consumer_schema, conf)
+        if not ok then
+            return false, err
+        end
+
+        local local_conf, err = core.config.local_conf(true)
+        if not local_conf then
+            return false, "failed to load the configuration file: " .. err
+        end
+
+        local encrypted = core.table.try_read_attr(local_conf, "apisix", "data_encryption",
+        "enable_encrypt_fields") and (core.config.type == "etcd")
+
+        -- if encrypted, the secret length will exceed 32 so don't check
+        if not encrypted then
+            -- restrict the length of secret, we use A256GCM for encryption,
+            -- so the length should be 32 chars only
+            if conf.is_base64_encoded then
+                if #base64.decode_base64url(conf.secret) ~= 32 then
+                    return false, "the secret length after base64 decode should be 32 chars"
+                end
+            else
+                if #conf.secret ~= 32 then
+                    return false, "the secret length should be 32 chars"
+                end
+            end
+        end
+
+        return true
     end
     return core.schema.check(schema, conf)
 end
@@ -110,7 +139,7 @@ local function jwe_decrypt_with_obj(o, consumer)
         secret,
         nil,
         cipher,
-        {iv = o.iv}
+        {iv = dec(o.iv)}
     )
 
     local decrypted = aes_default:decrypt(dec(o.ciphertext), dec(o.tag))

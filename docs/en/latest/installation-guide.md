@@ -126,7 +126,7 @@ sudo yum install apisix
 You can also install a specific version of APISIX by specifying it:
 
 ```shell
-sudo yum install apisix-2.13.1
+sudo yum install apisix-3.8.0
 ```
 
 :::
@@ -178,14 +178,10 @@ Currently the only DEB repository supported by APISIX is Debian 11 (Bullseye) an
 
 ```shell
 # amd64
-echo "deb http://openresty.org/package/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
-wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
 echo "deb http://repos.apiseven.com/packages/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
 
 # arm64
-echo "deb http://openresty.org/package/arm64/debian bullseye openresty" | sudo tee /etc/apt/sources.list.d/openresty.list
-wget -O - https://openresty.org/package/pubkey.gpg | sudo apt-key add -
 wget -O - http://repos.apiseven.com/pubkey.gpg | sudo apt-key add -
 echo "deb http://repos.apiseven.com/packages/arm64/debian bullseye main" | sudo tee /etc/apt/sources.list.d/apisix.list
 ```
@@ -194,7 +190,7 @@ Then, to install APISIX, run:
 
 ```shell
 sudo apt update
-sudo apt install -y apisix=3.0.0-0
+sudo apt install -y apisix=3.8.0-0
 ```
 
 ### Managing APISIX server
@@ -275,7 +271,7 @@ You can configure your APISIX deployment in two ways:
    apisix start -c <path to config file>
    ```
 
-APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured.
+APISIX will use the configurations added in this configuration file and will fall back to the default configuration if anything is not configured. The default configurations can be found in `apisix/cli/config.lua` and should not be modified.
 
 For example, to configure the default listening port to be `8000` without changing other configurations, your configuration file could look like this:
 
@@ -298,12 +294,6 @@ deployment:
     host:
       - "http://foo:2379"
 ```
-
-:::warning
-
-APISIX's default configuration can be found in `conf/config-default.yaml` file and it should not be modified. It is bound to the source code and the configuration should only be changed by the methods mentioned above.
-
-:::
 
 :::warning
 

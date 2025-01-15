@@ -132,155 +132,176 @@ local function do_run_watch(premature)
         return
     end
 
-    local local_conf, err = config_local.local_conf()
-    if not local_conf then
-        error("no local conf: " .. err)
-    end
-    watch_ctx.prefix = local_conf.etcd.prefix .. "/"
-
-    watch_ctx.cli, err = get_etcd()
-    if not watch_ctx.cli then
-        error("failed to create etcd instance: " .. string(err))
-    end
-
-    local rev = 0
-    if loaded_configuration then
-        local _, res = next(loaded_configuration)
-        if res then
-            rev = tonumber(res.headers["X-Etcd-Index"])
-            assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
+    -- the main watcher first start
+    if watch_ctx.started == false then
+        local local_conf, err = config_local.local_conf()
+        if not local_conf then
+            error("no local conf: " .. err)
         end
-    end
+        watch_ctx.prefix = local_conf.etcd.prefix .. "/"
+        watch_ctx.timeout = local_conf.etcd.watch_timeout
 
-    if rev == 0 then
-        while true do
-            local res, err = watch_ctx.cli:get(watch_ctx.prefix)
-            if not res then
-                log.error("etcd get: ", err)
-                ngx_sleep(3)
-            else
-                rev = tonumber(res.body.header.revision)
-                break
+        watch_ctx.cli, err = get_etcd()
+        if not watch_ctx.cli then
+            error("failed to create etcd instance: " .. string(err))
+        end
+
+        local rev = 0
+        if loaded_configuration then
+            local _, res = next(loaded_configuration)
+            if res then
+                rev = tonumber(res.headers["X-Etcd-Index"])
+                assert(rev > 0, 'invalid res.headers["X-Etcd-Index"]')
             end
         end
-    end
 
-    watch_ctx.rev = rev + 1
-    watch_ctx.started = true
+        if rev == 0 then
+            while true do
+                local res, err = watch_ctx.cli:get(watch_ctx.prefix)
+                if not res then
+                    log.error("etcd get: ", err)
+                    ngx_sleep(3)
+                else
+                    rev = tonumber(res.body.header.revision)
+                    break
+                end
+            end
+        end
 
-    log.warn("main etcd watcher started, revision=", watch_ctx.rev)
-    for _, sema in pairs(watch_ctx.wait_init) do
-        sema:post()
+        watch_ctx.rev = rev + 1
+        watch_ctx.started = true
+
+        log.info("main etcd watcher initialised, revision=", watch_ctx.rev)
+
+        if watch_ctx.wait_init then
+            for _, sema in pairs(watch_ctx.wait_init) do
+                sema:post()
+            end
+            watch_ctx.wait_init = nil
+        end
     end
-    watch_ctx.wait_init = nil
 
     local opts = {}
-    opts.timeout = 50 -- second
+    opts.timeout = watch_ctx.timeout or 50 -- second
     opts.need_cancel = true
+    opts.start_revision = watch_ctx.rev
 
-    ::restart_watch::
+    log.info("restart watchdir: start_revision=", opts.start_revision)
+
+    local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
+    if not res_func then
+        log.error("watchdir err: ", err)
+        ngx_sleep(3)
+        return
+    end
+
+    ::watch_event::
     while true do
-        opts.start_revision = watch_ctx.rev
-        log.info("restart watchdir: start_revision=", opts.start_revision)
-        local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
-        if not res_func then
-            log.error("watchdir: ", err)
-            ngx_sleep(3)
-            goto restart_watch
+        local res, err = res_func()
+        if log_level >= NGX_INFO then
+            log.info("res_func: ", inspect(res))
         end
 
-        ::watch_event::
-        while true do
-            local res, err = res_func()
-            if log_level >= NGX_INFO then
-                log.info("res_func: ", inspect(res))
+        if not res then
+            if err ~= "closed" and
+                err ~= "timeout" and
+                err ~= "broken pipe"
+            then
+                log.error("wait watch event: ", err)
             end
+            cancel_watch(http_cli)
+            break
+        end
 
-            if not res then
-                if err ~= "closed" and
-                    err ~= "timeout" and
-                    err ~= "broken pipe"
-                then
-                    log.error("wait watch event: ", err)
-                end
-                cancel_watch(http_cli)
-                break
+        if res.error then
+            log.error("wait watch event: ", inspect(res.error))
+            cancel_watch(http_cli)
+            break
+        end
+
+        if res.result.created then
+            goto watch_event
+        end
+
+        if res.result.canceled then
+            log.warn("watch canceled by etcd, res: ", inspect(res))
+            if res.result.compact_revision then
+                watch_ctx.rev = tonumber(res.result.compact_revision)
+                log.error("etcd compacted, compact_revision=", watch_ctx.rev)
+                produce_res(nil, "compacted")
             end
+            cancel_watch(http_cli)
+            break
+        end
 
-            if res.error then
-                log.error("wait watch event: ", inspect(res.error))
-                cancel_watch(http_cli)
-                break
+        -- cleanup
+        local min_idx = 0
+        for _, idx in pairs(watch_ctx.idx) do
+            if (min_idx == 0) or (idx < min_idx) then
+                min_idx = idx
             end
+        end
 
-            if res.result.created then
-                goto watch_event
+        for i = 1, min_idx - 1 do
+            watch_ctx.res[i] = false
+        end
+
+        if min_idx > 100 then
+            for k, idx in pairs(watch_ctx.idx) do
+                watch_ctx.idx[k] = idx - min_idx + 1
             end
-
-            if res.result.canceled then
-                log.warn("watch canceled by etcd, res: ", inspect(res))
-                if res.result.compact_revision then
-                    watch_ctx.rev = tonumber(res.result.compact_revision)
-                    log.warn("etcd compacted, compact_revision=", watch_ctx.rev)
-                    produce_res(nil, "compacted")
-                end
-                cancel_watch(http_cli)
-                break
-            end
-
-            -- cleanup
-            local min_idx = 0
-            for _, idx in pairs(watch_ctx.idx) do
-                if (min_idx == 0) or (idx < min_idx) then
-                    min_idx = idx
-                end
-            end
-
+            -- trim the res table
             for i = 1, min_idx - 1 do
-                watch_ctx.res[i] = false
+                table.remove(watch_ctx.res, 1)
             end
-
-            if min_idx > 100 then
-                for k, idx in pairs(watch_ctx.idx) do
-                    watch_ctx.idx[k] = idx - min_idx + 1
-                end
-                -- trim the res table
-                for i = 1, min_idx - 1 do
-                    table.remove(watch_ctx.res, 1)
-                end
-            end
-
-            local rev = tonumber(res.result.header.revision)
-            if rev > watch_ctx.rev then
-                watch_ctx.rev = rev + 1
-            end
-            produce_res(res)
         end
+
+        local rev = tonumber(res.result.header.revision)
+        if rev == nil then
+            log.warn("receive a invalid revision header, header: ", inspect(res.result.header))
+            cancel_watch(http_cli)
+            break
+        end
+        if rev > watch_ctx.rev then
+            watch_ctx.rev = rev + 1
+        end
+        produce_res(res)
     end
 end
 
 
 local function run_watch(premature)
-    local run_watch_th = ngx_thread_spawn(do_run_watch, premature)
+    local run_watch_th, err = ngx_thread_spawn(do_run_watch, premature)
+    if not run_watch_th then
+        log.error("failed to spawn thread do_run_watch: ", err)
+        return
+    end
 
-    ::restart::
-    local check_worker_th = ngx_thread_spawn(function ()
+    local check_worker_th, err = ngx_thread_spawn(function ()
         while not exiting() do
             ngx_sleep(0.1)
         end
     end)
+    if not check_worker_th then
+        log.error("failed to spawn thread check_worker: ", err)
+        return
+    end
 
-    local ok, err = ngx_thread_wait(check_worker_th)
-
+    local ok, err = ngx_thread_wait(run_watch_th, check_worker_th)
     if not ok then
-        log.error("check_worker thread terminates failed, retart checker, error: " .. err)
-        ngx_thread_kill(check_worker_th)
-        goto restart
+        log.error("run_watch or check_worker thread terminates failed",
+                        " restart those threads, error: ", inspect(err))
     end
 
     ngx_thread_kill(run_watch_th)
-    -- notify child watchers
-    produce_res(nil, "worker exited")
+    ngx_thread_kill(check_worker_th)
+
+    if not exiting() then
+        ngx_timer_at(0, run_watch)
+    else
+        -- notify child watchers
+        produce_res(nil, "worker exited")
+    end
 end
 
 
@@ -523,7 +544,7 @@ local function load_full_data(self, dir_res, headers)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item.value)
+                data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item.value))
@@ -614,7 +635,7 @@ local function sync_data(self)
     if not dir_res then
         if err == "compacted" then
             self.need_reload = true
-            log.warn("waitdir [", self.key, "] err: ", err,
+            log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
             return false
         end
@@ -636,6 +657,7 @@ local function sync_data(self)
     -- waitdir will return [res] even for self.single_item = true
     for _, res in ipairs(res_copy) do
         local key
+        local data_valid = true
         if self.single_item then
             key = self.key
         else
@@ -643,33 +665,37 @@ local function sync_data(self)
         end
 
         if res.value and not self.single_item and type(res.value) ~= "table" then
-            self:upgrade_version(res.modifiedIndex)
-            return false, "invalid item data of [" .. self.key .. "/" .. key
-                            .. "], val: " .. res.value
-                            .. ", it should be an object"
+            data_valid = false
+            log.error("invalid item data of [", self.key .. "/" .. key,
+                      "], val: ", res.value,
+                      ", it should be an object")
         end
 
-        if res.value and self.item_schema then
-            local ok, err = check_schema(self.item_schema, res.value)
-            if not ok then
-                self:upgrade_version(res.modifiedIndex)
-
-                return false, "failed to check item data of ["
-                                .. self.key .. "] err:" .. err
-            end
-
-            if self.checker then
-                local ok, err = self.checker(res.value)
-                if not ok then
-                    self:upgrade_version(res.modifiedIndex)
-
-                    return false, "failed to check item data of ["
-                                    .. self.key .. "] err:" .. err
-                end
+        if data_valid and res.value and self.item_schema then
+            data_valid, err = check_schema(self.item_schema, res.value)
+            if not data_valid then
+                log.error("failed to check item data of [", self.key,
+                          "] err:", err, " ,val: ", json.encode(res.value))
             end
         end
 
+        if data_valid and res.value and self.checker then
+            data_valid, err = self.checker(res.value, res.key)
+            if not data_valid then
+                log.error("failed to check item data of [", self.key,
+                          "] err:", err, " ,val: ", json.delay_encode(res.value))
+            end
+        end
+
+        -- the modifiedIndex tracking should be updated regardless of the validity of the config
         self:upgrade_version(res.modifiedIndex)
+
+        if not data_valid then
+            -- do not update the config cache when the data is invalid
+            -- invalid data should only cancel this config item update, not discard
+            -- the remaining events, use continue instead of loop break and return
+            goto CONTINUE
+        end
 
         if res.dir then
             if res.value then
@@ -743,6 +769,8 @@ local function sync_data(self)
         end
 
         self.conf_version = self.conf_version + 1
+
+        ::CONTINUE::
     end
 
     return self.values

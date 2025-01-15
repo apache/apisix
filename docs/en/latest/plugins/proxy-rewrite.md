@@ -42,7 +42,7 @@ The `proxy-rewrite` Plugin rewrites Upstream proxy information such as `scheme`,
 | host                        | string        | False    |         |                                                                                                                                        | New Upstream host address.                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | headers                     | object        | False    |         |                                                                                                                                   |                   |
 | headers.add     | object   | false     |        |                 | Append the new headers. The format is `{"name": "value",...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. It also supports referencing the match result of `regex_uri` as a variable like `$1-$2-$3`.                                                                                              |
-| headers.set     | object  | false     |        |                 | Overwrite the headers. If the header does not exist, it will be added. The format is  `{"name": "value", ...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. It also supports referencing the match result of `regex_uri` as a variable like `$1-$2-$3`.                                                                                        |
+| headers.set     | object  | false     |        |                 | Overwrite the headers. If the header does not exist, it will be added. The format is  `{"name": "value", ...}`. The values in the header can contain Nginx variables like `$remote_addr` and `$balancer_ip`. It also supports referencing the match result of `regex_uri` as a variable like `$1-$2-$3`. Note that if you would like to set the `Host` header, use the `host` attribute instead.                                                                                       |
 | headers.remove  | array   | false     |        |                 | Remove the headers. The format is `["name", ...]`.
 | use_real_request_uri_unsafe | boolean       | False    | false   |                                                                                                                                        | Use real_request_uri (original $request_uri in nginx) to bypass URI normalization. **Enabling this is considered unsafe as it bypasses all URI normalization steps**.                                                                                                                                                                                                                                                                                                     |
 
@@ -56,8 +56,17 @@ Header configurations are executed according to the following priorities:
 
 The example below enables the `proxy-rewrite` Plugin on a specific Route:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",
@@ -108,7 +117,7 @@ Once you send the request, you can check the Upstream `access.log` for its outpu
 To remove the `proxy-rewrite` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/test/index.html",

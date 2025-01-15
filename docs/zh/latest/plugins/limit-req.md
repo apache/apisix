@@ -43,6 +43,19 @@ description: limit-req 插件使用漏桶算法限制对用户服务的请求速
 | rejected_msg  | string | 否    |        | 非空                                                                                      | 当超过阈值的请求被拒绝时，返回的响应体。|
 | nodelay       | boolean | 否   | false  |                                                                                           | 当设置为 `true` 时，请求速率超过 `rate` 但没有超过（`rate` + `burst`）的请求不会加上延迟；当设置为 `false`，则会加上延迟。 |
 | allow_degradation | boolean | 否 | false |                                                                                          | 当设置为 `true` 时，如果限速插件功能临时不可用，将会自动允许请求继续。|
+| policy              | string  | 否        | "local"        | ["local", "redis", "redis-cluster"]    | 用于检索和增加限制计数的策略。当设置为 `local` 时，计数器被以内存方式保存在节点本地；当设置为 `redis` 时，计数器保存在 Redis 服务节点上，从而可以跨节点共享结果，通常用它来完成全局限速；当设置为 `redis-cluster` 时，使用 Redis 集群而不是单个实例。|
+| redis_host          | string  | 否        |               |                                         | 当使用 `redis` 限速策略时，Redis 服务节点的地址。**当 `policy` 属性设置为 `redis` 时必选。**                                                                                                                                               |
+| redis_port          | integer | 否        | 6379          | [1,...]                                 | 当使用 `redis` 限速策略时，Redis 服务节点的端口。                                                                                                                                                                                      |
+| redis_username      | string  | 否        |               |                                         | 若使用 Redis ACL 进行身份验证（适用于 Redis 版本 >=6.0），则需要提供 Redis 用户名。若使用 Redis legacy 方式 `requirepass` 进行身份验证，则只需将密码配置在 `redis_password`。当 `policy` 设置为 `redis` 时使用。                                                        |
+| redis_password      | string  | 否        |               |                                         | 当使用 `redis`  或者 `redis-cluster`  限速策略时，Redis 服务节点的密码。                                                                                                                                                                 |
+| redis_ssl           | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis`                                                                                                                                                                      |
+| redis_ssl_verify    | boolean | 否        | false         |                                         | 当使用 `redis` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性，具体请参考 [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                                                       |
+| redis_database      | integer | 否        | 0             | redis_database >= 0                     | 当使用 `redis` 限速策略时，Redis 服务节点中使用的 `database`，并且只针对非 Redis 集群模式（单实例模式或者提供单入口的 Redis 公有云服务）生效。                                                                                                                           |
+| redis_timeout       | integer | 否        | 1000          | [1,...]                                 | 当 `policy` 设置为 `redis` 或 `redis-cluster` 时，Redis 服务节点的超时时间（以毫秒为单位）。                                                                                                                                             |
+| redis_cluster_nodes | array   | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的地址列表（至少需要两个地址）。**当 `policy` 属性设置为 `redis-cluster` 时必选。**                                                                                                                 |
+| redis_cluster_name  | string  | 否        |               |                                         | 当使用 `redis-cluster` 限速策略时，Redis 集群服务节点的名称。**当 `policy` 设置为 `redis-cluster` 时必选。**                                                                                                                               |
+| redis_cluster_ssl  | boolean  | 否        |     false    |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则使用 SSL 连接到 `redis-cluster`                                                                                                                                                      |
+| redis_cluster_ssl_verify  | boolean  | 否        |     false        |                                         | 当使用 `redis-cluster` 限速策略时，如果设置为 true，则验证服务器 SSL 证书的有效性                                                                                                                                                                |
 
 ## 启用插件
 
@@ -50,15 +63,25 @@ description: limit-req 插件使用漏桶算法限制对用户服务的请求速
 
 以下示例展示了如何在指定路由上启用 `limit-req` 插件，并设置 `key_type` 的值为 `var`：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var",
@@ -74,7 +97,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 }'
 ```
 
-上述示例表示，APISIX 将客户端的 IP 地址作为限制请求速率的条件，当请求速率小于 3 次每秒（`rate`）时，请求正常；当请求速率大于 3 次每秒（`rate`），小于 5 次每秒（`rate + burst`）时，将会对超出部分的请求进行延迟处理；当请求速率大于 5 次每秒（`rate + burst`）时，超出规定数量的请求将返回 HTTP 状态码 `503`。
+上述示例表示，APISIX 将客户端的 IP 地址作为限制请求速率的条件，当请求速率小于等于 3 次每秒（`rate`）时，请求正常；当请求速率大于 3 次每秒（`rate`），小于等于 5 次每秒（`rate + burst`）时，将会对超出部分的请求进行延迟处理；当请求速率大于 5 次每秒（`rate + burst`）时，超出规定数量的请求将返回 HTTP 状态码 `503`。
 
 你也可以设置 `key_type` 的值为 `var_combination`：
 
@@ -84,7 +107,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var_combination",
@@ -146,7 +169,7 @@ Server: APISIX web server
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/consumers \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer_jack",
     "plugins": {
@@ -167,7 +190,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -219,7 +242,7 @@ HTTP/1.1 403 Forbidden
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -235,7 +258,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 你也可以通过以下命令移除 Consumer 上的 `limit-req` 插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer_jack",
     "plugins": {

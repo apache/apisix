@@ -185,7 +185,7 @@ Access-Control-Allow-Origin: https://test.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -204,7 +204,7 @@ Access-Control-Allow-Origin: https://domain.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -276,7 +276,7 @@ Access-Control-Allow-Origin: https://domain.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -295,7 +295,7 @@ Access-Control-Allow-Origin: https://sub.domain.com
 Vary: Via, Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:
 
@@ -348,6 +348,75 @@ Access-Control-Allow-Origin: http://foo.example.org
 Vary: Origin
 Access-Control-Allow-Methods: *
 Access-Control-Allow-Headers: *
-Access-Control-Expose-Headers: *
+Access-Control-Expose-Headers:
+Access-Control-Max-Age: 5
+Access-Control-Allow-Credentials:
+
+
+
+=== TEST 13: set route (allow_origins_by_metadata specified and allow_origins * is invalid while set allow_origins_by_metadata)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "cors": {
+                            "allow_origins": "*",
+                            "allow_origins_by_metadata": ["key_1"]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: origin not match because allow_origins * invalid
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: http://foo.example.org
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin:
+Access-Control-Allow-Methods:
+Access-Control-Allow-Headers:
+Access-Control-Expose-Headers:
+Access-Control-Max-Age:
+Access-Control-Allow-Credentials:
+
+
+
+=== TEST 15: origin matches with first allow_origins_by_metadata
+--- request
+GET /hello HTTP/1.1
+--- more_headers
+Origin: https://domain.com
+--- response_body
+hello world
+--- response_headers
+Access-Control-Allow-Origin: https://domain.com
+Access-Control-Allow-Methods: *
+Access-Control-Allow-Headers: *
+Access-Control-Expose-Headers:
 Access-Control-Max-Age: 5
 Access-Control-Allow-Credentials:

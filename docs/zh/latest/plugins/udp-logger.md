@@ -41,16 +41,59 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 | port             | integer | 是     |              | [0,...] | 目标端口。                                         |
 | timeout          | integer | 否     | 1000         | [1,...] | 发送数据超时间。                                   |
 | log_format       | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
-| name             | string  | 否     | "udp logger" |         | 用于识别批处理器。                                 |
-| include_req_body | boolean | 否     |              |         | 当设置为 `true` 时，日志中将包含请求体。           |
+| name             | string  | 否     | "udp logger" |         | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                                 |
+| include_req_body | boolean | 否     |              |  [false, true] | 当设置为 `true` 时，日志中将包含请求体。           |
+| include_req_body_expr | array | 否 |       |           | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
+| include_resp_body | boolean | 否     | false | [false, true]| 当设置为 `true` 时，日志中将包含响应体。                                                     |
+| include_resp_body_expr | array | 否 |       |           | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志和数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
+
+### 默认日志格式数据
+
+```json
+{
+  "apisix_latency": 99.999988555908,
+  "service_id": "",
+  "server": {
+    "version": "3.7.0",
+    "hostname": "localhost"
+  },
+  "request": {
+    "method": "GET",
+    "headers": {
+      "connection": "close",
+      "host": "localhost"
+    },
+    "url": "http://localhost:1984/opentracing",
+    "size": 65,
+    "querystring": {},
+    "uri": "/opentracing"
+  },
+  "start_time": 1704527399740,
+  "client_ip": "127.0.0.1",
+  "response": {
+    "status": 200,
+    "size": 136,
+    "headers": {
+      "server": "APISIX/3.7.0",
+      "content-type": "text/plain",
+      "transfer-encoding": "chunked",
+      "connection": "close"
+    }
+  },
+  "upstream": "127.0.0.1:1982",
+  "route_id": "1",
+  "upstream_latency": 12,
+  "latency": 111.99998855591
+}
+```
 
 ## 插件元数据
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否    | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format       | object  | 否    |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头。则表明获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 
 :::info 注意
 
@@ -60,9 +103,19 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 udp-logger �
 
 以下示例展示了如何通过 Admin API 配置插件元数据：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/udp-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -84,7 +137,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/udp-logger \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "udp-logger": {
@@ -123,7 +176,7 @@ hello, world
 当你需要删除该插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

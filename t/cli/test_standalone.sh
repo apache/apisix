@@ -20,6 +20,7 @@
 . ./t/cli/common.sh
 
 standalone() {
+    rm -f conf/apisix.yaml.link
     clean_up
     git checkout conf/apisix.yaml
 }
@@ -53,7 +54,7 @@ routes:
 # check for resolve variables
 var_test_path=/test make init
 
-if ! grep "env var_test_path=/test;" conf/nginx.conf > /dev/null; then
+if ! grep "env var_test_path;" conf/nginx.conf > /dev/null; then
     echo "failed: failed to resolve variables"
     exit 1
 fi
@@ -138,3 +139,19 @@ if [ ! $code -eq 200 ]; then
 fi
 
 echo "passed: resolve variables in apisix.yaml conf success"
+
+# Avoid unnecessary config reloads
+## Wait for a second else `st_ctime` won't increase
+sleep 1
+expected_config_reloads=$(grep "config file $(pwd)/conf/apisix.yaml reloaded." logs/error.log | wc -l)
+
+## Create a symlink to change the link count and as a result `st_ctime`
+ln conf/apisix.yaml conf/apisix.yaml.link
+sleep 1
+
+actual_config_reloads=$(grep "config file $(pwd)/conf/apisix.yaml reloaded." logs/error.log | wc -l)
+if [ $expected_config_reloads -ne $actual_config_reloads ]; then
+    echo "failed: apisix.yaml was reloaded"
+    exit 1
+fi
+echo "passed: apisix.yaml was not reloaded"

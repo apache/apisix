@@ -19,6 +19,7 @@ local expr        = require("resty.expr.v1")
 local re_compile  = require("resty.core.regex").re_match_compile
 local plugin_name = "response-rewrite"
 local ngx         = ngx
+local ngx_header  = ngx.header
 local re_match    = ngx.re.match
 local re_sub      = ngx.re.sub
 local re_gsub     = ngx.re.gsub
@@ -26,6 +27,7 @@ local pairs       = pairs
 local ipairs      = ipairs
 local type        = type
 local pcall       = pcall
+local content_decode = require("apisix.utils.content-decode")
 
 
 local lrucache = core.lrucache.new({
@@ -260,6 +262,21 @@ function _M.body_filter(conf, ctx)
         end
 
         local err
+        if ctx.response_encoding ~= nil then
+            local decoder = content_decode.dispatch_decoder(ctx.response_encoding)
+            if not decoder then
+                core.log.error("filters may not work as expected ",
+                               "due to unsupported compression encoding type: ",
+                               ctx.response_encoding)
+                return
+            end
+            body, err = decoder(body)
+            if err ~= nil then
+                core.log.error("filters may not work as expected: ", err)
+                return
+            end
+        end
+
         for _, filter in ipairs(conf.filters) do
             if filter.scope == "once" then
                 body, _, err = re_sub(body, filter.regex, filter.replace, filter.options)
@@ -333,7 +350,9 @@ function _M.header_filter(conf, ctx)
 
     -- if filters have no any match, response body won't be modified.
     if conf.filters or conf.body then
+        local response_encoding = ngx_header["Content-Encoding"]
         core.response.clear_header_as_body_modified()
+        ctx.response_encoding = response_encoding
     end
 
     if not conf.headers then

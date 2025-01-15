@@ -23,12 +23,20 @@ import json
 import random
 import threading
 from public import check_leak, LEAK_COUNT, run_test, connect_admin
-
+import yaml
 
 REQ_PER_THREAD = 50
 THREADS_NUM = 10
 TOTOL_ROUTES = 50
 
+def get_admin_key_from_yaml(yaml_file_path):
+    with open(yaml_file_path, 'r') as file:
+        yaml_data = yaml.safe_load(file)
+    try:
+        admin_key = yaml_data['deployment']['admin']['admin_key'][0]['key']
+        return admin_key
+    except KeyError:
+        return None
 
 def create_route():
     conf = json.dumps({
@@ -41,10 +49,18 @@ def create_route():
         }
     })
     conn = connect_admin()
+    key = get_admin_key_from_yaml('conf/config.yaml')
+    if key is None:
+        print("Key not found in the YAML file.")
+        return
+    key = key.replace('"', '')
+    print("the key is", key)
+    headers = {
+    "X-API-KEY": key,
+    }
+    print("Request headers:", headers)
     conn.request("PUT", "/apisix/admin/consumers", conf,
-            headers={
-                "X-API-KEY":"edd1c9f034335f136f87ad84b625c8f1",
-            })
+            headers=headers)
     response = conn.getresponse()
     assert response.status <= 300, response.read()
 
@@ -80,11 +96,8 @@ def create_route():
                 "type": "roundrobin"
             },
         })
-
         conn.request("PUT", "/apisix/admin/routes/" + i, conf,
-                headers={
-                    "X-API-KEY":"edd1c9f034335f136f87ad84b625c8f1",
-                })
+                headers=headers)
         response = conn.getresponse()
         assert response.status <= 300, response.read()
 

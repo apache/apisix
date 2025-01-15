@@ -117,36 +117,36 @@ local _M = {
 
 Note: The priority of the new plugin cannot be same to any existing ones, you can use the `/v1/schema` method of [control API](./control-api.md#get-v1schema) to view the priority of all plugins. In addition, plugins with higher priority value will be executed first in a given phase (see the definition of `phase` in [choose-phase-to-run](#choose-phase-to-run)). For example, the priority of example-plugin is 0 and the priority of ip-restriction is 3000. Therefore, the ip-restriction plugin will be executed first, then the example-plugin plugin. It's recommended to use priority 1 ~ 99 for your plugin unless you want it to run before some builtin plugins.
 
-In the "__conf/config-default.yaml__" configuration file, the enabled plugins (all specified by plugin name) are listed.
+By default, most APISIX plugins are [enabled](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua):
 
-```yaml
-plugins:                          # plugin list
-  - limit-req
-  - limit-count
-  - limit-conn
-  - key-auth
-  - prometheus
-  - node-status
-  - jwt-auth
-  - zipkin
-  - ip-restriction
-  - grpc-transcode
-  - serverless-pre-function
-  - serverless-post-function
-  - openid-connect
-  - proxy-rewrite
-  - redirect
+```lua title="apisix/cli/config.lua"
+local _M = {
   ...
+  plugins = {
+    "real-ip",
+    "ai",
+    "client-control",
+    "proxy-control",
+    "request-id",
+    "zipkin",
+    "ext-plugin-pre-req",
+    "fault-injection",
+    "mocking",
+    "serverless-pre-function",
+    ...
+  },
+  ...
+}
 ```
 
 Note: the order of the plugins is not related to the order of execution.
 
-To enable your plugin, copy this plugin list into `conf/config.yaml`, and add your plugin name. For instance:
+To enable your custom plugin, add the list of plugins into `conf/config.yaml` and append your plugin name. For instance:
 
 ```yaml
-plugins: # copied from config-default.yaml
-  ...
-  - your-plugin
+plugins:         # see `conf/config.yaml.example` for an example
+  - ...          # add existing plugins
+  - your-plugin  # add your custom plugin
 ```
 
 If your plugin has a new code directory of its own, and you need to redistribute it with the APISIX source code, you will need to modify the `Makefile` to create directory, such as:
@@ -341,7 +341,7 @@ If none of the keys in `keyring` can decrypt the data, the original data is used
 Determine which phase to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
-In APISIX, only the authentication logic can be run in the rewrite phase. Other logic needs to run before proxy should be in access phase.
+Similarly, if you want to modify or process the response body or headers you can do that in the `body_filter` or in the `header_filter` phases respectively.
 
 The following code snippet shows how to implement any logic relevant to the plugin in the OpenResty log phase.
 
@@ -370,8 +370,17 @@ end
 
 Write the logic of the plugin in the corresponding phase. There are two parameters `conf` and `ctx` in the phase method, take the `limit-conn` plugin configuration as an example.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -430,19 +439,20 @@ end
 
 ## register public API
 
-A plugin can register API which exposes to the public. Take jwt-auth plugin as an example, this plugin registers `GET /apisix/plugin/jwt/sign` to allow client to sign its key:
+A plugin can register API which exposes to the public. Take batch-requests plugin as an example, this plugin registers `POST /apisix/batch-requests` to allow developers to group multiple API requests into a single HTTP request/response cycle:
 
 ```lua
-local function gen_token()
-    --...
+function batch_requests()
+    -- ...
 end
 
 function _M.api()
+    -- ...
     return {
         {
-            methods = {"GET"},
-            uri = "/apisix/plugin/jwt/sign",
-            handler = gen_token,
+            methods = {"POST"},
+            uri = "/apisix/batch-requests",
+            handler = batch_requests,
         }
     }
 end

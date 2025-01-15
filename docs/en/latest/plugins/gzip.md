@@ -30,6 +30,7 @@ description: This document contains information about the Apache APISIX gzip Plu
 ## Description
 
 The `gzip` Plugin dynamically sets the behavior of [gzip in Nginx](https://docs.nginx.com/nginx/admin-guide/web-server/compression/).
+When the `gzip` plugin is enabled, the client needs to include `Accept-Encoding: gzip` in the request header to indicate support for gzip compression. Upon receiving the request, APISIX dynamically determines whether to compress the response content based on the client's support and server configuration. If the conditions are met, `APISIX` adds the `Content-Encoding: gzip` header to the response, indicating that the response content has been compressed using gzip. Upon receiving the response, the client uses the corresponding decompression algorithm based on the `Content-Encoding` header to decompress the response content and obtain the original response content.
 
 :::info IMPORTANT
 
@@ -45,16 +46,25 @@ This Plugin requires APISIX to run on [APISIX-Runtime](../FAQ.md#how-do-i-build-
 | min_length     | integer              | False    | 20            | >= 1         | Dynamically sets the `gzip_min_length` directive.                                       |
 | comp_level     | integer              | False    | 1             | [1, 9]       | Dynamically sets the `gzip_comp_level` directive.                                       |
 | http_version   | number               | False    | 1.1           | 1.1, 1.0     | Dynamically sets the `gzip_http_version` directive.                                     |
-| buffers.number | integer              | False    | 32            | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
-| buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive.                                          |
+| buffers.number | integer              | False    | 32            | >= 1         | Dynamically sets the `gzip_buffers` directive parameter `number`.                                          |
+| buffers.size   | integer              | False    | 4096          | >= 1         | Dynamically sets the `gzip_buffers` directive parameter `size`. The unit is in bytes.                                          |
 | vary           | boolean              | False    | false         |              | Dynamically sets the `gzip_vary` directive.                                             |
 
 ## Enable Plugin
 
 The example below enables the `gzip` Plugin on the specified Route:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -100,7 +110,7 @@ Warning: <FILE>" to save to a file.
 To remove the `gzip` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {

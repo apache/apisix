@@ -62,9 +62,19 @@ description: 本文介绍了 Apache APISIX limit-count 插件的相关操作，�
 
 以下示例展示了如何在指定路由上启用 `limit-count` 插件，并设置 `key_type` 为 `"var"`：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -89,7 +99,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -114,7 +124,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -138,7 +148,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello"
@@ -147,7 +157,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "service_id": "1",
     "uri": "/hello2"
@@ -158,7 +168,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -193,7 +203,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -223,7 +233,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -239,6 +249,37 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
             ],
             "redis_password": "password",
             "redis_cluster_name": "redis-cluster-1"
+        }
+    },
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+此外，插件中的属性值可以引用 APISIX 中的密钥。APISIX 当前支持两种存储密钥的方式 - [环境变量和 HashiCorp Vault](../terminology/secret.md)。
+如果您设置了环境变量 `REDIS_HOST` 和 `REDIS_PASSWORD` ，如下所示，您可以在插件配置中使用它们：
+
+```shell
+curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
+-H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "uri": "/index.html",
+    "plugins": {
+        "limit-count": {
+            "count": 2,
+            "time_window": 60,
+            "rejected_code": 503,
+            "key": "remote_addr",
+            "policy": "redis",
+            "redis_host": "$ENV://REDIS_HOST",
+            "redis_port": 6379,
+            "redis_password": "$ENV://REDIS_PASSWORD",
+            "redis_database": 1,
+            "redis_timeout": 1001
         }
     },
     "upstream": {
@@ -305,7 +346,7 @@ Server: APISIX web server
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",

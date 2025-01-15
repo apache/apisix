@@ -49,7 +49,8 @@ local schema = {
         keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 5}
     },
-    required = {"api_host", "service_token", "namespace", "action"}
+    required = {"api_host", "service_token", "namespace", "action"},
+    encrypt_fields = {"service_token"}
 }
 
 
@@ -62,6 +63,10 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"api_host"}
+    core.utils.check_https(check, conf, _M.name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, _M.name)
+
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return false, err

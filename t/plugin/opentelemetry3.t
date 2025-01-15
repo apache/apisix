@@ -158,7 +158,10 @@ qr/request log: \{.*"opentelemetry_context_traceparent":"00-\w{32}-\w{16}-01".*\
 
 
 === TEST 3: trigger opentelemetry with disable set variables
---- yaml_config
+--- extra_yaml_config
+plugins:
+    - http-logger
+    - opentelemetry
 plugin_attr:
     opentelemetry:
         set_ngx_var: false

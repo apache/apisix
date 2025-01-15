@@ -91,6 +91,9 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 If the Kubernetes service discovery runs inside a pod, you can use minimal configuration:
@@ -220,6 +223,9 @@ discovery:
 
     # reserved lua shared memory size,1m memory can store about 1000 pieces of endpoint
     shared_size: 1m #default 1m
+
+    # if watch_endpoint_slices setting true, watch apiserver with endpointslices instead of endpoints
+    watch_endpoint_slices: false #default false
 ```
 
 Multi-Kubernetes service discovery does not fill default values for service and client fields, you need to fill them according to the cluster configuration.
@@ -312,7 +318,7 @@ metadata:
  name: apisix-test
 rules:
 - apiGroups: [ "" ]
-  resources: [ endpoints ]
+  resources: [ endpoints,endpointslices ]
   verbs: [ get,list,watch ]
 ---
 
@@ -345,3 +351,56 @@ A: Assume your [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod
  ```shell
  kubectl -n apisix get secret kubernetes-discovery-token-c64cv -o jsonpath={.data.token} | base64 -d
  ```
+
+## Debugging API
+
+It also offers control api for debugging.
+
+### Memory Dump API
+
+To query/list the nodes discoverd by kubernetes discovery, you can query the /v1/discovery/kubernetes/dump control API endpoint like so:
+
+```shell
+GET /v1/discovery/kubernetes/dump
+```
+
+Which will yield the following response:
+
+```
+{
+  "endpoints": [
+    {
+      "endpoints": [
+        {
+          "value": "{\"https\":[{\"host\":\"172.18.164.170\",\"port\":6443,\"weight\":50},{\"host\":\"172.18.164.171\",\"port\":6443,\"weight\":50},{\"host\":\"172.18.164.172\",\"port\":6443,\"weight\":50}]}",
+          "name": "default/kubernetes"
+        },
+        {
+          "value": "{\"metrics\":[{\"host\":\"172.18.164.170\",\"port\":2379,\"weight\":50},{\"host\":\"172.18.164.171\",\"port\":2379,\"weight\":50},{\"host\":\"172.18.164.172\",\"port\":2379,\"weight\":50}]}",
+          "name": "kube-system/etcd"
+        },
+        {
+          "value": "{\"http-85\":[{\"host\":\"172.64.89.2\",\"port\":85,\"weight\":50}]}",
+          "name": "test-ws/testing"
+        }
+      ],
+      "id": "first"
+    }
+  ],
+  "config": [
+    {
+      "default_weight": 50,
+      "id": "first",
+      "client": {
+        "token": "xxx"
+      },
+      "service": {
+        "host": "172.18.164.170",
+        "port": "6443",
+        "schema": "https"
+      },
+      "shared_size": "1m"
+    }
+  ]
+}
+```

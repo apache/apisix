@@ -82,12 +82,8 @@ deployment:
     }
 --- request
 GET /t
---- grep_error_log eval
-qr/init_by_lua:\d+: \S+/
---- grep_error_log_out
-init_by_lua:12: ab
-init_by_lua:19: 200
-init_by_lua:26: 404
+--- error_log eval
+qr/init_by_lua:\d+: ab/ and qr/init_by_lua:\d+: 200/ and qr/init_by_lua:\d+: 404/
 
 
 
@@ -136,12 +132,8 @@ deployment:
         ngx.say("ok")
     }
 --- stream_enable
---- grep_error_log eval
-qr/init_by_lua:\d+: \S+/
---- grep_error_log_out
-init_by_lua:12: ab
-init_by_lua:19: 200
-init_by_lua:26: 404
+--- error_log eval
+qr/init_by_lua:\d+: ab/ and qr/init_by_lua:\d+: 200/ and qr/init_by_lua:\d+: 404/
 
 
 
@@ -159,6 +151,8 @@ deployment:
       cert: t/certs/mtls_client.crt
       key: t/certs/mtls_client.key
       verify: false
+  admin:
+    admin_key_required: false
 --- config
     location /t {
         content_by_lua_block {
@@ -284,5 +278,5 @@ deployment:
     }
 --- request
 GET /t
---- error_log
-init_by_lua:11: ab
+--- error_log eval
+qr/init_by_lua:\d+: ab/

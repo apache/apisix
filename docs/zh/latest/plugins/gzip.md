@@ -29,7 +29,8 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 
 ## 描述
 
-`gzip` 插件能动态设置 NGINX 的压缩行为。
+`gzip` 插件能动态设置 [NGINX](https://docs.nginx.com/nginx/admin-guide/web-server/compression/) 的压缩行为。
+当启用 `gzip` 插件时，客户端在发起请求时需要在请求头中添加 `Accept-Encoding: gzip`，以表明客户端支持 `gzip` 压缩。APISIX 在接收到请求后，会根据客户端的支持情况和服务器配置动态判断是否对响应内容进行 gzip 压缩。如果判定条件得到满足，APISIX 将在响应头中添加 `Content-Encoding: gzip` 字段，以指示响应内容已经通过 `gzip` 压缩。在客户端接收到响应后，根据响应头中的 `Content-Encoding` 字段使用相应的解压缩算法对响应内容进行解压，从而获取原始的响应内容。
 
 :::info IMPORTANT
 
@@ -45,17 +46,27 @@ description: 本文介绍了关于 Apache APISIX `gzip` 插件的基本信息及
 | min_length     | integer              | 否      |  20            | >= 1     | 动态设置 [`gzip_min_length`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_min_length) 指令。                      |
 | comp_level     | integer              | 否      |  1             | [1, 9]   | 动态设置 [`gzip_comp_level`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_comp_level) 指令。                      |
 | http_version   | number               | 否      |  1.1           | 1.1, 1.0 | 动态设置 [`gzip_http_version`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_http_version) 指令。                  |
-| buffers.number | integer              | 否      |  32            | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令。                            |
-| buffers.size   | integer              | 否      |  4096          | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令。                            |
+| buffers.number | integer              | 否      |  32            | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令 参数 `number`。                            |
+| buffers.size   | integer              | 否      |  4096          | >= 1     | 动态设置 [`gzip_buffers`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_buffers) 指令参数 `size`。单位为字节。                            |
 | vary           | boolean              | 否      |  false         |          | 动态设置 [`gzip_vary`](https://nginx.org/en/docs/http/ngx_http_gzip_module.html#gzip_vary) 指令。                                  |
 
 ## 启用插件
 
 以下示例展示了如何在指定路由中启用 `gzip` 插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {
@@ -102,7 +113,7 @@ Warning: <FILE>" to save to a file.
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "upstream": {

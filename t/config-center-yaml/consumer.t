@@ -34,19 +34,6 @@ deployment:
 _EOC_
 
     $block->set_value("yaml_config", $yaml_config);
-
-    my $routes = <<_EOC_;
-routes:
-  -
-    uri: /hello
-    upstream:
-        nodes:
-            "127.0.0.1:1980": 1
-        type: roundrobin
-#END
-_EOC_
-
-    $block->set_value("apisix_yaml", $block->apisix_yaml . $routes);
 });
 
 run_tests();
@@ -57,6 +44,12 @@ __DATA__
 --- apisix_yaml
 consumers:
   - username: jwt-auth
+routes:
+  - uri: /hello
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
 #END
 --- request
 GET /hello
@@ -67,46 +60,7 @@ property "username" validation failed
 
 
 
-=== TEST 2: validate the plugin under consumer
---- apisix_yaml
-routes:
-  - uri: /apisix/plugin/jwt/sign
-    plugins:
-        public-api: {}
-consumers:
-  - username: jwt
-    plugins:
-        jwt-auth:
-            secret: my-secret-key
-#END
---- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- error_log
-plugin jwt-auth err: property "key" is required
---- error_code: 404
-
-
-
-=== TEST 3: provide default value for the plugin
---- apisix_yaml
-routes:
-  - uri: /apisix/plugin/jwt/sign
-    plugins:
-        public-api: {}
-consumers:
-  - username: jwt
-    plugins:
-        jwt-auth:
-            key: user-key
-            secret: my-secret-key
-#END
---- request
-GET /apisix/plugin/jwt/sign?key=user-key
---- error_code: 200
-
-
-
-=== TEST 4: consumer restriction
+=== TEST 2: consumer restriction
 --- apisix_yaml
 consumers:
   - username: jack

@@ -471,6 +471,7 @@ location /v1/agent {
 --- response_body eval
 --- error_code eval
 [200, 200, 200, 200, 200, 200]
+--- wait: 2
 
 
 
@@ -491,14 +492,19 @@ discovery:
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin")
-            ngx.sleep(2)
-            local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
-                ngx.HTTP_GET)
-            local entity = json.decode(res)
-            ngx.say(json.encode(entity.services))
+            for i = 1, 3 do
+                ngx.sleep(2)
+                local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
+                    ngx.HTTP_GET)
+                local entity = json.decode(res)
+                if entity.services and entity.services.service_a then
+                    ngx.say(json.encode(entity.services))
+                    return
+                end
+            end
         }
     }
---- timeout: 3
+--- timeout: 8
 --- request
 GET /t
 --- response_body

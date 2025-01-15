@@ -70,6 +70,8 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"endpoint"}
+    core.utils.check_https(check, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 
@@ -283,6 +285,15 @@ end
 
 
 function _M.log(conf, ctx)
+    if ctx.zipkin then
+        core.tablepool.release("zipkin_ctx", ctx.zipkin)
+        ctx.zipkin = nil
+    end
+
+    if not ctx.opentracing_sample then
+        return
+    end
+
     local opentracing = ctx.opentracing
 
     local log_end_time = opentracing.tracer:time()
@@ -302,11 +313,6 @@ function _M.log(conf, ctx)
     opentracing.request_span:set_tag("http.status_code", upstream_status)
 
     opentracing.request_span:finish(log_end_time)
-
-    if ctx.zipkin then
-        core.tablepool.release("zipkin_ctx", ctx.zipkin)
-        ctx.zipkin = nil
-    end
 end
 
 return _M

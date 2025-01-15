@@ -65,9 +65,18 @@ plugin_attr:
 
 You can enable the Plugin on a specific Route as shown below:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "proxy-mirror": {
@@ -135,7 +144,7 @@ To remove the `proxy-mirror` Plugin, you can delete the corresponding JSON confi
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
-  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

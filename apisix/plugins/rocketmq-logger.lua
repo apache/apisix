@@ -75,7 +75,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -97,6 +99,7 @@ function _M.check_schema(conf, schema_type)
     if not ok then
         return nil, err
     end
+    core.utils.check_tls_bool({"use_tls"}, conf, plugin_name)
     return log_util.check_log_schema(conf)
 end
 

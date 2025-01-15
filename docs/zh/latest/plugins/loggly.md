@@ -43,12 +43,19 @@ description: API 网关 Apache APISIX loggly 插件可用于将日志转发到 S
 | tags                   | array         | 否      |         | 元数据将包含在任何事件日志中，以帮助进行分段和过滤。                                                                                                        |
 | log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body       | boolean       | 否      | false   | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。               |
+| include_req_body_expr   | array         | 否   |       | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。 |
 | include_resp_body      | boolean       | 否      | false   | 当设置为 `true` 时，包含响应体。                                            |
 | include_resp_body_expr | array         | 否      |         | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
 
 该插件支持使用批处理器来聚合并批量处理条目（日志或数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
 如果要生成用户令牌，请在 Loggly 系统中的 `<your assigned subdomain>/loggly.com/tokens` 设置，或者在系统中单击 `Logs > Source setup > Customer tokens`。
+
+### 默认日志格式示例
+
+```text
+<10>1 2024-01-06T06:50:51.739Z 127.0.0.1 apisix 58525 - [token-1@41058 tag="apisix"] {"service_id":"","server":{"version":"3.7.0","hostname":"localhost"},"apisix_latency":100.99985313416,"request":{"url":"http://127.0.0.1:1984/opentracing","headers":{"content-type":"application/x-www-form-urlencoded","user-agent":"lua-resty-http/0.16.1 (Lua) ngx_lua/10025","host":"127.0.0.1:1984"},"querystring":{},"uri":"/opentracing","size":155,"method":"GET"},"response":{"headers":{"content-type":"text/plain","server":"APISIX/3.7.0","transfer-encoding":"chunked","connection":"close"},"size":141,"status":200},"route_id":"1","latency":103.99985313416,"upstream_latency":3,"client_ip":"127.0.0.1","upstream":"127.0.0.1:1982","start_time":1704523851634}
+```
 
 ## 插件元数据设置
 
@@ -68,9 +75,19 @@ APISIX 支持 [Syslog](https://documentation.solarwinds.com/en/success_center/lo
 
 Syslog 协议允许你发送符合 RFC5424 的 syslog 事件并进行细粒度控制。但是在以快速传输速度发送大量日志时，使用 HTTP/S 批量端点会更好。你可以通过以下方式更新元数据以更新使用的协议：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "protocol": "http"
 }'
@@ -86,7 +103,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loggly \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "loggly":{
@@ -118,7 +135,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins":{
         "loggly":{
@@ -153,7 +170,7 @@ curl -i http://127.0.0.1:9080/index.html
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/index.html",
     "plugins": {},

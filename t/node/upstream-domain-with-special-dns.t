@@ -58,8 +58,7 @@ __DATA__
 --- listen_ipv6
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     nodes:
         ipv6.test.local:1980: 1
     type: roundrobin
@@ -74,8 +73,7 @@ hello world
 --- log_level: debug
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     nodes:
         ttl.test.local:1980: 1
     type: roundrobin
@@ -117,8 +115,7 @@ deployment:
         config_provider: yaml
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     nodes:
         ttl.test.local:1980: 1
     type: roundrobin
@@ -152,8 +149,7 @@ connect to 127.0.0.1:1053
 --- log_level: debug
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     nodes:
         ttl.1s.test.local:1980: 1
     type: roundrobin
@@ -200,8 +196,7 @@ deployment:
         config_provider: yaml
 --- apisix_yaml
 upstreams:
-    -
-    id: 1
+  - id: 1
     nodes:
         ttl.test.local:1980: 1
     type: roundrobin

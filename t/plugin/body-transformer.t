@@ -473,8 +473,8 @@ qr/attempt to call global 'name' \(a string value\)/
             local core = require("apisix.core")
             local req_template = [[
             {%
-                local yaml = require("tinyyaml")
-                local body = yaml.parse(_body)
+                local yaml = require("lyaml")
+                local body = yaml.load(_body)
             %}
             {"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
             ]]
@@ -1069,3 +1069,61 @@ location /demo {
             assert(res.status == 200)
         }
     }
+
+
+
+=== TEST 16: test for missing Content-Type and skip body parsing
+--- config
+    location /demo {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local body = core.request.get_body()
+            assert(body == "{\"message\": \"actually json\"}")
+        }
+    }
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local core = require("apisix.core")
+
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                string.format([[{
+                    "uri": "/foobar",
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/demo"
+                        },
+                        "body-transformer": {
+                            "request": {
+                                "input_format": "plain",
+                                "template": "{\"message\": \"{* string.gsub(_body, 'not ', '') *}\"}"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:%d": 1
+                        }
+                    }
+                }]], ngx.var.server_port)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+            ngx.sleep(0.5)
+
+            local http = require("resty.http")
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/foobar", {
+                method = "POST",
+                body = "not actually json",
+            })
+            assert(res.status == 200)
+        }
+    }
+--- no_error_log
+no input format to parse

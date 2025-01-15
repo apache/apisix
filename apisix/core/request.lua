@@ -21,6 +21,7 @@
 
 local lfs = require("lfs")
 local log = require("apisix.core.log")
+local json = require("apisix.core.json")
 local io = require("apisix.core.io")
 local req_add_header
 if ngx.config.subsystem == "http" then
@@ -55,17 +56,17 @@ local function _headers(ctx)
     end
 
     if not is_apisix_or then
-        return get_headers(0)
+        return get_headers()
     end
 
     if a6_request.is_request_header_set() then
         a6_request.clear_request_header()
-        ctx.headers = get_headers(0)
+        ctx.headers = get_headers()
     end
 
     local headers = ctx.headers
     if not headers then
-        headers = get_headers(0)
+        headers = get_headers()
         ctx.headers = headers
     end
 
@@ -107,7 +108,9 @@ function _M.header(ctx, name)
     if not ctx then
         ctx = ngx.ctx.api_ctx
     end
-    return _headers(ctx)[name]
+
+    local value = _headers(ctx)[name]
+    return type(value) == "table" and value[1] or value
 end
 
 local function modify_header(ctx, header_name, header_value, override)
@@ -140,6 +143,11 @@ local function modify_header(ctx, header_name, header_value, override)
         req_set_header(header_name, header_value)
     else
         req_add_header(header_name, header_value)
+    end
+
+    if ctx and ctx.var then
+        -- when the header is updated, clear cache of ctx.var
+        ctx.var["http_" .. str_lower(header_name)] = nil
     end
 
     if is_apisix_or and not changed then
@@ -282,6 +290,15 @@ function _M.get_body(max_size, ctx)
         end
     end
 
+    -- check content-length header for http2/http3
+    do
+        local var = ctx and ctx.var or ngx.var
+        local content_length = tonumber(var.http_content_length)
+        if (var.server_protocol == "HTTP/2.0" or var.server_protocol == "HTTP/3.0")
+            and not content_length then
+            return nil, "HTTP2/HTTP3 request without a Content-Length header"
+        end
+    end
     req_read_body()
 
     local req_body = req_get_body_data()
@@ -315,6 +332,21 @@ function _M.get_body(max_size, ctx)
 
     local req_body, err = io.get_file(file_name)
     return req_body, err
+end
+
+
+function _M.get_json_request_body_table()
+    local body, err = _M.get_body()
+    if not body then
+        return nil, { message = "could not get body: " .. (err or "request body is empty") }
+    end
+
+    local body_tab, err = json.decode(body)
+    if not body_tab then
+        return nil, { message = "could not get parse JSON request body: " .. err }
+    end
+
+    return body_tab
 end
 
 

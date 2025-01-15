@@ -36,9 +36,18 @@ While configuring the same plugin, only one copy of the configuration is valid. 
 
 The example below illustrates how to create a Plugin Config and bind it to a Route:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "desc": "blah",
     "plugins": {
@@ -80,7 +89,7 @@ For example, if you configure a Plugin Config as shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_configs/1 \
- -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+ -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "desc": "I am plugin_config 1",
     "plugins": {
@@ -103,7 +112,7 @@ to a Route as shown below,
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "plugin_config_id": 1,
@@ -132,7 +141,7 @@ the effective configuration will be as the one shown below:
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -i -d '
+-H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
     "uris": ["/index.html"],
     "upstream": {

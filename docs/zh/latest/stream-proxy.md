@@ -44,8 +44,18 @@ apisix:
 
 简例如下：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "remote_addr": "127.0.0.1",
     "upstream": {
@@ -71,7 +81,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 例如
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "server_addr": "127.0.0.1",
     "server_port": 2000,
@@ -114,7 +124,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 3. 现在我们将创建一个带有服务器过滤的 stream 路由：
 
    ```shell
-   curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+   curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
    {
        "server_addr": "127.0.0.10",
        "server_port": 9101,
@@ -171,7 +181,7 @@ mTLS 也是支持的，参考 [保护路由](./mtls.md#保护路由)。
 然后，我们需要配置一个 route，匹配连接并代理到上游：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "nodes": {
@@ -185,7 +195,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 当连接为 TLS over TCP 时，我们可以通过 SNI 来匹配路由，比如：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "sni": "a.test.com",
     "upstream": {
@@ -204,7 +214,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f03
 APISIX 还支持代理到 TLS over TCP 上游。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "upstream": {
         "scheme": "tls",

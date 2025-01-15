@@ -55,13 +55,55 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 
 This plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
+### Example of default log format
+
+```json
+{
+    "request": {
+        "headers": {
+            "connection": "close",
+            "host": "localhost",
+            "test-header": "only-for-test#1"
+        },
+        "method": "GET",
+        "uri": "/hello",
+        "url": "http://localhost:1984/hello",
+        "size": 89,
+        "querystring": {}
+    },
+    "client_ip": "127.0.0.1",
+    "start_time": 1704525701293,
+    "apisix_latency": 100.99994659424,
+    "response": {
+        "headers": {
+            "content-type": "text/plain",
+            "server": "APISIX/3.7.0",
+            "content-length": "12",
+            "connection": "close"
+        },
+        "status": 200,
+        "size": 118
+    },
+    "route_id": "1",
+    "loki_log_time": "1704525701293000000",
+    "upstream_latency": 5,
+    "latency": 105.99994659424,
+    "upstream": "127.0.0.1:1980",
+    "server": {
+        "hostname": "localhost",
+        "version": "3.7.0"
+    },
+    "service_id": ""
+}
+```
+
 ## Metadata
 
 You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| log_format | object | False | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
+| log_format | object | False |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
 
 :::info IMPORTANT
 
@@ -71,8 +113,17 @@ Configuring the plugin metadata is global in scope. This means that it will take
 
 The example below shows how you can configure through the Admin API:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -94,7 +145,7 @@ With this configuration, your logs would be formatted as shown below:
 The example below shows how you can enable the `loki-logger` plugin on a specific Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "loki-logger": {
@@ -124,7 +175,7 @@ curl -i http://127.0.0.1:9080/hello
 When you need to remove the `loki-logger` plugin, you can delete the corresponding JSON configuration with the following command and APISIX will automatically reload the relevant configuration without restarting the service:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

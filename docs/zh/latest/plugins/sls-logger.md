@@ -43,22 +43,62 @@ title: sls-logger
 | access_key_id | 必须的 | AccessKey ID。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | access_key_secret | 必须的 | AccessKey Secret。建议使用阿里云子账号 AK，详情请参见 [授权](https://help.aliyun.com/document_detail/47664.html?spm=a2c4g.11186623.2.15.49301b47lfvxXP#task-xsk-ttc-ry)。|
 | include_req_body | 可选的 | 是否包含请求体。|
-|name| 可选的 | 批处理名字。|
+| include_req_body_expr   | 可选的 | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。    |
+| include_resp_body       | 可选的 | 当设置为 `true` 时，日志中将包含响应体。                                                     |
+| include_resp_body_expr  | 可选的 | 当 `include_resp_body` 属性设置为 `true` 时进行过滤响应体，并且只有当此处设置的表达式计算结果为 `true` 时，才会记录响应体。更多信息，请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr)。 |
+|name| 可选的 | 批处理名字。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。|
 
 注意：schema 中还定义了 `encrypt_fields = {"access_key_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
 本插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认设置情况下批处理器会每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解或自定义批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置) 配置部分。
 
+### 默认日志格式示例
+
+```json
+{
+    "route_conf": {
+        "host": "100.100.99.135",
+        "buffer_duration": 60,
+        "timeout": 30000,
+        "include_req_body": false,
+        "logstore": "your_logstore",
+        "log_format": {
+            "vip": "$remote_addr"
+        },
+        "project": "your_project",
+        "inactive_timeout": 5,
+        "access_key_id": "your_access_key_id",
+        "access_key_secret": "your_access_key_secret",
+        "batch_max_size": 1000,
+        "max_retry_count": 0,
+        "retry_delay": 1,
+        "port": 10009,
+        "name": "sls-logger"
+    },
+    "data": "<46>1 2024-01-06T03:29:56.457Z localhost apisix 28063 - [logservice project=\"your_project\" logstore=\"your_logstore\" access-key-id=\"your_access_key_id\" access-key-secret=\"your_access_key_secret\"] {\"vip\":\"127.0.0.1\",\"route_id\":\"1\"}\n"
+}
+```
+
 ## 插件元数据设置
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 可选   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 sls-logger 的 Route 或 Service 生效。 |
+| log_format       | object  | 可选   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../../../en/latest/apisix-variable.md) 或 [Nginx 内置变量](http://nginx.org/en/docs/varindex.html)。特别的，**该设置是全局生效的**，意味着指定 log_format 后，将对所有绑定 sls-logger 的 Route 或 Service 生效。 |
 
 ### 设置日志格式示例
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/sls-logger -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/sls-logger -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -80,7 +120,7 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/sls-logger -H 'X-API-KEY
 1. 下面例子展示了如何为指定路由开启 `sls-logger` 插件的。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "sls-logger": {
@@ -126,7 +166,7 @@ hello, world
 想要禁用“sls-logger”插件，是非常简单的，将对应的插件配置从 json 配置删除，就会立即生效，不需要重新启动服务：
 
 ```shell
-$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/hello",
     "plugins": {},

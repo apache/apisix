@@ -43,8 +43,8 @@ description: OpenID Connect allows the client to obtain user information from th
 | realm                                | string   | False    | "apisix"              |              | Realm used for authentication.                                                                                                                                                                                                        |
 | bearer_only                          | boolean  | False    | false                 |              | When set to `true`, APISIX will only check if the authorization header in the request matches a bearer token.                                                                                                                         |
 | logout_path                          | string   | False    | "/logout"             |              | Path for logging out.                                                                                                                                                                                                                 |
-| post_logout_redirect_uri             | string   | False    |                       |              | URL to redirect to after logging out.                                                                                                                                                                                                 |
-| redirect_uri                         | string   | False    | "ngx.var.request_uri" |              | URI to which the identity provider redirects back to.                                                                                                                                                                                 |
+| post_logout_redirect_uri             | string   | False    |                       |              | URL to redirect to after logging out. If the OIDC discovery endpoint does not provide an [`end_session_endpoint`](https://openid.net/specs/openid-connect-rpinitiated-1_0.html), the plugin internally redirects using the [`redirect_after_logout_uri`](https://github.com/zmartzone/lua-resty-openidc). Otherwise, it redirects using the [`post_logout_redirect_uri`](https://openid.net/specs/openid-connect-rpinitiated-1_0.html). |
+| redirect_uri                         | string  | False    |                       |              | URI to which the identity provider redirects back to. If not configured, APISIX will append the `.apisix/redirect` suffix to determine the default `redirect_uri`. Note that the provider should be properly configured to allow such `redirect_uri` values. |
 | timeout                              | integer  | False    | 3                     | [1,...]      | Request timeout time in seconds.                                                                                                                                                                                                      |
 | ssl_verify                           | boolean  | False    | false                 |              | When set to true, verifies the identity provider's SSL certificates.                                                                                                                                                                  |
 | introspection_endpoint               | string   | False    |                       |              | URL of the token verification endpoint of the identity server.                                                                                                                                                                        |
@@ -61,6 +61,8 @@ description: OpenID Connect allows the client to obtain user information from th
 | set_refresh_token_header             | boolean  | False    | false                 |              | When set to true and a refresh token object is available, sets it in the `X-Refresh-Token` request header.                                                                                                                            |
 | session                              | object   | False    |                       |              | When bearer_only is set to false, openid-connect will use Authorization Code flow to authenticate on the IDP, so you need to set the session-related configuration.                                                                   |
 | session.secret                       | string   | True     | Automatic generation  | 16 or more characters | The key used for session encrypt and HMAC operation.                                                                                                                                                                                  |
+| session.cookie                       | object   | False    |                       |             |                                                                                                                                                                                  |
+| session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
 | unauth_action                        | string   | False    | "auth"                |  ["auth","deny","pass"]            | Specify the response type on unauthenticated requests. "auth" redirects to identity provider, "deny" results in a 401 response, "pass" will allow the request without authentication.                                                 |
 | proxy_opts                           | object   | False    |                       |                                  | HTTP proxy that the OpenID provider is behind.                                                                                                                                                                                  |
 | proxy_opts.http_proxy     | string   | False    |                       | http://proxy-server:port         | HTTP proxy server address.                                                                                                                                                                                                            |
@@ -68,13 +70,13 @@ description: OpenID Connect allows the client to obtain user information from th
 | proxy_opts.http_proxy_authorization  | string   | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `http_proxy`. Can be overridden with custom `Proxy-Authorization` request header.                                                                                                                                                              |
 | proxy_opts.https_proxy_authorization | string   | False    |                       | Basic [base64 username:password] | Default `Proxy-Authorization` header value to be used with `https_proxy`. Cannot be overridden with custom `Proxy-Authorization` request header since with with HTTPS the authorization is completed when connecting.                         |
 | proxy_opts.no_proxy                  | string   | False    |                       |                                  | Comma separated list of hosts that should not be proxied.                                                                                                                                                                             |
-| authorization_params                 | object   | False    |                       |                                  | Additional parameters to send in the in the request to the authorization endpoint.                                                                                                                                                    |
+| authorization_params                 | object   | False    |                       |                                  | Additional parameters to send in the request to the authorization endpoint.                                                                                                                                                    |
 | client_rsa_private_key | string | False |  |  | Client RSA private key used to sign JWT. |
 | client_rsa_private_key_id | string | False |  |  | Client RSA private key ID used to compute a signed JWT. |
 | client_jwt_assertion_expires_in | integer | False | 60 |  | Life duration of the signed JWT in seconds. |
 | renew_access_token_on_expiry | boolean | False | true |  | If true, attempt to silently renew the access token when it expires or if a refresh token is available. If the token fails to renew, redirect user for re-authentication. |
 | access_token_expires_in | integer | False |  |  | Lifetime of the access token in seconds if no `expires_in` attribute is present in the token endpoint response. |
-| refresh_session_interval | integer | False | 900 |  | Time interval to refresh user ID token without requiring re-authentication. |
+| refresh_session_interval | integer | False |  |  | Time interval to refresh user ID token without requiring re-authentication. When not set, it will not check the expiration time of the session issued to the client by the gateway. If set to 900, it means refreshing the user's id_token (or session in the browser) after 900 seconds without requiring re-authentication. |
 | iat_slack | integer | False | 120 |  | Tolerance of clock skew in seconds with the `iat` claim in an ID token. |
 | accept_none_alg | boolean | False | false |  | Set to true if the OpenID provider does not sign its ID token, such as when the signature algorithm is set to `none`. |
 | accept_unsupported_alg | boolean | False | true |  | If true, ignore ID token signature to accept unsupported signature algorithm. |
@@ -87,6 +89,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | cache_segment | string | False |  |  | Optional name of a cache segment, used to separate and differentiate caches used by token introspection or JWT verification. |
 | introspection_interval | integer | False | 0 |  | TTL of the cached and introspected access token in seconds. |
 | introspection_expiry_claim | string | False |  |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. The default value is 0, which means this option is not used and the plugin defaults to use the TTL passed by expiry claim defined in `introspection_expiry_claim`. If `introspection_interval` is larger than 0 and less than the TTL passed by expiry claim defined in `introspection_expiry_claim`, use `introspection_interval`. |
+| introspection_addon_headers | string[] | False |  |  | Array of strings. Used to append additional header values to the introspection HTTP request. If the specified header does not exist in origin request, value will not be appended. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
@@ -98,7 +101,7 @@ Tutorial: [Use Keycloak with API Gateway to secure APIs](https://apisix.apache.o
 
 :::
 
-This plugin offers two scenorios:
+This plugin offers two scenarios:
 
 1. Authentication between Services: Set `bearer_only` to `true` and configure the `introspection_endpoint` or `public_key` attribute. In this scenario, APISIX will reject requests without a token or invalid token in the request header.
 
@@ -116,8 +119,17 @@ The image below shows an example token introspection flow via a Gateway:
 
 The example below shows how you can enable the Plugin on Route. The Route below will protect the Upstream by introspecting the token provided in the request header:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```bash
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -160,7 +172,7 @@ You can also provide the public key of the JWT token for verification. If you ha
 The example below shows how you can add public key introspection to a Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins":{
@@ -196,7 +208,7 @@ Once the user has authenticated with the identity provider, the Plugin will obta
 The example below adds the Plugin with this mode of operation to the Route:
 
 ```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/5 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "uri": "/get",
   "plugins": {
@@ -221,11 +233,48 @@ In this example, the Plugin can enforce that the access token, the ID token, and
 
 ## Troubleshooting
 
-1. If APISIX cannot resolve/connect to the identity provider (e.g., Okta, Keycloak, Authing), check/modify the DNS settings in your configuration file (`conf/config.yaml`).
+This section covers a few commonly seen issues when working with this plugin to help you troubleshoot.
 
-2. If you encounter the error `the error request to the redirect_uri path, but there's no session state found,` please confirm whether the currently accessed URL carries `code` and `state,` and do not directly access `redirect_uri.`
+### APISIX Cannot Connect to OpenID provider
 
-2. If you encounter the error `the error request to the redirect_uri path, but there's no session state found`, please check the `redirect_uri` attribute : APISIX will initiate an authentication request to the identity provider, after the authentication service completes the authentication and authorization logic, it will redirect to the address configured by `redirect_uri` (e.g., `http://127.0.0.1:9080/callback`) with ID Token and AccessToken, and then enter APISIX again and complete the function of token exchange in OIDC logic. The `redirect_uri` attribute needs to meet the following conditions:
+If APISIX fails to resolve or cannot connect to the OpenID provider, double check the DNS settings in your configuration file `config.yaml` and modify as needed.
 
-- `redirect_uri` needs to be captured by the route where the current APISIX is located. For example, the `uri` of the current route is `/api/v1/*`, `redirect_uri` can be filled in as `/api/v1/callback`;
-- `scheme` and `host` of `redirect_uri` (`scheme:host`) are the values required to access APISIX from the perspective of the identity provider.
+### No Session State Found
+
+If you encounter a `500 internal server error` with the following message in the log when working with [authorization code flow](#authorization-code-flow), there could be a number of reasons.
+
+```text
+the error request to the redirect_uri path, but there's no session state found
+```
+
+#### 1. Misconfigured Redirection URI
+
+A common misconfiguration is to configure the `redirect_uri` the same as the URI of the route. When a user initiates a request to visit the protected resource, the request directly hits the redirection URI with no session cookie in the request, which leads to the no session state found error.
+
+To properly configure the redirection URI, make sure that the `redirect_uri` matches the route where the plugin is configured, without being fully identical. For instance, a correct configuration would be to configure `uri` of the route to `/api/v1/*` and the path portion of the `redirect_uri` to `/api/v1/redirect`.
+
+You should also ensure that the `redirect_uri` include the scheme, such as `http` or `https`.
+
+#### 2. Missing Session Secret
+
+If you deploy APISIX in the [standalone mode](../deployment-modes.md#standalone), make sure that `session.secret` is configured.
+
+User sessions are stored in browser as cookies and encrypted with session secret. The secret is automatically generated and saved to etcd if no secret is configured through the `session.secret` attribute. However, in standalone mode, etcd is no longer the configuration center. Therefore, you should explicitly configure `session.secret` for this plugin in the YAML configuration center `apisix.yaml`.
+
+#### 3. Cookie Not Sent or Absent
+
+Check if the [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) cookie attribute is properly set (i.e. if your application needs to send the cookie cross sites) to see if this could be a factor that prevents the cookie being saved to the browser's cookie jar or being sent from the browser.
+
+#### 4. Upstream Sent Too Big Header
+
+If you have NGINX sitting in front of APISIX to proxy client traffic, see if you observe the following error in NGINX's `error.log`:
+
+```text
+upstream sent too big header while reading response header from upstream
+```
+
+If so, try adjusting `proxy_buffers`, `proxy_buffer_size`, and `proxy_busy_buffers_size` to larger values.
+
+#### 5. Invalid Client Secret
+
+Verify if `client_secret` is valid and correct. An invalid `client_secret` would lead to an authentication failure and no token shall be returned and stored in session.

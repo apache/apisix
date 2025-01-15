@@ -64,8 +64,17 @@ plugins:
 
 Now, when APISIX is reloaded, you can add it to a specific Route as shown below:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "nodes": {
         "127.0.0.1:20880": 1
@@ -73,7 +82,7 @@ curl http://127.0.0.1:9180/apisix/admin/upstreams/1  -H 'X-API-KEY: edd1c9f03433
     "type": "roundrobin"
 }'
 
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uris": [
         "/hello"
@@ -93,7 +102,45 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f1
 
 You can follow the [Quick Start](https://github.com/alibaba/tengine/tree/master/modules/mod_dubbo#quick-start) guide in Tengine with the configuration above for testing.
 
-Dubbo returns data in the form `Map<String, String>`.
+APISIX dubbo plugin uses `hessian2` as the serialization protocol. It supports only `Map<String, Object>` as the request and response data type.
+
+### Application
+
+Your dubbo config should be configured to use `hessian2` as the serialization protocol.
+
+```yml
+dubbo:
+  ...
+  protocol:
+    ...
+    serialization: hessian2
+```
+
+Your application should implement the interface with the request and response data type as `Map<String, Object>`.
+
+```java
+public interface DemoService {
+    Map<String, Object> sayHello(Map<String, Object> context);
+}
+```
+
+### Request and Response
+
+If you need to pass request data, you can add the data to the HTTP request header. The plugin will convert the HTTP request header to the request data of the Dubbo service. Here is a sample HTTP request that passes `user` information:
+
+```bash
+curl -i -X POST 'http://localhost:9080/hello' \
+                    --header 'user: apisix'
+
+
+HTTP/1.1 200 OK
+Date: Mon, 15 Jan 2024 10:15:57 GMT
+Content-Type: text/plain; charset=utf-8
+...
+hello: apisix
+...
+Server: APISIX/3.8.0
+```
 
 If the returned data is:
 
@@ -123,7 +170,7 @@ body of the message
 To remove the `dubbo-proxy` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [

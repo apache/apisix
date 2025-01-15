@@ -78,7 +78,7 @@ local function create_router(ssl_items)
 
     core.log.info("route items: ", core.json.delay_encode(route_items, true))
     -- for testing
-    if #route_items > 1 then
+    if idx > 1 then
         core.log.info("we have more than 1 ssl certs now")
     end
     local router, err = router_new(route_items)
@@ -118,6 +118,7 @@ local function set_pem_ssl_key(sni, cert, pkey)
 
     return true
 end
+_M.set_pem_ssl_key = set_pem_ssl_key
 
 
 -- export the set cert/key process so we can hook it in the other plugins
@@ -237,7 +238,8 @@ function _M.set(matched_ssl, sni)
     end
     ngx_ssl.clear_certs()
 
-    local new_ssl_value = secret.fetch_secrets(matched_ssl.value) or matched_ssl.value
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "")
+                            or matched_ssl.value
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
@@ -283,9 +285,11 @@ local function ssl_filter(ssl)
     end
 
     if ssl.value.sni then
+        ssl.value.sni = ngx.re.sub(ssl.value.sni, "\\.$", "", "jo")
         ssl.value.sni = str_lower(ssl.value.sni)
     elseif ssl.value.snis then
         for i, v in ipairs(ssl.value.snis) do
+            v = ngx.re.sub(v, "\\.$", "", "jo")
             ssl.value.snis[i] = str_lower(v)
         end
     end

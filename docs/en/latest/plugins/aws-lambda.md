@@ -29,11 +29,11 @@ description: This document contains information about the Apache APISIX aws-lamb
 
 ## Description
 
-The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) as a dynamic upstream to proxy all requests for a particular URI to the AWS Cloud.
+The `aws-lambda` Plugin is used for integrating APISIX with [AWS Lambda](https://aws.amazon.com/lambda/) and [Amazon API Gateway](https://aws.amazon.com/api-gateway/) as a dynamic upstream to proxy all requests for a particular URI to the AWS Cloud.
 
 When enabled, the Plugin terminates the ongoing request to the configured URI and initiates a new request to the AWS Lambda Gateway URI on behalf of the client with configured authorization details, request headers, body and parameters (all three passed from the original request). It returns the response with headers, status code and the body to the client that initiated the request with APISIX.
 
-This Plugin supports authorization via AWS API key and AWS IAM secrets.
+This Plugin supports authorization via AWS API key and AWS IAM secrets. The Plugin implements [AWS Signature Version 4 signing](https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_aws-signing.html) for IAM secrets.
 
 ## Attributes
 
@@ -43,33 +43,37 @@ This Plugin supports authorization via AWS API key and AWS IAM secrets.
 | authorization        | object  | False    |         |              | Authorization credentials to access the cloud function.                                                                                    |
 | authorization.apikey | string  | False    |         |              | Generated API Key to authorize requests to the AWS Gateway endpoint.                                                                       |
 | authorization.iam    | object  | False    |         |              | Used for AWS IAM role based authorization performed via AWS v4 request signing. See [IAM authorization schema](#iam-authorization-schema). |
+| authorization.iam.accesskey  | string | True     |               | Generated access key ID from AWS IAM console.                                       |
+| authorization.iam.secretkey | string | True     |               | Generated access key secret from AWS IAM console.                                   |
+| authorization.iam.aws_region | string | False    | "us-east-1"   | AWS region where the request is being sent.                                         |
+| authorization.iam.service    | string | False    | "execute-api" | The service that is receiving the request. For Amazon API gateway APIs, it should be set to `execute-api`. For Lambda function, it should be set to `lambda`. |
 | timeout              | integer | False    | 3000    | [100,...]    | Proxy request timeout in milliseconds.                                                                                                     |
 | ssl_verify           | boolean | False    | true    | true/false   | When set to `true` performs SSL verification.                                                                                              |
 | keepalive            | boolean | False    | true    | true/false   | When set to `true` keeps the connection alive for reuse.                                                                                   |
 | keepalive_pool       | integer | False    | 5       | [1,...]      | Maximum number of requests that can be sent on this connection before closing it.                                                          |
 | keepalive_timeout    | integer | False    | 60000   | [1000,...]   | Time is ms for connection to remain idle without closing.                                                          |
 
-### IAM Authorization Schema
-
-| Name       | Type   | Required | Default       | Description                                                                         |
-|------------|--------|----------|---------------|-------------------------------------------------------------------------------------|
-| accesskey  | string | True     |               | Generated access key ID from AWS IAM console.                                       |
-| secret_key | string | True     |               | Generated access key secret from AWS IAM console.                                   |
-| aws_region | string | False    | "us-east-1"   | AWS region where the request is being sent.                                         |
-| service    | string | False    | "execute-api" | The service that is receiving the request. For HTTP trigger, it is `"execute-api"`. |
-
 ## Enable Plugin
 
 The example below shows how you can configure the Plugin on a specific Route:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "aws-lambda": {
             "function_uri": "https://x9w6z07gb9.execute-api.us-east-1.amazonaws.com/default/test-apisix",
             "authorization": {
-                "apikey": "<Generated API Key from aws console>",
+                "apikey": "<Generated API Key from aws console>"
             },
             "ssl_verify":false
         }
@@ -100,7 +104,7 @@ Server: APISIX/2.10.2
 "Hello, APISIX!"
 ```
 
-Another example of a request where the client communicates with APISIX via HTTP/2 is shown below (make sure you have configured `enable_http2: true` for a in your default configuration file (`config-default.yaml`). You can do this by uncommenting the port `9081` from the field `apisix.node_listen`):
+Another example of a request where the client communicates with APISIX via HTTP/2 is shown below. Before proceeding, make sure you have configured `enable_http2: true` in your configuration file `config.yaml` for port `9081` and reloaded APISIX. See [`config.yaml.example`](https://github.com/apache/apisix/blob/master/conf/config.yaml.example) for the example configuration.
 
 ```shell
 curl -i -XGET --http2 --http2-prior-knowledge localhost:9081/aws\?name=APISIX
@@ -122,7 +126,7 @@ server: APISIX/2.10.2
 Similarly, the function can be triggered via AWS API Gateway by using AWS IAM permissions for authorization. The Plugin includes authentication signatures in HTTP calls via AWS v4 request signing. The example below shows this method:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "aws-lambda": {
@@ -159,7 +163,7 @@ The `uri` configured on a Route must end with `*` for this feature to work prope
 The example below configures this feature:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "aws-lambda": {
@@ -199,7 +203,7 @@ Server: APISIX/2.11.0
 To remove the `aws-lambda` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "uri": "/aws",
     "plugins": {},

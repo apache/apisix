@@ -114,6 +114,11 @@ local _M = {
 
 
 function _M.check_schema(conf)
+    local check = {"discovery", "token_endpoint", "resource_registration_endpoint",
+                    "access_denied_redirect_uri"}
+    core.utils.check_https(check, conf, plugin_name)
+    core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
+
     return core.schema.check(schema, conf)
 end
 
@@ -503,7 +508,7 @@ local function authz_keycloak_resolve_resource(conf, uri, sa_access_token)
     if not resource_registration_endpoint then
         local err = "Unable to determine registration endpoint."
         log.error(err)
-        return 503, err
+        return nil, err
     end
 
     log.debug("Resource registration endpoint: ", resource_registration_endpoint)
@@ -558,7 +563,7 @@ local function evaluate_permissions(conf, ctx, token)
         local sa_access_token, err = authz_keycloak_ensure_sa_access_token(conf)
         if err then
             log.error(err)
-            return 503
+            return 503, err
         end
 
         -- Resolve URI to resource(s).
@@ -569,7 +574,7 @@ local function evaluate_permissions(conf, ctx, token)
         if permission == nil then
             -- No result back from resource registration endpoint.
             log.error(err)
-            return 503
+            return 503, err
         end
     else
         -- Use statically configured permissions.
@@ -759,7 +764,7 @@ end
 
 function _M.access(conf, ctx)
     -- resolve secrets
-    conf = fetch_secrets(conf)
+    conf = fetch_secrets(conf, true, conf, "")
     local headers = core.request.headers(ctx)
     local need_grant_token = conf.password_grant_token_generation_incoming_uri and
         ctx.var.request_uri == conf.password_grant_token_generation_incoming_uri and

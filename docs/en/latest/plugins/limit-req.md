@@ -43,19 +43,41 @@ The `limit-req` Plugin limits the number of requests to your service using the [
 | rejected_msg      | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
 | nodelay           | boolean | False    | false   |                            | If set to `true`, requests within the burst threshold would not be delayed.                                                                                                                                                                                                                                                                                                                           |
 | allow_degradation | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
+| policy            | string  | False                                     | "local"   | ["local", "redis", "redis-cluster"] | Rate-limiting policies to use for retrieving and increment the limit count. When set to `local` the counters will be locally stored in memory on the node. When set to `redis` counters are stored on a Redis server and will be shared across the nodes. It is done usually for global speed limiting, and setting to `redis-cluster` uses a Redis cluster instead of a single instance.                                                                                                            |
+| redis_host        | string  | required when `policy` is `redis`         |         |                            | Address of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                    |
+| redis_port        | integer | False                                     | 6379    | [1,...]                    | Port of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                       |
+| redis_username    | string  | False                                     |         |                            | Username for Redis authentication if Redis ACL is used (for Redis version >= 6.0). If you use the legacy authentication method `requirepass` to configure Redis password, configure only the `redis_password`. Used when the `policy` is set to `redis`.                                                                                                                                                  |
+| redis_password    | string  | False                                     |         |                            | Password for Redis authentication. Used when the `policy` is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                     |
+| redis_ssl         | boolean | False                                     | false   |                            | If set to `true`, then uses SSL to connect to redis instance. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                   |
+| redis_ssl_verify  | boolean | False                                     | false   |                            | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis`. See [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                                                                                                                                                      |
+| redis_database    | integer | False                                     | 0       | redis_database >= 0        | Selected database of the Redis server (for single instance operation or when using Redis cloud with a single entrypoint). Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                       |
+| redis_timeout     | integer | False                                     | 1000    | [1,...]                    | Timeout in milliseconds for any command submitted to the Redis server. Used when the `policy` attribute is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                       |
+| redis_cluster_nodes | array   | required when `policy` is `redis-cluster` |         |                            | Addresses of Redis cluster nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                       |
+| redis_cluster_name | string  | required when `policy` is `redis-cluster` |         |                            | Name of the Redis cluster service nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                |
+| redis_cluster_ssl | boolean |  False | false   |                            | If set to `true`, then uses SSL to connect to redis-cluster. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                            |
+| redis_cluster_ssl_verify | boolean | False | false   |                            | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                             |
 
 ## Enable Plugin
 
 You can enable the Plugin on a Route as shown below:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var",
@@ -79,7 +101,7 @@ You can also configure the `key_type` to `var_combination` as shown:
     "uri": "/index.html",
     "plugins": {
         "limit-req": {
-            "rate": 1,
+            "rate": 3,
             "burst": 2,
             "rejected_code": 503,
             "key_type": "var_combination",
@@ -100,7 +122,7 @@ You can also configure the Plugin on specific consumers to limit their requests.
 First, you can create a Consumer and enable the `limit-req` Plugin on it:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer_jack",
     "plugins": {
@@ -108,8 +130,8 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
             "key": "auth-jack"
         },
         "limit-req": {
-            "rate": 1,
-            "burst": 3,
+            "rate": 3,
+            "burst": 2,
             "rejected_code": 403,
             "key": "consumer_name"
         }
@@ -122,7 +144,7 @@ In this example, the [key-auth](./key-auth.md) Plugin is used to authenticate th
 Next, create a Route and enable the `key-auth` Plugin:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -142,7 +164,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 ## Example usage
 
-Once you have configured the Plugin as shown above, you can test it out. The above configuration limits to 1 request per second. If the number of requests is greater than 1 but less than 3, a delay will be added. And if the number of requests per second exceeds 3, it will be rejected.
+Once you have configured the Plugin as shown above, you can test it out. The above configuration limits to 3 request per second. If the number of requests is greater than 3 but less than 5, a delay will be added. And if the number of requests per second exceeds 5, it will be rejected.
 
 Now if you send a request:
 
@@ -191,7 +213,7 @@ Server: APISIX web server
 To remove the `limit-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/index.html",
@@ -210,7 +232,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 Similarly for removing the Plugin from a Consumer:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer_jack",
     "plugins": {

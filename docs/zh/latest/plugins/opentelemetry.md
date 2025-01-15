@@ -45,8 +45,8 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 | sampler.options.root.name             | string        | 否     | always_off                                      | ["always_on", "always_off", "trace_id_ratio"]                | root 采样策略。 |
 | sampler.options.root.options          | object        | 否     | {fraction = 0}                                  |                                                              | root 采样策略参数。 |
 | sampler.options.root.options.fraction | number        | 否     | 0                                               | [0, 1]                                                       | `trace_id_ratio` root 采样策略的百分比 |
-| additional_attributes                 | array[string] | 否     |                                                 |                                                              | 追加到 trace span 的额外属性（变量名为 `key`，变量值为 `value`）。 |
-| additional_attributes[0]              | string        | 是     |                                                 |                                                              | APISIX 或 NGINX 变量，例如：`http_header` 或者 `route_id`。 |
+| additional_attributes                 | array[string] | 否     |                                                 |                                                              | 追加到 trace span 的额外属性，支持内置 NGINX 或 APISIX 变量，例如：`http_header` 或者 `route_id`。 |
+| additional_header_prefix_attributes   | array[string] | False    |                                                 |                                                              | 附加到跟踪范围属性的标头或标头前缀。例如，使用 `x-my-header"` 或 `x-my-headers-*` 来包含带有前缀 `x-my-headers-` 的所有标头。                                                                                                                                                                   |
 
 ## 如何设置数据上报
 
@@ -54,18 +54,26 @@ description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本
 
 | 名称                                       | 类型    | 默认值                                             | 描述                                                                                                                                             |
 | ------------------------------------------ | ------- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| trace_id_source                            | enum    | random                                            | trace ID 的来源。有效值为：`random` 或 `x-request-id`。当设置为 `x-request-id` 时，`x-request-id` 头的值将用作跟踪 ID。请确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}`。 |
+| trace_id_source                            | enum    | x-request-id                                      | trace ID 的来源。有效值为：`random` 或 `x-request-id`。当设置为 `x-request-id` 时，`x-request-id` 头的值将用作跟踪 ID。请确保当前请求 ID 是符合 TraceID 规范的：`[0-9a-f]{32}`。 |
 | resource                                   | object  |                                                   | 追加到 trace 的额外 [resource](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/resource/sdk.md)。 |
 | collector                                  | object  | {address = "127.0.0.1:4318", request_timeout = 3} | OpenTelemetry Collector 配置。 |
 | collector.address                          | string  | 127.0.0.1:4318                                    | 数据采集服务的地址。如果数据采集服务使用的是 HTTPS 协议，可以将 address 设置为 https://127.0.0.1:4318。 |
 | collector.request_timeout                  | integer | 3                                                 | 数据采集服务上报请求超时时长，单位为秒。 |
 | collector.request_headers                  | object  |                                                   | 数据采集服务上报请求附加的 HTTP 请求头。 |
 | batch_span_processor                       | object  |                                                   | trace span 处理器参数配置。 |
-| batch_span_processor.drop_on_queue_full    | boolean | true                                              | 如果设置为 `true` 时，则在队列排满时删除 span。否则，强制处理批次。|
-| batch_span_processor.max_queue_size        | integer | 2048                                              | 处理器缓存队列容量的最大值。 |
-| batch_span_processor.batch_timeout         | number  | 5                                                 | 构造一批 span 超时时间，单位为秒。 |
-| batch_span_processor.max_export_batch_size | integer | 256                                               | 单个批次中要处理的 span 数量。 |
-| batch_span_processor.inactive_timeout      | number  | 2                                                 | 两个处理批次之间的时间间隔，单位为秒。 |
+| batch_span_processor.drop_on_queue_full    | boolean | false                                             | 如果设置为 `true` 时，则在队列排满时删除 span。否则，强制处理批次。|
+| batch_span_processor.max_queue_size        | integer | 1024                                              | 处理器缓存队列容量的最大值。 |
+| batch_span_processor.batch_timeout         | number  | 2                                                 | 构造一批 span 超时时间，单位为秒。 |
+| batch_span_processor.max_export_batch_size | integer | 16                                                | 单个批次中要处理的 span 数量。 |
+| batch_span_processor.inactive_timeout      | number  | 1                                                 | 两个处理批次之间的时间间隔，单位为秒。 |
+
+:::note
+
+如果你在 error log 中发现由 hex2bytes 函数引发的 `bad argument #1 to '?' (invalid value)` 错误，务必确认你的 traceId 是否满足 opentelemetry 的 [traceId 格式](https://opentelemetry.io/docs/specs/otel/trace/api/#retrieving-the-traceid-and-spanid) 所需的正则规范`[0-9a-f]{32}`。
+
+例如，当插件属性 `trace_id_source` 配置为 `x-request-id` 时，如果请求包含由 Envoy 生成的 x-request-id 请求头，可能会发生上述情况。Envoy 默认使用 [UUID](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/observability/tracing#trace-context-propagation) 生成该请求头。当 opentelemetry 插件将此 UUID 作为 traceId 时，UUID 中的 `-` 可能会引起问题。由于带有 `-` 的 UUID 格式与 traceId 格式不符，因此尝试将跟踪推送到收集器时会导致错误。
+
+:::
 
 你可以参考以下示例进行配置：
 
@@ -123,9 +131,19 @@ plugins:
 
 开启成功后，可以通过如下命令在指定路由上启用 `opentelemetry` 插件：
 
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [
@@ -153,7 +171,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1  \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uris": [

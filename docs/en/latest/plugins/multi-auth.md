@@ -48,8 +48,17 @@ To enable the Plugin, you have to create two or more Consumer objects with diffe
 
 First create a Consumer using basic authentication:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "foo1",
     "plugins": {
@@ -64,7 +73,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Then create a Consumer using key authentication:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "foo2",
     "plugins": {
@@ -75,12 +84,10 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 }'
 ```
 
-You can also use the [APISIX Dashboard](/docs/dashboard/USER_GUIDE) to complete the operation through a web UI.
-
 Once you have created Consumer objects, you can then configure a Route or a Service to authenticate requests:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
@@ -113,16 +120,16 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f13
 
 After you have configured the Plugin as mentioned above, you can make a request to the Route as shown below:
 
-request with basic-auth
+Send a request with `basic-auth` credentials:
 
 ```shell
 curl -i -ufoo1:bar1 http://127.0.0.1:9080/hello
 ```
 
-request with key-auth
+Send a request with `key-auth` credentials:
 
 ```shell
-curl http://127.0.0.2:9080/hello -H 'apikey: auth-one' -i
+curl http://127.0.0.1:9080/hello -H 'apikey: auth-one' -i
 ```
 
 ```
@@ -131,11 +138,9 @@ HTTP/1.1 200 OK
 hello, world
 ```
 
-If the request is not authorized, an error will be thrown:
+If the request is not authorized, an `401 Unauthorized` error will be thrown:
 
-```shell
-HTTP/1.1 401 Unauthorized
-...
+```json
 {"message":"Authorization Failed"}
 ```
 
@@ -144,7 +149,7 @@ HTTP/1.1 401 Unauthorized
 To remove the `multi-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

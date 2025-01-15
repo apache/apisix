@@ -33,7 +33,22 @@ local schema = {
         tls_options = {type = "string"},
         timeout = {type = "integer", minimum = 1, default= 1000},
         log_format = {type = "object"},
-        include_req_body = {type = "boolean", default = false}
+        include_req_body = {type = "boolean", default = false},
+        include_req_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
+        include_resp_body = { type = "boolean", default = false },
+        include_resp_body_expr = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "array"
+            }
+        },
     },
     required = {"host", "port"}
 }
@@ -41,7 +56,9 @@ local schema = {
 local metadata_schema = {
     type = "object",
     properties = {
-        log_format = log_util.metadata_schema_log_format,
+        log_format = {
+            type = "object"
+        }
     },
 }
 
@@ -59,6 +76,7 @@ function _M.check_schema(conf, schema_type)
         return core.schema.check(metadata_schema, conf)
     end
 
+    core.utils.check_tls_bool({"tls"}, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 
@@ -75,6 +93,7 @@ local function send_tcp_data(conf, log_message)
     sock:settimeout(conf.timeout)
 
     core.log.info("sending a batch logs to ", conf.host, ":", conf.port)
+    core.log.info("sending log_message: ", log_message)
 
     local ok, err = sock:connect(conf.host, conf.port)
     if not ok then
@@ -104,6 +123,11 @@ local function send_tcp_data(conf, log_message)
     end
 
     return res, err_msg
+end
+
+
+function _M.body_filter(conf, ctx)
+    log_util.collect_body(conf, ctx)
 end
 
 

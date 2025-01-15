@@ -346,7 +346,7 @@ passed
 --- yaml_config
 apisix:
     data_encryption:
-        enable: true
+        enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
 --- config
@@ -558,3 +558,136 @@ opentracing
 --- error_log eval
 qr/resolve ip failed, hostname: .*, error: address can't be resolved/
 --- wait: 0.5
+
+
+
+=== TEST 17: collect log with include_req_body_expr
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            t('/apisix/admin/plugin_metadata/tencent-cloud-cls', ngx.HTTP_DELETE)
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tencent-cloud-cls": {
+                                "cls_host": "127.0.0.1:10420",
+                                     "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                                     "secret_id": "secret_id",
+                                     "secret_key": "secret_key",
+                                     "batch_max_size": 1,
+                                     "max_retry_count": 1,
+                                     "retry_delay": 2,
+                                     "buffer_duration": 2,
+                                     "inactive_timeout": 2,
+                                     "include_req_body": true,
+                                     "include_req_body_expr": [
+                                         ["arg_bar", "==", "bar"]
+                                     ]
+                                 }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            -- this will include resp body
+            local code, _, body = t("/opentracing?bar=bar", "POST", "body-data")
+        }
+    }
+--- error_log
+"body":"body-data"
+
+
+
+=== TEST 18: collect log with include_req_body_expr mismatch
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/opentracing?foo=bar", "POST", "body-data")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+
+        }
+    }
+--- no_error_log
+"body":"body-data"
+
+
+
+=== TEST 19: collect log with include_resp_body_expr
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "tencent-cloud-cls": {
+                                "cls_host": "127.0.0.1:10420",
+                                     "cls_topic": "143b5d70-139b-4aec-b54e-bb97756916de",
+                                     "secret_id": "secret_id",
+                                     "secret_key": "secret_key",
+                                     "batch_max_size": 1,
+                                     "max_retry_count": 1,
+                                     "retry_delay": 2,
+                                     "buffer_duration": 2,
+                                     "inactive_timeout": 2,
+                                     "include_resp_body": true,
+                                     "include_resp_body_expr": [
+                                         ["arg_bar", "==", "bar"]
+                                     ]
+                                 }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1982": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/opentracing"
+                }]]
+            )
+
+            -- this will include resp body
+            local code, _, body = t("/opentracing?bar=bar", "GET")
+        }
+    }
+--- error_log
+"body":"opentracing\n"
+
+
+
+=== TEST 20: collect log with include_resp_body_expr mismatch
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, _, body = t("/opentracing?foo=bar", "GET")
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("fail")
+                return
+            end
+            ngx.print(body)
+
+        }
+    }
+--- no_error_log
+"body":"opentracing\n"

@@ -42,7 +42,7 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 | user             | string  | 是     |                     |              | ClickHouse 的用户。                                       |
 | password         | string  | 是     |                     |              | ClickHouse 的密码。                                      |
 | timeout          | integer | 否     | 3                   | [1,...]      | 发送请求后保持连接活动的时间。                             |
-| name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。                                |
+| name             | string  | 否     | "clickhouse logger" |              | 标识 logger 的唯一标识符。如果您使用 Prometheus 监视 APISIX 指标，名称将以 `apisix_batch_process_entries` 导出。                               |
 | ssl_verify       | boolean | 否     | true                | [true,false] | 当设置为 `true` 时，验证证书。                                                |
 | log_format             | object  | 否   |          |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX 变量](../apisix-variable.md) 或 [NGINX 内置变量](http://nginx.org/en/docs/varindex.html)。 |
 | include_req_body       | boolean | 否     | false          | [false, true]         | 当设置为 `true` 时，包含请求体。**注意**：如果请求体无法完全存放在内存中，由于 NGINX 的限制，APISIX 无法将它记录下来。|
@@ -54,17 +54,70 @@ description: 本文介绍了 API 网关 Apache APISIX 如何使用 clickhouse-lo
 
 该插件支持使用批处理器来聚合并批量处理条目（日志/数据）。这样可以避免插件频繁地提交数据，默认情况下批处理器每 `5` 秒钟或队列中的数据达到 `1000` 条时提交数据，如需了解批处理器相关参数设置，请参考 [Batch-Processor](../batch-processor.md#配置)。
 
+### 默认日志格式示例
+
+```json
+{
+    "response": {
+        "status": 200,
+        "size": 118,
+        "headers": {
+            "content-type": "text/plain",
+            "connection": "close",
+            "server": "APISIX/3.7.0",
+            "content-length": "12"
+        }
+    },
+    "client_ip": "127.0.0.1",
+    "upstream_latency": 3,
+    "apisix_latency": 98.999998092651,
+    "upstream": "127.0.0.1:1982",
+    "latency": 101.99999809265,
+    "server": {
+        "version": "3.7.0",
+        "hostname": "localhost"
+    },
+    "route_id": "1",
+    "start_time": 1704507612177,
+    "service_id": "",
+    "request": {
+        "method": "POST",
+        "querystring": {
+            "foo": "unknown"
+        },
+        "headers": {
+            "host": "localhost",
+            "connection": "close",
+            "content-length": "18"
+        },
+        "size": 110,
+        "uri": "/hello?foo=unknown",
+        "url": "http://localhost:1984/hello?foo=unknown"
+    }
+}
+```
+
 ## 配置插件元数据
 
 `clickhouse-logger` 也支持自定义日志格式，与 [http-logger](./http-logger.md) 插件类似。
 
 | 名称             | 类型    | 必选项 | 默认值        | 有效值  | 描述                                             |
 | ---------------- | ------- | ------ | ------------- | ------- | ------------------------------------------------ |
-| log_format       | object  | 否   | {"host": "$host", "@timestamp": "$time_iso8601", "client_ip": "$remote_addr"} |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
+| log_format       | object  | 否   |  |         | 以 JSON 格式的键值对来声明日志格式。对于值部分，仅支持字符串。如果是以 `$` 开头，则表明是要获取 [APISIX](../apisix-variable.md) 或 [NGINX](http://nginx.org/en/docs/varindex.html) 变量。该配置全局生效。如果你指定了 `log_format`，该配置就会对所有绑定 `clickhouse-logger` 的路由或服务生效。|
+
+:::note
+
+您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/clickhouse-logger \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "log_format": {
         "host": "$host",
@@ -93,7 +146,7 @@ curl -X POST 'http://localhost:8123/' \
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
       "plugins": {
             "clickhouse-logger": {
@@ -141,7 +194,7 @@ curl 'http://localhost:8123/?query=select%20*%20from%20default.test'
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+-H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",

@@ -71,8 +71,17 @@ The above steps can be achieved by running simple two [curl commands](https://en
 
 The first `cmd` creates a **new Consumer** with API Key based authentication enabled where the API consumer can only make 2 requests against the Product API within 60 seconds.
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
    "username":"consumer1",
    "plugins":{
@@ -93,7 +102,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Then, we define our **new Route and Upstream** so that all incoming requests to the gateway endpoint `/api/products` will be forwarded to our example product backend service after a successful authentication process.
 
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
   "name": "Route for consumer request rate limiting",
   "methods": [
@@ -156,7 +165,7 @@ Below two curl cmds create consumer groups named `basic_plan` and `premium_plan`
 Create a Consumer Group Basic Plan.
 
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/consumer_groups/basic_plan -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumer_groups/basic_plan -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -172,7 +181,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumer_groups/basic_plan -H 'X-API-KEY
 Create a Consumer Group Premium Plan.
 
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/consumer_groups/premium_plan -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumer_groups/premium_plan -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "plugins": {
         "limit-count": {
@@ -190,7 +199,7 @@ In the above steps, we set up the rate limiting config for Basic plan to have on
 Create and add first consumer to the Basic group.
 
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer1",
     "plugins": {
@@ -205,7 +214,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Create and add second consumer to the Premium group.
 
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer2",
     "plugins": {
@@ -220,7 +229,7 @@ curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f1
 Create and add third consumer to the Premium group.
 
 ``` shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "username": "consumer3",
     "plugins": {

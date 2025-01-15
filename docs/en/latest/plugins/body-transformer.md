@@ -45,17 +45,28 @@ Use cases:
 | `request`      | object       | False      | request body transformation configuration      |
 | `request.input_format`      | string       | False      | request body original format, if not specified, it would be determined from `Content-Type` header.      |
 | `request.template`      | string       | True      | request body transformation template       |
+| `request.template_is_base64`      | boolean       | False    | Set to true if the template is base64 encoded       |
 | `response`      | object       | False      | response body transformation configuration      |
 | `response.input_format`      | string       | False      | response body original format, if not specified, it would be determined from `Content-Type` header.       |
 | `response.template`      | string       | True      | response body transformation template       |
+| `response.template_is_base64`      | boolean       | False     | Set to true if the template is base64 encoded       |
 
 ## Enable Plugin
 
 You can enable the Plugin on a specific Route as shown below:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST"],
     "uri": "/ws",
@@ -107,8 +118,8 @@ For example, parse YAML to JSON yourself:
 
 ```
 {%
-    local yaml = require("tinyyaml")
-    local body = yaml.parse(_body)
+    local yaml = require("lyaml")
+    local body = yaml.load(_body)
 %}
 {"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
 ```
@@ -120,13 +131,14 @@ For example, you could use `base64` command to encode your template text file:
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST"],
     "uri": "/ws",
     "plugins": {
         "body-transformer": {
             "request": {
+                "template_is_base64": true,
                 "template": "'"$(base64 -w0 /path/to/my_template_file)"'"
             }
         }
@@ -203,7 +215,7 @@ EOF
 )
 
 curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST"],
     "uri": "/ws",
@@ -263,7 +275,7 @@ To remove the `body-transformer` Plugin, you can delete the corresponding JSON c
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+    -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["POST"],
     "uri": "/ws",
