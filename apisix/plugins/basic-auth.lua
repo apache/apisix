@@ -140,7 +140,8 @@ local function find_consumer(ctx)
         return nil, nil, "Invalid authorization in request"
     end
 
-    local cur_consumer, consumer_conf, err = consumer.find_consumer(plugin_name, "username", username)
+    local cur_consumer, consumer_conf, err = consumer.find_consumer(plugin_name,
+                                             "username", username)
     if not cur_consumer then
         err = "failed to find user: " .. (err or "invalid user")
         if auth_utils.is_running_under_multi_auth(ctx) then
