@@ -92,7 +92,7 @@ Reload APISIX for changes to take effect.
 
 | Name          | Type    | Required | Default | Valid values | Description                                |
 | ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
-| `prefer_name` | boolean |          | False   |              | If true, export Route/Service name instead of their ID in Prometheus metrics. |
+| prefer_name | boolean |          | False   |              | If true, export Route/Service name instead of their ID in Prometheus metrics. |
 
 ## Metrics
 
