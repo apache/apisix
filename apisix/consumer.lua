@@ -269,5 +269,33 @@ function _M.init_worker()
     end
 end
 
+local function get_anonymous_consumer_from_local_cache(name)
+    local anon_consumer_raw = consumers:get(name)
+
+    if not anon_consumer_raw or not anon_consumer_raw.value or
+    not anon_consumer_raw.value.id or not anon_consumer_raw.modifiedIndex then
+        return nil, nil, "failed to get anonymous consumer " .. name
+    end
+
+    -- make structure of anon_consumer similar to that of consumer_mod.consumers_kv's response
+    local anon_consumer = anon_consumer_raw.value
+    anon_consumer.consumer_name = anon_consumer_raw.value.id
+    anon_consumer.modifiedIndex = anon_consumer_raw.modifiedIndex
+
+    local anon_consumer_conf = {
+        conf_version = anon_consumer_raw.modifiedIndex
+    }
+
+    return anon_consumer, anon_consumer_conf
+end
+
+
+function _M.get_anonymous_consumer(name)
+    local anon_consumer, anon_consumer_conf, err
+    anon_consumer, anon_consumer_conf, err = get_anonymous_consumer_from_local_cache(name)
+
+    return anon_consumer, anon_consumer_conf, err
+end
+
 
 return _M
