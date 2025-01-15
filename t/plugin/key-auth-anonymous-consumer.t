@@ -131,7 +131,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            
+
             for i = 1, 5, 1 do
                 local code, body = t('/hello',
                     ngx.HTTP_GET,
