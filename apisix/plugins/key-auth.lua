@@ -109,6 +109,7 @@ function _M.rewrite(conf, ctx)
         end
         consumer, consumer_conf, err = consumer_mod.get_anonymous_consumer(conf.anonymous_consumer)
         if not consumer then
+            err = "key-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
             return 401, { message = "Invalid user authorization"}
         end

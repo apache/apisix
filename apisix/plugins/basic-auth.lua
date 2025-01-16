@@ -169,6 +169,7 @@ function _M.rewrite(conf, ctx)
         end
         cur_consumer, consumer_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
         if not cur_consumer then
+            err = "basic-auth failed to authenticate the request, code: 401. error: " .. err
             core.log.error(err)
             return 401, { message = "Invalid user authorization" }
         end
