@@ -33,7 +33,7 @@ description: The opentelemetry Plugin instruments APISIX and sends traces to Ope
 
 ## Description
 
-The `opentelemetry` Plugin can be used to report tracing data according to the [OpenTelemetry specification](https://opentelemetry.io/docs/reference/specification/).
+The `opentelemetry` Plugin can be used to report tracing data according to the [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/).
 
 The Plugin only supports binary-encoded [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
 
