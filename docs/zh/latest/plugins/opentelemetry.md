@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - OpenTelemetry
-description: 本文介绍了关于 Apache APISIX `opentelemetry` 插件的基本信息及使用方法。
+description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上报 Traces 数据，该插件仅支持二进制编码的 OLTP over HTTP。
 ---
 
 <!--
