@@ -134,6 +134,7 @@ hello world
 failed to authenticate the request
 
 
+
 === TEST 5: invalid basic-auth credentials
 --- request
 GET /hello
