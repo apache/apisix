@@ -70,7 +70,7 @@ plugin_attr:
 | 名称                                  | 类型           | 必选项    | 默认值        | 有效值        | 描述 |
 |---------------------------------------|---------------|----------|--------------|--------------|-------------|
 | sampler                               | object        | 否       | -            | -            | 采样策略。    |
-| sampler.name                          | string        | False    | `always_off` | ["always_on", "always_off", "trace_id_ratio", "parent_base"]  | 采样策略。<br>`always_on`：全采样；`always_off`：不采样；`trace_id_ratio`：基于 trace id 的百分比采样；`parent_base`：如果存在 tracing 上游，则使用上游的采样决定，否则使用配置的采样策略决策。|
+| sampler.name                          | string        | 否       | `always_off` | ["always_on", "always_off", "trace_id_ratio", "parent_base"]  | 采样策略。<br>`always_on`：全采样；`always_off`：不采样；`trace_id_ratio`：基于 trace id 的百分比采样；`parent_base`：如果存在 tracing 上游，则使用上游的采样决定，否则使用配置的采样策略决策。|
 | sampler.options                       | object        | 否       | -            | -            | 采样策略参数。 |
 | sampler.options.fraction              | number        | 否       | 0            | [0, 1]       | `trace_id_ratio`：采样策略的百分比。 |
 | sampler.options.root                  | object        | 否       | -            | -            | `parent_base`：采样策略在没有上游 tracing 时，会使用 root 采样策略做决策。|
