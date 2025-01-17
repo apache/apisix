@@ -36,16 +36,16 @@ description: proxy-cache 插件提供了根据缓存键缓存响应并从缓存�
 
 | 名称               | 类型           | 必选项 | 默认值                    | 有效值                                                                          | 描述                                                                                                                               |
 | ------------------ | -------------- | ------ | ------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| cache_strategy | string | False | disk | ["disk","memory"] | 缓存策略。缓存在磁盘还是内存中。 |
-| cache_zone | string | False | disk_cache_one | | 与缓存策略一起使用的缓存区域。该值应与[配置文件](#static-configurations)中定义的缓存区域之一匹配，并与缓存策略相对应。例如，当使用内存缓存策略时，应该使用内存缓存区域。 |
-| cache_key | array[string] | False | ["$host", "$request_uri"] | | 用于缓存的键。支持[Nginx 变量](https://nginx.org/en/docs/varindex.html)和值中的常量字符串。变量应该以 `$` 符号为前缀。 |
-| cache_bypass | array[string] | False | | |一个或多个用于解析值的参数，如果任何值不为空且不等于 `0`，则不会从缓存中检索响应。支持值中的 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和常量字符串。变量应该以 `$` 符号为前缀。|
-| cache_method | array[string] | False | ["GET", "HEAD"] | ["GET", "POST", "HEAD"] | 应缓存响应的请求方法。|
-| cache_http_status | array[integer] | False | [200, 301, 404] | [200, 599] | 应缓存响应的响应 HTTP 状态代码。|
-| hide_cache_headers | boolean | False | false | | 如果为 true，则隐藏 `Expires` 和 `Cache-Control` 响应标头。|
-| cache_control | boolean | False | false | | 如果为 true，则遵守 HTTP 规范中的 `Cache-Control` 行为。仅对内存中策略有效。 |
-| no_cache | array[string] | False | | | 用于解析值的一个或多个参数，如果任何值不为空且不等于 `0`，则不会缓存响应。支持 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。 |
-| cache_ttl | integer | False | 300 | >=1 | 在内存中缓存时的缓存生存时间 (TTL)，以秒为单位。要调整在磁盘上缓存时的 TTL，请更新[配置文件](#static-configurations) 中的 `cache_ttl`。TTL 值与从上游服务收到的响应标头 [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 和 [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) 中的值一起评估。|
+| cache_strategy | string | 否 | disk | ["disk","memory"] | 缓存策略。缓存在磁盘还是内存中。 |
+| cache_zone | string | 否 | disk_cache_one | | 与缓存策略一起使用的缓存区域。该值应与[配置文件](#static-configurations)中定义的缓存区域之一匹配，并与缓存策略相对应。例如，当使用内存缓存策略时，应该使用内存缓存区域。 |
+| cache_key | array[string] | 否 | ["$host", "$request_uri"] | | 用于缓存的键。支持[Nginx 变量](https://nginx.org/en/docs/varindex.html)和值中的常量字符串。变量应该以 `$` 符号为前缀。 |
+| cache_bypass | array[string] | 否 | | |一个或多个用于解析值的参数，如果任何值不为空且不等于 `0`，则不会从缓存中检索响应。支持值中的 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和常量字符串。变量应该以 `$` 符号为前缀。|
+| cache_method | array[string] | 否 | ["GET", "HEAD"] | ["GET", "POST", "HEAD"] | 应缓存响应的请求方法。|
+| cache_http_status | array[integer] | 否 | [200, 301, 404] | [200, 599] | 应缓存响应的响应 HTTP 状态代码。|
+| hide_cache_headers | boolean | 否 | false | | 如果为 true，则隐藏 `Expires` 和 `Cache-Control` 响应标头。|
+| cache_control | boolean | 否 | false | | 如果为 true，则遵守 HTTP 规范中的 `Cache-Control` 行为。仅对内存中策略有效。 |
+| no_cache | array[string] | 否 | | | 用于解析值的一个或多个参数，如果任何值不为空且不等于 `0`，则不会缓存响应。支持 [Nginx variables](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。 |
+| cache_ttl | integer | 否 | 300 | >=1 | 在内存中缓存时的缓存生存时间 (TTL)，以秒为单位。要调整在磁盘上缓存时的 TTL，请更新[配置文件](#static-configurations) 中的 `cache_ttl`。TTL 值与从上游服务收到的响应标头 [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) 和 [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) 中的值一起评估。|
 
 ## 静态配置
 
