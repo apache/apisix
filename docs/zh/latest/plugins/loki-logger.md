@@ -60,9 +60,9 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 
 该插件支持使用批处理器对条目（日志/数据）进行批量聚合和处理，避免了频繁提交数据的需求。批处理器每隔 `5` 秒或当队列中的数据达到 `1000` 时提交数据。有关更多信息或设置自定义配置，请参阅 [批处理器](../batch-processor.md#configuration)。
 
-## 元数据
+## Plugin Metadata
 
-您还可以使用 [Plugin Metadata](../terminology/plugin-metadata.md) 全局配置日志格式，该元数据配置所有 `loki-logger` 插件实例的日志格式。如果在单个插件实例上配置的日志格式与在 Plugin Metadata 上配置的日志格式不同，则在单个插件实例上配置的日志格式优先。
+您还可以使用 [Plugin Metadata](../terminology/plugin-metadata.md) 全局配置日志格式，该 Plugin Metadata 配置所有 `loki-logger` 插件实例的日志格式。如果在单个插件实例上配置的日志格式与在 Plugin Metadata 上配置的日志格式不同，则在单个插件实例上配置的日志格式优先。
 
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 |------|------|----------|--|-------------|
@@ -205,7 +205,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-为 `loki-logger` 配置插件元数据，它将更新所有需要记录请求的路由的日志格式：
+为 `loki-logger` 配置 Plugin Metadata，它将更新所有需要记录请求的路由的日志格式：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger" -X PUT \
@@ -239,7 +239,7 @@ curl -i "http://127.0.0.1:9080/anything"
 }
 ```
 
-如果路由上的插件指定了特定的日志格式，它将优先于插件元数据中指定的日志格式。例如，按如下方式更新上一个路由上的插件：
+如果路由上的插件指定了特定的日志格式，它将优先于 Plugin Metadata 中指定的日志格式。例如，按如下方式更新上一个路由上的插件：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/loki-logger-route" -X PATCH \
