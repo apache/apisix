@@ -62,7 +62,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 ## Metadata
 
-You can also configure log format on a global scale using the [plugin metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
+You can also configure log format on a global scale using the [Plugin Metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
