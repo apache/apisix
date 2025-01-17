@@ -619,21 +619,20 @@ end
 function _M.dump_data()
 
     local eps = {}
-    for _, conf in ipairs(local_conf.discovery.kubernetes) do
 
-        local id = conf.id
-        local endpoint_dict = get_endpoint_dict(id)
+    local discovery_conf = local_conf.discovery.kubernetes
+    if #discovery_conf == 0 then
+        local endpoint_dict = get_endpoint_dict()
         local keys, err = endpoint_dict:get_keys()
         if err then
             error(err)
-            break
         end
 
         if keys then
             local k8s = {}
             for i = 1, #keys do
-
                 local key = keys[i]
+
                 --skip key with suffix #version
                 if key:sub(-#"#version") ~= "#version" then
                     local value = endpoint_dict:get(key)
@@ -646,10 +645,44 @@ function _M.dump_data()
             end
 
             core.table.insert(eps, {
-                id = conf.id,
+                id = 0,
                 endpoints = k8s
             })
 
+        end
+    else
+        for _, conf in ipairs(local_conf.discovery.kubernetes) do
+            local id = conf.id
+            local endpoint_dict = get_endpoint_dict(id)
+            local keys, err = endpoint_dict:get_keys()
+            if err then
+                error(err)
+                break
+            end
+
+            if keys then
+                local k8s = {}
+                for i = 1, #keys do
+
+                    local key = keys[i]
+
+                    --skip key with suffix #version
+                    if key:sub(-#"#version") ~= "#version" then
+                        local value = endpoint_dict:get(key)
+
+                        core.table.insert(k8s, {
+                            name = key,
+                            value = value
+                        })
+                    end
+                end
+
+                core.table.insert(eps, {
+                    id = conf.id,
+                    endpoints = k8s
+                })
+
+            end
         end
     end
 
