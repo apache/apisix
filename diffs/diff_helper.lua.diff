@@ -1,6 +1,0 @@
-52c52
-<     local route = core.table.clone(ctx.matched_route).value
----
->     local route = core.table.deepcopy(ctx.matched_route).value
-54a55
->         -- unimportant to send upstream info to OPA

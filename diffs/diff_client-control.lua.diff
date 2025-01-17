@@ -1,6 +1,0 @@
-28a29
->             description = "Maximum message body size in bytes. No restriction when set to 0."
-52c53
-<         core.log.error("need to build APISIX-Base to support client control")
----
->         core.log.error("need to build APISIX-Runtime to support client control")
