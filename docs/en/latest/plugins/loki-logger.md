@@ -60,7 +60,7 @@ When enabled, the Plugin will serialize the request context information to [JSON
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-## Metadata
+## Plugin Metadata
 
 You can also configure log format on a global scale using the [Plugin Metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
 
