@@ -1,0 +1,4 @@
+50c50
+<         core.log.error("need to build APISIX-Base to support proxy control")
+---
+>         core.log.error("need to build APISIX-Runtime to support proxy control")

@@ -1,0 +1,123 @@
+58c58
+< local metadata_schema = {
+---
+> local attr_schema = {
+70,72c70
+<             additionalProperties = {
+<                 one_of = {{type = "boolean"},{type = "number"}, {type = "string"}},
+<             },
+---
+>             additionalProperties = {{type = "boolean"}, {type = "number"}, {type = "string"}},
+119,121c117,119
+<             type = "boolean",
+<             description = "set nginx variables",
+<             default = false,
+---
+>           type = "boolean",
+>           description = "set nginx variables",
+>           default = false,
+197c195
+<     metadata_schema = metadata_schema,
+---
+>     attr_schema = attr_schema,
+201,206c199
+< function _M.check_schema(conf, schema_type)
+<     if schema_type == core.schema.TYPE_METADATA then
+<         local check = {"collector.address"}
+<         core.utils.check_https(check, conf, plugin_name)
+<         return core.schema.check(metadata_schema, conf)
+<     end
+---
+> function _M.check_schema(conf)
+212a206
+> local plugin_info
+227c221,229
+< end
+---
+>     plugin_info = plugin.plugin_attr(plugin_name) or {}
+>     local check = {"collector.address"}
+>     core.utils.check_https(check, plugin_info, plugin_name)
+>     local ok, err = core.schema.check(attr_schema, plugin_info)
+>     if not ok then
+>         core.log.error("failed to check the plugin_attr[", plugin_name, "]",
+>                 ": ", err)
+>         return
+>     end
+229,230d230
+< 
+< local function create_tracer_obj(conf, plugin_info)
+236a237,240
+> end
+> 
+> 
+> local function create_tracer_obj(conf)
+309,314c313
+<     local metadata = plugin.plugin_metadata(plugin_name)
+<     if metadata == nil then
+<         core.log.warn("plugin_metadata is required for opentelemetry plugin to working properly")
+<         return
+<     end
+<     core.log.info("metadata: ", core.json.delay_encode(metadata))
+---
+>     local vars = api_ctx.var
+316,317c315
+<     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, metadata.modifiedIndex,
+<                                                     create_tracer_obj, conf, metadata.value)
+---
+>     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
+323,324c321,322
+<     -- extract trace context from the headers of downstream HTTP request
+<     local upstream_context = trace_context_propagator:extract(context, ngx.req)
+---
+>     local span_name = vars.method
+> 
+326,327c324,328
+<         attr.string("service", api_ctx.service_name),
+<         attr.string("route", api_ctx.route_name),
+---
+>         attr.string("net.host.name", vars.host),
+>         attr.string("http.method", vars.method),
+>         attr.string("http.scheme", vars.scheme),
+>         attr.string("http.target", vars.request_uri),
+>         attr.string("http.user_agent", vars.http_user_agent),
+329a331,342
+>     if api_ctx.curr_req_matched then
+>         table.insert(attributes, attr.string("apisix.route_id", api_ctx.route_id))
+>         table.insert(attributes, attr.string("apisix.route_name", api_ctx.route_name))
+>         table.insert(attributes, attr.string("http.route", api_ctx.curr_req_matched._path))
+>         span_name = span_name .. " " .. api_ctx.curr_req_matched._path
+>     end
+> 
+>     if api_ctx.service_id then
+>         table.insert(attributes, attr.string("apisix.service_id", api_ctx.service_id))
+>         table.insert(attributes, attr.string("apisix.service_name", api_ctx.service_name))
+>     end
+> 
+343c356,359
+<     local ctx = tracer:start(upstream_context, api_ctx.var.request_uri, {
+---
+>     -- extract trace context from the headers of downstream HTTP request
+>     local upstream_context = trace_context_propagator:extract(context, ngx.req)
+> 
+>     local ctx = tracer:start(upstream_context, span_name, {
+348,355c364,371
+<     if metadata.value.set_ngx_var then
+<         local span_context = ctx:span():context()
+<         ngx_var.opentelemetry_context_traceparent = string_format("00-%s-%s-%02x",
+<                                                                    span_context.trace_id,
+<                                                                    span_context.span_id,
+<                                                                    span_context.trace_flags)
+<         ngx_var.opentelemetry_trace_id = span_context.trace_id
+<         ngx_var.opentelemetry_span_id = span_context.span_id
+---
+>     if plugin_info.set_ngx_var then
+>       local span_context = ctx:span():context()
+>       ngx_var.opentelemetry_context_traceparent = string_format("00-%s-%s-%02x",
+>                                                                  span_context.trace_id,
+>                                                                  span_context.span_id,
+>                                                                  span_context.trace_flags)
+>       ngx_var.opentelemetry_trace_id = span_context.trace_id
+>       ngx_var.opentelemetry_span_id = span_context.span_id
+377a394,395
+> 
+>         span:set_attributes(attr.int("http.status_code", upstream_status))

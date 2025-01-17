@@ -1,0 +1,321 @@
+19a20
+> local control   = require("apisix.control.v1")
+29a31
+> local prometheus_bkp
+35a38,39
+> local get_global_rules = require("apisix.global_rules").global_rules
+> local get_global_rules_prev_index = require("apisix.global_rules").get_pre_index
+42,48d45
+< 
+< local shdict_name = "config"
+< if ngx.config.subsystem == "stream" then
+<     shdict_name = shdict_name .. "-stream"
+< end
+< local config_dict = ngx.shared[shdict_name]
+< 
+118a116,118
+>         if prometheus_bkp then
+>             prometheus = prometheus_bkp
+>         end
+139,141c139,142
+<     local status_exptime = core.table.try_read_attr(attr, "metrics", "http_status", "expire")
+<     local latency_exptime = core.table.try_read_attr(attr, "metrics", "http_latency", "expire")
+<     local bandwidth_exptime = core.table.try_read_attr(attr, "metrics", "bandwidth", "expire")
+---
+>     local exptime
+>     if attr and attr.expire then
+>         exptime = attr.expire
+>     end
+147c148
+<             {"state", "gateway_group_id", "instance_id"})
+---
+>             {"state"})
+150,151c151
+<             "The total number of client requests since APISIX started",
+<             {"gateway_group_id", "instance_id",})
+---
+>             "The total number of client requests since APISIX started")
+154,155c154
+<             "Config server etcd reachable from APISIX, 0 is unreachable",
+<             {"gateway_group_id", "instance_id",})
+---
+>             "Config server etcd reachable from APISIX, 0 is unreachable")
+157d155
+< 
+160c158
+<             {"hostname", "gateway_group_id", "instance_id",})
+---
+>             {"hostname"})
+164c162
+<             {"key", "gateway_group_id", "instance_id"})
+---
+>             {"key"})
+168c166
+<             {"name", "gateway_group_id", "instance_id",})
+---
+>             {"name"})
+172c170
+<             {"name", "gateway_group_id", "instance_id",})
+---
+>             {"name"})
+173a172,176
+>     metrics.upstream_status = prometheus:gauge("upstream_status",
+>             "Upstream status from health check",
+>             {"name", "ip", "port"},
+>             exptime)
+> 
+181,184c184,186
+<             {"code", "route", "route_id", "matched_uri",
+<             "matched_host", "service", "service_id","consumer", "node",
+<             "gateway_group_id", "instance_id", "api_product_id",
+<             unpack(extra_labels("http_status"))}, status_exptime)
+---
+>             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
+>             unpack(extra_labels("http_status"))},
+>             exptime)
+189a192
+> 
+192,194c195,196
+<         {"type", "route", "route_id", "service", "service_id", "consumer", "node",
+<         "gateway_group_id", "instance_id", "api_product_id",unpack(extra_labels("http_latency"))},
+<         buckets, latency_exptime)
+---
+>         {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
+>         buckets, exptime)
+198,200c200,201
+<             {"type", "route", "route_id", "service", "service_id", "consumer", "node",
+<             "gateway_group_id", "instance_id", "api_product_id",
+<             unpack(extra_labels("bandwidth"))}, bandwidth_exptime)
+---
+>             {"type", "route", "service", "consumer", "node", unpack(extra_labels("bandwidth"))},
+>             exptime)
+214c215
+<         core.log.error("need to build APISIX-Base to support L4 metrics")
+---
+>         core.log.error("need to build APISIX-Runtime to support L4 metrics")
+232,241d232
+< local function get_gateway_group_id()
+<     local gateway_group_id, err = config_dict:get("gateway_group_id")
+<     if not gateway_group_id then
+<         core.log.warn("failed to get gateway_group_id: ", err)
+<         return ""
+<     end
+<     return gateway_group_id
+< end
+< 
+< 
+246d236
+<     local route = ""
+249d238
+<     local service = ""
+251,253d239
+<     local gateway_group_id = get_gateway_group_id()
+<     local instance_id = core.id.get()
+<     local api_product_id = ctx.api_product_id or ""
+257d242
+<         route = matched_route.id
+259d243
+<         service = matched_route.service_id or ""
+262c246
+<             route = matched_route.name or route
+---
+>             route_id = matched_route.name or route_id
+264,265c248,249
+<                 local fetched_service = service_fetch(service_id)
+<                 service = fetched_service and fetched_service.value.name or service_id
+---
+>                 local service = service_fetch(service_id)
+>                 service_id = service and service.value.name or service_id
+278,280c262,264
+<         gen_arr(vars.status, route, route_id, matched_uri, matched_host,
+<                 service, service_id, consumer_name, balancer_ip, gateway_group_id,
+<                 instance_id, api_product_id, unpack(extra_labels("http_status", ctx))))
+---
+>         gen_arr(vars.status, route_id, matched_uri, matched_host,
+>                 service_id, consumer_name, balancer_ip,
+>                 unpack(extra_labels("http_status", ctx))))
+286,287c270,271
+<         gen_arr("request", route, route_id, service, service_id, consumer_name, balancer_ip,
+<         gateway_group_id, instance_id, api_product_id, unpack(latency_extra_label_values)))
+---
+>         gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
+>         unpack(latency_extra_label_values)))
+291,292c275,276
+<             gen_arr("upstream", route, route_id, service, service_id, consumer_name, balancer_ip,
+<             gateway_group_id, instance_id, api_product_id, unpack(latency_extra_label_values)))
+---
+>             gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
+>             unpack(latency_extra_label_values)))
+296,297c280,281
+<         gen_arr("apisix", route, route_id, service, service_id, consumer_name, balancer_ip,
+<         gateway_group_id, instance_id, api_product_id, unpack(latency_extra_label_values)))
+---
+>         gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
+>         unpack(latency_extra_label_values)))
+302,303c286,287
+<         gen_arr("ingress", route, route_id, service, service_id, consumer_name, balancer_ip,
+<         gateway_group_id, instance_id, api_product_id, unpack(bandwidth_extra_label_values)))
+---
+>         gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
+>         unpack(bandwidth_extra_label_values)))
+306,307c290,291
+<         gen_arr("egress", route, route_id, service, service_id, consumer_name, balancer_ip,
+<         gateway_group_id, instance_id, api_product_id, unpack(bandwidth_extra_label_values)))
+---
+>         gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
+>         unpack(bandwidth_extra_label_values)))
+329c313
+< local function nginx_status(gateway_group_id, instance_id)
+---
+> local function nginx_status()
+354c338
+<             metrics.requests:set(val[0], {gateway_group_id, instance_id})
+---
+>             metrics.requests:set(val[0])
+356c340
+<             label_values = {name, gateway_group_id, instance_id,}
+---
+>             label_values[1] = name
+364,365c348
+< local function set_modify_index(key, items, items_ver, global_max_index,
+<                                 gateway_group_id, instance_id)
+---
+> local function set_modify_index(key, items, items_ver, global_max_index)
+379c362
+<     key_values = {key, gateway_group_id, instance_id}
+---
+>     key_values[1] = key
+389c372
+< local function etcd_modify_index(gateway_group_id, instance_id)
+---
+> local function etcd_modify_index()
+395,396c378
+<     global_max_idx = set_modify_index("routes", routes, routes_ver, global_max_idx,
+<         gateway_group_id, instance_id)
+---
+>     global_max_idx = set_modify_index("routes", routes, routes_ver, global_max_idx)
+400,401c382
+<     global_max_idx = set_modify_index("services", services, services_ver, global_max_idx,
+<         gateway_group_id, instance_id)
+---
+>     global_max_idx = set_modify_index("services", services, services_ver, global_max_idx)
+405,406c386
+<     global_max_idx = set_modify_index("ssls", ssls, ssls_ver, global_max_idx,
+<         gateway_group_id, instance_id)
+---
+>     global_max_idx = set_modify_index("ssls", ssls, ssls_ver, global_max_idx)
+410,411c390
+<     global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx,
+<         gateway_group_id, instance_id)
+---
+>     global_max_idx = set_modify_index("consumers", consumers, consumers_ver, global_max_idx)
+414c393
+<     local global_rules = router.global_rules
+---
+>     local global_rules, global_rules_ver = get_global_rules()
+416,417c395,396
+<         global_max_idx = set_modify_index("global_rules", global_rules.values,
+<             global_rules.conf_version, global_max_idx, gateway_group_id, instance_id)
+---
+>         global_max_idx = set_modify_index("global_rules", global_rules,
+>             global_rules_ver, global_max_idx)
+420,421c399,401
+<         key_values = {"prev_index", gateway_group_id, instance_id}
+<         metrics.etcd_modify_indexes:set(global_rules.prev_index, key_values)
+---
+>         key_values[1] = "prev_index"
+>         local prev_index = get_global_rules_prev_index()
+>         metrics.etcd_modify_indexes:set(prev_index, key_values)
+424,425c404
+<         global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx,
+<             gateway_group_id, instance_id)
+---
+>         global_max_idx = set_modify_index("global_rules", nil, nil, global_max_idx)
+430,431c409
+<     global_max_idx = set_modify_index("upstreams", upstreams, upstreams_ver, global_max_idx,
+<         gateway_group_id, instance_id)
+---
+>     global_max_idx = set_modify_index("upstreams", upstreams, upstreams_ver, global_max_idx)
+436c414
+<         stream_routes_ver, global_max_idx, gateway_group_id, instance_id)
+---
+>         stream_routes_ver, global_max_idx)
+440,441c418
+<     global_max_idx = set_modify_index("protos", protos, protos_ver, global_max_idx,
+<         gateway_group_id, instance_id)
+---
+>     global_max_idx = set_modify_index("protos", protos, protos_ver, global_max_idx)
+444c421
+<     key_values = {"max_modify_index", gateway_group_id, instance_id}
+---
+>     key_values[1] = "max_modify_index"
+450c427,428
+< local function shared_dict_status(gateway_group_id, instance_id)
+---
+> local function shared_dict_status()
+>     local name = {}
+452,454c430,432
+<         local labels = {shared_dict_name, gateway_group_id, instance_id}
+<         metrics.shared_dict_capacity_bytes:set(shared_dict:capacity(), labels)
+<         metrics.shared_dict_free_space_bytes:set(shared_dict:free_space(), labels)
+---
+>         name[1] = shared_dict_name
+>         metrics.shared_dict_capacity_bytes:set(shared_dict:capacity(), name)
+>         metrics.shared_dict_free_space_bytes:set(shared_dict:free_space(), name)
+466,468d443
+<     local gateway_group_id = get_gateway_group_id()
+<     local instance_id = core.id.get()
+< 
+470c445
+<     shared_dict_status(gateway_group_id, instance_id)
+---
+>     shared_dict_status()
+473c448
+<     nginx_status(gateway_group_id, instance_id)
+---
+>     nginx_status()
+484c459
+<         etcd_modify_index(gateway_group_id, instance_id)
+---
+>         etcd_modify_index()
+488c463
+<             metrics.etcd_reachable:set(1, {gateway_group_id, instance_id,})
+---
+>             metrics.etcd_reachable:set(1)
+491c466
+<             metrics.etcd_reachable:set(0, {gateway_group_id, instance_id,})
+---
+>             metrics.etcd_reachable:set(0)
+503c478
+<             key_values = {"x_etcd_index", gateway_group_id, instance_id}
+---
+>             key_values[1] = "x_etcd_index"
+508c483
+<     metrics.node_info:set(1, gen_arr(hostname, gateway_group_id, instance_id))
+---
+>     metrics.node_info:set(1, gen_arr(hostname))
+509a485,494
+>     -- update upstream_status metrics
+>     local stats = control.get_health_checkers()
+>     for _, stat in ipairs(stats) do
+>         for _, node in ipairs(stat.nodes) do
+>             metrics.upstream_status:set(
+>                     (node.status == "healthy" or node.status == "mostly_healthy") and 1 or 0,
+>                     gen_arr(stat.name, node.ip, node.port)
+>             )
+>         end
+>     end
+543a529,531
+>     if not prometheus then
+>         core.response.exit(200, "{}")
+>     end
+565a554,562
+> 
+> 
+> function _M.destroy()
+>     if prometheus ~= nil then
+>         prometheus_bkp = core.table.deepcopy(prometheus)
+>         prometheus = nil
+>     end
+> end
+> 

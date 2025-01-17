@@ -1,0 +1,2 @@
+231a232
+>             value = core.utils.resolve_var(value, ctx.var)

@@ -1,0 +1,96 @@
+31,32d30
+< local schema_def = require("apisix.schema_def")
+< local auth_utils = require("apisix.utils.auth")
+66d63
+<         anonymous_consumer = schema_def.anonymous_consumer_schema,
+129,131c126,128
+<     local cur_consumer, _, err = consumer.find_consumer(plugin_name, "key_id", key_id)
+<     if not cur_consumer then
+<         return nil, err or "Invalid key_id"
+---
+>     local consumer_conf = consumer.plugin(plugin_name)
+>     if not consumer_conf then
+>         return nil, "Missing related consumer"
+133d129
+<     core.log.info("consumer: ", core.json.delay_encode(consumer, true))
+135c131,138
+<     return cur_consumer
+---
+>     local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "key_id")
+>     local consumer = consumers[key_id]
+>     if not consumer then
+>         return nil, "Invalid key_id"
+>     end
+>     core.log.info("consumer: ", core.json.delay_encode(consumer))
+> 
+>     return consumer
+164c167
+<                             h .. ": " .. canonical_header)
+---
+>                                 h .. ": " .. canonical_header)
+186,189d188
+<     if not params then
+<         return nil
+<     end
+< 
+294c293
+<     if not auth_string:match("^Signature") then
+---
+>     if not core.string.has_prefix(auth_string, "Signature") then
+325c324
+< local function find_consumer(conf, ctx)
+---
+> function _M.rewrite(conf, ctx)
+328,331c327,328
+<         if not auth_utils.is_running_under_multi_auth(ctx) then
+<             core.log.warn("client request can't be validated: ", err)
+<         end
+<         return nil, nil, "client request can't be validated: " .. err
+---
+>         core.log.warn("client request can't be validated: ", err)
+>         return 401, {message = "client request can't be validated: " .. err}
+333a331,333
+>     if conf.hide_credentials then
+>         core.request.set_header("Authorization", nil)
+>     end
+336,341c336,337
+<         err = "client request can't be validated: " .. (err or "Invalid signature")
+<         if auth_utils.is_running_under_multi_auth(ctx) then
+<             return nil, nil, err
+<         end
+<         core.log.warn(err)
+<         return nil, nil, "client request can't be validated"
+---
+>         core.log.warn("client request can't be validated: ", err or "Invalid signature")
+>         return 401, {message = "client request can't be validated"}
+344,369c340,342
+<     local consumers_conf = consumer.consumers_conf(plugin_name)
+<     return validated_consumer, consumers_conf, err
+< end
+< 
+< 
+< function _M.rewrite(conf, ctx)
+<     local cur_consumer, consumers_conf, err = find_consumer(conf, ctx)
+<     if not cur_consumer then
+<         if not conf.anonymous_consumer then
+<             return 401, { message = err }
+<         end
+<         cur_consumer, consumers_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
+<         if not cur_consumer then
+<             if auth_utils.is_running_under_multi_auth(ctx) then
+<                 return 401, err
+<             end
+<             core.log.error(err)
+<             return 401, { message = "Invalid user authorization" }
+<         end
+<     end
+< 
+<     if conf.hide_credentials then
+<         core.request.set_header("Authorization", nil)
+<     end
+< 
+<     consumer.attach_consumer(ctx, cur_consumer, consumers_conf)
+---
+>     local consumer_conf = consumer.plugin(plugin_name)
+>     consumer.attach_consumer(ctx, validated_consumer, consumer_conf)
+>     core.log.info("hit hmac-auth rewrite")

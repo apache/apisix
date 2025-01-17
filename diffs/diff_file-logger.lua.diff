@@ -1,0 +1,21 @@
+18a19
+> local expr         =   require("resty.expr.v1")
+48a50,56
+>         },
+>         match = {
+>             type = "array",
+>             maxItems = 20,
+>             items = {
+>                 type = "array",
+>             },
+77a86,91
+>     if conf.match then
+>         local ok, err = expr.new(conf.match)
+>         if not ok then
+>             return nil, "failed to validate the 'match' expression: " .. err
+>         end
+>     end
+162a177,179
+>     if entry == nil then
+>         return
+>     end

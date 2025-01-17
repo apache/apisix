@@ -1,0 +1,57 @@
+76d75
+< 
+105d103
+< local started_skywalking_reporter = false
+107,108c105,107
+<     if not ctx.skywalking_sample then
+<         return
+---
+>     if ctx.skywalking_sample then
+>         sw_tracer:prepareForReport()
+>         core.log.info("tracer prepare for report")
+110,124d108
+< 
+<     if not started_skywalking_reporter then
+<         started_skywalking_reporter = true
+< 
+<         local sk_cli = require("skywalking.client")
+< 
+<         local plugin_info = _M.plugin_info
+<         if plugin_info.report_interval then
+<             sk_cli.backendTimerDelay = plugin_info.report_interval
+<         end
+<         sk_cli:startBackendTimer(plugin_info.endpoint_addr)
+<     end
+< 
+<     sw_tracer:prepareForReport()
+<     core.log.info("tracer prepare for report")
+131a116
+> 
+144a130,131
+>     local metadata_shdict = ngx.shared.tracing_buffer
+> 
+149,152d135
+<     _M.plugin_info = local_plugin_info
+< 
+<     local metadata_shdict = ngx.shared.tracing_buffer
+< 
+154a138,144
+> 
+>     local sk_cli = require("skywalking.client")
+>     if local_plugin_info.report_interval then
+>         sk_cli.backendTimerDelay = local_plugin_info.report_interval
+>     end
+> 
+>     sk_cli:startBackendTimer(local_plugin_info.endpoint_addr)
+155a146,156
+> 
+> 
+> function _M.destroy()
+>     if process.type() ~= "worker" then
+>         return
+>     end
+> 
+>     local sk_cli = require("skywalking.client")
+>     sk_cli:destroyBackendTimer()
+> end
+> 

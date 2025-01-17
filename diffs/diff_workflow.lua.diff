@@ -1,0 +1,58 @@
+18c18
+< local plugin      = require("apisix.plugin")
+---
+> local limit_count = require("apisix.plugins.limit-count.init")
+52c52
+<                 required = {"actions"}
+---
+>                 required = {"case", "actions"}
+55c55,56
+<     }
+---
+>     },
+>     required = {"rules"}
+94a96,100
+> local function rate_limit(conf, ctx)
+>     return limit_count.rate_limit(conf, ctx, "limit-count", 1)
+> end
+> 
+> 
+99a106,109
+>     ["limit-count"] = {
+>         handler        = rate_limit,
+>         check_schema   = limit_count.check_schema,
+>     }
+103,110d112
+< function _M.register(plugin_name, handler, check_schema)
+<     support_action[plugin_name] = {
+<         handler        = handler,
+<         check_schema   = check_schema
+<     }
+< end
+< 
+< 
+118,122c120,122
+<         if rule.case then
+<             local ok, err = expr.new(rule.case)
+<             if not ok then
+<                 return false, "failed to validate the 'case' expression: " .. err
+<             end
+---
+>         local ok, err = expr.new(rule.case)
+>         if not ok then
+>             return false, "failed to validate the 'case' expression: " .. err
+123a124
+> 
+144a146
+>     local match_result
+146,150c148,149
+<         local match_result = true
+<         if rule.case then
+<             local expr, _ = expr.new(rule.case)
+<             match_result = expr:eval(ctx.var)
+<         end
+---
+>         local expr, _ = expr.new(rule.case)
+>         match_result = expr:eval(ctx.var)
+154d152
+<             plugin.skip_plugin(ctx, action[1])

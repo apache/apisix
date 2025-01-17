@@ -1,0 +1,8 @@
+28d27
+< 
+154c153
+<     -- after core.request.header function changed,
+---
+>     -- after core.request.header function changed
+178d176
+< 

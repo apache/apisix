@@ -1,0 +1,107 @@
+26d25
+< local auth_utils = require("apisix.utils.auth")
+59a59,62
+>         token_endpoint_auth_method = {
+>             type = "string",
+>             default = "client_secret_basic"
+>         },
+80c83
+<                 },
+---
+>                 }
+95c98
+<             description = "use ngx.var.request_uri if not configured"
+---
+>             description = "auto append '.apisix/redirect' to ngx.var.uri if not configured"
+200,201c203
+<             type = "integer",
+<             default = 900
+---
+>             type = "integer"
+276,280c278
+<         },
+<         token_endpoint_auth_method = {
+<             type = "string",
+<             default = "client_secret_basic"
+<         },
+---
+>         }
+282c280
+<     encrypt_fields = {"client_secret"},
+---
+>     encrypt_fields = {"client_secret", "client_rsa_private_key"},
+290d287
+<     type = 'auth',
+457d453
+< 
+467d462
+< 
+478d472
+< 
+487a482,483
+>     local path = ctx.var.request_uri
+> 
+489c485,500
+<         conf.redirect_uri = ctx.var.request_uri
+---
+>         -- NOTE: 'lua-resty-openidc' requires that 'redirect_uri' be
+>         --       different from 'uri'.  So default to append the
+>         --       '.apisix/redirect' suffix if not configured.
+>         local suffix = "/.apisix/redirect"
+>         local uri = ctx.var.uri
+>         if core.string.has_suffix(uri, suffix) then
+>             -- This is the redirection response from the OIDC provider.
+>             conf.redirect_uri = uri
+>         else
+>             if string.sub(uri, -1, -1) == "/" then
+>                 conf.redirect_uri = string.sub(uri, 1, -2) .. suffix
+>             else
+>                 conf.redirect_uri = uri .. suffix
+>             end
+>         end
+>         core.log.debug("auto set redirect_uri: ", conf.redirect_uri)
+496a508,520
+>     if path == (conf.logout_path or "/logout") then
+>         local discovery, discovery_err = openidc.get_discovery_doc(conf)
+>         if discovery_err then
+>             core.log.error("OIDC access discovery url failed : ", discovery_err)
+>             return 503
+>         end
+>         if conf.post_logout_redirect_uri and not discovery.end_session_endpoint then
+>             -- If the end_session_endpoint field does not exist in the OpenID Provider Discovery
+>             -- Metadata, the redirect_after_logout_uri field is used for redirection.
+>             conf.redirect_after_logout_uri = conf.post_logout_redirect_uri
+>         end
+>     end
+> 
+499c523
+<     if conf.bearer_only or conf.introspection_endpoint or conf.public_key then
+---
+>     if conf.bearer_only or conf.introspection_endpoint or conf.public_key or conf.use_jwks then
+508d531
+<             err = "OIDC introspection failed: " .. err
+510,513c533
+<             if auth_utils.is_running_under_multi_auth(ctx) then
+<                 return response, err
+<             end
+<             core.log.error(err)
+---
+>             core.log.error("OIDC introspection failed: ", err)
+539,540d558
+< 
+<         ctx.external_user = userinfo
+560a579,581
+>             if session then
+>                 session:close()
+>             end
+567,571c588
+<             err = "OIDC authentication failed: " .. err
+<             if auth_utils.is_running_under_multi_auth(ctx) then
+<                 return 500, err
+<             end
+<             core.log.error(err)
+---
+>             core.log.error("OIDC authentication failed: ", err)
+600,601d616
+< 
+<             ctx.external_user = response.user

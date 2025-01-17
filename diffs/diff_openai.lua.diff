@@ -1,0 +1,34 @@
+24d23
+< local type  = type
+46,48c45,47
+<         scheme = parsed_url and parsed_url.scheme or "https",
+<         host = parsed_url and parsed_url.host or DEFAULT_HOST,
+<         port = parsed_url and parsed_url.port or DEFAULT_PORT,
+---
+>         scheme = parsed_url.scheme or "https",
+>         host = parsed_url.host or DEFAULT_HOST,
+>         port = parsed_url.port or DEFAULT_PORT,
+50c49
+<         ssl_server_name = parsed_url and parsed_url.host or DEFAULT_HOST,
+---
+>         ssl_server_name = parsed_url.host or DEFAULT_HOST,
+58c57
+<     local query_params = conf.auth.query or {}
+---
+>     local path = (parsed_url.path or DEFAULT_PATH)
+60,68d58
+<     if type(parsed_url) == "table" and parsed_url.query and #parsed_url.query > 0 then
+<         local args_tab = core.string.decode_args(parsed_url.query)
+<         if type(args_tab) == "table" then
+<             core.table.merge(query_params, args_tab)
+<         end
+<     end
+< 
+<     local path = (endpoint and parsed_url.path or DEFAULT_PATH)
+< 
+77c67
+<         query = query_params
+---
+>         query = conf.auth.query
+87d76
+<     httpc:set_timeout(30000)

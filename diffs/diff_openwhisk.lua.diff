@@ -1,0 +1,4 @@
+52c52
+<         required = {"api_host", "service_token", "namespace", "action"},
+---
+>     required = {"api_host", "service_token", "namespace", "action"},

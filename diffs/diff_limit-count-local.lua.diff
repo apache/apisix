@@ -1,0 +1,7 @@
+68,71c68
+<     local reset = 0
+<     if not delay then
+<         return delay, remaining, reset
+<     end
+---
+>     local reset

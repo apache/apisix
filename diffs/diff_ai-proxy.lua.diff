@@ -1,0 +1,8 @@
+30c30
+<     priority = 997,
+---
+>     priority = 999,
+32c32
+<     schema = schema.plugin_schema,
+---
+>     schema = schema,

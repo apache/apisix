@@ -1,0 +1,83 @@
+35d34
+< local str_find = string.find
+37c36
+< local str_reverse = string.reverse
+---
+> local str_byte = string.byte
+38a38
+> local string_rfind = require("pl.stringx").rfind
+51a52
+> local SLASH_BYTE = str_byte("/")
+77,88d77
+< local function get_last_index(str, key)
+<     local rev = str_reverse(str)
+<     local _, idx = str_find(rev, key)
+<     local n
+<     if idx then
+<         n = #rev - idx + 1
+<     end
+< 
+<     return n
+< end
+< 
+< 
+104d92
+<         local root = str_sub(conf_path, 1, 1)
+106c94
+<         if root ~= "/" then
+---
+>         if str_byte(conf_path) ~= SLASH_BYTE then
+109c97
+<         local n = get_last_index(conf_path, "/")
+---
+>         local n = string_rfind(conf_path, "/")
+129c117
+<     local log_dir, _ = get_log_path_info(log_file_name)
+---
+>     local log_dir, log_name = get_log_path_info(log_file_name)
+131c119
+<     local compression_log_type = log_file_name .. COMPRESSION_FILE_SUFFIX
+---
+>     local compression_log_type = log_name .. COMPRESSION_FILE_SUFFIX
+133c121
+<         local n = get_last_index(file, "__")
+---
+>         local n = string_rfind(file, "__")
+136c124
+<             if log_type == log_file_name or log_type == compression_log_type then
+---
+>             if log_type == log_name or log_type == compression_log_type then
+171c159
+< local function compression_file(new_file)
+---
+> local function compression_file(new_file, timeout)
+177c165
+<     local n = get_last_index(new_file, "/")
+---
+>     local n = string_rfind(new_file, "/")
+185c173
+<     local ok, stdout, stderr, reason, status = shell.run(cmd)
+---
+>     local ok, stdout, stderr, reason, status = shell.run(cmd, nil, timeout, nil)
+220c208
+< local function rotate_file(files, now_time, max_kept)
+---
+> local function rotate_file(files, now_time, max_kept, timeout)
+251c239
+<             compression_file(new_file)
+---
+>             compression_file(new_file, timeout)
+273a262
+>     local timeout = 10000 -- default timeout 10 seconds
+277a267
+>         timeout = attr.timeout or timeout
+283a274
+>     core.log.info("rotate timeout:", timeout)
+303c294
+<         rotate_file(files, now_time, max_kept)
+---
+>         rotate_file(files, now_time, max_kept, timeout)
+321c312
+<         rotate_file(files, now_time, max_kept)
+---
+>         rotate_file(files, now_time, max_kept, timeout)

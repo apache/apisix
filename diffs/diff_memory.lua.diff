@@ -1,0 +1,22 @@
+34a35,38
+>     if self.dict == nil then
+>         return nil, "invalid cache_zone provided"
+>     end
+> 
+45a50,53
+>     if self.dict == nil then
+>         return nil, "invalid cache_zone provided"
+>     end
+> 
+47c55
+<     local res_json, err = self.dict:get(key)
+---
+>     local res_json, err, stale = self.dict:get_stale(key)
+54a63,65
+>     if stale then
+>         return nil, "expired"
+>     end
+65a77,79
+>     if self.dict == nil then
+>         return nil, "invalid cache_zone provided"
+>     end
