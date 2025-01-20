@@ -35,6 +35,7 @@ local schema = {
         idp_uri = {type = "string"},
         cas_callback_uri = {type = "string"},
         logout_uri = {type = "string"},
+        user_header = {type = "string"},
     },
     required = {
         "idp_uri", "cas_callback_uri", "logout_uri"
@@ -87,6 +88,9 @@ local function with_session_id(conf, ctx, session_id)
     else
         -- refresh the TTL
         store:set(session_id, user, SESSION_LIFETIME)
+        if conf.user_header then
+            core.request.set_header(conf.user_header, user)
+        end
     end
 end
 
