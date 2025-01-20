@@ -6,7 +6,7 @@ keywords:
   - 插件
   - Elasticsearch-logger
   - 日志
-description: elasticsearch-logger Plugin将请求和响应日志批量推送到Elasticsearch，并支持日志格式的自定义。
+description: elasticsearch-logger Plugin 将请求和响应日志批量推送到 Elasticsearch，并支持日志格式的自定义。
 ---
 
 <!--
