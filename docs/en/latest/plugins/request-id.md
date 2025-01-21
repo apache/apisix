@@ -40,9 +40,9 @@ The `request-id` Plugin adds a unique ID to each request proxied through APISIX,
 | ------------------- | ------- | -------- | -------------- | ------------------------------- | ---------------------------------------------------------------------- |
 | header_name         | string  | False    | "X-Request-Id" |                                 | Name of the header that carries the request unique ID. Note that if a request carries an ID in the `header_name` header, the Plugin will use the header value as the unique ID and will not overwrite it with the generated ID.                                 |
 | include_in_response | boolean | False    | true           |                                 | If true, include the generated request ID in the response header, where the name of the header is the `header_name` value. |
-| algorithm           | string  | False    | "uuid"         | ["uuid", "nanoid", "range_id"] | Algorithm used for generating the unique ID. When set to `uuid` , the Plugin generates a universally unique identifier. When set to `nanoid`, the Plugin generates a compact, URL-safe ID. When set to `range_id`, the Plugin generates a sequential ID with specific parameters.                 |
+| algorithm           | string  | False    | "uuid"         | ["uuid","nanoid","range_id"] | Algorithm used for generating the unique ID. When set to `uuid` , the Plugin generates a universally unique identifier. When set to `nanoid`, the Plugin generates a compact, URL-safe ID. When set to `range_id`, the Plugin generates a sequential ID with specific parameters.                 |
 | range_id      | object | False | |   | Configuration for generating a request ID using the `range_id` algorithm.  |
-| range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| minimum length 6 | Character set used for the `range_id` algorithm. |
+| range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789" | minimum length 6 | Character set used for the `range_id` algorithm. |
 | range_id.length    | integer | False | 16             | >=6 | Length of the generated ID for the `range_id` algorithm. |
 
 ## Examples
@@ -187,18 +187,18 @@ You should receive an `HTTP/1.1 200 OK` response not and see `X-Req-Identifier` 
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
-  "form": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-6752748c-7d364f48564508db1e8c9ea8", 
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-6752748c-7d364f48564508db1e8c9ea8",
     "X-Forwarded-Host": "127.0.0.1",
     "X-Req-Identifier": "268092bc-15e1-4461-b277-bf7775f2856f"
-  }, 
+  },
   ...
 }
 ```

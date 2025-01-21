@@ -36,9 +36,9 @@ description: request-id 插件为通过 APISIX 代理的每个请求添加一个
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
 | header_name | string | 否 | "X-Request-Id" | | 携带请求唯一 ID 的标头的名称。请注意，如果请求在 `header_name` 标头中携带 ID，则插件将使用标头值作为唯一 ID，并且不会用生成的 ID 覆盖它。|
 | include_in_response | 布尔值 | 否 | true | | 如果为 true，则将生成的请求 ID 包含在响应标头中，其中标头的名称是 `header_name` 值。|
-| algorithm | string | 否 | "uuid" | ["uuid", "nanoid", "range_id"] | 用于生成唯一 ID 的算法。设置为 `uuid` 时，插件会生成一个通用唯一标识符。设置为 `nanoid` 时，插件会生成一个紧凑的、URL 安全的 ID。设置为 `range_id` 时，插件会生成具有特定参数的连续 ID。|
+| algorithm | string | 否 | "uuid" | ["uuid","nanoid","range_id"] | 用于生成唯一 ID 的算法。设置为 `uuid` 时，插件会生成一个通用唯一标识符。设置为 `nanoid` 时，插件会生成一个紧凑的、URL 安全的 ID。设置为 `range_id` 时，插件会生成具有特定参数的连续 ID。|
 | range_id | object | 否 | | |使用 `range_id` 算法生成请求 ID 的配置。|
-| range_id.char_set | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| 最小长度 6 | 用于 `range_id` 算法的字符集。|
+| range_id.char_set | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789" | 最小长度 6 | 用于 `range_id` 算法的字符集。|
 | range_id.length | integer | 否 | 16 | >=6 | 用于 `range_id` 算法的生成的 ID 的长度。|
 
 ## 示例
@@ -183,18 +183,18 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ```json
 {
-  "args": {}, 
-  "data": "", 
-  "files": {}, 
-  "form": {}, 
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-6752748c-7d364f48564508db1e8c9ea8", 
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-6752748c-7d364f48564508db1e8c9ea8",
     "X-Forwarded-Host": "127.0.0.1",
     "X-Req-Identifier": "268092bc-15e1-4461-b277-bf7775f2856f"
-  }, 
+  },
   ...
 }
 ```
@@ -256,7 +256,7 @@ curl -i "http://127.0.0.1:9180/apisix/admin/global_rules" -X PUT -d '{
 }'
 ```
 
-使用 `request-id` 插件创建路由，将请求ID添加到不同的自定义标头：
+使用 `request-id` 插件创建路由，将请求 ID 添加到不同的自定义标头：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
