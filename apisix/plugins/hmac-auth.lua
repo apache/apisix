@@ -21,12 +21,12 @@ local ngx_re     = require("ngx.re")
 local ipairs     = ipairs
 local hmac_sha1  = ngx.hmac_sha1
 local core       = require("apisix.core")
-local hmac       = require("resty.hmac")
+local hmac       = require("resty.openssl.hmac")
 local consumer   = require("apisix.consumer")
 local ngx_decode_base64 = ngx.decode_base64
 local ngx_encode_base64 = ngx.encode_base64
 local plugin_name   = "hmac-auth"
-local ALLOWED_ALGORITHMS = {"hmac-sha1", "hmac-sha256", "hmac-sha512"}
+local ALLOWED_ALGORITHMS = {"hmac-sha1", "hmac-sha256", "hmac-sha512", "hmac-sm3"}
 local resty_sha256 = require("resty.sha256")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
@@ -92,10 +92,13 @@ local hmac_funcs = {
         return hmac_sha1(secret_key, message)
     end,
     ["hmac-sha256"] = function(secret_key, message)
-        return hmac:new(secret_key, hmac.ALGOS.SHA256):final(message)
+        return hmac.new(secret_key, "sha256"):final(message)
     end,
     ["hmac-sha512"] = function(secret_key, message)
-        return hmac:new(secret_key, hmac.ALGOS.SHA512):final(message)
+        return hmac.new(secret_key, "sha512"):final(message)
+    end,
+    ["hmac-sm3"] = function(secret_key, message)
+        return hmac.new(secret_key, "sm3"):final(message)
     end,
 }
 
@@ -103,7 +106,7 @@ local hmac_funcs = {
 local function array_to_map(arr)
     local map = core.table.new(0, #arr)
     for _, v in ipairs(arr) do
-      map[v] = true
+        map[v] = true
     end
 
     return map
@@ -152,19 +155,19 @@ local function generate_signature(ctx, secret_key, params)
         for _, h in ipairs(params.headers) do
             local canonical_header = core.request.header(ctx, h)
             if not canonical_header then
-              if h == "@request-target" then
-                local request_target = request_method .. " " .. uri
-                core.table.insert(signing_string_items, request_target)
+                if h == "@request-target" then
+                    local request_target = request_method .. " " .. uri
+                    core.table.insert(signing_string_items, request_target)
+                    core.log.info("canonical_header name:", core.json.delay_encode(h))
+                    core.log.info("canonical_header value: ",
+                            core.json.delay_encode(request_target))
+                end
+            else
+                core.table.insert(signing_string_items,
+                        h .. ": " .. canonical_header)
                 core.log.info("canonical_header name:", core.json.delay_encode(h))
                 core.log.info("canonical_header value: ",
-                              core.json.delay_encode(request_target))
-              end
-            else
-              core.table.insert(signing_string_items,
-                                h .. ": " .. canonical_header)
-              core.log.info("canonical_header name:", core.json.delay_encode(h))
-              core.log.info("canonical_header value: ",
-                            core.json.delay_encode(canonical_header))
+                        core.json.delay_encode(canonical_header))
             end
         end
     end
@@ -208,10 +211,10 @@ local function validate(ctx, conf, params)
     end
 
     for _, algo in ipairs(conf.allowed_algorithms) do
-      if algo == params.algorithm then
-        found_algorithm = true
-        break
-      end
+        if algo == params.algorithm then
+            found_algorithm = true
+            break
+        end
     end
 
     if not found_algorithm then
