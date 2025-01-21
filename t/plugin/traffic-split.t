@@ -673,9 +673,9 @@ GET /t
                         name = "upstream_A",
                         type = "roundrobin",
                         pass_host = "rewrite",
-                        upstream_host = "www.apiseven.com",
+                        upstream_host = "httpbin.org",
                         nodes = {
-                          ["www.apiseven.com:80"] = 0
+                          ["httpbin.org:80"] = 0
                         }
                       },
                       weight = 100000
@@ -715,7 +715,7 @@ passed
 --- error_code eval
 [200, 200]
 --- error_log_like eval
-qr/(dns resolver domain: www.apiseven.com to \d+.\d+.\d+.\d+){2}/
+qr/(dns resolver domain: httpbin.org to \d+.\d+.\d+.\d+){2}/
 
 
 
