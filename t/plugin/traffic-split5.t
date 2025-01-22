@@ -549,7 +549,7 @@ nginx_config:
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/upstreams/1',
                  ngx.HTTP_PUT,
-                 [[{                 
+                 [[{
                     "type": "roundrobin",
                     "nodes": {
                         "127.0.0.1:1970":10
@@ -564,7 +564,7 @@ nginx_config:
 
             local code, body = t('/apisix/admin/upstreams/2',
                  ngx.HTTP_PUT,
-                 [[{                 
+                 [[{
                     "type": "roundrobin",
                     "nodes": {
                         "127.0.0.1:1971":10
