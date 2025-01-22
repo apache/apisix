@@ -535,3 +535,102 @@ id=1
 Content-Type: application/x-www-form-urlencoded;charset=UTF-8
 --- response_body
 1970
+
+
+
+=== TEST 12: failure after plugin reload
+--- extra_yaml_config
+nginx_config:
+  worker_processes: 1
+
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:1970":10
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/upstreams/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "type": "roundrobin",
+                    "nodes": {
+                        "127.0.0.1:1971":10
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "plugins": {
+                        "traffic-split": {
+                            "rules": [
+                                {
+                                    "weighted_upstreams": [
+                                        {
+                                            "upstream_id": "2",
+                                            "weight": 1
+                                        },
+                                        {
+                                            "weight": 1
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "upstream_id": "1"
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local code, body = t('/hello')
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/plugins/reload', ngx.HTTP_PUT)
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/hello')
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed.")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed.
