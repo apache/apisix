@@ -538,7 +538,7 @@ Content-Type: application/x-www-form-urlencoded;charset=UTF-8
 
 
 
-=== TEST 6: failure after plugin reload
+=== TEST 12: failure after plugin reload
 --- extra_yaml_config
 nginx_config:
   worker_processes: 1
