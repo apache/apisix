@@ -219,23 +219,6 @@ function _M.init()
         trace_id_ratio = trace_id_ratio_sampler_new,
     }
     hostname = core.utils.gethostname()
-
-    -- plugin_info = plugin.plugin_attr(plugin_name) or {}
-    -- local check = {"collector.address"}
-    -- core.utils.check_https(check, plugin_info, plugin_name)
-    -- local ok, err = core.schema.check(attr_schema, plugin_info)
-    -- if not ok then
-    --     core.log.error("failed to check the plugin_attr[", plugin_name, "]",
-    --             ": ", err)
-    --     return
-    -- end
-
-    -- if plugin_info.trace_id_source == "x-request-id" then
-    --     id_generator.new_ids = function()
-    --         local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
-    --         return trace_id, id_generator.new_span_id()
-    --     end
-    -- end
 end
 
 
@@ -247,7 +230,8 @@ local function create_tracer_obj(conf)
     end
     core.log.info("metadata: ", core.json.delay_encode(metadata))
     local plugin_info = metadata.value
-
+    local check = {"collector.address"}
+    core.utils.check_https(check, plugin_info, plugin_name)
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
             local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
