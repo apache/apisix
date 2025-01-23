@@ -24,17 +24,6 @@ add_block_preprocessor(sub {
 plugins:
     - opentelemetry
     - proxy-rewrite
-plugin_attr:
-    opentelemetry:
-        trace_id_source: x-request-id
-        batch_span_processor:
-            max_export_batch_size: 1
-            inactive_timeout: 0.5
-        collector:
-            address: 127.0.0.1:4318
-            request_timeout: 3
-            request_headers:
-                foo: bar
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
@@ -52,7 +41,42 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: add plugin
+=== TEST 1: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "x-request-id",
+                    "collector": {
+                        "address": "127.0.0.1:4318",
+                        "request_timeout": 3,
+                        "request_headers": {
+                            "foo": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2: add plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -92,7 +116,7 @@ passed
 
 
 
-=== TEST 2: trigger opentelemetry
+=== TEST 3: trigger opentelemetry
 --- request
 GET /articles/12345/comments?foo=bar
 --- more_headers
@@ -103,7 +127,7 @@ opentracing
 
 
 
-=== TEST 3: (resource) check service.name
+=== TEST 4: (resource) check service.name
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -111,7 +135,7 @@ qr/\{"key":"service.name","value":\{"stringValue":"APISIX"\}\}/
 
 
 
-=== TEST 4: (span) check name
+=== TEST 5: (span) check name
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -119,7 +143,7 @@ qr/"name":"GET \/articles\/\*\/comments"/
 
 
 
-=== TEST 5: (span) check http.status_code
+=== TEST 6: (span) check http.status_code
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -127,7 +151,7 @@ qr/\{"key":"http.status_code","value":\{"intValue":"200"\}\}/
 
 
 
-=== TEST 6: (span) check http.method
+=== TEST 7: (span) check http.method
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -135,7 +159,7 @@ qr/\{"key":"http.method","value":\{"stringValue":"GET"\}\}/
 
 
 
-=== TEST 7: (span) check http.host
+=== TEST 8: (span) check http.host
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -143,7 +167,7 @@ qr/\{"key":"net.host.name","value":\{"stringValue":"localhost"\}\}/
 
 
 
-=== TEST 8: (span) check http.user_agent
+=== TEST 9: (span) check http.user_agent
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -151,7 +175,7 @@ qr/\{"key":"http.user_agent","value":\{"stringValue":"test-client"\}\}/
 
 
 
-=== TEST 9: (span) check http.target
+=== TEST 10: (span) check http.target
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -159,7 +183,7 @@ qr/\{"key":"http.target","value":\{"stringValue":"\/articles\/12345\/comments\?f
 
 
 
-=== TEST 10: (span) check http.route
+=== TEST 11: (span) check http.route
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -167,7 +191,7 @@ qr/\{"key":"http.route","value":\{"stringValue":"\/articles\/\*\/comments"\}\}/
 
 
 
-=== TEST 11: (span) check apisix.route_id
+=== TEST 12: (span) check apisix.route_id
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
@@ -175,7 +199,7 @@ qr/\{"key":"apisix.route_id","value":\{"stringValue":"1"\}\}/
 
 
 
-=== TEST 12: (span) check apisix.route_name
+=== TEST 13: (span) check apisix.route_name
 --- exec
 tail -n 1 ci/pod/otelcol-contrib/data-otlp.json
 --- response_body eval
