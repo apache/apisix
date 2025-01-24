@@ -312,7 +312,7 @@ function _M.rewrite(conf, api_ctx)
     core.utils.check_https(check, plugin_info, plugin_name)
     local vars = api_ctx.var
 
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
         return
