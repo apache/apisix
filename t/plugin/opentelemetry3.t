@@ -100,6 +100,21 @@ __DATA__
                 return body
             end
 
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    set_ngx_var: true
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return body
+            end
+
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
