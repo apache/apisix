@@ -192,6 +192,10 @@ function _M.plugin(plugin_name)
     return plugin_conf[plugin_name]
 end
 
+function _M.consumers_conf(plugin_name)
+    return _M.plugin(plugin_name)
+end
+
 
 -- attach chosen consumer to the ctx, used in auth plugin
 function _M.attach_consumer(ctx, consumer, conf)
@@ -251,6 +255,20 @@ function _M.consumers_kv(plugin_name, consumer_conf, key_attr)
     return consumers
 end
 
+
+function _M.find_consumer(plugin_name, key, key_value)
+    local consumer
+    local consumer_conf
+    consumer_conf = _M.plugin(plugin_name)
+    if not consumer_conf then
+        return nil, nil, "Missing related consumer"
+    end
+    local consumers = _M.consumers_kv(plugin_name, consumer_conf, key)
+    consumer = consumers[key_value]
+    return consumer, consumer_conf
+end
+
+
 local function check_consumer(consumer, key)
     local data_valid
     local err
@@ -292,6 +310,34 @@ function _M.init_worker()
         error("failed to create etcd instance for fetching consumers: " .. err)
         return
     end
+end
+
+local function get_anonymous_consumer_from_local_cache(name)
+    local anon_consumer_raw = consumers:get(name)
+
+    if not anon_consumer_raw or not anon_consumer_raw.value or
+    not anon_consumer_raw.value.id or not anon_consumer_raw.modifiedIndex then
+        return nil, nil, "failed to get anonymous consumer " .. name
+    end
+
+    -- make structure of anon_consumer similar to that of consumer_mod.consumers_kv's response
+    local anon_consumer = anon_consumer_raw.value
+    anon_consumer.consumer_name = anon_consumer_raw.value.id
+    anon_consumer.modifiedIndex = anon_consumer_raw.modifiedIndex
+
+    local anon_consumer_conf = {
+        conf_version = anon_consumer_raw.modifiedIndex
+    }
+
+    return anon_consumer, anon_consumer_conf
+end
+
+
+function _M.get_anonymous_consumer(name)
+    local anon_consumer, anon_consumer_conf, err
+    anon_consumer, anon_consumer_conf, err = get_anonymous_consumer_from_local_cache(name)
+
+    return anon_consumer, anon_consumer_conf, err
 end
 
 
