@@ -36,33 +36,41 @@ The `opentelemetry` Plugin can be used to report tracing data according to the [
 
 The Plugin only supports binary-encoded [OLTP over HTTP](https://opentelemetry.io/docs/reference/specification/protocol/otlp/#otlphttp).
 
-## Static Configurations
+## Configurations
 
 By default, configurations of the Service name, tenant ID, collector, and batch span processor are pre-configured in [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
 
-To customize these values, add the corresponding configurations to `config.yaml`. For example:
+You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/opentelemetry` For example:
 
-```yaml
-plugin_attr:
-  opentelemetry:
-    trace_id_source: x-request-id     # Specify the source of the trace ID, `x-request-id` or `random`. When set to `x-request-id`,
-                                      # the value of the `x-request-id` header will be used as the trace ID.
-    resource:                         # Additional resource to append to the trace.
-      service.name: APISIX            # Set the Service name for OpenTelemetry traces.
-    collector:
-      address: 127.0.0.1:4318       # Set the address of the OpenTelemetry collector to send traces to.
-      request_timeout: 3            # Set the timeout for requests to the OpenTelemetry collector in seconds.
-      request_headers:              # Set the headers to include in requests to the OpenTelemetry collector.
-        Authorization: token        # Set the authorization header to include an access token.
-    batch_span_processor:           # Trace span processor.
-      drop_on_queue_full: false     # Drop spans when the export queue is full.
-      max_queue_size: 1024          # Set the maximum size of the span export queue.
-      batch_timeout: 2              # Set the timeout for span batches to wait in the export queue before
-                                    # being sent.
-      inactive_timeout: 1           # Set the timeout for spans to wait in the export queue before being sent,
-                                    # if the queue is not full.
-      max_export_batch_size: 16     # Set the maximum number of spans to include in each batch sent to the OpenTelemetry collector.
-    set_ngx_var: false              # Export opentelemetry variables to nginx variables.
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "trace_id_source": "x-request-id",
+    "resource": {
+      "service.name": "APISIX"
+    },
+    "collector": {
+      "address": "127.0.0.1:4318",
+      "request_timeout": 3,
+      "request_headers": {
+        "Authorization": "token"
+      },
+      "batch_span_processor": {
+        "drop_on_queue_full": false,
+        "max_queue_size": 1024,
+        "batch_timeout": 2,
+        "inactive_timeout": 1,
+        "max_export_batch_size": 16
+      },
+      "set_ngx_var": false
+    }
+}'
 ```
 
 Reload APISIX for changes to take effect.
