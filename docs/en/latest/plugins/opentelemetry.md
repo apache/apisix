@@ -42,6 +42,9 @@ By default, configurations of the Service name, tenant ID, collector, and batch 
 
 You can change this configuration of the Plugin through the endpoint `apisix/admin/plugin_metadata/opentelemetry` For example:
 
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
