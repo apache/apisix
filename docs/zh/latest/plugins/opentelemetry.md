@@ -42,7 +42,7 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 您可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置，例如：
 
 :::note
-您可以从“ config.yaml”获取“ admin_key”,并使用以下命令保存到环境变量中:
+您可以从“config.yaml”获取“admin_key”,并使用以下命令保存到环境变量中：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
