@@ -66,6 +66,10 @@ __DATA__
             ngx.say(body)
         }
     }
+--- request
+GET /t
+--- response_body
+passed
 
 
 

@@ -54,6 +54,9 @@ __DATA__
                         "inactive_timeout": 0.5
                     },
                     "trace_id_source": "x-request-id",
+                    "resource": {
+                        "service.name": "APISIX"
+                    },
                     "collector": {
                         "address": "127.0.0.1:4318",
                         "request_timeout": 3,
