@@ -39,7 +39,7 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 
 默认情况下，服务名称、租户 ID、collector 和 batch span processor 的配置已预配置在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中。
 
-您可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置,例如:
+您可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置，例如：
 
 :::note
 您可以从“ config.yaml”获取“ admin_key”,并使用以下命令保存到环境变量中:
