@@ -75,8 +75,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 }'
 ```
 
-重新加载 APISIX 以使更改生效。
-
 ## 属性
 
 | 名称                                  | 类型           | 必选项    | 默认值        | 有效值        | 描述 |

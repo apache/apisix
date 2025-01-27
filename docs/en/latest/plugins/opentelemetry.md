@@ -76,8 +76,6 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
 }'
 ```
 
-Reload APISIX for changes to take effect.
-
 ## Attributes
 
 | Name                                  | Type          | Required | Default      | Valid Values | Description |
