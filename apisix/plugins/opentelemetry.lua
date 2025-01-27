@@ -198,7 +198,13 @@ local _M = {
 
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
-        return core.schema.check(metadata_schema, conf)
+        local ok, err = core.schema.check(metadata_schema, conf)
+        if not ok then
+            return ok, err
+        end
+        local check = {"collector.address"}
+        core.utils.check_https(check, conf, plugin_name)
+        return true
     end
     return core.schema.check(schema, conf)
 end
@@ -308,8 +314,6 @@ function _M.rewrite(conf, api_ctx)
     end
     core.log.info("metadata: ", core.json.delay_encode(metadata))
     local plugin_info = metadata.value
-    local check = {"collector.address"}
-    core.utils.check_https(check, plugin_info, plugin_name)
     local vars = api_ctx.var
 
     local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
