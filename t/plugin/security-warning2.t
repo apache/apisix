@@ -185,7 +185,7 @@ plugins:
             if code >= 300 then
                 ngx.status = code
             end
-            --- deleting this data so this doesn't effect when metadata schema is validated 
+            --- deleting this data so this doesn't effect when metadata schema is validated
             --- at init in next test.
             local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
                 ngx.HTTP_DELETE)
