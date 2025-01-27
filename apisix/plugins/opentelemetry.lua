@@ -192,7 +192,7 @@ local _M = {
     priority = 12009,
     name = plugin_name,
     schema = schema,
-     metadata_schema = metadata_schema,
+    metadata_schema = metadata_schema,
 }
 
 
