@@ -138,21 +138,30 @@ Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
 --- extra_yaml_config
 plugins:
     - opentelemetry
-plugin_attr:
-    opentelemetry:
-        trace_id_source: x-request-id
-        batch_span_processor:
-            max_export_batch_size: 1
-            inactive_timeout: 0.5
-        collector:
-            address: http://127.0.0.1:4318
-            request_timeout: 3
-            request_headers:
-                foo: bar
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "x-request-id",
+                    "collector": {
+                        "address": "http://127.0.0.1:4318",
+                        "request_timeout": 3,
+                        "request_headers": {
+                            "foo": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
@@ -176,6 +185,13 @@ plugin_attr:
             if code >= 300 then
                 ngx.status = code
             end
+            --- deleting this data so this doesn't effect when metadata schema is validated
+            --- at init in next test.
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_DELETE)
+            if code >= 300 then
+                ngx.status = code
+            end
             ngx.say(body)
         }
     }
@@ -190,21 +206,30 @@ Using opentelemetry collector.address with no TLS is a security risk
 --- extra_yaml_config
 plugins:
     - opentelemetry
-plugin_attr:
-    opentelemetry:
-        trace_id_source: x-request-id
-        batch_span_processor:
-            max_export_batch_size: 1
-            inactive_timeout: 0.5
-        collector:
-            address: https://127.0.0.1:4318
-            request_timeout: 3
-            request_headers:
-                foo: bar
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "x-request-id",
+                    "collector": {
+                        "address": "https://127.0.0.1:4318",
+                        "request_timeout": 3,
+                        "request_headers": {
+                            "foo": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
                 [[{
