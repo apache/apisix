@@ -1032,8 +1032,15 @@ _M.plugin_injected_schema = {
                 description = "filter determines whether the plugin "..
                                 "needs to be executed at runtime",
                 type  = "array",
-            }
-        }
+            },
+            pre_function = {
+                description = "function to be executed in each phase " ..
+                              "before execution of plugins. The pre_function will have access " ..
+                              "to two arguments: `conf` and `ctx`.",
+                type = "string",
+            },
+        },
+        additionalProperties = false,
     }
 }
 
