@@ -23,17 +23,6 @@ add_block_preprocessor(sub {
         my $extra_yaml_config = <<_EOC_;
 plugins:
     - opentelemetry
-plugin_attr:
-    opentelemetry:
-        trace_id_source: x-request-id
-        batch_span_processor:
-            max_export_batch_size: 1
-            inactive_timeout: 0.5
-        collector:
-            address: 127.0.0.1:4318
-            request_timeout: 3
-            request_headers:
-                foo: bar
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
@@ -49,7 +38,42 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: set additional_attributes with match
+=== TEST 1: add plugin metadata
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "trace_id_source": "x-request-id",
+                    "collector": {
+                        "address": "127.0.0.1:4318",
+                        "request_timeout": 3,
+                        "request_headers": {
+                            "foo": "bar"
+                        }
+                    }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 2: set additional_attributes with match
 --- config
     location /t {
         content_by_lua_block {
@@ -91,7 +115,7 @@ passed
 
 
 
-=== TEST 2: opentelemetry expands headers
+=== TEST 3: opentelemetry expands headers
 --- extra_init_by_lua
     local otlp = require("opentelemetry.trace.exporter.otlp")
     local orig_export_spans = otlp.export_spans
