@@ -51,7 +51,7 @@ location /t {
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing ) in \".+(\""}
+{"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing closing parenthesis in \".+(\""}
 
 
 
@@ -112,7 +112,7 @@ location /t {
 GET /t
 --- error_code: 400
 --- response_body
-{"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing ) in \"^b(\""}
+{"error_msg":"failed to check the configuration of plugin uri-blocker err: pcre_compile() failed: missing closing parenthesis in \"^b(\""}
 
 
 
