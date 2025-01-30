@@ -401,3 +401,220 @@ passed
 --- response_body
 true
 --- error_code: 302
+
+
+
+=== TEST 11: Set up route with plugin matching  URI `/*` and point plugin to local Keycloak instance and set claim validator.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
+                                "set_access_token_header": true,
+                                "access_token_in_authorization_header": false,
+                                "set_id_token_header": true,
+                                "set_userinfo_header": true,
+                                "set_refresh_token_header": true,
+                                "claim_schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "access_token": { "type" : "string"},
+                                        "id_token": { "type" : "object"},
+                                        "user": { "type" : "object"}
+                                    },
+                                    "required" : ["access_token","id_token","user"]
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: Access route w/o bearer token and go through the full OIDC Relying Party authentication process and validate claim successfully.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- Make the final call back to the original URI.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
+
+            if not res then
+                -- No response, must be an error.
+                ngx.status = 500
+                ngx.say(err)
+                return
+            elseif res.status ~= 200 then
+                -- Not a valid response.
+                -- Use 500 to indicate error.
+                ngx.status = 500
+                ngx.say("Invoking the original URI didn't return the expected result.")
+                return
+            end
+
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- response_body_like
+uri: /uri
+cookie: .*
+host: 127.0.0.1:1984
+user-agent: .*
+x-access-token: ey.*
+x-id-token: ey.*
+x-real-ip: 127.0.0.1
+x-refresh-token: ey.*
+x-userinfo: ey.*
+
+
+
+=== TEST 13: Set up route with plugin matching  URI `/*` and point plugin to local Keycloak instance and set claim validator with more strict schema.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
+                                "set_access_token_header": true,
+                                "access_token_in_authorization_header": false,
+                                "set_id_token_header": true,
+                                "set_userinfo_header": true,
+                                "set_refresh_token_header": true,
+                                "claim_schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "access_token": { "type" : "string"},
+                                        "id_token": { "type" : "object"},
+                                        "user": { "type" : "object"},
+                                        "user1": { "type" : "object"}
+                                    },
+                                    "required" : ["access_token","id_token","user","user1"]
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: Access route w/o bearer token and go through the full OIDC Relying Party authentication process and fail to validate claim.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local login_keycloak = require("lib.keycloak").login_keycloak
+            local concatenate_cookies = require("lib.keycloak").concatenate_cookies
+
+            local httpc = http.new()
+
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/uri"
+            local res, err = login_keycloak(uri, "teacher@gmail.com", "123456")
+            if err then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            local cookie_str = concatenate_cookies(res.headers['Set-Cookie'])
+            -- Make the final call back to the original URI.
+            local redirect_uri = "http://127.0.0.1:" .. ngx.var.server_port .. res.headers['Location']
+            res, err = httpc:request_uri(redirect_uri, {
+                    method = "GET",
+                    headers = {
+                        ["Cookie"] = cookie_str
+                    }
+                })
+
+            if not res then
+            ngx.say('here error',err)
+                -- No response, must be an error.
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- error_code: 401
+--- error_log
+property "user1" is required
