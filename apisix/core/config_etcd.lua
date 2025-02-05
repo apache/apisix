@@ -853,7 +853,7 @@ local function _automatic_fetch(premature, self)
                             i = i + 1
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
-                            if not err or not string.find(err, err_etcd_unhealthy_all) then
+                            if not err or not core_str.find(err, err_etcd_unhealthy_all) then
                                 log.warn("reconnected to etcd")
                                 reconnected = true
                                 break
