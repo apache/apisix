@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - SkyWalking
-description: skywalking-logger 将请求和响应日志作为JSON对象批量推送到 SkyWalking OAP 服务器，并支持日志格式的自定义。
+description: skywalking-logger 将请求和响应日志作为 JSON 对象批量推送到 SkyWalking OAP 服务器，并支持日志格式的自定义。
 ---
 
 <!--
