@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Public API
-description: The public-api is used for exposing an API endpoint through a general HTTP API router.
+description: The `public-api` plugin exposes an internal API endpoint, making it publicly accessible. One of the primary use cases of this plugin is to expose internal endpoints created by other plugins.
 ---
 
 <!--
@@ -26,189 +26,78 @@ description: The public-api is used for exposing an API endpoint through a gener
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/public-api" />
+</head>
+
 ## Description
 
-The `public-api` is used for exposing an API endpoint through a general HTTP API router.
-
-When you are using custom Plugins, you can use the `public-api` Plugin to define a fixed, public API for a particular functionality. For example, you can create a public API endpoint `/apisix/batch-requests` for grouping multiple API requests in one request using the [batch-requests](./batch-requests.md) Plugin.
-
-:::note
-
-The public API added in a custom Plugin is not exposed by default and the user should manually configure a Route and enable the `public-api` Plugin on it.
-
-:::
+The `public-api` plugin exposes an internal API endpoint, making it publicly accessible. One of the primary use cases of this plugin is to expose internal endpoints created by other plugins.
 
 ## Attributes
 
-| Name | Type   | Required | Default | Description                                                                                                                                                  |
-|------|--------|----------|---------|--------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| uri  | string | False    | ""      | URI of the public API. When setting up a Route, use this attribute to configure the original public API URI. |
+| Name    | Type      | Required | Default | Valid Values | Description |
+|---------|-----------|----------|---------|--------------|-------------|
+| uri     | string    | False    | -       | -            | Internal endpoint to expose. If not configured, expose the route URI. |
 
-## Example usage
+## Example
 
-The example below uses the [batch-requests](./batch-requests.md) Plugin and the [key-auth](./key-auth.md) Plugin along with the `public-api` Plugin. Refer to their documentation for its configuration. This step is omitted below and only explains the configuration of the `public-api` Plugin.
+### Expose Prometheus Metrics at Custom Endpoint
 
-### Basic usage
+The following example demonstrates how you can disable the Prometheus export server that, by default, exposes an endpoint on port `9091`, and expose APISIX Prometheus metrics on a new public API endpoint on port `9080`, which APISIX uses to listen to other client requests.
 
-You can enable the Plugin on a specific Route as shown below:
+You will also configure the route such that the internal endpoint `/apisix/prometheus/metrics` is exposed at a custom endpoint.
 
-```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
-    -H 'X-API-KEY: <api-key>' \
-    -H 'Content-Type: application/json' \
-    -d '{
-      "uri": "/apisix/batch-requests",
-      "plugins": {
-        "public-api": {}
-    }
-}'
-```
+:::caution
 
-Now, if you make a request to the configured URI, you will receive a batch-requests response:
+If a large quantity of metrics is being collected, the plugin could take up a significant amount of CPU resources for metric computations and negatively impact the processing of regular requests.
 
-```shell
-curl --location --request POST 'http://127.0.0.1:9080/apisix/batch-requests' \
---header 'Content-Type: application/json' \
---data '{
-    "headers": {
-        "Content-Type": "application/json",
-        "admin-jwt":"xxxx"
-    },
-    "timeout": 500,
-    "pipeline": [
-        {
-            "method": "POST",
-            "path": "/community.GiftSrv/GetGifts",
-            "body": "test"
-        },
-        {
-            "method": "POST",
-            "path": "/community.GiftSrv/GetGifts",
-            "body": "test2"
-        }
-    ]
-}'
-```
-
-```shell
-[
-  {
-    "status": 200,
-    "reason": "OK",
-    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
-    "headers": {
-      "Connection": "keep-alive",
-      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
-      "Content-Type": "application/json",
-      "Content-Length": "81",
-      "Server": "APISIX web server"
-    }
-  },
-  {
-    "status": 200,
-    "reason": "OK",
-    "body": "{\"ret\":500,\"msg\":\"error\",\"game_info\":null,\"gift\":[],\"to_gets\":0,\"get_all_msg\":\"\"}",
-    "headers": {
-      "Connection": "keep-alive",
-      "Date": "Sat, 11 Apr 2020 17:53:20 GMT",
-      "Content-Type": "application/json",
-      "Content-Length": "81",
-      "Server": "APISIX web server"
-    }
-  }
-]
-```
-
-### Using custom URI
-
-You can also use a custom URI for exposing the API as shown below:
-
-```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
-    -H 'X-API-KEY: <api-key>' \
-    -H 'Content-Type: application/json' \
-    -d '{
-      "uri": "/batch-requests-gifs",
-      "plugins": {
-        "public-api": {
-            "uri": "/apisix/batch-requests"
-        }
-    }
-}'
-```
-
-Now you can make requests to this new endpoint:
-
-```shell
-curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
---header 'Content-Type: application/json' \
---data '{...}'
-```
-
-### Securing the Route
-
-You can use the `key-auth` Plugin to add authentication and secure the Route:
-
-```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
-    -H 'X-API-KEY: <api-key>' \
-    -H 'Content-Type: application/json' \
-    -d '{
-    "uri": "/batch-requests-gifs",
-    "plugins": {
-        "public-api": {},
-        "key-auth": {}
-    }
-}'
-```
-
-Now, only authenticated requests are allowed:
-
-```shell
-curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
-    -H "apikey: test-apikey"
-    -H 'Content-Type: application/json' \
-    --data '{...}'
-```
-
-```shell
-HTTP/1.1 200 OK
-```
-
-The below request will fail:
-
-```shell
-curl --location --request POST 'http://127.0.0.1:9080/batch-requests-gifs' \
-    -H 'Content-Type: application/json' \
-    --data '{...}'
-```
-
-```shell
-HTTP/1.1 401 Unauthorized
-```
-
-## Delete Plugin
-
-To remove the `public-api` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-:::note
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
-
-```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-```
+To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads the metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured in the configuration files, as demonstrated [above](#get-apisix-metrics). If you expose the metric endpoint with the `public-api` plugin, you will not benefit from this optimization.
 
 :::
 
+Disable the Prometheus export server in the configuration file and reload APISIX for changes to take effect:
+
+```yaml title="conf/config.yaml"
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+```
+
+Next, create a route with the `public-api` plugin and expose a public API endpoint for APISIX metrics. You should set the route `uri` to the custom endpoint path and set the plugin `uri` to the internal endpoint to be exposed.
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-  "uri": "/hello",
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "127.0.0.1:1980": 1
+curl "http://127.0.0.1:9180/apisix/admin/routes/prometheus-metrics" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "uri": "/prometheus_metrics",
+    "plugins": {
+      "public-api": {
+        "uri": "/apisix/prometheus/metrics"
+      }
     }
-  }
-}'
+  }'
+```
+
+Send a request to the custom metrics endpoint:
+
+```shell
+curl "http://127.0.0.1:9080/prometheus_metrics"
+```
+
+You should see an output similar to the following:
+
+```text
+# HELP apisix_http_requests_total The total number of client requests since APISIX started
+# TYPE apisix_http_requests_total gauge
+apisix_http_requests_total 1
+# HELP apisix_nginx_http_current_connections Number of HTTP connections
+# TYPE apisix_nginx_http_current_connections gauge
+apisix_nginx_http_current_connections{state="accepted"} 1
+apisix_nginx_http_current_connections{state="active"} 1
+apisix_nginx_http_current_connections{state="handled"} 1
+apisix_nginx_http_current_connections{state="reading"} 0
+apisix_nginx_http_current_connections{state="waiting"} 0
+apisix_nginx_http_current_connections{state="writing"} 1
+...
 ```
