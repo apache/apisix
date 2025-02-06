@@ -52,7 +52,7 @@ You will also configure the route such that the internal endpoint `/apisix/prome
 
 If a large quantity of metrics is being collected, the plugin could take up a significant amount of CPU resources for metric computations and negatively impact the processing of regular requests.
 
-To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads the metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured in the configuration files, as demonstrated [above](#get-apisix-metrics). If you expose the metric endpoint with the `public-api` plugin, you will not benefit from this optimization.
+To address this issue, APISIX uses [privileged agent](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) and offloads the metric computations to a separate process. This optimization applies automatically if you use the metric endpoint configured under `plugin_attr.prometheus.export_addr` in the configuration file. If you expose the metric endpoint with the `public-api` plugin, you will not benefit from this optimization.
 
 :::
 
