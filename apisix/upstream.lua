@@ -300,10 +300,10 @@ function _M.set_by_route(route, api_ctx)
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
             end
 
-            up_conf.nodes = new_nodes
-            up_conf.original_nodes = up_conf.nodes
-
             local new_up_conf = core.table.clone(up_conf)
+            new_up_conf.nodes = new_nodes
+            new_up_conf.original_nodes = up_conf.nodes
+
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
                           core.json.delay_encode(new_up_conf, true))
