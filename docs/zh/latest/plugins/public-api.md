@@ -36,9 +36,9 @@ description: `public-api` 插件公开了一个内部 API 端点，使其可被�
 
 ## 属性
 
-| 名称  | 类型   | 必选项 | 默认值 | 描述 |
-|------|--------|-------|-------|------|
-| uri  | string | 否    | -     | 内部端点的 URI。如果未配置，则暴露路由的 URI。|
+| 名称  | 类型   | 必选项 | 默认值 | 有效值 | 描述 |
+|------|--------|-------|-------|------|------|
+| uri  | string | 否    | -  | -  | 内部端点的 URI。如果未配置，则暴露路由的 URI。|
 
 ## 示例
 
@@ -46,13 +46,13 @@ description: `public-api` 插件公开了一个内部 API 端点，使其可被�
 
 以下示例演示如何禁用默认在端口 `9091` 上暴露端点的 Prometheus 导出服务器，并在 APISIX 用于监听其他客户端请求的端口 `9080` 上，通过新的公共 API 端点暴露 APISIX 的 Prometheus 指标。
 
-你还将配置路由，使内部端点 `/apisix/prometheus/metrics` 在自定义端点上暴露。
+此外，还会配置路由，使内部端点 `/apisix/prometheus/metrics` 通过自定义端点对外公开。
 
 :::caution
 
-如果收集了大量指标，插件可能会占用大量 CPU 资源进行指标计算，并对常规请求的处理产生负面影响。
+如果收集了大量指标，插件可能会占用大量 CPU 资源用于计算，从而影响正常请求的处理。
 
-为了解决这个问题，APISIX 使用 [特权代理](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) 机制，并将指标计算卸载至独立进程。如果使用配置文件中 `plugin_attr.prometheus.export_addr` 设定的指标端点，该优化将自动生效。但如果通过 `public-api` 插件暴露指标端点，则无法享受此优化。
+为了解决这个问题，APISIX 使用 [特权代理进程](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) ，并将指标计算卸载至独立进程。如果使用配置文件中 `plugin_attr.prometheus.export_addr` 设定的指标端点，该优化将自动生效。但如果通过 `public-api` 插件暴露指标端点，则不会受益于此优化。
 
 :::
 
