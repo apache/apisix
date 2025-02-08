@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Public API
-description: The `public-api` plugin exposes an internal API endpoint, making it publicly accessible. One of the primary use cases of this plugin is to expose internal endpoints created by other plugins.
+description: The public-api plugin exposes an internal API endpoint, making it publicly accessible. One of the primary use cases of this plugin is to expose internal endpoints created by other plugins.
 ---
 
 <!--
