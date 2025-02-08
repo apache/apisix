@@ -38,7 +38,7 @@ The `public-api` Plugin exposes an internal API endpoint, making it publicly acc
 
 | Name    | Type      | Required | Default | Valid Values | Description |
 |---------|-----------|----------|---------|--------------|-------------|
-| uri     | string    | False    | -       | -            | Internal endpoint to expose. If not configured, expose the Route URI. |
+| uri     | string    | False    |         |              | Internal endpoint to expose. If not configured, expose the Route URI. |
 
 ## Example
 
