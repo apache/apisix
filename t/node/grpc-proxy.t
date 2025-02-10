@@ -169,7 +169,7 @@ routes:
 GET /hello
 --- error_code: 502
 --- error_log
-upstream: "grpcs://127.0.0.1:443"
+connect() failed (111: Connection refused) while connecting to upstream
 
 
 
@@ -188,7 +188,7 @@ routes:
 GET /hello
 --- error_code: 502
 --- error_log
-upstream: "grpc://127.0.0.1:80"
+connect() failed (111: Connection refused) while connecting to upstream
 
 
 

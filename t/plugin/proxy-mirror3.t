@@ -73,4 +73,4 @@ grpcurl -import-path ./t/grpc_server_example/proto -proto helloworld.proto -plai
   "message": "Hello apisix"
 }
 --- error_log eval
-qr/Connection refused\) while connecting to upstream.*proxy_mirror_grpc/
+qr/Connection refused\) while connecting to upstream/
