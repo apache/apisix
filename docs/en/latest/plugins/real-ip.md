@@ -45,9 +45,22 @@ The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://n
 | trusted_addresses | array[string] | False |     | array of IPv4 or IPv6 addresses (CIDR notation acceptable)  | Trusted addresses that are known to send correct replacement addresses. This configuration sets the [`set_real_ip_from`](https://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from) directive. |
 | recursive  | boolean | False |  False   |    | If false, replace the original client address that matches one of the trusted addresses by the last address sent in the configured `source`.<br>If true, replace the original client address that matches one of the trusted addresses by the last non-trusted address sent in the configured `source`. |
 
+:::note
+If the address specified in `source` is missing or invalid, the Plugin would not change the client address.
+:::
+
 ## Examples
 
 The examples below demonstrate how you can configure `real-ip` in different scenarios.
+
+:::note
+You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+```
+
+:::
 
 ### Obtain Real Client Address From URI Parameter
 
