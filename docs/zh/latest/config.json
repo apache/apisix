@@ -28,6 +28,7 @@
         "tutorials/protect-api",
         "tutorials/observe-your-api",
         "tutorials/health-check",
+        "tutorials/manage-api-consumers",
         "tutorials/client-to-apisix-mtls"
       ]
     },
