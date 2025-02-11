@@ -53,7 +53,7 @@ description: real-ip 插件允许 APISIX 通过 HTTP 请求头或 HTTP 查询字
 
 以下示例演示了如何使用 URI 参数更新客户端 IP 地址。
 
-创建如下路由。您应配置 `source` 以使用[内置变量](/apisix/reference/built-in-variables) 从 URL 参数 `realip` 获取值。使用 `response-rewrite` 插件设置响应头，以验证客户端 IP 和端口是否实际更新。
+创建如下路由。您应配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从 URL 参数 `realip` 获取值。使用 `response-rewrite` 插件设置响应头，以验证客户端 IP 和端口是否实际更新。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -99,7 +99,7 @@ remote-port: 9080
 
 以下示例展示了当 APISIX 位于反向代理（例如负载均衡器）之后时，如何设置真实客户端 IP，此时代理在 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 请求头中暴露了真实客户端 IP。
 
-创建如下路由。您应配置 `source` 以使用[内置变量](/apisix/reference/built-in-variables) 从请求头 `X-Forwarded-For` 获取值。使用 response-rewrite 插件设置响应头，以验证客户端 IP 是否实际更新。
+创建如下路由。您应配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。使用 response-rewrite 插件设置响应头，以验证客户端 IP 是否实际更新。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -145,7 +145,7 @@ IP 地址应对应于请求发起客户端的 IP 地址。
 
 以下示例展示了当 APISIX 位于多个代理之后时，如何获取真实客户端 IP，此时 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 请求头包含了一系列代理 IP 地址。
 
-创建如下路由。您应配置 `source` 以使用[内置变量](/apisix/reference/built-in-variables) 从请求头 `X-Forwarded-For` 获取值。将 `recursive` 设置为 `true`，以便将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。然后，使用 `response-rewrite` 插件设置响应头，以验证客户端 IP 是否实际更新。
+创建如下路由。您应配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。将 `recursive` 设置为 `true`，以便将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。然后，使用 `response-rewrite` 插件设置响应头，以验证客户端 IP 是否实际更新。
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -178,7 +178,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" \
-  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1" 
+  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1"
 ```
 
 您应看到响应包含以下头：

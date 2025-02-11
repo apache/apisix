@@ -41,7 +41,7 @@ The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://n
 
 | Name      | Type    | Required | Default | Valid values   | Description   |
 |-----------|---------|----------|---------|----------------|---------------|
-| source    | string  | True      |     |    |A built-in variable, such as `http_x_forwarded_for` or `arg_realip`. The variable value should be a valid IP address that represents the client's real IP address, with an optional port.|
+| source    | string  | True      |     |    |A built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html), such as `http_x_forwarded_for` or `arg_realip`. The variable value should be a valid IP address that represents the client's real IP address, with an optional port.|
 | trusted_addresses | array[string] | False |     | array of IPv4 or IPv6 addresses (CIDR notation acceptable)  | Trusted addresses that are known to send correct replacement addresses. This configuration sets the [`set_real_ip_from`](https://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from) directive. |
 | recursive  | boolean | False |  False   |    | If false, replace the original client address that matches one of the trusted addresses by the last address sent in the configured `source`.<br>If true, replace the original client address that matches one of the trusted addresses by the last non-trusted address sent in the configured `source`. |
 
@@ -53,7 +53,7 @@ The examples below demonstrate how you can configure `real-ip` in different scen
 
 The following example demonstrates how to update the client IP address with a URI parameter.
 
-Create a Route as follows. You should configure `source` to obtain value from the URL parameter `realip` using the [built-in variables](/apisix/reference/built-in-variables). Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
+Create a Route as follows. You should configure `source` to obtain value from the URL parameter `realip` using [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html). Use the `response-rewrite` Plugin to set response headers to verify if the client IP and port were actually updated.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -99,7 +99,7 @@ remote-port: 9080
 
 The following example shows how to set the real client IP when APISIX is behind a reverse proxy, such as a load balancer when the proxy exposes the real client IP in the [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) header.
 
-Create a Route as follows. You should configure `source` to obtain value from the request header `X-Forwarded-For` using the [built-in variables](/apisix/reference/built-in-variables). Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+Create a Route as follows. You should configure `source` to obtain value from the request header `X-Forwarded-For` using [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html). Use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -145,7 +145,7 @@ The IP address should correspond to the IP address of the request-originating cl
 
 The following example shows how to get the real client IP when APISIX is behind multiple proxies, which causes [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) header to include a list of proxy IP addresses.
 
-Create a Route as follows. You should configure `source` to obtain value from the request header `X-Forwarded-For` using the [built-in variables](/apisix/reference/built-in-variables). Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`. Then, use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
+Create a Route as follows. You should configure `source` to obtain value from the request header `X-Forwarded-For` using [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html). Set `recursive` to `true` so that the original client address that matches one of the trusted addresses is replaced by the last non-trusted address sent in the configured `source`. Then, use the `response-rewrite` Plugin to set a response header to verify if the client IP was actually updated.
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -178,7 +178,7 @@ Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" \
-  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1" 
+  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1"
 ```
 
 You should see a response including the following header:
