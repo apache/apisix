@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Real IP
-description: The real-ip plugin allows APISIX to set the client's real IP by the IP address passed in the HTTP header or HTTP query string.
+description: The real-ip plugin allows Apache APISIX to set the client's real IP by the IP address passed in the HTTP header or HTTP query string.
 ---
 
 <!--
