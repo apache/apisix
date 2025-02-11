@@ -54,6 +54,7 @@ description: real-ip 插件允许 Apache APISIX 通过 HTTP 请求头或 HTTP �
 以下示例展示了如何在不同场景中配置 `real-ip`。
 
 :::note
+
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
 ```bash

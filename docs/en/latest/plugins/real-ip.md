@@ -54,6 +54,7 @@ If the address specified in `source` is missing or invalid, the Plugin would not
 The examples below demonstrate how you can configure `real-ip` in different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
