@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - Real IP
-description: real-ip 插件允许 APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。
+description: real-ip 插件允许 Apache APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。
 ---
 
 <!--
