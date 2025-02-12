@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Limit Count
-description: This document contains information about the Apache APISIX limit-count Plugin, you can use it to limit the number of requests to your service by a given count per time.
+description: The limit-count plugin uses a fixed window algorithm to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
 ---
 
 <!--
@@ -26,42 +26,53 @@ description: This document contains information about the Apache APISIX limit-co
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/limit-count" />
+</head>
+
 ## Description
 
-The `limit-count` Plugin limits the number of requests to your service by a given count per time. The plugin is using Fixed Window algorithm.
+The `limit-count` plugin uses a fixed window algorithm to limit the rate of requests by the number of requests within a given time interval. Requests exceeding the configured quota will be rejected.
+
+You may see the following rate limiting headers in the response:
+
+* `X-RateLimit-Limit`: the total quota
+* `X-RateLimit-Remaining`: the remaining quota
+* `X-RateLimit-Reset`: number of seconds left for the counter to reset
 
 ## Attributes
 
 | Name                    | Type    | Required                                  | Default       | Valid values                           | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
 | ----------------------- | ------- | ----------------------------------------- | ------------- | -------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| count                   | integer | True                                      |               | count > 0                              | Maximum number of requests to allow.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| time_window             | integer | True                                      |               | time_window > 0                        | Time in seconds before `count` is reset.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| key_type                | string  | False                                     | "var"         | ["var", "var_combination", "constant"] | Type of user specified key to use.                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
-| key                     | string  | False                                     | "remote_addr" |                                        | User specified key to base the request limiting on. If the `key_type` attribute is set to `constant`, the key will be treated as a constant value. If the `key_type` attribute is set to `var`, the key will be treated as a name of variable, like `remote_addr` or `consumer_name`. If the `key_type` is set to `var_combination`, the key will be a combination of variables, like `$remote_addr $consumer_name`. If the value of the key is empty, `remote_addr` will be set as the default key. |
-| rejected_code           | integer | False                                     | 503           | [200,...,599]                          | HTTP status code returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| rejected_msg            | string  | False                                     |               | non-empty                              | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                                                                                                                |
-| policy                  | string  | False                                     | "local"       | ["local", "redis", "redis-cluster"]    | Rate-limiting policies to use for retrieving and increment the limit count. When set to `local` the counters will be locally stored in memory on the node. When set to `redis` counters are stored on a Redis server and will be shared across the nodes. It is done usually for global speed limiting, and setting to `redis-cluster` uses a Redis cluster instead of a single instance.                                                                                                            |
-| allow_degradation       | boolean | False                                     | false         |                                        | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable (for example, a Redis timeout) and allows requests to continue.                                                                                                                                                                                                                                                                                                                                             |
-| show_limit_quota_header | boolean | False                                     | true          |                                        | When set to `true`, adds `X-RateLimit-Limit` (total number of requests) and `X-RateLimit-Remaining` (remaining number of requests) to the response header.                                                                                                                                                                                                                                                                                                                                           |
-| group                   | string  | False                                     |               | non-empty                              | Group to share the counter with. Routes configured with the same group will share the same counter. Do not configure with a value that was previously used in this attribute before as the plugin would not allow.                                                                                                                                                                                                                                                                                                                                                                                                      |
-| redis_host              | string  | required when `policy` is `redis`         |               |                                        | Address of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| redis_port              | integer | False                                     | 6379          | [1,...]                                | Port of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| redis_username          | string  | False                                     |               |                                        | Username for Redis authentication if Redis ACL is used (for Redis version >= 6.0). If you use the legacy authentication method `requirepass` to configure Redis password, configure only the `redis_password`. Used when the `policy` is set to `redis`.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| redis_password          | string  | False                                     |               |                                        | Password for Redis authentication. Used when the `policy` is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| redis_ssl               | boolean | False                                     | false         |                                        | If set to `true`, then uses SSL to connect to redis instance. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| redis_ssl_verify        | boolean | False                                     | false         |                                        | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis`. See [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                                                                                                                                                                                                                                                                                                                                                                                          |
-| redis_database          | integer | False                                     | 0             | redis_database >= 0                    | Selected database of the Redis server (for single instance operation or when using Redis cloud with a single entrypoint). Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                        |
-| redis_timeout           | integer | False                                     | 1000          | [1,...]                                | Timeout in milliseconds for any command submitted to the Redis server. Used when the `policy` attribute is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
-| redis_cluster_nodes     | array   | required when `policy` is `redis-cluster` |               |                                        | Addresses of Redis cluster nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                        |
-| redis_cluster_name      | string  | required when `policy` is `redis-cluster` |               |                                        | Name of the Redis cluster service nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
-| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If set to `true`, then uses SSL to connect to redis-cluster. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
-| redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                 |
+| count                   | integer | True                                      |               | > 0                              | The maximum number of requests allowed within a given time interval.                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| time_window             | integer | True                                      |               | > 0                        | The time interval corresponding to the rate limiting `count` in seconds.                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| key_type                | string  | False                                     | var         | ["var","var_combination","constant"] | The type of key. If the `key_type` is `var`, the `key` is interpreted a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. If the `key_type` is `constant`, the `key` is interpreted as a constant.                  |
+| key                     | string  | False                                     | remote_addr |                                        | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, to configure the `key` to use a combination of two request headers `custom-a` and `custom-b`, the `key` should be configured as `$http_custom_a $http_custom_b`. If the `key_type` is `constant`, the `key` is interpreted as a constant value. |
+| rejected_code           | integer | False                                     | 503           | [200,...,599]                          | The HTTP status code returned when a request is rejected for exceeding the threshold.                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| rejected_msg            | string  | False                                     |               | non-empty                              | The response body returned when a request is rejected for exceeding the threshold.                                                                                                                                                                                                                                                                                                                                                                                                                |
+| policy                  | string  | False                                     | local       | ["local","redis","redis-cluster"]    | The policy for rate limiting counter. If it is `local`, the counter is stored in memory locally. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster.                                                                                                            |
+| allow_degradation       | boolean | False                                     | false         |                                        | If true, allow APISIX to continue handling requests without the plugin when the plugin or its dependencies become unavailable.                                                                                                                                                                                                                                                                                             |
+| show_limit_quota_header | boolean | False                                     | true          |                                        | If true, include `X-RateLimit-Limit` to show the total quota and `X-RateLimit-Remaining` to show the remaining quota in the response header.                                                                                                                                                                                                                                                                                                                                   |
+| group                   | string  | False                                     |               | non-empty                              | The `group` ID for the plugin, such that routes of the same `group` can share the same rate limiting counter.                                                                                                                                                                                                                                                                                                                                                                   |
+| redis_host              | string  | False         |               |                                        | The address of the Redis node. Required when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| redis_port              | integer | False                                     | 6379          | [1,...]                                | The port of the Redis node when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| redis_username          | string  | False                                     |               |                                        | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. Used when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                          |
+| redis_password          | string  | False                                     |               |                                        | The password of the Redis node when `policy` is `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                           |
+| redis_ssl               | boolean | False                                     | false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| redis_ssl_verify        | boolean | False                                     | false         |                                        | If true, verify the server SSL certificate when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                                                                                         |
+| redis_database          | integer | False                                     | 0             | >= 0                    | The database number in Redis when `policy` is `redis`.                                                                                                                                                                                                                                                                                                                       |
+| redis_timeout           | integer | False                                     | 1000          | [1,...]                                | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
+| redis_cluster_nodes     | array[string]   | False |               |                                        | The list of the Redis cluster nodes with at least two addresses. Required when policy is redis-cluster.                                                                                                                                                                                                                                                                                                                                                                                                       |
+| redis_cluster_name      | string  | False |               |                                        | The name of the Redis cluster. Required when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                |
+| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is                                                                                                                                                                                                                                                                                                                                                                                                |
+| redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If true, verify the server SSL certificate when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                               |
 
-## Enable Plugin
+## Examples
 
-You can enable the Plugin on a Route as shown below:
+The examples below demonstrate how you can configure `limit-count` in different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -70,302 +81,15 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key_type": "var",
-            "key": "remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:9001": 1
-        }
-    }
-}'
-```
+### Apply Rate Limiting by Remote Address
 
-You can also configure the `key_type` to `var_combination` as shown:
+The following example demonstrates the rate limiting of requests by a single variable, `remote_addr`.
 
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key_type": "var_combination",
-            "key": "$consumer_name $remote_addr"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:9001": 1
-        }
-    }
-}'
-```
-
-You can also create a group to share the same counter across multiple Routes:
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins": {
-        "limit-count": {
-            "count": 1,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "group": "services_1#1640140620"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-Now every Route which belongs to group `services_1#1640140620` (or the service with ID `1`) will share the same counter.
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "service_id": "1",
-    "uri": "/hello"
-}'
-```
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/2 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "service_id": "1",
-    "uri": "/hello2"
-}'
-```
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-```shell
-HTTP/1.1 200 ...
-```
-
-You can also share the same limit counter for all your requests by setting the `key_type` to `constant`:
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/services/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins": {
-        "limit-count": {
-            "count": 1,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "key_type": "constant",
-            "group": "services_1#1640140621"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-The above configuration means that when the `group` attribute of the `limit-count` plugin is configured to `services_1#1640140620` for multiple routes, requests to those routes will share the same counter, even if the requests come from different IP addresses.
-
-:::note
-
-The configuration of `limit-count` in the same `group` must be consistent. If you want to change the configuration, you need to update the value of the corresponding `group` at the same time.
-
-:::
-
-For cluster-level traffic limiting, you can use a Redis server. The counter will be shared between different APISIX nodes to achieve traffic limiting.
-
-The example below shows how you can use the `redis` policy:
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "policy": "redis",
-            "redis_host": "127.0.0.1",
-            "redis_port": 6379,
-            "redis_password": "password",
-            "redis_database": 1,
-            "redis_timeout": 1001
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-Similarly you can also configure the `redis-cluster` policy:
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "policy": "redis-cluster",
-            "redis_cluster_nodes": [
-              "127.0.0.1:5000",
-              "127.0.0.1:5001"
-            ],
-            "redis_password": "password",
-            "redis_cluster_name": "redis-cluster-1"
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-In addition, you can use APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md). For example, in
-case you have environment variables `REDIS_HOST` and `REDIS_PASSWORD` set, you can use them in the plugin configuration as shown below:
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "limit-count": {
-            "count": 2,
-            "time_window": 60,
-            "rejected_code": 503,
-            "key": "remote_addr",
-            "policy": "redis",
-            "redis_host": "$ENV://REDIS_HOST",
-            "redis_port": 6379,
-            "redis_password": "$ENV://REDIS_PASSWORD",
-            "redis_database": 1,
-            "redis_timeout": 1001
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-## Example usage
-
-The above configuration limits to 2 requests in 60 seconds. The first two requests will work and the response headers will contain the headers `X-RateLimit-Limit` and `X-RateLimit-Remaining` and `X-RateLimit-Reset`, represents the total number of requests that are limited, the number of requests that can still be sent, and the number of seconds left for the counter to reset:
-
-```shell
-curl -i http://127.0.0.1:9080/index.html
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html
-Content-Length: 13175
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 58
-Server: APISIX web server
-```
-
-When you visit for a third time in the 60 seconds, you will receive a response with 503 code. Currently, in the case of rejection, the limit count headers is also returned:
-
-```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 58
-Server: APISIX web server
-```
-
-You can also set a custom response by configuring the `rejected_msg` attribute:
-
-```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-X-RateLimit-Limit: 2
-X-RateLimit-Remaining: 0
-X-RateLimit-Reset: 58
-Server: APISIX web server
-
-{"error_msg":"Requests are too frequent, please try again later."}
-```
-
-### Customize Rate Limiting Headers
-
-The following example demonstrates how you can use plugin metadata to customize the rate limiting response header names, which are by default `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset`.
-
-Configure the plugin metadata for this plugin and update the headers:
-
-```shell
-curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/limit-count" -X PUT -d '
-{
-  "log_format": {
-    "limit_header": "X-Custom-RateLimit-Limit",
-    "remaining_header": "X-Custom-RateLimit-Remaining",
-    "reset_header": "X-Custom-RateLimit-Reset"
-  }
-}'
-```
-
-Create a route with `limit-count` plugin that allows for a quota of 1 within a 30-second window per remote address:
+Create a Route with `limit-count` plugin that allows for a quota of 1 within a 30-second window per remote address:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "limit-count-route",
     "uri": "/get",
@@ -375,10 +99,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
         "time_window": 30,
         "rejected_code": 429,
         "key_type": "var",
-        "key": "remote_addr",
-        "window_type": "sliding"
+        "key": "remote_addr"
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -395,29 +117,391 @@ Send a request to verify:
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response and see the following headers:
+You should see an `HTTP/1.1 200 OK` response.
 
-```text
-X-Custom-RateLimit-Limit: 1
-X-Custom-RateLimit-Remaining: 0
-X-Custom-RateLimit-Reset: 28
-```
+The request has consumed all the quota allowed for the time window. If you send the request again within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, indicating the request surpasses the quota threshold.
 
-## Delete Plugin
+### Apply Rate Limiting by Remote Address and Consumer Name
 
-To remove the `limit-count` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+The following example demonstrates the rate limiting of requests by a combination of variables, `remote_addr` and `consumer_name`. It allows for a quota of 1 within a 30-second window per remote address and for each consumer.
+
+Create a Consumer `john`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john"
+  }'
+```
+
+Create `key-auth` Credential for the consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
     }
-}'
+  }'
+```
+
+Create a second Consumer `jane`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jane"
+  }'
+```
+
+Create `key-auth` Credential for the consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jane-key"
+      }
+    }
+  }'
+```
+
+Create a Route with `key-auth` and `limit-count` plugins, and specify in the `limit-count` plugin to use a combination of variables as the rate limiting key:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "key-auth": {},
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key_type": "var_combination",
+        "key": "$remote_addr $consumer_name"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request as the Consumer `jane`:
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key'
+```
+
+You should see an `HTTP/1.1 200 OK` response with the corresponding response body.
+
+This request has consumed all the quota set for the time window. If you send the same request as the Consumer `jane` within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, indicating the request surpasses the quota threshold.
+
+Send the same request as the Consumer `john` within the same 30-second time interval:
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
+```
+
+You should see an `HTTP/1.1 200 OK` response with the corresponding response body, indicating the request is not rate limited.
+
+Send the same request as the Consumer `john` again within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response.
+
+This verifies the plugin rate limits by the combination of variables, `remote_addr` and `consumer_name`.
+
+### Share Quota among Routes
+
+The following example demonstrates the sharing of rate limiting quota among multiple routes by configuring the `group` of the `limit-count` plugin.
+
+Note that the configurations of the `limit-count` plugin of the same `group` should be identical. To avoid update anomalies and repetitive configurations, you can create a Service with `limit-count` plugin and Upstream for routes to connect to.
+
+Create a service:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-service",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "group": "srv1"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Create two routes and configure their `service_id` to be `limit-count-service`, so that they share the same configurations for the plugin and upstream:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route-1",
+    "service_id": "limit-count-service",
+    "uri": "/get1",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
+    }
+  }'
+```
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route-2",
+    "service_id": "limit-count-service",
+    "uri": "/get2",
+    "plugins": {
+      "proxy-rewrite": {
+        "uri": "/get"
+      }
+    }
+  }'
+```
+
+:::note
+
+The [`proxy-rewrite`](./proxy-rewrite.md) plugin is used to rewrite the URI to `/get` so that requests are forwarded to the correct endpoint.
+
+:::
+
+Send a request to Route `/get1`:
+
+```shell
+curl -i "http://127.0.0.1:9080/get1"
+```
+
+You should see an `HTTP/1.1 200 OK` response with the corresponding response body.
+
+Send the same request to Route `/get2` within the same 30-second time interval:
+
+```shell
+curl -i "http://127.0.0.1:9080/get2"
+```
+
+You should receive an `HTTP/1.1 429 Too Many Requests` response, which verifies the two routes share the same rate limiting quota.
+
+### Share Quota Among APISIX Nodes with a Redis Server
+
+The following example demonstrates the rate limiting of requests across multiple APISIX nodes with a Redis server, such that different APISIX nodes share the same rate limiting quota.
+
+On each APISIX instance, create a Route with the following configurations. Adjust the address of the Admin API, Redis host, port, password, and database accordingly.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis",
+        "redis_host": "192.168.xxx.xxx",
+        "redis_port": 6379,
+        "redis_password": "p@ssw0rd",
+        "redis_database": 1
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to an APISIX instance:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response with the corresponding response body.
+
+Send the same request to a different APISIX instance within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, verifying routes configured in different APISIX nodes share the same quota.
+
+### Share Quota Among APISIX Nodes with a Redis Cluster
+
+You can also use a Redis cluster to apply the same quota across multiple APISIX nodes, such that different APISIX nodes share the same rate limiting quota.
+
+Ensure that your Redis instances are running in [cluster mode](https://redis.io/docs/management/scaling/#create-and-use-a-redis-cluster). A minimum of two nodes are required for the `limit-count` plugin configurations.
+
+On each APISIX instance, create a Route with the following configurations. Adjust the address of the Admin API, Redis cluster nodes, password, cluster name, and SSL varification accordingly.
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-count-route",
+    "uri": "/get",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429,
+        "key": "remote_addr",
+        "policy": "redis-cluster",
+        "redis_cluster_nodes": [
+          "192.168.xxx.xxx:6379",
+          "192.168.xxx.xxx:16379"
+        ],
+        "redis_password": "p@ssw0rd",
+        "redis_cluster_name": "redis-cluster-1",
+        "redis_cluster_ssl": true
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to an APISIX instance:
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response with the corresponding response body.
+
+Send the same request to a different APISIX instance within the same 30-second time interval, you should receive an `HTTP/1.1 429 Too Many Requests` response, verifying routes configured in different APISIX nodes share the same quota.
+
+### Rate Limit with Anonymous Consumer
+
+does not need to authenticate and has less quotas. While this example uses [`key-auth`](./key-auth.md) for authentication, the anonymous Consumer can also be configured with [`basic-auth`](./basic-auth.md), [`jwt-auth`](./jwt-auth.md), and [`hmac-auth`](./hmac-auth.md).
+
+Create a regular Consumer `john` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john",
+    "plugins": {
+      "limit-count": {
+        "count": 3,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+Create the `key-auth` Credential for the Consumer `john`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "anonymous",
+    "plugins": {
+      "limit-count": {
+        "count": 1,
+        "time_window": 30,
+        "rejected_code": 429
+      }
+    }
+  }'
+```
+
+Create a Route and configure the `key-auth` plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "key-auth-route",
+    "uri": "/anything",
+    "plugins": {
+      "key-auth": {
+        "anonymous_consumer": "anonymous"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+To verify, send five consecutive requests with `john`'s key:
+
+```shell
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: john-key' -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+You should see the following response, showing that out of the 5 requests, 3 requests were successful (status code 200) while the others were rejected (status code 429).
+
+```text
+200:    3, 429:    2
+```
+
+Send five anonymous requests:
+
+```shell
+resp=$(seq 5 | xargs -I{} curl "http://127.0.0.1:9080/anything" -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+You should see the following response, showing that only one request was successful:
+
+```text
+200:    1, 429:    4
 ```
