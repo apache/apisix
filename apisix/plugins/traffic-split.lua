@@ -217,8 +217,7 @@ local function new_rr_obj(weighted_upstreams)
             -- If the upstream object has only the weight value, it means
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
-            upstream_obj.upstream = "plugin#upstream#is#empty"
-            server_list[upstream_obj.upstream] = upstream_obj.weight
+            server_list["plugin#upstream#is#empty"] = upstream_obj.weight
 
         end
     end
