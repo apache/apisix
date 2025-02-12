@@ -152,14 +152,12 @@ jobs:
           mvn package
           cd dubbo-backend-provider/target
           java \
-            --add-opens java.base/java.lang=ALL-UNNAMED \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
           cd $cur_dir/t/lib/dubbo-serialization-backend
           mvn package
           cd dubbo-serialization-backend-provider/target
           java \
-            --add-opens java.base/java.lang=ALL-UNNAMED \
             -Djava.net.preferIPv4Stack=true \
             -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
 
