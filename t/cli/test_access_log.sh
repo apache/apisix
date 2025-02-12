@@ -198,10 +198,10 @@ nginx_config:
 echo "check here:"
 #check permission
 # Add this before "make run" in the "TLS upstream" section
+echo "CHECK HERE"
+sudo chmod 0777 conf/config.yaml
 ls -l conf/config.yaml
 ls -ld conf/
-sudo chmod 644 conf/config.yaml
-sudo chown $USER:$USER conf/config.yaml
 make run
 sleep 2
 
