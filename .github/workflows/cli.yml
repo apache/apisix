@@ -62,14 +62,5 @@ jobs:
             sudo --preserve-env=OPENRESTY_VERSION \
             ./ci/${{ matrix.job_name }}_runner.sh do_install
 
-      - name: Fix APISIX Config Permissions
-        run: |
-          sudo chmod 644 /home/runner/work/apisix/apisix/conf/config.yaml
-          sudo chmod 755 /home/runner/work/apisix/apisix/conf/
-
-      - name: Reset File Ownership
-        run: |
-          sudo chown -R $USER:$USER /home/runner/work/apisix/apisix/
-
       - name: Linux Script
-        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
+        run: sudo sh -c 'umask 022; ./ci/${{ matrix.job_name }}_runner.sh script'
