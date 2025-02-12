@@ -199,7 +199,7 @@ echo "check here:"
 #check permission
 # Add this before "make run" in the "TLS upstream" section
 echo "CHECK HERE"
-sudo chmod 0777 conf/config.yaml
+chmod 0777 conf/config.yaml
 ls -l conf/config.yaml
 ls -ld conf/
 make run
