@@ -63,4 +63,4 @@ jobs:
             ./ci/${{ matrix.job_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo sh -c 'umask 022; ./ci/${{ matrix.job_name }}_runner.sh script'
+        run: sudo sh -c 'umask 000; ./ci/${{ matrix.job_name }}_runner.sh script'
