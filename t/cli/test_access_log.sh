@@ -199,7 +199,10 @@ echo "check here:"
 #check permission
 # Add this before "make run" in the "TLS upstream" section
 echo "CHECK HERE"
-chmod 0777 conf/config.yaml
+# Reset ownership to the user who invoked sudo
+sudo chown "${SUDO_USER:-$(whoami)}":"${SUDO_USER:-$(whoami)}" conf/config.yaml
+# Set secure permissions
+sudo chmod 644 conf/config.yaml
 ls -l conf/config.yaml
 ls -ld conf/
 make run

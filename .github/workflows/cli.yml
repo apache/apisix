@@ -57,16 +57,10 @@ jobs:
       - name: Linux Before install
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
 
-      - name: Fix Permissions
-        run: |
-          sudo chmod 755 /home/runner/work/apisix/apisix/conf
-          sudo chmod 644 /home/runner/work/apisix/apisix/conf/config.yaml
-          sudo chown -R $USER:$USER /home/runner/work/apisix/apisix/
-
       - name: Linux Install
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
             ./ci/${{ matrix.job_name }}_runner.sh do_install
-
+          
       - name: Linux Script
-        run: sudo sh -c 'umask 000; ./ci/${{ matrix.job_name }}_runner.sh script'
+        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
