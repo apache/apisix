@@ -66,10 +66,10 @@ jobs:
         run: |
           sudo chmod 644 /home/runner/work/apisix/apisix/conf/config.yaml
           sudo chmod 755 /home/runner/work/apisix/apisix/conf/
-          
+
       - name: Reset File Ownership
         run: |
           sudo chown -R $USER:$USER /home/runner/work/apisix/apisix/
-          
+
       - name: Linux Script
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
