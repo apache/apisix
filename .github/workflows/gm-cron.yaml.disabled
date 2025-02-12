@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - ubuntu-20.04
+          - ubuntu-latest
         os_name:
           - linux_openresty_tongsuo
         test_dir:
