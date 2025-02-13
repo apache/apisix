@@ -18,7 +18,7 @@ permissions:
 jobs:
   test_apisix:
     name: run ci on redhat ubi
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -101,11 +101,15 @@ jobs:
         cd t/lib/dubbo-backend
         mvn package
         cd dubbo-backend-provider/target
-        java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+        java \
+            -Djava.net.preferIPv4Stack=true \
+            -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
         cd $cur_dir/t/lib/dubbo-serialization-backend
         mvn package
         cd dubbo-serialization-backend-provider/target
-        java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+        java \
+            -Djava.net.preferIPv4Stack=true \
+            -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
 
     - name: Build xDS library
       if: steps.test_env.outputs.type == 'last'
