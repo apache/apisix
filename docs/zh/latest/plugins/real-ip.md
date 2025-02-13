@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - Real IP
-description: 本文介绍了关于 Apache APISIX `real-ip` 插件的基本信息及使用方法。
+description: real-ip 插件允许 Apache APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。
 ---
 
 <!--
@@ -27,35 +27,31 @@ description: 本文介绍了关于 Apache APISIX `real-ip` 插件的基本信息
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/real-ip" />
+</head>
+
 ## 描述
 
-`real-ip` 插件用于动态改变传递到 Apache APISIX 的客户端的 IP 地址和端口。
+`real-ip` 插件允许 APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。当 APISIX 位于反向代理之后时，此功能尤其有用，因为否则代理可能会被视为请求发起客户端。
 
-它的工作方式和 NGINX 中的 `ngx_http_realip_module` 模块一样，并且更加灵活。
-
-:::info IMPORTANT
-
-该插件要求 APISIX  运行在 [APISIX-Runtime](../FAQ.md#如何构建-apisix-runtime-环境) 上。
-
-:::
+该插件在功能上类似于 NGINX 的 [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html)，但提供了更多的灵活性。
 
 ## 属性
 
-| 名称              | 类型          | 必选项 | 有效值                                                       | 描述                                                                                     |
-|-------------------|---------------|--|-------------------------------------------------------------|----------------------------------------------------------------------|
-| source            | string        | 是 | 任何 NGINX 变量，如 `arg_realip` 或 `http_x_forwarded_for` 。 | 动态设置客户端的 IP 地址和端口，或主机名。如果该值不包含端口，则不会更改客户端的端口。 |
-| trusted_addresses | array[string] | 否 | IP 或 CIDR 范围列表。                                         | 动态设置 `set_real_ip_from` 字段。                                    |
-| recursive         | boolean       | 否 | true 或者 false，默认是 false                                | 如果禁用递归搜索，则与受信任地址之一匹配的原始客户端地址将替换为配置的`source`中发送的最后一个地址。如果启用递归搜索，则与受信任地址之一匹配的原始客户端地址将替换为配置的`source`中发送的最后一个非受信任地址。 |
+| 名称              | 类型          | 是否必需 | 默认值 | 有效值                     | 描述                                                                 |
+|-------------------|---------------|----------|--------|----------------------------|----------------------------------------------------------------------|
+| source            | string        | 是       |        |                            | 内置变量，例如 `http_x_forwarded_for` 或 `arg_realip`。变量值应为一个有效的 IP 地址，表示客户端的真实 IP 地址，可选地包含端口。 |
+| trusted_addresses | array[string] | 否       |        | IPv4 或 IPv6 地址数组（接受 CIDR 表示法） | 已知会发送正确替代地址的可信地址。此配置设置 [`set_real_ip_from`](https://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from) 指令。 |
+| recursive         | boolean       | 否       | false  |                            | 如果为 false，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个地址。<br>如果为 true，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。 |
 
 :::note
-
 如果 `source` 属性中设置的地址丢失或者无效，该插件将不会更改客户端地址。
-
 :::
 
-## 启用插件
+## 示例
 
-以下示例展示了如何在指定路由中启用 `real-ip` 插件：
+以下示例展示了如何在不同场景中配置 `real-ip`。
 
 :::note
 
@@ -67,60 +63,140 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 从 URI 参数获取真实客户端地址
+
+以下示例演示了如何使用 URI 参数更新客户端 IP 地址。
+
+创建如下路由。您应配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从 URL 参数 `realip` 获取值。使用 `response-rewrite` 插件设置响应头，以验证客户端 IP 和端口是否实际更新。
+
 ```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "real-ip-route",
+    "uri": "/get",
     "plugins": {
-        "real-ip": {
-            "source": "arg_realip",
-            "trusted_addresses": ["127.0.0.0/24"]
-        },
-        "response-rewrite": {
-            "headers": {
-                "remote_addr": "$remote_addr",
-                "remote_port": "$remote_port"
-            }
+      "real-ip": {
+        "source": "arg_realip",
+        "trusted_addresses": ["127.0.0.0/24"]
+      },
+      "response-rewrite": {
+        "headers": {
+          "remote_addr": "$remote_addr",
+          "remote_port": "$remote_port"
         }
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## 测试插件
-
-通过上述命令启用插件后，可以使用如下命令测试插件是否启用成功：
+向路由发送带有 URL 参数中的真实 IP 和端口的请求：
 
 ```shell
-curl 'http://127.0.0.1:9080/index.html?realip=1.2.3.4:9080' -I
+curl -i "http://127.0.0.1:9080/get?realip=1.2.3.4:9080"
 ```
 
-```shell
-...
+您应看到响应包含以下头：
+
+```text
 remote-addr: 1.2.3.4
 remote-port: 9080
 ```
 
-## 删除插件
+### 从请求头获取真实客户端地址
 
-当你需要禁用 `real-ip` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+以下示例展示了当 APISIX 位于反向代理（例如负载均衡器）之后时，如何设置真实客户端 IP，此时代理在 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 请求头中暴露了真实客户端 IP。
+
+创建如下路由。您应配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。使用 response-rewrite 插件设置响应头，以验证客户端 IP 是否实际更新。
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "real-ip-route",
+    "uri": "/get",
+    "plugins": {
+      "real-ip": {
+        "source": "http_x_forwarded_for",
+        "trusted_addresses": ["127.0.0.0/24"]
+      },
+      "response-rewrite": {
+        "headers": {
+          "remote_addr": "$remote_addr"
         }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应看到响应包含以下头：
+
+```text
+remote-addr: 10.26.3.19
+```
+
+IP 地址应对应于请求发起客户端的 IP 地址。
+
+### 在多个代理之后获取真实客户端地址
+
+以下示例展示了当 APISIX 位于多个代理之后时，如何获取真实客户端 IP，此时 [`X-Forwarded-For`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For) 请求头包含了一系列代理 IP 地址。
+
+创建如下路由。您应配置 `source` 以使用 [APISIX 变量](https://apisix.apache.org/docs/apisix/apisix-variable/)或者 [NGINX 变量](https://nginx.org/en/docs/varindex.html)从请求头 `X-Forwarded-For` 获取值。将 `recursive` 设置为 `true`，以便将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。然后，使用 `response-rewrite` 插件设置响应头，以验证客户端 IP 是否实际更新。
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+  "id": "real-ip-route",
+  "uri": "/get",
+  "plugins": {
+    "real-ip": {
+      "source": "http_x_forwarded_for",
+      "recursive": true,
+      "trusted_addresses": ["192.128.0.0/16", "127.0.0.0/24"]
+    },
+    "response-rewrite": {
+      "headers": {
+        "remote_addr": "$remote_addr"
+      }
+    }
+  },
+  "upstream": {
+    "type": "roundrobin",
+    "nodes": {
+      "httpbin.org:80": 1
+    }
+  }
 }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" \
+  -H "X-Forwarded-For: 127.0.0.2, 192.128.1.1, 127.0.0.1"
+```
+
+您应看到响应包含以下头：
+
+```text
+remote-addr: 127.0.0.2
 ```
