@@ -61,6 +61,6 @@ jobs:
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
             ./ci/${{ matrix.job_name }}_runner.sh do_install
-          
+
       - name: Linux Script
         run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
