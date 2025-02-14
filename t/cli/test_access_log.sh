@@ -179,50 +179,60 @@ make stop
 
 echo "don't log uninitialized access log variable when the HTTP request is malformed"
 
-# # TLS upstream
+# TLS upstream
 
-# echo "
-# deployment:
-#     admin:
-#         admin_listen:
-#             port: 9180
-#         https_admin: true
-#         admin_api_mtls:
-#             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
-#             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
-# nginx_config:
-#   http:
-#     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
-# " > conf/config.yaml
+echo "
+deployment:
+    admin:
+        admin_listen:
+            port: 9180
+        https_admin: true
+        admin_api_mtls:
+            admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
+            admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+nginx_config:
+  http:
+    access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
+" > conf/config.yaml
+# Before starting APISIX in the failing test:
 
-# make init
-# make run
-# sleep 2
+# 1. Fix parent directory permissions
+sudo chmod o+x /home/runner/work/ /home/runner/work/apisix/ /home/runner/work/apisix/apisix/
 
-# admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-# curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d \
-#     '{"uri":"/apisix/admin/routes/1", "upstream":{"nodes":{"localhost:9180":1},"scheme":"https","type":"roundrobin","pass_host":"node"}}'
+# 2. Ensure conf/ is accessible
+sudo chmod -R o+rx conf/
 
-# curl -i http://127.0.0.1:9080/apisix/admin/routes/1
-# sleep 4
-# tail -n 2 logs/access.log > output.log
+# 3. Regenerate nginx.conf
+make init
 
-# # APISIX
-# if ! grep '"https://localhost:9180" -' output.log; then
-#     echo "failed: should find upstream scheme"
-#     cat output.log
-#     exit 1
-# fi
+# 4. Start APISIX
+make run
+sleep 2
 
-# # admin
-# if ! grep '"http://localhost:9180" localhost' output.log; then
-#     echo "failed: should find upstream scheme"
-#     cat output.log
-#     exit 1
-# fi
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+curl -k -i https://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d \
+    '{"uri":"/apisix/admin/routes/1", "upstream":{"nodes":{"localhost:9180":1},"scheme":"https","type":"roundrobin","pass_host":"node"}}'
 
-# make stop
-# echo "passed: should find upstream scheme"
+curl -i http://127.0.0.1:9080/apisix/admin/routes/1
+sleep 4
+tail -n 2 logs/access.log > output.log
+
+# APISIX
+if ! grep '"https://localhost:9180" -' output.log; then
+    echo "failed: should find upstream scheme"
+    cat output.log
+    exit 1
+fi
+
+# admin
+if ! grep '"http://localhost:9180" localhost' output.log; then
+    echo "failed: should find upstream scheme"
+    cat output.log
+    exit 1
+fi
+
+make stop
+echo "passed: should find upstream scheme"
 
 # check stream logs
 echo '
