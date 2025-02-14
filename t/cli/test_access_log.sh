@@ -195,16 +195,7 @@ nginx_config:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
 " > conf/config.yaml
 
-echo "check here:"
-#check permission
-# Add this before "make run" in the "TLS upstream" section
-echo "CHECK HERE"
-# Reset ownership to the user who invoked sudo
-sudo chown "${SUDO_USER:-$(whoami)}":"${SUDO_USER:-$(whoami)}" conf/config.yaml
-# Set secure permissions
-sudo chmod 644 conf/config.yaml
-ls -l conf/config.yaml
-ls -ld conf/
+make init
 make run
 sleep 2
 
