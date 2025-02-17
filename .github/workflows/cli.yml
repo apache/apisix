@@ -42,6 +42,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          detached: true
+
       - name: Cache deps
         uses: actions/cache@v4
         env:
