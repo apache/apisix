@@ -25,11 +25,12 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Fix base permissions
+      - name: Fix ALL directory and file permissions
         run: |
-          # Ensure APISIX directories are accessible
-          sudo chmod -R a+rx "$GITHUB_WORKSPACE/apisix"
-          sudo chmod -R a+r "$GITHUB_WORKSPACE/conf"
+            # Fix directories: Ensure traversal (a+rx)
+            sudo find "$GITHUB_WORKSPACE" -type d -exec chmod a+rx {} \;
+            # Fix files: Ensure readability (a+r)
+            sudo find "$GITHUB_WORKSPACE" -type f -exec chmod a+r {} \;
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
