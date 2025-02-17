@@ -194,18 +194,7 @@ nginx_config:
   http:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
 " > conf/config.yaml
-# Before starting APISIX in the failing test:
 
-# 1. Fix parent directory permissions
-sudo chmod o+x /home/runner/work/ /home/runner/work/apisix/ /home/runner/work/apisix/apisix/
-
-# 2. Ensure conf/ is accessible
-sudo chmod -R o+rx conf/
-
-# 3. Regenerate nginx.conf
-make init
-
-# 4. Start APISIX
 make run
 sleep 2
 
