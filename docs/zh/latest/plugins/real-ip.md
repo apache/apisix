@@ -43,7 +43,7 @@ description: real-ip 插件允许 Apache APISIX 通过 HTTP 请求头或 HTTP �
 |-------------------|---------------|----------|--------|----------------------------|----------------------------------------------------------------------|
 | source            | string        | 是       |        |                            | 内置变量，例如 `http_x_forwarded_for` 或 `arg_realip`。变量值应为一个有效的 IP 地址，表示客户端的真实 IP 地址，可选地包含端口。 |
 | trusted_addresses | array[string] | 否       |        | IPv4 或 IPv6 地址数组（接受 CIDR 表示法） | 已知会发送正确替代地址的可信地址。此配置设置 [`set_real_ip_from`](https://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from) 指令。 |
-| recursive         | boolean       | 否       | false  |                            | 如果为 false，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个地址。<br>如果为 true，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。 |
+| recursive         | boolean       | 否       | false  |                            | 如果为 false，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个地址。<br />如果为 true，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。 |
 
 :::note
 如果 `source` 属性中设置的地址丢失或者无效，该插件将不会更改客户端地址。
