@@ -47,7 +47,6 @@ jobs:
 
       - name: Linux Install
         run: |
-          --preserve-env=OPENRESTY_VERSION \
           ./ci/linux_apisix_current_luarocks_runner.sh do_install
 
       - name: Linux Script
