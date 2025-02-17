@@ -23,7 +23,6 @@ jobs:
           - linux_apisix_current_luarocks_in_customed_nginx
 
     runs-on: ${{ matrix.platform }}
-    timeout-minutes: 30
     env:
       SERVER_NAME: ${{ matrix.job_name }}
       OPENRESTY_VERSION: default
