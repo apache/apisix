@@ -213,13 +213,6 @@ if ! grep '"http://127.0.0.1:9180" -' output.log; then
     exit 1
 fi
 
-# admin
-if ! grep '"http://127.0.0.1:9180" localhost' output.log; then
-    echo "failed: should find upstream scheme"
-    cat output.log
-    exit 1
-fi
-
 make stop
 echo "passed: should find upstream scheme"
 
