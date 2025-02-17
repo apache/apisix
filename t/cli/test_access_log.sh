@@ -207,7 +207,7 @@ sleep 4
 tail -n 2 logs/access.log > output.log
 
 # APISIX
-if ! grep '"https://127.0.0.1:9180" -' output.log; then
+if ! grep '"http://127.0.0.1:9180" -' output.log; then
     echo "failed: should find upstream scheme"
     cat output.log
     exit 1

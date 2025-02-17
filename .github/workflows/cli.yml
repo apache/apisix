@@ -63,4 +63,8 @@ jobs:
             ./ci/${{ matrix.job_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
+        run: |
+          sudo sh -c 'umask 022 && ./ci/${{ matrix.job_name }}_runner.sh script'
+          
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
