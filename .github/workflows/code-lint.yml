@@ -2,7 +2,7 @@ name: Code Lint
 
 on:
   pull_request:
-    branches: [master, 'release/**']
+    branches: ['release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
