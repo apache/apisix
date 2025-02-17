@@ -6,11 +6,11 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
-  pull_request:
-    branches: [ master, 'release/**' ]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
+  # pull_request:
+  #   branches: [ master, 'release/**' ]
+  #   paths-ignore:
+  #     - 'docs/**'
+  #     - '**/*.md'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref == 'refs/heads/master' && github.run_number || github.ref }}
@@ -25,7 +25,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - ubuntu-20.04
+          - ubuntu-latest
         os_name:
           - linux_openresty
 
