@@ -14,16 +14,9 @@ on:
       
 jobs:
   build:
-    strategy:
-      matrix:
-        platform:
-          - ubuntu-latest
-        job_name:
-          - linux_apisix_current_luarocks
-
-    runs-on: ${{ matrix.platform }}
+    runs-on: ubuntu-latest
     env:
-      SERVER_NAME: ${{ matrix.job_name }}
+      SERVER_NAME: linux_apisix_current_luarocks
       OPENRESTY_VERSION: default
 
     steps:
@@ -43,20 +36,20 @@ jobs:
           cache-name: cache-deps
         with:
           path: deps
-          key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.job_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
+          key: ${{ runner.os }}-${{ env.cache-name }}-linux_apisix_current_luarocks-${{ hashFiles('apisix-master-0.rockspec') }}
 
       - name: Linux launch common services
         run: |
           project_compose_ci=ci/pod/docker-compose.common.yml make ci-env-up
 
       - name: Linux Before install
-        run: sudo ./ci/${{ matrix.job_name }}_runner.sh before_install
+        run: sudo ./ci/linux_apisix_current_luarocks_runner.sh before_install
 
       - name: Linux Install
         run: |
             sudo --preserve-env=OPENRESTY_VERSION \
-            ./ci/${{ matrix.job_name }}_runner.sh do_install
+            ./ci/linux_apisix_current_luarocks_runner.sh do_install
 
       - name: Linux Script
         run: |
-          sudo sh -c 'umask 022 && ./ci/${{ matrix.job_name }}_runner.sh script'
+          sudo sh -c 'umask 022 && ./ci/linux_apisix_current_luarocks_runner.sh script'
