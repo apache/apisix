@@ -43,7 +43,7 @@ The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://n
 |-----------|---------|----------|---------|----------------|---------------|
 | source    | string  | True      |     |    |A built-in [APISIX variable](https://apisix.apache.org/docs/apisix/apisix-variable/) or [NGINX variable](https://nginx.org/en/docs/varindex.html), such as `http_x_forwarded_for` or `arg_realip`. The variable value should be a valid IP address that represents the client's real IP address, with an optional port.|
 | trusted_addresses | array[string] | False |     | array of IPv4 or IPv6 addresses (CIDR notation acceptable)  | Trusted addresses that are known to send correct replacement addresses. This configuration sets the [`set_real_ip_from`](https://nginx.org/en/docs/http/ngx_http_realip_module.html#set_real_ip_from) directive. |
-| recursive  | boolean | False |  False   |    | If false, replace the original client address that matches one of the trusted addresses by the last address sent in the configured `source`.<br>If true, replace the original client address that matches one of the trusted addresses by the last non-trusted address sent in the configured `source`. |
+| recursive  | boolean | False |  False   |    | If false, replace the original client address that matches one of the trusted addresses by the last address sent in the configured `source`.<br />If true, replace the original client address that matches one of the trusted addresses by the last non-trusted address sent in the configured `source`. |
 
 :::note
 If the address specified in `source` is missing or invalid, the Plugin would not change the client address.
