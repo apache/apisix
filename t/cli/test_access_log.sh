@@ -194,8 +194,12 @@ nginx_config:
   http:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
 " > conf/config.yaml
-
+# Before starting APISIX in the failing test give 
+sudo chmod 644 conf/config.yaml
+# 4. Start APISIX
 make run
+echo "CHECK PERMISSIONS"
+ls -la conf/config.yaml
 sleep 2
 
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
