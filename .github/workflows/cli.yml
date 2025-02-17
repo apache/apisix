@@ -62,6 +62,7 @@ jobs:
       - name: Linux Script
         run: |
           # Force permissions during test execution
+          sudo chmod o+x /home/runner  # Add execute for "others"
           sudo sh -c 'umask 022 && ./ci/linux_apisix_current_luarocks_runner.sh script'
           # Post-script permission fix
           sudo find "$GITHUB_WORKSPACE/conf" -type f -exec chmod 644 {} \;
