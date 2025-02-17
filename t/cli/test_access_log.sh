@@ -195,7 +195,7 @@ nginx_config:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'
 " > conf/config.yaml
 # 4. Start APISIX
-sudo -E make run
+make run
 sleep 2
 
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -207,14 +207,14 @@ sleep 4
 tail -n 2 logs/access.log > output.log
 
 # APISIX
-if ! grep '"https://localhost:9180" -' output.log; then
+if ! grep '"https://127.0.0.1:9180" -' output.log; then
     echo "failed: should find upstream scheme"
     cat output.log
     exit 1
 fi
 
 # admin
-if ! grep '"http://localhost:9180" localhost' output.log; then
+if ! grep '"http://127.0.0.1:9180" localhost' output.log; then
     echo "failed: should find upstream scheme"
     cat output.log
     exit 1
