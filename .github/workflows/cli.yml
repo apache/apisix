@@ -25,11 +25,6 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          detached: true
-
       - name: Cache deps
         uses: actions/cache@v4
         env:
@@ -54,6 +49,5 @@ jobs:
 
       - name: Linux Script
         run: |
-          # Force permissions during test execution
           sudo chmod +x /home/runner
           sudo sh -c 'umask 022 && ./ci/linux_apisix_current_luarocks_runner.sh script'
