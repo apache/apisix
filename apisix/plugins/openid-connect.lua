@@ -384,13 +384,24 @@ local function introspect(ctx, conf)
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        local res, err = openidc.bearer_jwt_verify(conf, {
-            lifetime_grace_period = conf.iat_slack,
-            aud = function (val, claim)
-                local ok = conf.client_id == val
-                return ok, not ok and "Audience does not match the client_id" or nil
-            end,
-        })
+        local res, err = openidc.bearer_jwt_verify(conf,
+            { lifetime_grace_period = conf.iat_slack },
+            {
+                aud = function (val, claim)
+                    if type(val) == "table" then
+                        for _, v in ipairs(val) do
+                            if conf.client_id == v then
+                                return true
+                            end
+                        end
+                        error("Audience list does not contain the client id")
+                    end
+                    if conf.client_id ~= val then
+                        error("Audience does not match the client id")
+                    end
+                    return true
+                end,
+            })
 
         if err then
             -- Error while validating or token invalid.
