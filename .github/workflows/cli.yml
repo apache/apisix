@@ -33,7 +33,7 @@ jobs:
     runs-on: ${{ matrix.platform }}
     timeout-minutes: 30
     env:
-      SERVER_NAME: linux_apisix_current_luarocks
+      SERVER_NAME: ${{ matrix.job_name }}
       OPENRESTY_VERSION: default
 
     steps:
@@ -65,4 +65,4 @@ jobs:
       - name: Linux Script
         run: |
           sudo chmod +x /home/runner
-          sudo sh -c 'umask 022 && ./ci/${{ matrix.job_name }}_runner.sh script'
+          sudo ./ci/${{ matrix.job_name }}_runner.sh script
