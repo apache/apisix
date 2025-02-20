@@ -107,7 +107,7 @@ done
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                                 "client_rsa_private_key": "89ae4c8edadf1cd1c9f034335f136f87ad84b625c8f1",
-                                "discovery": "http://127.0.0.1:1980/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -166,9 +166,9 @@ qO8TJbXcxCUnkkaTs3PxWDk5a54lv7FmngKQaxuXV4cL+7Kp1R4D8NS4w88so4e+
             local res, err = httpc:request_uri(uri, {method = "GET"})
             ngx.status = res.status
             local location = res.headers['Location']
-            if location and string.find(location, 'https://samples.auth0.com/authorize') ~= -1 and
+            if location and string.find(location, 'http://127.0.0.1:8080/realms/basic/protocol/openid-connect/auth') ~= -1 and
                 string.find(location, 'scope=apisix') ~= -1 and
-                string.find(location, 'client_id=kbyuFDidLLm280LIwVFiazOqjO3ty8KH') ~= -1 and
+                string.find(location, 'client_id=apisix') ~= -1 and
                 string.find(location, 'response_type=code') ~= -1 and
                 string.find(location, 'redirect_uri=https://iresty.com') ~= -1 then
                 ngx.say(true)
