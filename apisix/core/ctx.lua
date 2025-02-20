@@ -204,6 +204,12 @@ do
         var_x_forwarded_host       = true,
     }
 
+    local no_cacheable_var_prefix_names = {
+    }
+
+    local apisix_var_prefix_names = {
+    }
+
     -- sort in alphabetical
     local apisix_var_names = {
         balancer_ip = true,
@@ -232,6 +238,7 @@ do
             end
 
             local val
+            local matched_prefix_name
             local method = var_methods[key]
             if method then
                 val = method()
@@ -302,13 +309,26 @@ do
                         -- the getter is registered by ctx.register_var
                         val = getter(ctx)
                     end
-
                 else
-                    val = get_var(key, t._request)
+                    local matched_prefix_getter = nil
+                    for prefix_name, prefix_getter in pairs(apisix_var_prefix_names) do
+                        if core_str.has_prefix(key, prefix_name) then
+                            matched_prefix_name = prefix_name
+                            matched_prefix_getter = prefix_getter
+                            break
+                        end
+                    end
+                    if matched_prefix_getter then
+                        local arg_key = sub_str(key, #matched_prefix_name + 1)
+                        val = matched_prefix_getter(t._ctx, arg_key)
+                    else
+                        val = get_var(key, t._request)
+                    end
                 end
             end
 
-            if val ~= nil and not no_cacheable_var_names[key] then
+            if val ~= nil and not no_cacheable_var_names[key] and
+               not no_cacheable_var_prefix_names[matched_prefix_name] then
                 t._cache[key] = val
             end
 
@@ -348,16 +368,23 @@ do
 --
 -- We support the options below in the `opts`:
 -- * no_cacheable: if the result of getter is cacheable or not. Default to `false`.
+-- * prefix: if the variable is a prefix variable or not. Default to `false`.
 function _M.register_var(name, getter, opts)
     if type(getter) ~= "function" then
         error("the getter of registered var should be a function")
     end
 
-    apisix_var_names[name] = getter
-
-    if opts then
+    if opts and opts.prefix then
+        apisix_var_prefix_names[name] = getter
         if opts.no_cacheable then
-            no_cacheable_var_names[name] = true
+            no_cacheable_var_prefix_names[name] = true
+        end
+    else
+        apisix_var_names[name] = getter
+        if opts then
+            if opts.no_cacheable then
+                no_cacheable_var_names[name] = true
+            end
         end
     end
 end
