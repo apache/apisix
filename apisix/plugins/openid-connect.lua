@@ -89,6 +89,33 @@ local schema = {
             type = "string",
             default = "apisix",
         },
+        claim_validator = {
+            type = "object",
+            properties = {
+                audience = {
+                    type = "object",
+                    description = "audience claim value to validate",
+                    properties = {
+                        claim = {
+                            type = "string",
+                            description = "custom claim name",
+                            default = "aud",
+                        },
+                        required = {
+                            type = "boolean",
+                            description = "audience claim is required",
+                            default = false,
+                        },
+                        match_with_client_id = {
+                            type = "boolean",
+                            description = "audience must euqal to or includes client_id",
+                            default = false,
+                        }
+                    },
+                },
+            },
+            default = {},
+        },
         logout_path = {
             type = "string",
             default = "/logout",
@@ -384,24 +411,7 @@ local function introspect(ctx, conf)
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        local res, err = openidc.bearer_jwt_verify(conf,
-            { lifetime_grace_period = conf.iat_slack },
-            {
-                aud = function (val, claim)
-                    if type(val) == "table" then
-                        for _, v in ipairs(val) do
-                            if conf.client_id == v then
-                                return true
-                            end
-                        end
-                        error("Audience list does not contain the client id")
-                    end
-                    if conf.client_id ~= val then
-                        error("Audience does not match the client id")
-                    end
-                    return true
-                end,
-            })
+        local res, err = openidc.bearer_jwt_verify(conf)
 
         if err then
             -- Error while validating or token invalid.
@@ -564,6 +574,34 @@ function _M.rewrite(plugin_conf, ctx)
                     return 403, core.json.encode(error_response)
                 end
             end
+
+            -- jwt audience claim validator
+            local audience_claim = core.table.try_read_attr(conf, "claim_validator", "audience", "claim") or "aud"
+            local audience_value = response[audience_claim]
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
+                and not audience_value then
+                core.log.error("OIDC introspection failed: required audience (".. audience_claim ..") not present")
+                local error_response = { error = "required audience claim not present" }
+                return 403, core.json.encode(error_response)
+            end
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
+                and audience_value ~= nil then
+                local error_response = { error = "mismatched audience" }
+                if type(audience_value) == "table" then
+                    for _, v in ipairs(audience_value) do
+                        if conf.client_id == v then
+                            return true
+                        end
+                    end
+                    core.log.error("OIDC introspection failed: audience list does not contain the client id")
+                    return 403, core.json.encode(error_response)
+                end
+                if conf.client_id ~= audience_value then
+                    core.log.error("OIDC introspection failed: audience does not match the client id")
+                    return 403, core.json.encode(error_response)
+                end
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 
