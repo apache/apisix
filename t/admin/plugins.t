@@ -106,6 +106,7 @@ limit-conn
 limit-count
 limit-req
 ai-proxy
+ai-proxy-multi
 gzip
 server-info
 traffic-split

@@ -105,7 +105,48 @@ local model_schema = {
     required = {"provider", "name"}
 }
 
-_M.plugin_schema = {
+local provider_schema = {
+    type = "array",
+    minItems = 1,
+    items = {
+        type = "object",
+        properties = {
+            name = {
+                type = "string",
+                description = "Name of the AI service provider.",
+                enum = { "openai", "deepseek" }, -- add more providers later
+
+            },
+            model = {
+                type = "string",
+                description = "Model to execute.",
+            },
+            priority = {
+                type = "integer",
+                description = "Priority of the provider for load balancing",
+                default = 0,
+            },
+            weight = {
+                type = "integer",
+            },
+            auth = auth_schema,
+            options = model_options_schema,
+            override = {
+                type = "object",
+                properties = {
+                    endpoint = {
+                        type = "string",
+                        description = "To be specified to override the host of the AI provider",
+                    },
+                },
+            },
+        },
+        required = {"name", "model", "auth"}
+    },
+}
+
+
+_M.ai_proxy_schema = {
     type = "object",
     properties = {
         auth = auth_schema,
@@ -124,6 +165,51 @@ _M.plugin_schema = {
         ssl_verify = {type = "boolean", default = true },
     },
     required = {"model", "auth"}
+}
+
+_M.ai_proxy_multi_schema = {
+    type = "object",
+    properties = {
+        balancer = {
+            type = "object",
+            properties = {
+                algorithm = {
+                    type = "string",
+                    enum = { "chash", "roundrobin" },
+                },
+                hash_on = {
+                    type = "string",
+                    default = "vars",
+                    enum = {
+                      "vars",
+                      "header",
+                      "cookie",
+                      "consumer",
+                      "vars_combinations",
+                    },
+                },
+                key = {
+                    description = "the key of chash for dynamic load balancing",
+                    type = "string",
+                },
+            },
+            default = { algorithm = "roundrobin" }
+        },
+        providers = provider_schema,
+        passthrough = { type = "boolean", default = false },
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 60000,
+            default = 3000,
+            description = "timeout in milliseconds",
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
+        keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        ssl_verify = {type = "boolean", default = true },
+    },
+    required = {"providers", }
 }
 
 _M.chat_request_schema = {
