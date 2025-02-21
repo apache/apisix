@@ -186,7 +186,6 @@ local function get_load_balanced_provider(ctx, conf, ups_tab, request_table)
 end
 
 ai_proxy.get_model_name = function (...)
-    
 end
 
 
@@ -201,7 +200,7 @@ ai_proxy.proxy_request_to_llm = function (conf, request_table, ctx)
     end
 
     ::retry::
-    local provider_name, provider_conf = get_load_balanced_provider(ctx, conf, ups_tab, request_table)
+    local provider, provider_conf = get_load_balanced_provider(ctx, conf, ups_tab, request_table)
     local extra_opts = {
         endpoint = core.table.try_read_attr(provider_conf, "override", "endpoint"),
         query_params = provider_conf.auth.query or {},
@@ -209,7 +208,7 @@ ai_proxy.proxy_request_to_llm = function (conf, request_table, ctx)
         model_options = provider_conf.options,
     }
 
-    local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. provider_name)
+    local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. provider)
     local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
     if not res then
         if (ctx.balancer_try_count or 0) < 1 then

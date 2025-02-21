@@ -59,7 +59,7 @@ function _M.get_model_name(conf)
 end
 
 
-function _M.proxy_request_to_llm(conf, request_table)
+function _M.proxy_request_to_llm(conf, request_table, ctx)
     local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
     local extra_opts = {
         endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
@@ -96,7 +96,7 @@ function _M.access(conf, ctx)
         request_table.stream = true
     end
 
-    local res, err, httpc = _M.proxy_request_to_llm(conf, request_table)
+    local res, err, httpc = _M.proxy_request_to_llm(conf, request_table, ctx)
     if not res then
         core.log.error("failed to send request to LLM service: ", err)
         return internal_server_error
