@@ -608,6 +608,7 @@ Authorization: Bearer token
 {"foo", "bar"}
 
 
+
 === TEST 16: set route with stream = true (SSE)
 --- config
     location /t {
