@@ -19,8 +19,13 @@ local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local ai_proxy = require("apisix.plugins.ai-proxy")
 local plugin = require("apisix.plugin")
+
 local require = require
 local pcall = pcall
+local ipairs = ipairs
+local unpack = unpack
+local type = type
+
 local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local priority_balancer = require("apisix.balancer.priority")
 

@@ -26,6 +26,7 @@ local url  = require("socket.url")
 
 local pairs = pairs
 local type  = type
+local setmetatable = setmetatable
 
 
 function _M.new(opts)
