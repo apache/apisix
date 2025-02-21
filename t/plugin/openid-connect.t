@@ -124,6 +124,7 @@ done
                         "uri": "/hello"
                 }]]
                 )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -132,20 +133,29 @@ done
     }
 --- response_body
 passed
+
+
+
 === TEST 5: verify encrypted field
 --- config
     location /t {
         content_by_lua_block {
             local json = require("toolkit.json")
             local t = require("lib.test_admin").test
+
+
             -- get plugin conf from etcd, client_rsa_private_key is encrypted
             local etcd = require("apisix.core.etcd")
             local res = assert(etcd.get('/routes/1'))
             ngx.say(res.body.node.value.plugins["openid-connect"].client_rsa_private_key)
+
         }
     }
 --- response_body
 qO8TJbXcxCUnkkaTs3PxWDk5a54lv7FmngKQaxuXV4cL+7Kp1R4D8NS4w88so4e+
+
+
+
 === TEST 6: Access route w/o bearer token. Should redirect to authentication endpoint of ID provider.
 --- config
     location /t {
