@@ -38,7 +38,7 @@ function _M.check_schema(conf)
     if not ai_driver then
         return false, "provider: " .. conf.model.provider .. " is not supported."
     end
-    return core.schema.check(schema.plugin_schema, conf)
+    return core.schema.check(schema.ai_proxy_schema, conf)
 end
 
 
@@ -53,6 +53,26 @@ local function keepalive_or_close(conf, httpc)
     httpc:close()
 end
 
+
+function _M.get_model_name(conf)
+    return conf.model.name
+end
+
+
+function _M.proxy_request_to_llm(conf, request_table)
+    local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
+    local extra_opts = {
+        endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
+        query_params = conf.auth.query or {},
+        headers = (conf.auth.header or {}),
+        model_options = conf.model.options
+    }
+    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
+    if not res then
+        return nil, err, nil
+    end
+    return res, nil, httpc
+end
 
 function _M.access(conf, ctx)
     local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
@@ -70,16 +90,13 @@ function _M.access(conf, ctx)
         return bad_request, "request format doesn't match schema: " .. err
     end
 
-    if conf.model.name then
-        request_table.model = conf.model.name
-    end
+    request_table.model = _M.get_model_name(conf)
 
     if core.table.try_read_attr(conf, "model", "options", "stream") then
         request_table.stream = true
     end
 
-    local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
-    local res, err, httpc = ai_driver.request(conf, request_table, ctx)
+    local res, err, httpc = _M.proxy_request_to_llm(conf, request_table)
     if not res then
         core.log.error("failed to send request to LLM service: ", err)
         return internal_server_error
