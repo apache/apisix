@@ -223,6 +223,7 @@ local _M = {
     "workflow",
     "api-breaker",
     "ai-proxy",
+    "ai-proxy-multi",
     "limit-conn",
     "limit-count",
     "limit-req",

@@ -34,10 +34,10 @@ local lrucache_server_picker = core.lrucache.new({
     ttl = 300, count = 256
 })
 
-local plugin_name = "ai-proxy"
+local plugin_name = "ai-proxy-multi"
 local _M = {
     version = 0.5,
-    priority = 999,
+    priority = 998,
     name = plugin_name,
     schema = schema.ai_proxy_multi_schema,
 }
