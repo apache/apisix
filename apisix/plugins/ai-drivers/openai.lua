@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-return require("apisix.plugins.ai-proxy.drivers.openai-compatible").new(
+return require("apisix.plugins.ai-drivers.openai-compatible").new(
     {
         host = "api.openai.com",
         path = "/v1/chat/completions",

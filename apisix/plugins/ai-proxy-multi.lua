@@ -61,7 +61,7 @@ end
 
 function _M.check_schema(conf)
     for _, provider in ipairs(conf.providers) do
-        local ai_driver = pcall(require, "apisix.plugins.ai-proxy.drivers." .. provider.name)
+        local ai_driver = pcall(require, "apisix.plugins.ai-drivers." .. provider.name)
         if not ai_driver then
             return false, "provider: " .. provider.name .. " is not supported."
         end
@@ -208,7 +208,7 @@ ai_proxy.proxy_request_to_llm = function (conf, request_table, ctx)
         model_options = provider_conf.options,
     }
 
-    local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. provider)
+    local ai_driver = require("apisix.plugins.ai-drivers." .. provider)
     local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
     if not res then
         if (ctx.balancer_try_count or 0) < 1 then

@@ -34,7 +34,7 @@ local _M = {
 
 
 function _M.check_schema(conf)
-    local ai_driver = pcall(require, "apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
+    local ai_driver = pcall(require, "apisix.plugins.ai-drivers." .. conf.model.provider)
     if not ai_driver then
         return false, "provider: " .. conf.model.provider .. " is not supported."
     end
@@ -60,7 +60,7 @@ end
 
 
 function _M.proxy_request_to_llm(conf, request_table, ctx)
-    local ai_driver = require("apisix.plugins.ai-proxy.drivers." .. conf.model.provider)
+    local ai_driver = require("apisix.plugins.ai-drivers." .. conf.model.provider)
     local extra_opts = {
         endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
         query_params = conf.auth.query or {},
