@@ -587,16 +587,18 @@ function _M.rewrite(plugin_conf, ctx)
             if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
                 and audience_value ~= nil then
                 local error_response = { error = "mismatched audience" }
+                local matched = false
                 if type(audience_value) == "table" then
                     for _, v in ipairs(audience_value) do
                         if conf.client_id == v then
-                            return true
+                            matched = true
                         end
                     end
-                    core.log.error("OIDC introspection failed: audience list does not contain the client id")
-                    return 403, core.json.encode(error_response)
-                end
-                if conf.client_id ~= audience_value then
+                    if not matched then
+                        core.log.error("OIDC introspection failed: audience list does not contain the client id")
+                        return 403, core.json.encode(error_response)
+                    end
+                elseif conf.client_id ~= audience_value then
                     core.log.error("OIDC introspection failed: audience does not match the client id")
                     return 403, core.json.encode(error_response)
                 end

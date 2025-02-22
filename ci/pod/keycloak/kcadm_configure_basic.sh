@@ -21,7 +21,7 @@ export PATH=/opt/keycloak/bin:$PATH
 
 kcadm.sh config credentials --server http://127.0.0.1:8080 --realm master --user admin --password admin
 
-# create realm 
+# create realm
 kcadm.sh create realms -s realm=basic -s enabled=true
 
 # set realm keys with specific private key, reuse tls cert and key
@@ -46,9 +46,9 @@ kcadm.sh create clients \
     -s 'redirectUris=["*"]' \
     -s 'directAccessGrantsEnabled=true'
 
-# add audience to client apisix
-CLIENT_UUID=$(kcadm.sh get clients -r basic -q clientId=apisix | jq -r '.[0].id')
-kcadm.sh create clients/$CLIENT_UUID/protocol-mappers/models \
+# add audience to client apisix, so that the access token will contain the client id ("apisix") as audience 
+APISIX_CLIENT_UUID=$(kcadm.sh get clients -r basic -q clientId=apisix | jq -r '.[0].id')
+kcadm.sh create clients/$APISIX_CLIENT_UUID/protocol-mappers/models \
   -r basic \
   -s protocol=openid-connect \
   -s name=aud \
@@ -56,6 +56,29 @@ kcadm.sh create clients/$CLIENT_UUID/protocol-mappers/models \
   -s 'config."id.token.claim"=false' \
   -s 'config."access.token.claim"=true' \
   -s 'config."included.client.audience"=apisix'
+
+# create client apisix
+kcadm.sh create clients \
+    -r basic \
+    -s clientId=apisix \
+    -s enabled=true \
+    -s clientAuthenticatorType=client-secret \
+    -s secret=secret \
+    -s 'redirectUris=["*"]' \
+    -s 'directAccessGrantsEnabled=true'
+
+# create client apisix-no-aud, without client id audience
+# according to Keycloak's default implementation, when unconfigured,
+# only the account is listed as an audience, not the client id
+
+kcadm.sh create clients \
+    -r basic \
+    -s clientId=apisix-no-aud \
+    -s enabled=true \
+    -s clientAuthenticatorType=client-secret \
+    -s secret=secret \
+    -s 'redirectUris=["*"]' \
+    -s 'directAccessGrantsEnabled=true'
 
 # create user jack
 kcadm.sh create users -r basic -s username=jack -s enabled=true
