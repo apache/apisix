@@ -211,6 +211,7 @@ Note the assertion in the error log, where it is shown that the custom claim fie
 OIDC introspection failed: required audience (custom_claim) not present
 
 
+
 === TEST 5: Update route (jwt local, audience required, custom claim)
 Use "iss" to fake "aud".
 --- config
