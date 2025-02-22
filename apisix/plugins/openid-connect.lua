@@ -576,11 +576,13 @@ function _M.rewrite(plugin_conf, ctx)
             end
 
             -- jwt audience claim validator
-            local audience_claim = core.table.try_read_attr(conf, "claim_validator", "audience", "claim") or "aud"
+            local audience_claim = core.table.try_read_attr(conf, "claim_validator",
+                                                             "audience", "claim") or "aud"
             local audience_value = response[audience_claim]
             if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
                 and not audience_value then
-                core.log.error("OIDC introspection failed: required audience (".. audience_claim ..") not present")
+                core.log.error("OIDC introspection failed: required audience (",
+                                audience_claim, ") not present")
                 local error_response = { error = "required audience claim not present" }
                 return 403, core.json.encode(error_response)
             end
@@ -595,11 +597,13 @@ function _M.rewrite(plugin_conf, ctx)
                         end
                     end
                     if not matched then
-                        core.log.error("OIDC introspection failed: audience list does not contain the client id")
+                        core.log.error("OIDC introspection failed: ",
+                                        "audience list does not contain the client id")
                         return 403, core.json.encode(error_response)
                     end
                 elseif conf.client_id ~= audience_value then
-                    core.log.error("OIDC introspection failed: audience does not match the client id")
+                    core.log.error("OIDC introspection failed: ",
+                                    "audience does not match the client id")
                     return 403, core.json.encode(error_response)
                 end
             end
