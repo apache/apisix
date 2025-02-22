@@ -46,7 +46,7 @@ kcadm.sh create clients \
     -s 'redirectUris=["*"]' \
     -s 'directAccessGrantsEnabled=true'
 
-# add audience to client apisix, so that the access token will contain the client id ("apisix") as audience 
+# add audience to client apisix, so that the access token will contain the client id ("apisix") as audience
 APISIX_CLIENT_UUID=$(kcadm.sh get clients -r basic -q clientId=apisix | jq -r '.[0].id')
 kcadm.sh create clients/$APISIX_CLIENT_UUID/protocol-mappers/models \
   -r basic \
