@@ -39,6 +39,7 @@ run_tests();
 __DATA__
 
 === TEST 1: Create route (jwt local, audience required)
+The public key reuses Keycloak's TLS private key to export a public key.
 --- config
     location /t {
         content_by_lua_block {
