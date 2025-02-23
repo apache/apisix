@@ -176,37 +176,46 @@ function _M.body_filter(conf, ctx)
         local status = ctx.var.upstream_trailer_grpc_status
         local message = ctx.var.upstream_trailer_grpc_message
 
+        local build_trailer = function (grpc_status, grpc_message)
+            local status_str = "grpc-status:" .. grpc_status
+            local status_msg = "grpc-message:" .. ( grpc_message or "")
+            local grpc_web_trailer = status_str .. "\r\n" .. status_msg .. "\r\n"
+            local len = #grpc_web_trailer
+
+            -- 1 byte: 0x80
+            local trailer_buf = string.char(0x80)
+            -- 4 bytes: length of the trailer
+            trailer_buf = trailer_buf .. string.char(
+                bit.band(bit.rshift(len, 24), 0xff),
+                bit.band(bit.rshift(len, 16), 0xff),
+                bit.band(bit.rshift(len, 8), 0xff),
+                bit.band(len, 0xff)
+            )
+            -- n bytes: trailer
+            trailer_buf = trailer_buf .. grpc_web_trailer
+
+            return  trailer_buf
+        end
+
+        local attach_trailer = function (trailer_buf)
+            if ctx.grpc_web_encoding == CONTENT_ENCODING_BINARY then
+                ngx_arg[1] = ngx_arg[1] .. trailer_buf
+            else
+                ngx_arg[1] = ngx_arg[1] .. encode_base64(trailer_buf)
+            end
+
+            -- clear trailer
+            ctx.var.upstream_trailer_grpc_status = nil
+            ctx.var.upstream_trailer_grpc_message = nil
+        end
+
         -- When the response body completes and still does not receive the grpc status
         if status == nil or status == "" then
             core.log.error("upstream grpc status not received")
-        end
-
-        local status_str = "grpc-status:" .. status
-        local status_msg = "grpc-message:" .. ( message or "")
-        local grpc_web_trailer = status_str .. "\r\n" .. status_msg .. "\r\n"
-        local len = #grpc_web_trailer
-
-        -- 1 byte: 0x80
-        local trailer_buf = string.char(0x80)
-        -- 4 bytes: length of the trailer
-        trailer_buf = trailer_buf .. string.char(
-            bit.band(bit.rshift(len, 24), 0xff),
-            bit.band(bit.rshift(len, 16), 0xff),
-            bit.band(bit.rshift(len, 8), 0xff),
-            bit.band(len, 0xff)
-        )
-        -- n bytes: trailer
-        trailer_buf = trailer_buf .. grpc_web_trailer
-
-        if ctx.grpc_web_encoding == CONTENT_ENCODING_BINARY then
-            ngx_arg[1] = ngx_arg[1] .. trailer_buf
+            attach_trailer(build_trailer(2, "upstream grpc status not received"))
         else
-            ngx_arg[1] = ngx_arg[1] .. encode_base64(trailer_buf)
+            attach_trailer(build_trailer(status, message))
         end
-
-        -- clear trailer
-        ctx.var.upstream_trailer_grpc_status = nil
-        ctx.var.upstream_trailer_grpc_message = nil
     end
 end
 
