@@ -172,9 +172,15 @@ function _M.body_filter(conf, ctx)
         n bytes: trailer
 
     --]]
-    local status = ctx.var.upstream_trailer_grpc_status
-    local message = ctx.var.upstream_trailer_grpc_message
-    if status ~= "" and status ~= nil then
+    if ngx_arg[2] then -- if eof
+        local status = ctx.var.upstream_trailer_grpc_status
+        local message = ctx.var.upstream_trailer_grpc_message
+
+        -- When the response body completes and still does not receive the grpc status
+        if status == nil or status == "" then
+            core.log.error("upstream grpc status not received")
+        end
+
         local status_str = "grpc-status:" .. status
         local status_msg = "grpc-message:" .. ( message or "")
         local grpc_web_trailer = status_str .. "\r\n" .. status_msg .. "\r\n"
