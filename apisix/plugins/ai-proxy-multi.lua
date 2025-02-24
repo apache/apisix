@@ -17,8 +17,8 @@
 
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
-local ai_proxy = require("apisix.plugins.ai-proxy")
 local plugin = require("apisix.plugin")
+local base = require("apisix.plugins.ai-proxy.base")
 
 local require = require
 local pcall = pcall
@@ -190,11 +190,11 @@ local function get_load_balanced_provider(ctx, conf, ups_tab, request_table)
     return provider_name, provider_conf
 end
 
-ai_proxy.get_model_name = function (...)
+local function get_model_name(...)
 end
 
 
-ai_proxy.proxy_request_to_llm = function (conf, request_table, ctx)
+local function proxy_request_to_llm(conf, request_table, ctx)
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
@@ -228,9 +228,7 @@ ai_proxy.proxy_request_to_llm = function (conf, request_table, ctx)
 end
 
 
-function _M.access(conf, ctx)
-    local rets = {ai_proxy.access(conf, ctx)}
-    return unpack(rets)
-end
+_M.access = base.new(proxy_request_to_llm, get_model_name)
+
 
 return _M
