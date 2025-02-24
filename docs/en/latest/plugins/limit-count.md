@@ -64,7 +64,7 @@ You may see the following rate limiting headers in the response:
 | redis_timeout           | integer | False                                     | 1000          | [1,...]                                | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                        |
 | redis_cluster_nodes     | array[string]   | False |               |                                        | The list of the Redis cluster nodes with at least two addresses. Required when policy is redis-cluster.                                                                                                                                                                                                                                                                                                                                                                                                       |
 | redis_cluster_name      | string  | False |               |                                        | The name of the Redis cluster. Required when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                                |
-| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is                                                                                                                                                                                                                                                                                                                                                                                                |
+| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                               |
 | redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If true, verify the server SSL certificate when `policy` is `redis-cluster`.                                                                                                                                                                                                                                                                                                                                                                                               |
 
 ## Examples
@@ -160,7 +160,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
@@ -254,7 +254,7 @@ curl "http://127.0.0.1:9180/apisix/admin/services" -X PUT \
   }'
 ```
 
-Create two routes and configure their `service_id` to be `limit-count-service`, so that they share the same configurations for the plugin and upstream:
+Create two Routes and configure their `service_id` to be `limit-count-service`, so that they share the same configurations for the Plugin and Upstream:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -437,7 +437,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+Create an anonymous user `anonymous` and configure the `limit-count` Plugin to allow for a quota of 1 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -454,7 +454,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create a Route and configure the `key-auth` plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
+Create a Route and configure the `key-auth` Plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
