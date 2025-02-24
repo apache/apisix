@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Limit Connection
-description: The limit-conn Plugin limits the rate of requests by the number of concurrent connections. Requests exceeding the threshold will be delayed or rejected based on the configuration, ensuring controlled resource usage and preventing overload.
+description: The limit-conn plugin restricts the rate of requests by managing concurrent connections. Requests exceeding the threshold may be delayed or rejected, ensuring controlled API usage and preventing overload.
 ---
 
 <!--
