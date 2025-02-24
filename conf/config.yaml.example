@@ -491,6 +491,7 @@ plugins:                           # plugin list (sorted by priority)
   - limit-req                      # priority: 1001
   #- node-status                   # priority: 1000
   - ai-proxy                       # priority: 999
+  - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
   - server-info                    # priority: 990
