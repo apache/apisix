@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Limit Connection
-description: limit-conn 插件通过并发连接数来限制请求速率。超过阈值的请求将根据配置被延迟或拒绝，从而确保可控的资源使用并防止过载。
+description: limit-conn 插件通过管理并发连接来限制请求速率。超过阈值的请求可能会被延迟或拒绝，以确保 API 使用受控并防止过载。
 ---
 
 <!--
