@@ -168,7 +168,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
