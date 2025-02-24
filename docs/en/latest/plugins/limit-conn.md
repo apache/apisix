@@ -183,7 +183,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
   }'
 ```
 
-Create a Route with `key-auth` and `limit-conn` plugins, and specify in the `limit-conn` Plugin to use a combination of variables as the rate limiting key:
+Create a Route with `key-auth` and `limit-conn` Plugins, and specify in the `limit-conn` Plugin to use a combination of variables as the rate limiting key:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
