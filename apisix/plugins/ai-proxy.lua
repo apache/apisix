@@ -20,11 +20,6 @@ local base = require("apisix.plugins.ai-proxy.base")
 
 local require = require
 local pcall = pcall
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
-local bad_request = ngx.HTTP_BAD_REQUEST
-local ngx_req = ngx.req
-local ngx_print = ngx.print
-local ngx_flush = ngx.flush
 
 local plugin_name = "ai-proxy"
 local _M = {
@@ -41,18 +36,6 @@ function _M.check_schema(conf)
         return false, "provider: " .. conf.model.provider .. " is not supported."
     end
     return core.schema.check(schema.ai_proxy_schema, conf)
-end
-
-
-local CONTENT_TYPE_JSON = "application/json"
-
-
-local function keepalive_or_close(conf, httpc)
-    if conf.set_keepalive then
-        httpc:set_keepalive(10000, 100)
-        return
-    end
-    httpc:close()
 end
 
 
