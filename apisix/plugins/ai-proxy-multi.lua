@@ -23,7 +23,6 @@ local base = require("apisix.plugins.ai-proxy.base")
 local require = require
 local pcall = pcall
 local ipairs = ipairs
-local unpack = unpack
 local type = type
 
 local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
