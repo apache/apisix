@@ -182,7 +182,7 @@ local function ensure_dir(path)
         -- This uses "mkdir -p" to avoid error if the directory already exists.
         local ok = os.execute("mkdir -p " .. dir)
         if not ok then
-            error("Failed to create directory: " .. dir)
+            error("failed to create directory: " .. dir)
         end
     end
 end
@@ -193,14 +193,14 @@ function _M.gen_trusted_certs_combined_file(combined_filepath, paths)
 
     local combined_file, err = io.open(combined_filepath, "w")
     if not combined_file then
-        error("Failed to open or create combined file at " .. combined_filepath ..
-              ". Error: " .. tostring(err))
+        error("failed to open or create combined file at " .. combined_filepath ..
+              ". error: " .. tostring(err))
     end
 
     for _, path in ipairs(paths) do
         local cert_file, cert_err = io.open(path, "r")
         if not cert_file then
-            error("Failed to open certificate file " .. path .. ": " .. tostring(cert_err))
+            error("failed to open certificate file " .. path .. ": " .. tostring(cert_err))
         end
         local data = cert_file:read("*a") or ""
         combined_file:write(data)
