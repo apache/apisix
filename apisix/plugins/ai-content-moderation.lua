@@ -148,7 +148,7 @@ function _M.rewrite(conf, ctx)
     })
 
     if not res then
-        core.log.error("failed to send request to ", provider, ": ", err)
+        core.log.error("failed to send request to ", endpoint, ": ", err)
         return HTTP_INTERNAL_SERVER_ERROR, err
     end
 
