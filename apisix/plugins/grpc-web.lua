@@ -105,7 +105,7 @@ local build_trailer = function (grpc_status, grpc_message)
     -- n bytes: trailer
     trailer_buf = trailer_buf .. grpc_web_trailer
 
-    return  trailer_buf
+    return trailer_buf
 end
 
 function _M.access(conf, ctx)
@@ -157,7 +157,6 @@ function _M.access(conf, ctx)
 
     if encoding == CONTENT_ENCODING_BASE64 then
         body = decode_base64(body)
-        ngx.log(ngx.WARN, "DECODE BODY: ", body)
         if not body then
             core.log.error("failed to decode request body")
             return exit(ctx, 400)
