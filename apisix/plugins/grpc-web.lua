@@ -86,7 +86,7 @@ end
 --
 -- @param grpc_status number grpc status code
 -- @param grpc_message string grpc message
--- @return string grpc-web trailer chunk in byte[]
+-- @return string grpc-web trailer chunk in raw string
 local build_trailer = function (grpc_status, grpc_message)
     local status_str = "grpc-status:" .. grpc_status
     local status_msg = "grpc-message:" .. ( grpc_message or "")
