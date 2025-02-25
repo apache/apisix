@@ -193,7 +193,7 @@ function _M.gen_trusted_certs_combined_file(combined_filepath, paths)
 
     local combined_file, err = io.open(combined_filepath, "w")
     if not combined_file then
-        error("Failed to open or create combined file at " .. combined_filepath .. 
+        error("Failed to open or create combined file at " .. combined_filepath ..
               ". Error: " .. tostring(err))
     end
 
