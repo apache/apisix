@@ -157,6 +157,8 @@ function _M.rewrite(conf, ctx)
         return HTTP_INTERNAL_SERVER_ERROR, "failed to get moderation results from response"
     end
 
+    core.log.debug("moderation results: ", core.json.delay_encode(results, true))
+
     for _, result in ipairs(results) do
         if conf.moderation_categories then
             for _, item in pairs(result.Labels) do

@@ -298,7 +298,10 @@ request body exceeds PROFANITY threshold
 
 
 === TEST 12: good_request should pass
+--- log_level: debug
 --- request
 POST /echo
 {"model":"gpt-4o-mini","messages":[{"role":"user","content":"good_request"}]}
 --- error_code: 200
+--- error_log eval
+qr/moderation results:.*"Toxicity":0.02150000333786.*/
