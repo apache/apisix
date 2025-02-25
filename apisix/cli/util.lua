@@ -174,36 +174,11 @@ do
 end
 
 
-local function ensure_dir(path)
-    -- Extract directory from path
-    local dir = path:match("(.*/)")
-    if dir then
-        -- Try to create directory recursively.
-        -- This uses "mkdir -p" to avoid error if the directory already exists.
-        local ok = os.execute("mkdir -p " .. dir)
-        if not ok then
-            error("failed to create directory: " .. dir)
-        end
-    end
-end
-
 function _M.gen_trusted_certs_combined_file(combined_filepath, paths)
-    -- Ensure the directory for combined_filepath exists.
-    ensure_dir(combined_filepath)
-
-    local combined_file, err = io.open(combined_filepath, "w")
-    if not combined_file then
-        error("failed to open or create combined file at " .. combined_filepath ..
-              ". error: " .. tostring(err))
-    end
-
+    local combined_file = assert(io.open(combined_filepath, "w"))
     for _, path in ipairs(paths) do
-        local cert_file, cert_err = io.open(path, "r")
-        if not cert_file then
-            error("failed to open certificate file " .. path .. ": " .. tostring(cert_err))
-        end
-        local data = cert_file:read("*a") or ""
-        combined_file:write(data)
+        local cert_file = assert(io.open(path, "r"))
+        combined_file:write(cert_file:read("*a"))
         combined_file:write("\n")
         cert_file:close()
     end
