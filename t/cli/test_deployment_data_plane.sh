@@ -60,3 +60,24 @@ if [ ! $code -eq 404 ]; then
 fi
 
 echo "passed: data_plane should not enable Admin API"
+
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+    etcd:
+        host:
+            - https://127.0.0.1:12379
+        prefix: "/apisix"
+        timeout: 30
+' > conf/config.yaml
+
+out=$(make run 2>&1 || true)
+make stop
+if  echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:12379: certificate verify failed'; then
+    echo "failed: should verify certificate by default and not get certificate verify failed"
+    exit 1
+fi
+
+echo "passed: should verify certificate by default using system cert"
