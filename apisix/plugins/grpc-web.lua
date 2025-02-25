@@ -73,6 +73,20 @@ local function exit(ctx, status)
     return status
 end
 
+--- Build gRPC-Web trailer chunk
+-- grpc-web trailer format reference:
+--     envoyproxy/envoy/source/extensions/filters/http/grpc_web/grpc_web_filter.cc
+--
+-- Format for grpc-web trailer
+--     1 byte: 0x80
+--     4 bytes: length of the trailer
+--     n bytes: trailer
+-- It using upstream_trailer_* variables from nginx, it is available since NGINX version 1.13.10
+-- https://nginx.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_trailer_
+--
+-- @param grpc_status number grpc status code
+-- @param grpc_message string grpc message
+-- @return string grpc-web trailer chunk in byte[]
 local build_trailer = function (grpc_status, grpc_message)
     local status_str = "grpc-status:" .. grpc_status
     local status_msg = "grpc-message:" .. ( grpc_message or "")
@@ -194,19 +208,6 @@ function _M.body_filter(conf, ctx)
         ngx_arg[1] = chunk
     end
 
-    --[[
-    upstream_trailer_* available since NGINX version 1.13.10 :
-    https://nginx.org/en/docs/http/ngx_http_upstream_module.html#var_upstream_trailer_
-
-    grpc-web trailer format reference:
-    envoyproxy/envoy/source/extensions/filters/http/grpc_web/grpc_web_filter.cc
-
-    Format for grpc-web trailer
-        1 byte: 0x80
-        4 bytes: length of the trailer
-        n bytes: trailer
-
-    --]]
     if ngx_arg[2] then -- if eof
         local status = ctx.var.upstream_trailer_grpc_status
         local message = ctx.var.upstream_trailer_grpc_message
