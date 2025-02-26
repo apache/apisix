@@ -55,12 +55,23 @@ local schema = {
         provider = {
             type = "object",
             properties = {
-                aws_comprehend = aws_comprehend_schema
+                aws_comprehend = aws_comprehend_schema,
+                custom_comprehend = {
+                    type = "object",
+                    properties = {
+                        endpoint = {
+                            type = "string",
+                            pattern = [[^https?://]]
+                        },
+                        region = {
+                            type = "string",
+                            default = "us-east-1",
+                        }
+                    },
+                    required = { "endpoint", }
+                },
             },
             maxProperties = 1,
-            -- ensure only one provider can be configured while implementing support for
-            -- other providers
-            required = { "aws_comprehend" }
         },
         moderation_categories = {
             type = "object",
@@ -120,14 +131,18 @@ function _M.rewrite(conf, ctx)
     local provider = conf.provider[next(conf.provider)]
 
     local credentials = aws_instance:Credentials({
-        accessKeyId = provider.access_key_id,
-        secretAccessKey = provider.secret_access_key,
+        accessKeyId = provider.access_key_id or "",
+        secretAccessKey = provider.secret_access_key or "",
         sessionToken = provider.session_token,
     })
 
-    local default_endpoint = "https://comprehend." .. provider.region .. ".amazonaws.com"
-    local scheme, host, port = unpack(http:parse_uri(provider.endpoint or default_endpoint))
-    local endpoint = scheme .. "://" .. host
+    local endpoint = provider.endpoint
+    if not endpoint then
+        endpoint = "https://comprehend." .. provider.region .. ".amazonaws.com"
+    end
+
+    local scheme, host, port = unpack(http:parse_uri(endpoint))
+    endpoint = scheme .. "://" .. host
     aws_instance.config.endpoint = endpoint
     aws_instance.config.ssl_verify = provider.ssl_verify
 
