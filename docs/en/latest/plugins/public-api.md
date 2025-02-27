@@ -40,7 +40,7 @@ The `public-api` Plugin exposes an internal API endpoint, making it publicly acc
 |---------|-----------|----------|---------|--------------|-------------|
 | uri     | string    | False    |         |              | Internal endpoint to expose. If not configured, expose the Route URI. |
 
-## Example
+## Examples
 
 The examples below demonstrate how you can configure `public-api` in different scenarios.
 
