@@ -41,8 +41,8 @@ Note that APISIX ignores any response from the Upstream host receiving mirrored 
 | Name         | Type   | Required | Default | Valid values | Description                                                                                                               |
 |--------------|--------|----------|---------|--------------|---------------------------------------------------------------------------------------------------------------------------|
 | host         | string | True     |         |              | Address of the host to forward the mirrored traffic to. The address should contain the scheme but without the path, such as `http://127.0.0.1:8081`.  |
-| path         | string | False    |         |              | Path of the host to forward the mirrored traffic to. If unspecified, default to the current URI path of the route. Not applicable if the Plugin is mirroring gRPC traffic.    |
-| path_concat_mode | string | False   |   replace     | ["replace", "prefix"]       | Concatenation mode when `path` is specified. When set to `replace`, the configured `path` would be directly used as the path of the host to forward the mirrored traffic to. When set to `prefix`, the path to forward to would be the configured `path`, appended by the requested URI path of the route. Not applicable if the Plugin is mirroring gRPC traffic.  |
+| path         | string | False    |         |              | Path of the host to forward the mirrored traffic to. If unspecified, default to the current URI path of the Route. Not applicable if the Plugin is mirroring gRPC traffic.    |
+| path_concat_mode | string | False   |   replace     | ["replace", "prefix"]       | Concatenation mode when `path` is specified. When set to `replace`, the configured `path` would be directly used as the path of the host to forward the mirrored traffic to. When set to `prefix`, the path to forward to would be the configured `path`, appended by the requested URI path of the Route. Not applicable if the Plugin is mirroring gRPC traffic.  |
 | sample_ratio | number | False    | 1       | [0.00001, 1] |  Ratio of the requests that will be mirrored. By default, all traffic are mirrored.                         |
 
 ## Static Configurations
@@ -111,7 +111,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send Generate a few requests to the route:
+Send Generate a few requests to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get"
@@ -125,11 +125,11 @@ Navigating back to the NGINX terminal session, you should see a number of access
 172.17.0.1 - - [29/Jan/2024:23:11:01 +0000] "GET /get HTTP/1.1" 404 153 "-" "curl/7.64.1" "-"
 ```
 
-This suggests APISIX has mirrored the request to the NGINX server. Here, the HTTP response status is `404` since the sample NGINX server does not implement the route.
+This suggests APISIX has mirrored the request to the NGINX server. Here, the HTTP response status is `404` since the sample NGINX server does not implement the Route.
 
 ### Configure Mirroring Timeouts
 
-The following example demonstrates how you can update the default connect, read, and send timeouts for the plugin. This could be useful when mirroring traffic to a very slow backend service.
+The following example demonstrates how you can update the default connect, read, and send timeouts for the Plugin. This could be useful when mirroring traffic to a very slow backend service.
 
 As the request mirroring was implemented as sub-requests, excessive delays in the sub-requests could lead to the blocking of the original requests. By default, the connect, read, and send timeouts are set to 60 seconds. To update these values, you can configure them in the `plugin_attr` section of the configuration file as such:
 
