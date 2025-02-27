@@ -503,7 +503,9 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
-
+    if not yaml_conf.apisix.ssl.ssl_trusted_certificate then
+        yaml_conf.apisix.ssl.ssl_trusted_certificate = "system"
+    end
     if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
         local cert_paths = {}
         local ssl_certificates = yaml_conf.apisix.ssl.ssl_trusted_certificate
