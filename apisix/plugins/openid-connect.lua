@@ -277,7 +277,9 @@ local schema = {
             }
         },
         valid_issuers = {
-            description = "Whitelist the vetted issuers of the jwt",
+            description = [[Whitelist the vetted issuers of the jwt.
+            When not passed by the user, the issuer returned by discovery endpoint will be used.
+            In case both are missing, the issuer will not be validated.]],
             type = "array",
             items = {
                 type = "string"
