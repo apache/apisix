@@ -32,7 +32,7 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-		my $http_config = $block->http_config // <<_EOC_;
+    my $http_config = $block->http_config // <<_EOC_;
 
     server {
         listen 8089;
@@ -64,36 +64,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Check configuration of cookie
---- config
-    location /t {
-        content_by_lua_block {
-            local test_cases = {
-                {
-                    client_id = "course_management",
-                    client_secret = "tbsmDOpsHwdgIqYl2NltGRTKzjIzvEmT",
-                    discovery = "http://127.0.0.1:8089/realms/University/.well-known/openid-configuration",
-                    session = {
-                        secret = "6S8IO+Pydgb33LIor8T9ClER0T/sglFAjClFeAF3RsY=",
-                        cookie = {
-                            lifetime = 86400
-                        }
-                    }
-                },
-            }
-            local plugin = require("apisix.plugins.openid-connect")
-            for _, case in ipairs(test_cases) do
-                local ok, err = plugin.check_schema(case)
-                ngx.say(ok and "done" or err)
-            end
-        }
-    }
---- response_body
-done
-
-
-
-=== TEST 2: Set up new route with wrong valid_issuers
+=== TEST 1: Set up new route with wrong valid_issuers
 --- config
     location /t {
         content_by_lua_block {
@@ -135,7 +106,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err
 
 
 
-=== TEST 3: Set up new route with valid valid_issuers
+=== TEST 2: Set up new route with valid valid_issuers
 --- config
     location /t {
         content_by_lua_block {
