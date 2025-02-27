@@ -56,6 +56,7 @@ local _M = {
     enable_resolv_search_opt = true,
     ssl = {
       enable = true,
+      ssl_trusted_certificate = "system",
       listen = { {
         port = 9443,
         enable_http3 = false
