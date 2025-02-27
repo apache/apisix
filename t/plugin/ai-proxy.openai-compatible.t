@@ -159,7 +159,7 @@ __DATA__
                             },
                             "model": {
                                 "provider": "openai-compatible",
-                                "name": "gpt-35-turbo-instruct",
+                                "name": "custom",
                                 "options": {
                                     "max_tokens": 512,
                                     "temperature": 1.0
@@ -273,7 +273,7 @@ path override works
 
 
 
-=== TEST 6: set route with stream = true (SSE)
+=== TEST 4: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -291,7 +291,7 @@ path override works
                             },
                             "model": {
                                 "provider": "openai-compatible",
-                                "name": "gpt-35-turbo-instruct",
+                                "name": "custom",
                                 "options": {
                                     "max_tokens": 512,
                                     "temperature": 1.0,
@@ -324,7 +324,7 @@ passed
 
 
 
-=== TEST 7: test is SSE works as expected
+=== TEST 5: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
