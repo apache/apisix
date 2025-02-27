@@ -147,7 +147,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 5: set route with right auth header
+=== TEST 1: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -160,8 +160,8 @@ __DATA__
                         "ai-proxy-multi": {
                             "providers": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-4",
+                                    "name": "openai-compatible",
+                                    "model": "custom",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -200,7 +200,7 @@ passed
 
 
 
-=== TEST 6: send request
+=== TEST 2: send request
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
@@ -212,7 +212,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 16: set route with stream = true (SSE)
+=== TEST 3: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -225,8 +225,8 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                         "ai-proxy-multi": {
                             "providers": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-35-turbo-instruct",
+                                    "name": "openai-compatible",
+                                    "model": "custom-instruct",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -266,7 +266,7 @@ passed
 
 
 
-=== TEST 17: test is SSE works as expected
+=== TEST 4: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
