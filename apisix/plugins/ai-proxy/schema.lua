@@ -84,7 +84,7 @@ local model_schema = {
         provider = {
             type = "string",
             description = "Name of the AI service provider.",
-            oneOf = { "openai", "openai-compatible" }, -- add more providers later
+            enum = { "openai", "openai-compatible" }, -- add more providers later
         },
         name = {
             type = "string",
