@@ -42,13 +42,13 @@ Responses can be conditionally cached based on request HTTP methods, response st
 |--------------------|----------------|----------|---------------------------|-------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | cache_strategy     | string         | False    | disk                      | ["disk","memory"]       | Caching strategy. Cache on disk or in memory.          |
 | cache_zone         | string         | False    | disk_cache_one            |                         | Cache zone used with the caching strategy. The value should match one of the cache zones defined in the [configuration files](#static-configurations) and should correspond to the caching strategy. For example, when using the in-memory caching strategy, you should use an in-memory cache zone. |
-| cache_key          | array[string]  | False    | ["$host", "$request_uri"] |                         | Key to use for caching. Support [Nginx variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.    |
-| cache_bypass       | array[string]  | False    |                           |                         | One or more parameters to parse value from, such that if any of the values is not empty and is not equal to `0`, response will not be retrieved from cache. Support [Nginx variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.     |
+| cache_key          | array[string]  | False    | ["$host", "$request_uri"] |                         | Key to use for caching. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.    |
+| cache_bypass       | array[string]  | False    |                           |                         | One or more parameters to parse value from, such that if any of the values is not empty and is not equal to `0`, response will not be retrieved from cache. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.     |
 | cache_method       | array[string]  | False    | ["GET", "HEAD"]           | ["GET", "POST", "HEAD"] | Request methods of which the response should be cached.       |
 | cache_http_status  | array[integer] | False    | [200, 301, 404]           | [200, 599]              | Response HTTP status codes of which the response should be cached.   |
 | hide_cache_headers | boolean        | False    | false                     |                         | If true, hide `Expires` and `Cache-Control` response headers.   |
 | cache_control      | boolean        | False    | false                     |                         | If true, comply with `Cache-Control` behavior in the HTTP specification. Only valid for in-memory strategy.     |
-| no_cache           | array[string]  | False    |                           |                         | One or more parameters to parse value from, such that if any of the values is not empty and is not equal to `0`, response will not be cached. Support [Nginx variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.       |
+| no_cache           | array[string]  | False    |                           |                         | One or more parameters to parse value from, such that if any of the values is not empty and is not equal to `0`, response will not be cached. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign.       |
 | cache_ttl          | integer        | False    | 300          |        >=1          | Cache time to live (TTL) in seconds when caching in memory. To adjust the TTL when caching on disk, update `cache_ttl` in the [configuration files](#static-configurations). The TTL value is evaluated in conjunction with the values in the response headers  [`Cache-Control`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control) and [`Expires`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Expires) received from the Upstream service.     |
 
 ## Static Configurations
@@ -100,7 +100,7 @@ On-disk caching strategy offers the advantages of data persistency when system r
 
 The following example demonstrates how you can use `proxy-cache` Plugin on a Route to cache data on disk.
 
-When using the on-disk caching strategy, the cache TTL is determined by value from the response header `Expires` or `Cache-Control`. If none of these headers is present or if APISIX returns `502 Bad Gateway` or `504 Gateway Timeout` due to unavailable upstreams, the cache TTL defaults to the value configured in the [configuration files](#static-configuration).
+When using the on-disk caching strategy, the cache TTL is determined by value from the response header `Expires` or `Cache-Control`. If none of these headers is present or if APISIX returns `502 Bad Gateway` or `504 Gateway Timeout` due to unavailable Upstreams, the cache TTL defaults to the value configured in the [configuration files](#static-configuration).
 
 Create a Route with the `proxy-cache` Plugin to cache data on disk:
 
@@ -124,7 +124,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -180,7 +180,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -350,7 +350,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Generate a few requests to the route:
+Generate a few requests to the Route:
 
 ```shell
 seq 4 | xargs -I{} curl -I "http://127.0.0.1:9080/timeout"
