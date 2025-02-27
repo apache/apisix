@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local aws_instance = require("resty.aws")()
+local aws = require("resty.aws")
 local http = require("resty.http")
 local fetch_secrets = require("apisix.secret").fetch_secrets
 
@@ -117,6 +117,7 @@ function _M.rewrite(conf, ctx)
         return HTTP_BAD_REQUEST, "messages not found in request body"
     end
 
+    local aws_instance = aws()
     local provider = conf.provider[next(conf.provider)]
 
     local credentials = aws_instance:Credentials({
