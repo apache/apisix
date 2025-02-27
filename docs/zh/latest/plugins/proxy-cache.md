@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API 网关
   - Proxy Cache
-description: proxy-cache 插件提供了根据缓存键缓存响应并从缓存中检索响应的功能。该插​​件支持基于磁盘和基于内存的缓存选项，用于缓存 GET、POST 和 HEAD 请求。
+description: proxy-cache 插件根据键缓存响应，支持 GET、POST 和 HEAD 请求的磁盘和内存缓存，从而增强 API 性能。
 ---
 
 <!--

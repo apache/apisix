@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - Proxy Cache
-description: The proxy-cache Plugin provides the capability to cache responses based on a cache key and retrieve responses from cache. The Plugin supports both disk-based and memory-based caching options to cache for GET, POST, and HEAD requests.
+description: The proxy-cache Plugin caches responses based on keys, supporting disk and memory caching for GET, POST, and HEAD requests, enhancing API performance.
 ---
 
 <!--
