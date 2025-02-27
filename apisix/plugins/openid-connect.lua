@@ -275,7 +275,14 @@ local schema = {
             items = {
                 type = "string"
             }
-        }
+        },
+        valid_issuers = {
+            description = "Whitelist the vetted issuers of the jwt",
+            type = "array",
+            items = {
+                type = "string"
+            }
+        },
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
@@ -384,8 +391,22 @@ local function introspect(ctx, conf)
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        local res, err = openidc.bearer_jwt_verify(conf)
-
+        local valid_issuers
+        local opts = {}
+        if conf.valid_issuers then
+            valid_issuers = conf.valid_issuers
+        else
+            local discovery, discovery_err = openidc.get_discovery_doc(conf)
+            if discovery_err then
+                core.log.warn("OIDC access discovery url failed : ", discovery_err)
+            else
+                valid_issuers = {discovery.issuer}
+            end
+        end
+        if valid_issuers then
+            opts.valid_issuers = valid_issuers
+        end
+        local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
