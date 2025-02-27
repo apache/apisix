@@ -383,18 +383,10 @@ local function introspect(ctx, conf)
             return nil, nil, nil, nil
         end
     end
-
+    local opts = {}
     -- If we get here, token was found in request.
-
-    if conf.public_key or conf.use_jwks then
-        -- Validate token against public key or jwks document of the oidc provider.
-        -- TODO: In the called method, the openidc module will try to extract
-        --  the token by itself again -- from a request header or session cookie.
-        --  It is inefficient that we also need to extract it (just from headers)
-        --  so we can add it in the configured header. Find a way to use openidc
-        --  module's internal methods to extract the token.
+    if conf.use_jwks then
         local valid_issuers
-        local opts = {}
         if conf.valid_issuers then
             valid_issuers = conf.valid_issuers
         else
@@ -408,6 +400,14 @@ local function introspect(ctx, conf)
         if valid_issuers then
             opts.valid_issuers = valid_issuers
         end
+    end
+    if conf.public_key or conf.use_jwks then
+        -- Validate token against public key or jwks document of the oidc provider.
+        -- TODO: In the called method, the openidc module will try to extract
+        --  the token by itself again -- from a request header or session cookie.
+        --  It is inefficient that we also need to extract it (just from headers)
+        --  so we can add it in the configured header. Find a way to use openidc
+        --  module's internal methods to extract the token.
         local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
