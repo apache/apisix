@@ -93,7 +93,13 @@ function _M.request(self, conf, request_table, extra_opts)
             request_table[opt] = val
         end
     end
-    params.body = core.json.encode(request_table)
+
+    local req_json, err = core.json.encode(request_table)
+    if not req_json then
+        return nil, err
+    end
+
+    params.body = req_json
 
     httpc:set_timeout(conf.keepalive_timeout)
     local res, err = httpc:request(params)
