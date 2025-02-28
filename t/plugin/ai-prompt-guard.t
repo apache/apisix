@@ -32,43 +32,41 @@ run_tests;
 
 __DATA__
 
-=== TEST 1: Setup consumers
+=== TEST 1: wrong regex should fail validation
 --- config
-location /t {
-    content_by_lua_block {
-        local t = require("lib.test_admin").test
-
-        -- Create 'user' consumer
-        local code, body = t('/apisix/admin/consumers',
-            ngx.HTTP_PUT,
-            [[{
-                "username": "user",
-                "plugins": {
-                    "key-auth": {
-                        "key": "user-key"
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                        "match_all_roles": true,
+                        "deny_patterns": [
+                            "(abc"
+                        ]
+                        }
                     }
-                }
             }]]
-        )
+            )
 
-        -- Create 'admin' consumer
-        local code, body = t('/apisix/admin/consumers',
-            ngx.HTTP_PUT,
-            [[{
-                "username": "admin",
-                "plugins": {
-                    "key-auth": {
-                        "key": "admin-key"
-                    }
-                }
-            }]]
-        )
-
+        if code >= 300 then
+            ngx.status = code
+        end
         ngx.say(body)
     }
 }
---- response_body
-passed
+--- response_body eval
+qr/.*failed to check the configuration of plugin ai-prompt-guard.*/
+--- error_code: 400
 
 
 
@@ -362,3 +360,54 @@ POST /hello
         { "role": "system", "content": "goodword" }
     ]
 }
+
+
+
+=== TEST 15: setup route + deny + match_all_roles + pattern match
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-guard": {
+                        "match_all_roles": true,
+                        "deny_patterns": [
+                            "^[A-Za-z0-9_]+badword$"
+                        ]
+                        }
+                    }
+            }]]
+            )
+
+        if code >= 300 then
+            ngx.status = code
+        end
+        ngx.say(body)
+    }
+}
+--- response_body
+passed
+
+
+
+=== TEST 16: send request with good word
+--- request
+POST /hello
+{
+    "messages": [
+        { "role": "system", "content": "anaapsanaapbadword" }
+    ]
+}
+--- response_body
+{"message":"Request contains prohibited content"}
+--- error_code: 400

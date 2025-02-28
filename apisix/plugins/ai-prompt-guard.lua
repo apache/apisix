@@ -18,6 +18,8 @@ local core = require("apisix.core")
 local ngx = ngx
 local ipairs = ipairs
 local table = table
+local re_compile  = require("resty.core.regex").re_match_compile
+local re_find = ngx.re.find
 
 local plugin_name = "ai-prompt-guard"
 
@@ -53,7 +55,28 @@ local _M = {
 }
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
+    local ok, err = core.schema.check(schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    -- Validate allow_patterns
+    for _, pattern in ipairs(conf.allow_patterns) do
+        local compiled = re_compile(pattern, "jou")
+        if not compiled then
+            return false, "invalid allow_pattern: " .. pattern
+        end
+    end
+
+    -- Validate deny_patterns
+    for _, pattern in ipairs(conf.deny_patterns) do
+        local compiled = re_compile(pattern, "jou")
+        if not compiled then
+            return false, "invalid deny_pattern: " .. pattern
+        end
+    end
+
+    return true
 end
 
 local function get_content_to_check(conf, messages)
@@ -87,18 +110,18 @@ function _M.access(conf, ctx)
         return 400, {message = err}
     end
 
-
     local messages = json_body.messages or {}
-    if not conf.match_all_roles and messages and messages[#messages].role ~= "user" then
+    if not conf.match_all_roles and #messages > 0 and messages[#messages].role ~= "user" then
         return
     end
+
     local content_to_check = get_content_to_check(conf, messages)
 
-    -- Allow patterns check
-    if #conf.allow_patterns > 0 then
+     -- Allow patterns check
+     if #conf.allow_patterns > 0 then
         local any_allowed = false
         for _, pattern in ipairs(conf.allow_patterns) do
-            if ngx.re.find(content_to_check, pattern, "jou") then
+            if re_find(content_to_check, pattern, "jou") then
                 any_allowed = true
                 break
             end
@@ -110,7 +133,7 @@ function _M.access(conf, ctx)
 
     -- Deny patterns check
     for _, pattern in ipairs(conf.deny_patterns) do
-        if ngx.re.find(content_to_check, pattern, "jou") then
+        if re_find(content_to_check, pattern, "jou") then
             return 400, {message = "Request contains prohibited content"}
         end
     end
