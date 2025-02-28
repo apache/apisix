@@ -79,12 +79,12 @@ function _M.access(conf, ctx)
     local body = core.request.get_body()
     if not body then
         core.log.error("Empty request body")
-        return core.response.exit(400, {message = "Empty request body"})
+        return 400, {message = "Empty request body"}
     end
 
     local json_body, err = core.json.decode(body)
     if err then
-        return core.response.exit(400, {message = err})
+        return 400, {message = err}
     end
 
 
@@ -104,14 +104,14 @@ function _M.access(conf, ctx)
             end
         end
         if not any_allowed then
-            return core.response.exit(400, {message = "Request doesn't match allow patterns"})
+            return 400, {message = "Request doesn't match allow patterns"}
         end
     end
 
     -- Deny patterns check
     for _, pattern in ipairs(conf.deny_patterns) do
         if ngx.re.find(content_to_check, pattern, "jou") then
-            return core.response.exit(400, {message = "Request contains prohibited content"})
+            return 400, {message = "Request contains prohibited content"}
         end
     end
 end
