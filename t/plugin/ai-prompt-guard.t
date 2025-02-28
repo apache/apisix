@@ -89,13 +89,13 @@ passed
                     },
                     "plugins": {
                         "ai-prompt-guard": {
-														"match_all_roles": true,
+                        "match_all_roles": true,
                             "allow_patterns": [
-															"goodword"
-														],
-														"deny_patterns": [
-															"badword"
-														]
+                                "goodword"
+                            ],
+                        "deny_patterns": [
+                            "badword"
+                        ]
                         }
                     }
             }]]
@@ -154,10 +154,10 @@ POST /hello
                     },
                     "plugins": {
                         "ai-prompt-guard": {
-														"match_all_roles": true,
-														"deny_patterns": [
-															"badword"
-														]
+                        "match_all_roles": true,
+                        "deny_patterns": [
+                            "badword"
+                        ]
                         }
                     }
             }]]
@@ -216,9 +216,9 @@ POST /hello
                     },
                     "plugins": {
                         "ai-prompt-guard": {
-														"allow_patterns": [
-															"goodword"
-														]
+                            "allow_patterns": [
+                                "goodword"
+                            ]
                         }
                     }
             }]]
@@ -277,11 +277,11 @@ POST /hello
                     },
                     "plugins": {
                         "ai-prompt-guard": {
-														"match_all_conversation_history": true,
-														"match_all_roles": true,
-														"deny_patterns": [
-															"badword"
-														]
+                        "match_all_conversation_history": true,
+                        "match_all_roles": true,
+                        "deny_patterns": [
+                            "badword"
+                        ]
                         }
                     }
             }]]
@@ -331,11 +331,11 @@ POST /hello
                     },
                     "plugins": {
                         "ai-prompt-guard": {
-														"match_all_conversation_history": false,
-														"match_all_roles": true,
-														"deny_patterns": [
-															"badword"
-														]
+                        "match_all_conversation_history": false,
+                        "match_all_roles": true,
+                        "deny_patterns": [
+                            "badword"
+                        ]
                         }
                     }
             }]]

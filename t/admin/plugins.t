@@ -67,7 +67,6 @@ ext-plugin-pre-req
 fault-injection
 mocking
 serverless-pre-function
-ai-prompt-guard
 cors
 ip-restriction
 ua-restriction
@@ -95,6 +94,7 @@ opa
 authz-keycloak
 proxy-cache
 body-transformer
+ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
 ai-rag

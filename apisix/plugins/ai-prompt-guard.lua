@@ -16,6 +16,8 @@
 --
 local core = require("apisix.core")
 local ngx = ngx
+local ipairs = ipairs
+local table = table
 
 local plugin_name = "ai-prompt-guard"
 
@@ -45,7 +47,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 10000,
+    priority = 1072,
     name = plugin_name,
     schema = schema,
 }
