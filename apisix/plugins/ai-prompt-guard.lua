@@ -1,3 +1,19 @@
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 local core = require("apisix.core")
 local ngx = ngx
 
@@ -41,7 +57,6 @@ end
 local function get_content_to_check(conf, messages)
     local contents = {}
     if conf.match_all_conversation_history then
-				core.log.warn("Matching all conversation history")
         for _, msg in ipairs(messages) do
             if msg.content then
                 core.table.insert(contents, msg.content)
@@ -61,7 +76,7 @@ end
 function _M.access(conf, ctx)
     local body = core.request.get_body()
     if not body then
-				core.log.error("Empty request body")
+        core.log.error("Empty request body")
         return core.response.exit(400, {message = "Empty request body"})
     end
 
@@ -72,9 +87,9 @@ function _M.access(conf, ctx)
 
 
     local messages = json_body.messages or {}
-		if not conf.match_all_roles and messages and messages[#messages].role ~= "user" then
-				return
-		end
+    if not conf.match_all_roles and messages and messages[#messages].role ~= "user" then
+        return
+    end
     local content_to_check = get_content_to_check(conf, messages)
 
     -- Allow patterns check
