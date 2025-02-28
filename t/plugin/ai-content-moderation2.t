@@ -45,7 +45,7 @@ __DATA__
                 [[{
                     "uri": "/echo",
                     "plugins": {
-                        "ai-content-moderation": {
+                        "ai-aws-content-moderation": {
                             "provider": {
                                 "aws_comprehend": {
                                     "access_key_id": "access",

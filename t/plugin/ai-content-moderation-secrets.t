@@ -114,7 +114,7 @@ Success! Data written to: kv/apisix/foo
                  [[{
                     "uri": "/echo",
                     "plugins": {
-                        "ai-content-moderation": {
+                        "ai-aws-content-moderation": {
                             "provider": {
                                 "aws_comprehend": {
                                     "access_key_id": "$secret://vault/test1/foo/access_key_id",
@@ -169,7 +169,7 @@ POST /echo
                  [[{
                     "uri": "/echo",
                     "plugins": {
-                        "ai-content-moderation": {
+                        "ai-aws-content-moderation": {
                             "provider": {
                                 "aws_comprehend": {
                                     "access_key_id": "$env://ACCESS_KEY_ID",
