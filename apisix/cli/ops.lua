@@ -536,8 +536,8 @@ Please modify "admin_key" in conf/config.yaml .
                 end
             end
 
-            local combined_cert_filepath = yaml_conf.apisix.ssl.ssl_trusted_combined_path
-                                           or profile.apisix_home .. "/conf/ssl_trusted_combined.pem"
+            local combined_cert_filepath = yaml_conf.apisix.ssl.ssl_trusted_combined_path or
+                                           profile.apisix_home .. "/conf/ssl_trusted_combined.pem"
             util.gen_trusted_certs_combined_file(combined_cert_filepath, cert_paths)
 
             yaml_conf.apisix.ssl.ssl_trusted_certificate = combined_cert_filepath
