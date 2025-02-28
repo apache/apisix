@@ -464,6 +464,7 @@ OIDC introspection failed: Invalid Authorization header format.
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -537,6 +538,7 @@ true
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -551,7 +553,8 @@ true
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "valid_issuers": ["Mysoft corp"]
                             }
                         },
                         "upstream": {
@@ -602,6 +605,7 @@ x-userinfo: ey.*
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -620,7 +624,8 @@ x-userinfo: ey.*
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": true,
                                 "set_id_token_header": false,
-                                "set_userinfo_header": false
+                                "set_userinfo_header": false,
+                                "valid_issuers": ["Mysoft corp"]
                             }
                         },
                         "upstream": {
@@ -669,6 +674,7 @@ x-real-ip: 127.0.0.1
                             "openid-connect": {
                                 "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                                 "client_secret": "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
+                                "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -683,7 +689,8 @@ x-real-ip: 127.0.0.1
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "valid_issuers": ["Mysoft corp"]
                             }
                         },
                         "upstream": {
