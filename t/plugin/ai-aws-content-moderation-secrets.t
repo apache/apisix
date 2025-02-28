@@ -115,15 +115,12 @@ Success! Data written to: kv/apisix/foo
                     "uri": "/echo",
                     "plugins": {
                         "ai-aws-content-moderation": {
-                            "provider": {
-                                "aws_comprehend": {
-                                    "access_key_id": "$secret://vault/test1/foo/access_key_id",
-                                    "secret_access_key": "$secret://vault/test1/foo/secret_access_key",
-                                    "region": "us-east-1",
-                                    "endpoint": "http://localhost:2668"
-                                }
-                            },
-                            "llm_provider": "openai"
+                            "comprehend": {
+                                "access_key_id": "$secret://vault/test1/foo/access_key_id",
+                                "secret_access_key": "$secret://vault/test1/foo/secret_access_key",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
                         }
                     },
                     "upstream": {
@@ -170,15 +167,12 @@ POST /echo
                     "uri": "/echo",
                     "plugins": {
                         "ai-aws-content-moderation": {
-                            "provider": {
-                                "aws_comprehend": {
-                                    "access_key_id": "$env://ACCESS_KEY_ID",
-                                    "secret_access_key": "$env://SECRET_ACCESS_KEY",
-                                    "region": "us-east-1",
-                                    "endpoint": "http://localhost:2668"
-                                }
-                            },
-                            "llm_provider": "openai"
+                            "comprehend": {
+                                "access_key_id": "$env://ACCESS_KEY_ID",
+                                "secret_access_key": "$env://SECRET_ACCESS_KEY",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
                         }
                     },
                     "upstream": {
