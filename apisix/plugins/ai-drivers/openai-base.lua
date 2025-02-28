@@ -101,7 +101,6 @@ function _M.request(self, conf, request_table, extra_opts)
 
     params.body = req_json
 
-    httpc:set_timeout(conf.keepalive_timeout)
     local res, err = httpc:request(params)
     if not res then
         return nil, err
