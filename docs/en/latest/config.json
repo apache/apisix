@@ -102,7 +102,8 @@
             "plugins/ai-proxy",
             "plugins/ai-proxy-multi",
             "plugins/attach-consumer-label",
-            "plugins/ai-rag"
+            "plugins/ai-rag",
+            "plugins/ai-prompt-guard"
           ]
         },
         {
