@@ -116,9 +116,9 @@ passed
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "goodword" }
-	]
+    "messages": [
+        { "role": "system", "content": "goodword" }
+    ]
 }
 
 
@@ -127,9 +127,9 @@ POST /hello
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "badword" }
-	]
+    "messages": [
+        { "role": "system", "content": "badword" }
+    ]
 }
 --- response_body
 {"message":"Request doesn't match allow patterns"}
@@ -178,9 +178,9 @@ passed
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "goodword" }
-	]
+    "messages": [
+        { "role": "system", "content": "goodword" }
+    ]
 }
 
 
@@ -189,9 +189,9 @@ POST /hello
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "badword" }
-	]
+    "messages": [
+        { "role": "system", "content": "badword" }
+    ]
 }
 --- response_body
 {"message":"Request contains prohibited content"}
@@ -239,9 +239,9 @@ passed
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "badword" }
-	]
+    "messages": [
+        { "role": "system", "content": "badword" }
+    ]
 }
 
 
@@ -250,9 +250,9 @@ POST /hello
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "user", "content": "badword" }
-	]
+    "messages": [
+        { "role": "user", "content": "badword" }
+    ]
 }
 --- response_body
 {"message":"Request doesn't match allow patterns"}
@@ -302,11 +302,11 @@ passed
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "goodword" },
-		{ "role": "system", "content": "badword" },
-		{ "role": "system", "content": "goodword" }
-	]
+    "messages": [
+        { "role": "system", "content": "goodword" },
+        { "role": "system", "content": "badword" },
+        { "role": "system", "content": "goodword" }
+    ]
 }
 --- response_body
 {"message":"Request contains prohibited content"}
@@ -356,9 +356,9 @@ passed
 --- request
 POST /hello
 {
-	"messages": [
-		{ "role": "system", "content": "goodword" },
-		{ "role": "system", "content": "badword" },
-		{ "role": "system", "content": "goodword" }
-	]
+    "messages": [
+        { "role": "system", "content": "goodword" },
+        { "role": "system", "content": "badword" },
+        { "role": "system", "content": "goodword" }
+    ]
 }
