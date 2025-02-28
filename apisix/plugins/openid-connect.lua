@@ -394,6 +394,7 @@ local function introspect(ctx, conf)
             if discovery_err then
                 core.log.warn("OIDC access discovery url failed : ", discovery_err)
             else
+                core.log.info("valid_issuers not provided, using issuer from discovery doc: ", discovery.issuer)
                 valid_issuers = {discovery.issuer}
             end
         end
