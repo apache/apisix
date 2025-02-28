@@ -75,9 +75,9 @@ deployment:
 
 out=$(make run 2>&1 || true)
 make stop
-if  echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:12379: certificate verify failed'; then
-    echo "failed: should verify certificate by default and not get certificate verify failed"
+if ! echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:12379: certificate verify failed'; then
+    echo "failed: should verify certificate by default"
     exit 1
 fi
 
-echo "passed: should verify certificate by default using system cert"
+echo "passed: should verify certificate by default"

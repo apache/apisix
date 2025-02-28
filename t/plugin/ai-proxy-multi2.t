@@ -289,7 +289,7 @@ passed
 
 
 === TEST 6: send request
---- custom_trusted_cert: /etc/ssl/cert.pem
+--- custom_trusted_cert: /etc/ssl/certs/ca-certificates.crt
 --- request
 POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
