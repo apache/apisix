@@ -67,6 +67,7 @@ ext-plugin-pre-req
 fault-injection
 mocking
 serverless-pre-function
+ai-prompt-guard
 cors
 ip-restriction
 ua-restriction
