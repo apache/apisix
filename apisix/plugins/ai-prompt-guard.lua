@@ -81,15 +81,12 @@ function _M.access(conf, ctx)
     if #conf.allow_patterns > 0 then
         local any_allowed = false
         for _, pattern in ipairs(conf.allow_patterns) do
-						-- core.log.error("Checking pattern: ", pattern)
-						-- core.log.error("Content to check: ", content_to_check)
             if ngx.re.find(content_to_check, pattern, "jou") then
                 any_allowed = true
                 break
             end
         end
         if not any_allowed then
-						-- core.log.error("Request doesn't match allow patterns")
             return core.response.exit(400, {message = "Request doesn't match allow patterns"})
         end
     end
@@ -97,7 +94,6 @@ function _M.access(conf, ctx)
     -- Deny patterns check
     for _, pattern in ipairs(conf.deny_patterns) do
         if ngx.re.find(content_to_check, pattern, "jou") then
-						-- core.log.error("Request contains prohibited content")
             return core.response.exit(400, {message = "Request contains prohibited content"})
         end
     end
