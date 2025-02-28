@@ -337,7 +337,7 @@ token validate successfully by jwks
                             "openid-connect": {
                                 "client_id": "dummy",
                                 "client_secret": "dummy",
-                                "discovery": "http://127.0.0.1:8089/realms/University/.well-known/openid-configuration",
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
                                 "redirect_uri": "http://localhost:3000",
                                 "ssl_verify": false,
                                 "timeout": 10,
@@ -368,23 +368,6 @@ passed
 
 
 === TEST 8: Obtain valid token and access route with it. Use valid_issuer from discovery endpoint.
---- http_config
-    server {
-        listen 8089;
-
-        location /realms/University/.well-known/openid-configuration {
-            content_by_lua_block {
-                ngx.say([[
-{
-  "issuer": "http://127.0.0.1:8089/realms/University",
-  "jwks_uri": "http://127.0.0.1:8089/realms/University/protocol/openid-connect/certs",
-  "response_types_supported": ["id_token"],
-  "subject_types_supported": ["public"],
-  "id_token_signing_alg_values_supported": ["RS256"]
-}]])
-            }
-        }
-    }
 --- config
     location /t {
         content_by_lua_block {
@@ -407,20 +390,39 @@ passed
                 return
             end
 
+            -- Check if response code was ok.
+            if res.status == 200 then
+                -- Get access token from JSON response body.
+                local body = json_decode(res.body)
+                local accessToken = body["access_token"]
 
-            -- Get access token from JSON response body.
-            local body = json_decode(res.body)
-            local accessToken = body["access_token"]
+                -- Access route using access token. Should work.
+                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+                local res, err = httpc:request_uri(uri, {
+                    method = "GET",
+                    headers = {
+                        ["Authorization"] = "Bearer " .. body["access_token"]
+                    }
+                 })
 
-            -- Access route using access token. Should work.
-            uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            local res, err = httpc:request_uri(uri, {
-                method = "GET",
-                headers = {
-                    ["Authorization"] = "Bearer " .. body["access_token"]
-                }
-                })
+                if res.status == 200 then
+                    -- Route accessed successfully.
+                    ngx.say(true)
+                else
+                    -- Couldn't access route.
+                    ngx.say(false)
+                end
+            else
+                -- Response from Keycloak not ok.
+                ngx.say(false)
+            end
         }
     }
+--- response_body
+true
+--- grep_error_log eval
+qr/token validate successfully by \w+/
+--- grep_error_log_out
+token validate successfully by jwks
 --- error_log
-valid_issuers not provided, using issuer from discovery doc: http://127.0.0.1:8089/realms/University
+valid_issuers not provided, using issuer from discovery doc: http://127.0.0.1:8080/realms/University
