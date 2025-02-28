@@ -479,7 +479,8 @@ OIDC introspection failed: Invalid Authorization header format.
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "valid_issuers": ["Mysoft corp"]
                             }
                         },
                         "upstream": {
