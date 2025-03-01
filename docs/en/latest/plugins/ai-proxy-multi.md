@@ -193,3 +193,58 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```
 
 In the above configuration `priority` for the deepseek provider is set to `0`. Which means if `openai` provider is unavailable then `ai-proxy-multi` plugin will retry sending request to `deepseek` in the second attempt.
+
+### Send request to an OpenAI compatible LLM
+
+Create a route with the `ai-proxy-multi` plugin with `provider.name` set to `openai-compatible` and the endpoint of the model set to `provider.override.endpoint` like so:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "ai-proxy-multi-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "providers": [
+          {
+            "name": "openai-compatible",
+            "model": "qwen-plus",
+            "weight": 1,
+            "priority": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "override": {
+              "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+            }
+          },
+          {
+            "name": "deepseek",
+            "model": "deepseek-chat",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$DEEPSEEK_API_KEY"'"
+              }
+            },
+            "options": {
+                "max_tokens": 512,
+                "temperature": 1.0
+            }
+          }
+        ],
+        "passthrough": false
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```

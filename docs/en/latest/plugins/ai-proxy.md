@@ -142,3 +142,39 @@ You will receive a response like this:
   "usage": { "completion_tokens": 15, "prompt_tokens": 23, "total_tokens": 38 }
 }
 ```
+
+### Send request to an OpenAI compatible LLM
+
+Create a route with the `ai-proxy` plugin with `provider` set to `openai-compatible` and the endpoint of the model set to `override.endpoint` like so:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/anything",
+    "plugins": {
+      "ai-proxy": {
+        "auth": {
+          "header": {
+            "Authorization": "Bearer <some-token>"
+          }
+        },
+        "model": {
+          "provider": "openai-compatible",
+          "name": "qwen-plus"
+        },
+        "override": {
+          "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "somerandom.com:443": 1
+      },
+      "scheme": "https",
+      "pass_host": "node"
+    }
+  }'
+```
