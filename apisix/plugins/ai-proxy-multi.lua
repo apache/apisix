@@ -145,7 +145,6 @@ end
 
 
 local function pick_target(ctx, conf, ups_tab)
-    ctx.ai_balancer_try_count = (ctx.ai_balancer_try_count or 0) + 1
     if ctx.ai_balancer_try_count > 1 then
         if ctx.server_picker and ctx.server_picker.after_balance then
             ctx.server_picker.after_balance(ctx, true)
@@ -172,6 +171,7 @@ end
 
 
 local function get_load_balanced_provider(ctx, conf, ups_tab, request_table)
+    ctx.ai_balancer_try_count = (ctx.ai_balancer_try_count or 0) + 1
     local provider_name, provider_conf
     if #conf.providers == 1 then
         provider_name = conf.providers[1].name
@@ -215,7 +215,7 @@ local function proxy_request_to_llm(conf, request_table, ctx)
     local ai_driver = require("apisix.plugins.ai-drivers." .. provider)
     local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
     if not res then
-        if (ctx.balancer_try_count or 0) < 1 then
+        if (ctx.ai_balancer_try_count or 0) < 1 then
             core.log.warn("failed to send request to LLM: ", err, ". Retrying...")
             goto retry
         end
