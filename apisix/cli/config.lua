@@ -216,6 +216,7 @@ local _M = {
     "body-transformer",
     "ai-prompt-template",
     "ai-prompt-decorator",
+    "ai-prompt-guard",
     "ai-rag",
     "ai-content-moderation",
     "proxy-mirror",
