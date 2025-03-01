@@ -362,7 +362,7 @@ passed
 
 
 
-=== TEST 5: set route with unavailable endpoint
+=== TEST 9: set route with unavailable endpoint
 --- config
     location /t {
         content_by_lua_block {
@@ -415,7 +415,7 @@ passed
 
 
 
-=== TEST 8: ai-proxy-multi should retry once and fail
+=== TEST 10: ai-proxy-multi should retry once and fail
 # i.e it should not attempt to proxy request endlessly
 --- request
 POST /anything
