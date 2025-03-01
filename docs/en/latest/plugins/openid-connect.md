@@ -90,6 +90,7 @@ description: OpenID Connect allows the client to obtain user information from th
 | introspection_interval | integer | False | 0 |  | TTL of the cached and introspected access token in seconds. |
 | introspection_expiry_claim | string | False |  |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. The default value is 0, which means this option is not used and the plugin defaults to use the TTL passed by expiry claim defined in `introspection_expiry_claim`. If `introspection_interval` is larger than 0 and less than the TTL passed by expiry claim defined in `introspection_expiry_claim`, use `introspection_interval`. |
 | introspection_addon_headers | string[] | False |  |  | Array of strings. Used to append additional header values to the introspection HTTP request. If the specified header does not exist in origin request, value will not be appended. |
+| auth_accept_token_as_header_name | string | False | "Authorization" |  | Name of the request header from which to accept the access token. Defaults to `Authorization`. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
