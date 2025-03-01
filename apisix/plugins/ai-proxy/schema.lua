@@ -70,6 +70,10 @@ local model_options_schema = {
             maximum = 1,
 
         },
+        stream = {
+            description = "Stream response by SSE",
+            type = "boolean",
+        }
     }
 }
 
