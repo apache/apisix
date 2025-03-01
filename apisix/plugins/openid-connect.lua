@@ -275,7 +275,16 @@ local schema = {
             items = {
                 type = "string"
             }
-        }
+        },
+        valid_issuers = {
+            description = [[Whitelist the vetted issuers of the jwt.
+            When not passed by the user, the issuer returned by discovery endpoint will be used.
+            In case both are missing, the issuer will not be validated.]],
+            type = "array",
+            items = {
+                type = "string"
+            }
+        },
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
@@ -375,17 +384,31 @@ local function introspect(ctx, conf)
         end
     end
 
-    -- If we get here, token was found in request.
-
     if conf.public_key or conf.use_jwks then
+        local opts = {}
         -- Validate token against public key or jwks document of the oidc provider.
         -- TODO: In the called method, the openidc module will try to extract
         --  the token by itself again -- from a request header or session cookie.
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        local res, err = openidc.bearer_jwt_verify(conf)
-
+        local valid_issuers
+        if conf.valid_issuers then
+            valid_issuers = conf.valid_issuers
+        else
+            local discovery, discovery_err = openidc.get_discovery_doc(conf)
+            if discovery_err then
+                core.log.warn("OIDC access discovery url failed : ", discovery_err)
+            else
+                core.log.info("valid_issuers not provided, using issuer from discovery doc: ",
+                              discovery.issuer)
+                valid_issuers = {discovery.issuer}
+            end
+        end
+        if valid_issuers then
+            opts.valid_issuers = valid_issuers
+        end
+        local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
