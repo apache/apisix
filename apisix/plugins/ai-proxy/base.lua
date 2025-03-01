@@ -69,24 +69,6 @@ function _M.new(proxy_request_to_llm_func, get_model_name_func)
             return internal_server_error
         end
 
-        if conf.passthrough then
-            ngx_req.init_body()
-            while true do
-                local chunk, err = body_reader() -- will read chunk by chunk
-                if err then
-                    core.log.error("failed to read response chunk: ", err)
-                    break
-                end
-                if not chunk then
-                    break
-                end
-                ngx_req.append_body(chunk)
-            end
-            ngx_req.finish_body()
-            keepalive_or_close(conf, httpc)
-            return
-        end
-
         if request_table.stream then
             while true do
                 local chunk, err = body_reader() -- will read chunk by chunk

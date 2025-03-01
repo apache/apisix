@@ -151,7 +151,6 @@ _M.ai_proxy_schema = {
     properties = {
         auth = auth_schema,
         model = model_schema,
-        passthrough = { type = "boolean", default = false },
         timeout = {
             type = "integer",
             minimum = 1,
@@ -196,7 +195,6 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         providers = provider_schema,
-        passthrough = { type = "boolean", default = false },
         timeout = {
             type = "integer",
             minimum = 1,
