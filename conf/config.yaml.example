@@ -481,7 +481,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
   - ai-rag                         # priority: 1060
-  - ai-content-moderation          # priority: 1040 TODO: compare priority with other ai plugins
+  - ai-aws-content-moderation      # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
