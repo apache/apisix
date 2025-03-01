@@ -34,6 +34,7 @@ local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
+local remove_tab   = table.remove
 local type         = type
 local ipairs       = ipairs
 local setmetatable = setmetatable
@@ -741,22 +742,23 @@ local function sync_data(self)
 
         -- avoid space waste
         if self.sync_times > 100 then
-            local values_original = table.clone(self.values)
-            table.clear(self.values)
-
-            for i = 1, #values_original do
-                local val = values_original[i]
-                if val then
-                    table.insert(self.values, val)
-                end
-            end
-
+            local pre = 1
+            local cur = 1
             table.clear(self.values_hash)
             log.info("clear stale data in `values_hash` for key: ", key)
+            for _, val in ipairs(self.values) do
+                if val then
+                    self.values[pre] = val
+                    key = short_key(self, val.key)
+                    self.values_hash[key] = pre
+                    pre = pre + 1
+                end
 
-            for i = 1, #self.values do
-                key = short_key(self, self.values[i].key)
-                self.values_hash[key] = i
+                cur = cur + 1
+            end
+
+            for i = cur - 1, pre, -1 do
+                remove_tab(self.values, i)
             end
 
             self.sync_times = 0
