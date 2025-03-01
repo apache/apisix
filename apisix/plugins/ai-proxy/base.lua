@@ -20,7 +20,6 @@ local core = require("apisix.core")
 local bad_request = ngx.HTTP_BAD_REQUEST
 local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local schema = require("apisix.plugins.ai-proxy.schema")
-local ngx_req = ngx.req
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
 
