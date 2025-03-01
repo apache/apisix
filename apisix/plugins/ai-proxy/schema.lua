@@ -73,7 +73,6 @@ local model_options_schema = {
         stream = {
             description = "Stream response by SSE",
             type = "boolean",
-            default = false,
         }
     }
 }

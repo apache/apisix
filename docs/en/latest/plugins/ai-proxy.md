@@ -61,7 +61,7 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | model.options.output_cost | No           | Number   | Cost per 1M tokens in the output of the AI. Minimum: 0                               |
 | model.options.temperature | No           | Number   | Matching temperature for models. Range: 0.0 - 5.0                                    |
 | model.options.top_p       | No           | Number   | Top-p probability mass. Range: 0 - 1                                                 |
-| model.options.stream      | No           | Boolean  | Stream response by SSE. Default: false                                               |
+| model.options.stream      | No           | Boolean  | Stream response by SSE.                                                              |
 | override.endpoint         | No           | String   | Override the endpoint of the AI provider                                             |
 | passthrough               | No           | Boolean  | If enabled, the response from LLM will be sent to the upstream. Default: false       |
 | timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 3000         |
