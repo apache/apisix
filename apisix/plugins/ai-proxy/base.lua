@@ -20,7 +20,6 @@ local core = require("apisix.core")
 local bad_request = ngx.HTTP_BAD_REQUEST
 local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local schema = require("apisix.plugins.ai-proxy.schema")
-local ngx_req = ngx.req
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
 
@@ -67,24 +66,6 @@ function _M.new(proxy_request_to_llm_func, get_model_name_func)
         if not body_reader then
             core.log.error("LLM sent no response body")
             return internal_server_error
-        end
-
-        if conf.passthrough then
-            ngx_req.init_body()
-            while true do
-                local chunk, err = body_reader() -- will read chunk by chunk
-                if err then
-                    core.log.error("failed to read response chunk: ", err)
-                    break
-                end
-                if not chunk then
-                    break
-                end
-                ngx_req.append_body(chunk)
-            end
-            ngx_req.finish_body()
-            keepalive_or_close(conf, httpc)
-            return
         end
 
         if request_table.stream then

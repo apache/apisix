@@ -46,26 +46,6 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
-            location /anything {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-
-                    if body ~= "SELECT * FROM STUDENTS" then
-                        ngx.status = 503
-                        ngx.say("passthrough doesn't work")
-                        return
-                    end
-                    ngx.say('{"foo", "bar"}')
-                }
-            }
-
             location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
@@ -519,70 +499,7 @@ path override works
 
 
 
-=== TEST 14: set route with right auth header
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy": {
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
-                                }
-                            },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724"
-                            },
-                            "ssl_verify": false,
-                            "passthrough": true
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:6724": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 15: send request with wrong method should work
---- request
-POST /anything
-{ "messages": [ { "role": "user", "content": "write an SQL query to get all rows from student table" } ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 200
---- response_body
-{"foo", "bar"}
-
-
-
-=== TEST 16: set route with stream = true (SSE)
+=== TEST 14: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -633,7 +550,7 @@ passed
 
 
 
-=== TEST 17: test is SSE works as expected
+=== TEST 15: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
