@@ -215,7 +215,7 @@ local function proxy_request_to_llm(conf, request_table, ctx)
     local ai_driver = require("apisix.plugins.ai-drivers." .. provider)
     local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
     if not res then
-        if (ctx.ai_balancer_try_count or 0) < 1 then
+        if (ctx.ai_balancer_try_count or 0) < 2 then
             core.log.warn("failed to send request to LLM: ", err, ". Retrying...")
             goto retry
         end
