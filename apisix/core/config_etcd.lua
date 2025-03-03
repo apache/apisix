@@ -262,9 +262,10 @@ local function do_run_watch(premature)
             cancel_watch(http_cli)
             break
         end
-        log.warn("watch event: revision=", rev, ", watch_ctx.rev=", watch_ctx.rev)
+
         if rev < watch_ctx.rev then
-            log.error("received smaller revision, rev=", rev, ", watch_ctx.rev=", watch_ctx.rev,". etcd may be restarted. resyncing....")
+            log.error("received smaller revision, rev=", rev, ", watch_ctx.rev=",
+                      watch_ctx.rev,". etcd may be restarted. resyncing....")
             produce_res(nil, "restarted")
             cancel_watch(http_cli)
             break
