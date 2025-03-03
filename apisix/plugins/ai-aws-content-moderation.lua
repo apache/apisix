@@ -19,12 +19,10 @@ local aws_instance = require("resty.aws")()
 local http = require("resty.http")
 local fetch_secrets = require("apisix.secret").fetch_secrets
 
-local next = next
 local pairs = pairs
 local unpack = unpack
 local type = type
 local ipairs = ipairs
-local require = require
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 
