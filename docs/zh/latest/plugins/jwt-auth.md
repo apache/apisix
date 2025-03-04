@@ -59,7 +59,7 @@ Route 端：
 | cookie | string | 否     | jwt           | 设置我们从哪个 cookie 获取 token，优先级低于 query。        |
 | hide_credentials | boolean | 否     | false  | 该参数设置为 `true` 时，则不会将含有认证信息的 header\query\cookie 传递给 Upstream。|
 | key_claim_name | string  | 否     | key           | 包含用户密钥（对应消费者的密钥属性）的 JWT 声明的名称。|
-| store_in_ctx | boolean | 否     | false  | 设置为 `true` 会将 JWT 存储在请求上下文中。这允许在同一请求上随后运行的低优先级插件检索和使用 JWT 令牌。 |
+| store_in_ctx | boolean | 否     | false  | 设置为 `true` 将会将 JWT 负载存储在请求上下文 (`ctx.jwt_auth_payload`) 中。这允许在同一请求上随后运行的低优先级插件检索和使用 JWT 令牌。 |
 
 您可以使用 [HashiCorp Vault](https://www.vaultproject.io/) 实施 `jwt-auth`，以从其[加密的 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv) 使用 [APISIX Secret](../terminology/secret.md) 资源。
 
