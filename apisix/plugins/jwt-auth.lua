@@ -300,7 +300,7 @@ local function find_consumer(conf, ctx)
     end
 
     if conf.store_in_ctx then
-        ctx.jwt_obj = jwt_obj
+        ctx.jwt_auth_payload = jwt_obj.payload
     end
 
     return consumer, consumer_conf

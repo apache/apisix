@@ -247,9 +247,9 @@ qr/\\"key\\" validation failed: string too short, expected at least 1, got 0/
                             "phase": "rewrite",
                             "functions": [
                                 "return function(conf, ctx)
-                                if ctx.jwt_obj then
+                                if ctx.jwt_auth_payload then
                                     ngx.status = 200
-                                    ngx.say(\"JWT found in ctx. Payload key: \" .. ctx.jwt_obj.payload.key)
+                                    ngx.say(\"JWT found in ctx. Payload key: \" .. ctx.jwt_auth_payload.key)
                                     return ngx.exit(200)
                                 else
                                     ngx.status = 401
@@ -297,9 +297,9 @@ passed
                             "phase": "rewrite",
                             "functions": [
                                 "return function(conf, ctx)
-                                if ctx.jwt_obj then
+                                if ctx.jwt_auth_payload then
                                     ngx.status = 200
-                                    ngx.say(\"JWT found in ctx. Payload key: \" .. ctx.jwt_obj.payload.key)
+                                    ngx.say(\"JWT found in ctx. Payload key: \" .. ctx.jwt_auth_payload.key)
                                     return ngx.exit(200)
                                 else
                                     ngx.status = 401
