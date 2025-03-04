@@ -233,7 +233,7 @@ qr/\\"key\\" validation failed: string too short, expected at least 1, got 0/
 
 
 
-=== TEST 6: enable jwt auth plugin without store_in_ctx
+=== TEST 6: store_in_ctx disabled
 --- config
     location /t {
         content_by_lua_block {
@@ -281,7 +281,18 @@ passed
 
 
 
-=== TEST 7: enable jwt auth plugin with store_in_ctx
+=== TEST 7: verify store_in_ctx disabled (header with bearer)
+--- request
+GET /jwt-auth-no-ctx
+--- more_headers
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo
+--- error_code: 401
+--- response_body
+JWT not found in ctx.
+
+
+
+=== TEST 8: store_in_ctx enabled
 --- config
     location /t {
         content_by_lua_block {
@@ -331,18 +342,7 @@ passed
 
 
 
-=== TEST 8: verify (header with bearer)
---- request
-GET /jwt-auth-no-ctx
---- more_headers
-Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo
---- error_code: 401
---- response_body
-JWT not found in ctx.
-
-
-
-=== TEST 9: verify (header with bearer)
+=== TEST 9: verify store_in_ctx enabled (header with bearer)
 --- request
 GET /jwt-auth-ctx
 --- more_headers
