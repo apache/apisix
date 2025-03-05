@@ -314,9 +314,8 @@ You can update your configuration file as shown below:
 ```yaml title="conf/config.yaml"
 deployment:
   admin:
-    admin_key
-      -
-        name: "admin"
+    admin_key:
+      - name: "admin"
         key: newsupersecurekey
         role: admin
 ```

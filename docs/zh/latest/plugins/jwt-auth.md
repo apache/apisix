@@ -63,6 +63,7 @@ Route 端：
 | hide_credentials | boolean | 否     | false  | 如果为 true，则不要将 header、query 或带有 JWT 的 cookie 传递给上游服务。 |
 | key_claim_name | string  | 否     | key           | 包含用户密钥（对应消费者的密钥属性）的 JWT 声明的名称。|
 | anonymous_consumer | string | 否     | false  | 匿名消费者名称。如果已配置，则允许匿名用户绕过身份验证。  |
+| store_in_ctx | boolean | 否     | false  | 设置为 `true` 将会将 JWT 负载存储在请求上下文 (`ctx.jwt_auth_payload`) 中。这允许在同一请求上随后运行的低优先级插件检索和使用 JWT 令牌。 |
 
 您可以使用 [HashiCorp Vault](https://www.vaultproject.io/) 实施 `jwt-auth`，以从其[加密的 KV 引擎](https://developer.hashicorp.com/vault/docs/secrets/kv) 使用 [APISIX Secret](../terminology/secret.md) 资源。
 

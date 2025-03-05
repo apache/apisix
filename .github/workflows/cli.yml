@@ -63,4 +63,6 @@ jobs:
             ./ci/${{ matrix.job_name }}_runner.sh do_install
 
       - name: Linux Script
-        run: sudo ./ci/${{ matrix.job_name }}_runner.sh script
+        run: |
+          sudo chmod +x /home/runner
+          sudo ./ci/${{ matrix.job_name }}_runner.sh script

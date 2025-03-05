@@ -67,6 +67,7 @@ For Route:
 | hide_credentials| boolean | False    | false  | If true, do not pass the header, query, or cookie with JWT to Upstream services.  |
 | key_claim_name  | string  | False    | key     | The name of the JWT claim that contains the user key (corresponds to Consumer's key attribute). |
 | anonymous_consumer | string | False  | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.   |
+| store_in_ctx     | boolean | False    | false   | Set to true will store the JWT payload in the request context (`ctx.jwt_auth_payload`). This allows lower-priority plugins that run afterwards on the same request to retrieve and use the JWT token. |
 
 You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/) to store and fetch secrets and RSA keys pairs from its [encrypted KV engine](https://developer.hashicorp.com/vault/docs/secrets/kv) using the [APISIX Secret](../terminology/secret.md) resource.
 

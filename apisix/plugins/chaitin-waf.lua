@@ -330,8 +330,8 @@ local function do_access(conf, ctx)
 
     local code = 200
     extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
-    if result then
-        if result.status then
+    if result and result.status and result.status ~= 200 then
+        if result.event_id then
             code = result.status
             extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
             extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"

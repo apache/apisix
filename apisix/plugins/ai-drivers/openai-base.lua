@@ -16,26 +16,38 @@
 --
 local _M = {}
 
+local mt = {
+    __index = _M
+}
+
 local core = require("apisix.core")
 local http = require("resty.http")
 local url  = require("socket.url")
 
 local pairs = pairs
-
--- globals
-local DEFAULT_HOST = "api.openai.com"
-local DEFAULT_PORT = 443
-local DEFAULT_PATH = "/v1/chat/completions"
+local type  = type
+local setmetatable = setmetatable
 
 
-function _M.request(conf, request_table, ctx)
+function _M.new(opts)
+
+    local self = {
+        host = opts.host,
+        port = opts.port,
+        path = opts.path,
+    }
+    return setmetatable(self, mt)
+end
+
+
+function _M.request(self, conf, request_table, extra_opts)
     local httpc, err = http.new()
     if not httpc then
         return nil, "failed to create http client to send request to LLM server: " .. err
     end
     httpc:set_timeout(conf.timeout)
 
-    local endpoint = core.table.try_read_attr(conf, "override", "endpoint")
+    local endpoint = extra_opts.endpoint
     local parsed_url
     if endpoint then
         parsed_url = url.parse(endpoint)
@@ -43,10 +55,10 @@ function _M.request(conf, request_table, ctx)
 
     local ok, err = httpc:connect({
         scheme = endpoint and parsed_url.scheme or "https",
-        host = endpoint and parsed_url.host or DEFAULT_HOST,
-        port = endpoint and parsed_url.port or DEFAULT_PORT,
+        host = endpoint and parsed_url.host or self.host,
+        port = endpoint and parsed_url.port or self.port,
         ssl_verify = conf.ssl_verify,
-        ssl_server_name = endpoint and parsed_url.host or DEFAULT_HOST,
+        ssl_server_name = endpoint and parsed_url.host or self.host,
         pool_size = conf.keepalive and conf.keepalive_pool,
     })
 
@@ -54,9 +66,18 @@ function _M.request(conf, request_table, ctx)
         return nil, "failed to connect to LLM server: " .. err
     end
 
-    local path = (endpoint and parsed_url.path or DEFAULT_PATH)
+    local query_params = extra_opts.query_params
 
-    local headers = (conf.auth.header or {})
+    if type(parsed_url) == "table" and parsed_url.query and #parsed_url.query > 0 then
+        local args_tab = core.string.decode_args(parsed_url.query)
+        if type(args_tab) == "table" then
+            core.table.merge(query_params, args_tab)
+        end
+    end
+
+    local path = (endpoint and parsed_url.path or self.path)
+
+    local headers = extra_opts.headers
     headers["Content-Type"] = "application/json"
     local params = {
         method = "POST",
@@ -64,15 +85,21 @@ function _M.request(conf, request_table, ctx)
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
         path = path,
-        query = conf.auth.query
+        query = query_params
     }
 
-    if conf.model.options then
-        for opt, val in pairs(conf.model.options) do
+    if extra_opts.model_options then
+        for opt, val in pairs(extra_opts.model_options) do
             request_table[opt] = val
         end
     end
-    params.body = core.json.encode(request_table)
+
+    local req_json, err = core.json.encode(request_table)
+    if not req_json then
+        return nil, err
+    end
+
+    params.body = req_json
 
     local res, err = httpc:request(params)
     if not res then

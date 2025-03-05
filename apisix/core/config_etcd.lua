@@ -262,6 +262,14 @@ local function do_run_watch(premature)
             cancel_watch(http_cli)
             break
         end
+
+        if rev < watch_ctx.rev then
+            log.error("received smaller revision, rev=", rev, ", watch_ctx.rev=",
+                      watch_ctx.rev,". etcd may be restarted. resyncing....")
+            produce_res(nil, "restarted")
+            cancel_watch(http_cli)
+            break
+        end
         if rev > watch_ctx.rev then
             watch_ctx.rev = rev + 1
         end
@@ -569,6 +577,7 @@ local function load_full_data(self, dir_res, headers)
     end
 
     if headers then
+        self.prev_index = tonumber(headers["X-Etcd-Index"]) or 0
         self:upgrade_version(headers["X-Etcd-Index"])
     end
 
@@ -633,7 +642,7 @@ local function sync_data(self)
     log.info("res: ", json.delay_encode(dir_res, true), ", err: ", err)
 
     if not dir_res then
-        if err == "compacted" then
+        if err == "compacted" or err == "restarted" then
             self.need_reload = true
             log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
@@ -853,7 +862,7 @@ local function _automatic_fetch(premature, self)
                             i = i + 1
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
-                            if not err or not string.find(err, err_etcd_unhealthy_all) then
+                            if not err or not core_str.find(err, err_etcd_unhealthy_all) then
                                 log.warn("reconnected to etcd")
                                 reconnected = true
                                 break
