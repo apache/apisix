@@ -49,8 +49,6 @@ local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
 local str_format = string.format
-local string = string
-local table = table
 
 
 local _M = {}
