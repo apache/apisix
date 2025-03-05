@@ -111,9 +111,6 @@ function _M.access(conf, ctx)
         -- filter to only user messages
         local new_messages = {}
         for _, msg in ipairs(messages) do
-            if not msg then
-                return 400, {message = "request doesn't contain messages"}
-            end
             if msg.role == "user" then
                 core.table.insert(new_messages, msg)
             end
@@ -126,9 +123,6 @@ function _M.access(conf, ctx)
     -- extract only messages
     local content = {}
     for _, msg in ipairs(messages) do
-        if not msg then
-            return 400, {message = "request doesn't contain messages"}
-        end
         if msg.content then
             core.table.insert(content, msg.content)
         end
