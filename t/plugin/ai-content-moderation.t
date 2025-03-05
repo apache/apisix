@@ -30,6 +30,12 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $main_config = $block->main_config // <<_EOC_;
+        env AWS_REGION=us-east-1;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
+
     my $http_config = $block->http_config // <<_EOC_;
         server {
             listen 2668;
