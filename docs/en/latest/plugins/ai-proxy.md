@@ -61,9 +61,8 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | model.options.output_cost | No           | Number   | Cost per 1M tokens in the output of the AI. Minimum: 0                               |
 | model.options.temperature | No           | Number   | Matching temperature for models. Range: 0.0 - 5.0                                    |
 | model.options.top_p       | No           | Number   | Top-p probability mass. Range: 0 - 1                                                 |
-| model.options.stream      | No           | Boolean  | Stream response by SSE. Default: false                                               |
+| model.options.stream      | No           | Boolean  | Stream response by SSE.                                                              |
 | override.endpoint         | No           | String   | Override the endpoint of the AI provider                                             |
-| passthrough               | No           | Boolean  | If enabled, the response from LLM will be sent to the upstream. Default: false       |
 | timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 3000         |
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM. Default: true                                  |
 | keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM. Minimum: 1000. Default: 60000 |
@@ -107,7 +106,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   }'
 ```
 
-Since `passthrough` is not enabled upstream node can be any arbitrary value because it won't be contacted.
+Upstream node can be any arbitrary value because it won't be contacted.
 
 Now send a request:
 
@@ -141,4 +140,40 @@ You will receive a response like this:
   "system_fingerprint": "fp_abc28019ad",
   "usage": { "completion_tokens": 15, "prompt_tokens": 23, "total_tokens": 38 }
 }
+```
+
+### Send request to an OpenAI compatible LLM
+
+Create a route with the `ai-proxy` plugin with `provider` set to `openai-compatible` and the endpoint of the model set to `override.endpoint` like so:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/anything",
+    "plugins": {
+      "ai-proxy": {
+        "auth": {
+          "header": {
+            "Authorization": "Bearer <some-token>"
+          }
+        },
+        "model": {
+          "provider": "openai-compatible",
+          "name": "qwen-plus"
+        },
+        "override": {
+          "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "somerandom.com:443": 1
+      },
+      "scheme": "https",
+      "pass_host": "node"
+    }
+  }'
 ```
