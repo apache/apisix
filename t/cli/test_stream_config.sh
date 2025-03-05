@@ -78,7 +78,6 @@ echo "
 apisix:
     ssl:
         ssl_trusted_certificate: t/certs/mtls_ca.crt
-        ssl_trusted_combined_path: t/certs/mtls_ca_combined.crt
     proxy_mode: http&stream
     stream_proxy:
         tcp:
