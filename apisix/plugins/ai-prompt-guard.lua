@@ -82,20 +82,16 @@ end
 local function get_content_to_check(conf, messages)
     local contents = {}
     if conf.match_all_conversation_history then
-        for _, msg in ipairs(messages) do
-            if msg.content then
-                core.table.insert(contents, msg.content)
-            end
-        end
+        return messages
     else
         if #messages > 0 then
             local last_msg = messages[#messages]
-            if last_msg.content then
-                core.table.insert(contents, last_msg.content)
+            if last_msg then
+                core.table.insert(contents, last_msg)
             end
         end
     end
-    return table.concat(contents, " ")
+    return contents
 end
 
 function _M.access(conf, ctx)
@@ -111,12 +107,34 @@ function _M.access(conf, ctx)
     end
 
     local messages = json_body.messages or {}
-    if not conf.match_all_roles and #messages > 0 and messages[#messages].role ~= "user" then
-        return
+    messages = get_content_to_check(conf, messages)
+    if not conf.match_all_roles then
+        -- filter to only user messages
+        local new_messages = {}
+        for _, msg in ipairs(messages) do
+            if not msg then
+                return 400, {message = "request doesn't contain messages"}
+            end
+            if msg.role == "user" then
+                core.table.insert(new_messages, msg)
+            end
+        end
+        messages = new_messages
     end
-
-    local content_to_check = get_content_to_check(conf, messages)
-
+    if #messages == 0 then --nothing to check
+        return 200
+    end
+    -- extract only messages
+    local content = {}
+    for _, msg in ipairs(messages) do
+        if not msg then
+            return 400, {message = "request doesn't contain messages"}
+        end
+        if msg.content then
+            core.table.insert(content, msg.content)
+        end
+    end
+    local content_to_check = table.concat(content, " ")
      -- Allow patterns check
      if #conf.allow_patterns > 0 then
         local any_allowed = false
