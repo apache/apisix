@@ -270,7 +270,9 @@ local function do_run_watch(premature)
             cancel_watch(http_cli)
             break
         end
-        watch_ctx.rev = rev + 1
+        if rev > watch_ctx.rev then
+            watch_ctx.rev = rev + 1
+        end
         produce_res(res)
     end
 end
