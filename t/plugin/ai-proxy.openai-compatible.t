@@ -46,26 +46,6 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
-            location /anything {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-
-                    if body ~= "SELECT * FROM STUDENTS" then
-                        ngx.status = 503
-                        ngx.say("passthrough doesn't work")
-                        return
-                    end
-                    ngx.say('{"foo", "bar"}')
-                }
-            }
-
             location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
