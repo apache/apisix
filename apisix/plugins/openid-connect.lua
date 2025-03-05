@@ -115,7 +115,6 @@ local schema = {
                     },
                 },
             },
-            default = {},
         },
         logout_path = {
             type = "string",
