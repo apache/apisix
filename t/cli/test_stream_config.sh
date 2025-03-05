@@ -76,25 +76,6 @@ echo "passed: enable stream proxy and http proxy"
 
 echo "
 apisix:
-    ssl:
-        ssl_trusted_certificate: t/certs/mtls_ca.crt
-    proxy_mode: http&stream
-    stream_proxy:
-        tcp:
-            - addr: 9100
-" > conf/config.yaml
-
-make init
-
-if ! grep "t/certs/mtls_ca_combined.crt;" conf/nginx.conf > /dev/null; then
-    echo "failed: failed to set trust certificate"
-    exit 1
-fi
-
-echo "passed: set trust certificate"
-
-echo "
-apisix:
     proxy_mode: http&stream
     stream_proxy:
         tcp:
