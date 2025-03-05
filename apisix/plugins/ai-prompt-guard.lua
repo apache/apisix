@@ -80,15 +80,14 @@ function _M.check_schema(conf)
 end
 
 local function get_content_to_check(conf, messages)
-    local contents = {}
     if conf.match_all_conversation_history then
         return messages
-    else
-        if #messages > 0 then
-            local last_msg = messages[#messages]
-            if last_msg then
-                core.table.insert(contents, last_msg)
-            end
+    end
+    local contents = {}
+    if #messages > 0 then
+        local last_msg = messages[#messages]
+        if last_msg then
+            core.table.insert(contents, last_msg)
         end
     end
     return contents
