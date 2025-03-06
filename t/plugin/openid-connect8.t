@@ -78,7 +78,7 @@ __DATA__
     }
 --- error_code: 400
 --- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err: property \\"valid_issuers\\" validation failed.*"\}/
+qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err: property \\"claim_validator\\" validation failed.*"\}/
 
 
 
