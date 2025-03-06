@@ -276,15 +276,21 @@ local schema = {
                 type = "string"
             }
         },
-        valid_issuers = {
-            description = [[Whitelist the vetted issuers of the jwt.
-            When not passed by the user, the issuer returned by discovery endpoint will be used.
-            In case both are missing, the issuer will not be validated.]],
-            type = "array",
-            items = {
-                type = "string"
+        claim_validator = {
+            type = "object",
+            properties = {
+                valid_issuers = {
+                    description = [[Whitelist the vetted issuers of the jwt.
+                    When not passed by the user, the issuer returned by discovery endpoint will be used.
+                    In case both are missing, the issuer will not be validated.]],
+                    type = "array",
+                    items = {
+                        type = "string"
+                    }
+                },
             }
-        },
+        }
+
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
@@ -393,8 +399,8 @@ local function introspect(ctx, conf)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
         local valid_issuers
-        if conf.valid_issuers then
-            valid_issuers = conf.valid_issuers
+        if conf.claim_validator and conf.claim_validator.valid_issuers then
+            valid_issuers = conf.claim_validator.valid_issuers
         else
             local discovery, discovery_err = openidc.get_discovery_doc(conf)
             if discovery_err then
