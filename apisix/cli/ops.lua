@@ -510,7 +510,7 @@ Please modify "admin_key" in conf/config.yaml .
             util.die(err)
         end
         yaml_conf.apisix.ssl.ssl_trusted_certificate = trusted_certs_path
-    elseif yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
+    else
         -- During validation, the path is relative to PWD
         -- When Nginx starts, the path is relative to conf
         -- Therefore we need to check the absolute version instead
