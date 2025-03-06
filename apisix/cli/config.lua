@@ -218,7 +218,7 @@ local _M = {
     "ai-prompt-decorator",
     "ai-prompt-guard",
     "ai-rag",
-    "ai-content-moderation",
+    "ai-aws-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",

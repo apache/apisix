@@ -56,6 +56,10 @@ local schema = {
             default = "key",
             minLength = 1,
         },
+        store_in_ctx = {
+            type = "boolean",
+            default = false
+        },
         anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
@@ -293,6 +297,10 @@ local function find_consumer(conf, ctx)
         end
         core.log.warn(err)
         return nil, nil, "failed to verify jwt"
+    end
+
+    if conf.store_in_ctx then
+        ctx.jwt_auth_payload = jwt_obj.payload
     end
 
     return consumer, consumer_conf

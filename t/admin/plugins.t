@@ -98,7 +98,7 @@ ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
 ai-rag
-ai-content-moderation
+ai-aws-content-moderation
 proxy-mirror
 proxy-rewrite
 workflow

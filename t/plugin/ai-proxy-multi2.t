@@ -359,3 +359,68 @@ POST /anything
 found query params: {"api_key":"apikey","some_query":"yes"}
 --- response_body
 passed
+
+
+
+=== TEST 9: set route with unavailable endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "providers": [
+                                {
+                                    "name": "openai",
+                                    "model": "gpt-4",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://unavailable.endpoint.ehfwuehr:404"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: ai-proxy-multi should retry once and fail
+# i.e it should not attempt to proxy request endlessly
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- error_code: 500
+--- error_log
+parse_domain(): failed to parse domain: unavailable.endpoint.ehfwuehr, error: failed to query the DNS server: dns
+phase_func(): failed to send request to LLM service: failed to connect to LLM server: failed to parse domain

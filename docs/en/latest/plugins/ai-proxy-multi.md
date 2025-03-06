@@ -1,5 +1,5 @@
 ---
-title: ai-proxy
+title: ai-proxy-multi
 keywords:
   - Apache APISIX
   - API Gateway
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX ai-proxy
 
 ## Description
 
-The `ai-prox-multi` plugin simplifies access to LLM providers and models by defining a standard request format
+The `ai-proxy-multi` plugin simplifies access to LLM providers and models by defining a standard request format
 that allows key fields in plugin configuration to be embedded into the request.
 
 This plugin adds additional features like `load balancing` and `retries` to the existing `ai-proxy` plugin.
@@ -68,9 +68,8 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | provider.options.output_cost | No           | number   | Cost per 1M tokens in the AI-generated output. Minimum is 0.                                                  |             |
 | provider.options.temperature | No           | number   | Defines the model's temperature (0.0 - 5.0) for randomness in responses.                                      |             |
 | provider.options.top_p       | No           | number   | Defines the top-p probability mass (0 - 1) for nucleus sampling.                                              |             |
-| provider.options.stream      | No           | boolean  | Enables streaming responses via SSE.                                                                          | false       |
+| provider.options.stream      | No           | boolean  | Enables streaming responses via SSE.                                                                          |             |
 | provider.override.endpoint   | No           | string   | Custom host override for the AI provider.                                                                     |             |
-| passthrough                  | No           | boolean  | If true, requests are forwarded without processing.                                                           | false       |
 | timeout                      | No           | integer  | Request timeout in milliseconds (1-60000).                                                                    | 3000        |
 | keepalive                    | No           | boolean  | Enables keepalive connections.                                                                                | true        |
 | keepalive_timeout            | No           | integer  | Timeout for keepalive connections (minimum 1000ms).                                                           | 60000       |
@@ -120,8 +119,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
                 "temperature": 1.0
             }
           }
-        ],
-        "passthrough": false
+        ]
       }
     },
     "upstream": {
@@ -179,8 +177,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
                 "temperature": 1.0
             }
           }
-        ],
-        "passthrough": false
+        ]
       }
     },
     "upstream": {
@@ -193,3 +190,58 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 ```
 
 In the above configuration `priority` for the deepseek provider is set to `0`. Which means if `openai` provider is unavailable then `ai-proxy-multi` plugin will retry sending request to `deepseek` in the second attempt.
+
+### Send request to an OpenAI compatible LLM
+
+Create a route with the `ai-proxy-multi` plugin with `provider.name` set to `openai-compatible` and the endpoint of the model set to `provider.override.endpoint` like so:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "ai-proxy-multi-route",
+    "uri": "/anything",
+    "methods": ["POST"],
+    "plugins": {
+      "ai-proxy-multi": {
+        "providers": [
+          {
+            "name": "openai-compatible",
+            "model": "qwen-plus",
+            "weight": 1,
+            "priority": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$OPENAI_API_KEY"'"
+              }
+            },
+            "override": {
+              "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+            }
+          },
+          {
+            "name": "deepseek",
+            "model": "deepseek-chat",
+            "weight": 1,
+            "auth": {
+              "header": {
+                "Authorization": "Bearer '"$DEEPSEEK_API_KEY"'"
+              }
+            },
+            "options": {
+                "max_tokens": 512,
+                "temperature": 1.0
+            }
+          }
+        ],
+        "passthrough": false
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```

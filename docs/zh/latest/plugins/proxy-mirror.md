@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Proxy Mirror
-description: 本文介绍了 Apache APISIX proxy-mirror 插件的相关操作，你可以使用此插件镜像客户端的请求。
+description: proxy-mirror 插件将入口流量复制到 APISIX 并将其转发到指定的上游，而不会中断常规服务。
 ---
 
 <!--
@@ -26,28 +26,45 @@ description: 本文介绍了 Apache APISIX proxy-mirror 插件的相关操作，
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/proxy-mirror" />
+</head>
+
 ## 描述
 
-`proxy-mirror` 插件提供了镜像客户端请求的能力。流量镜像是将线上真实流量拷贝到镜像服务中，以便在不影响线上服务的情况下，对线上流量或请求内容进行具体的分析。
+`proxy-mirror` 插件将传入流量复制到 APISIX 并将其转发到指定的上游，而不会中断常规服务。您可以将插件配置为镜像所有流量或仅镜像一部分流量。该机制有利于一些用例，包括故障排除、安全检查、分析等。
 
-:::note 注意
-
-镜像请求返回的响应会被忽略。
-
-:::
+请注意，APISIX 会忽略接收镜像流量的上游主机的任何响应。
 
 ## 参数
 
 | 名称 | 类型   | 必选项 | 默认值 | 有效值 | 描述                                                                                                    |
 | ---- | ------ | ------ | ------ | ------ | ------------------------------------------------------------------------------------------------------- |
-| host | string | 是   |        |        | 指定镜像服务的地址，地址中需要包含 `schema`（`http(s)` 或 `grpc(s)`），但不能包含 `path` 部分。例如 `http://127.0.0.1:9797`。 |
-| path | string | 否   |        |        | 指定镜像请求的路径。如果不指定，则默认会使用当前路径。如果是为了镜像 grpc 流量，这个选项不再适用。|
-| path_concat_mode | string | 否   |   replace     | ["replace", "prefix"]       | 当指定镜像请求的路径时，设置请求路径的拼接模式。`replace` 模式将会直接使用 `path` 作为镜像请求的路径。`prefix` 模式将会使用 `path` + `来源请求 URI` 作为镜像请求的路径。当然如果是为了镜像 grpc 流量，这个选项也不再适用。|
-| sample_ratio | number | 否    | 1       |  [0.00001, 1]     | 镜像请求的采样率。当设置为 `1` 时为全采样。 |
+| host | string | 是 | | | 将镜像流量转发到的主机的地址。该地址应包含方案但不包含路径，例如 `http://127.0.0.1:8081`。 |
+| path | string | 否 | | | 将镜像流量转发到的主机的路径。如果未指定，则默认为路由的当前 URI 路径。如果插件正在镜像 gRPC 流量，则不适用。 |
+| path_concat_mode | string | 否 | replace | ["replace", "prefix"] | 指定 `path` 时的连接模式。设置为 `replace` 时，配置的 `path` 将直接用作将镜像流量转发到的主机的路径。设置为 `prefix` 时，转发到的路径将是配置的 `path`，附加路由的请求 URI 路径。如果插件正在镜像 gRPC 流量，则不适用。 |
+| sample_ratio | number | 否 | 1 | [0.00001, 1] | 将被镜像的请求的比例。默认情况下，所有流量都会被镜像。|
 
-## 启用插件
+## 静态配置
 
-以下示例展示了如何在指定路由上启用 `proxy-mirror` 插件：
+默认情况下，插件的超时值在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中预先配置。
+
+要自定义这些值，请将相应的配置添加到 `config.yaml`。例如：
+
+```yaml
+plugin_attr:
+  proxy-mirror:
+    timeout:
+      connect: 60s
+      read: 60s
+      send: 60s
+```
+
+重新加载 APISIX 以使更改生效。
+
+## 示例
+
+以下示例演示了如何为不同场景配置 `proxy-mirror`。
 
 :::note
 
@@ -59,36 +76,64 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 镜像部分流量
+
+以下示例演示了如何配置 `proxy-mirror` 以将 50% 的流量镜像到路由并将其转发到另一个上游服务。
+
+启动一个示例 NGINX 服务器以接收镜像流量：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
-  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins": {
-        "proxy-mirror": {
-           "host": "http://127.0.0.1:9797"
-        }
-    },
-    "upstream": {
-        "nodes": {
-            "127.0.0.1:1999": 1
-        },
-        "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
+docker run -p 8081:80 --name nginx nginx
 ```
 
-### 指定镜像子请求的超时时间
+您应该在终端会话中看到 NGINX 访问日志和错误日志。
 
-我们可以在 `conf/config.yaml` 文件内的 `plugin_attr` 中指定子请求的超时时间。由于镜像请求是以子请求的方式实现，子请求的延迟将会导致原始请求阻塞，直到子请求完成，才可以恢复正常。因此可以配置超时时间，来避免子请求出现过大的延迟而影响原始请求。
+打开一个新的终端会话并使用 `proxy-mirror` 创建一个路由来镜像 50% 的流量：
 
-| 名称 | 类型 | 默认值 | 描述 |
-| --- | --- | --- | --- |
-| connect | string | 60s | 镜像请求到上游的连接超时时间。 |
-| read | string | 60s | APISIX 与镜像服务器维持连接的时间；如果在该时间内，APISIX 没有收到镜像服务器的响应，则关闭连接。 |
-| send | string | 60s | APISIX 与镜像服务器维持连接的时间；如果在该时间内，APISIX 没有发送请求，则关闭连接。 |
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "traffic-mirror-route",
+    "uri": "/get",
+    "plugins": {
+      "proxy-mirror": {
+        "host": "http://127.0.0.1:8081",
+        "sample_ratio": 0.5
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
 
-```yaml
+发送生成几个请求到路由：
+
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+您应该会收到所有请求的 `HTTP/1.1 200 OK` 响应。
+
+导航回 NGINX 终端会话，您应该会看到一些访问日志条目，大约是生成的请求数量的一半：
+
+```text
+172.17.0.1 - - [29/Jan/2024:23:11:01 +0000] "GET /get HTTP/1.1" 404 153 "-" "curl/7.64.1" "-"
+```
+
+这表明 APISIX 已将请求镜像到 NGINX 服务器。此处，HTTP 响应状态为 `404`，因为示例 NGINX 服务器未实现路由。
+
+### 配置镜像超时
+
+以下示例演示了如何更新插件的默认连接、读取和发送超时。当将流量镜像到非常慢的后端服务时，这可能很有用。
+
+由于请求镜像是作为子请求实现的，子请求中的过度延迟可能导致原始请求被阻止。默认情况下，连接、读取和发送超时设置为 60 秒。要更新这些值，您可以在配置文件的 `plugin_attr` 部分中配置它们，如下所示：
+
+```yaml title="conf/config.yaml"
 plugin_attr:
   proxy-mirror:
     timeout:
@@ -97,49 +142,4 @@ plugin_attr:
       send: 2000ms
 ```
 
-## 测试插件
-
-:::tip 提示
-
-因为指定的镜像地址是 `127.0.0.1:9797`，所以验证此插件是否正常工作需要在端口为 `9797` 的服务上确认。
-
-我们可以通过 `python` 启动一个简单的服务：
-
-```shell
-python -m http.server 9797
-```
-
-:::
-
-按上述配置启用插件后，使用 `curl` 命令请求该路由，请求将被镜像到所配置的主机上：
-
-```shell
-curl http://127.0.0.1:9080/hello -i
-```
-
-返回的 HTTP 响应头中如果带有 `200` 状态码，则表示插件生效：
-
-```shell
-HTTP/1.1 200 OK
-...
-hello world
-```
-
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  \
-  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1999": 1
-        }
-    }
-}'
-```
+重新加载 APISIX 以使更改生效。
