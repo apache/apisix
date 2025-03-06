@@ -178,7 +178,7 @@ hello world
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
                                     "valid_issuers": ["Mysoft corp"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -334,7 +334,7 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
                                     "valid_issuers": ["Mysoft corp"]
-                                },
+                                }
                             }
                         },
                         "upstream": {

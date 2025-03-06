@@ -57,7 +57,7 @@ __DATA__
                                 "use_jwks": true,
                                 "claim_validator": {
                                     "valid_issuers": 123
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -101,7 +101,7 @@ qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err
                                 "use_jwks": true,
                                 "claim_validator": {
                                     "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -146,7 +146,7 @@ passed
                                 "realm": "University",
                                 "claim_validator": {
                                     "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -249,7 +249,7 @@ OIDC introspection failed: jwt signature verification failed: Claim 'iss' ('http
                                 "realm": "University",
                                 "claim_validator": {
                                     "valid_issuers": ["http://127.0.0.1:8080/realms/University"]
-                                },
+                                }
                             }
                         },
                         "upstream": {

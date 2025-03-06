@@ -482,7 +482,7 @@ OIDC introspection failed: Invalid Authorization header format.
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
                                     "valid_issuers": ["Mysoft corp"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -559,7 +559,7 @@ true
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
                                     "valid_issuers": ["Mysoft corp"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -632,7 +632,7 @@ x-userinfo: ey.*
                                 "set_userinfo_header": false,
                                 "claim_validator": {
                                     "valid_issuers": ["Mysoft corp"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
@@ -699,7 +699,7 @@ x-real-ip: 127.0.0.1
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
                                     "valid_issuers": ["Mysoft corp"]
-                                },
+                                }
                             }
                         },
                         "upstream": {
