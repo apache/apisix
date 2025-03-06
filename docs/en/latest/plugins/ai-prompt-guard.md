@@ -52,14 +52,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
     "uri": "/v1/chat/completions",
     "plugins": {
-        "ai-prompt-guard": {
-           "match_all_roles": true,
-              "allow_patterns": [
-                 "goodword"
-              ],
-          "deny_patterns": [
-            "badword"
-          ]
+      "ai-prompt-guard": {
+        "match_all_roles": true,
+          "allow_patterns": [
+            "goodword"
+          ],
+        "deny_patterns": [
+          "badword"
+        ]
      }
   },
     "upstream": {
