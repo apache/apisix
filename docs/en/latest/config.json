@@ -82,7 +82,8 @@
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
             "plugins/ocsp-stapling",
-            "plugins/ai-prompt-guard"
+            "plugins/ai-prompt-guard",
+            "plugins/ai-aws-content-moderation"
           ]
         },
         {
