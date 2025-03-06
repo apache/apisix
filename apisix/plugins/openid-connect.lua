@@ -22,6 +22,7 @@ local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
 local ipairs  = ipairs
+local type    = type
 local concat  = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
@@ -88,6 +89,42 @@ local schema = {
         realm = {
             type = "string",
             default = "apisix",
+        },
+        claim_validator = {
+            type = "object",
+            properties = {
+                valid_issuers = {
+                    description = [[Whitelist the vetted issuers of the jwt.
+                    When not passed by the user, the issuer returned by
+                    discovery endpoint will be used. In case both are missing,
+                    the issuer will not be validated.]],
+                    type = "array",
+                    items = {
+                        type = "string"
+                    }
+                },
+                audience = {
+                    type = "object",
+                    description = "audience claim value to validate",
+                    properties = {
+                        claim = {
+                            type = "string",
+                            description = "custom claim name",
+                            default = "aud",
+                        },
+                        required = {
+                            type = "boolean",
+                            description = "audience claim is required",
+                            default = false,
+                        },
+                        match_with_client_id = {
+                            type = "boolean",
+                            description = "audience must euqal to or includes client_id",
+                            default = false,
+                        }
+                    },
+                },
+            },
         },
         logout_path = {
             type = "string",
@@ -275,23 +312,7 @@ local schema = {
             items = {
                 type = "string"
             }
-        },
-        claim_validator = {
-            type = "object",
-            properties = {
-                valid_issuers = {
-                    description = [[Whitelist the vetted issuers of the jwt.
-                    When not passed by the user, the issuer returned by
-                    discovery endpoint will be used. In case both are missing,
-                    the issuer will not be validated.]],
-                    type = "array",
-                    items = {
-                        type = "string"
-                    }
-                },
-            }
         }
-
     },
     encrypt_fields = {"client_secret", "client_rsa_private_key"},
     required = {"client_id", "client_secret", "discovery"}
@@ -577,6 +598,40 @@ function _M.rewrite(plugin_conf, ctx)
                     return 403, core.json.encode(error_response)
                 end
             end
+
+            -- jwt audience claim validator
+            local audience_claim = core.table.try_read_attr(conf, "claim_validator",
+                                                             "audience", "claim") or "aud"
+            local audience_value = response[audience_claim]
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
+                and not audience_value then
+                core.log.error("OIDC introspection failed: required audience (",
+                                audience_claim, ") not present")
+                local error_response = { error = "required audience claim not present" }
+                return 403, core.json.encode(error_response)
+            end
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
+                and audience_value ~= nil then
+                local error_response = { error = "mismatched audience" }
+                local matched = false
+                if type(audience_value) == "table" then
+                    for _, v in ipairs(audience_value) do
+                        if conf.client_id == v then
+                            matched = true
+                        end
+                    end
+                    if not matched then
+                        core.log.error("OIDC introspection failed: ",
+                                        "audience list does not contain the client id")
+                        return 403, core.json.encode(error_response)
+                    end
+                elseif conf.client_id ~= audience_value then
+                    core.log.error("OIDC introspection failed: ",
+                                    "audience does not match the client id")
+                    return 403, core.json.encode(error_response)
+                end
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 

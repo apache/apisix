@@ -38,7 +38,8 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Set up new route with wrong valid_issuers
+=== TEST 1: Create route (jwt local, audience required)
+It reuses Keycloak's TLS private key to export the public key.
 --- config
     location /t {
         content_by_lua_block {
@@ -48,105 +49,25 @@ __DATA__
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "client_id": "dummy",
-                                "client_secret": "dummy",
-                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
-                                "ssl_verify": true,
-                                "timeout": 10,
+                                "client_id": "apisix",
+                                "client_secret": "secret",
+                                "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
                                 "bearer_only": true,
-                                "use_jwks": true,
                                 "claim_validator": {
-                                    "valid_issuers": 123
+                                    "audience": {
+                                        "required": true
+                                    }
                                 },
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/*"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err: property \\"valid_issuers\\" validation failed.*"\}/
-
-
-
-=== TEST 2: Set up new route with valid valid_issuers
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "openid-connect": {
-                                "client_id": "dummy",
-                                "client_secret": "dummy",
-                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
-                                "ssl_verify": true,
-                                "timeout": 10,
-                                "bearer_only": true,
-                                "use_jwks": true,
-                                "claim_validator": {
-                                    "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
-                                },
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/*"
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 3: Update plugin with ID provider jwks endpoint for token verification with invalid issuer.
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "openid-connect": {
-                                "client_id": "not required",
-                                "client_secret": "not required",
-                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
-                                "redirect_uri": "http://localhost:3000",
-                                "ssl_verify": false,
-                                "timeout": 10,
-                                "bearer_only": true,
-                                "use_jwks": true,
-                                "realm": "University",
-                                "claim_validator": {
-                                    "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
-                                },
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxeMCu3jE1QChgzCwlxP\n]] ..
+                                    [[mOkRHQORlOvwGpCX9zRCkMAq7a6jvlQTyM+OOfnnX9xBF4YxRRj3VOqdBJBdEjC2\n]] ..
+                                    [[jLFQUECdqnD+hZaCGIsk91grP4G7XaFqud7nAH1rniMh1rKLy3NFYTl5tK4U2IPP\n]] ..
+                                    [[JzIye8ur2JHyzE+qpcAEp/U6M4I2rdPX1gE2ze8gYuIr1VbCg6Nkt45DslZ2GDI8\n]] ..
+                                    [[2TtwkpMlEjJfmbEnrLHkigPXNs6IHyiFPN95462gPG5TBX3YpxDCP/cnHhMeeyFI\n]] ..
+                                    [[56WNYlhy0iLYmRfiyhKXi76fYKa/PIIUfOSErrKgKsHJp7HQKo48O4Gz5tQyL1IF\n]] ..
+                                    [[QQIDAQAB\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
                             }
                         },
                         "upstream": {
@@ -170,65 +91,130 @@ passed
 
 
 
-=== TEST 4: verification fails because issuer not in valid_issuer
+=== TEST 2: Access route with a valid token (with audience)
 --- config
     location /t {
         content_by_lua_block {
-            -- Obtain valid access token from Keycloak using known username and password.
-            local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
-            local res, err = httpc:request_uri(uri, {
-                    method = "POST",
-                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
-                    headers = {
-                        ["Content-Type"] = "application/x-www-form-urlencoded"
-                    }
-                })
-
-            -- Check response from keycloak and fail quickly if there's no response.
+            local res, err = httpc:request_uri("http://127.0.0.1:8080/realms/basic/protocol/openid-connect/token", {
+                method = "POST",
+                body = "client_id=apisix&client_secret=secret&grant_type=password&username=jack&password=jack",
+                headers = { ["Content-Type"] = "application/x-www-form-urlencoded" }
+            })
             if not res then
-                ngx.say(err)
+                ngx.say("FAILED: ", err)
                 return
             end
-
-            -- Check if response code was ok.
-            if res.status == 200 then
-                -- Get access token from JSON response body.
-                local body = json_decode(res.body)
-                local accessToken = body["access_token"]
-
-                -- Access route using access token. Should work.
-                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-                local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = {
-                        ["Authorization"] = "Bearer " .. body["access_token"]
-                    }
-                 })
-
-                if res.status == 200 then
-                    -- Route accessed successfully.
-                    ngx.say(true)
-                else
-                    -- Couldn't access route.
-                    ngx.say(false)
-                end
-            else
-                -- Response from Keycloak not ok.
-                ngx.say(false)
+            local access_token = require("toolkit.json").decode(res.body).access_token
+            local res, err = httpc:request_uri("http://127.0.0.1:1980/hello", {
+                method = "GET",
+                headers = { Authorization = "Bearer " .. access_token }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
             end
+            ngx.status = res.status
+        }
+    }
+
+
+
+=== TEST 3: Update route (jwt local, audience required, custom claim)
+Use a custom non-existent claim to simulate the case where the standard field "aud" is not included.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "apisix",
+                                "client_secret": "secret",
+                                "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
+                                "bearer_only": true,
+                                "claim_validator": {
+                                    "audience": {
+                                        "claim": "custom_claim",
+                                        "required": true
+                                    }
+                                },
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxeMCu3jE1QChgzCwlxP\n]] ..
+                                    [[mOkRHQORlOvwGpCX9zRCkMAq7a6jvlQTyM+OOfnnX9xBF4YxRRj3VOqdBJBdEjC2\n]] ..
+                                    [[jLFQUECdqnD+hZaCGIsk91grP4G7XaFqud7nAH1rniMh1rKLy3NFYTl5tK4U2IPP\n]] ..
+                                    [[JzIye8ur2JHyzE+qpcAEp/U6M4I2rdPX1gE2ze8gYuIr1VbCg6Nkt45DslZ2GDI8\n]] ..
+                                    [[2TtwkpMlEjJfmbEnrLHkigPXNs6IHyiFPN95462gPG5TBX3YpxDCP/cnHhMeeyFI\n]] ..
+                                    [[56WNYlhy0iLYmRfiyhKXi76fYKa/PIIUfOSErrKgKsHJp7HQKo48O4Gz5tQyL1IF\n]] ..
+                                    [[QQIDAQAB\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- response_body
-false
+passed
+
+
+
+=== TEST 4: Access route with an invalid token (without audience)
+Use a custom non-existent claim to simulate the case where the standard field "aud" is not included.
+Note the assertion in the error log, where it is shown that the custom claim field name did take effect.
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:8080/realms/basic/protocol/openid-connect/token", {
+                method = "POST",
+                body = "client_id=apisix&client_secret=secret&grant_type=password&username=jack&password=jack",
+                headers = { ["Content-Type"] = "application/x-www-form-urlencoded" }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
+            end
+            local access_token = require("toolkit.json").decode(res.body).access_token
+            res, err = httpc:request_uri("http://127.0.0.1:"..ngx.var.server_port.."/hello", {
+                method = "GET",
+                headers = { Authorization = "Bearer " .. access_token }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
+            end
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- error_code: 403
+--- response_body
+{"error":"required audience claim not present"}
 --- error_log
-OIDC introspection failed: jwt signature verification failed: Claim 'iss' ('http://127.0.0.1:8080/realms/University') returned failure
+OIDC introspection failed: required audience (custom_claim) not present
 
 
 
-=== TEST 5: Update plugin with ID provider jwks endpoint for token verification with valid issuer.
+=== TEST 5: Update route (jwt local, audience required, custom claim)
+Use "iss" to fake "aud".
 --- config
     location /t {
         content_by_lua_block {
@@ -238,18 +224,26 @@ OIDC introspection failed: jwt signature verification failed: Claim 'iss' ('http
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "client_id": "dummy",
-                                "client_secret": "dummy",
-                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
-                                "redirect_uri": "http://localhost:3000",
-                                "ssl_verify": false,
-                                "timeout": 10,
+                                "client_id": "apisix",
+                                "client_secret": "secret",
+                                "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
                                 "bearer_only": true,
-                                "use_jwks": true,
-                                "realm": "University",
                                 "claim_validator": {
-                                    "valid_issuers": ["http://127.0.0.1:8080/realms/University"]
+                                    "audience": {
+                                        "claim": "iss",
+                                        "required": true
+                                    }
                                 },
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxeMCu3jE1QChgzCwlxP\n]] ..
+                                    [[mOkRHQORlOvwGpCX9zRCkMAq7a6jvlQTyM+OOfnnX9xBF4YxRRj3VOqdBJBdEjC2\n]] ..
+                                    [[jLFQUECdqnD+hZaCGIsk91grP4G7XaFqud7nAH1rniMh1rKLy3NFYTl5tK4U2IPP\n]] ..
+                                    [[JzIye8ur2JHyzE+qpcAEp/U6M4I2rdPX1gE2ze8gYuIr1VbCg6Nkt45DslZ2GDI8\n]] ..
+                                    [[2TtwkpMlEjJfmbEnrLHkigPXNs6IHyiFPN95462gPG5TBX3YpxDCP/cnHhMeeyFI\n]] ..
+                                    [[56WNYlhy0iLYmRfiyhKXi76fYKa/PIIUfOSErrKgKsHJp7HQKo48O4Gz5tQyL1IF\n]] ..
+                                    [[QQIDAQAB\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
                             }
                         },
                         "upstream": {
@@ -273,67 +267,39 @@ passed
 
 
 
-=== TEST 6: Obtain valid token and access route with it.
+=== TEST 6: Access route with an valid token (with custom audience claim)
+Use "iss" to fake "aud".
 --- config
     location /t {
         content_by_lua_block {
-            -- Obtain valid access token from Keycloak using known username and password.
-            local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
-            local res, err = httpc:request_uri(uri, {
-                    method = "POST",
-                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
-                    headers = {
-                        ["Content-Type"] = "application/x-www-form-urlencoded"
-                    }
-                })
-
-            -- Check response from keycloak and fail quickly if there's no response.
+            local res, err = httpc:request_uri("http://127.0.0.1:8080/realms/basic/protocol/openid-connect/token", {
+                method = "POST",
+                body = "client_id=apisix&client_secret=secret&grant_type=password&username=jack&password=jack",
+                headers = { ["Content-Type"] = "application/x-www-form-urlencoded" }
+            })
             if not res then
-                ngx.say(err)
+                ngx.say("FAILED: ", err)
                 return
             end
-
-            -- Check if response code was ok.
-            if res.status == 200 then
-                -- Get access token from JSON response body.
-                local body = json_decode(res.body)
-                local accessToken = body["access_token"]
-
-                -- Access route using access token. Should work.
-                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-                local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = {
-                        ["Authorization"] = "Bearer " .. body["access_token"]
-                    }
-                 })
-
-                if res.status == 200 then
-                    -- Route accessed successfully.
-                    ngx.say(true)
-                else
-                    -- Couldn't access route.
-                    ngx.say(false)
-                end
-            else
-                -- Response from Keycloak not ok.
-                ngx.say(false)
+            local access_token = require("toolkit.json").decode(res.body).access_token
+            res, err = httpc:request_uri("http://127.0.0.1:"..ngx.var.server_port.."/hello", {
+                method = "GET",
+                headers = { Authorization = "Bearer " .. access_token }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
             end
+            ngx.status = res.status
+            ngx.say(res.body)
         }
     }
---- response_body
-true
---- grep_error_log eval
-qr/token validate successfully by \w+/
---- grep_error_log_out
-token validate successfully by jwks
 
 
 
-=== TEST 7: Update plugin with ID provider jwks endpoint for token verification with valid issuer in discovery endpoint.
+=== TEST 7: Update route (jwt local, audience required, match client_id)
 --- config
     location /t {
         content_by_lua_block {
@@ -343,15 +309,26 @@ token validate successfully by jwks
                  [[{
                         "plugins": {
                             "openid-connect": {
-                                "client_id": "dummy",
-                                "client_secret": "dummy",
-                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
-                                "redirect_uri": "http://localhost:3000",
-                                "ssl_verify": false,
-                                "timeout": 10,
+                                "client_id": "apisix",
+                                "client_secret": "secret",
+                                "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
                                 "bearer_only": true,
-                                "use_jwks": true,
-                                "realm": "University"
+                                "claim_validator": {
+                                    "audience": {
+                                        "required": true,
+                                        "match_with_client_id": true
+                                    }
+                                },
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxeMCu3jE1QChgzCwlxP\n]] ..
+                                    [[mOkRHQORlOvwGpCX9zRCkMAq7a6jvlQTyM+OOfnnX9xBF4YxRRj3VOqdBJBdEjC2\n]] ..
+                                    [[jLFQUECdqnD+hZaCGIsk91grP4G7XaFqud7nAH1rniMh1rKLy3NFYTl5tK4U2IPP\n]] ..
+                                    [[JzIye8ur2JHyzE+qpcAEp/U6M4I2rdPX1gE2ze8gYuIr1VbCg6Nkt45DslZ2GDI8\n]] ..
+                                    [[2TtwkpMlEjJfmbEnrLHkigPXNs6IHyiFPN95462gPG5TBX3YpxDCP/cnHhMeeyFI\n]] ..
+                                    [[56WNYlhy0iLYmRfiyhKXi76fYKa/PIIUfOSErrKgKsHJp7HQKo48O4Gz5tQyL1IF\n]] ..
+                                    [[QQIDAQAB\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
                             }
                         },
                         "upstream": {
@@ -375,62 +352,122 @@ passed
 
 
 
-=== TEST 8: Obtain valid token and access route with it. Use valid_issuer from discovery endpoint.
+=== TEST 8: Access route with an valid token (with client id as audience)
 --- config
     location /t {
         content_by_lua_block {
-            -- Obtain valid access token from Keycloak using known username and password.
-            local json_decode = require("toolkit.json").decode
             local http = require "resty.http"
             local httpc = http.new()
-            local uri = "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token"
-            local res, err = httpc:request_uri(uri, {
-                    method = "POST",
-                    body = "grant_type=password&client_id=course_management&client_secret=d1ec69e9-55d2-4109-a3ea-befa071579d5&username=teacher@gmail.com&password=123456",
-                    headers = {
-                        ["Content-Type"] = "application/x-www-form-urlencoded"
-                    }
-                })
-
-            -- Check response from keycloak and fail quickly if there's no response.
+            local res, err = httpc:request_uri("http://127.0.0.1:8080/realms/basic/protocol/openid-connect/token", {
+                method = "POST",
+                body = "client_id=apisix&client_secret=secret&grant_type=password&username=jack&password=jack",
+                headers = { ["Content-Type"] = "application/x-www-form-urlencoded" }
+            })
             if not res then
-                ngx.say(err)
+                ngx.say("FAILED: ", err)
                 return
             end
-
-            -- Check if response code was ok.
-            if res.status == 200 then
-                -- Get access token from JSON response body.
-                local body = json_decode(res.body)
-                local accessToken = body["access_token"]
-
-                -- Access route using access token. Should work.
-                uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-                local res, err = httpc:request_uri(uri, {
-                    method = "GET",
-                    headers = {
-                        ["Authorization"] = "Bearer " .. body["access_token"]
-                    }
-                 })
-
-                if res.status == 200 then
-                    -- Route accessed successfully.
-                    ngx.say(true)
-                else
-                    -- Couldn't access route.
-                    ngx.say(false)
-                end
-            else
-                -- Response from Keycloak not ok.
-                ngx.say(false)
+            local access_token = require("toolkit.json").decode(res.body).access_token
+            res, err = httpc:request_uri("http://127.0.0.1:"..ngx.var.server_port.."/hello", {
+                method = "GET",
+                headers = { Authorization = "Bearer " .. access_token }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
             end
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+
+
+
+=== TEST 9: Update route (jwt local, audience required, match client_id)
+Use the apisix-no-aud client. According to Keycloak's default implementation, when unconfigured,
+only the account is listed as an audience, not the client id.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "client_id": "apisix-no-aud",
+                                "client_secret": "secret",
+                                "discovery": "http://127.0.0.1:8080/realms/basic/.well-known/openid-configuration",
+                                "bearer_only": true,
+                                "claim_validator": {
+                                    "audience": {
+                                        "required": true,
+                                        "match_with_client_id": true
+                                    }
+                                },
+                                "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                                    [[MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvxeMCu3jE1QChgzCwlxP\n]] ..
+                                    [[mOkRHQORlOvwGpCX9zRCkMAq7a6jvlQTyM+OOfnnX9xBF4YxRRj3VOqdBJBdEjC2\n]] ..
+                                    [[jLFQUECdqnD+hZaCGIsk91grP4G7XaFqud7nAH1rniMh1rKLy3NFYTl5tK4U2IPP\n]] ..
+                                    [[JzIye8ur2JHyzE+qpcAEp/U6M4I2rdPX1gE2ze8gYuIr1VbCg6Nkt45DslZ2GDI8\n]] ..
+                                    [[2TtwkpMlEjJfmbEnrLHkigPXNs6IHyiFPN95462gPG5TBX3YpxDCP/cnHhMeeyFI\n]] ..
+                                    [[56WNYlhy0iLYmRfiyhKXi76fYKa/PIIUfOSErrKgKsHJp7HQKo48O4Gz5tQyL1IF\n]] ..
+                                    [[QQIDAQAB\n]] ..
+                                    [[-----END PUBLIC KEY-----",
+                                "token_signing_alg_values_expected": "RS256"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- response_body
-true
---- grep_error_log eval
-qr/token validate successfully by \w+/
---- grep_error_log_out
-token validate successfully by jwks
+passed
+
+
+
+=== TEST 10: Access route with an invalid token (without client id as audience)
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local res, err = httpc:request_uri("http://127.0.0.1:8080/realms/basic/protocol/openid-connect/token", {
+                method = "POST",
+                body = "client_id=apisix-no-aud&client_secret=secret&grant_type=password&username=jack&password=jack",
+                headers = { ["Content-Type"] = "application/x-www-form-urlencoded" }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
+            end
+            local access_token = require("toolkit.json").decode(res.body).access_token
+            res, err = httpc:request_uri("http://127.0.0.1:"..ngx.var.server_port.."/hello", {
+                method = "GET",
+                headers = { Authorization = "Bearer " .. access_token }
+            })
+            if not res then
+                ngx.say("FAILED: ", err)
+                return
+            end
+            ngx.status = res.status
+            ngx.say(res.body)
+        }
+    }
+--- error_code: 403
+--- response_body
+{"error":"mismatched audience"}
 --- error_log
-valid_issuers not provided, using issuer from discovery doc: http://127.0.0.1:8080/realms/University
+OIDC introspection failed: audience does not match the client id

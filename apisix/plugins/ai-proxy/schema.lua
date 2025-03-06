@@ -73,7 +73,6 @@ local model_options_schema = {
         stream = {
             description = "Stream response by SSE",
             type = "boolean",
-            default = false,
         }
     }
 }
@@ -84,8 +83,7 @@ local model_schema = {
         provider = {
             type = "string",
             description = "Name of the AI service provider.",
-            oneOf = { "openai" }, -- add more providers later
-
+            enum = { "openai", "openai-compatible", "deepseek" }, -- add more providers later
         },
         name = {
             type = "string",
@@ -114,7 +112,7 @@ local provider_schema = {
             name = {
                 type = "string",
                 description = "Name of the AI service provider.",
-                enum = { "openai", "deepseek" }, -- add more providers later
+                enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
 
             },
             model = {
@@ -151,7 +149,6 @@ _M.ai_proxy_schema = {
     properties = {
         auth = auth_schema,
         model = model_schema,
-        passthrough = { type = "boolean", default = false },
         timeout = {
             type = "integer",
             minimum = 1,
@@ -160,7 +157,6 @@ _M.ai_proxy_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
-        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
@@ -196,7 +192,6 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         providers = provider_schema,
-        passthrough = { type = "boolean", default = false },
         timeout = {
             type = "integer",
             minimum = 1,
