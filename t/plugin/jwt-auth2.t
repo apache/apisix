@@ -176,7 +176,9 @@ hello world
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
-                                "valid_issuers": ["Mysoft corp"]
+                                "claim_validator": {
+                                    "valid_issuers": ["Mysoft corp"]
+                                },
                             }
                         },
                         "upstream": {
@@ -330,7 +332,9 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
-                                "valid_issuers": ["Mysoft corp"]
+                                "claim_validator": {
+                                    "valid_issuers": ["Mysoft corp"]
+                                },
                             }
                         },
                         "upstream": {

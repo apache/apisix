@@ -55,7 +55,9 @@ __DATA__
                                 "timeout": 10,
                                 "bearer_only": true,
                                 "use_jwks": true,
-                                "valid_issuers": 123
+                                "claim_validator": {
+                                    "valid_issuers": 123
+                                },
                             }
                         },
                         "upstream": {
@@ -97,7 +99,9 @@ qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err
                                 "timeout": 10,
                                 "bearer_only": true,
                                 "use_jwks": true,
-                                "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                "claim_validator": {
+                                    "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                },
                             }
                         },
                         "upstream": {
@@ -140,7 +144,9 @@ passed
                                 "bearer_only": true,
                                 "use_jwks": true,
                                 "realm": "University",
-                                "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                "claim_validator": {
+                                    "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                },
                             }
                         },
                         "upstream": {
@@ -241,7 +247,9 @@ OIDC introspection failed: jwt signature verification failed: Claim 'iss' ('http
                                 "bearer_only": true,
                                 "use_jwks": true,
                                 "realm": "University",
-                                "valid_issuers": ["http://127.0.0.1:8080/realms/University"]
+                                "claim_validator": {
+                                    "valid_issuers": ["http://127.0.0.1:8080/realms/University"]
+                                },
                             }
                         },
                         "upstream": {

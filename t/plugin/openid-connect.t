@@ -480,7 +480,9 @@ OIDC introspection failed: Invalid Authorization header format.
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
-                                "valid_issuers": ["Mysoft corp"]
+                                "claim_validator": {
+                                    "valid_issuers": ["Mysoft corp"]
+                                },
                             }
                         },
                         "upstream": {
@@ -555,7 +557,9 @@ true
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
-                                "valid_issuers": ["Mysoft corp"]
+                                "claim_validator": {
+                                    "valid_issuers": ["Mysoft corp"]
+                                },
                             }
                         },
                         "upstream": {
@@ -626,7 +630,9 @@ x-userinfo: ey.*
                                 "access_token_in_authorization_header": true,
                                 "set_id_token_header": false,
                                 "set_userinfo_header": false,
-                                "valid_issuers": ["Mysoft corp"]
+                                "claim_validator": {
+                                    "valid_issuers": ["Mysoft corp"]
+                                },
                             }
                         },
                         "upstream": {
@@ -691,7 +697,9 @@ x-real-ip: 127.0.0.1
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
-                                "valid_issuers": ["Mysoft corp"]
+                                "claim_validator": {
+                                    "valid_issuers": ["Mysoft corp"]
+                                },
                             }
                         },
                         "upstream": {
