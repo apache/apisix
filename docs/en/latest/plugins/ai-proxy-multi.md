@@ -1,5 +1,5 @@
 ---
-title: ai-proxy
+title: ai-proxy-multi
 keywords:
   - Apache APISIX
   - API Gateway
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX ai-proxy
 
 ## Description
 
-The `ai-prox-multi` plugin simplifies access to LLM providers and models by defining a standard request format
+The `ai-proxy-multi` plugin simplifies access to LLM providers and models by defining a standard request format
 that allows key fields in plugin configuration to be embedded into the request.
 
 This plugin adds additional features like `load balancing` and `retries` to the existing `ai-proxy` plugin.
