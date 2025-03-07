@@ -18,6 +18,7 @@
 local yaml = require("lyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
+local schema = require("apisix.cli.schema")
 local default_conf = require("apisix.cli.config")
 local dkjson = require("dkjson")
 local pl_path = require("pl.path")
@@ -264,6 +265,11 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
+    -- fill the default value by the schema
+    local ok, err = schema.validate(default_conf)
+    if not ok then
+        error(err)
+    end
     if default_conf.deployment then
         default_conf.deployment.config_provider = "etcd"
         if default_conf.deployment.role == "traditional" then
@@ -299,10 +305,8 @@ function _M.read_yaml_conf(apisix_home)
     end
 
     local apisix_ssl = default_conf.apisix.ssl
-    if apisix_ssl and not apisix_ssl.ssl_trusted_certificate then
-        apisix_ssl.ssl_trusted_certificate = "system"
-    end
     if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
+        -- default value is set to "system" during schema validation
         if apisix_ssl.ssl_trusted_certificate == "system" then
             local trusted_certs_path, err = util.get_system_trusted_certs_filepath()
             if not trusted_certs_path then

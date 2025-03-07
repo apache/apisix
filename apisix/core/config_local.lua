@@ -65,12 +65,6 @@ function _M.local_conf(force)
         return nil, err
     end
 
-    -- fill the default value by the schema
-    local ok, err = schema.validate(default_conf)
-    if not ok then
-        error(err)
-    end
-
     config_data = default_conf
     return config_data
 end
