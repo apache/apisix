@@ -501,24 +501,6 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
-    if yaml_conf.apisix.ssl.ssl_trusted_certificate == "system" then
-        local trusted_certs_path, err = util.get_system_trusted_certs_filepath()
-        if not trusted_certs_path then
-            util.die(err)
-        end
-        yaml_conf.apisix.ssl.ssl_trusted_certificate = trusted_certs_path
-    else
-        -- During validation, the path is relative to PWD
-        -- When Nginx starts, the path is relative to conf
-        -- Therefore we need to check the absolute version instead
-        local cert_path = pl_path.abspath(yaml_conf.apisix.ssl.ssl_trusted_certificate)
-        if not pl_path.exists(cert_path) then
-            util.die("certificate path", cert_path, "doesn't exist\n")
-        end
-        yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
-    end
-
-
     -- enable ssl with place holder crt&key
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
