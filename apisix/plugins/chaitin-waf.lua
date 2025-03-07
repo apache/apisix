@@ -31,6 +31,10 @@ local ipairs = ipairs
 
 local plugin_name = "chaitin-waf"
 
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 1024
+})
+
 local vars_schema = {
     type = "array",
 }
@@ -223,18 +227,28 @@ local function get_chaitin_server(metadata, ctx)
 end
 
 
+local function fetch_expression_result(match)
+    local exp, err = expr.new(match.vars)
+    if err then
+        local msg = "failed to create match expression for " ..
+                tostring(match.vars) .. ", err: " .. tostring(err)
+        core.log.error(msg)
+        return false, msg
+    end
+
+    return exp, err
+end
+
+
 local function check_match(conf, ctx)
     local match_passed = true
 
     if conf.match then
         for _, match in ipairs(conf.match) do
             -- todo: use lrucache to cache the result
-            local exp, err = expr.new(match.vars)
-            if err then
-                local msg = "failed to create match expression for " ..
-                        tostring(match.vars) .. ", err: " .. tostring(err)
-                core.log.error(msg)
-                return false, msg
+            local exp, err = lrucache(match, nil, fetch_expression_result, match)
+            if not exp then
+                return false, err
             end
 
             match_passed = exp:eval(ctx.var)
