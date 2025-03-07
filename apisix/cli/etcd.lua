@@ -23,6 +23,7 @@ local file = require("apisix.cli.file")
 local http = require("socket.http")
 local https = require("ssl.https")
 local ltn12 = require("ltn12")
+local pl_path = require("pl.path")
 
 local type = type
 local ipairs = ipairs
@@ -124,7 +125,23 @@ local function request(url, yaml_conf)
 
             local apisix_ssl = yaml_conf.apisix.ssl
             if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
-                url.cafile = apisix_ssl.ssl_trusted_certificate
+                if apisix_ssl == "system" then
+                    local trusted_certs_path, err = util.get_system_trusted_certs_filepath()
+                    if not trusted_certs_path then
+                        util.die(err)
+                    end
+                    apisix_ssl = trusted_certs_path
+                else
+                    -- During validation, the path is relative to PWD
+                    -- When Nginx starts, the path is relative to conf
+                    -- Therefore we need to check the absolute version instead
+                    local cert_path = pl_path.abspath(apisix_ssl)
+                    if not pl_path.exists(cert_path) then
+                        util.die("certificate path", cert_path, "doesn't exist\n")
+                    end
+                    yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
+                end
+                url.cafile = apisix_ssl
             end
         end
 
