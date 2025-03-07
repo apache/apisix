@@ -5,8 +5,9 @@ keywords:
   - API Gateway
   - Plugin
   - SkyWalking
-description: This document will introduce how the API gateway Apache APISIX reports metrics to Apache SkyWalking (an open-source APM) with the skywalking plugin.
+description: The skywalking Plugin supports the integrating with Apache SkyWalking for request tracing.
 ---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -26,89 +27,65 @@ description: This document will introduce how the API gateway Apache APISIX repo
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/skywalking" />
+</head>
+
 ## Description
 
-The `skywalking` Plugin is used to integrate with [Apache SkyWalking](https://github.com/apache/skywalking).
+The `skywalking` Plugin supports the integrating with [Apache SkyWalking](https://skywalking.apache.org) for request tracing.
 
-SkyWalking uses its native Nginx Lua tracer to provide tracing, topology analysis, and metrics from both service and URI perspectives.
+SkyWalking uses its native Nginx Lua tracer to provide tracing, topology analysis, and metrics from both service and URI perspectives. APISIX supports HTTP protocol to interact with the SkyWalking server.
 
-APISIX supports HTTP protocol to interact with the SkyWalking server.
+The server currently supports two protocols: HTTP and gRPC. In APISIX, only HTTP is currently supported.
+
+## Static Configurations
+
+By default, service names and endpoint address for the Plugin are pre-configured in the [default configuration](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua).
+
+To customize these values, add the corresponding configurations to `config.yaml`. For example:
+
+```yaml
+plugin_attr:
+  skywalking:
+    report_interval: 3      # Reporting interval time in seconds.
+    service_name: APISIX    # Service name for SkyWalking reporter.
+    service_instance_name: "APISIX Instance Name"   # Service instance name for SkyWalking reporter.
+                                                    # Set to $hostname to get the local hostname.
+    endpoint_addr: http://127.0.0.1:12800           # SkyWalking HTTP endpoint.
+```
+
+Reload APISIX for changes to take effect.
 
 ## Attributes
 
 | Name         | Type   | Required | Default | Valid values | Description                                                                |
 |--------------|--------|----------|---------|--------------|----------------------------------------------------------------------------|
-| sample_ratio | number | True     | 1       | [0.00001, 1] | How often to sample the requests. Setting to `1` will sample all requests. |
+| sample_ratio | number | True     | 1       | [0.00001, 1] | Frequency of request sampling. Setting the sample ratio to `1` means to sample all requests. |
 
-### Configuring the endpoint
+## Example
 
-You can configure these attributes on your configuration file (`conf/config.yaml`):
+To follow along the example, start a storage, OAP and Booster UI with Docker Compose, following [Skywalking's documentation](https://skywalking.apache.org/docs/main/next/en/setup/backend/backend-docker/). Once set up, the OAP server should be listening on `12800` and you should be able to access the UI at [http://localhost:8080](http://localhost:8080).
 
-| Name                  | Type    | Default                                | Description                                                                                  |
-|-----------------------|---------|----------------------------------------|----------------------------------------------------------------------------------------------|
-| service_name          | string  | "APISIX"                               | Service name for SkyWalking reporter.                                                        |
-| service_instance_name | string  | "APISIX Instance Name"                 | Service instance name for SkyWalking reporter. Set to `$hostname` to get the local hostname. |
-| endpoint_addr         | string  | "http://127.0.0.1:12800"               | SkyWalking HTTP endpoint. For example, `http://127.0.0.1:12800`.                             |
-| report_interval       | integer | Value in the SkyWalking client library | Reporting interval time in seconds.                                                          |
+Update APISIX configuration file to enable the `skywalking` plugin, which is disabled by default, and update the endpoint address:
 
-You can configure these as shown below:
+```yaml title="config.yaml"
+plugins:
+  - skywalking
+  - ...
 
-```yaml title="conf/config.yaml"
 plugin_attr:
   skywalking:
+    report_interval: 3
     service_name: APISIX
-    service_instance_name: "APISIX Instance Name"
-    endpoint_addr: http://127.0.0.1:12800
+    service_instance_name: APISIX Instance
+    endpoint_addr: http://192.168.2.103:12800
 ```
 
-### Sample code for upstream configuration
-
-```java title="Java with Spring Boot"
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import javax.servlet.http.HttpServletRequest;
-
-@RestController
-public class TestController {
-    @RequestMapping("/uid/{count}")
-    public String getUidList(@PathVariable("count") String countStr, HttpServletRequest request) {
-       return "OK";
-    }
-}
-```
-
-You can configure the SkyWalking agent while starting your service:
-
-```shell title="agent/config/agent.config"
-agent.service_name=yourservername
-collector.backend_service=10.110.149.175:11800
-```
-
-Then, run the script:
-
-```shell
-nohup java -javaagent:/root/skywalking/app/agent/skywalking-agent.jar \
--jar /root/skywalking/app/app.jar \
---server.port=8089 \
-2>&1 > /root/skywalking/app/logs/nohup.log &
-```
-
-## Enable Plugin
-
-To enable the Plugin, you have to add it to your configuration file (`conf/config.yaml`):
-
-```yaml title="conf/config.yaml"
-plugins:
-  - ...
-  - skywalking
-```
-
-Once you do this, a background timer will be created to report data to the SkyWalking OAP server.
-
-Now, you can enable the Plugin on a specific Route:
+Reload APISIX for configuration changes to take effect.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -117,121 +94,83 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Trace All Requests
+
+The following example demonstrates how you can trace all requests passing through a route.
+
+Create a Route with `skywalking` and configure the sampling ratio to be 1 to trace all requests:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uris": [
-        "/uid/*"
-    ],
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-route",
+    "uri": "/anything",
     "plugins": {
-        "skywalking": {
-            "sample_ratio": 1
-        }
+      "skywalking": {
+        "sample_ratio": 1
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "10.110.149.175:8089": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
 
-<!-- You also can complete the above operation through the web interface, first add a route, then add SkyWalking plugin:
-
-![ ](../../../assets/images/plugin/skywalking-1.png) -->
-
-## Example usage
-
-First, you need to have your SkyWalking server running.
-
-You can run it on Docker by:
+Send a few requests to the route:
 
 ```shell
-sudo docker run --name skywalking -d -p 1234:1234 -p 12800:12800 --restart always apache/skywalking-oap-server:8.7.0-es6
+curl -i "http://127.0.0.1:9080/anything"
 ```
 
-:::tip
+You should receive `HTTP/1.1 200 OK` responses.
 
-By default, SkyWalking uses H2 storage. You can also use Elasticsearch storage instead.
+In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __Services__. You should see a service called `APISIX` with traces corresponding to your requests:
 
-First, install Elasticsearch. You can do it on Docker by running:
+![SkyWalking APISIX traces](https://static.apiseven.com/uploads/2025/01/15/UdwiO8NJ_skywalking-traces.png)
 
-```shell
-sudo docker run -d --name elasticsearch -p 9200:9200 -p 9300:9300 --restart always -e "discovery.type=single-node" elasticsearch:6.7.2
-```
+### Associate Traces with Logs
 
-Optionally, you can install Elasticsearch management page, elasticsearch-hq:
+The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the route.
 
-```shell
-sudo docker run -d --name elastic-hq -p 5000:5000 --restart always elastichq/elasticsearch-hq
-```
-
-Once you have Elasticsearch installed, you can start a SkyWalking server by running:
+Create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
 
 ```shell
-sudo docker run --name skywalking -d -p 1234:1234 -p 12800:12800 --restart always --link elasticsearch:elasticsearch -e SW_STORAGE=elasticsearch -e SW_STORAGE_ES_CLUSTER_NODES=elasticsearch:9200 apache/skywalking-oap-server:8.7.0-es6
-```
-
-:::
-
-You can also install SkyWalking UI to view the data. To run it on Docker:
-
-```shell
-sudo docker run --name skywalking-ui -d -p 8080:8080 --link skywalking:skywalking -e SW_OAP_ADDRESS=skywalking:12800 --restart always apache/skywalking-ui
-```
-
-You should be able to access the UI from your browser:
-
-<!-- ![ ](../../../assets/images/plugin/skywalking-3.png) -->
-
-Now if you make requests to APISIX:
-
-```shell
-curl -v http://10.110.149.192:9080/uid/12
-```
-
-```shell
-HTTP/1.1 200 OK
-OK
-...
-```
-
-You should be able to see the topology of all services in your SkyWalking UI:
-
-![ ](../../../assets/images/plugin/skywalking-4.png)
-
-You should also be able to see traces from all services:
-
-![ ](../../../assets/images/plugin/skywalking-5.png)
-
-## Delete Plugin
-
-To remove the `skywalking` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uris": [
-        "/uid/*"
-    ],
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-logger-route",
+    "uri": "/anything",
     "plugins": {
+      "skywalking": {
+        "sample_ratio": 1
+      },
+      "skywalking-logger": {
+        "endpoint_addr": "http://192.168.2.103:12800"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "10.110.149.175:8089": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
 
-To completely disable the `skywalking` Plugin, i.e to stop the background report timer, you need to remove the Plugin from your configuration file (`conf/config.yaml`):
+Generate a few requests to the route:
 
-```yaml
-plugins:
-  - ...
-  # - skywalking
+```shell
+curl -i "http://127.0.0.1:9080/anything"
 ```
+
+You should receive `HTTP/1.1 200 OK` responses.
+
+In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __Services__. You should see a service called `APISIX` with a trace corresponding to your request, where you can view the associated logs:
+
+![trace context](https://static.apiseven.com/uploads/2025/01/16/soUpXm6b_trace-view-logs.png)
+
+![associated log](https://static.apiseven.com/uploads/2025/01/16/XD934LvU_associated-logs.png)
