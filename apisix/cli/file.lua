@@ -268,7 +268,7 @@ function _M.read_yaml_conf(apisix_home)
     -- fill the default value by the schema
     local ok, err = schema.validate(default_conf)
     if not ok then
-        error(err)
+        return nil, err
     end
     if default_conf.deployment then
         default_conf.deployment.config_provider = "etcd"
