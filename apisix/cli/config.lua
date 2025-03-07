@@ -67,7 +67,8 @@ local _M = {
         "ECDHE-ECDSA-CHACHA20-POLY1305", "ECDHE-RSA-CHACHA20-POLY1305",
         "DHE-RSA-AES128-GCM-SHA256", "DHE-RSA-AES256-GCM-SHA384",
       }, ":"),
-      ssl_session_tickets = false
+      ssl_session_tickets = false,
+      ssl_trusted_certificate = "system"
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,

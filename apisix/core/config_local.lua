@@ -20,8 +20,6 @@
 -- @module core.config_local
 
 local file   = require("apisix.cli.file")
-local schema = require("apisix.cli.schema")
-local error  = error
 
 
 local _M = {}
@@ -63,12 +61,6 @@ function _M.local_conf(force)
     local default_conf, err = file.read_yaml_conf()
     if not default_conf then
         return nil, err
-    end
-
-    -- fill the default value by the schema
-    local ok, err = schema.validate(default_conf)
-    if not ok then
-        error(err)
     end
 
     config_data = default_conf
