@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Request ID
-description: 本文介绍了 Apache APISIX request-id 插件的相关操作，你可以使用此插件为每个请求代理添加 unique ID 来追踪 API 请求。
+description: request-id 插件为通过 APISIX 代理的每个请求添加一个唯一的 ID，可用于跟踪 API 请求。
 ---
 
 <!--
@@ -28,27 +28,22 @@ description: 本文介绍了 Apache APISIX request-id 插件的相关操作，�
 
 ## 描述
 
-`request-id` 插件通过 APISIX 为每一个请求代理添加 unique ID 用于追踪 API 请求。
-
-:::note 注意
-
-如果请求已经配置了 `header_name` 属性的请求头，该插件将不会为请求添加 unique ID。
-
-:::
+`request-id` 插件为每个通过 APISIX 代理的请求添加一个唯一 ID，可用于跟踪 API 请求。如果请求在 `header_name` 对应的 header 中带有 ID，则插件将使用 header 值作为唯一 ID，而不会用自动生成的 ID 进行覆盖。
 
 ## 属性
 
 | 名称                | 类型    | 必选项   | 默认值         | 有效值 | 描述                           |
 | ------------------- | ------- | -------- | -------------- | ------ | ------------------------------ |
-| header_name         | string  | 否 | "X-Request-Id" |                       | unique ID 的请求头的名称。         |
-| include_in_response | boolean | 否 | true          |                       | 当设置为 `true` 时，将 unique ID 加入返回头。 |
-| algorithm           | string  | 否 | "uuid"         | ["uuid", "nanoid", "range_id"] | 指定的 unique ID 生成算法。 |
-| range_id.char_set      | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789| 字符串长度最小为 6 | range_id 算法的字符集 |
-| range_id.length    | integer | 否 | 16             | 最小值为 6 | range_id 算法的 id 长度 |
+| header_name | string | 否 | "X-Request-Id" | | 携带请求唯一 ID 的标头的名称。请注意，如果请求在 `header_name` 标头中携带 ID，则插件将使用标头值作为唯一 ID，并且不会用生成的 ID 覆盖它。|
+| include_in_response | 布尔值 | 否 | true | | 如果为 true，则将生成的请求 ID 包含在响应标头中，其中标头的名称是 `header_name` 值。|
+| algorithm | string | 否 | "uuid" | ["uuid","nanoid","range_id"] | 用于生成唯一 ID 的算法。设置为 `uuid` 时，插件会生成一个通用唯一标识符。设置为 `nanoid` 时，插件会生成一个紧凑的、URL 安全的 ID。设置为 `range_id` 时，插件会生成具有特定参数的连续 ID。|
+| range_id | object | 否 | | |使用 `range_id` 算法生成请求 ID 的配置。|
+| range_id.char_set | string | 否 | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789" | 最小长度 6 | 用于 `range_id` 算法的字符集。|
+| range_id.length | integer | 否 | 16 | >=6 | 用于 `range_id` 算法的生成的 ID 的长度。|
 
-## 启用插件
+## 示例
 
-以下示例展示了如何在指定路由上启用 `request-id` 插件：
+以下示例演示了如何在不同场景中配置“request-id”。
 
 :::note
 
@@ -60,58 +55,238 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 将请求 ID 附加到默认响应标头
+
+以下示例演示了如何在路由上配置 `request-id`，如果请求中未传递标头值，则将生成的请求 ID 附加到默认的 `X-Request-Id` 响应标头。当在请求中设置 `X-Request-Id` 标头时，插件将把请求标头中的值作为请求 ID。
+
+使用其默认配置（明确定义）创建带有 `request-id` 插件的路由：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
     "plugins": {
-        "request-id": {
-            "include_in_response": true
-        }
+      "request-id": {
+        "header_name": "X-Request-Id",
+        "include_in_response": true,
+        "algorithm": "uuid"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该会收到一个 `HTTP/1.1 200 OK` 响应，并且会看到响应包含 `X-Request-Id` 标头和生成的 ID：
+
+```text
+X-Request-Id: b9b2c0d4-d058-46fa-bafc-dd91a0ccf441
+```
+
+使用标头中的自定义请求 ID 向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H 'X-Request-Id: some-custom-request-id'
+```
+
+您应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含带有自定义请求 ID 的 `X-Request-Id` 标头：
+
+```text
+X-Request-Id：some-custom-request-id
+```
+
+### 将请求 ID 附加到自定义响应标头
+
+以下示例演示如何在路由上配置 `request-id`，将生成的请求 ID 附加到指定的标头。
+
+使用 `request-id` 插件创建路由，以定义带有请求 ID 的自定义标头，并将请求 ID 包含在响应标头中：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {
+        "header_name": "X-Req-Identifier",
+        "include_in_response": true
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含带有生成 ID 的 `X-Req-Identifier` 标头：
+
+```text
+X-Req-Identifier：1c42ff59-ee4c-4103-a980-8359f4135b21
+```
+
+### 在响应标头中隐藏请求 ID
+
+以下示例演示如何在路由上配置 `request-id`，将生成的请求 ID 附加到指定的标头。包含请求 ID 的标头应转发到上游服务，但不会在响应标头中返回。
+
+使用 `request-id` 插件创建路由，以定义带有请求 ID 的自定义标头，而不在响应标头中包含请求 ID：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {
+        "header_name": "X-Req-Identifier",
+        "include_in_response": false
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该收到 `HTTP/1.1 200 OK` 响应，并在响应标头中看到 `X-Req-Identifier` 标头。在响应主体中，您应该看到：
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {},
+  "headers": {
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-6752748c-7d364f48564508db1e8c9ea8",
+    "X-Forwarded-Host": "127.0.0.1",
+    "X-Req-Identifier": "268092bc-15e1-4461-b277-bf7775f2856f"
+  },
+  ...
+}
+```
+
+这表明请求 ID 已转发到上游服务，但未在响应标头中返回。
+
+### 使用 `nanoid` 算法
+
+以下示例演示如何在路由上配置 `request-id` 并使用 `nanoid` 算法生成请求 ID。
+
+使用 `request-id` 插件创建路由，如下所示：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {
+        "algorithm": "nanoid"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该收到一个 `HTTP/1.1 200 OK` 响应，并看到响应包含 `X-Req-Identifier` 标头，其中的 ID 使用 `nanoid` 算法生成：
+
+```text
+X-Request-Id: kepgHWCH2ycQ6JknQKrX2
+```
+
+### 全局和在路由上附加请求 ID
+
+以下示例演示如何将 `request-id` 配置为全局插件并在路由上附加两个 ID。
+
+为 `request-id` 插件创建全局规则，将请求 ID 添加到自定义标头：
+
+```shell
+curl -i "http://127.0.0.1:9180/apisix/admin/global_rules" -X PUT -d '{
+  "id": "rule-for-request-id",
+  "plugins": {
+    "request-id": {
+      "header_name": "Global-Request-ID"
+    }
+  }
 }'
 ```
 
-## 测试插件
-
-按上述配置启用插件后，APISIX 将为你的每个请求创建一个 unique ID。
-
-使用 `curl` 命令请求该路由：
+使用 `request-id` 插件创建路由，将请求 ID 添加到不同的自定义标头：
 
 ```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-返回的 HTTP 响应头中如果带有 `200` 状态码，且每次返回不同的 `X-Request-Id`，则表示插件生效：
-
-```shell
-HTTP/1.1 200 OK
-X-Request-Id: fe32076a-d0a5-49a6-a361-6c244c1df956
-```
-
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/5 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/get",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
     "plugins": {
+      "request-id": {
+        "header_name": "Route-Request-ID"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:8080": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
+```
+
+向路由发送请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+您应该会收到 `HTTP/1.1 200 OK` 响应，并看到响应包含以下标头：
+
+```text
+Global-Request-ID：2e9b99c1-08ed-4a74-b347-49c0891b07ad
+Route-Request-ID：d755666b-732c-4f0e-a30e-a7a71ace4e26
 ```
