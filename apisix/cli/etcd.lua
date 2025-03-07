@@ -125,12 +125,12 @@ local function request(url, yaml_conf)
 
             local apisix_ssl = yaml_conf.apisix.ssl
             if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
-                if apisix_ssl == "system" then
+                if apisix_ssl.ssl_trusted_certificate == "system" then
                     local trusted_certs_path, err = util.get_system_trusted_certs_filepath()
                     if not trusted_certs_path then
                         util.die(err)
                     end
-                    apisix_ssl = trusted_certs_path
+                    apisix_ssl.ssl_trusted_certificate = trusted_certs_path
                 else
                     -- During validation, the path is relative to PWD
                     -- When Nginx starts, the path is relative to conf
@@ -139,9 +139,9 @@ local function request(url, yaml_conf)
                     if not pl_path.exists(cert_path) then
                         util.die("certificate path", cert_path, "doesn't exist\n")
                     end
-                    yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
+                    apisix_ssl.ssl_trusted_certificate = cert_path
                 end
-                url.cafile = apisix_ssl
+                url.cafile = apisix_ssl.ssl_trusted_certificate
             end
         end
 
