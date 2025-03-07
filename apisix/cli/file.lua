@@ -308,7 +308,7 @@ function _M.read_yaml_conf(apisix_home)
             if not trusted_certs_path then
                 util.die(err)
             end
-            
+
             apisix_ssl.ssl_trusted_certificate = trusted_certs_path
         else
             -- During validation, the path is relative to PWD
