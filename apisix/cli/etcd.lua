@@ -135,7 +135,7 @@ local function request(url, yaml_conf)
                     -- During validation, the path is relative to PWD
                     -- When Nginx starts, the path is relative to conf
                     -- Therefore we need to check the absolute version instead
-                    local cert_path = pl_path.abspath(apisix_ssl)
+                    local cert_path = pl_path.abspath(apisix_ssl.ssl_trusted_certificate)
                     if not pl_path.exists(cert_path) then
                         util.die("certificate path", cert_path, "doesn't exist\n")
                     end
