@@ -441,4 +441,4 @@ qr/token validate successfully by \w+/
 --- grep_error_log_out
 token validate successfully by jwks
 --- error_log
-valid_issuers not provided, using issuer from discovery doc: http://127.0.0.1:8080/realms/University
+valid_issuers not provided explicitly, using issuer from discovery doc: http://127.0.0.1:8080/realms/University
