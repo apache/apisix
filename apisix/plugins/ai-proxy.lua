@@ -26,7 +26,7 @@ local _M = {
     version = 0.5,
     priority = 1040,
     name = plugin_name,
-    schema = schema,
+    schema = schema.ai_proxy_schema,
 }
 
 
