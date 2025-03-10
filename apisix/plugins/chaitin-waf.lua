@@ -54,8 +54,8 @@ local plugin_schema = {
     properties = {
         mode = {
             type = "string",
-            enum = { "off", "monitor", "block" },
-            default = "block",
+            enum = { "off", "monitor", "block", nil },
+            default = nil,
         },
         match = match_schema,
         append_waf_resp_header = {
@@ -86,6 +86,9 @@ local plugin_schema = {
                 },
                 keepalive_timeout = {
                     type = "integer",
+                },
+                real_client_ip = {
+                    type = "boolean"
                 }
             },
         },
@@ -95,6 +98,11 @@ local plugin_schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        mode = {
+            type = "string",
+            enum = { "off", "monitor", "block", nil },
+            default = nil,
+        },
         nodes = {
             type = "array",
             items = {
@@ -143,8 +151,10 @@ local metadata_schema = {
                     type = "integer",
                     default = 60000 -- milliseconds
                 },
-                -- TODO: we need a configuration to enable/disable the real client ip
-                -- the real client ip is calculated by APISIX
+                real_client_ip = {
+                    type = "boolean",
+                    default = true
+                }
             },
             default = {},
         },
@@ -232,7 +242,7 @@ end
 
 
 local function check_match(conf, ctx)
-    if not conf.match then
+    if not conf.match or next(conf.match) == nil then
         return true
     end
 
@@ -264,9 +274,8 @@ local function get_conf(conf, metadata)
         mode = "block",
         real_client_ip = true,
     }
-
+    core.log.error("============================Meta", metadata.mode)
     if metadata.config then
-        t.mode = metadata.config.mode or t.mode
         t.connect_timeout = metadata.config.connect_timeout
         t.send_timeout = metadata.config.send_timeout
         t.read_timeout = metadata.config.read_timeout
@@ -275,9 +284,8 @@ local function get_conf(conf, metadata)
         t.keepalive_timeout = metadata.config.keepalive_timeout
         t.real_client_ip = metadata.config.real_client_ip or t.real_client_ip
     end
-
+    core.log.error("============================Conf", conf.mode)
     if conf.config then
-        t.mode = conf.config.mode or t.mode
         t.connect_timeout = conf.config.connect_timeout
         t.send_timeout = conf.config.send_timeout
         t.read_timeout = conf.config.read_timeout
@@ -287,24 +295,14 @@ local function get_conf(conf, metadata)
         t.real_client_ip = conf.config.real_client_ip or t.real_client_ip
     end
 
+    t.mode = conf.mode or metadata.mode or t.mode
+
     return t
 end
 
 
 local function do_access(conf, ctx)
     local extra_headers = {}
-
-    local match, err = check_match(conf, ctx)
-    if not match then
-        if err then
-            extra_headers[HEADER_CHAITIN_WAF] = "err"
-            extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
-            return 500, nil, extra_headers
-        else
-            extra_headers[HEADER_CHAITIN_WAF] = "no"
-            return nil, nil, extra_headers
-        end
-    end
 
     local metadata = plugin.plugin_metadata(plugin_name)
     if not core.table.try_read_attr(metadata, "value", "nodes") then
@@ -322,7 +320,7 @@ local function do_access(conf, ctx)
     end
 
     core.log.info("picked chaitin-waf server: ", host, ":", port)
-
+    core.log.error("TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", core.json.encode(conf))
     local t = get_conf(conf, metadata.value)
     t.host = host
     t.port = port
@@ -330,10 +328,22 @@ local function do_access(conf, ctx)
     extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
 
     local mode = t.mode or "block"
-
+    core.log.error("======================================Mode:", mode)
     if mode == "off" then
         extra_headers[HEADER_CHAITIN_WAF] = "off"
         return nil, nil, extra_headers
+    end
+
+    local match, err = check_match(conf, ctx)
+    if not match then
+        if err then
+            extra_headers[HEADER_CHAITIN_WAF] = "err"
+            extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+            return 500, nil, extra_headers
+        else
+            extra_headers[HEADER_CHAITIN_WAF] = "no"
+            return nil, nil, extra_headers
+        end
     end
 
     if t.real_client_ip then
