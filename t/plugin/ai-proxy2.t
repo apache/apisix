@@ -117,18 +117,16 @@ __DATA__
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "query": {
                                     "api_key": "wrong_key"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
@@ -177,18 +175,16 @@ Unauthorized
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "query": {
                                     "api_key": "apikey"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
@@ -237,18 +233,16 @@ passed
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "some-key"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-4",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-4",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             }
                         }
                     },
@@ -292,18 +286,15 @@ POST /anything
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "query": {
                                     "api_key": "apikey"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"

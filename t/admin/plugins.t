@@ -98,6 +98,8 @@ ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
 ai-rag
+ai-proxy-multi
+ai-proxy
 ai-aws-content-moderation
 proxy-mirror
 proxy-rewrite
@@ -106,8 +108,6 @@ api-breaker
 limit-conn
 limit-count
 limit-req
-ai-proxy
-ai-proxy-multi
 gzip
 server-info
 traffic-split
