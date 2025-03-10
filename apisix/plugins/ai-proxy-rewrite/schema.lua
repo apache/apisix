@@ -38,43 +38,12 @@ local model_options_schema = {
     description = "Key/value settings for the model",
     type = "object",
     properties = {
-        max_tokens = {
-            type = "integer",
-            description = "Defines the max_tokens, if using chat or completion models.",
-            default = 256
-
-        },
-        input_cost = {
-            type = "number",
-            description = "Defines the cost per 1M tokens in your prompt.",
-            minimum = 0
-
-        },
-        output_cost = {
-            type = "number",
-            description = "Defines the cost per 1M tokens in the output of the AI.",
-            minimum = 0
-
-        },
-        temperature = {
-            type = "number",
-            description = "Defines the matching temperature, if using chat or completion models.",
-            minimum = 0.0,
-            maximum = 5.0
-
-        },
-        top_p = {
-            type = "number",
-            description = "Defines the top-p probability mass, if supported.",
-            minimum = 0,
-            maximum = 1
-
-        },
-        stream = {
-            description = "Stream response by SSE",
-            type = "boolean"
+        model = {
+            type = "string",
+            description = "Model to execute."
         }
-    }
+    },
+    additionalProperties = true
 }
 
 _M.ai_proxy_rewrite_schema = {
@@ -91,40 +60,25 @@ _M.ai_proxy_rewrite_schema = {
         },
         auth = auth_schema,
         options = model_options_schema,
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 60000,
+            default = 30000,
+            description = "timeout in milliseconds",
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        ssl_verify = {type = "boolean", default = true },
         override = {
             type = "object",
             properties = {
                 endpoint = {
                     type = "string",
-                    description = "To be specified to override the host of the AI provider"
-                }
-            }
+                    description = "To be specified to override the endpoint of the AI Instance",
+                },
+            },
         },
-        timeout = {
-            type = "integer",
-            minimum = 1,
-            maximum = 60000,
-            default = 3000,
-            description = "timeout in milliseconds"
-        },
-        keepalive = {
-            type = "boolean",
-            default = true
-        },
-        keepalive_timeout = {
-            type = "integer",
-            minimum = 1000,
-            default = 60000
-        },
-        keepalive_pool = {
-            type = "integer",
-            minimum = 1,
-            default = 30
-        },
-        ssl_verify = {
-            type = "boolean",
-            default = true
-        }
     },
     required = {"prompt", "provider", "auth"}
 }
