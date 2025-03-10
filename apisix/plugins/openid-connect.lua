@@ -431,14 +431,16 @@ local function introspect(ctx, conf)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
         local valid_issuers
-        if conf.claim_validator and conf.claim_validator.issuer and conf.claim_validator.issuer.enforce then
+        if conf.claim_validator and conf.claim_validator.issuer and
+            conf.claim_validator.issuer.enforce then
             valid_issuers = conf.claim_validator.issuer.valid_issuers
             if not valid_issuers then
                 local discovery, discovery_err = openidc.get_discovery_doc(conf)
                 if discovery_err then
                     core.log.warn("OIDC access discovery url failed : ", discovery_err)
                 else
-                    core.log.info("valid_issuers not provided explicitly, using issuer from discovery doc: ",
+                    core.log.info([[valid_issuers not provided explicitly,
+                                  using issuer from discovery doc: ]],
                                   discovery.issuer)
                     valid_issuers = {discovery.issuer}
                 end
