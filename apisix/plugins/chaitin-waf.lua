@@ -274,7 +274,7 @@ local function get_conf(conf, metadata)
         mode = "block",
         real_client_ip = true,
     }
-    core.log.error("============================Meta", metadata.mode)
+
     if metadata.config then
         t.connect_timeout = metadata.config.connect_timeout
         t.send_timeout = metadata.config.send_timeout
@@ -284,7 +284,7 @@ local function get_conf(conf, metadata)
         t.keepalive_timeout = metadata.config.keepalive_timeout
         t.real_client_ip = metadata.config.real_client_ip or t.real_client_ip
     end
-    core.log.error("============================Conf", conf.mode)
+
     if conf.config then
         t.connect_timeout = conf.config.connect_timeout
         t.send_timeout = conf.config.send_timeout
@@ -320,7 +320,6 @@ local function do_access(conf, ctx)
     end
 
     core.log.info("picked chaitin-waf server: ", host, ":", port)
-    core.log.error("TESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT", core.json.encode(conf))
     local t = get_conf(conf, metadata.value)
     t.host = host
     t.port = port
@@ -328,7 +327,6 @@ local function do_access(conf, ctx)
     extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
 
     local mode = t.mode or "block"
-    core.log.error("======================================Mode:", mode)
     if mode == "off" then
         extra_headers[HEADER_CHAITIN_WAF] = "off"
         return nil, nil, extra_headers
@@ -383,12 +381,12 @@ local function do_access(conf, ctx)
         extra_headers[HEADER_CHAITIN_WAF_STATUS] = result.status
         extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
-        core.log.error("request rejected by chaitin-waf, event_id: " .. result.event_id)
-
         if mode == "monitor" then
             core.log.warn(warning_message, result.event_id)
             return nil, nil, extra_headers
         end
+
+        core.log.error("request rejected by chaitin-waf, event_id: " .. result.event_id)
 
         return tonumber(result.status),
                fmt(blocked_message, result.status, result.event_id) .. "\n",

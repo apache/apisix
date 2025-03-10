@@ -40,7 +40,6 @@ _EOC_
     # setup default conf.yaml
     my $extra_yaml_config = $block->extra_yaml_config // <<_EOC_;
 apisix:
-  error_log: "logs/error.log debug"
   stream_proxy:                 # TCP/UDP L4 proxy
    only: true                  # Enable L4 proxy only without L7 proxy.
    tcp:
@@ -61,9 +60,9 @@ _EOC_
         $block->set_value("request", "GET /do");
     }
 
-    # if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-    #     $block->set_value("no_error_log", "[error]");
-    # }
+    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
+        $block->set_value("no_error_log", "[error]");
+    }
 });
 
 run_tests;
@@ -273,39 +272,29 @@ X-APISIX-CHAITIN-WAF-ACTION: pass
 X-APISIX-CHAITIN-WAF-TIME:
 
 
-=== TEST 8: plugin mode off
+
+=== TEST 8: plugin mode off prepare
 --- config
     location /do {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": [
-                        {
-                            "host": "127.0.0.1",
-                            "port": 8089
-                        }
-                    ]
-                 }]]
-                )
-
-            ngx.log(ngx.INFO, body)
-            if code >= 300 then
-                ngx.status = code
-                return ngx.print(body)
-            end
-
             local code, body = t('/apisix/admin/routes/1',
                  ngx.HTTP_PUT,
                  [[{
                         "methods": ["GET"],
                         "plugins": {
                             "chaitin-waf": {
-                                "mode": "off",
-                                "upstream": {
-                                   "servers": ["test.org"]
-                               }
+                               "mode": "off",
+                               "upstream": {
+                                   "servers": ["httpbun.org"]
+                               },
+                               "match": [
+                                    {
+                                        "vars": [
+                                            ["http_waf","==","true"]
+                                        ]
+                                    }
+                                ]
                             }
                         },
                         "upstream": {
@@ -324,7 +313,12 @@ X-APISIX-CHAITIN-WAF-TIME:
             ngx.say(body)
         }
     }
+--- response_body
+passed
 
+
+
+=== TEST 9: plugin mode off 
 --- request
 GET /hello
 --- more_headers
@@ -336,75 +330,8 @@ hello world
 X-APISIX-CHAITIN-WAF: off
 
 
-=== TEST 9: plugin mode monitor
---- config
-    location /do {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
 
-            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "nodes": [
-                        {
-                            "host": "127.0.0.1",
-                            "port": 8089
-                        }
-                    ]
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                return ngx.print(body)
-            end
-
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "methods": ["GET"],
-                    "plugins": {
-                        "chaitin-waf": {
-                            "mode": "monitor",
-                            "match": [
-                                {
-                                    "vars": [
-                                        ["http_trigger","==","block"]
-                                    ]
-                                }
-                            ]
-                        }
-                    },
-                    "upstream": {
-                        "nodes": {
-                            "127.0.0.1:1980": 1
-                        },
-                        "type": "roundrobin"
-                    },
-                    "uri": "/*"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                return ngx.print(body)
-            end
-            ngx.say("passed")
-        }
-    }
-
---- request
-GET /hello
---- more_headers
-trigger: block
---- error_code: 200
---- response_body
-hello world
---- response_headers
-X-APISIX-CHAITIN-WAF: yes
-X-APISIX-CHAITIN-WAF-STATUS: 403
-X-APISIX-CHAITIN-WAF-ACTION: reject
-
-
-=== TEST 10: real_client_ip = false
+=== TEST 10: real_client_ip = false prepare
 --- config
     location /do {
         content_by_lua_block {
@@ -460,7 +387,12 @@ X-APISIX-CHAITIN-WAF-ACTION: reject
             ngx.say("passed")
         }
     }
+--- response_body
+passed
 
+
+
+=== TEST 11: real_client_ip = false
 --- request
 GET /hello
 --- more_headers
