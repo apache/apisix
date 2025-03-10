@@ -481,7 +481,10 @@ OIDC introspection failed: Invalid Authorization header format.
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
-                                    "valid_issuers": ["Mysoft corp"]
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"],
+                                        "enforce": true
+                                    }
                                 }
                             }
                         },
@@ -558,7 +561,10 @@ true
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
-                                    "valid_issuers": ["Mysoft corp"]
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"],
+                                        "enforce": true
+                                    }
                                 }
                             }
                         },
@@ -631,7 +637,10 @@ x-userinfo: ey.*
                                 "set_id_token_header": false,
                                 "set_userinfo_header": false,
                                 "claim_validator": {
-                                    "valid_issuers": ["Mysoft corp"]
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"],
+                                        "enforce": true
+                                    }
                                 }
                             }
                         },
@@ -698,7 +707,10 @@ x-real-ip: 127.0.0.1
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
-                                    "valid_issuers": ["Mysoft corp"]
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"],
+                                        "enforce": true
+                                    }
                                 }
                             }
                         },

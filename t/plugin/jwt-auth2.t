@@ -177,7 +177,10 @@ hello world
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
-                                    "valid_issuers": ["Mysoft corp"]
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"],
+                                        "enforce": true
+                                    }
                                 }
                             }
                         },
@@ -333,7 +336,10 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                                     [[-----END PUBLIC KEY-----",
                                 "token_signing_alg_values_expected": "RS256",
                                 "claim_validator": {
-                                    "valid_issuers": ["Mysoft corp"]
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"],
+                                        "enforce": true
+                                    }
                                 }
                             }
                         },

@@ -56,7 +56,9 @@ __DATA__
                                 "bearer_only": true,
                                 "use_jwks": true,
                                 "claim_validator": {
-                                    "valid_issuers": 123
+                                    "issuer": {
+                                        "valid_issuers": 123
+                                    }
                                 }
                             }
                         },
@@ -100,7 +102,9 @@ qr/\{"error_msg":"failed to check the configuration of plugin openid-connect err
                                 "bearer_only": true,
                                 "use_jwks": true,
                                 "claim_validator": {
-                                    "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                    "issuer": {
+                                        "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                    }
                                 }
                             }
                         },
@@ -145,7 +149,9 @@ passed
                                 "use_jwks": true,
                                 "realm": "University",
                                 "claim_validator": {
-                                    "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                    "issuer": {
+                                        "valid_issuers": ["https://securetoken.google.com/test-firebase-project"]
+                                    }
                                 }
                             }
                         },
@@ -248,7 +254,9 @@ OIDC introspection failed: jwt signature verification failed: Claim 'iss' ('http
                                 "use_jwks": true,
                                 "realm": "University",
                                 "claim_validator": {
-                                    "valid_issuers": ["http://127.0.0.1:8080/realms/University"]
+                                    "issuer": {
+                                         "valid_issuers": ["http://127.0.0.1:8080/realms/University"]
+                                    }
                                 }
                             }
                         },
