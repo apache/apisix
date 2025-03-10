@@ -36,20 +36,14 @@ The `ai-proxy-rewrite` plugin extends `ai-proxy` by adding a prompt field, combi
 
 | **Field**                 | **Required** | **Type** | **Description**                                                                      |
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
-| prompt                    | Yes          | String   | The prompt send to LLM.                                                                |
+| prompt                    | Yes          | String   | The prompt send to LLM.                                                              |
+| provider                  | Yes          | String   | Type of the AI service instance.                                                     |
 | auth                      | Yes          | Object   | Authentication configuration                                                         |
 | auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
-| model.provider            | Yes          | String   | Name of the AI service provider (`openai`).                                          |
-| model.name                | Yes          | String   | Model name to execute.                                                               |
-| model.options             | No           | Object   | Key/value settings for the model                                                     |
-| model.options.max_tokens  | No           | Integer  | Defines the max tokens if using chat or completion models. Default: 256              |
-| model.options.input_cost  | No           | Number   | Cost per 1M tokens in your prompt. Minimum: 0                                        |
-| model.options.output_cost | No           | Number   | Cost per 1M tokens in the output of the AI. Minimum: 0                               |
-| model.options.temperature | No           | Number   | Matching temperature for models. Range: 0.0 - 5.0                                    |
-| model.options.top_p       | No           | Number   | Top-p probability mass. Range: 0 - 1                                                 |
-| model.options.stream      | No           | Boolean  | Stream response by SSE.                                                              |
-| override.endpoint         | No           | String   | Override the endpoint of the AI provider                                             |
+| options                   | No           | Object   | Key/value settings for the model                                                     |
+| options.model             | No           | String   | Model to execute.                                                                    |
+| override.endpoint         | No           | String   | To be specified to override the endpoint of the AI Instance                          |
 | timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 3000         |
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM. Default: true                                  |
 | keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM. Minimum: 1000. Default: 60000 |
@@ -69,18 +63,16 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "plugins": {
       "ai-proxy-rewrite": {
         "prompt": "Given a JSON request body, identify and mask any sensitive information such as credit card numbers, social security numbers, and personal identification numbers (e.g., passport or driver's license numbers). Replace detected sensitive values with a masked format (e.g., '*** **** **** 1234') for credit card numbers). Ensure the JSON structure remains unchanged.",
+        "provider": "openai",
         "auth": {
           "header": {
             "Authorization": "Bearer <some-token>"
           }
         },
-        "model": {
-          "provider": "openai",
-          "name": "gpt-4",
-          "options": {
-            "max_tokens": 512,
-            "temperature": 1.0
-          }
+        "options": {
+          "model": "gpt-4",
+          "max_tokens": 1024,
+          "temperature": 1
         }
       }
     },
@@ -150,14 +142,16 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "plugins": {
       "ai-proxy-rewrite": {
         "prompt": "Given a JSON request body, identify and mask any sensitive information such as credit card numbers, social security numbers, and personal identification numbers (e.g., passport or driver's license numbers). Replace detected sensitive values with a masked format (e.g., '*** **** **** 1234') for credit card numbers). Ensure the JSON structure remains unchanged.",
+        "provider": "openai-compatible",
         "auth": {
           "header": {
             "Authorization": "Bearer <some-token>"
           }
         },
-        "model": {
-          "provider": "openai-compatible",
-          "name": "qwen-plus"
+        "options": {
+          "model": "qwen-plus",
+          "max_tokens": 1024,
+          "temperature": 1
         },
         "override": {
           "endpoint": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
