@@ -24,41 +24,33 @@ local pcall = pcall
 local plugin_name = "ai-proxy"
 local _M = {
     version = 0.5,
-    priority = 999,
+    priority = 1040,
     name = plugin_name,
-    schema = schema,
+    schema = schema.ai_proxy_schema,
 }
 
 
 function _M.check_schema(conf)
-    local ai_driver = pcall(require, "apisix.plugins.ai-drivers." .. conf.model.provider)
+    local ok, err = core.schema.check(schema.ai_proxy_schema, conf)
+    if not ok then
+        return false, err
+    end
+    local ai_driver, err = pcall(require, "apisix.plugins.ai-drivers." .. conf.provider)
     if not ai_driver then
-        return false, "provider: " .. conf.model.provider .. " is not supported."
+        core.log.warn("fail to require ai provider: ", conf.provider, ", err", err)
+        return false, "ai provider: " .. conf.provider .. " is not supported."
     end
-    return core.schema.check(schema.ai_proxy_schema, conf)
+    return ok
 end
 
 
-local function get_model_name(conf)
-    return conf.model.name
+function _M.access(conf, ctx)
+    ctx.picked_ai_instance_name = "ai-proxy"
+    ctx.picked_ai_instance = conf
 end
 
 
-local function proxy_request_to_llm(conf, request_table, ctx)
-    local ai_driver = require("apisix.plugins.ai-drivers." .. conf.model.provider)
-    local extra_opts = {
-        endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
-        query_params = conf.auth.query or {},
-        headers = (conf.auth.header or {}),
-        model_options = conf.model.options
-    }
-    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
-    if not res then
-        return nil, err, nil
-    end
-    return res, nil, httpc
-end
+_M.before_proxy = base.before_proxy
 
-_M.access = base.new(proxy_request_to_llm, get_model_name)
 
 return _M
