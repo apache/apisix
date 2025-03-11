@@ -17,7 +17,7 @@
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local resource = require("apisix.admin.resource")
-
+local plugin = require("apisix.plugin")
 
 local function check_conf(username, conf, need_username, schema)
     local ok, err = core.schema.check(schema, conf)
@@ -32,7 +32,29 @@ local function check_conf(username, conf, need_username, schema)
     if conf.plugins then
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
-            return nil, {error_msg = "invalid plugins configuration: " .. err}
+            return nil, {
+                error_msg = "invalid plugins configuration: " .. err
+            }
+        end
+
+        -- check duplicate key
+        for plugin_name, plugin_conf in pairs(conf.plugins or {}) do
+            local plugin_obj = plugin.get(plugin_name)
+            if not plugin_obj then
+                return nil, {error_msg = "unknown plugin " .. plugin_name}
+            end
+            -- if plugin_obj and plugin_obj.type == "auth" then
+            plugin.decrypt_conf(plugin_name, plugin_conf, core.schema.TYPE_CONSUMER)
+            for key, key_value in pairs(plugin_conf) do
+                local consumer, _ = require("apisix.consumer").find_consumer(plugin_name, key, key_value)
+                if consumer then
+                    return nil, {
+                        error_msg = "duplicate key found with consumer: " .. consumer.username
+                    }
+                end
+
+            end
+            -- end
         end
     end
 

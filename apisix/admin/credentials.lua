@@ -32,7 +32,7 @@ local function check_conf(_id, conf, _need_id, schema)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        for name, _ in pairs(conf.plugins) do
+        for name, plugin_conf in pairs(conf.plugins) do
             local plugin_obj = plugin.get(name)
             if not plugin_obj then
                 return nil, {error_msg = "unknown plugin " .. name}
@@ -40,6 +40,16 @@ local function check_conf(_id, conf, _need_id, schema)
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
             end
+
+            -- check duplicate key
+            plugin.decrypt_conf(name, plugin_conf, core.schema.TYPE_CONSUMER)
+            for key, key_value in pairs(plugin_conf) do
+                local consumer, _ = require("apisix.consumer").find_consumer(name, key, key_value)
+                if consumer then
+                    return nil, {error_msg = "duplicate key found with consumer: " .. consumer.username}
+                end
+            end
+
         end
     end
 
