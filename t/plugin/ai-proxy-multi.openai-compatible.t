@@ -52,26 +52,6 @@ _EOC_
 
             default_type 'application/json';
 
-            location /anything {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-
-                    if body ~= "SELECT * FROM STUDENTS" then
-                        ngx.status = 503
-                        ngx.say("passthrough doesn't work")
-                        return
-                    end
-                    ngx.say('{"foo", "bar"}')
-                }
-            }
-
             location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
@@ -158,10 +138,10 @@ __DATA__
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai-compatible",
-                                    "model": "custom",
+                                    "name": "self-hosted",
+                                    "provider": "openai-compatible",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -169,6 +149,7 @@ __DATA__
                                         }
                                     },
                                     "options": {
+                                        "model": "custom",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -223,10 +204,10 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai-compatible",
-                                    "model": "custom-instruct",
+                                    "name": "self-hosted",
+                                    "provider": "openai-compatible",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -234,6 +215,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         }
                                     },
                                     "options": {
+                                        "model": "custom-instruct",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true

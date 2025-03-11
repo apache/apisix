@@ -20,12 +20,20 @@ local mt = {
     __index = _M
 }
 
+local CONTENT_TYPE_JSON = "application/json"
+
 local core = require("apisix.core")
 local http = require("resty.http")
 local url  = require("socket.url")
+local schema = require("apisix.plugins.ai-drivers.schema")
+local ngx_re = require("ngx.re")
+
+local ngx_print = ngx.print
+local ngx_flush = ngx.flush
 
 local pairs = pairs
 local type  = type
+local ipairs = ipairs
 local setmetatable = setmetatable
 
 
@@ -37,6 +45,26 @@ function _M.new(opts)
         path = opts.path,
     }
     return setmetatable(self, mt)
+end
+
+
+function _M.validate_request(ctx)
+        local ct = core.request.header(ctx, "Content-Type") or CONTENT_TYPE_JSON
+        if not core.string.has_prefix(ct, CONTENT_TYPE_JSON) then
+            return nil, "unsupported content-type: " .. ct .. ", only application/json is supported"
+        end
+
+        local request_table, err = core.request.get_json_request_body_table()
+        if not request_table then
+            return nil, err
+        end
+
+        local ok, err = core.schema.check(schema.chat_request_schema, request_table)
+        if not ok then
+            return nil, "request format doesn't match schema: " .. err
+        end
+
+        return request_table, nil
 end
 
 
@@ -54,11 +82,11 @@ function _M.request(self, conf, request_table, extra_opts)
     end
 
     local ok, err = httpc:connect({
-        scheme = endpoint and parsed_url.scheme or "https",
-        host = endpoint and parsed_url.host or self.host,
-        port = endpoint and parsed_url.port or self.port,
+        scheme = parsed_url and parsed_url.scheme or "https",
+        host = parsed_url and parsed_url.host or self.host,
+        port = parsed_url and parsed_url.port or self.port,
         ssl_verify = conf.ssl_verify,
-        ssl_server_name = endpoint and parsed_url.host or self.host,
+        ssl_server_name = parsed_url and parsed_url.host or self.host,
         pool_size = conf.keepalive and conf.keepalive_pool,
     })
 
@@ -75,7 +103,7 @@ function _M.request(self, conf, request_table, extra_opts)
         end
     end
 
-    local path = (endpoint and parsed_url.path or self.path)
+    local path = (parsed_url and parsed_url.path or self.path)
 
     local headers = extra_opts.headers
     headers["Content-Type"] = "application/json"
@@ -106,7 +134,95 @@ function _M.request(self, conf, request_table, extra_opts)
         return nil, err
     end
 
-    return res, nil, httpc
+    return res, nil
 end
+
+
+function _M.read_response(ctx, res)
+    local body_reader = res.body_reader
+    if not body_reader then
+        core.log.error("AI service sent no response body")
+        return 500
+    end
+
+    local content_type = res.headers["Content-Type"]
+    core.response.set_header("Content-Type", content_type)
+
+    if core.string.find(content_type, "text/event-stream") then
+        while true do
+            local chunk, err = body_reader() -- will read chunk by chunk
+            if err then
+                core.log.error("failed to read response chunk: ", err)
+                break
+            end
+            if not chunk then
+                break
+            end
+
+            ngx_print(chunk)
+            ngx_flush(true)
+
+            local events, err = ngx_re.split(chunk, "\n")
+            if err then
+                core.log.warn("failed to split response chunk [", chunk, "] to events: ", err)
+                goto CONTINUE
+            end
+
+            for _, event in ipairs(events) do
+                if not core.string.find(event, "data:") or core.string.find(event, "[DONE]") then
+                    goto CONTINUE
+                end
+
+                local parts, err = ngx_re.split(event, ":", nil, nil, 2)
+                if err then
+                    core.log.warn("failed to split data event [", event,  "] to parts: ", err)
+                    goto CONTINUE
+                end
+
+                if #parts ~= 2 then
+                    core.log.warn("malformed data event: ", event)
+                    goto CONTINUE
+                end
+
+                local data, err = core.json.decode(parts[2])
+                if err then
+                    core.log.warn("failed to decode data event [", parts[2], "] to json: ", err)
+                    goto CONTINUE
+                end
+
+                -- usage field is null for non-last events, null is parsed as userdata type
+                if data and data.usage and type(data.usage) ~= "userdata" then
+                    ctx.ai_token_usage = {
+                        prompt_tokens = data.usage.prompt_tokens or 0,
+                        completion_tokens = data.usage.completion_tokens or 0,
+                        total_tokens = data.usage.total_tokens or 0,
+                    }
+                end
+            end
+
+            ::CONTINUE::
+        end
+        return
+    end
+
+    local raw_res_body, err = res:read_body()
+    if not raw_res_body then
+        core.log.error("failed to read response body: ", err)
+        return 500
+    end
+    local res_body, err = core.json.decode(raw_res_body)
+    if err then
+        core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
+            ", it will cause token usage not available")
+    else
+        ctx.ai_token_usage = {
+            prompt_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
+            completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
+            total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
+        }
+    end
+    return res.status, raw_res_body
+end
+
 
 return _M

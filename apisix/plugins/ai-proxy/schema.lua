@@ -38,6 +38,10 @@ local model_options_schema = {
     description = "Key/value settings for the model",
     type = "object",
     properties = {
+        model = {
+            type = "string",
+            description = "Model to execute.",
+        },
         max_tokens = {
             type = "integer",
             description = "Defines the max_tokens, if using chat or completion models.",
@@ -74,36 +78,10 @@ local model_options_schema = {
             description = "Stream response by SSE",
             type = "boolean",
         }
-    }
-}
-
-local model_schema = {
-    type = "object",
-    properties = {
-        provider = {
-            type = "string",
-            description = "Name of the AI service provider.",
-            enum = { "openai", "openai-compatible", "deepseek" }, -- add more providers later
-        },
-        name = {
-            type = "string",
-            description = "Model name to execute.",
-        },
-        options = model_options_schema,
-        override = {
-            type = "object",
-            properties = {
-                endpoint = {
-                    type = "string",
-                    description = "To be specified to override the host of the AI provider",
-                },
-            }
-        }
     },
-    required = {"provider", "name"}
 }
 
-local provider_schema = {
+local ai_instance_schema = {
     type = "array",
     minItems = 1,
     items = {
@@ -111,13 +89,15 @@ local provider_schema = {
         properties = {
             name = {
                 type = "string",
-                description = "Name of the AI service provider.",
+                minLength = 1,
+                maxLength = 100,
+                description = "Name of the AI service instance.",
+            },
+            provider = {
+                type = "string",
+                description = "Type of the AI service instance.",
                 enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
 
-            },
-            model = {
-                type = "string",
-                description = "Model to execute.",
             },
             priority = {
                 type = "integer",
@@ -126,6 +106,7 @@ local provider_schema = {
             },
             weight = {
                 type = "integer",
+                minimum = 0,
             },
             auth = auth_schema,
             options = model_options_schema,
@@ -134,12 +115,12 @@ local provider_schema = {
                 properties = {
                     endpoint = {
                         type = "string",
-                        description = "To be specified to override the host of the AI provider",
+                        description = "To be specified to override the endpoint of the AI Instance",
                     },
                 },
             },
         },
-        required = {"name", "model", "auth"}
+        required = {"name", "provider", "auth"}
     },
 }
 
@@ -147,8 +128,14 @@ local provider_schema = {
 _M.ai_proxy_schema = {
     type = "object",
     properties = {
+        provider = {
+            type = "string",
+            description = "Type of the AI service instance.",
+            enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+
+        },
         auth = auth_schema,
-        model = model_schema,
+        options = model_options_schema,
         timeout = {
             type = "integer",
             minimum = 1,
@@ -159,8 +146,17 @@ _M.ai_proxy_schema = {
         keepalive = {type = "boolean", default = true},
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
+        override = {
+            type = "object",
+            properties = {
+                endpoint = {
+                    type = "string",
+                    description = "To be specified to override the endpoint of the AI Instance",
+                },
+            },
+        },
     },
-    required = {"model", "auth"}
+    required = {"provider", "auth"}
 }
 
 _M.ai_proxy_multi_schema = {
@@ -191,7 +187,7 @@ _M.ai_proxy_multi_schema = {
             },
             default = { algorithm = "roundrobin" }
         },
-        providers = provider_schema,
+        instances = ai_instance_schema,
         timeout = {
             type = "integer",
             minimum = 1,
@@ -200,11 +196,10 @@ _M.ai_proxy_multi_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
-        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
-    required = {"providers", }
+    required = {"instances"}
 }
 
 _M.chat_request_schema = {
