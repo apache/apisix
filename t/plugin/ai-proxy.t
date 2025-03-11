@@ -127,9 +127,9 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
             local ok, err = plugin.check_schema({
-                model = {
-                    provider = "openai",
-                    name = "gpt-4",
+                provider = "openai",
+                options = {
+                    model = "gpt-4",
                 },
                 auth = {
                     header = {
@@ -156,9 +156,9 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy")
             local ok, err = plugin.check_schema({
-                model = {
-                    provider = "some-unique",
-                    name = "gpt-4",
+                provider = "some-unique",
+                options = {
+                    model = "gpt-4",
                 },
                 auth = {
                     header = {
@@ -175,7 +175,7 @@ passed
         }
     }
 --- response_body eval
-qr/.*provider: some-unique is not supported.*/
+qr/.*property "provider" validation failed: matches none of the enum values.*/
 
 
 
@@ -190,18 +190,16 @@ qr/.*provider: some-unique is not supported.*/
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer wrongtoken"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
@@ -250,18 +248,16 @@ Unauthorized
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
@@ -342,7 +338,7 @@ prompt%3Dwhat%2520is%25201%2520%252B%25201
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body chomp
-unsupported content-type: application/x-www-form-urlencoded
+unsupported content-type: application/x-www-form-urlencoded, only application/json is supported
 
 
 
@@ -369,18 +365,16 @@ request format doesn't match schema: property "messages" is required
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "some-model",
-                                "options": {
-                                    "foo": "bar",
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "model": "some-model",
+                                "foo": "bar",
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724"
@@ -440,18 +434,16 @@ options_works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
+                            "model": "some-model",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "some-model",
-                                "options": {
-                                    "foo": "bar",
-                                    "temperature": 1.0
-                                }
+                            "options": {
+                                "foo": "bar",
+                                "temperature": 1.0
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724/random"
@@ -510,19 +502,17 @@ path override works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                            "provider": "openai",
                             "auth": {
                                 "header": {
                                     "Authorization": "Bearer token"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0,
-                                    "stream": true
-                                }
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0,
+                                "stream": true
                             },
                             "override": {
                                 "endpoint": "http://localhost:7737"

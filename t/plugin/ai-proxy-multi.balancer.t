@@ -158,10 +158,10 @@ __DATA__
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
                                     "name": "openai",
-                                    "model": "gpt-4",
+                                    "provider": "openai",
                                     "weight": 4,
                                     "auth": {
                                         "header": {
@@ -169,6 +169,7 @@ __DATA__
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-4",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -178,7 +179,7 @@ __DATA__
                                 },
                                 {
                                     "name": "deepseek",
-                                    "model": "gpt-4",
+                                    "provider": "deepseek",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -186,6 +187,7 @@ __DATA__
                                         }
                                     },
                                     "options": {
+                                        "model": "deepseek-chat",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -239,7 +241,7 @@ passed
             end
 
             table.sort(restab)
-            ngx.log(ngx.WARN, "test picked providers: ", table.concat(restab, "."))
+            ngx.log(ngx.WARN, "test picked instances: ", table.concat(restab, "."))
 
         }
     }
@@ -266,10 +268,10 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                 "hash_on": "vars",
                                 "key": "query_string"
                             },
-                            "providers": [
+                            "instances": [
                                 {
                                     "name": "openai",
-                                    "model": "gpt-4",
+                                    "provider": "openai",
                                     "weight": 4,
                                     "auth": {
                                         "header": {
@@ -277,6 +279,7 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-4",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -286,7 +289,7 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                 },
                                 {
                                     "name": "deepseek",
-                                    "model": "gpt-4",
+                                    "provider": "deepseek",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -294,6 +297,7 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                         }
                                     },
                                     "options": {
+                                        "model": "deepseek-chat",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -366,105 +370,3 @@ GET /t
 --- error_log
 distribution: deepseek: 2
 distribution: openai: 8
-
-
-
-=== TEST 5: retry logic with different priorities
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "providers": [
-                                {
-                                    "name": "openai",
-                                    "model": "gpt-4",
-                                    "weight": 1,
-                                    "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:9999"
-                                    }
-                                },
-                                {
-                                    "name": "deepseek",
-                                    "model": "gpt-4",
-                                    "priority": 0,
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 6: test
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/anything"
-
-            local restab = {}
-
-            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "POST", body = body})
-                if not res then
-                    ngx.say(err)
-                    return
-                end
-                ngx.say(res.body)
-
-        }
-    }
---- request
-GET /t
---- response_body
-deepseek
---- error_log
-failed to send request to LLM: failed to connect to LLM server: connection refused. Retrying...

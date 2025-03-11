@@ -133,10 +133,13 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy-multi")
             local ok, err = plugin.check_schema({
-                providers = {
+                instances = {
                     {
-                        name = "openai",
-                        model = "gpt-4",
+                        name = "openai-official",
+                        provider = "openai",
+                        options = {
+                            model = "gpt-4",
+                        },
                         weight = 1,
                         auth = {
                             header = {
@@ -165,10 +168,13 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy-multi")
             local ok, err = plugin.check_schema({
-                providers = {
+                instances = {
                     {
-                        name = "some-unique",
-                        model = "gpt-4",
+                        name = "self-hosted",
+                        provider = "some-unique",
+                        options = {
+                            model = "gpt-4",
+                        },
                         weight = 1,
                         auth = {
                             header = {
@@ -187,7 +193,7 @@ passed
         }
     }
 --- response_body eval
-qr/.*provider: some-unique is not supported.*/
+qr/.*property "provider" validation failed: matches none of the enum values*/
 
 
 
@@ -202,10 +208,10 @@ qr/.*provider: some-unique is not supported.*/
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-4",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -213,6 +219,7 @@ qr/.*provider: some-unique is not supported.*/
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-4",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -265,10 +272,10 @@ Unauthorized
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-4",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -276,6 +283,7 @@ Unauthorized
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-4",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -360,7 +368,7 @@ prompt%3Dwhat%2520is%25201%2520%252B%25201
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body chomp
-unsupported content-type: application/x-www-form-urlencoded
+unsupported content-type: application/x-www-form-urlencoded, only application/json is supported
 
 
 
@@ -387,10 +395,10 @@ request format doesn't match schema: property "messages" is required
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "some-model",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -398,6 +406,7 @@ request format doesn't match schema: property "messages" is required
                                         }
                                     },
                                     "options": {
+                                        "model": "some-model",
                                         "foo": "bar",
                                         "temperature": 1.0
                                     },
@@ -461,10 +470,10 @@ options_works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "some-model",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -472,6 +481,7 @@ options_works
                                         }
                                     },
                                     "options": {
+                                        "model": "some-model",
                                         "foo": "bar",
                                         "temperature": 1.0
                                     },
@@ -534,10 +544,10 @@ path override works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-35-turbo-instruct",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -545,6 +555,7 @@ path override works
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-35-turbo-instruct",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true
