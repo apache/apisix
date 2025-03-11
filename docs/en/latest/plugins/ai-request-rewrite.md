@@ -29,26 +29,26 @@ description: This document contains information about the Apache APISIX ai-reque
 
 ## Description
 
-The `ai-request-rewrite` plugin leverages predefined prompts and AI LLM services to intelligently modify client requests, enabling AI-powered content transformation before forwarding to upstream services.
+The `ai-request-rewrite` plugin leverages predefined prompts and AI services to intelligently modify client requests, enabling AI-powered content transformation before forwarding to upstream services.
 
 
 ## Plugin Attributes
 
 | **Field**                 | **Required** | **Type** | **Description**                                                                      |
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
-| prompt                    | Yes          | String   | The prompt send to LLM.                                                              |
-| provider                  | Yes          | String   | Type of the AI service instance.                                                     |
+| prompt                    | Yes          | String   | The prompt send to AI service.                                                              |
+| provider                  | Yes          | String   | Type of the AI service.                                                     |
 | auth                      | Yes          | Object   | Authentication configuration                                                         |
 | auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
 | options                   | No           | Object   | Key/value settings for the model                                                     |
 | options.model             | No           | String   | Model to execute.                                                                    |
-| override.endpoint         | No           | String   | To be specified to override the endpoint of the AI Instance                          |
-| timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 3000         |
-| keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM. Default: true                                  |
-| keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM. Minimum: 1000. Default: 60000 |
-| keepalive_pool            | No           | Integer  | Keepalive pool size for requests to LLM. Minimum: 1. Default: 30                     |
-| ssl_verify                | No           | Boolean  | SSL verification for requests to LLM. Default: true                                  |
+| override.endpoint         | No           | String   | To be specified to override the endpoint of the AI service                          |
+| timeout                   | No           | Integer  | Timeout in milliseconds for requests to AI service. Range: 1 - 60000. Default: 3000         |
+| keepalive                 | No           | Boolean  | Enable keepalive for requests to AI service. Default: true                                  |
+| keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to AI service. Minimum: 1000. Default: 60000 |
+| keepalive_pool            | No           | Integer  | Keepalive pool size for requests to AI service. Minimum: 1. Default: 30                     |
+| ssl_verify                | No           | Boolean  | SSL verification for requests to AI service. Default: true                                  |
 
 
 ## How it works
@@ -59,7 +59,7 @@ The `ai-request-rewrite` plugin leverages predefined prompts and AI LLM services
 
 ## Example usage
 
-Create a route with the `ai-request-rewrite` plugin like so:
+Create a route with the `ai-request-rewrite` plugin like:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
