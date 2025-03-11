@@ -98,6 +98,7 @@ ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
 ai-rag
+ai-rate-limiting
 ai-aws-content-moderation
 ai-proxy-multi
 ai-proxy
