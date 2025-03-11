@@ -47,8 +47,7 @@ local schema = {
         },
         instances = {
             type = "array",
-            items = instance_limit_schema,
-            minItems = 1,
+            items = instance_limit_schema
         },
         rejected_code = {
             type = "integer", minimum = 200, maximum = 599, default = 503
@@ -57,18 +56,7 @@ local schema = {
             type = "string", minLength = 1
         },
     },
-    dependencies = {
-        limit = {"time_window"},
-        time_window = {"limit"}
-    },
-    anyOf = {
-        {
-            required = {"limit", "time_window"}
-        },
-        {
-            required = {"instances"}
-        }
-    }
+    required = {"limit", "time_window"},
 }
 
 local _M = {
@@ -124,10 +112,6 @@ end
 local function fetch_limit_conf_kvs(conf)
     local mt = {
         __index = function(t, k)
-            if not conf.limit then
-                return nil
-            end
-
             local limit_conf = transform_limit_conf(conf, nil, k)
             t[k] = limit_conf
             return limit_conf
@@ -150,9 +134,6 @@ function _M.access(conf, ctx)
 
     local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
     local limit_conf = limit_conf_kvs[ai_instance_name]
-    if not limit_conf then
-        return
-    end
     local code, msg = limit_count.rate_limit(limit_conf, ctx, plugin_name, 1, true)
     ctx.ai_rate_limiting = code and true or false
     return code, msg
@@ -162,9 +143,9 @@ end
 function _M.check_instance_status(conf, ctx, instance_name)
     if conf == nil then
         local plugins = ctx.plugins
-        for i = 1, #plugins, 2 do
-            if plugins[i]["name"] == plugin_name then
-                conf = plugins[i + 1]
+        for _, plugin in ipairs(plugins) do
+            if plugin.name == plugin_name then
+                conf = plugin
             end
         end
     end
@@ -183,10 +164,6 @@ function _M.check_instance_status(conf, ctx, instance_name)
 
     local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
     local limit_conf = limit_conf_kvs[instance_name]
-    if not limit_conf then
-        return true
-    end
-
     local code, _ = limit_count.rate_limit(limit_conf, ctx, plugin_name, 1, true)
     if code then
         core.log.info("rate limit for instance: ", instance_name, " code: ", code)
@@ -225,9 +202,7 @@ function _M.log(conf, ctx)
 
     local limit_conf_kvs = limit_conf_cache(conf, nil, fetch_limit_conf_kvs, conf)
     local limit_conf = limit_conf_kvs[instance_name]
-    if limit_conf then
-        limit_count.rate_limit(limit_conf, ctx, plugin_name, used_tokens)
-    end
+    limit_count.rate_limit(limit_conf, ctx, plugin_name, used_tokens)
 end
 
 
