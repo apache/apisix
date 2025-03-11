@@ -102,9 +102,54 @@ local _M = {
 }
 
 
+local function proxy_request_to_llm(conf, request_table, ctx)
+  local ai_driver = require("apisix.plugins.ai-drivers." .. conf.provider)
+  local extra_opts = {
+      endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
+      query_params = conf.auth.query or {},
+      headers = (conf.auth.header or {}),
+      model_options = conf.options
+  }
+
+  local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
+
+  if not res then
+      return nil, err, nil
+  end
+  return res, nil, httpc
+end
+
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 
+function _M.access(conf, ctx)
+
+  local request_table_client, err = core.request.get_json_request_body_table()
+  if not request_table_client then
+      return bad_request, err
+  end
+
+  local ai_request_table = {
+    messages = {
+        {
+            role = "system",
+            content = conf.prompt
+        },
+        {
+            role = "user",
+            content = request_table_client
+        }
+    }
+  }
+
+  local res, err, httpc = proxy_request_to_llm(conf, ai_request_table, ctx)
+  if not res then
+      return nil, err, nil
+  end
+
+  ngx.say(res)
+end
 
 return _M
