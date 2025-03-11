@@ -318,7 +318,7 @@ passed
 
 
 
-=== TEST 9: plugin mode off 
+=== TEST 9: plugin mode off
 --- request
 GET /hello
 --- more_headers

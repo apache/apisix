@@ -39,9 +39,9 @@ Depending on the plugin configuration, it is optional to add additional response
 The response headers are listed below:
 
 - **X-APISIX-CHAITIN-WAF**: Whether APISIX forwards the request to the WAF server.
-    - yes: forwarded  
-    - no: not forwarded  
-    - unhealthy: matches the match variables, but no WAF server is available.  
+    - yes: forwarded
+    - no: not forwarded
+    - unhealthy: matches the match variables, but no WAF server is available.
     - err: an error occurred during the execution of the plugin. Also includes the **X-APISIX-CHAITIN-WAF-ERROR** header.
     - waf-err: error while interacting with the WAF server. Also includes the **X-APISIX-CHAITIN-WAF-ERROR** header.
     - timeout: request to the WAF server timed out.
@@ -49,8 +49,8 @@ The response headers are listed below:
 - **X-APISIX-CHAITIN-WAF-TIME**: The time in milliseconds that APISIX spent interacting with WAF.
 - **X-APISIX-CHAITIN-WAF-STATUS**: The status code returned to APISIX by the WAF server.
 - **X-APISIX-CHAITIN-WAF-ACTION**: The action returned to APISIX by the WAF server.
-    - pass: request valid and passed  
-    - reject: request rejected by WAF service
+    - pass: request valid and passed.
+    - reject: request rejected by WAF service.
 - **X-APISIX-CHAITIN-WAF-SERVER**: Debug header. Indicates which WAF server was selected.
 
 ## Plugin Metadata
@@ -114,8 +114,8 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H "X-API-KE
 | config.keepalive_timeout | integer       | false    | 60000         | The idle connection timeout for the WAF service, in milliseconds.                                                                                                                                                                                                                                                                                         |
 | config.real_client_ip    | boolean       | false    | true          | Specifies whether to determine the client IP from the `X-Forwarded-For` header. If set to `false`, the plugin uses the direct client IP from the connection.                                                                                                                                                                                             |
 
-
 Below is a sample Route configuration that uses:
+
 - httpbun.org as the upstream backend.
 - mode set to monitor, so the plugin only logs potential blocks.
 - A matching rule that triggers the plugin when the custom header waf: true is set.
@@ -158,9 +158,10 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
 With the sample configuration described above (including your chosen `mode` and `real_client_ip` settings), the plugin behaves as follows:
 
 - **If the `match` condition is not satisfied** (for example, `waf: true` is missing), the request proceeds normally without contacting the WAF. You can observe:
+
   ```bash
   curl -H "Host: httpbun.org" http://127.0.0.1:9080/get -i
-  
+
   HTTP/1.1 200 OK
   Content-Type: application/json
   Content-Length: 408
@@ -169,7 +170,7 @@ With the sample configuration described above (including your chosen `mode` and 
   Date: Wed, 19 Jul 2023 09:30:42 GMT
   X-Powered-By: httpbun/3c0dc05883dd9212ac38b04705037d50b02f2596
   Server: APISIX/3.3.0
-  
+
   {
     "args": {},
     "headers": {
@@ -245,6 +246,7 @@ With the sample configuration described above (including your chosen `mode` and 
   ```
 
 - **Suspicious requests** that meet the plugin’s match rules and are flagged by the WAF are typically rejected with a 403 status, along with headers that include `X-APISIX-CHAITIN-WAF-ACTION: reject`. For example:
+
   ```bash
     curl -H "Host: httpbun.org" -H "waf: true" http://127.0.0.1:9080/getid=1%20AND%201=1 -i
 

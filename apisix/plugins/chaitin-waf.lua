@@ -242,7 +242,7 @@ end
 
 
 local function check_match(conf, ctx)
-    if not conf.match or next(conf.match) == nil then
+    if not conf.match or #conf.match == 0 then
         return true
     end
 
