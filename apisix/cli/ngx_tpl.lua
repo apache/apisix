@@ -431,7 +431,6 @@ http {
     {% if ssl.ssl_trusted_certificate ~= nil then %}
     lua_ssl_trusted_certificate {* ssl.ssl_trusted_certificate *};
     {% end %}
-    lua_ssl_trusted_certificate /etc/ssl/cert.pem;
     # http configuration snippet starts
     {% if http_configuration_snippet then %}
     {* http_configuration_snippet *}
