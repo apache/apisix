@@ -39,6 +39,8 @@ local str_sub = string.sub
 local tonumber = tonumber
 local clear_tab = require("table.clear")
 local pairs = pairs
+local buffer = require("string.buffer")
+
 
 local _M = {version = 0.1}
 
@@ -187,21 +189,16 @@ function _M.hold_body_chunk(ctx, hold_the_copy, max_resp_body_bytes)
     if type(chunk) == "string" and chunk ~= "" then
         body_buffer = ctx._body_buffer[ctx._plugin_name]
         if not body_buffer then
-            body_buffer = {
-                chunk,
-                n = 1
-            }
+            body_buffer = buffer.new()
             ctx._body_buffer[ctx._plugin_name] = body_buffer
             ctx._resp_body_bytes = #chunk
         else
-            local n = body_buffer.n + 1
-            body_buffer.n = n
-            body_buffer[n] = chunk
             ctx._resp_body_bytes = ctx._resp_body_bytes + #chunk
         end
+        body_buffer:put(chunk)
+
         if max_resp_body_bytes and ctx._resp_body_bytes >= max_resp_body_bytes then
-            local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
-            body_data = str_sub(body_data, 1, max_resp_body_bytes)
+            local body_data = body_buffer:get(max_resp_body_bytes)
             return body_data
         end
     end
@@ -215,7 +212,7 @@ function _M.hold_body_chunk(ctx, hold_the_copy, max_resp_body_bytes)
             return chunk
         end
 
-        local body_data = concat_tab(body_buffer, "", 1, body_buffer.n)
+        local body_data = body_buffer:get()
         ctx._body_buffer[ctx._plugin_name] = nil
         return body_data
     end
