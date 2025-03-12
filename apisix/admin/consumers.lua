@@ -43,18 +43,29 @@ local function check_conf(username, conf, need_username, schema)
             if not plugin_obj then
                 return nil, {error_msg = "unknown plugin " .. plugin_name}
             end
-            -- if plugin_obj and plugin_obj.type == "auth" then
-            plugin.decrypt_conf(plugin_name, plugin_conf, core.schema.TYPE_CONSUMER)
-            for key, key_value in pairs(plugin_conf) do
-                local consumer, _ = require("apisix.consumer").find_consumer(plugin_name, key, key_value)
-                if consumer then
-                    return nil, {
-                        error_msg = "duplicate key found with consumer: " .. consumer.username
-                    }
-                end
+            if plugin_obj.type == "auth" then
+                plugin.decrypt_conf(plugin_name, plugin_conf, core.schema.TYPE_CONSUMER)
 
+                local plugin_key_map = {
+                    ["key-auth"] = "key",
+                    ["basic-auth"] = "username", 
+                    ["jwt-auth"] = "key",
+                    ["hmac-auth"] = "key_id"
+                }
+
+                local key_field = plugin_key_map[plugin_name]
+                if key_field then
+                    local key_value = plugin_conf[key_field]
+                    if key_value then
+                        local consumer, _ = require("apisix.consumer").find_consumer(plugin_name, key_field, key_value)
+                        if consumer and consumer.username ~= conf.username then
+                            return nil, {
+                                error_msg = "duplicate key found with consumer: " .. consumer.username
+                            }
+                        end
+                    end
+                end
             end
-            -- end
         end
     end
 

@@ -43,10 +43,22 @@ local function check_conf(_id, conf, _need_id, schema)
 
             -- check duplicate key
             plugin.decrypt_conf(name, plugin_conf, core.schema.TYPE_CONSUMER)
-            for key, key_value in pairs(plugin_conf) do
-                local consumer, _ = require("apisix.consumer").find_consumer(name, key, key_value)
-                if consumer then
-                    return nil, {error_msg = "duplicate key found with consumer: " .. consumer.username}
+
+            local plugin_key_map = {
+              ["key-auth"] = "key",
+              ["basic-auth"] = "username",
+              ["jwt-auth"] = "key",
+              ["hmac-auth"] = "key_id"
+            }
+
+            local key_field = plugin_key_map[name]
+            if key_field then
+                local key_value = plugin_conf[key_field]
+                if key_value then
+                    local consumer, _ = require("apisix.consumer").find_consumer(name, key_field, key_value)
+                    if consumer and consumer.credential_id ~= _id then
+                        return nil, {error_msg = "duplicate key found with consumer: " .. consumer.username}
+                    end
                 end
             end
 
