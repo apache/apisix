@@ -150,8 +150,7 @@ local function parase_llm_response(res_body)
         return nil, "'choices' not in llm response"
     end
 
-    core.log.warn("llm response: ", core.json.encode(response_table.choices[1].message.content))
-    return core.json.encode(response_table.choices[1].message.content), nil
+    return response_table.choices[1].message.content, nil
 end
 
 
@@ -222,9 +221,7 @@ function _M.access(conf, ctx)
         end
 
         keepalive_or_close(conf, httpc)
-
-        --TODO: set new request to upstream
-        return res.status, res_body
+        ngx.req.set_body_data(llm_response)
     end
 
 end
