@@ -42,7 +42,8 @@ local function check_conf(_id, conf, _need_id, schema)
             end
 
             -- check duplicate key
-            plugin.decrypt_conf(name, plugin_conf, core.schema.TYPE_CONSUMER)
+            local decrypted_conf = core.table.deepcopy(plugin_conf)
+            plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
 
             local plugin_key_map = {
               ["key-auth"] = "key",
@@ -53,7 +54,7 @@ local function check_conf(_id, conf, _need_id, schema)
 
             local key_field = plugin_key_map[name]
             if key_field then
-                local key_value = plugin_conf[key_field]
+                local key_value = decrypted_conf[key_field]
                 if key_value then
                     local consumer, _ = require("apisix.consumer").find_consumer(name, key_field, key_value)
                     if consumer and consumer.credential_id ~= _id then

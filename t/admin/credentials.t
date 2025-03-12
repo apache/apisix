@@ -110,7 +110,7 @@ passed
                      "desc": "basic-auth for jack",
                      "plugins": {
                          "basic-auth": {
-                             "username": "the-user",
+                             "username": "the-new-user",
                              "password": "the-password"
                          }
                      }
@@ -119,7 +119,7 @@ passed
                     "value":{
                         "desc":"basic-auth for jack",
                         "id":"credential_a",
-                        "plugins":{"basic-auth":{"username":"the-user","password":"WvF5kpaLvIzjuk4GNIMTJg=="}}
+                        "plugins":{"basic-auth":{"username":"the-new-user","password":"WvF5kpaLvIzjuk4GNIMTJg=="}}
                     },
                     "key":"/apisix/consumers/jack/credentials/credential_a"
                 }]]
@@ -492,3 +492,135 @@ GET /t
 --- error_code: 400
 --- response_body
 {"error_msg":"missing credential id"}
+
+
+=== TEST 17: create a consumer bar
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers', ngx.HTTP_PUT, [[{ "username": "bar" }]])
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 18: create a credential with key-auth for the consumer bar
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/bar/credentials/credential_c',
+                ngx.HTTP_PUT,
+                [[{
+                     "desc": "key-auth for bar",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-bar"
+                         }
+                     }
+                }]]
+            )
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 19: can not create a credential with duplicate key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/bar/credentials/credential_d',
+                ngx.HTTP_PUT,
+                [[{
+                     "desc": "key-auth for bar",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-bar"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key found with consumer: bar"}
+
+
+
+=== TEST 20: can update credential credential_c with same key
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- update desc, keep same key
+            local code, body = t('/apisix/admin/consumers/bar/credentials/credential_c',
+                ngx.HTTP_PUT,
+                [[{
+                     "desc": "new description",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key-bar"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_code: 200
+
+
+
+=== TEST 21: delete credential credential_c
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/bar/credentials/credential_c', ngx.HTTP_DELETE)
+        }
+    }
+--- request
+GET /t
+
+
+=== TEST 22: delete consumer bar
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/bar', ngx.HTTP_DELETE)
+        }
+    }
+--- request
+GET /t
+
+
+=== TEST 23: delete consumer jack
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers/jack', ngx.HTTP_DELETE)
+        }
+    }
+--- request
+GET /t

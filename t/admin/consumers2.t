@@ -174,3 +174,86 @@ __DATA__
     }
 --- response_body
 {"error_msg":"wrong username"}
+
+
+
+=== TEST 6: create consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "jack",
+                     "desc": "key-auth for jack",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key"
+                         }
+                     }
+                }]]
+            )
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 7: duplicate consumer key, PUT
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "jack2",
+                     "desc": "key-auth for jack2",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 400
+--- response_body
+{"error_msg":"duplicate key found with consumer: jack"}
+
+
+
+=== TEST 8: update consumer jack
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                     "username": "jack",
+                     "desc": "key-auth for jack",
+                     "plugins": {
+                         "key-auth": {
+                             "key": "the-key"
+                         }
+                     }
+                }]]
+            )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed

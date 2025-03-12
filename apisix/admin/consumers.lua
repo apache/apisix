@@ -44,7 +44,8 @@ local function check_conf(username, conf, need_username, schema)
                 return nil, {error_msg = "unknown plugin " .. plugin_name}
             end
             if plugin_obj.type == "auth" then
-                plugin.decrypt_conf(plugin_name, plugin_conf, core.schema.TYPE_CONSUMER)
+                local decrypted_conf = core.table.deepcopy(plugin_conf)
+                plugin.decrypt_conf(plugin_name, decrypted_conf, core.schema.TYPE_CONSUMER)
 
                 local plugin_key_map = {
                     ["key-auth"] = "key",
@@ -55,7 +56,7 @@ local function check_conf(username, conf, need_username, schema)
 
                 local key_field = plugin_key_map[plugin_name]
                 if key_field then
-                    local key_value = plugin_conf[key_field]
+                    local key_value = decrypted_conf[key_field]
                     if key_value then
                         local consumer, _ = require("apisix.consumer").find_consumer(plugin_name, key_field, key_value)
                         if consumer and consumer.username ~= conf.username then
