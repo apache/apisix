@@ -125,7 +125,7 @@ local _M = {
       access_log_buffer = 16384,
       -- luacheck: push max code line length 300
       access_log_format =
-      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"',
+      '$remote_addr - $remote_user [$time_local] $http_host "$request" $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri" "$ai_token_usage" "$ai_ttfb"',
       -- luacheck: pop
       access_log_format_escape = "default",
       keepalive_timeout = "60s",
@@ -271,6 +271,9 @@ local _M = {
   },
   stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
   plugin_attr = {
+    ["ai-proxy"] = {
+      enable_access_log = true,
+    },
     ["log-rotate"] = {
       timeout = 10000,
       interval = 3600,

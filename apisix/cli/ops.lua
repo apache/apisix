@@ -558,7 +558,10 @@ Please modify "admin_key" in conf/config.yaml .
     if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
         zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
     end
-
+    local enable_ai_proxy_log
+    if yaml_conf.plugin_attr["ai-proxy"].enable_access_log then
+        enable_ai_proxy_log = true
+    end
     -- Using template.render
     local sys_conf = {
         lua_path = env.pkg_path_org,
@@ -580,7 +583,9 @@ Please modify "admin_key" in conf/config.yaml .
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
         opentelemetry_set_ngx_var = opentelemetry_set_ngx_var,
-        zipkin_set_ngx_var = zipkin_set_ngx_var
+        zipkin_set_ngx_var = zipkin_set_ngx_var,
+        enable_ai_proxy_log = enable_ai_proxy_log,
+        
     }
 
     if not yaml_conf.apisix then

@@ -588,7 +588,6 @@ http {
         set $upstream_scheme             'http';
         set $upstream_host               $http_host;
         set $upstream_uri                '';
-
         location /apisix/admin {
             {%if allow_admin then%}
                 {% for _, allow_ip in ipairs(allow_admin) do %}
@@ -747,7 +746,10 @@ http {
             set $dubbo_service_version       '';
             set $dubbo_method                '';
             {% end %}
-
+            {% if enable_ai_proxy_log then%}
+            set $ai_token_usage             '';
+            set $ai_ttfb                   '';
+            {% end %}
             access_by_lua_block {
                 apisix.http_access_phase()
             }
