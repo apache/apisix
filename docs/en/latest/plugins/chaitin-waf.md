@@ -60,7 +60,7 @@ The response headers are listed below:
 | nodes                    | array(object) | true     |               | A list of addresses for the Chaitin SafeLine WAF service.                                                                    |
 | nodes[0].host            | string        | true     |               | The address of Chaitin SafeLine WAF service. Supports IPv4, IPv6, Unix Socket, etc.                                          |
 | nodes[0].port            | integer       | false    | 80            | The port of the Chaitin SafeLine WAF service.                                                                                |
-| mode                     | string        | false    | (fallback)    | The global default mode if a Route doesn't specify its own: `off`, `monitor`, or `block`. Defaults to `block` if not set.    |
+| mode                     | string        | false    | block    | The global default mode if a Route doesn't specify its own: `off`, `monitor`, or `block`.     |
 | config                   | object        | false    |               | WAF configuration defaults if none are specified on the Route.                                                               |
 | config.connect_timeout   | integer       | false    | 1000          | Connect timeout, in milliseconds.                                                                                            |
 | config.send_timeout      | integer       | false    | 1000          | Send timeout, in milliseconds.                                                                                               |
