@@ -155,17 +155,16 @@ end
 
 
 function _M.check_schema(conf)
-    return core.schema.check(schema, conf)
-end
-
-
-function _M.access(conf, ctx)
-
     -- openai-compatible should be used with override.endpoint
     if conf.provider == "openai-compatible" and not conf.override.endpoint then
         return core.response.exit(400, {error_msg = "openai-compatible should be used with override.endpoint"})
     end
 
+    return core.schema.check(schema, conf)
+end
+
+
+function _M.access(conf, ctx)
     local request_body, err = core.request
     local client_request_table, err = core.request.get_body()
     if not client_request_table then return bad_request, err end
@@ -179,7 +178,8 @@ function _M.access(conf, ctx)
                 role = "user",
                 content = client_request_table
             }
-        }
+        },
+        stream = false
     }
     local res, err, httpc = proxy_request_to_llm(conf, ai_request_table, ctx)
 
@@ -190,39 +190,24 @@ function _M.access(conf, ctx)
 
     local body_reader = res.body_reader
     if not body_reader then
-        core.log.error("LLM sent no response body")
+        core.log.error("llm sent no response body")
         return internal_server_error
     end
 
-    if conf.options.stream then
-        while true do
-            local chunk, err = body_reader() -- will read chunk by chunk
-            if err then
-                core.log.error("failed to read response chunk: ", err)
-                break
-            end
-            if not chunk then break end
-            ngx_print(chunk)
-            ngx_flush(true)
-        end
-        keepalive_or_close(conf, httpc)
-        return
-    else
-        local res_body, err = res:read_body()
-        if not res_body then
-            core.log.error("failed to read response body: ", err)
-            return internal_server_error
-        end
-
-        local llm_response, err = parase_llm_response(res_body)
-        if not llm_response then
-            core.log.error("failed to parse llm response: ", err)
-            return internal_server_error
-        end
-
-        keepalive_or_close(conf, httpc)
-        ngx.req.set_body_data(llm_response)
+    local res_body, err = res:read_body()
+    if not res_body then
+        core.log.error("failed to read llm response body: ", err)
+        return internal_server_error
     end
+
+    local llm_response, err = parase_llm_response(res_body)
+    if not llm_response then
+        core.log.error("failed to parse llm response: ", err)
+        return internal_server_error
+    end
+
+    keepalive_or_close(conf, httpc)
+    ngx.req.set_body_data(llm_response)
 
 end
 
