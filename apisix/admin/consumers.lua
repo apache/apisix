@@ -48,7 +48,7 @@ local function check_conf(username, conf, need_username, schema)
 
                 local plugin_key_map = {
                     ["key-auth"] = "key",
-                    ["basic-auth"] = "username", 
+                    ["basic-auth"] = "username",
                     ["jwt-auth"] = "key",
                     ["hmac-auth"] = "key_id"
                 }
