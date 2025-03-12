@@ -119,7 +119,7 @@ Below is a sample Route configuration that uses:
 - httpbun.org as the upstream backend.
 - mode set to monitor, so the plugin only logs potential blocks.
 - A matching rule that triggers the plugin when the custom header waf: true is set.
-- An override to disable the “real client IP” logic by setting config.real_client_ip to false.
+- An override to disable the `real client IP` logic by setting config.real_client_ip to false.
 
 ```bash
 curl http://127.0.0.1:9180/apisix/admin/routes/1 \
