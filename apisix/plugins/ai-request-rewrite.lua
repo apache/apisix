@@ -22,6 +22,10 @@ local error = error
 local ipairs = ipairs
 
 
+local bad_request = ngx.HTTP_BAD_REQUEST
+local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
+
+
 local auth_item_schema = {
     type = "object",
     patternProperties = {
@@ -122,7 +126,7 @@ end
 
 local function proxy_request_to_llm(conf, request_table, ctx)
     local ai_driver = require("apisix.plugins.ai-drivers." .. conf.provider)
-    
+
     local extra_opts = {
         endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
         query_params = conf.auth.query or {},
@@ -144,8 +148,14 @@ end
 
 function _M.access(conf, ctx)
 
-    local request_table_client, err = core.request.get_json_request_body_table()
-    if not request_table_client then return bad_request, err end
+    -- openai-compatible should be used with override.endpoint
+    if conf.provider == "openai-compatible" and not conf.override.endpoint then
+        return core.response.exit(400, {error_msg = "openai-compatible should be used with override.endpoint"})
+    end
+
+    local request_body, err = core.request
+    local client_request_table, err = core.request.get_body()
+    if not client_request_table then return bad_request, err end
 
     local ai_request_table = {
         messages = {
@@ -154,7 +164,7 @@ function _M.access(conf, ctx)
                 content = conf.prompt
             }, {
                 role = "user",
-                content = core.json.encode(request_table_client)
+                content = client_request_table
             }
         }
     }
