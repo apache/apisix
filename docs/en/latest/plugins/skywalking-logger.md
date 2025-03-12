@@ -6,8 +6,9 @@ keywords:
   - Plugin
   - SkyWalking Logger
   - skywalking-logger
-description: This document contains information about the Apache APISIX skywalking-logger Plugin.
+description: The skywalking-logger pushes request and response logs as JSON objects to SkyWalking OAP server in batches and supports the customization of log formats.
 ---
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -27,11 +28,15 @@ description: This document contains information about the Apache APISIX skywalki
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/skywalking-logger" />
+</head>
+
 ## Description
 
-The `skywalking-logger` Plugin can be used to push access log data to SkyWalking OAP server of HTTP.
+The `skywalking-logger` Plugin pushes request and response logs as JSON objects to SkyWalking OAP server in batches and supports the customization of log formats.
 
-If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/next/en/api/x-process-propagation-headers-v3/). This provides the ability to send access logs as JSON objects to the SkyWalking OAP server.
+If there is an existing tracing context, it sets up the trace-log correlation automatically and relies on [SkyWalking Cross Process Propagation Headers Protocol](https://skywalking.apache.org/docs/main/next/en/api/x-process-propagation-headers-v3/).
 
 ## Attributes
 
@@ -40,72 +45,15 @@ If there is an existing tracing context, it sets up the trace-log correlation au
 | endpoint_addr         | string  | True     |                        |               | URI of the SkyWalking OAP server.                                                                            |
 | service_name          | string  | False    | "APISIX"               |               | Service name for the SkyWalking reporter.                                                                    |
 | service_instance_name | string  | False    | "APISIX Instance Name" |               | Service instance name for the SkyWalking reporter. Set it to `$hostname` to directly get the local hostname. |
-| log_format | object | False    |   |            | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |                             | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [Nginx variables](http://nginx.org/en/docs/varindex.html) in values if the string starts with `$`. |
 | timeout               | integer | False    | 3                      | [1,...]       | Time to keep the connection alive for after sending a request.                                               |
 | name                  | string  | False    | "skywalking logger"    |               | Unique identifier to identify the logger. If you use Prometheus to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`.                                                                    |
-| include_req_body      | boolean | False    | false                  | [false, true] | When set to `true` includes the request body in the log.                                                     |
-| include_req_body_expr  | array         | False    |         |               | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
-| include_resp_body      | boolean       | False    | false   | [false, true] | When set to `true` includes the response body in the log.                                                                                                                                                                      |
-| include_resp_body_expr | array         | False    |         |               | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
+| include_req_body       | boolean       | False    | false   |  If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |
+| include_req_body_expr  | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true.      |
+| include_resp_body      | boolean       | False    | false   | If true, include the response body in the log.       |
+| include_resp_body_expr | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
-
-### Example of default log format
-
-  ```json
-   {
-      "serviceInstance": "APISIX Instance Name",
-      "body": {
-        "json": {
-          "json": "body-json"
-        }
-      },
-      "endpoint": "/opentracing",
-      "service": "APISIX"
-    }
-  ```
-
-For body-json data, it is an escaped json string
-
-  ```json
-    {
-      "response": {
-        "status": 200,
-        "headers": {
-          "server": "APISIX/3.7.0",
-          "content-type": "text/plain",
-          "transfer-encoding": "chunked",
-          "connection": "close"
-        },
-        "size": 136
-      },
-      "route_id": "1",
-      "upstream": "127.0.0.1:1982",
-      "upstream_latency": 8,
-      "apisix_latency": 101.00020599365,
-      "client_ip": "127.0.0.1",
-      "service_id": "",
-      "server": {
-        "hostname": "localhost",
-        "version": "3.7.0"
-      },
-      "start_time": 1704429712768,
-      "latency": 109.00020599365,
-      "request": {
-        "headers": {
-          "content-length": "9",
-          "host": "localhost",
-          "connection": "close"
-        },
-        "method": "POST",
-        "body": "body-data",
-        "size": 94,
-        "querystring": {},
-        "url": "http://localhost:1984/opentracing",
-        "uri": "/opentracing"
-      }
-    }
-  ```
 
 ## Metadata
 
@@ -113,17 +61,16 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |  | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [Nginx variables](http://nginx.org/en/docs/varindex.html) in values. |
 
-:::info IMPORTANT
+## Examples
 
-Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `skywalking-logger` Plugin.
+The examples below demonstrate how you can configure `skywalking-logger` Plugin for different scenarios.
 
-:::
-
-The example below shows how you can configure through the Admin API:
+To follow along the example, start a storage, OAP and Booster UI with Docker Compose, following [Skywalking's documentation](https://skywalking.apache.org/docs/main/next/en/setup/backend/backend-docker/). Once set up, the OAP server should be listening on `12800` and you should be able to access the UI at [http://localhost:8080](http://localhost:8080).
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -132,68 +79,266 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
-```
+### Log Requests in Default Log Format
 
-With this configuration, your logs would be formatted as shown below:
+The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the route.
+
+Create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-```
-
-## Enable Plugin
-
-Once you have set up your SkyWalking OAP server, you can enable the Plugin on a specific Route as shown below:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-      "plugins": {
-            "skywalking-logger": {
-                "endpoint_addr": "http://127.0.0.1:12800"
-            }
-       },
-      "upstream": {
-           "type": "roundrobin",
-           "nodes": {
-               "127.0.0.1:1980": 1
-           }
-      },
-      "uri": "/hello"
-}'
-```
-
-## Example usage
-
-Now, if you make a request to APISIX, it will be logged in your SkyWalking OAP server:
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-## Delete Plugin
-
-To remove the `skywalking-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {},
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "skywalking-logger": {
+        "endpoint_addr": "http://192.168.2.103:12800"
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
+
+Send a request to the route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __Services__. You should see a service called `APISIX` with a log entry corresponding to your request:
+
+```json
+{
+  "upstream_latency": 674,
+  "request": {
+    "method": "GET",
+    "headers": {
+      "user-agent": "curl/8.6.0",
+      "host": "127.0.0.1:9080",
+      "accept": "*/*"
+    },
+    "url": "http://127.0.0.1:9080/anything",
+    "size": 85,
+    "querystring": {},
+    "uri": "/anything"
+  },
+  "client_ip": "192.168.65.1",
+  "route_id": "skywalking-logger-route",
+  "start_time": 1736945107345,
+  "upstream": "3.210.94.60:80",
+  "server": {
+    "version": "3.11.0",
+    "hostname": "7edbcebe8eb3"
+  },
+  "service_id": "",
+  "response": {
+    "size": 619,
+    "status": 200,
+    "headers": {
+      "content-type": "application/json",
+      "date": "Thu, 16 Jan 2025 12:45:08 GMT",
+      "server": "APISIX/3.11.0",
+      "access-control-allow-origin": "*",
+      "connection": "close",
+      "access-control-allow-credentials": "true",
+      "content-length": "391"
+    }
+  },
+  "latency": 764.9998664856,
+  "apisix_latency": 90.999866485596
+}
+```
+
+### Log Request and Response Headers With Plugin Metadata
+
+The following example demonstrates how you can customize log format using plugin metadata and built-in variables to log specific headers from request and response.
+
+In APISIX, plugin metadata is used to configure the common metadata fields of all Plugin instances of the same plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
+
+First, create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "skywalking-logger": {
+        "endpoint_addr": "http://192.168.2.103:12800"
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Next, configure the Plugin metadata for `skywalking-logger` to log the custom request header `env` and the response header `Content-Type`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/skywalking-logger" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "@timestamp": "$time_iso8601",
+      "client_ip": "$remote_addr",
+      "env": "$http_env",
+      "resp_content_type": "$sent_http_Content_Type"
+    }
+  }'
+```
+
+Send a request to the Route with the `env` header:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
+```
+
+You should receive an `HTTP/1.1 200 OK` response. In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __Services__. You should see a service called `APISIX` with a log entry corresponding to your request:
+
+```json
+[
+  {
+    "route_id": "skywalking-logger-route",
+    "client_ip": "192.168.65.1",
+    "@timestamp": "2025-01-16T12:51:53+00:00",
+    "host": "127.0.0.1",
+    "env": "dev",
+    "resp_content_type": "application/json"
+  }
+]
+```
+
+### Log Request Bodies Conditionally
+
+The following example demonstrates how you can conditionally log request body.
+
+Create a Route with the `skywalking-logger` Plugin as such, to only include request body if the URL query string `log_body` is `yes`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "skywalking-logger": {
+        "endpoint_addr": "http://192.168.2.103:12800",
+        "include_req_body": true,
+        "include_req_body_expr": [["arg_log_body", "==", "yes"]]
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Send a request to the Route with a URL query string satisfying the condition:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}'
+```
+
+You should receive an `HTTP/1.1 200 OK` response. In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __Services__. You should see a service called `APISIX` with a log entry corresponding to your request, with the request body logged:
+
+```json
+[
+  {
+    "request": {
+      "url": "http://127.0.0.1:9080/anything?log_body=yes",
+      "querystring": {
+        "log_body": "yes"
+      },
+      "uri": "/anything?log_body=yes",
+      ...,
+      "body": "{\"env\": \"dev\"}",
+    },
+    ...
+  }
+]
+```
+
+Send a request to the Route without any URL query string:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
+```
+
+You should not observe a log entry without the request body.
+
+:::info
+
+If you have customized the `log_format` in addition to setting `include_req_body` or `include_resp_body` to `true`, the Plugin would not include the bodies in the logs.
+
+As a workaround, you may be able to use the NGINX variable `$request_body` in the log format, such as:
+
+```json
+{
+  "skywalking-logger": {
+    ...,
+    "log_format": {"body": "$request_body"}
+  }
+}
+```
+
+:::
+
+### Associate Traces with Logs
+
+The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the route.
+
+Create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "skywalking": {
+        "sample_ratio": 1
+      },
+      "skywalking-logger": {
+        "endpoint_addr": "http://192.168.2.103:12800"
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Generate a few requests to the route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive `HTTP/1.1 200 OK` responses.
+
+In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __Services__. You should see a service called `APISIX` with a trace corresponding to your request, where you can view the associated logs:
+
+![trace context](https://static.apiseven.com/uploads/2025/01/16/soUpXm6b_trace-view-logs.png)
+
+![associated log](https://static.apiseven.com/uploads/2025/01/16/XD934LvU_associated-logs.png)
