@@ -68,7 +68,7 @@ The response headers are listed below:
 | config.req_body_size     | integer       | false    | 1024          | Request body size, in KB.                                                                                                    |
 | config.keepalive_size    | integer       | false    | 256           | Maximum concurrent idle connections to the SafeLine WAF detection service.                                                   |
 | config.keepalive_timeout | integer       | false    | 60000         | Idle connection timeout, in milliseconds.                                                                                    |
-| config.real_client_ip    | boolean       | false    | true          | Whether to use the `X-Forwarded-For` as the client IP (if present). If `false`, uses the direct client IP from the connection. |
+| config.real_client_ip    | boolean       | false    | true          | Specifies whether to use the `X-Forwarded-For` as the client IP (if present). If `false`, uses the direct client IP from the connection. |
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
