@@ -20,7 +20,7 @@ local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
 local pairs    = pairs
 
-local function check_conf(_id, conf, _need_id, schema)
+local function check_conf(id, conf, _need_id, schema)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -56,9 +56,13 @@ local function check_conf(_id, conf, _need_id, schema)
             if key_field then
                 local key_value = decrypted_conf[key_field]
                 if key_value then
-                    local consumer, _ = require("apisix.consumer").find_consumer(name, key_field, key_value)
-                    if consumer and consumer.credential_id ~= _id then
-                        return nil, {error_msg = "duplicate key found with consumer: " .. consumer.username}
+                    local consumer, _ = require("apisix.consumer")
+                        .find_consumer(name, key_field, key_value)
+                    if consumer and consumer.credential_id ~= id then
+                        return nil, {
+                          error_msg = "duplicate key found with consumer: " 
+                          .. consumer.username
+                        }
                     end
                 end
             end

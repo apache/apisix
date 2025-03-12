@@ -58,10 +58,12 @@ local function check_conf(username, conf, need_username, schema)
                 if key_field then
                     local key_value = decrypted_conf[key_field]
                     if key_value then
-                        local consumer, _ = require("apisix.consumer").find_consumer(plugin_name, key_field, key_value)
+                        local consumer, _ = require("apisix.consumer")
+                            .find_consumer(plugin_name, key_field, key_value)
                         if consumer and consumer.username ~= conf.username then
                             return nil, {
-                                error_msg = "duplicate key found with consumer: " .. consumer.username
+                                error_msg = "duplicate key found with consumer: " 
+                                    .. consumer.username
                             }
                         end
                     end
