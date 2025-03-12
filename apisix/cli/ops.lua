@@ -585,7 +585,6 @@ Please modify "admin_key" in conf/config.yaml .
         opentelemetry_set_ngx_var = opentelemetry_set_ngx_var,
         zipkin_set_ngx_var = zipkin_set_ngx_var,
         enable_ai_proxy_log = enable_ai_proxy_log,
-        
     }
 
     if not yaml_conf.apisix then
