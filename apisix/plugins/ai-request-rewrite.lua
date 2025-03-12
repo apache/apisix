@@ -141,6 +141,20 @@ local function proxy_request_to_llm(conf, request_table, ctx)
 end
 
 
+local function parase_llm_response(res_body)
+    local response_table = core.json.decode(res_body)
+
+    if not response_table then return nil, "failed to decode llm response" end
+
+    if not response_table.choices then
+        return nil, "'choices' not in llm response"
+    end
+
+    core.log.warn("llm response: ", core.json.encode(response_table.choices[1].message.content))
+    return core.json.encode(response_table.choices[1].message.content), nil
+end
+
+
 function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
@@ -200,8 +214,16 @@ function _M.access(conf, ctx)
             core.log.error("failed to read response body: ", err)
             return internal_server_error
         end
-        core.log.warn("response body: ", res_body)
+
+        local llm_response, err = parase_llm_response(res_body)
+        if not llm_response then
+            core.log.error("failed to parse llm response: ", err)
+            return internal_server_error
+        end
+
         keepalive_or_close(conf, httpc)
+
+        --TODO: set new request to upstream
         return res.status, res_body
     end
 
