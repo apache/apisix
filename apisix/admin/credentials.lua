@@ -60,7 +60,7 @@ local function check_conf(id, conf, _need_id, schema)
                         .find_consumer(name, key_field, key_value)
                     if consumer and consumer.credential_id ~= id then
                         return nil, {
-                          error_msg = "duplicate key found with consumer: " 
+                          error_msg = "duplicate key found with consumer: "
                           .. consumer.username
                         }
                     end

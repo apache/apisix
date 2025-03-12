@@ -62,7 +62,7 @@ local function check_conf(username, conf, need_username, schema)
                             .find_consumer(plugin_name, key_field, key_value)
                         if consumer and consumer.username ~= conf.username then
                             return nil, {
-                                error_msg = "duplicate key found with consumer: " 
+                                error_msg = "duplicate key found with consumer: "
                                     .. consumer.username
                             }
                         end
