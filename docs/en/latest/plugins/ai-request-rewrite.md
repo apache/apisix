@@ -31,7 +31,6 @@ description: This document contains information about the Apache APISIX ai-reque
 
 The `ai-request-rewrite` plugin leverages predefined prompts and AI services to intelligently modify client requests, enabling AI-powered content transformation before forwarding to upstream services.
 
-
 ## Plugin Attributes
 
 | **Field**                 | **Required** | **Type** | **Description**                                                                      |
@@ -50,12 +49,9 @@ The `ai-request-rewrite` plugin leverages predefined prompts and AI services to 
 | keepalive_pool            | No           | Integer  | Keepalive pool size for requests to AI service. Minimum: 1. Default: 30                     |
 | ssl_verify                | No           | Boolean  | SSL verification for requests to AI service. Default: true                                  |
 
-
 ## How it works
 
 ![image](https://github.com/user-attachments/assets/c7288e4f-00fc-46ca-b69e-d3d74d7085ca)
-
-
 
 ## Example usage
 
@@ -108,6 +104,7 @@ curl "http://127.0.0.1:9080/anything" \
 ```
 
 The request body for AI Service is as follows:
+
 ```json
 {
   "messages": [
@@ -123,6 +120,7 @@ The request body for AI Service is as follows:
 }
 
 ```
+
 The upstream service will receive a request like this:
 
 ```json
@@ -134,7 +132,6 @@ The upstream service will receive a request like this:
   "address": "123 Main St"
 }
 ```
-
 
 ### Send request to an OpenAI compatible LLM
 
