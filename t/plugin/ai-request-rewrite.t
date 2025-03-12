@@ -144,12 +144,10 @@ property "provider" is required
 --- config
     location /t {
         content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-proxy")
+            local plugin = require("apisix.plugins.ai-request-rewrite")
             local ok, err = plugin.check_schema({
-                model = {
-                    provider = "invalid-provider",
-                    name = "gpt-4",
-                },
+                prompt = "some prompt",
+                provider = "invalid-provider",
                 auth = {
                     header = {
                         some_header = "some_value"
@@ -165,4 +163,4 @@ property "provider" is required
         }
     }
 --- response_body
-provider: invalid-provider is not supported.
+property "provider" validation failed: matches none of the enum values
