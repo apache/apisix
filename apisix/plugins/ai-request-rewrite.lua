@@ -115,13 +115,6 @@ local _M = {
 }
 
 
-local function keepalive_or_close(conf, httpc)
-  if conf.set_keepalive then
-      httpc:set_keepalive(10000, 100)
-      return
-  end
-  httpc:close()
-end
 
 
 local function proxy_request_to_llm(conf, request_table, ctx)
@@ -156,8 +149,17 @@ end
 
 function _M.check_schema(conf)
     -- openai-compatible should be used with override.endpoint
-    if conf.provider == "openai-compatible" and not conf.override.endpoint then
-        return core.response.exit(400, {error_msg = "openai-compatible should be used with override.endpoint"})
+    if conf.provider == "openai-compatible" then
+        local override = conf.override
+
+        if not override then
+            return false, "override.endpoint is required for openai-compatible provider"
+        end
+
+        local endpoint = override.endpoint
+            if not endpoint then
+            return false, "override.endpoint is required for openai-compatible provider"
+        end
     end
 
     return core.schema.check(schema, conf)
@@ -206,7 +208,7 @@ function _M.access(conf, ctx)
         return internal_server_error
     end
 
-    keepalive_or_close(conf, httpc)
+    httpc:close()
     ngx.req.set_body_data(llm_response)
 
 end
