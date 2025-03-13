@@ -67,24 +67,16 @@ local schema = {
         },
         session = {
             type = "object",
+            description = [[configuration of the session cookie. Anything supported by
+            the lua-resty-session init constructor can be set in this object]],
             properties = {
                 secret = {
                     type = "string",
                     description = "the key used for the encrypt and HMAC calculation",
                     minLength = 16,
-                },
-                cookie = {
-                    type = "object",
-                    properties = {
-                        lifetime = {
-                            type = "integer",
-                            description = "it holds the cookie lifetime in seconds in the future",
-                        }
-                    }
                 }
             },
             required = {"secret"},
-            additionalProperties = false,
         },
         realm = {
             type = "string",
