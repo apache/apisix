@@ -126,7 +126,7 @@ function _M.rewrite(conf, ctx)
         core.log.error("failed to send request to ", endpoint, ": ", err)
         return HTTP_INTERNAL_SERVER_ERROR, err
     end
-    core.log.warn("dibag: ", core.json.encode(res))
+
     local results = res.body and res.body.ResultList
     if type(results) ~= "table" or core.table.isempty(results) then
         return HTTP_INTERNAL_SERVER_ERROR, "failed to get moderation results from response"
