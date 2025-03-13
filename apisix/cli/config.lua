@@ -267,6 +267,7 @@ local _M = {
     "serverless-post-function",
     "ext-plugin-post-req",
     "ext-plugin-post-resp",
+    "ai-request-rewrite",
   },
   stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
   plugin_attr = {

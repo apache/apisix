@@ -19,19 +19,48 @@ use t::APISIX 'no_plan';
 
 log_level("info");
 repeat_each(1);
+no_long_string();
 no_root_location();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
-    }
-
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+    my $http_config = $block->http_config // <<_EOC_;
+        server {
+            server_name openai;
+            listen 6724;
 
+            default_type 'application/json';
+
+            location /random {
+                content_by_lua_block {
+                   ngx.req.read_body()
+                   local body = ngx.req.get_body_data()
+
+                   local json = require("cjson.safe")
+                   local request_data = json.decode(body)
+
+                   local response = {
+                        choices = {
+                            {
+                                message = {
+                                    content = request_data.messages[1].content .. ' ' .. request_data.messages[2].content
+                                }
+                            }
+                        }
+                        }
+                    local json = require("cjson.safe")
+                    local json_response = json.encode(response)
+                    ngx.say(json_response)
+                }
+            }
+        }
+_EOC_
+
+    $block->set_value("http_config", $http_config);
 });
 
 run_tests();
@@ -164,3 +193,123 @@ property "provider" is required
     }
 --- response_body
 property "provider" validation failed: matches none of the enum values
+
+
+
+
+=== TEST 6: provider deepseek 
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({ 
+                prompt = "some prompt",
+                provider = "deepseek",
+                auth = {
+                    header = {
+                        some_header = "some_value"
+                    }
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: provider openai-compatible should be used with override.endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({ 
+                prompt = "some prompt",
+                provider = "openai-compatible",
+                auth = {
+                    header = {
+                        some_header = "some_value"
+                    }
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+override.endpoint is required for openai-compatible provider
+
+
+
+=== TEST 8: override path
+--- config
+    location /t {
+        content_by_lua_block {
+            print("Response Code:")
+
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt",
+                            "provider": "openai-compatible",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/random"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+            local json = require("cjson.safe")
+            local response_data = json.decode(actual_body)
+
+            if json.encode(response_data.data) == "some prompt some random content" then
+                ngx.say("passed")
+
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- response_body_chomp
+passed
