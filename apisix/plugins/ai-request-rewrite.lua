@@ -145,6 +145,20 @@ end
 
 
 function _M.check_schema(conf)
+    -- openai-compatible should be used with override.endpoint
+    if conf.provider == "openai-compatible" then
+        local override = conf.override
+
+        if not override then
+            return false, "override.endpoint is required for openai-compatible provider"
+        end
+
+        local endpoint = override.endpoint
+            if not endpoint then
+            return false, "override.endpoint is required for openai-compatible provider"
+        end
+    end
+
     return core.schema.check(schema, conf)
 end
 

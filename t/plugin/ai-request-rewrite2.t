@@ -64,6 +64,25 @@ add_block_preprocessor(sub {
                     ngx.say(json_response)
                 }
             }
+
+            location /test/params/in/overridden/endpoint {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+                    local core = require("apisix.core")
+
+                    local query_auth = ngx.req.get_uri_args()["api_key"]
+                    ngx.log(ngx.INFO, "found query params: ", core.json.stably_encode(ngx.req.get_uri_args()))
+
+                    if query_auth ~= "apikey" then
+                        ngx.status = 401
+                        ngx.say("Unauthorized")
+                        return
+                    end
+
+                    ngx.status = 200
+                    ngx.say("passed")
+                }
+            }
         }
 _EOC_
 
@@ -125,6 +144,83 @@ __DATA__
                 ngx.say('passed')
                 return
             end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 2: openai-compatible provider should use with override.endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                prompt = "some prompt",
+                provider = "openai-compatible",
+                auth = {
+                    header = {
+                        Authorization =  "Bearer token"
+                    }
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+override.endpoint is required for openai-compatible provider
+
+
+
+=== TEST 3: query params in override.endpoint should be sent to LLM
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "model": {
+                                "provider": "openai",
+                                "name": "gpt-35-turbo-instruct",
+                                "options": {
+                                    "max_tokens": 512,
+                                    "temperature": 1.0
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
         }
     }
 --- response_body
