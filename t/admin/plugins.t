@@ -101,6 +101,7 @@ ai-rag
 ai-aws-content-moderation
 ai-proxy-multi
 ai-proxy
+ai-rate-limiting
 proxy-mirror
 proxy-rewrite
 workflow

@@ -158,7 +158,8 @@
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",
-            "plugins/workflow"
+            "plugins/workflow",
+            "plugins/ai-rate-limiting"
           ]
         },
         {
