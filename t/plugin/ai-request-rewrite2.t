@@ -80,8 +80,8 @@ __DATA__
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {

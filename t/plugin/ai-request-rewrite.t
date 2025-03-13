@@ -38,11 +38,11 @@ add_block_preprocessor(sub {
             location /v1/chat/completions {
                 content_by_lua_block {
 
-                   ngx.req.read_body()
-                   local body = ngx.req.get_body_data()
+                    ngx.req.read_body()
+                    local body = ngx.req.get_body_data()
 
-                   local json = require("cjson.safe")
-                   local request_data = json.decode(body)
+                    local json = require("cjson.safe")
+                    local request_data = json.decode(body)
                     local header_auth = ngx.req.get_headers()["authorization"]
                     local query_auth = ngx.req.get_uri_args()["api_key"]
 
@@ -52,7 +52,7 @@ add_block_preprocessor(sub {
                         return
                     end
 
-                   local response = {
+                    local response = {
                         choices = {
                             {
                                 message = {
@@ -70,7 +70,7 @@ add_block_preprocessor(sub {
             location /random {
                 content_by_lua_block {
 
-                   local response = {
+                    local response = {
                         choices = {
                             {
                                 message = {
@@ -120,7 +120,7 @@ __DATA__
                 provider = "openai",
                 auth = {
                     header = {
-                       Authorization =  "Bearer token"
+                        Authorization =  "Bearer token"
                     }
                 }
             })
@@ -146,7 +146,7 @@ passed
                 provider = "openai",
                 auth = {
                     header = {
-                       Authorization =  "Bearer token"
+                        Authorization =  "Bearer token"
                     }
                 }
             })
@@ -160,7 +160,6 @@ passed
     }
 --- response_body
 property "prompt" is required
-
 
 
 
@@ -195,7 +194,7 @@ property "auth" is required
                 prompt = "some prompt",
                 auth = {
                     header = {
-                       Authorization =  "Bearer token"
+                        Authorization =  "Bearer token"
                     }
                 }
             })
@@ -222,7 +221,7 @@ property "provider" is required
                 provider = "invalid-provider",
                 auth = {
                     header = {
-                       Authorization =  "Bearer token"
+                        Authorization =  "Bearer token"
                     }
                 }
             })
@@ -239,18 +238,17 @@ property "provider" validation failed: matches none of the enum values
 
 
 
-
-=== TEST 6: provider deepseek 
+=== TEST 6: provider deepseek
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-request-rewrite")
-            local ok, err = plugin.check_schema({ 
+            local ok, err = plugin.check_schema({
                 prompt = "some prompt",
                 provider = "deepseek",
                 auth = {
                     header = {
-                       Authorization =  "Bearer token"
+                        Authorization =  "Bearer token"
                     }
                 }
             })
@@ -267,17 +265,17 @@ passed
 
 
 
-=== TEST 7: provider openai-compatible 
+=== TEST 7: provider openai-compatible
 --- config
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-request-rewrite")
-            local ok, err = plugin.check_schema({ 
+            local ok, err = plugin.check_schema({
                 prompt = "some prompt",
                 provider = "openai-compatible",
                 auth = {
                     header = {
-                       Authorization =  "Bearer token"
+                        Authorization =  "Bearer token"
                     }
                 }
             })
@@ -300,8 +298,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
@@ -309,7 +307,7 @@ passed
                             "provider": "openai",
                             "auth": {
                                 "header": {
-                                   "Authorization": "Bearer token"
+                                    "Authorization": "Bearer token"
                                 }
                             },
                             "override": {
@@ -362,8 +360,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
@@ -410,14 +408,15 @@ llm service returned status: 401
 passed
 
 
+
 === TEST 10: set route with correct query param
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
@@ -467,14 +466,15 @@ passed
 passed
 
 
+
 === TEST 11: set route with wrong query param
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
@@ -522,14 +522,15 @@ llm service returned status: 401
 passed
 
 
+
 === TEST 12: prompt passed correctly to llm service
 --- config
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
@@ -586,8 +587,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
@@ -650,8 +651,8 @@ passed
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {

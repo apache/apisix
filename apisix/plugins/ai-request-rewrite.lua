@@ -17,9 +17,6 @@
 local core = require("apisix.core")
 local plugin_name = "api-breaker"
 local ngx = ngx
-local math = math
-local error = error
-local ipairs = ipairs
 
 
 local bad_request = ngx.HTTP_BAD_REQUEST
@@ -98,7 +95,8 @@ local schema = {
             properties = {
                 endpoint = {
                     type = "string",
-                    description = "To be specified to override the endpoint of the AI service provider."
+                    description = "To be specified to override " ..
+                    "the endpoint of the AI service provider."
                 }
             }
         }
@@ -152,7 +150,6 @@ end
 
 
 function _M.access(conf, ctx)
-    local request_body, err = core.request
     local client_request_table, err = core.request.get_body()
     if not client_request_table then return bad_request, err end
 
