@@ -92,6 +92,8 @@ GET /t
 --- response_body
 passed
 
+
+
 === TEST 2: the proxy-rewrite runs at 'rewrite' phase and should get executed only once
 --- request
 GET /hello
@@ -100,4 +102,3 @@ apikey: auth-jack
 --- timeout: 15
 --- response_body
 123
-
