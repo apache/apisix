@@ -94,470 +94,470 @@ run_tests();
 
 __DATA__
 
-# === TEST 1: minimal viable configuration
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({
-#                 prompt = "some prompt",
-#                 provider = "openai",
-#                 auth = {
-#                     header = {
-#                         "Authorization": "Bearer token"
-#                     }
-#                 }
-#             })
+=== TEST 1: minimal viable configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                prompt = "some prompt",
+                provider = "openai",
+                auth = {
+                    header = {
+                       Authorization =  "Bearer token"
+                    }
+                }
+            })
 
-#             if not ok then
-#                 ngx.print(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# passed
-
-
-
-# === TEST 2: missing prompt field should not pass
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({
-#                 provider = "openai",
-#                 auth = {
-#                     header = {
-#                         "Authorization": "Bearer token"
-#                     }
-#                 }
-#             })
-
-#             if not ok then
-#                 ngx.say(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# property "prompt" is required
+            if not ok then
+                ngx.print(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
 
 
 
+=== TEST 2: missing prompt field should not pass
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                provider = "openai",
+                auth = {
+                    header = {
+                       Authorization =  "Bearer token"
+                    }
+                }
+            })
 
-# === TEST 3: missing auth field should not pass
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({
-#                 prompt = "some prompt",
-#                 provider = "openai",
-#             })
-
-#             if not ok then
-#                 ngx.say(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# property "auth" is required
-
-
-
-# === TEST 4: missing provider field should not pass
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({
-#                 prompt = "some prompt",
-#                 auth = {
-#                     header = {
-#                         "Authorization": "Bearer token"
-#                     }
-#                 }
-#             })
-
-#             if not ok then
-#                 ngx.say(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# property "provider" is required
-
-
-
-# === TEST 5: provider must be one of: deepseek, openai, openai-compatible
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({
-#                 prompt = "some prompt",
-#                 provider = "invalid-provider",
-#                 auth = {
-#                     header = {
-#                         "Authorization": "Bearer token"
-#                     }
-#                 }
-#             })
-
-#             if not ok then
-#                 ngx.say(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# property "provider" validation failed: matches none of the enum values
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+property "prompt" is required
 
 
 
 
-# === TEST 6: provider deepseek 
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({ 
-#                 prompt = "some prompt",
-#                 provider = "deepseek",
-#                 auth = {
-#                     header = {
-#                         "Authorization": "Bearer token"
-#                     }
-#                 }
-#             })
+=== TEST 3: missing auth field should not pass
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                prompt = "some prompt",
+                provider = "openai",
+            })
 
-#             if not ok then
-#                 ngx.say(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# passed
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+property "auth" is required
 
 
 
-# === TEST 7: provider openai-compatible 
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local plugin = require("apisix.plugins.ai-request-rewrite")
-#             local ok, err = plugin.check_schema({ 
-#                 prompt = "some prompt",
-#                 provider = "openai-compatible",
-#                 auth = {
-#                     header = {
-#                         "Authorization": "Bearer token"
-#                     }
-#                 }
-#             })
+=== TEST 4: missing provider field should not pass
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                prompt = "some prompt",
+                auth = {
+                    header = {
+                       Authorization =  "Bearer token"
+                    }
+                }
+            })
 
-#             if not ok then
-#                 ngx.say(err)
-#             else
-#                 ngx.say("passed")
-#             end
-#         }
-#     }
-# --- response_body
-# passed
-
-
-
-# === TEST 8: override endpoint works
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local t = require("lib.test_admin").test
-#             local code, body = t('/apisix/admin/routes/1',
-#                  ngx.HTTP_PUT,
-#                  [[{
-#                     "uri": "/anything",
-#                     "plugins": {
-#                         "ai-request-rewrite": {
-#                             "prompt": "some prompt",
-#                             "provider": "openai",
-#                             "auth": {
-#                                 "header": {
-#                                     "Authorization": "Bearer token"
-#                                 }
-#                             },
-#                             "override": {
-#                                 "endpoint": "http://localhost:6724/random"
-#                             },
-#                             "ssl_verify": false
-#                         }
-#                     },
-#                     "upstream": {
-#                         "type": "roundrobin",
-#                         "nodes": {
-#                             "httpbin.org:80": 1
-#                         }
-#                     }
-#                 }]]
-#             )
-#             if code >= 300 then
-#                 ngx.status = code
-#                 ngx.say(body)
-#                 return
-#             end
-
-
-#             local code, body, actual_body = t("/anything",
-#                 ngx.HTTP_POST,
-#                 "some random content",
-#                 nil,
-#                 {
-#                     ["Content-Type"] = "text/plain",
-#                 }
-#             )
-#             local json = require("cjson.safe")
-#             local response_data = json.decode(actual_body)
-
-#             if response_data.data == 'return by random endpoint' then
-#                 ngx.say("passed")
-#             else
-#                 ngx.say(actual_body)
-#             end
-#         }
-#     }
-# --- response_body
-# passed
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+property "provider" is required
 
 
 
-# === TEST 9: set route with wrong auth header
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local t = require("lib.test_admin").test
-#             local code, body = t('/apisix/admin/routes/1',
-#                  ngx.HTTP_PUT,
-#                  [[{
-#                     "uri": "/anything",
-#                     "plugins": {
-#                         "ai-request-rewrite": {
-#                             "prompt": "some prompt",
-#                             "auth": {
-#                                 "header": {
-#                                     "Authorization": "Bearer wrong-token"
-#                                 }
-#                             },
-#                             "provider": "openai",
-#                             "override": {
-#                                 "endpoint": "http://localhost:6724"
-#                             },
-#                             "ssl_verify": false
-#                         }
-#                     },
-#                     "upstream": {
-#                         "type": "roundrobin",
-#                         "nodes": {
-#                             "httpbin.org:80": 1
-#                         }
-#                     }
-#                 }]]
-#             )
+=== TEST 5: provider must be one of: deepseek, openai, openai-compatible
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                prompt = "some prompt",
+                provider = "invalid-provider",
+                auth = {
+                    header = {
+                       Authorization =  "Bearer token"
+                    }
+                }
+            })
 
-#             local code, body, actual_body = t("/anything",
-#                 ngx.HTTP_POST,
-#                 "some random content",
-#                 nil,
-#                 {
-#                     ["Content-Type"] = "text/plain",
-#                 }
-#             )
-#             if code == 500 then
-#                 ngx.say('passed')
-#                 return
-#             end
-#         }
-#     }
-
-# --- error_log
-# llm service returned status: 401
-# --- response_body
-# passed
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+property "provider" validation failed: matches none of the enum values
 
 
-# === TEST 10: set route with correct query param
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local t = require("lib.test_admin").test
-#             local code, body = t('/apisix/admin/routes/1',
-#                  ngx.HTTP_PUT,
-#                  [[{
-#                     "uri": "/anything",
-#                     "plugins": {
-#                         "ai-request-rewrite": {
-#                             "prompt": "some prompt",
-#                             "auth": {
-#                                 "query": {
-#                                     "api_key": "apikey"
-#                                 }
-#                             },
-#                             "provider": "openai",
-#                             "override": {
-#                                 "endpoint": "http://localhost:6724"
-#                             },
-#                             "ssl_verify": false
-#                         }
-#                     },
-#                     "upstream": {
-#                         "type": "roundrobin",
-#                         "nodes": {
-#                             "httpbin.org:80": 1
-#                         }
-#                     }
-#                 }]]
-#             )
 
 
-#             local code, body, actual_body = t("/anything",
-#                 ngx.HTTP_POST,
-#                 "some random content",
-#                 nil,
-#                 {
-#                     ["Content-Type"] = "text/plain",
-#                 }
-#             )
+=== TEST 6: provider deepseek 
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({ 
+                prompt = "some prompt",
+                provider = "deepseek",
+                auth = {
+                    header = {
+                       Authorization =  "Bearer token"
+                    }
+                }
+            })
 
-#             local json = require("cjson.safe")
-#             local response_data = json.decode(actual_body)
-
-#             if response_data.data == "some prompt some random content" then
-#                 ngx.say("passed")
-#             else
-#                 ngx.say("failed")
-#             end
-#         }
-#     }
-# --- response_body
-# passed
-
-
-# === TEST 10: set route with wrong query param
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local t = require("lib.test_admin").test
-#             local code, body = t('/apisix/admin/routes/1',
-#                  ngx.HTTP_PUT,
-#                  [[{
-#                     "uri": "/anything",
-#                     "plugins": {
-#                         "ai-request-rewrite": {
-#                             "prompt": "some prompt",
-#                             "auth": {
-#                                 "query": {
-#                                     "api_key": "wrong_key"
-#                                 }
-#                             },
-#                             "provider": "openai",
-#                             "override": {
-#                                 "endpoint": "http://localhost:6724"
-#                             },
-#                             "ssl_verify": false
-#                         }
-#                     },
-#                     "upstream": {
-#                         "type": "roundrobin",
-#                         "nodes": {
-#                             "httpbin.org:80": 1
-#                         }
-#                     }
-#                 }]]
-#             )
-
-#             local code, body, actual_body = t("/anything",
-#                 ngx.HTTP_POST,
-#                 "some random content",
-#                 nil,
-#                 {
-#                     ["Content-Type"] = "text/plain",
-#                 }
-#             )
-
-#             if code == 500 then
-#                 ngx.say('passed')
-#                 return
-#             end
-#         }
-#     }
-
-# --- error_log
-# llm service returned status: 401
-# --- response_body
-# passed
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
 
 
-# === TEST 11: prompt passed correctly to llm service
-# --- config
-#     location /t {
-#         content_by_lua_block {
-#             local t = require("lib.test_admin").test
-#             local code, body = t('/apisix/admin/routes/1',
-#                  ngx.HTTP_PUT,
-#                  [[{
-#                     "uri": "/anything",
-#                     "plugins": {
-#                         "ai-request-rewrite": {
-#                             "prompt": "some prompt to test",
-#                             "auth": {
-#                                 "query": {
-#                                     "api_key": "apikey"
-#                                 }
-#                             },
-#                             "provider": "openai",
-#                             "override": {
-#                                 "endpoint": "http://localhost:6724"
-#                             },
-#                             "ssl_verify": false
-#                         }
-#                     },
-#                     "upstream": {
-#                         "type": "roundrobin",
-#                         "nodes": {
-#                             "httpbin.org:80": 1
-#                         }
-#                     }
-#                 }]]
-#             )
+
+=== TEST 7: provider openai-compatible 
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({ 
+                prompt = "some prompt",
+                provider = "openai-compatible",
+                auth = {
+                    header = {
+                       Authorization =  "Bearer token"
+                    }
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
 
 
-#             local code, body, actual_body = t("/anything",
-#                 ngx.HTTP_POST,
-#                 "some random content",
-#                 nil,
-#                 {
-#                     ["Content-Type"] = "text/plain",
-#                 }
-#             )
 
-#             local json = require("cjson.safe")
-#             local response_data = json.decode(actual_body)
+=== TEST 8: override endpoint works
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt",
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                   "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/random"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
 
-#             if response_data.data == "some prompt to test some random content" then
-#                 ngx.say("passed")
-#             else
-#                 ngx.say("failed")
-#             end
-#         }
-#     }
-# --- response_body
-# passed
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+            local json = require("cjson.safe")
+            local response_data = json.decode(actual_body)
+
+            if response_data.data == 'return by random endpoint' then
+                ngx.say("passed")
+            else
+                ngx.say(actual_body)
+            end
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: set route with wrong auth header
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer wrong-token"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+            if code == 500 then
+                ngx.say('passed')
+                return
+            end
+        }
+    }
+
+--- error_log
+llm service returned status: 401
+--- response_body
+passed
+
+
+=== TEST 10: set route with correct query param
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt",
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+
+            local json = require("cjson.safe")
+            local response_data = json.decode(actual_body)
+
+            if response_data.data == "some prompt some random content" then
+                ngx.say("passed")
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- response_body
+passed
+
+
+=== TEST 11: set route with wrong query param
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt",
+                            "auth": {
+                                "query": {
+                                    "api_key": "wrong_key"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+
+            if code == 500 then
+                ngx.say('passed')
+                return
+            end
+        }
+    }
+
+--- error_log
+llm service returned status: 401
+--- response_body
+passed
+
+
+=== TEST 12: prompt passed correctly to llm service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt to test",
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+
+            local json = require("cjson.safe")
+            local response_data = json.decode(actual_body)
+
+            if response_data.data == "some prompt to test some random content" then
+                ngx.say("passed")
+            else
+                ngx.say("failed")
+            end
+        }
+    }
+--- response_body
+passed
