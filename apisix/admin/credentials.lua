@@ -18,6 +18,7 @@ local core     = require("apisix.core")
 local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
+local consumer = require("apisix.consumer")
 local pairs    = pairs
 
 local function check_conf(id, conf, _need_id, schema)
@@ -37,6 +38,7 @@ local function check_conf(id, conf, _need_id, schema)
             if not plugin_obj then
                 return nil, {error_msg = "unknown plugin " .. name}
             end
+
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
             end
@@ -55,13 +57,15 @@ local function check_conf(id, conf, _need_id, schema)
             local key_field = plugin_key_map[name]
             if key_field then
                 local key_value = decrypted_conf[key_field]
+
                 if key_value then
-                    local consumer, _ = require("apisix.consumer")
-                        .find_consumer(name, key_field, key_value)
+                    local consumer, _ = consumer
+                      .find_consumer(name, key_field, key_value)
+
                     if consumer and consumer.credential_id ~= id then
                         return nil, {
                           error_msg = "duplicate key found with consumer: "
-                          .. consumer.username
+                            .. consumer.username
                         }
                     end
                 end

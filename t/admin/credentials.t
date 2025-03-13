@@ -494,6 +494,7 @@ GET /t
 {"error_msg":"missing credential id"}
 
 
+
 === TEST 17: create a consumer bar
 --- config
     location /t {
@@ -602,6 +603,7 @@ passed
 GET /t
 
 
+
 === TEST 22: delete consumer bar
 --- config
     location /t {
@@ -612,6 +614,7 @@ GET /t
     }
 --- request
 GET /t
+
 
 
 === TEST 23: delete consumer jack
