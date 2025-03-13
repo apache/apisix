@@ -84,6 +84,22 @@ add_block_preprocessor(sub {
                     ngx.say(json_response)
                 }
             }
+
+            location /internalservererror {
+                content_by_lua_block {
+                    ngx.status = 500
+                    ngx.say("Internal Server Error")
+                    return
+                }
+            }
+
+            location /bad_request {
+                content_by_lua_block {
+                    ngx.status = 400
+                    ngx.say("Bad Request")
+                    return
+                }
+            }
         }
 _EOC_
 
@@ -559,5 +575,133 @@ passed
             end
         }
     }
+--- response_body
+passed
+
+
+
+=== TEST 13: check llm bad request
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt to test",
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724/bad_request"
+                            },
+                            "ssl_verify": false,
+                            "options": {
+                                "model": "check_options_model",
+                                "temperature": 0.5,
+                                "max_tokens": 100,
+                                "top_p": 1,
+                                "frequency_penalty": 0,
+                                "presence_penalty": 0
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+
+            if code == 500 then
+                ngx.say('passed')
+                return
+            end
+        }
+    }
+--- error_log
+llm service returned status: 400
+--- response_body
+passed
+
+
+
+=== TEST 14: check llm internalservererror
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt to test",
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724/internalservererror"
+                            },
+                            "ssl_verify": false,
+                            "options": {
+                                "model": "check_options_model",
+                                "temperature": 0.5,
+                                "max_tokens": 100,
+                                "top_p": 1,
+                                "frequency_penalty": 0,
+                                "presence_penalty": 0
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+
+            if code == 500 then
+                ngx.say('passed')
+                return
+            end
+        }
+    }
+--- error_log
+llm service returned status: 500
 --- response_body
 passed

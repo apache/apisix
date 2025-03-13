@@ -175,7 +175,7 @@ function _M.access(conf, ctx)
         return internal_server_error
     end
 
-    if res.status > 400 then
+    if res.status >= 400 then
         core.log.error("llm service returned status: ", res.status)
         return internal_server_error
     end
