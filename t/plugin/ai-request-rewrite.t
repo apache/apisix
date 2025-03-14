@@ -277,6 +277,9 @@ passed
                     header = {
                         Authorization =  "Bearer token"
                     }
+                },
+                override = {
+                    endpoint = "http://localhost:6724"
                 }
             })
 
