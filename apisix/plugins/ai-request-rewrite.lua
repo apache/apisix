@@ -15,9 +15,9 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local plugin_name = "api-breaker"
 local ngx = ngx
 
+local plugin_name = "ai-request-rewrite"
 
 local bad_request = ngx.HTTP_BAD_REQUEST
 local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
@@ -32,16 +32,14 @@ local auth_item_schema = {
     }
 }
 
-
 local auth_schema = {
     type = "object",
-    patternProperties = {
+    properties = {
         header = auth_item_schema,
         query = auth_item_schema
     },
     additionalProperties = false
 }
-
 
 local model_options_schema = {
     description = "Key/value settings for the model",
@@ -54,7 +52,6 @@ local model_options_schema = {
     },
     additionalProperties = true
 }
-
 
 local schema = {
     type = "object",
@@ -104,15 +101,12 @@ local schema = {
     required = {"prompt", "provider", "auth"}
 }
 
-
 local _M = {
     version = 0.1,
-    name = plugin_name,
     priority = 1073,
+    name = plugin_name,
     schema = schema
 }
-
-
 
 local function proxy_request_to_llm(conf, request_table, ctx)
     local ai_driver = require("apisix.plugins.ai-drivers." .. conf.provider)
@@ -131,7 +125,7 @@ local function proxy_request_to_llm(conf, request_table, ctx)
 end
 
 
-local function parase_llm_response(res_body)
+local function parse_llm_response(res_body)
     local response_table = core.json.decode(res_body)
 
     if not response_table then return nil, "failed to decode llm response" end
@@ -160,53 +154,57 @@ end
 
 function _M.access(conf, ctx)
     local client_request_table, err = core.request.get_body()
-    if not client_request_table then return bad_request, err end
+    if not client_request_table then
+        core.log.error("failed to get request body: ", err)
+        return bad_request, err
+    end
 
+    -- Prepare request for LLM service
     local ai_request_table = {
         messages = {
             {
                 role = "system",
                 content = conf.prompt
-            }, {
+            },
+            {
                 role = "user",
                 content = client_request_table
             }
         },
         stream = false
     }
-    local res, err, httpc = proxy_request_to_llm(conf, ai_request_table, ctx)
 
+    -- Send request to LLM service
+    local res, err, httpc = proxy_request_to_llm(conf, ai_request_table, ctx)
     if not res then
         core.log.error("failed to send request to LLM service: ", err)
         return internal_server_error
     end
 
+    -- Handle LLM response
     if res.status >= 400 then
-        core.log.error("llm service returned status: ", res.status)
+        core.log.error("LLM service returned error status: ", res.status)
         return internal_server_error
     end
 
-    local body_reader = res.body_reader
-    if not body_reader then
-        core.log.error("llm sent no response body")
-        return internal_server_error
-    end
-
+    -- Read response body
     local res_body, err = res:read_body()
     if not res_body then
-        core.log.error("failed to read llm response body: ", err)
+        core.log.error("failed to read LLM response body: ", err)
+        httpc:close()
         return internal_server_error
     end
 
-    local llm_response, err = parase_llm_response(res_body)
+    -- Parse LLM response
+    local llm_response, err = parse_llm_response(res_body)
     if not llm_response then
-        core.log.error("failed to parse llm response: ", err)
+        core.log.error("failed to parse LLM response: ", err)
+        httpc:close()
         return internal_server_error
     end
 
     httpc:close()
     ngx.req.set_body_data(llm_response)
-
 end
 
 return _M

@@ -220,7 +220,7 @@ override.endpoint is required for openai-compatible provider
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.print(body)
+            ngx.say(body)
         }
     }
 --- response_body

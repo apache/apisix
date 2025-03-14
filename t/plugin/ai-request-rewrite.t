@@ -406,7 +406,7 @@ passed
     }
 
 --- error_log
-llm service returned status: 401
+LLM service returned error status: 401
 --- response_body
 passed
 
@@ -520,13 +520,13 @@ passed
     }
 
 --- error_log
-llm service returned status: 401
+LLM service returned error status: 401
 --- response_body
 passed
 
 
 
-=== TEST 12: prompt passed correctly to llm service
+=== TEST 12: prompt passed correctly to LLM service
 --- config
     location /t {
         content_by_lua_block {
@@ -584,7 +584,7 @@ passed
 
 
 
-=== TEST 13: check llm bad request
+=== TEST 13: check LLM bad request
 --- config
     location /t {
         content_by_lua_block {
@@ -642,13 +642,13 @@ passed
         }
     }
 --- error_log
-llm service returned status: 400
+LLM service returned error status: 400
 --- response_body
 passed
 
 
 
-=== TEST 14: check llm internalservererror
+=== TEST 14: check LLM internalservererror
 --- config
     location /t {
         content_by_lua_block {
@@ -706,6 +706,6 @@ passed
         }
     }
 --- error_log
-llm service returned status: 500
+LLM service returned error status: 500
 --- response_body
 passed
