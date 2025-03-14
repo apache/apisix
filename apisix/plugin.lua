@@ -506,6 +506,16 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
             if plugin_conf._meta and plugin_conf._meta.priority then
                 custom_sort = true
             end
+
+            -- in the rewrite phase, the plugin executes in the following order:
+            -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
+            -- 2. merge plugins from consumer and route
+            -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
+            -- in this case, we need to skip the plugins that was already executed(step 1)
+            if phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
+                plugin_conf._skip_rewrite_in_consumer = true
+            end
+
             core.table.insert(plugins, plugin_obj)
             core.table.insert(plugins, plugin_conf)
         end
@@ -522,15 +532,6 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         for i = 1, #plugins, 2 do
             local plugin_obj = plugins[i]
             local plugin_conf = plugins[i + 1]
-
-            -- in the rewrite phase, the plugin executes in the following order:
-            -- 1. execute the rewrite phase of the plugins on route(including the auth plugins)
-            -- 2. merge plugins from consumer and route
-            -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
-            -- in this case, we need to skip the plugins that was already executed(step 1)
-            if phase == "rewrite_in_consumer" and not plugin_conf._from_consumer then
-                plugin_conf._skip_rewrite_in_consumer = true
-            end
 
             tmp_plugin_objs[plugin_conf] = plugin_obj
             core.table.insert(tmp_plugin_confs, plugin_conf)
