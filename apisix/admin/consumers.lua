@@ -17,7 +17,9 @@
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local resource = require("apisix.admin.resource")
-
+local plugin = require("apisix.plugin")
+local pairs = pairs
+local consumer = require("apisix.consumer")
 
 local function check_conf(username, conf, need_username, schema)
     local ok, err = core.schema.check(schema, conf)
@@ -32,7 +34,50 @@ local function check_conf(username, conf, need_username, schema)
     if conf.plugins then
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
-            return nil, {error_msg = "invalid plugins configuration: " .. err}
+            return nil, {
+                error_msg = "invalid plugins configuration: " .. err
+            }
+        end
+
+        -- check duplicate key
+        for plugin_name, plugin_conf in pairs(conf.plugins or {}) do
+            local plugin_obj = plugin.get(plugin_name)
+            if not plugin_obj then
+                return nil, {error_msg = "unknown plugin " .. plugin_name}
+            end
+
+            if plugin_obj.type == "auth" then
+                local decrypted_conf = core.table.deepcopy(plugin_conf)
+                plugin.decrypt_conf(plugin_name, decrypted_conf, core.schema.TYPE_CONSUMER)
+
+                local plugin_key_map = {
+                    ["key-auth"] = "key",
+                    ["basic-auth"] = "username",
+                    ["jwt-auth"] = "key",
+                    ["hmac-auth"] = "key_id"
+                }
+
+                local key_field = plugin_key_map[plugin_name]
+
+                if key_field then
+                    local key_value = decrypted_conf[key_field]
+
+                    if key_value then
+                        local consumer, _, err = consumer
+                            .find_consumer(plugin_name, key_field, key_value)
+                        if err then
+                            core.log.warn("failed to find consumer: ", err)
+                        end
+
+                        if consumer and consumer.username ~= conf.username then
+                            return nil, {
+                                error_msg = "duplicate key found with consumer: "
+                                    .. consumer.username
+                            }
+                        end
+                    end
+                end
+            end
         end
     end
 
