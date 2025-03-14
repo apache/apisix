@@ -94,7 +94,7 @@ passed
 
 
 
-=== TEST 2: the proxy-rewrite runs at 'rewrite' phase and should get executed only once
+=== TEST 2: the proxy-rewrite runs at 'rewrite' phase and should get executed only once, hence the response body is expected '123' not '123123'
 --- request
 GET /hello
 --- more_headers
