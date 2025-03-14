@@ -64,7 +64,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "uri": "/anything",
     "plugins": {
       "ai-request-rewrite": {
-        "prompt": "Given a JSON request body, identify and mask any sensitive information such as credit card numbers, social security numbers, and personal identification numbers (e.g., passport or driver\'s license numbers). Replace detected sensitive values with a masked format (e.g., \"*** **** **** 1234\") for credit card numbers. Ensure the JSON structure remains unchanged.",
+        "prompt": "Given a JSON request body, identify and mask any sensitive information such as credit card numbers, social security numbers, and personal identification numbers (e.g., passport or driver'\''s license numbers). Replace detected sensitive values with a masked format (e.g., \"*** **** **** 1234\") for credit card numbers. Ensure the JSON structure remains unchanged.",
         "provider": "openai",
         "auth": {
           "header": {
@@ -72,19 +72,15 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
           }
         },
         "options": {
-          "model": "gpt-4",
-          "max_tokens": 1024,
-          "temperature": 1
+          "model": "gpt-4"
         }
       }
     },
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "somerandom.com:443": 1
-      },
-      "scheme": "https",
-      "pass_host": "node"
+        "httpbin.org:80": 1
+      }
     }
   }'
 ```
@@ -144,7 +140,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "uri": "/anything",
     "plugins": {
       "ai-request-rewrite": {
-        "prompt": "Given a JSON request body, identify and mask any sensitive information such as credit card numbers, social security numbers, and personal identification numbers (e.g., passport or driver's license numbers). Replace detected sensitive values with a masked format (e.g., '*** **** **** 1234') for credit card numbers). Ensure the JSON structure remains unchanged.",
+        "prompt": "Given a JSON request body, identify and mask any sensitive information such as credit card numbers, social security numbers, and personal identification numbers (e.g., passport or driver'\''s license numbers). Replace detected sensitive values with a masked format (e.g., '*** **** **** 1234') for credit card numbers). Ensure the JSON structure remains unchanged.",
         "provider": "openai-compatible",
         "auth": {
           "header": {
@@ -164,10 +160,8 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     "upstream": {
       "type": "roundrobin",
       "nodes": {
-        "somerandom.com:443": 1
-      },
-      "scheme": "https",
-      "pass_host": "node"
+        "httpbin.org:80": 1
+      }
     }
   }'
 ```
