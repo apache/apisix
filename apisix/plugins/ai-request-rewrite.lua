@@ -108,7 +108,7 @@ local schema = {
 local _M = {
     version = 0.1,
     name = plugin_name,
-    priority = 9999,
+    priority = 1073,
     schema = schema
 }
 
@@ -149,12 +149,7 @@ function _M.check_schema(conf)
     if conf.provider == "openai-compatible" then
         local override = conf.override
 
-        if not override then
-            return false, "override.endpoint is required for openai-compatible provider"
-        end
-
-        local endpoint = override.endpoint
-            if not endpoint then
+        if not override or not override.endpoint then
             return false, "override.endpoint is required for openai-compatible provider"
         end
     end
