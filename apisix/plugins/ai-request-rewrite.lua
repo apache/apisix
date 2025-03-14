@@ -17,6 +17,8 @@
 local core = require("apisix.core")
 local ngx = ngx
 
+local require = require
+
 local plugin_name = "ai-request-rewrite"
 
 local bad_request = ngx.HTTP_BAD_REQUEST
