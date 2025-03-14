@@ -59,8 +59,12 @@ local function check_conf(id, conf, _need_id, schema)
                 local key_value = decrypted_conf[key_field]
 
                 if key_value then
-                    local consumer, _ = consumer
+                    local consumer, _, err = consumer
                       .find_consumer(name, key_field, key_value)
+
+                    if err then
+                        core.log.warn("failed to find consumer: ", err)
+                    end
 
                     if consumer and consumer.credential_id ~= id then
                         return nil, {
