@@ -49,7 +49,8 @@ local model_options_schema = {
     properties = {
         model = {
             type = "string",
-            description = "Model to execute. Examples: \"gpt-3.5-turbo\" for openai, \"deepseek-chat\" for deekseek, or \"qwen-turbo\" for openai-compatible services"
+            description = "Model to execute. Examples: \"gpt-3.5-turbo\" for openai, " ..
+            "\"deepseek-chat\" for deekseek, or \"qwen-turbo\" for openai-compatible services"
         }
     },
     additionalProperties = true
@@ -130,7 +131,7 @@ end
 local function parse_llm_response(res_body)
     local response_table, err = core.json.decode(res_body)
 
-    if not response_table then 
+    if not response_table then
         return nil, "failed to decode llm response " .. ", err: " .. err
     end
 

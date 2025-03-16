@@ -2,7 +2,7 @@
 title: ai-request-rewrite
 keywords:
   - Apache APISIX
-  - API Gateway
+  - AI Gateway
   - Plugin
   - ai-request-rewrite
 description: The ai-request-rewrite plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
@@ -42,7 +42,7 @@ The `ai-request-rewrite` plugin intercepts client requests before they are forwa
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
 | options                   | No           | Object   | Key/value settings for the model                                                     |
 | options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible services |
-| override.endpoint         | No           | String   | To be specified to override the endpoint of the LLM service,                           |
+| override.endpoint         | No           | String   | Override the default endpoint when using OpenAI-compatible services (e.g., self-hosted models or third-party LLM services) |
 | timeout                   | No           | Integer  | Timeout in milliseconds for requests to AI service. Range: 1 - 60000. Default: 3000         |
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to AI service. Default: true                                  |
 | keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to AI service. Minimum: 1000. Default: 60000 |
@@ -165,3 +165,4 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
     }
   }'
 ```
+
