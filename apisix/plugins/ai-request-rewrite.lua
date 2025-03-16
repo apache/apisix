@@ -49,7 +49,7 @@ local model_options_schema = {
     properties = {
         model = {
             type = "string",
-            description = "Model to execute."
+            description = "Model to execute. Examples: \"gpt-3.5-turbo\" for openai, \"deepseek-chat\" for deekseek, or \"qwen-turbo\" for openai-compatible services"
         }
     },
     additionalProperties = true
@@ -128,15 +128,22 @@ end
 
 
 local function parse_llm_response(res_body)
-    local response_table = core.json.decode(res_body)
+    local response_table, err = core.json.decode(res_body)
 
-    if not response_table then return nil, "failed to decode llm response" end
+    if not response_table then 
+        return nil, "failed to decode llm response " .. ", err: " .. err
+    end
 
     if not response_table.choices then
         return nil, "'choices' not in llm response"
     end
 
-    return response_table.choices[1].message.content, nil
+    local message = response_table.choices[1].message
+    if not message then
+        return nil, "'message' not in llm response choices"
+    end
+
+    return message.content, nil
 end
 
 
@@ -185,7 +192,7 @@ function _M.access(conf, ctx)
 
     -- Handle LLM response
     if res.status >= 400 then
-        core.log.error("LLM service returned error status: ", res.status)
+        core.log.error("LLM service returned error status: ", res.status, ", err: ", err)
         return internal_server_error
     end
 

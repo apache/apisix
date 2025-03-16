@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - ai-request-rewrite
-description: This document contains information about the Apache APISIX ai-request-rewrite Plugin.
+description: The ai-request-rewrite plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
 ---
 
 <!--
@@ -29,20 +29,20 @@ description: This document contains information about the Apache APISIX ai-reque
 
 ## Description
 
-The `ai-request-rewrite` plugin leverages predefined prompts and AI services to intelligently modify client requests, enabling AI-powered content transformation before forwarding to upstream services.
+The `ai-request-rewrite` plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
 
 ## Plugin Attributes
 
 | **Field**                 | **Required** | **Type** | **Description**                                                                      |
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
-| prompt                    | Yes          | String   | The prompt send to AI service.                                                              |
-| provider                  | Yes          | String   | Type of the AI service.                                                     |
+| prompt                    | Yes          | String   | The prompt send to LLM service.                                                      |
+| provider                  | Yes          | String   | Name of the LLM service. Available options: openai, deekseek and openai-compatible   |
 | auth                      | Yes          | Object   | Authentication configuration                                                         |
 | auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
 | options                   | No           | Object   | Key/value settings for the model                                                     |
-| options.model             | No           | String   | Model to execute.                                                                    |
-| override.endpoint         | No           | String   | To be specified to override the endpoint of the AI service                          |
+| options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible services |
+| override.endpoint         | No           | String   | To be specified to override the endpoint of the LLM service,                           |
 | timeout                   | No           | Integer  | Timeout in milliseconds for requests to AI service. Range: 1 - 60000. Default: 3000         |
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to AI service. Default: true                                  |
 | keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to AI service. Minimum: 1000. Default: 60000 |
@@ -99,7 +99,7 @@ curl "http://127.0.0.1:9080/anything" \
   }'
 ```
 
-The request body for AI Service is as follows:
+The request body send to the LLM Service is as follows:
 
 ```json
 {
@@ -117,7 +117,7 @@ The request body for AI Service is as follows:
 
 ```
 
-The upstream service will receive a request like this:
+The LLM processes the input and returns a modified request body, which replace detected sensitive values with a masked format then used for the upstream request:
 
 ```json
 {
