@@ -43,11 +43,11 @@ The `ai-request-rewrite` plugin intercepts client requests before they are forwa
 | options                   | No           | Object   | Key/value settings for the model                                                     |
 | options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible services |
 | override.endpoint         | No           | String   | Override the default endpoint when using OpenAI-compatible services (e.g., self-hosted models or third-party LLM services) |
-| timeout                   | No           | Integer  | Timeout in milliseconds for requests to AI service. Range: 1 - 60000. Default: 3000         |
-| keepalive                 | No           | Boolean  | Enable keepalive for requests to AI service. Default: true                                  |
-| keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to AI service. Minimum: 1000. Default: 60000 |
-| keepalive_pool            | No           | Integer  | Keepalive pool size for requests to AI service. Minimum: 1. Default: 30                     |
-| ssl_verify                | No           | Boolean  | SSL verification for requests to AI service. Default: true                                  |
+| timeout                   | No           | Integer  | Total timeout in milliseconds for requests to LLM service, including connect, send, and read timeouts. Range: 1 - 60000. Default: 3000|
+| keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM service. Default: true                                  |
+| keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM service. Minimum: 1000. Default: 60000 |
+| keepalive_pool            | No           | Integer  | Keepalive pool size for requests to LLM service. Minimum: 1. Default: 30                     |
+| ssl_verify                | No           | Boolean  | SSL verification for requests to LLM service. Default: true                                  |
 
 ## How it works
 

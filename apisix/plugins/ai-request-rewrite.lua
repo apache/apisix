@@ -75,7 +75,8 @@ local schema = {
             minimum = 1,
             maximum = 60000,
             default = 30000,
-            description = "timeout in milliseconds"
+            description = "Total timeout in milliseconds for requests to LLM service, " ..
+            "including connect, send, and read timeouts."
         },
         keepalive = {
             type = "boolean",
