@@ -96,7 +96,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Trace All Requests
 
-The following example demonstrates how you can trace all requests passing through a route.
+The following example demonstrates how you can trace all requests passing through a Route.
 
 Create a Route with `skywalking` and configure the sampling ratio to be 1 to trace all requests:
 
@@ -120,7 +120,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a few requests to the route:
+Send a few requests to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -134,7 +134,7 @@ In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __S
 
 ### Associate Traces with Logs
 
-The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the route.
+The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the Route.
 
 Create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
 
@@ -161,7 +161,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Generate a few requests to the route:
+Generate a few requests to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
