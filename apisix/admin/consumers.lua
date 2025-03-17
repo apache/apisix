@@ -34,9 +34,7 @@ local function check_conf(username, conf, need_username, schema)
     if conf.plugins then
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
-            return nil, {
-                error_msg = "invalid plugins configuration: " .. err
-            }
+            return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
         -- check duplicate key
