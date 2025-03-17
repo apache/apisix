@@ -44,7 +44,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | field | object | 是 | | Elasticsearch `field` 配置。 |
 | field.index | string | 是 | | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。 |
 | field.type | string | 否 | Elasticsearch 默认值 | Elasticsearch [_type 字段](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field)。 |
-| log_format | object | 否 | | JSON 格式的键值对中的自定义日志格式。值中支持 [APISIX](../apisix-variable.md) 或 [Nginx 变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否 | | JSON 格式的键值对中的自定义日志格式。值中支持 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 | auth | array | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
 | auth.username | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。 |
 | auth.password | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 密码。 |
@@ -63,7 +63,7 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| log_format | object | 否 |  |自定义日志格式为 JSON 格式的键值对。值中支持 [APISIX 变量](../apisix-variable.md) 和 [Nginx 变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否 |  |自定义日志格式为 JSON 格式的键值对。值中支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 
 ## 示例
 
@@ -115,7 +115,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "elasticsearch-logger-route",
     "uri": "/anything",
@@ -200,7 +200,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ### 使用 Plugin Metadata 记录请求和响应标头
 
-以下示例演示了如何使用 [Plugin Metadata](../terminology/plugin-metadata.md) 和 [Nginx 变量](http://nginx.org/en/docs/varindex.html) 自定义日志格式，以记录请求和响应中的特定标头。
+以下示例演示了如何使用 [Plugin Metadata](../terminology/plugin-metadata.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html) 自定义日志格式，以记录请求和响应中的特定标头。
 
 在 APISIX 中，[Plugin Metadata](../terminology/plugin-metadata.md) 用于配置同一插件的所有插件实例的通用元数据字段。当插件在多个资源中启用并需要对其元数据字段进行通用更新时，它很有用。
 
@@ -208,7 +208,7 @@ curl -i "http://127.0.0.1:9080/anything"
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "elasticsearch-logger-route",
     "uri": "/anything",
@@ -233,7 +233,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "log_format": {
       "host": "$host",
@@ -283,7 +283,7 @@ curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "plugins": {
       "elasticsearch-logger": {

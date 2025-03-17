@@ -43,7 +43,7 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | field         | object   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
-| log_format | object | False    |                             | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [Nginx variables](http://nginx.org/en/docs/varindex.html) in values. |
+| log_format | object | False    |                             | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
@@ -62,7 +62,7 @@ This Plugin supports using batch processors to aggregate and process entries (lo
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| log_format | object | False |  | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) in values. |
+| log_format | object | False |  | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
 
 ## Examples
 
@@ -114,7 +114,7 @@ Create a Route with `elasticsearch-logger` to configure the `index` field as `ga
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "elasticsearch-logger-route",
     "uri": "/anything",
@@ -199,7 +199,7 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 
 ### Log Request and Response Headers With Plugin Metadata
 
-The following example demonstrates how you can customize log format using [Plugin Metadata](../terminology/plugin-metadata.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) to log specific headers from request and response.
+The following example demonstrates how you can customize log format using [Plugin Metadata](../terminology/plugin-metadata.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) to log specific headers from request and response.
 
 In APISIX, [Plugin Metadata](../terminology/plugin-metadata.md) is used to configure the common metadata fields of all Plugin instances of the same plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
 
@@ -207,7 +207,7 @@ First, create a Route with `elasticsearch-logger` as follows:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "elasticsearch-logger-route",
     "uri": "/anything",
@@ -232,7 +232,7 @@ Next, configure the Plugin metadata for `elasticsearch-logger`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "log_format": {
       "host": "$host",
@@ -282,7 +282,7 @@ Create a Route with `elasticsearch-logger` to only log request body if the URL q
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "plugins": {
       "elasticsearch-logger": {
