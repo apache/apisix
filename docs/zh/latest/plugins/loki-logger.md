@@ -51,7 +51,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 | keepalive | boolean | 否 | true | | 如果为 true，则保持连接以应对多个请求。|
 | keepalive_timeout | integer | 否 | 60000 | >=1000 | Keepalive 超时时间（以毫秒为单位）。|
 | keepalive_pool | integer | 否 | 5 | >=1 | 连接池中的最大连接数。|
-| log_format | object | 否 | | |自定义日志格式为 JSON 格式的键值对。值中支持 [APISIX 变量](../apisix-variable.md) 和 [Nginx 变量](http://nginx.org/en/docs/varindex.html)。 |
+| log_format | object | 否 | | |自定义日志格式为 JSON 格式的键值对。值中支持 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 | name | string | 否 | loki-logger | | 批处理器插件的唯一标识符。如果使用 [Prometheus](./prometheus.md) 监控 APISIX 指标，则名称会导出到 `apisix_batch_process_entries`。 |
 | include_req_body | boolean | 否 | false | | 如果为 true，则将请求正文包含在日志中。请注意，如果请求正文太大而无法保存在内存中，则由于 NGINX 的限制而无法记录。 |
 | include_req_body_expr | array[array] | 否 | | |一个或多个 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 形式条件的数组。在 `include_req_body` 为 true 时使用。仅当此处配置的表达式计算结果为 true 时，才会记录请求正文。|
@@ -66,7 +66,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 
 | 名称 | 类型 | 必选项 | 默认值 | 描述 |
 |------|------|----------|--|-------------|
-| log_format | object | 否 |  | 日志格式以 JSON 格式声明为键值对。值只支持字符串类型。可以通过在字符串前面加上 `$` 来使用 [APISIX 变量](../apisix-variable.md) 和 [Nginx 变量](http://nginx.org/en/docs/varindex.html) 。 |
+| log_format | object | 否 |  | 日志格式以 JSON 格式声明为键值对。值只支持字符串类型。可以通过在字符串前面加上 `$` 来使用 [APISIX 变量](../apisix-variable.md) 和 [NGINX 变量](http://nginx.org/en/docs/varindex.html) 。 |
 
 ## 示例
 
