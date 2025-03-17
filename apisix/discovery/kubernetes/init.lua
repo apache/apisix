@@ -372,11 +372,35 @@ local _M = {
 }
 
 
+local function refresh_token(handle, token_file)
+    local file, err = read_env(token_file)
+    if err then
+        core.log.error("failed to read token file path: ", err)
+        return
+    end
+
+    local token, err = util.read_file(file)
+    if err then
+        core.log.error("failed to refresh token from file: ", err)
+        return
+    end
+
+    token = token:gsub("%s+", "")
+    if token ~= handle.apiserver.token then
+        core.log.info("kubernetes token updated")
+        handle.apiserver.token = token
+    end
+end
+
 local function start_fetch(handle)
     local timer_runner
     timer_runner = function(premature)
         if premature then
             return
+        end
+
+        if handle.token_file then
+            refresh_token(handle, handle.token_file)
         end
 
         local ok, status = pcall(handle.list_watch, handle, handle.apiserver)
@@ -459,7 +483,8 @@ local function single_mode_init(conf)
     ctx = setmetatable({
         endpoint_dict = endpoint_dict,
         apiserver = apiserver,
-        default_weight = default_weight
+        default_weight = default_weight,
+        token_file = conf.client.token_file,
     }, { __index = endpoints_informer })
 
     start_fetch(ctx)
@@ -565,7 +590,8 @@ local function multiple_mode_init(confs)
         ctx[id] = setmetatable({
             endpoint_dict = endpoint_dict,
             apiserver = apiserver,
-            default_weight = default_weight
+            default_weight = default_weight,
+            token_file = conf.client.token_file,
         }, { __index = endpoints_informer })
     end
 

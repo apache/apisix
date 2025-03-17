@@ -94,6 +94,23 @@ _EOC_
             }
         }
 
+        location /update_token {
+            content_by_lua_block {
+                local token_file = "$::token_file"
+                
+                local file = io.open(token_file, "w")
+                file:write("invalid_token_value")
+                file:close()
+                
+                ngx.sleep(2)
+                
+                file = io.open(token_file, "w")
+                local token_value = [[$::token_value]]
+                file:write(token_value)
+                file:close()
+            }
+        }
+
 _EOC_
 
     $block->set_value("config", $config);
@@ -346,3 +363,25 @@ GET /compare
 Content-type: application/json
 --- response_body
 true
+
+
+
+=== TEST 7: auto refresh token when token expired
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    client:
+        token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
+--- request
+GET /update_token
+--- grep_error_log eval
+qr/list failed, kind: Endpoints, reason: Unauthorized/
+--- grep_error_log_out
+list failed, kind: Endpoints, reason: Unauthorized
