@@ -97,13 +97,10 @@ _EOC_
         location /update_token {
             content_by_lua_block {
                 local token_file = "$::token_file"
-                
                 local file = io.open(token_file, "w")
                 file:write("invalid_token_value")
                 file:close()
-                
                 ngx.sleep(2)
-                
                 file = io.open(token_file, "w")
                 local token_value = [[$::token_value]]
                 file:write(token_value)
