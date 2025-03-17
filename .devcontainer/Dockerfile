@@ -18,7 +18,7 @@
 FROM ubuntu:24.04
 
 RUN apt update && export DEBIAN_FRONTEND=noninteractive \
-    && apt install -y sudo git make gcc
+    && apt install -y sudo git make gcc tini
 
 COPY Makefile .requirements apisix-master-0.rockspec ./
 COPY utils/install-dependencies.sh utils/linux-install-luarocks.sh utils/
@@ -35,3 +35,5 @@ RUN curl -L https://github.com/etcd-io/etcd/releases/download/${ETCD_VER}/etcd-$
     && mv /tmp/etcd-download-test/etcdctl /usr/bin \
     && rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz && rm -rf /tmp/etcd-download-test \
     && rm -rf /tmp/*
+
+ENTRYPOINT [ "tini", "--" ]
