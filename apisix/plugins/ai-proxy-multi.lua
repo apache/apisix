@@ -197,6 +197,7 @@ function _M.access(conf, ctx)
     local name, ai_instance = pick_ai_instance(ctx, conf, ups_tab)
     ctx.picked_ai_instance_name = name
     ctx.picked_ai_instance = ai_instance
+    ctx.bypass_nginx_upstream = true
 end
 
 
