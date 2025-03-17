@@ -54,8 +54,8 @@ The traffic ratio between Upstream services may be less accurate since round rob
 | rules.weighted_upstreams.weight      | integer        | False    | weight = 1 |                             | Weight for each upstream.  |
 | rules.weighted_upstreams.upstream    | object         | False    |            |                             | Configuration of the upstream. Certain configuration options Upstream are not supported here. These fields are `service_name`, `discovery_type`, `checks`, `retries`, `retry_timeout`, `desc`, and `labels`. As a workaround, you can create an Upstream object and configure it in `upstream_id`.    |
 | rules.weighted_upstreams.upstream.type                  | array           | False    | roundrobin | [roundrobin, chash]         | Algorithm for traffic splitting. `roundrobin` for weighted round robin and `chash` for consistent hashing.        |
-| rules.weighted_upstreams.upstream.hash_on               | array           | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [Nginx variables](https://nginx.org/en/docs/varindex.html), headers, cookie, consumer, or a combination of [Nginx variables](https://nginx.org/en/docs/varindex.html).         |
-| rules.weighted_upstreams.upstream.key                   | string         | False    |            |                             | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the consumer name will be used as the key automatically.          |
+| rules.weighted_upstreams.upstream.hash_on               | array           | False    | vars       |                             | Used when `type` is `chash`. Support hashing on [NGINX  variables](https://nginx.org/en/docs/varindex.html), headers, cookie, Consumer, or a combination of [NGINX  variables](https://nginx.org/en/docs/varindex.html).         |
+| rules.weighted_upstreams.upstream.key                   | string         | False    |            |                             | Used when `type` is `chash`. When `hash_on` is set to `header` or `cookie`, `key` is required. When `hash_on` is set to `consumer`, `key` is not required as the Consumer name will be used as the key automatically.          |
 | rules.weighted_upstreams.upstream.nodes                 | object         | False    |            |                             | Addresses of the Upstream nodes.   |
 | rules.weighted_upstreams.upstream.timeout               | object         | False    | 15         |                             |  Timeout in seconds for connecting, sending and receiving messages.                |
 | rules.weighted_upstreams.upstream.pass_host             | array           | False    | "pass"     | ["pass", "node", "rewrite"] | Mode deciding how the host name is passed. `pass` passes the client's host name to the upstream. `node` passes the host configured in the node of the upstream. `rewrite` passes the value configured in `upstream_host`.             |
@@ -64,7 +64,7 @@ The traffic ratio between Upstream services may be less accurate since round rob
 
 ## Examples
 
-The examples below shows different use cases for using the `traffic-split` plugin.
+The examples below show different use cases for using the `traffic-split` Plugin.
 
 :::note
 
@@ -78,7 +78,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Implement Canary Release
 
-The following example demonstrates how to implement canary release with this plugin.
+The following example demonstrates how to implement canary release with this Plugin.
 
 A Canary release is a gradual deployment in which an increasing percentage of traffic is directed to a new release, allowing for a controlled and monitored rollout. This method ensures that any potential issues or bugs in the new release can be identified and addressed early on, before fully redirecting all traffic.
 
@@ -148,7 +148,7 @@ Adjust the Upstream weights accordingly to complete the canary release.
 
 ### Implement Blue-Green Deployment
 
-The following example demonstrates how to implement blue-green deployment with this plugin.
+The following example demonstrates how to implement blue-green deployment with this Plugin.
 
 Blue-green deployment is a deployment strategy that involves maintaining two identical environments: the _blue_ and the _green_. The blue environment refers to the current production deployment and the green environment refers to the new deployment. Once the green environment is tested to be ready for production, traffic will be routed to the green environment, making it the new production deployment.
 
