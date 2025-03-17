@@ -61,7 +61,7 @@ You can also set the format of the logs by configuring the Plugin metadata. The 
 
 | Name       | Type   | Required | Default                                                                       | Description                                                                                                                                                                                                                                             |
 | ---------- | ------ | -------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| log_format | object | False    |  | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [Nginx variables](http://nginx.org/en/docs/varindex.html) in values. |
+| log_format | object | False    |  | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
 
 ## Examples
 
@@ -81,7 +81,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Log Requests in Default Log Format
 
-The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the route.
+The following example demonstrates how you can configure the `skywalking-logger` Plugin on a Route to log information of requests hitting the Route.
 
 Create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
 
@@ -105,7 +105,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -159,9 +159,9 @@ In [Skywalking UI](http://localhost:8080), navigate to __General Service__ > __S
 
 ### Log Request and Response Headers With Plugin Metadata
 
-The following example demonstrates how you can customize log format using plugin metadata and built-in variables to log specific headers from request and response.
+The following example demonstrates how you can customize log format using Plugin metadata and built-in variables to log specific headers from request and response.
 
-In APISIX, plugin metadata is used to configure the common metadata fields of all Plugin instances of the same plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
+In APISIX, Plugin metadata is used to configure the common metadata fields of all Plugin instances of the same Plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
 
 First, create a Route with the `skywalking-logger` Plugin and configure the Plugin with your OAP server URI:
 
@@ -329,7 +329,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Generate a few requests to the route:
+Generate a few requests to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
