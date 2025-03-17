@@ -20,7 +20,7 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
-    command: sleep infinitys
+    command: sleep infinity
     volumes:
       - ..:/workspace:cached
     network_mode: service:etcd
