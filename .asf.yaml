@@ -159,3 +159,6 @@ github:
       commits:      notifications@apisix.apache.org
       issues:       notifications@apisix.apache.org
       pullrequests: notifications@apisix.apache.org
+    github:
+      features:
+        discussions: true
