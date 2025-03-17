@@ -230,12 +230,6 @@ qr/.*property "provider" validation failed: matches none of the enum values*/
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -293,12 +287,6 @@ Unauthorized
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -417,12 +405,6 @@ request format doesn't match schema: property "messages" is required
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                  }]]
             )
@@ -492,12 +474,6 @@ options_works
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                  }]]
             )
@@ -566,12 +542,6 @@ path override works
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                  }]]

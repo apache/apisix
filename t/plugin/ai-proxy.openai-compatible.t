@@ -148,12 +148,6 @@ __DATA__
                             },
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -207,12 +201,6 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                 "endpoint": "http://localhost:6724/random"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -276,12 +264,6 @@ path override works
                                 "endpoint": "http://localhost:7737/v1/chat/completions"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]

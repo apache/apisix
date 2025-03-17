@@ -120,7 +120,7 @@ local ai_instance_schema = {
                 },
             },
         },
-        required = {"name", "provider", "auth"}
+        required = {"name", "provider", "auth", "weight"}
     },
 }
 
@@ -139,7 +139,6 @@ _M.ai_proxy_schema = {
         timeout = {
             type = "integer",
             minimum = 1,
-            maximum = 60000,
             default = 30000,
             description = "timeout in milliseconds",
         },
@@ -196,7 +195,6 @@ _M.ai_proxy_multi_schema = {
         timeout = {
             type = "integer",
             minimum = 1,
-            maximum = 60000,
             default = 30000,
             description = "timeout in milliseconds",
         },
