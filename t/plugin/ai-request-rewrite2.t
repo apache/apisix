@@ -211,7 +211,7 @@ override.endpoint is required for openai-compatible provider
                     "upstream": {
                         "type": "roundrobin",
                         "nodes": {
-                            "canbeanything.com": 1
+                            "httpbin.org:80": 1
                         }
                     }
                 }]]

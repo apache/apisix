@@ -195,7 +195,11 @@ function _M.access(conf, ctx)
     -- Handle LLM response
     if res.status > 299 then
         core.log.error("LLM service returned error status: ", res.status, ", err: ", err)
-        return bad_request, "LLM service returned error status: " .. res.status .. ", err: " .. err
+        local error_msg = "LLM service returned error status: " .. res.status
+        if err then
+            error_msg = error_msg .. ", err: " .. err
+        end
+        return bad_request, error_msg
     end
 
     -- Read response body
