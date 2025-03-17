@@ -148,7 +148,7 @@ function _M.read_response(ctx, res)
     local content_type = res.headers["Content-Type"]
     core.response.set_header("Content-Type", content_type)
 
-    if core.string.find(content_type, "text/event-stream") then
+    if content_type and core.string.find(content_type, "text/event-stream") then
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
             if err then
@@ -208,6 +208,9 @@ function _M.read_response(ctx, res)
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
         core.log.error("failed to read response body: ", err)
+        if core.string.find(err, "timeout") then
+            return 504
+        end
         return 500
     end
     local res_body, err = core.json.decode(raw_res_body)

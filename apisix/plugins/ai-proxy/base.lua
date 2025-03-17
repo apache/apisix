@@ -47,6 +47,9 @@ function _M.before_proxy(conf, ctx)
     local res, err = ai_driver:request(conf, request_body, extra_opts)
     if not res then
         core.log.error("failed to send request to AI service: ", err)
+        if core.string.find(err, "timeout") then
+            return 504
+        end
         return internal_server_error
     end
 
