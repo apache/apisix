@@ -192,6 +192,7 @@ function _M.read_response(ctx, res)
 
                 -- usage field is null for non-last events, null is parsed as userdata type
                 if data and data.usage and type(data.usage) ~= "userdata" then
+                    core.log.info("got token usage from ai service: ", core.json.delay_encode(data.usage))
                     ctx.ai_token_usage = {
                         prompt_tokens = data.usage.prompt_tokens or 0,
                         completion_tokens = data.usage.completion_tokens or 0,
@@ -218,6 +219,7 @@ function _M.read_response(ctx, res)
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
             ", it will cause token usage not available")
     else
+        core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
         ctx.ai_token_usage = {
             prompt_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
             completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
