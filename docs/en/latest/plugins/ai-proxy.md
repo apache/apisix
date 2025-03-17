@@ -63,7 +63,7 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | model.options.top_p       | No           | Number   | Top-p probability mass. Range: 0 - 1                                                 |
 | model.options.stream      | No           | Boolean  | Stream response by SSE.                                                              |
 | override.endpoint         | No           | String   | Override the endpoint of the AI provider                                             |
-| timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 3000         |
+| timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 30000         |
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM. Default: true                                  |
 | keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM. Minimum: 1000. Default: 60000 |
 | keepalive_pool            | No           | Integer  | Keepalive pool size for requests to LLM. Minimum: 1. Default: 30                     |

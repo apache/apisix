@@ -70,7 +70,7 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | provider.options.top_p       | No           | number   | Defines the top-p probability mass (0 - 1) for nucleus sampling.                                              |             |
 | provider.options.stream      | No           | boolean  | Enables streaming responses via SSE.                                                                          |             |
 | provider.override.endpoint   | No           | string   | Custom host override for the AI provider.                                                                     |             |
-| timeout                      | No           | integer  | Request timeout in milliseconds (1-60000).                                                                    | 3000        |
+| timeout                      | No           | integer  | Request timeout in milliseconds (1-60000).                                                                    | 30000        |
 | keepalive                    | No           | boolean  | Enables keepalive connections.                                                                                | true        |
 | keepalive_timeout            | No           | integer  | Timeout for keepalive connections (minimum 1000ms).                                                           | 60000       |
 | keepalive_pool               | No           | integer  | Maximum keepalive connections.                                                                                | 30          |
