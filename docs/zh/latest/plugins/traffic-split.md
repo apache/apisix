@@ -54,7 +54,7 @@ description: traffic-split 插件根据条件和/或权重将流量引导至各�
 | rules.weighted_upstreams.weight | 整数 | 否 | weight = 1 | | 每个上游的权重。 |
 | rules.weighted_upstreams.upstream | object | 否 | | | 上游配置。此处不支持某些上游配置选项。这些字段为 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc` 和 `labels`。作为解决方法，您可以创建一个上游对象并在 `upstream_id` 中配置它。|
 | rules.weighted_upstreams.upstream.type | array | 否 | roundrobin | [roundrobin, chash] | 流量分割算法。`roundrobin` 用于加权循环，`chash` 用于一致性哈希。|
-| rules.weighted_upstreams.upstream.hash_on | array | 否 | vars | | 当 `t​​ype` 为 `chash` 时使用。支持对 [Nginx 变量](https://nginx.org/en/docs/varindex.html)、headers、cookie、consumer 或 [Nginx 变量](https://nginx.org/en/docs/varindex.html) 的组合进行哈希处理。 |
+| rules.weighted_upstreams.upstream.hash_on | array | 否 | vars | | 当 `t​​ype` 为 `chash` 时使用。支持对 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、headers、cookie、Consumer 或 [Nginx 变量](https://nginx.org/en/docs/varindex.html) 的组合进行哈希处理。 |
 | rules.weighted_upstreams.upstream.key | string | 否 | | | 当 `t​​ype` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作密钥。 |
 | rules.weighted_upstreams.upstream.nodes | object | 否 | | | 上游节点的地址。 |
 | rules.weighted_upstreams.upstream.timeout | object | 否 | 15 | | 连接、发送和接收消息的超时时间（秒）。 |
