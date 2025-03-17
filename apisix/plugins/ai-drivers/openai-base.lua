@@ -30,7 +30,9 @@ local ngx_re = require("ngx.re")
 
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
-
+local ngx_var = ngx.var
+local ngx_now = ngx.now
+local ngx_req = ngx.req
 local pairs = pairs
 local type  = type
 local ipairs = ipairs
@@ -148,6 +150,7 @@ function _M.read_response(ctx, res)
     local content_type = res.headers["Content-Type"]
     core.response.set_header("Content-Type", content_type)
 
+    local time_to_first_byte
     if core.string.find(content_type, "text/event-stream") then
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
@@ -158,7 +161,9 @@ function _M.read_response(ctx, res)
             if not chunk then
                 break
             end
-
+            if not time_to_first_byte then
+                time_to_first_byte = ngx_now() - ngx_req.start_time()
+            end
             ngx_print(chunk)
             ngx_flush(true)
 
@@ -202,13 +207,17 @@ function _M.read_response(ctx, res)
 
             ::CONTINUE::
         end
+        ngx_var.ai_token_usage = "ai_token_usage=" .. core.json.encode(ctx.ai_token_usage)
+        ngx_var.ai_ttfb = "ai_time_to_first_byte" .. time_to_first_byte
         return
     end
-
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
         core.log.error("failed to read response body: ", err)
         return 500
+    end
+    if not time_to_first_byte then
+        time_to_first_byte = ngx_now() - ngx_req.start_time()
     end
     local res_body, err = core.json.decode(raw_res_body)
     if err then
@@ -220,6 +229,8 @@ function _M.read_response(ctx, res)
             completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
             total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
         }
+        ngx_var.ai_token_usage = "ai_token_usage=" .. core.json.encode(ctx.ai_token_usage)
+        ngx_var.ai_ttfb = "ai_time_to_first_byte(in seconds)=" .. time_to_first_byte
     end
     return res.status, raw_res_body
 end
