@@ -207,7 +207,6 @@ function _M.read_response(ctx, res)
 
             ::CONTINUE::
         end
-        return
     end
 
     local raw_res_body, err = res:read_body()
