@@ -160,12 +160,6 @@ __DATA__
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -226,12 +220,6 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                  }]]

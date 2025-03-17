@@ -453,6 +453,12 @@ end
 
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
+    -- some plugins(ai-proxy...) request upstream by http client directly
+    if api_ctx.bypass_nginx_upstream then
+        common_phase("before_proxy")
+        return
+    end
+
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin

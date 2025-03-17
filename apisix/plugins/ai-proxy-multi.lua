@@ -217,6 +217,7 @@ function _M.access(conf, ctx)
     end
     ctx.picked_ai_instance_name = name
     ctx.picked_ai_instance = ai_instance
+    ctx.bypass_nginx_upstream = true
 end
 
 
