@@ -141,7 +141,7 @@ end
 function _M.read_response(ctx, res)
     local body_reader = res.body_reader
     if not body_reader then
-        core.log.error("AI service sent no response body")
+        core.log.warn("AI service sent no response body")
         return 500
     end
 
@@ -152,11 +152,14 @@ function _M.read_response(ctx, res)
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
             if err then
-                core.log.error("failed to read response chunk: ", err)
-                break
+                core.log.warn("failed to read response chunk: ", err)
+                if core.string.find(err, "timeout") then
+                    return 504
+                end
+                return 500
             end
             if not chunk then
-                break
+                return
             end
 
             ngx_print(chunk)
@@ -192,7 +195,8 @@ function _M.read_response(ctx, res)
 
                 -- usage field is null for non-last events, null is parsed as userdata type
                 if data and data.usage and type(data.usage) ~= "userdata" then
-                    core.log.info("got token usage from ai service: ", core.json.delay_encode(data.usage))
+                    core.log.info("got token usage from ai service: ",
+                                        core.json.delay_encode(data.usage))
                     ctx.ai_token_usage = {
                         prompt_tokens = data.usage.prompt_tokens or 0,
                         completion_tokens = data.usage.completion_tokens or 0,
@@ -208,7 +212,7 @@ function _M.read_response(ctx, res)
 
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
-        core.log.error("failed to read response body: ", err)
+        core.log.warn("failed to read response body: ", err)
         if core.string.find(err, "timeout") then
             return 504
         end
