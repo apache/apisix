@@ -140,7 +140,7 @@ _M.ai_proxy_schema = {
             type = "integer",
             minimum = 1,
             maximum = 60000,
-            default = 3000,
+            default = 30000,
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
@@ -188,11 +188,16 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
+        fallback_strategy = {
+            type = "string",
+            enum = { "instance_health_and_rate_limiting" },
+            default = "instance_health_and_rate_limiting",
+        },
         timeout = {
             type = "integer",
             minimum = 1,
             maximum = 60000,
-            default = 3000,
+            default = 30000,
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},

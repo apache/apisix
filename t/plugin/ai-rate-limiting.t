@@ -116,7 +116,7 @@ add_block_preprocessor(sub {
                         end
 
                         ngx.status = 200
-                        ngx.say([[
+                        ngx.say(string.format([[
 {
   "choices": [
     {
@@ -127,12 +127,12 @@ add_block_preprocessor(sub {
   ],
   "created": 1723780938,
   "id": "chatcmpl-9wiSIg5LYrrpxwsr2PubSQnbtod1P",
-  "model": "gpt-4o-2024-05-13",
+  "model": "%s",
   "object": "chat.completion",
   "system_fingerprint": "fp_abc28019ad",
   "usage": { "completion_tokens": 5, "prompt_tokens": 8, "total_tokens": 10 }
 }
-                        ]])
+                        ]], body.model))
                         return
                     end
 
@@ -537,3 +537,148 @@ Authorization: Bearer token
 Authorization: Bearer token
 --- error_code eval
 [200, 200, 200, 200, 200, 200, 200, 403, 503]
+
+
+
+=== TEST 13: ai-rate-limiting & ai-proxy-multi, with instance_health_and_rate_limiting strategy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 0,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 10,
+                            "time_window": 60
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: fallback strategy should works
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local code, _, body = t("/ai",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["test-type"] = "options",
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            assert(code == 200, "first request should be successful")
+            assert(core.string.find(body, "gpt-4"),
+                        "first request should be handled by higher priority instance")
+
+            local code, _, body = t("/ai",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["test-type"] = "options",
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            assert(code == 200, "second request should be successful")
+            assert(core.string.find(body, "gpt-3"),
+                        "second request should be handled by lower priority instance")
+
+            local code, body  = t("/ai",
+                ngx.HTTP_POST,
+                [[{
+                    "messages": [
+                        { "role": "system", "content": "You are a mathematician" },
+                        { "role": "user", "content": "What is 1+1?" }
+                    ]
+                }]],
+                nil,
+                {
+                    ["test-type"] = "options",
+                    ["Content-Type"] = "application/json",
+                }
+            )
+
+            assert(code == 503, "third request should be failed")
+            assert(core.string.find(body, "all servers tried"), "all servers tried")
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

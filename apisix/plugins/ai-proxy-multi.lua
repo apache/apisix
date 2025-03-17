@@ -25,7 +25,6 @@ local pcall = pcall
 local ipairs = ipairs
 local type = type
 
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local priority_balancer = require("apisix.balancer.priority")
 
 local pickers = {}
@@ -157,30 +156,48 @@ local function pick_target(ctx, conf, ups_tab)
                                                create_server_picker, conf, ups_tab)
     end
     if not server_picker then
-        return internal_server_error, "failed to fetch server picker"
+        return nil, nil, "failed to fetch server picker"
     end
-
-local instance_name = server_picker.get(ctx)
-    local instance_conf = get_instance_conf(conf.instances, instance_name)
-
-    ctx.balancer_server = instance_name
     ctx.server_picker = server_picker
 
+    local instance_name, err = server_picker.get(ctx)
+    if err then
+        return nil, nil, err
+    end
+    ctx.balancer_server = instance_name
+    if conf.fallback_strategy == "instance_health_and_rate_limiting" then
+        local ai_rate_limiting = require("apisix.plugins.ai-rate-limiting")
+        for _ = 1, #conf.instances do
+            if ai_rate_limiting.check_instance_status(nil, ctx, instance_name) then
+                break
+            end
+            core.log.info("ai instance: ", instance_name,
+                             " is not available, try to pick another one")
+            server_picker.after_balance(ctx, true)
+            instance_name, err = server_picker.get(ctx)
+            if err then
+                return nil, nil, err
+            end
+            ctx.balancer_server = instance_name
+        end
+    end
+
+    local instance_conf = get_instance_conf(conf.instances, instance_name)
     return instance_name, instance_conf
 end
 
 
 local function pick_ai_instance(ctx, conf, ups_tab)
-    local instance_name, instance_conf
+    local instance_name, instance_conf, err
     if #conf.instances == 1 then
         instance_name = conf.instances[1].name
         instance_conf = conf.instances[1]
     else
-        instance_name, instance_conf = pick_target(ctx, conf, ups_tab)
+        instance_name, instance_conf, err = pick_target(ctx, conf, ups_tab)
     end
 
     core.log.info("picked instance: ", instance_name)
-    return instance_name, instance_conf
+    return instance_name, instance_conf, err
 end
 
 
@@ -194,7 +211,10 @@ function _M.access(conf, ctx)
         ups_tab["hash_on"] = hash_on
     end
 
-    local name, ai_instance = pick_ai_instance(ctx, conf, ups_tab)
+    local name, ai_instance, err = pick_ai_instance(ctx, conf, ups_tab)
+    if err then
+        return 503, err
+    end
     ctx.picked_ai_instance_name = name
     ctx.picked_ai_instance = ai_instance
     ctx.bypass_nginx_upstream = true

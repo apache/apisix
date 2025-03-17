@@ -143,9 +143,9 @@ end
 function _M.check_instance_status(conf, ctx, instance_name)
     if conf == nil then
         local plugins = ctx.plugins
-        for _, plugin in ipairs(plugins) do
-            if plugin.name == plugin_name then
-                conf = plugin
+        for i = 1, #plugins, 2 do
+            if plugins[i]["name"] == plugin_name then
+                conf = plugins[i + 1]
             end
         end
     end
