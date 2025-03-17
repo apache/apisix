@@ -143,7 +143,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Generate three requests to the route:
+Generate three requests to the Route:
 
 ```shell
 resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
@@ -203,7 +203,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -228,7 +228,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
@@ -243,7 +243,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
   }'
 ```
 
-Create a Route with `key-auth` and `limit-req` plugins, and specify in the `limit-req` Plugin to use a combination of variables as the rate limiting key:
+Create a Route with `key-auth` and `limit-req` Plugins, and specify in the `limit-req` Plugin to use a combination of variables as the rate-limiting key:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -270,14 +270,14 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send two requests simultaneously, each for one consumer:
+Send two requests simultaneously, each for one Consumer:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key' & \
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key' &
 ```
 
-You should receive `HTTP/1.1 200 OK` for both requests, indicating the request has not exceeded the threshold for each consumer.
+You should receive `HTTP/1.1 200 OK` for both requests, indicating the request has not exceeded the threshold for each Consumer.
 
 If you send more requests as either Consumer within the same second, you should receive an `HTTP/1.1 429 Too Many Requests` response.
 
