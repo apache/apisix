@@ -187,7 +187,6 @@ init: runtime
 .PHONY: run
 run: runtime
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	rm -f logs/worker_events.sock logs/stream_worker_events.sock ## Cleanup stale event broker unix socket file
 	$(ENV_APISIX) start
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
