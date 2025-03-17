@@ -198,12 +198,6 @@ __DATA__
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -307,12 +301,6 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]

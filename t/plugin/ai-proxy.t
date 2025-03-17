@@ -206,12 +206,6 @@ qr/.*property "provider" validation failed: matches none of the enum values.*/
                             },
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -263,12 +257,6 @@ Unauthorized
                                 "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -381,12 +369,6 @@ request format doesn't match schema: property "messages" is required
                             },
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -450,12 +432,6 @@ options_works
                             },
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -518,12 +494,6 @@ path override works
                                 "endpoint": "http://localhost:7737"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]

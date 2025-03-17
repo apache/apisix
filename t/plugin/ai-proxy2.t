@@ -133,12 +133,6 @@ __DATA__
                             },
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -190,12 +184,6 @@ Unauthorized
                                 "endpoint": "http://localhost:6724"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -300,12 +288,6 @@ POST /anything
                                 "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"
                             },
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]

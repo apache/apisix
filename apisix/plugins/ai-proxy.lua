@@ -47,6 +47,7 @@ end
 function _M.access(conf, ctx)
     ctx.picked_ai_instance_name = "ai-proxy"
     ctx.picked_ai_instance = conf
+    ctx.bypass_nginx_upstream = true
 end
 
 
