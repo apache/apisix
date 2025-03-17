@@ -411,7 +411,7 @@ property "enum_payload" is required
 
 ## Appendix: JSON Schema
 
-The following section provides boilerplate JSON schema for you to adjust, combine, and use with this plugin. For a complete reference, see [JSON schema specification](https://json-schema.org/specification).
+The following section provides boilerplate JSON schema for you to adjust, combine, and use with this Plugin. For a complete reference, see [JSON schema specification](https://json-schema.org/specification).
 
 ### Enumerated Values
 
