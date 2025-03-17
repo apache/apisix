@@ -120,7 +120,7 @@ local ai_instance_schema = {
                 },
             },
         },
-        required = {"name", "provider", "auth"}
+        required = {"name", "provider", "auth", "weight"}
     },
 }
 
