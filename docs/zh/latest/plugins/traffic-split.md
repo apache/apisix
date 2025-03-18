@@ -6,7 +6,7 @@ keywords:
   - Traffic Split
   - 灰度发布
   - 蓝绿发布
-description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作，你可以使用此插件动态地将部分流量引导至各种上游服务。
+description: traffic-split 插件根据条件和/或权重将流量引导至各种上游服务。它提供了一种动态灵活的方法来实施发布策略和管理流量。
 ---
 
 <!--
@@ -28,11 +28,13 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/traffic-split" />
+</head>
+
 ## 描述
 
-`traffic-split` 插件可以通过配置 `match` 和 `weighted_upstreams` 属性，从而动态地将部分流量引导至各种上游服务。该插件可应用于灰度发布和蓝绿发布的场景。
-
-`match` 属性是用于引导流量的自定义规则，`weighted_upstreams` 属性则用于引导流量的上游服务。当一个请求被 `match` 属性匹配时，它将根据配置的 `weights` 属性被引导至上游服务。你也可以不使用 `match` 属性，只根据 `weighted_upstreams` 属性来引导所有流量。
+`traffic-split` 插件根据条件和/或权重将流量引导至各种上游服务。它提供了一种动态且灵活的方法来实施发布策略和管理流量。
 
 :::note 注意
 
@@ -42,40 +44,27 @@ description: 本文介绍了 Apache APISIX traffic-split 插件的相关操作�
 
 ## 属性
 
-|            名称             | 类型          | 必选项 | 默认值 | 有效值 | 描述                                                                                                                                                                                                                                                                                                                                                               |
-| ---------------------- | --------------| ------ | ------ | ------ |------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| rules.match                    | array[object] | 否  |        |        | 匹配规则列表，默认为空且规则将被无条件执行。                                                                                                                                                                                                                                                                                                                                           |
-| rules.match.vars               | array[array]  | 否   |        |        | 由一个或多个 `{var, operator, val}` 元素组成的列表，例如：`{"arg_name", "==", "json"}`，表示当前请求参数 `name` 是 `json`。这里的 `var` 与 NGINX 内部自身变量命名是保持一致，所以也可以使用 `request_uri`、`host` 等；对于已支持的运算符，具体用法请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
-| rules.weighted_upstreams       | array[object] | 否   |        |        | 上游配置规则列表。                                                                                                                                                                                                                                                                                                                                                        |
-| weighted_upstreams.upstream_id | string/integer | 否   |        |        | 通过上游 `id` 绑定对应上游。                                                                                                                                                                                                                                                                                                                                                  |
-| weighted_upstreams.upstream    | object | 否   |        |        | 上游配置信息。                                                                                                                                                                                                                                                                                                                                                          |
-| upstream.type                  | enum   | 否   |   roundrobin |  [roundrobin, chash]      | 流量引导机制的类型；`roundrobin` 表示支持权重的负载，`chash` 表示使用一致性哈希。                                                                                                                                                                                                                                                                                                                           |
-| upstream.hash_on               | enum   | 否   | vars | | 该属性仅当 `upstream.type` 是 `chash` 时有效。支持的类型有 `vars`（NGINX 内置变量），`header`（自定义 header），`cookie`，`consumer`，`vars_combinations`。更多信息请参考 [Upstream](../admin-api.md#upstream) 用法。                                                                                                                                                                                                  |
-| upstream.key                   | string | 否   |      |    | 该属性仅当 `upstream.type` 是 `chash` 时有效。根据 `hash_on` 和 `key` 来查找对应的 Node `id`。更多信息请参考 [Upstream](../admin-api.md#upstream) 用法。                                                                                                                                                                                                                                    |
-| upstream.nodes                 | object | 否   |        |        | 哈希表，键是上游节点的 IP 地址与可选端口的组合，值是节点的权重。将 `weight` 设置为 `0` 表示一个请求永远不会被转发到该节点。                                                                                                                                                                                                             |
-| upstream.timeout               | object | 否   |  15     |        | 发送和接收消息的超时时间（单位为秒）。                                                                                                                                                                                                                                                                                                                           |
-| upstream.pass_host             | enum   | 否   | "pass"   | ["pass", "node", "rewrite"]  | 当请求被转发到上游时配置 `host`。`pass` 代表将客户端的 `host` 透明传输给上游；`node` 代表使用 `upstream` Node 中配置的 `host`； `rewrite` 代表使用配置项 `upstream_host` 的值。                                                                                                                                                                                                                                                                |
-| upstream.name                  | string | 否   |        |  | 标识上游服务名称、使用场景等。                                                                                                                                                                                                                                                                                                                                                  |
-| upstream.upstream_host         | string | 否   |        |        | 上游服务请求的 `host`，仅当 `pass_host` 属性配置为 `rewrite` 时生效。                                                                                                                                                                                                                                                                                                                                    |
-| weighted_upstreams.weight      | integer | 否   |   weight = 1     |        | 根据 `weight` 值做流量划分，多个 `weight` 之间使用 `roundrobin` 算法划分。                                                                                                                                                                                                                                                                                                               |
+| 名称 | 类型 | 必选项 | 默认值 | 有效值 | 描述 |
+| ---------------------- | --------------| ------ | ------ | ------ |-------------------------------------------------------- -------------------------------------------------- -------------------------------------------------- -------------------------------------------------- --------------------------------------------------|
+| rules.match | array[object] | 否 | | | 要执行的一对或多对匹配条件和操作的数组。 |
+| rules.match | array[object] | 否 | | | 条件流量分割的匹配规则。 |
+| rules.match.vars | array[array] | 否 | | | 以 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 形式包含一个或多个匹配条件的数组，用于有条件地执行插件。 |
+| rules.weighted_upstreams | array[object] | 否 | | | 上游配置列表。 |
+| rules.weighted_upstreams.upstream_id | 字符串/整数 | 否 | | | 配置的上游对象的 ID。 |
+| rules.weighted_upstreams.weight | 整数 | 否 | weight = 1 | | 每个上游的权重。 |
+| rules.weighted_upstreams.upstream | object | 否 | | | 上游配置。此处不支持某些上游配置选项。这些字段为 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc` 和 `labels`。作为解决方法，您可以创建一个上游对象并在 `upstream_id` 中配置它。|
+| rules.weighted_upstreams.upstream.type | array | 否 | roundrobin | [roundrobin, chash] | 流量分割算法。`roundrobin` 用于加权循环，`chash` 用于一致性哈希。|
+| rules.weighted_upstreams.upstream.hash_on | array | 否 | vars | | 当 `t​​ype` 为 `chash` 时使用。支持对 [NGINX 变量](https://nginx.org/en/docs/varindex.html)、headers、cookie、Consumer 或 [Nginx 变量](https://nginx.org/en/docs/varindex.html) 的组合进行哈希处理。 |
+| rules.weighted_upstreams.upstream.key | string | 否 | | | 当 `t​​ype` 为 `chash` 时使用。当 `hash_on` 设置为 `header` 或 `cookie` 时，需要 `key`。当 `hash_on` 设置为 `consumer` 时，不需要 `key`，因为消费者名称将自动用作密钥。 |
+| rules.weighted_upstreams.upstream.nodes | object | 否 | | | 上游节点的地址。 |
+| rules.weighted_upstreams.upstream.timeout | object | 否 | 15 | | 连接、发送和接收消息的超时时间（秒）。 |
+| rules.weighted_upstreams.upstream.pass_host | array | 否 | "pass" | ["pass", "node", "rewrite"] | 决定如何传递主机名的模式。`pass` 将客户端的主机名传递给上游。`node` 传递上游节点中配置的主机。`rewrite` 传递 `upstream_host` 中配置的值。|
+| rules.weighted_upstreams.upstream.name | string | 否 | | | 用于指定服务名称、使用场景等的上游标识符。|
+| rules.weighted_upstreams.upstream.upstream_host | string | 否 | | | 当 `pass_host` 为 `rewrite` 时使用。上游的主机名。|
 
-:::note 注意
+## 示例
 
-目前 `weighted_upstreams.upstream` 的配置不支持 `service_name`、`discovery_type`、`checks`、`retries`、`retry_timeout`、`desc`、`labels`、`create_time` 和 `update_time` 等字段。如果你需要使用这些字段，可以在创建上游对象时指定这些字段，然后在该插件中配置 `weighted_upstreams.upstream_id` 属性即可。
-
-:::
-
-:::info 重要
-
-在 `match` 属性中，变量中的表达式以 AND 方式关联，多个变量以 OR 方式关联。
-
-如果你仅配置了 `weight` 属性，那么它将会使用该 Route 或 Service 中的上游服务的权重。
-
-:::
-
-## 启用插件
-
-以下示例展示了如何在指定路由上启用 `traffic-split` 插件，并通过插件中的 `upstream` 属性配置上游信息：
+以下示例展示了使用 `traffic-split` 插件的不同用例。
 
 :::note
 
@@ -87,567 +76,562 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 实现 Canary 发布
+
+以下示例演示了如何使用此插件实现 Canary 发布。
+
+Canary 发布是一种逐步部署，其中越来越多的流量被定向到新版本，从而实现受控和受监控的发布。此方法可确保在完全重定向所有流量之前，尽早识别和解决新版本中的任何潜在问题或错误。
+
+创建路由并使用以下规则配置 `traffic-split` 插件：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/headers",
+    "id": "traffic-split-route",
     "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream_A",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1981":10
-                                },
-                                "timeout": {
-                                    "connect": 15,
-                                    "send": 15,
-                                    "read": 15
-                                }
-                            },
-                            "weight": 1
-                        },
-                        {
-                            "weight": 1
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
-    }
-}'
-```
-
-如果你已经配置了一个上游对象，你可以通过插件中的 `upstream_id` 属性来绑定上游服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "weighted_upstreams": [
-                        {
-                            "upstream_id": 1,
-                            "weight": 1
-                        },
-                        {
-                            "weight": 1
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
-    }
-}'
-```
-
-:::tip 提示
-
-通过 `upstream_id` 方式来绑定已定义的上游，可以复用上游已存在的健康检查、重试等功能。
-
-:::
-
-:::note 注意
-
-`weighted_upstreams` 属性支持同时使用 `upstream` 和 `upstream_id` 两种配置方式。
-
-:::
-
-## 测试插件
-
-### 灰度发布
-
-灰度发布（又名金丝雀发布）是指在已经上线与未上线服务之间，能够平滑过渡的一种发布方式。在其上可以进行 A/B 测试，即让一部分用户继续用产品特性 A，一部分用户开始用产品特性 B。如果用户对特性 B 没有什么反对意见，那么逐步扩大范围，把所有用户都迁移到特性 B 上面来。
-
-以下示例展示了如何通过配置 `weighted_upstreams` 的 `weight` 属性来实现流量分流。按 3:2 的权重流量比例进行划分，其中 60% 的流量到达运行在 `1981` 端口上的上游服务，40% 的流量到达运行在 `1980` 端口上的上游服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream_A",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1981":10
-                                },
-                                "timeout": {
-                                    "connect": 15,
-                                    "send": 15,
-                                    "read": 15
-                                }
-                            },
-                            "weight": 3
-                        },
-                        {
-                            "weight": 2
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
-    }
-}'
-```
-
-**测试**
-
-在请求 5 次后，其中会有 3 次命中运行在 `1981` 端口的插件上游服务，2 次命中运行在 `1980` 端口的路由上游服务：
-
-```shell
-curl http://127.0.0.1:9080/index.html -i
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-```shell
-curl http://127.0.0.1:9080/index.html -i
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-world 1981
-```
-
-### 蓝绿发布
-
-在蓝绿发布场景中，你需要维护两个环境，一旦新的变化在蓝色环境（staging）中被测试和接受，用户流量就会从绿色环境（production）转移到蓝色环境。
-
-以下示例展示了如何基于请求头来配置 `match` 规则：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "match": [
-                        {
-                            "vars": [
-                                ["http_release","==","new_release"]
-                            ]
-                        }
-                    ],
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream_A",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1981":10
-                                }
-                            }
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
-    }
-}'
-```
-
-**测试**
-
-1. 通过 `curl` 命令发出请求，如果请求带有一个值为 `new_release` 的 release header，它就会被引导至在插件上配置的新的上游服务：
-
-```shell
-curl http://127.0.0.1:9080/index.html -H 'release: new_release' -i
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-world 1981
-```
-
-2. 否则请求会被引导至在路由上配置的另一个上游服务：
-
-```shell
-curl http://127.0.0.1:9080/index.html -H 'release: old_release' -i
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-### 自定义发布
-
-你也可以通过配置规则和权重来实现自定义发布。
-
-**示例 1**
-
-下面的示例只配置了一个 `vars` 规则，流量按 3:2 的权重比例进行划分，不匹配 `vars` 的流量将被重定向到在路由上配置的上游服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "match": [
-                        {
-                            "vars": [
-                                ["arg_name","==","jack"],
-                                ["http_user-id",">","23"],
-                                ["http_apisix-key","~~","[a-z]+"]
-                            ]
-                        }
-                    ],
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream_A",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1981":10
-                                }
-                            },
-                            "weight": 3
-                        },
-                        {
-                            "weight": 2
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
-    }
-}'
-```
-
-**测试**
-
-1. 通过 `curl` 命令发出请求，在 `match` 规则校验通过后，将会有 60% 的请求被引导至插件 `1981` 端口的上游服务，40% 的请求被引导至路由 `1980` 端口的上游服务：
-
-```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' \
--H 'user-id:30' -H 'apisix-key: hello' -i
-```
-
-在请求 5 次后，其中会有 3 次命中 `1981` 端口的服务，2 次命中 `1980` 端口的服务：
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-world 1981
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-2. 如果 `match` 规则校验失败（如缺少请求头 `apisix-key`）, 那么请求将被引导至路由的 `1980` 端口的上游服务：
-
-```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' \
--H 'user-id:30' -i
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-**示例 2**
-
-下面的示例配置了多个 `vars` 规则，流量按 3:2 的权重比例进行划分，不匹配 `vars` 的流量将被重定向到在路由上配置的上游服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "match": [
-                        {
-                            "vars": [
-                                ["arg_name","==","jack"],
-                                ["http_user-id",">","23"],
-                                ["http_apisix-key","~~","[a-z]+"]
-                            ]
-                        },
-                        {
-                            "vars": [
-                                ["arg_name2","==","rose"],
-                                ["http_user-id2","!",">","33"],
-                                ["http_apisix-key2","~~","[a-z]+"]
-                            ]
-                        }
-                    ],
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream_A",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1981":10
-                                }
-                            },
-                            "weight": 3
-                        },
-                        {
-                            "weight": 2
-                        }
-                    ]
-                }
-            ]
-        }
-    },
-    "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
-    }
-}'
-```
-
-**测试**
-
-1. 通过 `curl` 命令发出请求，如果两个 `vars` 表达式均匹配成功，`match` 规则校验通过后，将会有 60% 的请求被引导至插件 `1981` 端口的上游服务，40% 的请求命中到路由的 `1980` 端口的上游服务：
-
-```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack&name2=rose' \
--H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
-```
-
-在请求 5 次后，其中会有 3 次命中 `1981` 端口的服务，2 次命中 `1980` 端口的服务：
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-world 1981
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-2. 如果第二个 `vars` 的表达式匹配失败（例如缺少 `name2` 请求参数），`match` 规则校验通过后，效果将会与上一种相同。即有 60% 的请求被引导至插件 `1981` 端口的上游服务，40% 的请求命中到路由的 `1980` 端口的上游服务：
-
-```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' \
--H 'user-id:30' -H 'user-id2:22' -H 'apisix-key: hello' -H 'apisix-key2: world' -i
-```
-
-在请求 5 次后，其中会有 3 次命中 `1981` 端口的服务，2 次命中 `1980` 端口的服务：
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-world 1981
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-3. 如果两个 `vars` 的表达式均匹配失败（如缺少 `name` 和 `name2` 请求参数），`match` 规则会校验失败，请求将被引导至路由的 `1980` 端口的上游服务：
-
-```shell
-curl 'http://127.0.0.1:9080/index.html?name=jack' -i
-```
-
-```shell
-HTTP/1.1 200 OK
-Content-Type: text/html; charset=utf-8
-...
-hello 1980
-```
-
-### 匹配规则与上游对应
-
-以下示例展示了如何配置多个 `rules` 属性，实现不同的匹配规则与上游一一对应。当请求头 `x-api-id` 为 `1` 时，请求会被引导至 `1981` 端口的上游服务；当 `x-api-id` 为 `2` 时，请求会被引导至 `1982` 端口的上游服务；否则请求会被引导至 `1980` 端口的上游服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/hello",
-    "plugins": {
-        "traffic-split": {
-            "rules": [
-                {
-                    "match": [
-                        {
-                            "vars": [
-                                ["http_x-api-id","==","1"]
-                            ]
-                        }
-                    ],
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream-A",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1981":1
-                                }
-                            },
-                            "weight": 3
-                        }
-                    ]
+      "traffic-split": {
+        "rules": [
+          {
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "httpbin.org:443":1
+                  }
                 },
-                {
-                    "match": [
-                        {
-                            "vars": [
-                                ["http_x-api-id","==","2"]
-                            ]
-                        }
-                    ],
-                    "weighted_upstreams": [
-                        {
-                            "upstream": {
-                                "name": "upstream-B",
-                                "type": "roundrobin",
-                                "nodes": {
-                                    "127.0.0.1:1982":1
-                                }
-                            },
-                            "weight": 3
-                        }
-                    ]
-                }
+                "weight": 3
+              },
+              {
+                "weight": 2
+              }
             ]
-        }
+          }
+        ]
+      }
     },
     "upstream": {
-            "type": "roundrobin",
-            "nodes": {
-                "127.0.0.1:1980": 1
-            }
+      "type": "roundrobin",
+      "scheme": "https",
+      "pass_host": "node",
+      "nodes": {
+        "mock.api7.ai:443":1
+      }
     }
-}'
+  }'
 ```
 
-**测试**
+每个 Upstream 的流量比例由该 Upstream 的权重占所有 Upstream 总权重的比例决定，这里总权重计算为：3 + 2 = 5。
 
-1. 通过 `curl` 命令发出请求，请求头 `x-api-id` 为 `1`，则会命中 `1980` 端口的服务：
+因此，60% 的流量要转发到 `httpbin.org`，另外 40% 的流量要转发到 `mock.api7.ai`。
+
+向路由发送 10 个连续请求来验证：
 
 ```shell
-curl http://127.0.0.1:9080/hello -H 'x-api-id: 1'
+resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers" -sL) && \
+  count_httpbin=$(echo "$resp" | grep "httpbin.org" | wc -l) && \
+  count_mockapi7=$(echo "$resp" | grep "mock.api7.ai" | wc -l) && \
+  echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
 ```
 
-```shell
-1981
+您应该会看到类似以下内容的响应：
+
+```text
+httpbin.org: 6, mock.api7.ai: 4
 ```
 
-2. 如果请求头 `x-api-id` 为 `2`，则会命中 `1982` 端口的服务：
+相应地调整上游权重以完成金丝雀发布。
+
+### 实现蓝绿部署
+
+以下示例演示如何使用此插件实现蓝绿部署。
+
+蓝绿部署是一种部署策略，涉及维护两个相同的环境：蓝色和绿色。蓝色环境指的是当前的生产部署，绿色环境指的是新的部署。一旦绿色环境经过测试可以投入生产，流量将被路由到绿色环境，使其成为新的生产部署。
+
+创建路由并配置 `traffic-split` 插件，以便仅当请求包含标头 `release: new_release` 时才执行插件以重定向流量：
 
 ```shell
-curl http://127.0.0.1:9080/hello -H 'x-api-id: 2'
-```
-
-```shell
-1982
-```
-
-3. 如果请求头 `x-api-id` 为 `3`，规则不匹配，则会命中带 `1980` 端口的服务：
-
-```shell
-curl http://127.0.0.1:9080/hello -H 'x-api-id: 3'
-```
-
-```shell
-1980
-```
-
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {},
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/headers",
+    "id": "traffic-split-route",
+    "plugins": {
+      "traffic-split": {
+        "rules": [
+          {
+            "match": [
+              {
+                "vars": [
+                  ["http_release","==","new_release"]
+                ]
+              }
+            ],
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "httpbin.org:443":1
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "scheme": "https",
+      "pass_host": "node",
+      "nodes": {
+        "mock.api7.ai:443":1
+      }
     }
-}'
+  }'
+```
+
+向路由发送一个带有 `release` 标头的请求：
+
+```shell
+curl "http://127.0.0.1:9080/headers" -H 'release: new_release'
+```
+
+您应该会看到类似以下内容的响应：
+
+```json
+{
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    ...
+  }
+}
+```
+
+向路由发送一个不带任何附加标头的请求：
+
+```shell
+curl "http://127.0.0.1:9080/headers"
+```
+
+您应该会看到类似以下内容的响应：
+
+```json
+{
+  "headers": {
+    "accept": "*/*",
+    "host": "mock.api7.ai",
+    ...
+  }
+}
+```
+
+### 使用 APISIX 表达式定义 POST 请求的匹配条件
+
+以下示例演示了如何在规则中使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)，在满足 POST 请求的某些条件时有条件地执行插件。
+
+创建路由并使用以下规则配置 `traffic-split` 插件：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/post",
+    "methods": ["POST"],
+    "id": "traffic-split-route",
+    "plugins": {
+      "traffic-split": {
+        "rules": [
+          {
+            "match": [
+              {
+                "vars": [
+                  ["post_arg_id", "==", "1"]
+                ]
+              }
+            ],
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "httpbin.org:443":1
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "scheme": "https",
+      "pass_host": "node",
+      "nodes": {
+        "mock.api7.ai:443":1
+      }
+    }
+  }'
+```
+
+发送主体为 `id=1` 的 POST 请求：
+
+```shell
+curl "http://127.0.0.1:9080/post" -X POST \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'id=1'
+```
+
+您应该会看到类似以下内容的响应：
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "id": "1"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "4",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "httpbin.org",
+    ...
+  },
+  ...
+}
+```
+
+发送主体中不包含 `id=1` 的 POST 请求：
+
+```shell
+curl "http://127.0.0.1:9080/post" -X POST \
+  -H 'Content-Type: application/x-www-form-urlencoded' \
+  -d 'random=string'
+```
+
+您应该看到请求已转发到 `mock.api7.ai`。
+
+### 使用 APISIX 表达式定义 AND 匹配条件
+
+以下示例演示了如何在规则中使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)，在满足多个条件时有条件地执行插件。
+
+创建路由并配置 `traffic-split` 插件，以便仅在满足所有三个条件时重定向流量：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/headers",
+    "id": "traffic-split-route",
+    "plugins": {
+      "traffic-split": {
+        "rules": [
+          {
+            "match": [
+              {
+                "vars": [
+                  ["arg_name","==","jack"],
+                  ["http_user-id",">","23"],
+                  ["http_apisix-key","~~","[a-z]+"]
+                ]
+              }
+            ],
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "httpbin.org:443":1
+                  }
+                },
+                "weight": 3
+              },
+              {
+                "weight": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "scheme": "https",
+      "pass_host": "node",
+      "nodes": {
+        "mock.api7.ai:443":1
+      }
+    }
+  }'
+```
+
+如果满足条件，则 60% 的流量应定向到 `httpbin.org`，另外 40% 的流量应定向到 `mock.api7.ai`。如果不满足条件，则所有流量都应定向到 `mock.api7.ai`。
+
+发送 10 个满足所有条件的连续请求以验证：
+
+```shell
+resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name=jack" -H 'user-id: 30' -H 'apisix-key: helloapisix' -sL) && \
+  count_httpbin=$(echo "$resp" | grep "httpbin.org" | wc -l) && \
+  count_mockapi7=$(echo "$resp" | grep "mock.api7.ai" | wc -l) && \
+  echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
+```
+
+您应该会看到类似以下内容的响应：
+
+```text
+httpbin.org: 6, mock.api7.ai: 4
+```
+
+连续发送 10 个不满足条件的请求进行验证：
+
+```shell
+resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name=random" -sL) && \
+  count_httpbin=$(echo "$resp" | grep "httpbin.org" | wc -l) && \
+  count_mockapi7=$(echo "$resp" | grep "mock.api7.ai" | wc -l) && \
+  echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
+```
+
+您应该会看到类似以下内容的响应：
+
+```text
+httpbin.org: 0, mock.api7.ai: 10
+```
+
+### 使用 APISIX 表达式定义或匹配条件
+
+以下示例演示了如何在规则中使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)，在满足任一条件集时有条件地执行插件。
+
+创建路由并配置 `traffic-split` 插件，以在满足任一配置条件集时重定向流量：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/headers",
+    "id": "traffic-split-route",
+    "plugins": {
+      "traffic-split": {
+        "rules": [
+          {
+            "match": [
+              {
+                "vars": [
+                  ["arg_name","==","jack"],
+                  ["http_user-id",">","23"],
+                  ["http_apisix-key","~~","[a-z]+"]
+                ]
+              },
+              {
+                "vars": [
+                  ["arg_name2","==","rose"],
+                  ["http_user-id2","!",">","33"],
+                  ["http_apisix-key2","~~","[a-z]+"]
+                ]
+              }
+            ],
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "httpbin.org:443":1
+                  }
+                },
+                "weight": 3
+              },
+              {
+                "weight": 2
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "scheme": "https",
+      "pass_host": "node",
+      "nodes": {
+        "mock.api7.ai:443":1
+      }
+    }
+  }'
+```
+
+或者，您也可以使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 中的 OR 运算符来实现这些条件。
+
+如果满足条件，则 60% 的流量应定向到 `httpbin.org`，其余 40% 应定向到 `mock.api7.ai`。如果不满足条件，则所有流量都应定向到 `mock.api7.ai`。
+
+发送 10 个满足第二组条件的连续请求以验证：
+
+```shell
+resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name2=rose" -H 'user-id:30' -H 'apisix-key2: helloapisix' -sL) && \
+  count_httpbin=$(echo "$resp" | grep "httpbin.org" | wc -l) && \
+  count_mockapi7=$(echo "$resp" | grep "mock.api7.ai" | wc -l) && \
+  echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
+```
+
+您应该会看到类似以下内容的响应：
+
+```json
+httpbin.org: 6, mock.api7.ai: 4
+```
+
+发送 10 个连续的不满足任何一组条件的请求来验证：
+
+```shell
+resp=$(seq 10 | xargs -I{} curl "http://127.0.0.1:9080/headers?name=random" -sL) && \
+  count_httpbin=$(echo "$resp" | grep "httpbin.org" | wc -l) && \
+  count_mockapi7=$(echo "$resp" | grep "mock.api7.ai" | wc -l) && \
+  echo httpbin.org: $count_httpbin, mock.api7.ai: $count_mockapi7
+```
+
+您应该会看到类似以下内容的响应：
+
+```json
+httpbin.org: 0, mock.api7.ai: 10
+```
+
+### 为不同的上游配置不同的规则
+
+以下示例演示了如何在规则集和上游之间设置一对一映射。
+
+创建一个路由并使用以下匹配规则配置 `traffic-split` 插件，以便在请求包含标头 `x-api-id: 1` 或 `x-api-id: 2` 时将流量重定向到相应的上游服务：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "/headers",
+    "id": "traffic-split-route",
+    "plugins": {
+      "traffic-split": {
+        "rules": [
+          {
+            "match": [
+              {
+                "vars": [
+                  ["http_x-api-id","==","1"]
+                ]
+              }
+            ],
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "httpbin.org:443":1
+                  }
+                },
+                "weight": 1
+              }
+            ]
+          },
+          {
+            "match": [
+              {
+                "vars": [
+                  ["http_x-api-id","==","2"]
+                ]
+              }
+            ],
+            "weighted_upstreams": [
+              {
+                "upstream": {
+                  "type": "roundrobin",
+                  "scheme": "https",
+                  "pass_host": "node",
+                  "nodes": {
+                    "mock.api7.ai:443":1
+                  }
+                },
+                "weight": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "postman-echo.com:443": 1
+      },
+      "scheme": "https",
+      "pass_host": "node"
+    }
+  }'
+```
+
+发送带有标头 `x-api-id: 1` 的请求：
+
+```shell
+curl "http://127.0.0.1:9080/headers" -H 'x-api-id: 1'
+```
+
+您应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+
+```json
+{
+  "headers": {
+    "Accept": "*/*",
+    "Host": "httpbin.org",
+    ...
+  }
+}
+```
+
+发送带有标头 `x-api-id: 2` 的请求：
+
+```shell
+curl "http://127.0.0.1:9080/headers" -H 'x-api-id: 2'
+```
+
+您应该会看到类似于以下内容的 `HTTP/1.1 200 OK` 响应：
+
+```json
+{
+  "headers": {
+    "accept": "*/*",
+    "host": "mock.api7.ai",
+    ...
+  }
+}
+```
+
+发送不带任何附加标头的请求：
+
+```shell
+curl "http://127.0.0.1:9080/headers"
+```
+
+您应该会看到类似以下内容的响应：
+
+```json
+{
+  "headers": {
+    "accept": "*/*",
+    "host": "postman-echo.com",
+    ...
+  }
+}
 ```
