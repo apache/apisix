@@ -107,7 +107,7 @@ If your IP is allowed, you should receive an `HTTP/1.1 200 OK` response. If not,
 
 ### Restrict Access Using Modified IP
 
-The following example demonstrates how you can modify the IP used for IP restriction, using the `real-ip` plugin. This is particularly useful if APISIX is behind a reverse proxy and the real client IP is not available to APISIX.
+The following example demonstrates how you can modify the IP used for IP restriction, using the `real-ip` Plugin. This is particularly useful if APISIX is behind a reverse proxy and the real client IP is not available to APISIX.
 
 Create a Route with the `ip-restriction` Plugin to whitelist a specific IP address and obtain client IP address from the URL parameter `realip`:
 
