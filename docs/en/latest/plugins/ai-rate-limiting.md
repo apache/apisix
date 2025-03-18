@@ -47,6 +47,7 @@ The `ai-rate-limiting` plugin enforces token-based rate limiting for requests se
 | `rejected_msg`            | string        | false    | The response body returned when a request exceeding the quota is rejected.                                                                                                                                                                                                                    |
 
 If `limit` is configured, `time_window` also needs to be configured. Else, just specifying `instances` will also suffice.
+
 ## Example
 
 Create a route as such and update with your LLM providers, models, API keys, and endpoints:

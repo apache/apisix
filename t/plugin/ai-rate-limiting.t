@@ -238,7 +238,7 @@ __DATA__
                             limit = 30,
                             time_window = 60,
                         }
-                    },   
+                    },
                 }
             }
             local core = require("apisix.core")
