@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Basic Auth
   - basic-auth
-description: The basic-auth plugin adds basic access authentication for Consumers to authenticate themselves before being able to access Upstream resources.
+description: The basic-auth Plugin adds basic access authentication for Consumers to authenticate themselves before being able to access Upstream resources.
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: The basic-auth plugin adds basic access authentication for Consumer
 
 ## Description
 
-The `basic-auth` plugin adds [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) for [Consumers](../terminology/consumer.md) to authenticate themselves before being able to access Upstream resources.
+The `basic-auth` Plugin adds [basic access authentication](https://en.wikipedia.org/wiki/Basic_access_authentication) for [Consumers](../terminology/consumer.md) to authenticate themselves before being able to access Upstream resources.
 
 When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
@@ -58,7 +58,7 @@ For Route:
 
 ## Examples
 
-The examples below demonstrate how you can work with the `basic-auth` plugin for different scenarios.
+The examples below demonstrate how you can work with the `basic-auth` Plugin for different scenarios.
 
 :::note
 
@@ -411,7 +411,7 @@ You should see an `HTTP/1.1 200 OK` response with the `X-Consumer-Custom-Id` sim
 
 The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
 
-Create a regular Consumer `johndoe` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
+Create a regular Consumer `johndoe` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -444,7 +444,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
   }'
 ```
 
-Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+Create an anonymous user `anonymous` and configure the `limit-count` Plugin to allow for a quota of 1 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -461,7 +461,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create a Route and configure the `basic-auth` plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
+Create a Route and configure the `basic-auth` Plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
