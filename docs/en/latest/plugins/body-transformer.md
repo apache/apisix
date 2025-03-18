@@ -121,7 +121,7 @@ EOF
 
 `awk` and `tr` are used above to manipulate the template such that the template would be a valid JSON string.
 
-Create a Route with `body-transformer` using the templates created previously. In the plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the Upstream service to respond properly:
+Create a Route with `body-transformer` using the templates created previously. In the Plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the Upstream service to respond properly:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -223,7 +223,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -449,7 +449,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a GET request to the route:
+Send a GET request to the Route:
 
 ```shell
 curl "http://127.0.0.1:9080/anything?name=john"
@@ -503,7 +503,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route:
+Send a POST request to the Route:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -577,7 +577,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a multipart POST request to the route:
+Send a multipart POST request to the Route:
 
 ```shell
 curl -X POST \
