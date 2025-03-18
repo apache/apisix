@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - JWT Auth
   - jwt-auth
-description: The jwt-auth plugin supports the use of JSON Web Token (JWT) as a mechanism for clients to authenticate themselves before accessing Upstream resources.
+description: The jwt-auth Plugin supports the use of JSON Web Token (JWT) as a mechanism for clients to authenticate themselves before accessing Upstream resources.
 ---
 
 <!--
@@ -34,9 +34,9 @@ description: The jwt-auth plugin supports the use of JSON Web Token (JWT) as a m
 
 ## Description
 
-The `jwt-auth` plugin supports the use of [JSON Web Token (JWT)](https://jwt.io/) as a mechanism for clients to authenticate themselves before accessing Upstream resources.
+The `jwt-auth` Plugin supports the use of [JSON Web Token (JWT)](https://jwt.io/) as a mechanism for clients to authenticate themselves before accessing Upstream resources.
 
-Once enabled, the plugin exposes an endpoint to create JWT credentials by [Consumers](../terminology/consumer.md). The process generates a token that client requests should carry to identify themselves to APISIX. The token can be included in the request URL query string, request header, or cookie. APISIX will then verify the token to determine if a request should be allowed or denied to access Upstream resources.
+Once enabled, the Plugin exposes an endpoint to create JWT credentials by [Consumers](../terminology/consumer.md). The process generates a token that client requests should carry to identify themselves to APISIX. The token can be included in the request URL query string, request header, or cookie. APISIX will then verify the token to determine if a request should be allowed or denied to access Upstream resources.
 
 When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
@@ -73,7 +73,7 @@ You can implement `jwt-auth` with [HashiCorp Vault](https://www.vaultproject.io/
 
 ## Examples
 
-The examples below demonstrate how you can work with the `jwt-auth` plugin for different scenarios.
+The examples below demonstrate how you can work with the `jwt-auth` Plugin for different scenarios.
 
 :::note
 
@@ -436,7 +436,7 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ### Manage Secrets in Secret Manager
 
-The following example demonstrates how to manage `jwt-auth` Consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in plugin configuration.
+The following example demonstrates how to manage `jwt-auth` Consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in Plugin configuration.
 
 Start a Vault development server in Docker:
 
@@ -787,7 +787,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following, where `X-
 
 The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
 
-Create a regular Consumer `jack` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
+Create a regular Consumer `jack` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -820,7 +820,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
   }'
 ```
 
-Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+Create an anonymous user `anonymous` and configure the `limit-count` Plugin to allow for a quota of 1 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -837,7 +837,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create a Route and configure the `jwt-auth` plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
+Create a Route and configure the `jwt-auth` Plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
