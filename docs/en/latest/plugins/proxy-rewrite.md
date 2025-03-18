@@ -424,7 +424,7 @@ You should see a response similar to the following:
 
 The following example demonstrates how you can forward the name of consumers who authenticates successfully to Upstream services. As an example, you will be using `key-auth` as the authentication method.
 
-Create a consumer `JohnDoe`:
+Create a Consumer `JohnDoe`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -434,7 +434,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` credential for the consumer:
+Create `key-auth` credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
@@ -449,7 +449,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/JohnDoe/credentials" -X PUT \
   }'
 ```
 
-Next, create a Route with key authentication enabled, configure `proxy-rewrite` to add consumer name to the header, and remove the authentication key so that it is not visible to the Upstream service:
+Next, create a Route with key authentication enabled, configure `proxy-rewrite` to add Consumer name to the header, and remove the authentication key so that it is not visible to the Upstream service:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -476,7 +476,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the Route as consumer `JohnDoe`:
+Send a request to the Route as Consumer `JohnDoe`:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
