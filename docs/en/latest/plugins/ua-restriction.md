@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - UA restriction
-description: ua-restriction 插件支持通过配置用户代理的允许列表或拒绝列表来限制对上游资源的访问。限制用户代理有助于防止网络爬虫使上游资源过载并导致服务质量下降。
+description: The ua-restriction plugin restricts access to upstream resources using an allowlist or denylist of user agents, preventing overload from web crawlers and enhancing API security.
 ---
 
 <!--
