@@ -221,7 +221,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
   }'
 ```
 
-Create a Route with `jwt-auth` plugin, and specify that the request can either carry the token in the header, query, or the cookie:
+Create a Route with `jwt-auth` Plugin, and specify that the request can either carry the token in the header, query, or the cookie:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -647,7 +647,7 @@ The key content can be directly concatenated.
 
 :::
 
-Create a Route with the `jwt-auth` plugin:
+Create a Route with the `jwt-auth` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
