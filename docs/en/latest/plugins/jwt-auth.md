@@ -46,8 +46,8 @@ For Consumer/Credential:
 
 | Name          | Type    | Required                                              | Default | Valid values                | Description                                                                                                                                                                                 |
 |---------------|---------|-------------------------------------------------------|---------|-----------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| key           | string  | True                                                  |         |                             | Unique key for a Consumer.                                                                                                                                                                  |
-| secret        | string  | False                                                 |         |                             | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. If unspecified, the secret will be auto-generated. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
+| key           | string  | True                                                  |         |     non-empty       | Unique key for a Consumer.                                                                                                                                                                  |
+| secret        | string  | False                                                 |         |        non-empty        | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. If unspecified, the secret will be auto-generated. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
 | algorithm     | string  | False                                                 | HS256 | ["HS256", "HS512", "RS256", "ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
@@ -57,7 +57,7 @@ For Consumer/Credential:
 
 NOTE: `encrypt_fields = {"secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
-For Route:
+For Routes or Services:
 
 | Name   | Type   | Required | Default       | Description                                                         |
 |--------|--------|----------|---------------|---------------------------------------------------------------------|
