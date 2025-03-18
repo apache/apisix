@@ -37,6 +37,9 @@ local error         = error
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
+local getmetatable  = getmetatable
+local setmetatable  = setmetatable
+
 local is_http       = ngx.config.subsystem == "http"
 local local_plugins_hash    = core.table.new(0, 32)
 local stream_local_plugins  = core.table.new(32, 0)
@@ -1160,6 +1163,28 @@ local function run_meta_pre_function(conf, api_ctx, name)
         end
     end
 end
+
+
+function _M.set_plugins_meta_parent(plugins, parent)
+    if not plugins then
+        return
+    end
+    for _, plugin_conf in pairs(plugins) do
+        if not plugin_conf._meta then
+            plugin_conf._meta = {}
+        end
+        if not plugin_conf._meta.parent then
+            local mt_table = getmetatable(plugin_conf._meta)
+            if mt_table then
+                mt_table.parent = parent
+            else
+                plugin_conf._meta = setmetatable(plugin_conf._meta,
+                                                    { __index = {parent = parent} })
+            end
+        end
+    end
+end
+
 
 function _M.run_plugin(phase, plugins, api_ctx)
     local plugin_run = false
