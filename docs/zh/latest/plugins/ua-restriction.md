@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API 网关
   - UA restriction
-description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法，通过该插件可以将指定的 User-Agent 列入白名单或黑名单来限制对服务或路由的访问。
+description: ua-restriction 插件使用用户代理的允许列表或拒绝列表来限制对上游资源的访问，防止网络爬虫过载并增强 API 安全性。
 ---
 
 <!--
@@ -32,7 +32,7 @@ description: 本文介绍了 Apache APISIX ua-restriction 插件的使用方法�
 
 ## 描述
 
-The `ua-restriction` Plugin supports restricting access to upstream resources through either configuring an allowlist or denylist of user agents. A common use case is to prevent web crawlers from overloading the upstream resources and causing service degradation.
+`ua-restriction` 插件支持通过配置用户代理的允许列表或拒绝列表来限制对上游资源的访问。一个常见的用例是防止网络爬虫使上游资源过载并导致服务降级。
 
 ## 属性
 
