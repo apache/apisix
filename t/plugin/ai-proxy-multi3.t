@@ -176,6 +176,166 @@ run_tests();
 
 __DATA__
 
+=== TEST 1: set route, only one instance has checker
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    },
+                                    "checks": {
+                                        "active": {
+                                            "timeout": 5,
+                                            "http_path": "/status/gpt4",
+                                            "host": "foo.com",
+                                            "healthy": {
+                                                "interval": 1,
+                                                "successes": 1
+                                            },
+                                            "unhealthy": {
+                                                "interval": 1,
+                                                "http_failures": 1
+                                            },
+                                            "req_headers": ["User-Agent: curl/7.29.0"]
+                                        }
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 2: once instance changes from unhealthy to healthy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local test_dict = ngx.shared["test"]
+
+            local send_request = function()
+                local code, _, body = t("/ai",
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "You are a mathematician" },
+                            { "role": "user", "content": "What is 1+1?" }
+                        ]
+                    }]],
+                    nil,
+                    {
+                        ["test-type"] = "options",
+                        ["Content-Type"] = "application/json",
+                    }
+                )
+                assert(code == 200, "request should be successful")
+                return body
+            end
+
+            -- set the instance to unhealthy
+            test_dict:set("/status/gpt4#total", 0)
+            -- trigger the health check
+            send_request()
+            ngx.sleep(1)
+
+            local instances_count = {
+                ["gpt-4"] = 0,
+                ["gpt-3"] = 0,
+            }
+            for i = 1, 10 do
+                local resp = send_request()
+                if core.string.find(resp, "gpt-4") then
+                    instances_count["gpt-4"] = instances_count["gpt-4"] + 1
+                else
+                    instances_count["gpt-3"] = instances_count["gpt-3"] + 1
+                end
+            end
+
+            ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
+            assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
+            assert(instances_count["gpt-3"] >= 8, "gpt-3 should be healthy")
+
+            -- set the instance to healthy
+            test_dict:set("/status/gpt4#total", 30)
+            ngx.sleep(1)
+
+            local instances_count = {
+                ["gpt-4"] = 0,
+                ["gpt-3"] = 0,
+            }
+            for i = 1, 10 do
+                local resp = send_request()
+                if core.string.find(resp, "gpt-4") then
+                    instances_count["gpt-4"] = instances_count["gpt-4"] + 1
+                else
+                    instances_count["gpt-3"] = instances_count["gpt-3"] + 1
+                end
+            end
+            ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
+
+            local v = instances_count["gpt-4"] - instances_count["gpt-3"]
+            assert(v <= 2, "difference between gpt-4 and gpt-3 should be less than 2")
+            ngx.say("passed")
+        }
+    }
+--- timeout: 10
+--- response_body
+passed
+
+
+
 === TEST 3: set service, only one instance has checker
 --- config
     location /t {
