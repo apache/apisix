@@ -72,7 +72,7 @@ Create a Route with the `ip-restriction` Plugin to whitelist a range of IPs and 
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "ip-restriction-route",
     "uri": "/anything",
@@ -93,7 +93,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -113,7 +113,7 @@ Create a Route with the `ip-restriction` Plugin to whitelist a specific IP addre
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "id": "ip-restriction-route",
     "uri": "/anything",
@@ -136,7 +136,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything?realip=192.168.1.241"
