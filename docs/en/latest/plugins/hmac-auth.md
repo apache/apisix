@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - HMAC Authentication
   - hmac-auth
-description: The hmac-auth plugin supports HMAC (Hash-based Message Authentication Code) authentication as a mechanism to ensure the integrity of requests, preventing them from being modified during transmissions.
+description: The hmac-auth Plugin supports HMAC authentication to ensure request integrity, preventing modifications during transmission and enhancing API security.
 ---
 
 <!--
@@ -30,13 +30,13 @@ description: The hmac-auth plugin supports HMAC (Hash-based Message Authenticati
 
 ## Description
 
-The `hmac-auth` plugin supports HMAC (Hash-based Message Authentication Code) authentication as a mechanism to ensure the integrity of requests, preventing them from being modified during transmissions. To use the plugin, you would configure HMAC secret keys on [Consumers](../terminology/consumer.md) and enable the plugin on Routes or Services.
+The `hmac-auth` Plugin supports HMAC (Hash-based Message Authentication Code) authentication as a mechanism to ensure the integrity of requests, preventing them from being modified during transmissions. To use the Plugin, you would configure HMAC secret keys on [Consumers](../terminology/consumer.md) and enable the Plugin on Routes or Services.
 
-When a consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
+When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
-Once enabled, the plugin verifies the HMAC signature in the request's `Authorization` header and check that incoming requests are from trusted sources. Specifically, when APISIX receives an HMAC-signed request, the key ID is extracted from the `Authorization` header. APISIX then retrieves the corresponding consumer configuration, including the secret key. If the key ID is valid and exists, APISIX generates an HMAC signature using the request's `Date` header and the secret key. If this generated signature matches the signature provided in the `Authorization` header, the request is authenticated and forwarded to Upstream services.
+Once enabled, the Plugin verifies the HMAC signature in the request's `Authorization` header and check that incoming requests are from trusted sources. Specifically, when APISIX receives an HMAC-signed request, the key ID is extracted from the `Authorization` header. APISIX then retrieves the corresponding Consumer configuration, including the secret key. If the key ID is valid and exists, APISIX generates an HMAC signature using the request's `Date` header and the secret key. If this generated signature matches the signature provided in the `Authorization` header, the request is authenticated and forwarded to Upstream services.
 
-The plugin implementation is based on [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt).
+The Plugin implementation is based on [draft-cavage-http-signatures](https://www.ietf.org/archive/id/draft-cavage-http-signatures-12.txt).
 
 ## Attributes
 
@@ -44,7 +44,7 @@ The following attributes are available for configurations on Consumers or Creden
 
 | Name                  | Type          | Required | Default       | Valid values                                | Description                                                                                                                                                                                               |
 |-----------------------|---------------|----------|---------------|---------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| key_id            | string        | True     |               |                                             | Unique identifier for the consumer, which identifies the associated configurations such as the secret key.                                                                                              |
+| key_id            | string        | True     |               |                                             | Unique identifier for the Consumer, which identifies the associated configurations such as the secret key.                                                                                              |
 | secret_key            | string        | True     |               |                                             | Secret key used to generate an HMAC. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                                             |
 
 The following attributes are available for configurations on Routes or Services.
@@ -54,15 +54,15 @@ The following attributes are available for configurations on Routes or Services.
 | allowed_algorithms             | array[string]        | False    | ["hmac-sha1","hmac-sha256","hmac-sha512"] | combination of "hmac-sha1","hmac-sha256",and "hmac-sha512" | The list of HMAC algorithms allowed.                                                                                                                                                                                |
 | clock_skew            | integer       | False    | 300             |                 >=1                          | Maximum allowable time difference in seconds between the client request's timestamp and APISIX server's current time. This helps account for discrepancies in time synchronization between the client’s and server’s clocks and protect against replay attacks. The timestamp in the Date header (must be in GMT format) will be used for the calculation.        |
 | signed_headers        | array[string] | False    |               |                                             | The list of HMAC-signed headers that should be included in the client request's HMAC signature.  |
-| validate_request_body | boolean       | False    | false         |                              | If true, validate the integrity of the request body to ensure it has not been tampered with during transmission. Specifically, the plugin creates a SHA-256 base64-encoded digest and compare it to the `Digest` header. If the Digest` header is missing or if the digests do not match, the validation fails.                          |
+| validate_request_body | boolean       | False    | false         |                              | If true, validate the integrity of the request body to ensure it has not been tampered with during transmission. Specifically, the Plugin creates a SHA-256 base64-encoded digest and compare it to the `Digest` header. If the Digest` header is missing or if the digests do not match, the validation fails.                          |
 | hide_credentials | boolean       | False    | false         |                              | If true, do not pass the authorization request header to Upstream services.                        |
-| anonymous_consumer | string    | False    |          |                              | Anonymous consumer name. If configured, allow anonymous users to bypass the authentication.                        |
+| anonymous_consumer | string    | False    |          |                              | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.                        |
 
 NOTE: `encrypt_fields = {"secret_key"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 ## Examples
 
-The examples below demonstrate how you can work with the `hmac-auth` plugin for different scenarios.
+The examples below demonstrate how you can work with the `hmac-auth` Plugin for different scenarios.
 
 :::note
 
@@ -76,9 +76,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Implement HMAC Authentication on a Route
 
-The following example demonstrates how to implement HMAC authentications on a route. You will also attach a consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
+The following example demonstrates how to implement HMAC authentications on a route. You will also attach a Consumer custom ID to authenticated request in the `Consumer-Custom-Id` header, which can be used to implement additional logics as needed.
 
-Create a consumer `john` with a custom ID label:
+Create a Consumer `john` with a custom ID label:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -91,7 +91,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `hmac-auth` Credential for the consumer:
+Create `hmac-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -107,7 +107,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create a Route with the `hmac-auth` plugin using its default configurations:
+Create a Route with the `hmac-auth` Plugin using its default configurations:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -224,7 +224,7 @@ As seen the in the [last example](#implement-hmac-authentication-on-a-route), th
 
 The following example demonstrates how to prevent these information from being sent to the Upstream service.
 
-Update the plugin configuration to set `hide_credentials` to `true`:
+Update the Plugin configuration to set `hide_credentials` to `true`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/hmac-auth-route" -X PATCH \
@@ -269,7 +269,7 @@ You should see an `HTTP/1.1 200 OK` response and notice the `Authorization` head
 
 The following example demonstrates how to enable body validation to ensure the integrity of the request body.
 
-Create a consumer `john`:
+Create a Consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -279,7 +279,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `hmac-auth` Credential for the consumer:
+Create `hmac-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -295,7 +295,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create a Route with the `hmac-auth` plugin as such:
+Create a Route with the `hmac-auth` Plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -444,7 +444,7 @@ You should see an `HTTP/1.1 401 Unauthorized` response with the following messag
 
 The following example demonstrates how you can mandate certain headers to be signed in the request's HMAC signature.
 
-Create a consumer `john`:
+Create a Consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -454,7 +454,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `hmac-auth` Credential for the consumer:
+Create `hmac-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -470,7 +470,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create a Route with the `hmac-auth` plugin which requires three headers to be present in the HMAC signature:
+Create a Route with the `hmac-auth` Plugin which requires three headers to be present in the HMAC signature:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -594,9 +594,9 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ### Rate Limit with Anonymous Consumer
 
-The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous consumer does not need to authenticate and has less quotas.
+The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
 
-Create a regular consumer `john` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
+Create a regular Consumer `john` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -613,7 +613,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create the `hmac-auth` Credential for the consumer `john`:
+Create the `hmac-auth` Credential for the Consumer `john`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
@@ -629,7 +629,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
   }'
 ```
 
-Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+Create an anonymous user `anonymous` and configure the `limit-count` Plugin to allow for a quota of 1 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -646,7 +646,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create a Route and configure the `hmac-auth` plugin to accept anonymous consumer `anonymous` from bypassing the authentication:
+Create a Route and configure the `hmac-auth` Plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
