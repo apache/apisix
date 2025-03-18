@@ -4,7 +4,7 @@ keywords:
   - Apache APISIX
   - API Gateway
   - UA restriction
-description: The ua-restriction plugin restricts access to upstream resources using an allowlist or denylist of user agents, preventing overload from web crawlers and enhancing API security.
+description: The ua-restriction Plugin restricts access to upstream resources using an allowlist or denylist of user agents, preventing overload from web crawlers and enhancing API security.
 ---
 
 <!--
@@ -88,7 +88,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a request to the route:
+Send a request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything"
@@ -110,7 +110,7 @@ You should receive an `HTTP/1.1 403 Forbidden` response with the following messa
 
 ### Bypass UA Restriction Checks
 
-The following example demonstrates how to configure the plugin to allow requests of a specific user agent to bypass the UA restriction.
+The following example demonstrates how to configure the Plugin to allow requests of a specific user agent to bypass the UA restriction.
 
 Create a Route as such:
 
