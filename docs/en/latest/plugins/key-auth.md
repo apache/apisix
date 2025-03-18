@@ -52,12 +52,12 @@ NOTE: `encrypt_fields = {"key"}` is also defined in the schema, which means that
 
 For Route:
 
-| Name   | Type   | Required | Default | Valid | Description                                                                                                                                                                                                                                                                   |
-|--------|--------|-------------|---------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| header | string | False    | apikey  |       | The header to get the key from.                                                                                                                                                                                                                                               |
-| query  | string | False    | apikey  |       | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
-| hide_credentials   | boolean | False    | false        |       | If true, do not pass the header or query string with key to Upstream services.  |
-| anonymous_consumer | string | False   | false       |       | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.  |
+| Name   | Type   | Required | Default | Description                                                                                                                                                                                                                                                                   |
+|--------|--------|-------------|-------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| header | string | False    | apikey | The header to get the key from.                                                                                                                                                                                                                                               |
+| query  | string | False    | apikey  | The query string to get the key from. Lower priority than header.                                                                                                                                                                                                             |
+| hide_credentials   | boolean | False    | false  | If true, do not pass the header or query string with key to Upstream services.  |
+| anonymous_consumer | string  | False    | false  | Anonymous Consumer name. If configured, allow anonymous users to bypass the authentication.  |
 
 ## Examples
 
