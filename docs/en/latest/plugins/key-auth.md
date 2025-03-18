@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Key Auth
   - key-auth
-description: The key-auth plugin supports the use of an authentication key as a mechanism for clients to authenticate themselves before accessing Upstream resources.
+description: The key-auth Plugin supports the use of an authentication key as a mechanism for clients to authenticate themselves before accessing Upstream resources.
 ---
 
 <!--
@@ -34,9 +34,9 @@ description: The key-auth plugin supports the use of an authentication key as a 
 
 ## Description
 
-The `key-auth` plugin supports the use of an authentication key as a mechanism for clients to authenticate themselves before accessing Upstream resources.
+The `key-auth` Plugin supports the use of an authentication key as a mechanism for clients to authenticate themselves before accessing Upstream resources.
 
-To use the plugin, you would configure authentication keys on [Consumers](../terminology/consumer.md) and enable the plugin on routes or services. The key can be included in the request URL query string or request header. APISIX will then verify the key to determine if a request should be allowed or denied to access Upstream resources.
+To use the plugin, you would configure authentication keys on [Consumers](../terminology/consumer.md) and enable the Plugin on routes or services. The key can be included in the request URL query string or request header. APISIX will then verify the key to determine if a request should be allowed or denied to access Upstream resources.
 
 When a Consumer is successfully authenticated, APISIX adds additional headers, such as `X-Consumer-Username`, `X-Credential-Indentifier`, and other Consumer custom headers if configured, to the request, before proxying it to the Upstream service. The Upstream service will be able to differentiate between consumers and implement additional logics as needed. If any of these values is not available, the corresponding header will not be added.
 
@@ -61,7 +61,7 @@ For Route:
 
 ## Examples
 
-The examples below demonstrate how you can work with the `key-auth` plugin for different scenarios.
+The examples below demonstrate how you can work with the `key-auth` Plugin for different scenarios.
 
 :::note
 
@@ -87,7 +87,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -174,7 +174,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -309,7 +309,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -397,7 +397,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` Credential for the consumer:
+Create `key-auth` Credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -469,7 +469,7 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 The following example demonstrates how you can configure different rate limiting policies by regular and anonymous consumers, where the anonymous Consumer does not need to authenticate and has less quotas.
 
-Create a regular Consumer `jack` and configure the `limit-count` plugin to allow for a quota of 3 within a 30-second window:
+Create a regular Consumer `jack` and configure the `limit-count` Plugin to allow for a quota of 3 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -501,7 +501,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
   }'
 ```
 
-Create an anonymous user `anonymous` and configure the `limit-count` plugin to allow for a quota of 1 within a 30-second window:
+Create an anonymous user `anonymous` and configure the `limit-count` Plugin to allow for a quota of 1 within a 30-second window:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -518,7 +518,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create a Route and configure the `key-auth` plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
+Create a Route and configure the `key-auth` Plugin to accept anonymous Consumer `anonymous` from bypassing the authentication:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
