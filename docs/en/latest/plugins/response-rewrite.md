@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Response Rewrite
   - response-rewrite
-description: The response-rewrite Plugin offers options to rewrite responses that APISIX and its Upstream services return to clients. With the plugin, you can modify HTTP status codes, request headers, response body, and more.
+description: The response-rewrite Plugin offers options to rewrite responses that APISIX and its Upstream services return to clients. With the Plugin, you can modify HTTP status codes, request headers, response body, and more.
 ---
 
 <!--
@@ -34,7 +34,7 @@ description: The response-rewrite Plugin offers options to rewrite responses tha
 
 ## Description
 
-The `response-rewrite` Plugin offers options to rewrite responses that APISIX and its Upstream services return to clients. With the plugin, you can modify HTTP status codes, request headers, response body, and more.
+The `response-rewrite` Plugin offers options to rewrite responses that APISIX and its Upstream services return to clients. With the Plugin, you can modify HTTP status codes, request headers, response body, and more.
 
 For instance, you can use this Plugin to:
 
@@ -83,7 +83,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how to add response body and headers, only to responses with `200` HTTP status codes.
 
-Create a Route with the `response-rewrite` plugin:
+Create a Route with the `response-rewrite` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -137,7 +137,7 @@ X-Server-balancer-addr: 50.237.103.220:80
 
 The following example demonstrates how to use RegEx filter matching to replace `X-Amzn-Trace-Id` for responses.
 
-Create a Route with the `response-rewrite` plugin:
+Create a Route with the `response-rewrite` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -190,7 +190,7 @@ You should see a response similar to the following:
 
 The following example demonstrates how to Decode Body from Base64 format.
 
-Create a Route with the `response-rewrite` plugin:
+Create a Route with the `response-rewrite` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -228,9 +228,9 @@ Hello World
 
 ### Rewrite Response and Its Connection with Execution Phases
 
-The following example demonstrates the connection between the `response-rewrite` Plugin and [execution phases](/apisix/key-concepts/plugins#plugins-execution-lifecycle) by configuring the Plugin with the `key-auth` plugin, and see how the response is still rewritten to `200 OK` in the case of an unauthenticated request.
+The following example demonstrates the connection between the `response-rewrite` Plugin and [execution phases](/apisix/key-concepts/plugins#plugins-execution-lifecycle) by configuring the Plugin with the `key-auth` Plugin, and see how the response is still rewritten to `200 OK` in the case of an unauthenticated request.
 
-Create a consumer `jack`:
+Create a Consumer `jack`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -240,7 +240,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `key-auth` credential for the consumer:
+Create `key-auth` credential for the Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -297,7 +297,7 @@ Send a request to the Route without any key:
 curl -i "http://127.0.0.1:9080/get"
 ```
 
-You should still receive an `HTTP/1.1 200 OK` response of the same, instead of `HTTP/1.1 401 Unauthorized` from the `key-auth` plugin. This shows that the `response-rewrite` Plugin still rewrites the response.
+You should still receive an `HTTP/1.1 200 OK` response of the same, instead of `HTTP/1.1 401 Unauthorized` from the `key-auth` Plugin. This shows that the `response-rewrite` Plugin still rewrites the response.
 
 This is because **header_filter** and **body_filter** phase logics of the `response-rewrite` Plugin will continue to run after [`ngx.exit`](https://openresty-reference.readthedocs.io/en/latest/Lua_Nginx_API/#ngxexit) in the **access** or **rewrite** phases from other plugins.
 
