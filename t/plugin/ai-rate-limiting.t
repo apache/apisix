@@ -205,10 +205,40 @@ __DATA__
                 },
                 {
                     limit = 30,
+                    instances = {
+                        {
+                            name = "instance1",
+                            limit = 30,
+                            time_window = 60,
+                        }
+                    },
+                },
+                {
+                    instances = {
+                        {
+                            name = "instance1",
+                            limit = 30,
+                            time_window = 60,
+                        }
+                    },
+                },
+                {
+                    limit = 30,
                     time_window = 60,
                     rejected_code = 403,
                     rejected_msg = "rate limit exceeded",
                     limit_strategy = "completion_tokens",
+                },
+                {
+                    limit = 30,
+                    time_window = 60,
+                    instances = {
+                        {
+                            name = "instance1",
+                            limit = 30,
+                            time_window = 60,
+                        }
+                    },   
                 }
             }
             local core = require("apisix.core")
@@ -225,12 +255,15 @@ __DATA__
         }
     }
 --- response_body
-property "limit" is required
-property "time_window" is required
+property "limit" is required when "time_window" is set
+property "time_window" is required when "limit" is set
 property "rejected_code" validation failed: expected 199 to be at least 200
 property "limit_strategy" validation failed: matches none of the enum values
 property "instances" validation failed: failed to validate item 2: property "name" is required
-property "limit" is required
+property "limit" is required when "time_window" is set
+property "time_window" is required when "limit" is set
+passed
+passed
 passed
 done
 
@@ -682,3 +715,333 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 15: limiting to only one instance
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 0,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "limit": 20,
+                                    "time_window": 60
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: 10 requests, 8 should be handled by gpt-3, 2 should be handled by gpt-4
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+
+            local instances_count = {}
+            for i = 1, 10 do
+                local code, _, body = t("/ai",
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "You are a mathematician" },
+                            { "role": "user", "content": "What is 1+1?" }
+                        ]
+                    }]],
+                    nil,
+                    {
+                        ["test-type"] = "options",
+                        ["Content-Type"] = "application/json",
+                    }
+                )
+                assert(code == 200, "first request should be successful")
+                if core.string.find(body, "gpt-4") then
+                    instances_count["gpt-4"] = (instances_count["gpt-4"] or 0) + 1
+                else
+                    instances_count["gpt-3"] = (instances_count["gpt-3"] or 0) + 1
+                end
+            end
+
+            ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
+
+            assert(instances_count["gpt-4"] <= 2, "gpt-4 should be handled by higher priority instance")
+            assert(instances_count["gpt-3"] >= 8, "gpt-3 should be handled by lower priority instance")
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 17: each instance uses different current limiting
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 0,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "instances": [
+                                {
+                                    "name": "openai-gpt3",
+                                    "limit": 50,
+                                    "time_window": 60
+                                },
+                                {
+                                    "name": "openai-gpt4",
+                                    "limit": 20,
+                                    "time_window": 60
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: gpt3 allows 5 requests, gpt4 allows 2 requests
+--- pipelined_requests eval
+[
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+]
+--- more_headers
+Authorization: Bearer token
+--- error_code eval
+[200, 200, 200, 200, 200, 200, 200, 503, 503]
+
+
+
+=== TEST 19: set limit & instances
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 0,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:16724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        },
+                        "ai-rate-limiting": {
+                            "limit": 20,
+                            "time_window": 60,
+                            "instances": [
+                                {
+                                    "name": "openai-gpt3",
+                                    "limit": 50,
+                                    "time_window": 60
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "canbeanything.com": 1
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 20: gpt3 allows 5 requests, gpt4 allows 2 requests
+--- pipelined_requests eval
+[
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+    "POST /ai\n" . "{ \"messages\": [ { \"role\": \"system\", \"content\": \"You are a mathematician\" }, { \"role\": \"user\", \"content\": \"What is 1+1?\"} ] }",
+]
+--- more_headers
+Authorization: Bearer token
+--- error_code eval
+[200, 200, 200, 200, 200, 200, 200, 503, 503]
