@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - HMAC Authentication
   - hmac-auth
-description: hmac-auth 插件支持 HMAC（基于哈希的消息认证码）认证，作为一种确保请求完整性的机制，防止它们在传输过程中被修改。
+description: hmac-auth 插件支持 HMAC 认证，保证请求的完整性，防止传输过程中的修改，增强 API 的安全性。
 ---
 
 <!--
