@@ -25,7 +25,6 @@ local CONTENT_TYPE_JSON = "application/json"
 local core = require("apisix.core")
 local http = require("resty.http")
 local url  = require("socket.url")
-local schema = require("apisix.plugins.ai-drivers.schema")
 local ngx_re = require("ngx.re")
 
 local ngx_print = ngx.print
@@ -57,11 +56,6 @@ function _M.validate_request(ctx)
         local request_table, err = core.request.get_json_request_body_table()
         if not request_table then
             return nil, err
-        end
-
-        local ok, err = core.schema.check(schema.chat_request_schema, request_table)
-        if not ok then
-            return nil, "request format doesn't match schema: " .. err
         end
 
         return request_table, nil
