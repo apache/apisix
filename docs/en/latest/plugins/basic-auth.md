@@ -72,7 +72,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Implement Basic Authentication on Route
 
-The following example demonstrates how to implement basic authentication on a route.
+The following example demonstrates how to implement basic authentication on a Route.
 
 Create a Consumer `johndoe`:
 
