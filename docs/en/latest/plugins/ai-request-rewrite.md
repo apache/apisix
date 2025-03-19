@@ -5,7 +5,7 @@ keywords:
   - AI Gateway
   - Plugin
   - ai-request-rewrite
-description: The ai-request-rewrite plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
+description: The ai-request-rewrite plugin forwards client requests to LLM services for processing before sending them upstream, enabling AI-driven redaction, enrichment, and reformatting.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: The ai-request-rewrite plugin intercepts client requests before the
 
 ## Description
 
-The `ai-request-rewrite` plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
+The `ai-request-rewrite` plugin processes client requests by forwarding them to LLM services for transformation before relaying them to upstream services. This enables LLM-powered modifications such as data redaction, content enrichment, or reformatting.
 
 ## Plugin Attributes
 
@@ -53,13 +53,23 @@ The `ai-request-rewrite` plugin intercepts client requests before they are forwa
 
 ![image](https://github.com/user-attachments/assets/c7288e4f-00fc-46ca-b69e-d3d74d7085ca)
 
-## Example usage
+## Examples
 
-Create a route with the `ai-request-rewrite` plugin like:
+The examples below demonstrate how you can configure `ai-request-rewrite` for different scenarios.
+
+:::note
+
+You can fetch the admin_key from config.yaml and save to an environment variable with the following command:
+
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+
+:::
+
+### Redact sensitive information
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/anything",
     "plugins": {
@@ -135,7 +145,7 @@ Create a route with the `ai-request-rewrite` plugin with `provider` set to `open
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
-  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -H "X-API-KEY: ${admin_key}" \
   -d '{
     "uri": "/anything",
     "plugins": {
