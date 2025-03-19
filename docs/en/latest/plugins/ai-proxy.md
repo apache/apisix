@@ -56,12 +56,6 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | model.provider            | Yes          | String   | Name of the AI service provider (`openai`).                                          |
 | model.name                | Yes          | String   | Model name to execute.                                                               |
 | model.options             | No           | Object   | Key/value settings for the model                                                     |
-| model.options.max_tokens  | No           | Integer  | Defines the max tokens if using chat or completion models. Default: 256              |
-| model.options.input_cost  | No           | Number   | Cost per 1M tokens in your prompt. Minimum: 0                                        |
-| model.options.output_cost | No           | Number   | Cost per 1M tokens in the output of the AI. Minimum: 0                               |
-| model.options.temperature | No           | Number   | Matching temperature for models. Range: 0.0 - 5.0                                    |
-| model.options.top_p       | No           | Number   | Top-p probability mass. Range: 0 - 1                                                 |
-| model.options.stream      | No           | Boolean  | Stream response by SSE.                                                              |
 | override.endpoint         | No           | String   | Override the endpoint of the AI provider                                             |
 | timeout                   | No           | Integer  | Timeout in milliseconds for requests to LLM. Range: 1 - 60000. Default: 30000         |
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM. Default: true                                  |

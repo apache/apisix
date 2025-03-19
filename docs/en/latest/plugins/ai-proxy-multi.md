@@ -63,12 +63,6 @@ Proxying requests to OpenAI is supported now. Other LLM services will be support
 | provider.auth                | Yes          | object   | Authentication details, including headers and query parameters.                                               |             |
 | provider.auth.header         | No           | object   | Authentication details sent via headers. Header name must match `^[a-zA-Z0-9._-]+$`.                          |             |
 | provider.auth.query          | No           | object   | Authentication details sent via query parameters. Keys must match `^[a-zA-Z0-9._-]+$`.                        |             |
-| provider.options.max_tokens  | No           | integer  | Defines the maximum tokens for chat or completion models.                                                     | 256         |
-| provider.options.input_cost  | No           | number   | Cost per 1M tokens in the input prompt. Minimum is 0.                                                         |             |
-| provider.options.output_cost | No           | number   | Cost per 1M tokens in the AI-generated output. Minimum is 0.                                                  |             |
-| provider.options.temperature | No           | number   | Defines the model's temperature (0.0 - 5.0) for randomness in responses.                                      |             |
-| provider.options.top_p       | No           | number   | Defines the top-p probability mass (0 - 1) for nucleus sampling.                                              |             |
-| provider.options.stream      | No           | boolean  | Enables streaming responses via SSE.                                                                          |             |
 | provider.override.endpoint   | No           | string   | Custom host override for the AI provider.                                                                     |             |
 | timeout                      | No           | integer  | Request timeout in milliseconds (1-60000).                                                                    | 30000        |
 | keepalive                    | No           | boolean  | Enables keepalive connections.                                                                                | true        |
