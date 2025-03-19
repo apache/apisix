@@ -311,9 +311,15 @@ local function update_token(premature, handle)
         return
     end
 
-    local attributes, err = lfs.attributes(handle.apiserver.token_file)
+    local token_file_path, err = read_env(handle.apiserver.token_file)
+    if err then
+        core.log.error("failed to read token file path: ", err)
+        return
+    end
+
+    local attributes, err = lfs.attributes(token_file_path)
     if not attributes then
-        core.log.error("failed to fetch ", handle.apiserver.token_file, " attributes: ", err)
+        core.log.error("failed to fetch ", token_file_path, " attributes: ", err)
         return
     end
 
@@ -322,7 +328,7 @@ local function update_token(premature, handle)
         return
     end
 
-    local token, err = read_token(handle.apiserver.token_file)
+    local token, err = read_token(token_file_path)
     if err then
         return nil, err
     end
