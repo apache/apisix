@@ -37,7 +37,8 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        prefer_name = {type = "boolean", default = true}
+        prefer_name = {type = "boolean", default = true},
+        include_path = {type = "boolean", default = false}
     }
 }
 
@@ -82,6 +83,10 @@ local function generate_tag(entry, const_tags)
 
     if entry.route_id and entry.route_id ~= "" then
         core.table.insert(tags, "route_name:" .. entry.route_id)
+    end
+
+    if entry.path and entry.path ~= "" then
+        core.table.insert(tags, "path:" .. entry.path)
     end
 
     if entry.service_id and entry.service_id ~= "" then
@@ -238,6 +243,12 @@ function _M.log(conf, ctx)
 
         if ctx.route_name and ctx.route_name ~= "" then
             entry.route_id = ctx.route_name
+        end
+    end
+
+    if conf.include_path then
+        if ctx.curr_req_matched and ctx.curr_req_matched._path then
+            entry.path = ctx.curr_req_matched._path
         end
     end
 
