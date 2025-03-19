@@ -363,7 +363,7 @@ true
 
 
 
-=== TEST 7: auto refresh token when token expired
+=== TEST 7: auto update token when token file changed
 --- yaml_config
 apisix:
   node_listen: 1984
