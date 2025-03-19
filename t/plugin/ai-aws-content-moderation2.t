@@ -26,6 +26,12 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $main_config = $block->main_config // <<_EOC_;
+        env AWS_REGION=us-east-1;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
+
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
