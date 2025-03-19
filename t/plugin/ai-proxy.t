@@ -106,6 +106,66 @@ add_block_preprocessor(sub {
                 }
             }
 
+            location /v1/embeddings {
+                content_by_lua_block {
+                    if ngx.req.get_method() ~= "POST" then
+                        ngx.status = 400
+                        ngx.say("unsupported request method: ", ngx.req.get_method())
+                    end
+
+                    local header_auth = ngx.req.get_headers()["authorization"]
+                    if header_auth ~= "Bearer token" then
+                        ngx.status = 401
+                        ngx.say("unauthorized")
+                        return
+                    end
+
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    local json = require("cjson.safe")
+                    body, err = json.decode(body)
+                    if err then
+                        ngx.status = 400
+                        ngx.say("failed to get request body: ", err)
+                    end
+
+                    if body.model ~= "text-embedding-ada-002" then
+                        ngx.status = 400
+                        ngx.say("unsupported model: ", body.model)
+                        return
+                    end
+
+                    if body.encoding_format ~= "float" then
+                        ngx.status = 400
+                        ngx.say("unsupported encoding format: ", body.encoding_format)
+                        return
+                    end
+
+                    ngx.status = 200
+                    ngx.say([[
+                        {
+                          "object": "list",
+                          "data": [
+                            {
+                              "object": "embedding",
+                              "embedding": [
+                                0.0023064255,
+                                -0.009327292,
+                                -0.0028842222
+                              ],
+                              "index": 0
+                            }
+                          ],
+                          "model": "text-embedding-ada-002",
+                          "usage": {
+                            "prompt_tokens": 8,
+                            "total_tokens": 8
+                          }
+                        }
+                    ]])
+                }
+            }
+
             location /random {
                 content_by_lua_block {
                     ngx.say("path override works")
@@ -330,19 +390,7 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
 
 
 
-=== TEST 11: request schema validity check
---- request
-POST /anything
-{ "messages-missing": [ { "role": "system", "content": "xyz" } ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 400
---- response_body chomp
-request format doesn't match schema: property "messages" is required
-
-
-
-=== TEST 12: model options being merged to request body
+=== TEST 11: model options being merged to request body
 --- config
     location /t {
         content_by_lua_block {
@@ -405,7 +453,7 @@ options_works
 
 
 
-=== TEST 13: override path
+=== TEST 12: override path
 --- config
     location /t {
         content_by_lua_block {
@@ -467,7 +515,7 @@ path override works
 
 
 
-=== TEST 14: set route with stream = true (SSE)
+=== TEST 13: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -510,7 +558,7 @@ passed
 
 
 
-=== TEST 15: test is SSE works as expected
+=== TEST 14: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
@@ -568,3 +616,58 @@ passed
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 15: proxy embedding endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/embeddings",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "text-embedding-ada-002",
+                                "encoding_format": "float"
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/v1/embeddings"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: send request to embedding api
+--- request
+POST /embeddings
+{
+    "input": "The food was delicious and the waiter..."
+}
+--- error_code: 200
+--- response_body_like eval
+qr/.*text-embedding-ada-002*/
