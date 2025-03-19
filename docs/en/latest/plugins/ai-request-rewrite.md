@@ -5,7 +5,7 @@ keywords:
   - AI Gateway
   - Plugin
   - ai-request-rewrite
-description: The ai-request-rewrite plugin forwards client requests to LLM services for processing before sending them upstream, enabling AI-driven redaction, enrichment, and reformatting.
+description: The ai-request-rewrite plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: The ai-request-rewrite plugin forwards client requests to LLM servi
 
 ## Description
 
-The `ai-request-rewrite` plugin processes client requests by forwarding them to LLM services for transformation before relaying them to upstream services. This enables LLM-powered modifications such as data redaction, content enrichment, or reformatting.
+The `ai-request-rewrite` plugin intercepts client requests before they are forwarded to the upstream service. It sends a predefined prompt, along with the original request body, to a specified LLM service. The LLM processes the input and returns a modified request body, which is then used for the upstream request. This allows dynamic transformation of API requests based on AI-generated content.
 
 ## Plugin Attributes
 

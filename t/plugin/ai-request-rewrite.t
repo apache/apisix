@@ -399,7 +399,7 @@ passed
                 }
             )
 
-            if code == 400 then
+            if code == 500 then
                 ngx.say('passed')
                 return
             end
@@ -513,7 +513,7 @@ passed
                 }
             )
 
-            if code == 400 then
+            if code == 500 then
                 ngx.say('passed')
                 return
             end
@@ -636,7 +636,7 @@ passed
                 }
             )
 
-            if code == 400 then
+            if code == 500 then
                 ngx.say('passed')
                 return
             end
@@ -700,7 +700,7 @@ passed
                 }
             )
 
-            if code == 400 then
+            if code == 500 then
                 ngx.say('passed')
                 return
             end
