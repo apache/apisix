@@ -50,6 +50,8 @@ local schema = {
                 type = "array"
             }
         },
+        max_req_body_bytes = {type = "integer", minimum = 1, default = 524288},
+        max_resp_body_bytes = {type = "integer", minimum = 1, default = 524288},
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}},
         ssl_verify = {type = "boolean", default = false},
