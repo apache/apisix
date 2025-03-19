@@ -15,15 +15,13 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local ngx = ngx
-
 local require = require
+local ngx = ngx
+local req_set_body_data = ngx.req.set_body_data
+local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local plugin_name = "ai-request-rewrite"
-
-local bad_request = ngx.HTTP_BAD_REQUEST
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
-
 
 local auth_item_schema = {
     type = "object",
@@ -112,7 +110,7 @@ local _M = {
     schema = schema
 }
 
-local function proxy_request_to_llm(conf, request_table, ctx)
+local function request_to_llm(conf, request_table, ctx)
     local ai_driver = require("apisix.plugins.ai-drivers." .. conf.provider)
 
     local extra_opts = {
@@ -123,16 +121,24 @@ local function proxy_request_to_llm(conf, request_table, ctx)
     }
 
     local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
+    if err then
+        return nil, nil, err
+    end
 
-    if not res then return nil, err, nil end
-    return res, nil, httpc
+    local resp_body, read_err = res:read_body()
+    httpc:close()
+    if read_err then
+        return nil, nil, nil, read_err
+    end
+
+    return res, resp_body
 end
 
 
 local function parse_llm_response(res_body)
     local response_table, err = core.json.decode(res_body)
 
-    if not response_table then
+    if err then
         return nil, "failed to decode llm response " .. ", err: " .. err
     end
 
@@ -145,7 +151,7 @@ local function parse_llm_response(res_body)
         return nil, "'message' not in llm response choices"
     end
 
-    return message.content, nil
+    return message.content
 end
 
 
@@ -164,10 +170,10 @@ end
 
 
 function _M.access(conf, ctx)
-    local client_request_table, err = core.request.get_body()
-    if not client_request_table then
+    local client_request_body, err = core.request.get_body()
+    if err then
         core.log.error("failed to get request body: ", err)
-        return bad_request, err
+        return HTTP_BAD_REQUEST, err
     end
 
     -- Prepare request for LLM service
@@ -179,17 +185,17 @@ function _M.access(conf, ctx)
             },
             {
                 role = "user",
-                content = client_request_table
+                content = client_request_body
             }
         },
         stream = false
     }
 
     -- Send request to LLM service
-    local res, err, httpc = proxy_request_to_llm(conf, ai_request_table, ctx)
-    if not res then
+    local res, resp_body, err, read_err = request_to_llm(conf, ai_request_table, ctx)
+    if err then
         core.log.error("failed to send request to LLM service: ", err)
-        return internal_server_error
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     -- Handle LLM response
@@ -199,27 +205,22 @@ function _M.access(conf, ctx)
         if err then
             error_msg = error_msg .. ", err: " .. err
         end
-        return bad_request, error_msg
+        return HTTP_BAD_REQUEST, error_msg
     end
 
-    -- Read response body
-    local res_body, err = res:read_body()
-    if not res_body then
-        core.log.error("failed to read LLM response body: ", err)
-        httpc:close()
-        return internal_server_error
+    if read_err then
+        core.log.error("failed to read LLM response body: ", read_err)
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     -- Parse LLM response
-    local llm_response, err = parse_llm_response(res_body)
-    if not llm_response then
+    local llm_response, err = parse_llm_response(resp_body)
+    if err then
         core.log.error("failed to parse LLM response: ", err)
-        httpc:close()
-        return internal_server_error
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
-    httpc:close()
-    ngx.req.set_body_data(llm_response)
+    req_set_body_data(llm_response)
 end
 
 return _M

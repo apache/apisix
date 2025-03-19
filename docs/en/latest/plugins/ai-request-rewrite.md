@@ -42,8 +42,8 @@ The `ai-request-rewrite` plugin processes client requests by forwarding them to 
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
 | options                   | No           | Object   | Key/value settings for the model                                                     |
 | options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible services |
-| override.endpoint         | No           | String   | Override the default endpoint when using OpenAI-compatible services (e.g., self-hosted models or third-party LLM services) |
-| timeout                   | No           | Integer  | Total timeout in milliseconds for requests to LLM service, including connect, send, and read timeouts. Range: 1 - 60000. Default: 3000|
+| override.endpoint         | No           | String   | Override the default endpoint when using OpenAI-compatible services (e.g., self-hosted models or third-party LLM services). When the provider is 'openai-compatible', the endpoint field is required. |
+| timeout                   | No           | Integer  | Total timeout in milliseconds for requests to LLM service, including connect, send, and read timeouts. Range: 1 - 60000. Default: 30000|
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM service. Default: true                                  |
 | keepalive_timeout         | No           | Integer  | Keepalive timeout in milliseconds for requests to LLM service. Minimum: 1000. Default: 60000 |
 | keepalive_pool            | No           | Integer  | Keepalive pool size for requests to LLM service. Minimum: 1. Default: 30                     |
