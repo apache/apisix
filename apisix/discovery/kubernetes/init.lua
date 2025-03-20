@@ -285,12 +285,7 @@ local function read_env(key)
 end
 
 local function read_token(token_file)
-    local file, err = read_env(token_file)
-    if err then
-        return nil, err
-    end
-
-    local token, err = util.read_file(file)
+    local token, err = util.read_file(token_file)
     if err then
         return nil, err
     end
@@ -301,22 +296,12 @@ local function read_token(token_file)
 end
 
 
-local token_file_mtime
-local function update_token(premature, handle)
-    if premature then
-        return
-    end
-
+local function update_token(handle)
     if not handle.apiserver.token_file or handle.apiserver.token_file == "" then
         return
     end
 
-    local token_file_path, err = read_env(handle.apiserver.token_file)
-    if err then
-        core.log.error("failed to read token file path: ", err)
-        return
-    end
-
+    local token_file_path = handle.apiserver.token_file
     local attributes, err = lfs.attributes(token_file_path)
     if not attributes then
         core.log.error("failed to fetch ", token_file_path, " attributes: ", err)
@@ -324,7 +309,7 @@ local function update_token(premature, handle)
     end
 
     local last_modification_time = attributes.modification
-    if token_file_mtime == last_modification_time then
+    if handle.token_file_mtime == last_modification_time then
         return
     end
 
@@ -334,7 +319,7 @@ local function update_token(premature, handle)
     end
 
     handle.apiserver.token = token
-    token_file_mtime = last_modification_time
+    handle.token_file_mtime = last_modification_time
     core.log.warn("kubernetes service account token has been updated")
 end
 
@@ -379,12 +364,17 @@ local function get_apiserver(conf)
             return nil, err
         end
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        apiserver.token, err = read_token(conf.client.token_file)
+        local token_file, err = read_env(conf.client.token_file)
         if err then
             return nil, err
         end
 
-        apiserver.token_file = conf.client.token_file
+        apiserver.token, err = read_token(token_file)
+        if err then
+            return nil, err
+        end
+
+        apiserver.token_file = token_file
     else
         return nil, "one of [client.token,client.token_file] should be set but none"
     end
@@ -426,6 +416,8 @@ local function start_fetch(handle)
         if premature then
             return
         end
+
+        update_token(handle)
 
         local ok, status = pcall(handle.list_watch, handle, handle.apiserver)
 
@@ -507,11 +499,11 @@ local function single_mode_init(conf)
     ctx = setmetatable({
         endpoint_dict = endpoint_dict,
         apiserver = apiserver,
-        default_weight = default_weight
+        default_weight = default_weight,
+        token_file_mtime = nil
     }, { __index = endpoints_informer })
 
     start_fetch(ctx)
-    ngx.timer.every(1, update_token, ctx)
 end
 
 
@@ -614,13 +606,13 @@ local function multiple_mode_init(confs)
         ctx[id] = setmetatable({
             endpoint_dict = endpoint_dict,
             apiserver = apiserver,
-            default_weight = default_weight
+            default_weight = default_weight,
+            token_file_mtime = nil
         }, { __index = endpoints_informer })
     end
 
     for _, item in pairs(ctx) do
         start_fetch(item)
-        ngx.timer.every(1, update_token, item)
     end
 end
 
