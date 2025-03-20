@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - Loki-logger
   - Grafana Loki
-description: This document contains information about the Apache APISIX loki-logger Plugin.
+description: The loki-logger Plugin pushes request and response logs in batches to Grafana Loki, via the Loki HTTP API /loki/api/v1/push. The Plugin also supports the customization of log formats.
 ---
 
 <!--
@@ -28,92 +28,69 @@ description: This document contains information about the Apache APISIX loki-log
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/loki-logger" />
+</head>
+
 ## Description
 
-The `loki-logger` plugin is used to forward logs to [Grafana Loki](https://grafana.com/oss/loki/) for analysis and storage.
+The `loki-logger` Plugin pushes request and response logs in batches to [Grafana Loki](https://grafana.com/oss/loki/), via the [Loki HTTP API](https://grafana.com/docs/loki/latest/reference/loki-http-api/#loki-http-api) `/loki/api/v1/push`. The Plugin also supports the customization of log formats.
 
-When the Plugin is enabled, APISIX will serialize the request context information to [Log entries in JSON](https://grafana.com/docs/loki/latest/api/#push-log-entries-to-loki) and submit it to the batch queue. When the maximum batch size is exceeded, the data in the queue is pushed to Grafana Loki. See [batch processor](../batch-processor.md) for more details.
+When enabled, the Plugin will serialize the request context information to [JSON objects](https://grafana.com/docs/loki/latest/api/#push-log-entries-to-loki) and add them to the queue, before they are pushed to Loki. See [batch processor](../batch-processor.md) for more details.
 
 ## Attributes
 
-| Name | Type | Required | Default | Description |
-|---|---|---|---|---|
-| endpoint_addrs | array[string] | True |  | Loki API base URL, format like http://127.0.0.1:3100, supports HTTPS and domain names. If multiple endpoints are configured, they will be written randomly. |
-| endpoint_uri | string | False | /loki/api/v1/push | If you are using a log collection service that is compatible with the Loki Push API, you can use this configuration item to customize the API path. |
-| tenant_id | string | False | fake | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), its default value is set to the default value `fake` under single-tenancy. |
-| log_labels | object | False | {job = "apisix"} | Loki log label. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`, both individual and combined, such as `$host` or `$remote_addr:$remote_port`. |
-| ssl_verify        | boolean       | False    | true | When set to `true`, verifies the SSL certificate. |
-| timeout           | integer       | False    | 3000ms | Timeout for the Loki service HTTP call. Range from 1 to 60,000ms.  |
-| keepalive         | boolean       | False    | true | When set to `true`, keeps the connection alive for multiple requests. |
-| keepalive_timeout | integer       | False    | 60000ms | Idle time after which the connection is closed. Range greater than or equal than 1000ms.  |
-| keepalive_pool    | integer       | False    | 5       | Connection pool limit. Range greater than or equal than 1. |
-| log_format | object | False    |          | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
-| include_req_body       | boolean | False    | false | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations. |
-| include_req_body_expr  | array   | False    |  | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
-| include_resp_body      | boolean | False    | false | When set to `true` includes the response body in the log. |
-| include_resp_body_expr | array   | False    |  | Filter for when the `include_resp_body` attribute is set to `true`. Response body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
+| Name | Type | Required | Default | Valid values | Description |
+|---|---|---|---|---|---|
+| endpoint_addrs | array[string] | True |  | | Loki API base URLs, such as `http://127.0.0.1:3100`. If multiple endpoints are configured, the log will be pushed to a randomly determined endpoint from the list. |
+| endpoint_uri | string | False | /loki/api/v1/push | | URI path to the Loki ingest endpoint. |
+| tenant_id | string | False | fake | | Loki tenant ID. According to Loki's [multi-tenancy documentation](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy), the default value is set to `fake` under single-tenancy. |
+| log_labels | object | False | {job = "apisix"} | | Loki log label. Support [NGINX variables](https://nginx.org/en/docs/varindex.html) and constant strings in values. Variables should be prefixed with a `$` sign. For example, the label can be `{"origin" = "apisix"}` or `{"origin" = "$remote_addr"}`. |
+| ssl_verify        | boolean       | False    | true | | If true, verify Loki's SSL certificates. |
+| timeout           | integer       | False    | 3000 | [1, 60000] | Timeout for the Loki service HTTP call in milliseconds.  |
+| keepalive         | boolean       | False    | true |  | If true, keep the connection alive for multiple requests. |
+| keepalive_timeout | integer       | False    | 60000 | >=1000 | Keepalive timeout in milliseconds.  |
+| keepalive_pool    | integer       | False    | 5       | >=1 | Maximum number of connections in the connection pool.  |
+| log_format | object | False    |          | | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
+| name | string | False    | loki-logger | | Unique identifier of the Plugin for the batch processor. If you use [Prometheus](./prometheus.md) to monitor APISIX metrics, the name is exported in `apisix_batch_process_entries`. |
+| include_req_body       | boolean | False    | false | | If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations. |
+| include_req_body_expr  | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true. |
+| include_resp_body      | boolean | False    | false | | If true, include the response body in the log.  |
+| include_resp_body_expr | array[array]   | False    |  | | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true. |
 
-This plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
+This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-### Example of default log format
+## Plugin Metadata
 
-```json
-{
-    "request": {
-        "headers": {
-            "connection": "close",
-            "host": "localhost",
-            "test-header": "only-for-test#1"
-        },
-        "method": "GET",
-        "uri": "/hello",
-        "url": "http://localhost:1984/hello",
-        "size": 89,
-        "querystring": {}
-    },
-    "client_ip": "127.0.0.1",
-    "start_time": 1704525701293,
-    "apisix_latency": 100.99994659424,
-    "response": {
-        "headers": {
-            "content-type": "text/plain",
-            "server": "APISIX/3.7.0",
-            "content-length": "12",
-            "connection": "close"
-        },
-        "status": 200,
-        "size": 118
-    },
-    "route_id": "1",
-    "loki_log_time": "1704525701293000000",
-    "upstream_latency": 5,
-    "latency": 105.99994659424,
-    "upstream": "127.0.0.1:1980",
-    "server": {
-        "hostname": "localhost",
-        "version": "3.7.0"
-    },
-    "service_id": ""
-}
-```
-
-## Metadata
-
-You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
+You can also configure log format on a global scale using the [Plugin Metadata](../terminology/plugin-metadata.md), which configures the log format for all `loki-logger` Plugin instances. If the log format configured on the individual Plugin instance differs from the log format configured on Plugin metadata, the log format configured on the individual Plugin instance takes precedence.
 
 | Name | Type | Required | Default | Description |
 |------|------|----------|---------|-------------|
-| log_format | object | False |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX variables](../apisix-variable.md) and [Nginx variables](http://nginx.org/en/docs/varindex.html) can be used by prefixing the string with `$`. |
+| log_format | object | False |  | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
 
-:::info IMPORTANT
+## Examples
 
-Configuring the plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `loki-logger` plugin.
+The examples below demonstrate how you can configure `loki-logger` Plugin for different scenarios.
 
-:::
+To follow along the examples, start a sample Loki instance in Docker:
 
-The example below shows how you can configure through the Admin API:
+```shell
+wget https://raw.githubusercontent.com/grafana/loki/v3.0.0/cmd/loki/loki-local-config.yaml -O loki-config.yaml
+docker run --name loki -d -v $(pwd):/mnt/config -p 3100:3100 grafana/loki:3.2.1 -config.file=/mnt/config/loki-config.yaml
+```
+
+Additionally, start a Grafana instance to view and visualize the logs:
+
+```shell
+docker run -d --name=apisix-quickstart-grafana \
+  -p 3000:3000 \
+  grafana/grafana-oss
+```
+
+To connect Loki and Grafana, visit Grafana at [`http://localhost:3000`](http://localhost:3000). Under __Connections > Data sources__, add a new data source and select Loki. Your connection URL should follow the format of `http://{your_ip_address}:3100`. When saving the new data source, Grafana should also test the connection, and you are expected to see Grafana notifying the data source is successfully connected.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -122,72 +99,281 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
-```
+### Log Requests and Responses in Default Log Format
 
-With this configuration, your logs would be formatted as shown below:
+The following example demonstrates how you can configure the `loki-logger` Plugin on a Route to log requests and responses going through the route.
+
+Create a Route with the `loki-logger` Plugin and configure the address of Loki:
 
 ```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-```
-
-## Enable plugin
-
-The example below shows how you can enable the `loki-logger` plugin on a specific Route:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "loki-logger-route",
+    "uri": "/anything",
     "plugins": {
-        "loki-logger": {
-            "endpoint_addrs" : ["http://127.0.0.1:3100"]
-        }
+      "loki-logger": {
+        "endpoint_addrs": ["http://192.168.1.5:3100"]
+      }
     },
     "upstream": {
-       "nodes": {
-           "127.0.0.1:1980": 1
-       },
-       "type": "roundrobin"
-    },
-    "uri": "/hello"
-}'
-```
-
-## Example usage
-
-Now, if you make a request to APISIX, it will be logged in your Loki server:
-
-```shell
-curl -i http://127.0.0.1:9080/hello
-```
-
-## Delete the plugin
-
-When you need to remove the `loki-logger` plugin, you can delete the corresponding JSON configuration with the following command and APISIX will automatically reload the relevant configuration without restarting the service:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/hello",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
+
+Send a few requests to the Route to generate log entries:
+
+```shell
+curl "http://127.0.0.1:9080/anything"
+```
+
+You should receive `HTTP/1.1 200 OK` responses for all requests.
+
+Navigate to the [Grafana explore view](http://localhost:3000/explore) and run a query `job = apisix`. You should see a number of logs corresponding to your requests, such as the following:
+
+```json
+{
+  "route_id": "loki-logger-route",
+  "response": {
+    "status": 200,
+    "headers": {
+      "date": "Fri, 03 Jan 2025 03:54:26 GMT",
+      "server": "APISIX/3.11.0",
+      "access-control-allow-credentials": "true",
+      "content-length": "391",
+      "access-control-allow-origin": "*",
+      "content-type": "application/json",
+      "connection": "close"
+    },
+    "size": 619
+  },
+  "start_time": 1735876466,
+  "client_ip": "192.168.65.1",
+  "service_id": "",
+  "apisix_latency": 5.0000038146973,
+  "upstream": "34.197.122.172:80",
+  "upstream_latency": 666,
+  "server": {
+    "hostname": "0b9a772e68f8",
+    "version": "3.11.0"
+  },
+  "request": {
+    "headers": {
+      "user-agent": "curl/8.6.0",
+      "accept": "*/*",
+      "host": "127.0.0.1:9080"
+    },
+    "size": 85,
+    "method": "GET",
+    "url": "http://127.0.0.1:9080/anything",
+    "querystring": {},
+    "uri": "/anything"
+  },
+  "latency": 671.0000038147
+}
+```
+
+This verifies that Loki has been receiving logs from APISIX. You may also create dashboards in Grafana to further visualize and analyze the logs.
+
+### Customize Log Format with Plugin Metadata
+
+The following example demonstrates how you can customize log format using [Plugin Metadata](../terminology/plugin-metadata.md).
+
+Create a Route with the `loki-logger` plugin:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "loki-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "loki-logger": {
+        "endpoint_addrs": ["http://192.168.1.5:3100"]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+Configure Plugin metadata for `loki-logger`, which will update the log format for all routes of which requests would be logged:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/loki-logger" -X PUT \
+  -H 'X-API-KEY: ${admin_key}' \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "client_ip": "$remote_addr",
+      "route_id": "$route_id",
+      "@timestamp": "$time_iso8601"
+    }
+  }'
+```
+
+Send a request to the Route to generate a new log entry:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Navigate to the [Grafana explore view](http://localhost:3000/explore) and run a query `job = apisix`. You should see a log entry corresponding to your request, similar to the following:
+
+```json
+{
+  "@timestamp":"2025-01-03T21:11:34+00:00",
+  "client_ip":"192.168.65.1",
+  "route_id":"loki-logger-route",
+  "host":"127.0.0.1"
+}
+```
+
+If the Plugin on a Route specifies a specific log format, it will take precedence over the log format specified in the Plugin metadata. For instance, update the Plugin on the previous Route as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes/loki-logger-route" -X PATCH \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "plugins": {
+      "loki-logger": {
+        "log_format": {
+          "route_id": "$route_id",
+          "client_ip": "$remote_addr",
+          "@timestamp": "$time_iso8601"
+        }
+      }
+    }
+  }'
+```
+
+Send a request to the Route to generate a new log entry:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Navigate to the [Grafana explore view](http://localhost:3000/explore) and re-run the query `job = apisix`. You should see a log entry corresponding to your request, consistent with the format configured on the route, similar to the following:
+
+```json
+{
+  "client_ip":"192.168.65.1",
+  "route_id":"loki-logger-route",
+  "@timestamp":"2025-01-03T21:19:45+00:00"
+}
+```
+
+### Log Request Bodies Conditionally
+
+The following example demonstrates how you can conditionally log request body.
+
+Create a Route with `loki-logger` to only log request body if the URL query string `log_body` is `yes`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "loki-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "loki-logger": {
+        "endpoint_addrs": ["http://192.168.1.5:3100"],
+        "include_req_body": true,
+        "include_req_body_expr": [["arg_log_body", "==", "yes"]]
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Send a request to the Route with a URL query string satisfying the condition:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}'
+```
+
+Navigate to the [Grafana explore view](http://localhost:3000/explore) and run the query `job = apisix`. You should see a log entry corresponding to your request, where the request body is logged:
+
+```json
+{
+  "route_id": "loki-logger-route",
+  ...,
+  "request": {
+    "headers": {
+      ...
+    },
+    "body": "{\"env\": \"dev\"}",
+    "size": 182,
+    "method": "POST",
+    "url": "http://127.0.0.1:9080/anything?log_body=yes",
+    "querystring": {
+      "log_body": "yes"
+    },
+    "uri": "/anything?log_body=yes"
+  },
+  "latency": 809.99994277954
+}
+```
+
+Send a request to the Route without any URL query string:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
+```
+
+Navigate to the [Grafana explore view](http://localhost:3000/explore) and run the query `job = apisix`. You should see a log entry corresponding to your request, where the request body is not logged:
+
+```json
+{
+  "route_id": "loki-logger-route",
+  ...,
+  "request": {
+    "headers": {
+      ...
+    },
+    "size": 169,
+    "method": "POST",
+    "url": "http://127.0.0.1:9080/anything",
+    "querystring": {},
+    "uri": "/anything"
+  },
+  "latency": 557.00016021729
+}
+```
+
+:::info
+
+If you have customized the `log_format` in addition to setting `include_req_body` or `include_resp_body` to `true`, the Plugin would not include the bodies in the logs.
+
+As a workaround, you may be able to use the NGINX variable `$request_body` in the log format, such as:
+
+```json
+{
+  "kafka-logger": {
+    ...,
+    "log_format": {"body": "$request_body"}
+  }
+}
+```
+
+:::
 
 ## FAQ
 
