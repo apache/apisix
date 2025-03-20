@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Plugin
   - Elasticsearch-logger
-description: This document contains information about the Apache APISIX elasticsearch-logger Plugin.
+description: The elasticsearch-logger Plugin pushes request and response logs in batches to Elasticsearch and supports the customization of log formats.
 ---
 
 <!--
@@ -27,84 +27,78 @@ description: This document contains information about the Apache APISIX elastics
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/elasticsearch-logger" />
+</head>
+
 ## Description
 
-The `elasticsearch-logger` Plugin is used to forward logs to [Elasticsearch](https://www.elastic.co/guide/en/welcome-to-elastic/current/getting-started-general-purpose.html) for analysis and storage.
-
-When the Plugin is enabled, APISIX will serialize the request context information to [Elasticsearch Bulk format](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) and submit it to the batch queue. When the maximum batch size is exceeded, the data in the queue is pushed to Elasticsearch. See [batch processor](../batch-processor.md) for more details.
+The `elasticsearch-logger` Plugin pushes request and response logs in batches to [Elasticsearch](https://www.elastic.co) and supports the customization of log formats. When enabled, the Plugin will serialize the request context information to [Elasticsearch Bulk format](https://www.elastic.co/guide/en/elasticsearch/reference/current/docs-bulk.html#docs-bulk) and add them to the queue, before they are pushed to Elasticsearch. See [batch processor](../batch-processor.md) for more details.
 
 ## Attributes
 
 | Name          | Type    | Required | Default                     | Description                                                  |
 | ------------- | ------- | -------- | --------------------------- | ------------------------------------------------------------ |
-| endpoint_addr | string  | Deprecated     |                             | Deprecated. Use `endpoint_addrs` instead. Elasticsearch API.                                            |
-| endpoint_addrs  | array  | True     |                             | Elasticsearch API. If multiple endpoints are configured, they will be written randomly.                                            |
-| field         | array   | True     |                             | Elasticsearch `field` configuration.                          |
+| endpoint_addrs  | array[string] | True     |                             | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
+| field         | object   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
 | field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
-| log_format | object | False    |                             | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+| log_format | object | False    |                             | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
 | auth.password | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) password. |
-| ssl_verify    | boolean | False    | true                        | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake). |
+| ssl_verify    | boolean | False    | true                        | If true, perform SSL verification. |
 | timeout       | integer | False    | 10                          | Elasticsearch send data timeout in seconds.                  |
-| include_req_body       | boolean       | False    | false   | When set to `true` includes the request body in the log. If the request body is too big to be kept in the memory, it can't be logged due to Nginx's limitations.                                                               |
-| include_req_body_expr  | array         | False    |         | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more.        |
-| include_resp_body      | boolean       | False    | false   | When set to `true` includes the response body in the log.                                                                                                                                                                      |
-| include_resp_body_expr | array         | False    |         | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response if the expression evaluates to `true`.       |
+| include_req_body       | boolean       | False    | false   |  If true, include the request body in the log. Note that if the request body is too big to be kept in the memory, it can not be logged due to NGINX's limitations.       |
+| include_req_body_expr  | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_req_body` is true. Request body would only be logged when the expressions configured here evaluate to true.      |
+| include_resp_body      | boolean       | False    | false   | If true, include the response body in the log.       |
+| include_resp_body_expr | array[array]  | False    |         | An array of one or more conditions in the form of [lua-resty-expr](https://github.com/api7/lua-resty-expr). Used when the `include_resp_body` is true. Response body would only be logged when the expressions configured here evaluate to true.     |
 
 NOTE: `encrypt_fields = {"auth.password"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 
 This Plugin supports using batch processors to aggregate and process entries (logs/data) in a batch. This avoids the need for frequently submitting the data. The batch processor submits data every `5` seconds or when the data in the queue reaches `1000`. See [Batch Processor](../batch-processor.md#configuration) for more information or setting your custom configuration.
 
-### Example of default log format
+## Plugin Metadata
 
-```json
-{
-    "upstream_latency": 2,
-    "apisix_latency": 100.9999256134,
-    "request": {
-        "size": 59,
-        "url": "http://localhost:1984/hello",
-        "method": "GET",
-        "querystring": {},
-        "headers": {
-            "host": "localhost",
-            "connection": "close"
-        },
-        "uri": "/hello"
-    },
-    "server": {
-        "version": "3.7.0",
-        "hostname": "localhost"
-    },
-    "client_ip": "127.0.0.1",
-    "upstream": "127.0.0.1:1980",
-    "response": {
-        "status": 200,
-        "headers": {
-            "content-length": "12",
-            "connection": "close",
-            "content-type": "text/plain",
-            "server": "APISIX/3.7.0"
-        },
-        "size": 118
-    },
-    "start_time": 1704524807607,
-    "route_id": "1",
-    "service_id": "",
-    "latency": 102.9999256134
-}
+| Name | Type | Required | Default | Description |
+|------|------|----------|---------|-------------|
+| log_format | object | False |  | Custom log format in key-value pairs in JSON format. Support [APISIX variables](../apisix-variable.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
+
+## Examples
+
+The examples below demonstrate how you can configure `elasticsearch-logger` Plugin for different scenarios.
+
+To follow along the examples, start an Elasticsearch instance in Docker:
+
+```shell
+docker run -d \
+  --name elasticsearch \
+  --network apisix-quickstart-net \
+  -v elasticsearch_vol:/usr/share/elasticsearch/data/ \
+  -p 9200:9200 \
+  -p 9300:9300 \
+  -e ES_JAVA_OPTS="-Xms512m -Xmx512m" \
+  -e discovery.type=single-node \
+  -e xpack.security.enabled=false \
+  docker.elastic.co/elasticsearch/elasticsearch:7.17.1
 ```
 
-## Enable Plugin
+Start a Kibana instance in Docker to visualize the indexed data in Elasticsearch:
 
-### Full configuration
+```shell
+docker run -d \
+  --name kibana \
+  --network apisix-quickstart-net \
+  -p 5601:5601 \
+  -e ELASTICSEARCH_HOSTS="http://elasticsearch:9200" \
+  docker.elastic.co/kibana/kibana:7.17.1
+```
 
-The example below shows a complete configuration of the Plugin on a specific Route:
+If successful, you should see the Kibana dashboard on [localhost:5601](http://localhost:5601).
 
 :::note
-You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
+
+You can fetch the APISIX `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -112,233 +106,348 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins":{
-        "elasticsearch-logger":{
-            "endpoint_addr":"http://127.0.0.1:9200",
-            "field":{
-                "index":"services",
-                "type":"collector"
-            },
-            "auth":{
-                "username":"elastic",
-                "password":"123456"
-            },
-            "ssl_verify":false,
-            "timeout": 60,
-            "retry_delay":1,
-            "buffer_duration":60,
-            "max_retry_count":0,
-            "batch_max_size":1000,
-            "inactive_timeout":5,
-            "name":"elasticsearch-logger"
-        }
-    },
-    "upstream":{
-        "type":"roundrobin",
-        "nodes":{
-            "127.0.0.1:1980":1
-        }
-    },
-    "uri":"/elasticsearch.do"
-}'
-```
+### Log in the Default Log Format
 
-### Minimal configuration example
+The following example demonstrates how you can enable the `elasticsearch-logger` Plugin on a route, which logs client requests and responses to the Route and pushes logs to Elasticsearch.
 
-The example below shows a bare minimum configuration of the Plugin on a Route:
+Create a Route with `elasticsearch-logger` to configure the `index` field as `gateway` and the `type` field as `logs`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins":{
-        "elasticsearch-logger":{
-            "endpoint_addr":"http://127.0.0.1:9200",
-            "field":{
-                "index":"services"
-            }
-        }
-    },
-    "upstream":{
-        "type":"roundrobin",
-        "nodes":{
-            "127.0.0.1:1980":1
-        }
-    },
-    "uri":"/elasticsearch.do"
-}'
-```
-
-## Example usage
-
-Once you have configured the Route to use the Plugin, when you make a request to APISIX, it will be logged in your Elasticsearch server:
-
-```shell
-curl -i http://127.0.0.1:9080/elasticsearch.do\?q\=hello
-HTTP/1.1 200 OK
-...
-hello, world
-```
-
-You should be able to get the log from elasticsearch:
-
-```shell
-curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
-{
-  "took": 0,
-   ...
-    "hits": [
-      {
-        "_index": "services",
-        "_type": "_doc",
-        "_id": "M1qAxYIBRmRqWkmH4Wya",
-        "_score": 1,
-        "_source": {
-          "apisix_latency": 0,
-          "route_id": "1",
-          "server": {
-            "version": "2.15.0",
-            "hostname": "apisix"
-          },
-          "request": {
-            "size": 102,
-            "uri": "/elasticsearch.do?q=hello",
-            "querystring": {
-              "q": "hello"
-            },
-            "headers": {
-              "user-agent": "curl/7.29.0",
-              "host": "127.0.0.1:9080",
-              "accept": "*/*"
-            },
-            "url": "http://127.0.0.1:9080/elasticsearch.do?q=hello",
-            "method": "GET"
-          },
-          "service_id": "",
-          "latency": 0,
-          "upstream": "127.0.0.1:1980",
-          "upstream_latency": 1,
-          "client_ip": "127.0.0.1",
-          "start_time": 1661170929107,
-          "response": {
-            "size": 192,
-            "headers": {
-              "date": "Mon, 22 Aug 2022 12:22:09 GMT",
-              "server": "APISIX/2.15.0",
-              "content-type": "text/plain; charset=utf-8",
-              "connection": "close",
-              "transfer-encoding": "chunked"
-            },
-            "status": 200
-          }
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "elasticsearch-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "elasticsearch-logger": {
+        "endpoint_addrs": ["http://elasticsearch:9200"],
+        "field": {
+          "index": "gateway",
+          "type": "logs"
         }
       }
-    ]
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Send a request to the Route to generate a log entry:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and under __Discover__ tab, create a new index pattern `gateway` to fetch the data from Elasticsearch. Once configured, navigate back to the __Discover__ tab and you should see a log generated, similar to the following:
+
+```json
+{
+  "_index": "gateway",
+  "_type": "logs",
+  "_id": "CE-JL5QBOkdYRG7kEjTJ",
+  "_version": 1,
+  "_score": 1,
+  "_source": {
+    "request": {
+      "headers": {
+        "host": "127.0.0.1:9080",
+        "accept": "*/*",
+        "user-agent": "curl/8.6.0"
+      },
+      "size": 85,
+      "querystring": {},
+      "method": "GET",
+      "url": "http://127.0.0.1:9080/anything",
+      "uri": "/anything"
+    },
+    "response": {
+      "headers": {
+        "content-type": "application/json",
+        "access-control-allow-credentials": "true",
+        "server": "APISIX/3.11.0",
+        "content-length": "390",
+        "access-control-allow-origin": "*",
+        "connection": "close",
+        "date": "Mon, 13 Jan 2025 10:18:14 GMT"
+      },
+      "status": 200,
+      "size": 618
+    },
+    "route_id": "elasticsearch-logger-route",
+    "latency": 585.00003814697,
+    "apisix_latency": 18.000038146973,
+    "upstream_latency": 567,
+    "upstream": "50.19.58.113:80",
+    "server": {
+      "hostname": "0b9a772e68f8",
+      "version": "3.11.0"
+    },
+    "service_id": "",
+    "client_ip": "192.168.65.1"
+  },
+  "fields": {
+    ...
   }
 }
 ```
 
-## Metadata
+### Log Request and Response Headers With Plugin Metadata
 
-You can also set the format of the logs by configuring the Plugin metadata. The following configurations are available:
+The following example demonstrates how you can customize log format using [Plugin Metadata](../terminology/plugin-metadata.md) and [NGINX variables](http://nginx.org/en/docs/varindex.html) to log specific headers from request and response.
 
-| Name       | Type   | Required | Default                                                      | Description                                                  |
-| ---------- | ------ | -------- | ------------------------------------------------------------ | ------------------------------------------------------------ |
-| log_format | object | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
+In APISIX, [Plugin Metadata](../terminology/plugin-metadata.md) is used to configure the common metadata fields of all Plugin instances of the same plugin. It is useful when a Plugin is enabled across multiple resources and requires a universal update to their metadata fields.
 
-:::info IMPORTANT
+First, create a Route with `elasticsearch-logger` as follows:
 
-Configuring the Plugin metadata is global in scope. This means that it will take effect on all Routes and Services which use the `elasticsearch-logger` Plugin.
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "elasticsearch-logger-route",
+    "uri": "/anything",
+    "plugins": {
+      "elasticsearch-logger": {
+        "endpoint_addrs": ["http://elasticsearch:9200"],
+        "field": {
+          "index": "gateway",
+          "type": "logs"
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    }
+  }'
+```
+
+Next, configure the Plugin metadata for `elasticsearch-logger`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "log_format": {
+      "host": "$host",
+      "@timestamp": "$time_iso8601",
+      "client_ip": "$remote_addr",
+      "env": "$http_env",
+      "resp_content_type": "$sent_http_Content_Type"
+    }
+  }'
+```
+
+Send a request to the Route with the `env` header:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and under __Discover__ tab, create a new index pattern `gateway` to fetch the data from Elasticsearch, if you have not done so already. Once configured, navigate back to the __Discover__ tab and you should see a log generated, similar to the following:
+
+```json
+{
+  "_index": "gateway",
+  "_type": "logs",
+  "_id": "Ck-WL5QBOkdYRG7kODS0",
+  "_version": 1,
+  "_score": 1,
+  "_source": {
+    "client_ip": "192.168.65.1",
+    "route_id": "elasticsearch-logger-route",
+    "@timestamp": "2025-01-06T10:32:36+00:00",
+    "host": "127.0.0.1",
+    "resp_content_type": "application/json"
+  },
+  "fields": {
+    ...
+  }
+}
+```
+
+### Log Request Bodies Conditionally
+
+The following example demonstrates how you can conditionally log request body.
+
+Create a Route with `elasticsearch-logger` to only log request body if the URL query string `log_body` is `true`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "plugins": {
+      "elasticsearch-logger": {
+        "endpoint_addrs": ["http://elasticsearch:9200"],
+        "field": {
+          "index": "gateway",
+          "type": "logs"
+        },
+        "include_req_body": true,
+        "include_req_body_expr": [["arg_log_body", "==", "yes"]]
+      }
+    },
+    "upstream": {
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
+    },
+  "uri": "/anything",
+  "id": "elasticsearch-logger-route"
+}'
+```
+
+Send a request to the Route with an URL query string satisfying the condition:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}'
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and under __Discover__ tab, create a new index pattern `gateway` to fetch the data from Elasticsearch, if you have not done so already. Once configured, navigate back to the __Discover__ tab and you should see a log generated, similar to the following:
+
+```json
+{
+  "_index": "gateway",
+  "_type": "logs",
+  "_id": "Dk-cL5QBOkdYRG7k7DSW",
+  "_version": 1,
+  "_score": 1,
+  "_source": {
+    "request": {
+      "headers": {
+        "user-agent": "curl/8.6.0",
+        "accept": "*/*",
+        "content-length": "14",
+        "host": "127.0.0.1:9080",
+        "content-type": "application/x-www-form-urlencoded"
+      },
+      "size": 182,
+      "querystring": {
+        "log_body": "yes"
+      },
+      "body": "{\"env\": \"dev\"}",
+      "method": "POST",
+      "url": "http://127.0.0.1:9080/anything?log_body=yes",
+      "uri": "/anything?log_body=yes"
+    },
+    "start_time": 1735965595203,
+    "response": {
+      "headers": {
+        "content-type": "application/json",
+        "server": "APISIX/3.11.0",
+        "access-control-allow-credentials": "true",
+        "content-length": "548",
+        "access-control-allow-origin": "*",
+        "connection": "close",
+        "date": "Mon, 13 Jan 2025 11:02:32 GMT"
+      },
+      "status": 200,
+      "size": 776
+    },
+    "route_id": "elasticsearch-logger-route",
+    "latency": 703.9999961853,
+    "apisix_latency": 34.999996185303,
+    "upstream_latency": 669,
+    "upstream": "34.197.122.172:80",
+    "server": {
+      "hostname": "0b9a772e68f8",
+      "version": "3.11.0"
+    },
+    "service_id": "",
+    "client_ip": "192.168.65.1"
+  },
+  "fields": {
+    ...
+  }
+}
+```
+
+Send a request to the Route without any URL query string:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
+```
+
+Navigate to the Kibana dashboard __Discover__ tab and you should see a log generated, but without the request body:
+
+```json
+{
+  "_index": "gateway",
+  "_type": "logs",
+  "_id": "EU-eL5QBOkdYRG7kUDST",
+  "_version": 1,
+  "_score": 1,
+  "_source": {
+    "request": {
+      "headers": {
+        "content-type": "application/x-www-form-urlencoded",
+        "accept": "*/*",
+        "content-length": "14",
+        "host": "127.0.0.1:9080",
+        "user-agent": "curl/8.6.0"
+      },
+      "size": 169,
+      "querystring": {},
+      "method": "POST",
+      "url": "http://127.0.0.1:9080/anything",
+      "uri": "/anything"
+    },
+    "start_time": 1735965686363,
+    "response": {
+      "headers": {
+        "content-type": "application/json",
+        "access-control-allow-credentials": "true",
+        "server": "APISIX/3.11.0",
+        "content-length": "510",
+        "access-control-allow-origin": "*",
+        "connection": "close",
+        "date": "Mon, 13 Jan 2025 11:15:54 GMT"
+      },
+      "status": 200,
+      "size": 738
+    },
+    "route_id": "elasticsearch-logger-route",
+    "latency": 680.99999427795,
+    "apisix_latency": 4.9999942779541,
+    "upstream_latency": 676,
+    "upstream": "34.197.122.172:80",
+    "server": {
+      "hostname": "0b9a772e68f8",
+      "version": "3.11.0"
+    },
+    "service_id": "",
+    "client_ip": "192.168.65.1"
+  },
+  "fields": {
+    ...
+  }
+}
+```
+
+:::info
+
+If you have customized the `log_format` in addition to setting `include_req_body` or `include_resp_body` to `true`, the Plugin would not include the bodies in the logs.
+
+As a workaround, you may be able to use the NGINX variable `$request_body` in the log format, such as:
+
+```json
+{
+  "elasticsearch-logger": {
+    ...,
+    "log_format": {"body": "$request_body"}
+  }
+}
+```
 
 :::
-
-The example below shows how you can configure through the Admin API:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "log_format": {
-        "host": "$host",
-        "@timestamp": "$time_iso8601",
-        "client_ip": "$remote_addr"
-    }
-}'
-```
-
-With this configuration, your logs would be formatted as shown below:
-
-```shell
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-{"host":"localhost","@timestamp":"2020-09-23T19:05:05-04:00","client_ip":"127.0.0.1","route_id":"1"}
-```
-
- make a request to APISIX again:
-
-```shell
-curl -i http://127.0.0.1:9080/elasticsearch.do\?q\=hello
-HTTP/1.1 200 OK
-...
-hello, world
-```
-
-You should be able to get this log from elasticsearch:
-
-```shell
-curl -X GET "http://127.0.0.1:9200/services/_search" | jq .
-{
-  "took": 0,
-  ...
-  "hits": {
-    "total": {
-      "value": 1,
-      "relation": "eq"
-    },
-    "max_score": 1,
-    "hits": [
-      {
-        "_index": "services",
-        "_type": "_doc",
-        "_id": "NVqExYIBRmRqWkmH4WwG",
-        "_score": 1,
-        "_source": {
-          "@timestamp": "2022-08-22T20:26:31+08:00",
-          "client_ip": "127.0.0.1",
-          "host": "127.0.0.1",
-          "route_id": "1"
-        }
-      }
-    ]
-  }
-}
-```
-
-### Disable Metadata
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/elasticsearch-logger \
--H "X-API-KEY: $admin_key" -X DELETE
-```
-
-## Delete Plugin
-
-To remove the `elasticsearch-logger` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "plugins":{},
-    "upstream":{
-        "type":"roundrobin",
-        "nodes":{
-            "127.0.0.1:1980":1
-        }
-    },
-    "uri":"/elasticsearch.do"
-}'
-```
