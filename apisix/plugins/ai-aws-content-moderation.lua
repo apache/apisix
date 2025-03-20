@@ -14,8 +14,12 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+require("resty.aws.config") -- to read env vars before initing aws module
+
 local core = require("apisix.core")
-local aws_instance = require("resty.aws")()
+local aws = require("resty.aws")
+local aws_instance
+
 local http = require("resty.http")
 local fetch_secrets = require("apisix.secret").fetch_secrets
 
@@ -96,6 +100,9 @@ function _M.rewrite(conf, ctx)
 
     local comprehend = conf.comprehend
 
+    if not aws_instance then
+        aws_instance = aws()
+    end
     local credentials = aws_instance:Credentials({
         accessKeyId = comprehend.access_key_id,
         secretAccessKey = comprehend.secret_access_key,
