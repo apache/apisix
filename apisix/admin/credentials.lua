@@ -19,6 +19,7 @@ local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
 local consumer = require("apisix.consumer")
+local consumers = require("apisix.admin.consumers")
 local pairs    = pairs
 
 local function check_conf(id, conf, _need_id, schema)
@@ -47,14 +48,7 @@ local function check_conf(id, conf, _need_id, schema)
             local decrypted_conf = core.table.deepcopy(plugin_conf)
             plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
 
-            local plugin_key_map = {
-              ["key-auth"] = "key",
-              ["basic-auth"] = "username",
-              ["jwt-auth"] = "key",
-              ["hmac-auth"] = "key_id"
-            }
-
-            local key_field = plugin_key_map[name]
+            local key_field = consumers.plugin_key_map[name]
             if key_field then
                 local key_value = decrypted_conf[key_field]
 
