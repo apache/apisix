@@ -137,3 +137,76 @@ X-APISIX-CHAITIN-WAF-STATUS: 403
 X-APISIX-CHAITIN-WAF-ACTION: reject
 --- response_headers_like
 X-APISIX-CHAITIN-WAF-TIME:
+
+
+
+=== TEST 3: plugin mode monitor prepare
+--- config
+    location /do {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "nodes": [
+                        {
+                            "host": "127.0.0.1",
+                            "port": 8089
+                        }
+                    ]
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                    [[{
+                        "methods": ["GET"],
+                        "plugins": {
+                            "chaitin-waf": {
+                                "mode": "monitor",
+                                "match": [
+                                    {
+                                        "vars": [
+                                            ["http_waf", "==", "true"]
+                                        ]
+                                    }
+                                ]
+                            }
+                        },
+                        "uri": "/*",
+                        "upstream": {
+                            "nodes": { "127.0.0.1:1980": 1 },
+                            "type": "roundrobin"
+                        }
+                    }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+                return ngx.print(body)
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: plugin mode monitor
+--- request
+GET /hello
+--- more_headers
+waf: true
+trigger: block
+--- error_code: 200
+--- response_body
+hello world
+--- response_headers
+X-APISIX-CHAITIN-WAF: yes
+X-APISIX-CHAITIN-WAF-STATUS: 403
+X-APISIX-CHAITIN-WAF-ACTION: reject

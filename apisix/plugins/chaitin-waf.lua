@@ -35,6 +35,10 @@ local vars_schema = {
     type = "array",
 }
 
+local lrucache = core.lrucache.new({
+    ttl = 300, count = 1024
+})
+
 local match_schema = {
     type = "array",
     items = {
@@ -48,8 +52,11 @@ local match_schema = {
 local plugin_schema = {
     type = "object",
     properties = {
-        -- TODO: we should add a configuration "mode" here
-        -- It can be one of off, block and monitor
+        mode = {
+            type = "string",
+            enum = { "off", "monitor", "block", nil },
+            default = nil,
+        },
         match = match_schema,
         append_waf_resp_header = {
             type = "boolean",
@@ -79,6 +86,9 @@ local plugin_schema = {
                 },
                 keepalive_timeout = {
                     type = "integer",
+                },
+                real_client_ip = {
+                    type = "boolean"
                 }
             },
         },
@@ -88,6 +98,11 @@ local plugin_schema = {
 local metadata_schema = {
     type = "object",
     properties = {
+        mode = {
+            type = "string",
+            enum = { "off", "monitor", "block", nil },
+            default = nil,
+        },
         nodes = {
             type = "array",
             items = {
@@ -136,8 +151,10 @@ local metadata_schema = {
                     type = "integer",
                     default = 60000 -- milliseconds
                 },
-                -- TODO: we need a configuration to enable/disable the real client ip
-                -- the real client ip is calculated by APISIX
+                real_client_ip = {
+                    type = "boolean",
+                    default = true
+                }
             },
             default = {},
         },
@@ -163,6 +180,7 @@ local HEADER_CHAITIN_WAF_ACTION = "X-APISIX-CHAITIN-WAF-ACTION"
 local HEADER_CHAITIN_WAF_SERVER = "X-APISIX-CHAITIN-WAF-SERVER"
 local blocked_message = [[{"code": %s, "success":false, ]] ..
         [["message": "blocked by Chaitin SafeLine Web Application Firewall", "event_id": "%s"}]]
+local warning_message = "chaitin-waf monitor mode: request would have been rejected, event_id: "
 
 
 function _M.check_schema(conf, schema_type)
@@ -224,33 +242,37 @@ end
 
 
 local function check_match(conf, ctx)
-    local match_passed = true
+    if not conf.match or #conf.match == 0 then
+        return true
+    end
 
-    if conf.match then
-        for _, match in ipairs(conf.match) do
-            -- todo: use lrucache to cache the result
-            local exp, err = expr.new(match.vars)
-            if err then
-                local msg = "failed to create match expression for " ..
+    for _, match in ipairs(conf.match) do
+        local cache_key = tostring(match.vars)
+
+        local exp, err = lrucache(cache_key, nil, function(vars)
+            return expr.new(vars)
+        end, match.vars)
+
+        if not exp then
+            local msg = "failed to create match expression for " ..
                         tostring(match.vars) .. ", err: " .. tostring(err)
-                core.log.error(msg)
-                return false, msg
-            end
+            return false, msg
+        end
 
-            match_passed = exp:eval(ctx.var)
-            if match_passed then
-                break
-            end
+        local matched = exp:eval(ctx.var)
+        if matched then
+            return true
         end
     end
 
-    return match_passed, nil
+    return false
 end
 
 
 local function get_conf(conf, metadata)
     local t = {
         mode = "block",
+        real_client_ip = true,
     }
 
     if metadata.config then
@@ -260,6 +282,7 @@ local function get_conf(conf, metadata)
         t.req_body_size = metadata.config.req_body_size
         t.keepalive_size = metadata.config.keepalive_size
         t.keepalive_timeout = metadata.config.keepalive_timeout
+        t.real_client_ip = metadata.config.real_client_ip or t.real_client_ip
     end
 
     if conf.config then
@@ -269,7 +292,10 @@ local function get_conf(conf, metadata)
         t.req_body_size = conf.config.req_body_size
         t.keepalive_size = conf.config.keepalive_size
         t.keepalive_timeout = conf.config.keepalive_timeout
+        t.real_client_ip = conf.config.real_client_ip or t.real_client_ip
     end
+
+    t.mode = conf.mode or metadata.mode or t.mode
 
     return t
 end
@@ -277,18 +303,6 @@ end
 
 local function do_access(conf, ctx)
     local extra_headers = {}
-
-    local match, err = check_match(conf, ctx)
-    if not match then
-        if err then
-            extra_headers[HEADER_CHAITIN_WAF] = "err"
-            extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
-            return 500, nil, extra_headers
-        else
-            extra_headers[HEADER_CHAITIN_WAF] = "no"
-            return nil, nil, extra_headers
-        end
-    end
 
     local metadata = plugin.plugin_metadata(plugin_name)
     if not core.table.try_read_attr(metadata, "value", "nodes") then
@@ -306,16 +320,41 @@ local function do_access(conf, ctx)
     end
 
     core.log.info("picked chaitin-waf server: ", host, ":", port)
-
     local t = get_conf(conf, metadata.value)
     t.host = host
     t.port = port
 
     extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
-    extra_headers[HEADER_CHAITIN_WAF] = "yes"
+
+    local mode = t.mode or "block"
+    if mode == "off" then
+        extra_headers[HEADER_CHAITIN_WAF] = "off"
+        return nil, nil, extra_headers
+    end
+
+    local match, err = check_match(conf, ctx)
+    if not match then
+        if err then
+            extra_headers[HEADER_CHAITIN_WAF] = "err"
+            extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+            return 500, nil, extra_headers
+        else
+            extra_headers[HEADER_CHAITIN_WAF] = "no"
+            return nil, nil, extra_headers
+        end
+    end
+
+    if t.real_client_ip then
+        t.client_ip = ctx.var.http_x_forwarded_for or ctx.var.remote_addr
+    else
+        t.client_ip = ctx.var.remote_addr
+    end
 
     local start_time = ngx_now() * 1000
     local ok, err, result = t1k.do_access(t, false)
+
+    extra_headers[HEADER_CHAITIN_WAF_TIME] = ngx_now() * 1000 - start_time
+
     if not ok then
         extra_headers[HEADER_CHAITIN_WAF] = "waf-err"
         local err_msg = tostring(err)
@@ -323,26 +362,35 @@ local function do_access(conf, ctx)
             extra_headers[HEADER_CHAITIN_WAF] = "timeout"
         end
         extra_headers[HEADER_CHAITIN_WAF_ERROR] = tostring(err)
+
+        if mode == "monitor" then
+            core.log.warn("chaitin-waf monitor mode: detected waf error - ", err_msg)
+            return nil, nil, extra_headers
+        end
+
+        return 500, nil, extra_headers
     else
+        extra_headers[HEADER_CHAITIN_WAF] = "yes"
         extra_headers[HEADER_CHAITIN_WAF_ACTION] = "pass"
     end
-    extra_headers[HEADER_CHAITIN_WAF_TIME] = ngx_now() * 1000 - start_time
 
     local code = 200
     extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
-    if result and result.status and result.status ~= 200 then
-        if result.event_id then
-            code = result.status
-            extra_headers[HEADER_CHAITIN_WAF_STATUS] = code
-            extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
 
-            core.log.error("request rejected by chaitin-waf, event_id: " .. result.event_id)
-            return tonumber(code), fmt(blocked_message, code,
-                    result.event_id) .. "\n", extra_headers
+    if result and result.status and result.status ~= 200 and result.event_id then
+        extra_headers[HEADER_CHAITIN_WAF_STATUS] = result.status
+        extra_headers[HEADER_CHAITIN_WAF_ACTION] = "reject"
+
+        if mode == "monitor" then
+            core.log.warn(warning_message, result.event_id)
+            return nil, nil, extra_headers
         end
-    end
-    if not ok then
-        extra_headers[HEADER_CHAITIN_WAF_STATUS] = nil
+
+        core.log.error("request rejected by chaitin-waf, event_id: " .. result.event_id)
+
+        return tonumber(result.status),
+               fmt(blocked_message, result.status, result.event_id) .. "\n",
+               extra_headers
     end
 
     return nil, nil, extra_headers
