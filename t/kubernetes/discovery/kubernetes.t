@@ -40,6 +40,7 @@ env MyPort=6443;
 env KUBERNETES_SERVICE_HOST=127.0.0.1;
 env KUBERNETES_SERVICE_PORT=6443;
 env KUBERNETES_CLIENT_TOKEN=$::token_value;
+env KUBERNETES_CLIENT_TOKEN_FILE=$::token_file;
 _EOC_
 
     $block->set_value("main_config", $main_config);
@@ -100,7 +101,7 @@ _EOC_
                 local file = io.open(token_file, "w")
                 file:write("invalid_token_value")
                 file:close()
-                ngx.sleep(2)
+                ngx.sleep(3)
                 file = io.open(token_file, "w")
                 local token_value = [[$::token_value]]
                 file:write(token_value)
@@ -375,10 +376,10 @@ deployment:
 discovery:
   kubernetes:
     client:
-        token_file: /tmp/var/run/secrets/kubernetes.io/serviceaccount/token
+        token_file: "${KUBERNETES_CLIENT_TOKEN_FILE}"
 --- request
 GET /update_token
 --- grep_error_log eval
-qr/list failed, kind: Endpoints, reason: Unauthorized/
+qr/kubernetes service account token has been updated/
 --- grep_error_log_out
-list failed, kind: Endpoints, reason: Unauthorized
+kubernetes service account token has been updated
