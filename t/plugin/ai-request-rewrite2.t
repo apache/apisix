@@ -225,3 +225,63 @@ override.endpoint is required for openai-compatible provider
     }
 --- response_body
 passed
+
+
+
+=== TEST 4: send request without body
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt to test",
+                            "auth": {
+                                "query": {
+                                    "api_key": "apikey"
+                                }
+                            },
+                            "provider": "openai",
+                            "override": {
+                                "endpoint": "http://localhost:6724/check_extra_options"
+                            },
+                            "ssl_verify": false,
+                            "options": {
+                                "model": "check_options_model",
+                                "extra_option": "extra option"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                nil,
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+
+            if code == 200 then
+                ngx.say('passed')
+                return
+            end
+        }
+    }
+--- error_log eval
+qr/missing request body/
+--- response_body
+passed

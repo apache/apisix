@@ -16,6 +16,7 @@
 --
 local core = require("apisix.core")
 local require = require
+local pcall = pcall
 local ngx = ngx
 local req_set_body_data = ngx.req.set_body_data
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
@@ -111,7 +112,10 @@ local _M = {
 }
 
 local function request_to_llm(conf, request_table, ctx)
-    local ai_driver = require("apisix.plugins.ai-drivers." .. conf.provider)
+    local ok, ai_driver = pcall(require, "apisix.plugins.ai-drivers." .. conf.provider)
+    if not ok then
+        return nil, nil, "failed to load ai-driver: " .. conf.provider
+    end
 
     local extra_opts = {
         endpoint = core.table.try_read_attr(conf, "override", "endpoint"),
@@ -172,8 +176,13 @@ end
 function _M.access(conf, ctx)
     local client_request_body, err = core.request.get_body()
     if err then
-        core.log.info("failed to get request body: ", err)
-        return HTTP_BAD_REQUEST, err
+        core.log.warn("failed to get request body: ", err)
+        return HTTP_BAD_REQUEST
+    end
+
+    if not client_request_body then
+        core.log.warn("missing request body")
+        return
     end
 
     -- Prepare request for LLM service
