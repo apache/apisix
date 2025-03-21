@@ -200,7 +200,7 @@ function _M.access(conf, ctx)
 
     -- Handle LLM response
     if res.status > 299 then
-        core.log.error("LLM service returned error status: ", res.status, ", ", resp_body)
+        core.log.error("LLM service returned error status: ", res.status)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
