@@ -249,9 +249,9 @@ local function check_match(conf, ctx)
     for _, match in ipairs(conf.match) do
         local cache_key = core.json.encode(match.vars)
 
-        local exp, err = lrucache(cache_key, nil, function()
-            return expr.new(match.vars)
-        end)
+        local exp, err = lrucache(cache_key, nil, function(vars)
+            return expr.new(vars)
+        end, match.vars)
 
         if not exp then
             local msg = "failed to create match expression for " ..
