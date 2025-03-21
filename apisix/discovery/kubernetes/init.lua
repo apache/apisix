@@ -31,6 +31,7 @@ local core = require("apisix.core")
 local util = require("apisix.cli.util")
 local local_conf = require("apisix.core.config_local").local_conf()
 local informer_factory = require("apisix.discovery.kubernetes.informer_factory")
+local lfs = require("lfs")
 
 
 local ctx
@@ -283,6 +284,46 @@ local function read_env(key)
     return key
 end
 
+local function read_token(token_file)
+    local token, err = util.read_file(token_file)
+    if err then
+        return nil, err
+    end
+
+    -- remove possible extra whitespace
+    local trimmed_token = util.trim(token)
+    return trimmed_token
+end
+
+
+local function update_token(handle)
+    if not handle.apiserver.token_file or handle.apiserver.token_file == "" then
+        return
+    end
+
+    local token_file_path = handle.apiserver.token_file
+    local attributes, err = lfs.attributes(token_file_path)
+    if not attributes then
+        core.log.error("failed to fetch ", token_file_path, " attributes: ", err)
+        return
+    end
+
+    local last_modification_time = attributes.modification
+    if handle.token_file_mtime == last_modification_time then
+        return
+    end
+
+    local token, err = read_token(token_file_path)
+    if err then
+        core.log.error("read token failed: ", err)
+        return
+    end
+
+    handle.apiserver.token = token
+    handle.token_file_mtime = last_modification_time
+    core.log.info("kubernetes service account token has been updated")
+end
+
 
 local function get_apiserver(conf)
     local apiserver = {
@@ -324,22 +365,20 @@ local function get_apiserver(conf)
             return nil, err
         end
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        local file
-        file, err = read_env(conf.client.token_file)
+        local token_file, err = read_env(conf.client.token_file)
         if err then
             return nil, err
         end
 
-        apiserver.token, err = util.read_file(file)
+        apiserver.token, err = read_token(token_file)
         if err then
             return nil, err
         end
+
+        apiserver.token_file = token_file
     else
         return nil, "one of [client.token,client.token_file] should be set but none"
     end
-
-    -- remove possible extra whitespace
-    apiserver.token = apiserver.token:gsub("%s+", "")
 
     if apiserver.schema == "https" and apiserver.token == "" then
         return nil, "apiserver.token should set to non-empty string when service.schema is https"
@@ -378,6 +417,8 @@ local function start_fetch(handle)
         if premature then
             return
         end
+
+        update_token(handle)
 
         local ok, status = pcall(handle.list_watch, handle, handle.apiserver)
 
@@ -459,7 +500,8 @@ local function single_mode_init(conf)
     ctx = setmetatable({
         endpoint_dict = endpoint_dict,
         apiserver = apiserver,
-        default_weight = default_weight
+        default_weight = default_weight,
+        token_file_mtime = nil
     }, { __index = endpoints_informer })
 
     start_fetch(ctx)
@@ -565,7 +607,8 @@ local function multiple_mode_init(confs)
         ctx[id] = setmetatable({
             endpoint_dict = endpoint_dict,
             apiserver = apiserver,
-            default_weight = default_weight
+            default_weight = default_weight,
+            token_file_mtime = nil
         }, { __index = endpoints_informer })
     end
 
