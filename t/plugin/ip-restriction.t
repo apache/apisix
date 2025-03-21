@@ -57,7 +57,7 @@ __DATA__
 --- request
 GET /t
 --- response_body
-{"message":"Your IP address is not allowed","whitelist":["10.255.254.0/24","192.168.0.0/16"]}
+{"message":"Your IP address is not allowed","response_code":403,"whitelist":["10.255.254.0/24","192.168.0.0/16"]}
 
 
 
@@ -754,3 +754,94 @@ qr/string too short, expected at least 1, got 0/
 GET /t
 --- response_body_like eval
 qr/string too long, expected at most 1024, got 1025/
+
+
+
+=== TEST 33: set whitelist and 404 response code
+--- config
+location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
+                                 ],
+                                 "response_code": 404
+                            }
+                        }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 34: hit route and ip not in the whitelist expect 404
+--- http_config
+set_real_ip_from 127.0.0.1;
+real_ip_header X-Forwarded-For;
+--- more_headers
+X-Forwarded-For: 114.114.114.114
+--- request
+GET /hello
+--- error_code: 404
+--- error_log
+ip-restriction exits with http status code 404
+
+
+
+=== TEST 35: set wrong response code
+--- config
+location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "uri": "/hello",
+                        "upstream": {
+                            "type": "roundrobin",
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            }
+                        },
+                        "plugins": {
+                            "ip-restriction": {
+                                 "whitelist": [
+                                     "127.0.0.0/24",
+                                     "113.74.26.106"
+                                 ],
+                                 "response_code": 409
+                            }
+                        }
+                }]]
+                )
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/property \\"response_code\\" validation failed: expected 409 to be at most 404/
