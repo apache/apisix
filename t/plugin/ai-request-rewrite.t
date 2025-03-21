@@ -649,7 +649,7 @@ passed
 
 
 
-=== TEST 14: check LLM internalservererror
+=== TEST 14: check LLM internal server error
 --- config
     location /t {
         content_by_lua_block {

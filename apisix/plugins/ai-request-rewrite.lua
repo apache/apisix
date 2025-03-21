@@ -125,10 +125,10 @@ local function request_to_llm(conf, request_table, ctx)
         return nil, nil, err
     end
 
-    local resp_body, read_err = res:read_body()
+    local resp_body, err = res:read_body()
     httpc:close()
-    if read_err then
-        return nil, nil, nil, read_err
+    if err then
+        return nil, nil, err
     end
 
     return res, resp_body
@@ -142,7 +142,7 @@ local function parse_llm_response(res_body)
         return nil, "failed to decode llm response " .. ", err: " .. err
     end
 
-    if not response_table.choices then
+    if not response_table.choices or not response_table.choices[1] then
         return nil, "'choices' not in llm response"
     end
 
@@ -172,7 +172,7 @@ end
 function _M.access(conf, ctx)
     local client_request_body, err = core.request.get_body()
     if err then
-        core.log.error("failed to get request body: ", err)
+        core.log.info("failed to get request body: ", err)
         return HTTP_BAD_REQUEST, err
     end
 
@@ -192,20 +192,15 @@ function _M.access(conf, ctx)
     }
 
     -- Send request to LLM service
-    local res, resp_body, err, read_err = request_to_llm(conf, ai_request_table, ctx)
+    local res, resp_body, err = request_to_llm(conf, ai_request_table, ctx)
     if err then
-        core.log.error("failed to send request to LLM service: ", err)
+        core.log.error("failed to request to LLM service: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
     -- Handle LLM response
     if res.status > 299 then
         core.log.error("LLM service returned error status: ", res.status)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    if read_err then
-        core.log.error("failed to read LLM response body: ", read_err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
