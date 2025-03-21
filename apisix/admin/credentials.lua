@@ -18,9 +18,11 @@ local core     = require("apisix.core")
 local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
+local consumer = require("apisix.consumer")
+local consumers = require("apisix.admin.consumers")
 local pairs    = pairs
 
-local function check_conf(_id, conf, _need_id, schema)
+local function check_conf(id, conf, _need_id, schema)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -32,14 +34,41 @@ local function check_conf(_id, conf, _need_id, schema)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        for name, _ in pairs(conf.plugins) do
+        for name, plugin_conf in pairs(conf.plugins) do
             local plugin_obj = plugin.get(name)
             if not plugin_obj then
                 return nil, {error_msg = "unknown plugin " .. name}
             end
+
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
             end
+
+            -- check duplicate key
+            local decrypted_conf = core.table.deepcopy(plugin_conf)
+            plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
+
+            local key_field = consumers.plugin_key_map[name]
+            if key_field then
+                local key_value = decrypted_conf[key_field]
+
+                if key_value then
+                    local consumer, _, err = consumer
+                      .find_consumer(name, key_field, key_value)
+
+                    if err then
+                        core.log.warn("failed to find consumer: ", err)
+                    end
+
+                    if consumer and consumer.credential_id ~= id then
+                        return nil, {
+                          error_msg = "duplicate key found with consumer: "
+                            .. consumer.username
+                        }
+                    end
+                end
+            end
+
         end
     end
 
