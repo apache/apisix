@@ -36,11 +36,12 @@ Single IPs, multiple IPs or even IP ranges in CIDR notation like `10.10.10.0/24`
 
 ## Attributes
 
-| Name      | Type          | Required | Default                         | Valid values | Description                                                 |
-|-----------|---------------|----------|---------------------------------|--------------|-------------------------------------------------------------|
-| whitelist | array[string] | False    |                                 |              | List of IPs or CIDR ranges to whitelist.                    |
-| blacklist | array[string] | False    |                                 |              | List of IPs or CIDR ranges to blacklist.                    |
-| message   | string        | False    | "Your IP address is not allowed" | [1, 1024]    | Message returned when the IP address is not allowed access. |
+| Name          | Type          | Required | Default                          | Valid values | Description                                                            |
+|---------------|---------------|----------|----------------------------------|--------------|------------------------------------------------------------------------|
+| whitelist     | array[string] | False    |                                  |              | List of IPs or CIDR ranges to whitelist.                               |
+| blacklist     | array[string] | False    |                                  |              | List of IPs or CIDR ranges to blacklist.                               |
+| message       | string        | False    | "Your IP address is not allowed" | [1, 1024]    | Message returned when the IP address is not allowed access.            |
+| response_code | integer       | False    | 403                              | [403, 404]   | HTTP response code returned when the IP address is not allowed access. |
 
 :::note
 
