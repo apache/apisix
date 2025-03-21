@@ -291,7 +291,7 @@ local function read_token(token_file)
     end
 
     -- remove possible extra whitespace
-    local trimmed_token = token:gsub("%s+", "")
+    local trimmed_token = util.trim(token)
     return trimmed_token
 end
 
@@ -315,12 +315,13 @@ local function update_token(handle)
 
     local token, err = read_token(token_file_path)
     if err then
-        return nil, err
+        core.log.error("read token failed: ", err)
+        return
     end
 
     handle.apiserver.token = token
     handle.token_file_mtime = last_modification_time
-    core.log.warn("kubernetes service account token has been updated")
+    core.log.info("kubernetes service account token has been updated")
 end
 
 
