@@ -247,7 +247,7 @@ local function check_match(conf, ctx)
     end
 
     for _, match in ipairs(conf.match) do
-        local cache_key = core.json.encode(match.vars)
+        local cache_key = tostring(match.vars)
 
         local exp, err = lrucache(cache_key, nil, function(vars)
             return expr.new(vars)
