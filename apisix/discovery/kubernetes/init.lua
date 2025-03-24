@@ -295,49 +295,6 @@ local function read_token(token_file)
     return trimmed_token
 end
 
-
-local function create_apiserver_mt(token_file)
-    local initial_token, err = read_token(token_file)
-    if err then
-        return nil, err
-    end
-
-    local apiserver_mt = {
-        token_file_mtime = 0,
-        token_file_value = initial_token,
-        token_file = token_file
-    }
-
-    apiserver_mt.__index = function(_, key)
-        if key ~= "token" then
-            return nil
-        end
-
-        local attributes, err = lfs.attributes(apiserver_mt.token_file)
-        if not attributes then
-            core.log.error("failed to fetch ", apiserver_mt.token_file, " attributes: ", err)
-            return apiserver_mt.token_file_value
-        end
-
-        local mtime = attributes.modification
-        if mtime > apiserver_mt.token_file_mtime then
-            local new_token, err = read_token(apiserver_mt.token_file)
-            if err then
-                core.log.error("read token failed: ", err)
-                return apiserver_mt.token_file_value
-            end
-
-            apiserver_mt.token_file_value = new_token
-            apiserver_mt.token_file_mtime = mtime
-            core.log.info("kubernetes service account token has been updated")
-        end
-
-        return apiserver_mt.token_file_value
-    end
-
-    return apiserver_mt
-end
-
 local function get_apiserver(conf)
     local apiserver = {
         schema = "",
@@ -377,17 +334,27 @@ local function get_apiserver(conf)
             return nil, err
         end
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        local token_file, err = read_env(conf.client.token_file)
-        if err then
-            return nil, err
-        end
+        setmetatable(apiserver, {
+            __index = function(_, key)
+                if key ~= "token" then
+                    return nil
+                end
 
-        local apiserver_mt, err = create_apiserver_mt(token_file)
-        if err then
-            return nil, "failed to initialize apiserver metatable: " .. err
-        end
+                local token_file, err = read_env(conf.client.token_file)
+                if err then
+                    core.log.error("failed to read token file path: ", err)
+                    return nil
+                end
 
-        setmetatable(apiserver, apiserver_mt)
+                local token, err = read_token(token_file)
+                if err then
+                    core.log.error("failed to read token from file: ", err)
+                    return nil
+                end
+                core.log.debug("re-read the token value")
+                return token
+            end
+        })
     else
         return nil, "one of [client.token,client.token_file] should be set but none"
     end
