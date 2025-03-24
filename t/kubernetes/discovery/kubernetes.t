@@ -364,7 +364,7 @@ true
 
 
 
-=== TEST 7: auto update token when token file changed
+=== TEST 7: auto read token file before get token value
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -379,7 +379,9 @@ discovery:
         token_file: "${KUBERNETES_CLIENT_TOKEN_FILE}"
 --- request
 GET /update_token
+--- log_level: debug
 --- grep_error_log eval
-qr/kubernetes service account token has been updated/
+qr/re-read the token value/
 --- grep_error_log_out
-kubernetes service account token has been updated
+re-read the token value
+re-read the token value
