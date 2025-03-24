@@ -318,7 +318,7 @@ local function create_apiserver_mt(token_file)
             core.log.error("failed to fetch ", apiserver_mt.token_file, " attributes: ", err)
             return apiserver_mt.token_file_value
         end
-        
+
         local mtime = attributes.modification
         if mtime > apiserver_mt.token_file_mtime then
             local new_token, err = read_token(apiserver_mt.token_file)
@@ -326,7 +326,7 @@ local function create_apiserver_mt(token_file)
                 core.log.error("read token failed: ", err)
                 return apiserver_mt.token_file_value
             end
-            
+
             apiserver_mt.token_file_value = new_token
             apiserver_mt.token_file_mtime = mtime
             core.log.info("kubernetes service account token has been updated")
@@ -334,7 +334,7 @@ local function create_apiserver_mt(token_file)
 
         return apiserver_mt.token_file_value
     end
-    
+
     return apiserver_mt
 end
 
