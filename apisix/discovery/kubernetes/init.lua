@@ -328,10 +328,11 @@ local function get_apiserver(conf)
     end
 
     if conf.client.token then
-        apiserver.token, err = read_env(conf.client.token)
+        local token, err = read_env(conf.client.token)
         if err then
             return nil, err
         end
+        apiserver.token = util.trim(token)
     elseif conf.client.token_file and conf.client.token_file ~= "" then
         setmetatable(apiserver, {
             __index = function(_, key)
