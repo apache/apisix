@@ -381,7 +381,7 @@ local function get_apiserver(conf)
         if err then
             return nil, err
         end
-        
+
         local apiserver_mt, err = create_apiserver_mt(token_file)
         if err then
             return nil, "failed to initialize apiserver metatable: " .. err
@@ -511,7 +511,6 @@ local function single_mode_init(conf)
         endpoint_dict = endpoint_dict,
         apiserver = apiserver,
         default_weight = default_weight,
-        token_file_mtime = nil
     }, { __index = endpoints_informer })
 
     start_fetch(ctx)
@@ -618,7 +617,6 @@ local function multiple_mode_init(confs)
             endpoint_dict = endpoint_dict,
             apiserver = apiserver,
             default_weight = default_weight,
-            token_file_mtime = nil
         }, { __index = endpoints_informer })
     end
 
