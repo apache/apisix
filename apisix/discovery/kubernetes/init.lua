@@ -510,7 +510,7 @@ local function single_mode_init(conf)
     ctx = setmetatable({
         endpoint_dict = endpoint_dict,
         apiserver = apiserver,
-        default_weight = default_weight,
+        default_weight = default_weight
     }, { __index = endpoints_informer })
 
     start_fetch(ctx)
@@ -616,7 +616,7 @@ local function multiple_mode_init(confs)
         ctx[id] = setmetatable({
             endpoint_dict = endpoint_dict,
             apiserver = apiserver,
-            default_weight = default_weight,
+            default_weight = default_weight
         }, { __index = endpoints_informer })
     end
 
