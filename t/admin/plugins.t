@@ -94,6 +94,7 @@ opa
 authz-keycloak
 proxy-cache
 body-transformer
+ai-request-rewrite
 ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
