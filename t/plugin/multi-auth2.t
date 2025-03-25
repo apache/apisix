@@ -16,6 +16,7 @@
 #
 use t::APISIX 'no_plan';
 
+repeat_each(2);
 no_long_string();
 no_root_location();
 no_shuffle();
@@ -37,9 +38,8 @@ __DATA__
                             "username": "foo",
                             "password": "bar"
                         },
-                        "jwt-auth": {
-                            "key": "user-key",
-                            "secret": "my-secret-key"
+                        "key-auth": {
+                            "key": "auth-one"
                         }
                     }
                 }]]
@@ -70,6 +70,9 @@ passed
                             "auth_plugins": [
                                 {
                                     "basic-auth": {}
+                                },
+                                {
+                                    "key-auth": {}
                                 },
                                 {
                                     "jwt-auth": {}
@@ -103,7 +106,36 @@ passed
 
 
 
-=== TEST 3: invalid basic-auth credentials
+=== TEST 3: invalid key-auth apikey
+--- request
+GET /hello
+--- more_headers
+apikey: 123
+--- error_code: 401
+--- response_body
+{"message":"Authorization Failed"}
+--- error_log
+basic-auth failed to authenticate the request, code: 401. error: Missing authorization in request
+key-auth failed to authenticate the request, code: 401. error: Invalid API key in request
+jwt-auth failed to authenticate the request, code: 401. error: Missing JWT token in request
+hmac-auth failed to authenticate the request, code: 401. error: client request can't be validated: missing Authorization header
+
+
+
+=== TEST 4: valid key-auth apikey
+--- request
+GET /hello
+--- more_headers
+apikey: auth-one
+--- error_code: 200
+--- response_body
+hello world
+--- no_error_log
+failed to authenticate the request
+
+
+
+=== TEST 5: invalid basic-auth credentials
 --- request
 GET /hello
 --- more_headers
@@ -112,13 +144,14 @@ Authorization: Basic YmFyOmJhcgo=
 --- response_body
 {"message":"Authorization Failed"}
 --- error_log
-basic-auth failed to authenticate the request, code: 401. error: Invalid user authorization
+basic-auth failed to authenticate the request, code: 401. error: failed to find user: invalid user
+key-auth failed to authenticate the request, code: 401. error: Missing API key in request
 jwt-auth failed to authenticate the request, code: 401. error: JWT token invalid: invalid jwt string
 hmac-auth failed to authenticate the request, code: 401. error: client request can't be validated: Authorization header does not start with 'Signature'
 
 
 
-=== TEST 4: valid basic-auth creds
+=== TEST 6: valid basic-auth creds
 --- request
 GET /hello
 --- more_headers
@@ -130,7 +163,7 @@ failed to authenticate the request
 
 
 
-=== TEST 5: missing hmac auth authorization header
+=== TEST 7: missing hmac auth authorization header
 --- request
 GET /hello
 --- error_code: 401
@@ -141,7 +174,7 @@ hmac-auth failed to authenticate the request, code: 401. error: client request c
 
 
 
-=== TEST 6: hmac auth missing algorithm
+=== TEST 8: hmac auth missing algorithm
 --- request
 GET /hello
 --- more_headers
@@ -155,7 +188,48 @@ hmac-auth failed to authenticate the request, code: 401. error: client request c
 
 
 
-=== TEST 7: add consumer with username and jwt-auth plugins
+=== TEST 9: test with invalid jwt-auth token
+--- request
+GET /hello
+--- more_headers
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTU2Mzg3MDUwMX0.pPNVvh-TQsdDzorRwa-uuiLYiEBODscp9wv0cwD6c68
+--- error_code: 401
+--- response_body
+{"message":"Authorization Failed"}
+--- error_log
+jwt-auth failed to authenticate the request, code: 401. error: Invalid user key in JWT token
+
+
+
+=== TEST 10: create public API route (jwt-auth sign)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "public-api": {}
+                        },
+                        "uri": "/apisix/plugin/jwt/sign"
+                 }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 11: add consumer with username and jwt-auth plugins
 --- config
     location /t {
         content_by_lua_block {
@@ -186,7 +260,7 @@ passed
 
 
 
-=== TEST 8: test with expired jwt token
+=== TEST 12: test with expired jwt token
 --- request
 GET /hello
 --- error_code: 401
@@ -199,7 +273,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 
 
 
-=== TEST 9: test with jwt token containing wrong signature
+=== TEST 13: test with jwt token containing wrong signature
 --- request
 GET /hello
 --- error_code: 401
@@ -212,7 +286,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 
 
 
-=== TEST 10: verify jwt-auth
+=== TEST 14: verify jwt-auth
 --- request
 GET /hello
 --- more_headers
@@ -221,3 +295,74 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtle
 hello world
 --- no_error_log
 failed to authenticate the request
+
+
+
+=== TEST 15: enable multi auth plugin with non-existent anonymous consumer
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "multi-auth": {
+                            "auth_plugins": [
+                                {
+                                    "basic-auth": {
+                                        "anonymous_consumer": "not-found-anonymous"
+                                    }
+                                },
+                                {
+                                    "key-auth": {
+                                        "anonymous_consumer": "not-found-anonymous"
+                                    }
+                                },
+                                {
+                                    "jwt-auth": {
+                                        "anonymous_consumer": "not-found-anonymous"
+                                    }
+                                },
+                                {
+                                    "hmac-auth": {
+                                        "anonymous_consumer": "anonymous"
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 16: invalid basic-auth credentials
+--- request
+GET /hello
+--- error_code: 401
+--- response_body
+{"message":"Authorization Failed"}
+--- error_log
+basic-auth failed to authenticate the request, code: 401. error: failed to get anonymous consumer not-found-anonymous
+key-auth failed to authenticate the request, code: 401. error: failed to get anonymous consumer not-found-anonymous
+jwt-auth failed to authenticate the request, code: 401. error: failed to get anonymous consumer not-found-anonymous
+hmac-auth failed to authenticate the request, code: 401. error: failed to get anonymous consumer anonymous

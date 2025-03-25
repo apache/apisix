@@ -230,3 +230,123 @@ qr/\\"secret\\" validation failed: string too short, expected at least 1, got 0/
 --- error_code: 400
 --- response_body eval
 qr/\\"key\\" validation failed: string too short, expected at least 1, got 0/
+
+
+
+=== TEST 6: store_in_ctx disabled
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {},
+                        "serverless-post-function": {
+                            "phase": "rewrite",
+                            "functions": [
+                                "return function(conf, ctx)
+                                if ctx.jwt_auth_payload then
+                                    ngx.status = 200
+                                    ngx.say(\"JWT found in ctx. Payload key: \" .. ctx.jwt_auth_payload.key)
+                                    return ngx.exit(200)
+                                else
+                                    ngx.status = 401
+                                    ngx.say(\"JWT not found in ctx.\")
+                                    return ngx.exit(401)
+                                end
+                                end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/jwt-auth-no-ctx"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 7: verify store_in_ctx disabled (header with bearer)
+--- request
+GET /jwt-auth-no-ctx
+--- more_headers
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo
+--- error_code: 401
+--- response_body
+JWT not found in ctx.
+
+
+
+=== TEST 8: store_in_ctx enabled
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "jwt-auth": {
+                            "store_in_ctx": true
+                        },
+                        "serverless-post-function": {
+                            "phase": "rewrite",
+                            "functions": [
+                                "return function(conf, ctx)
+                                if ctx.jwt_auth_payload then
+                                    ngx.status = 200
+                                    ngx.say(\"JWT found in ctx. Payload key: \" .. ctx.jwt_auth_payload.key)
+                                    return ngx.exit(200)
+                                else
+                                    ngx.status = 401
+                                    ngx.say(\"JWT not found in ctx.\")
+                                    return ngx.exit(401)
+                                end
+                                end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/jwt-auth-ctx"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 9: verify store_in_ctx enabled (header with bearer)
+--- request
+GET /jwt-auth-ctx
+--- more_headers
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJ1c2VyLWtleSIsIm5iZiI6MTcyNzI3NDk4M30.N6ebc4U5ms976pwKZ_iQ88w_uJKqUVNtTYZ_nXhRpWo
+--- error_code: 200
+--- response_body
+JWT found in ctx. Payload key: user-key

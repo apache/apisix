@@ -14,7 +14,7 @@ jobs:
       fail-fast: false
       matrix:
         platform:
-          - ubuntu-20.04
+          - ubuntu-latest
         os_name:
           - linux_openresty_tongsuo
         test_dir:
@@ -126,15 +126,22 @@ jobs:
         run: |
           cur_dir=$(pwd)
           sudo apt update
-          sudo apt install -y maven
+          sudo apt install -y maven openjdk-8-jdk
+          sudo update-java-alternatives --set java-1.8.0-openjdk-amd64
+          export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+          export PATH=$JAVA_HOME/bin:$PATH
           cd t/lib/dubbo-backend
           mvn package
           cd dubbo-backend-provider/target
-          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
+          java \
+            -Djava.net.preferIPv4Stack=true \
+            -jar dubbo-demo-provider.one-jar.jar > /tmp/java.log &
           cd $cur_dir/t/lib/dubbo-serialization-backend
           mvn package
           cd dubbo-serialization-backend-provider/target
-          java -Djava.net.preferIPv4Stack=true -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
+          java \
+            -Djava.net.preferIPv4Stack=true \
+            -jar dubbo-demo-provider.one-jar.jar > /tmp/java2.log &
 
       - name: Build xDS library
         if: steps.test_env.outputs.type == 'last'

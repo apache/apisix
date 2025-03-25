@@ -17,7 +17,7 @@
 #
 -->
 
-# Apache APISIX API Gateway
+# Apache APISIX API Gateway ｜ AI Gateway
 
 <img src="./logos/apisix-white-bg.jpg" alt="APISIX logo" height="150px" align="right" />
 
@@ -32,7 +32,9 @@
 
 APISIX API Gateway provides rich traffic management features such as load balancing, dynamic upstream, canary release, circuit breaking, authentication, observability, and more.
 
-You can use **APISIX API Gateway** to handle traditional north-south traffic,
+APISIX can serve as an **AI Gateway** through its flexible plugin system, providing AI proxying, load balancing for LLMs, retries and fallbacks, token-based rate limiting, and robust security to ensure the efficiency and reliability of AI agents.
+
+You can use APISIX API Gateway to handle traditional north-south traffic,
 as well as east-west traffic between services.
 It can also be used as a [k8s ingress controller](https://github.com/apache/apisix-ingress-controller).
 
