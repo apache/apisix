@@ -290,8 +290,7 @@ local function read_token(token_file)
     end
 
     -- remove possible extra whitespace
-    local trimmed_token = util.trim(token)
-    return trimmed_token
+    return util.trim(token)
 end
 
 local function get_apiserver(conf)
@@ -337,19 +336,19 @@ local function get_apiserver(conf)
         setmetatable(apiserver, {
             __index = function(_, key)
                 if key ~= "token" then
-                    return nil
+                    return
                 end
 
                 local token_file, err = read_env(conf.client.token_file)
                 if err then
                     core.log.error("failed to read token file path: ", err)
-                    return nil
+                    return
                 end
 
                 local token, err = read_token(token_file)
                 if err then
                     core.log.error("failed to read token from file: ", err)
-                    return nil
+                    return
                 end
                 core.log.debug("re-read the token value")
                 return token
