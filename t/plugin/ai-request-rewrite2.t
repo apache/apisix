@@ -188,19 +188,16 @@ override.endpoint is required for openai-compatible provider
                  [[{
                     "uri": "/anything",
                     "plugins": {
-                        "ai-proxy": {
+                        "ai-request-rewrite": {
+                            "prompt": "some prompt to test",
                             "auth": {
                                 "query": {
                                     "api_key": "apikey"
                                 }
                             },
-                            "model": {
-                                "provider": "openai",
-                                "name": "gpt-35-turbo-instruct",
-                                "options": {
-                                    "max_tokens": 512,
-                                    "temperature": 1.0
-                                }
+                            "provider": "openai",
+                            "options": {
+                                "model": "gpt-35-turbo-instruct"
                             },
                             "override": {
                                 "endpoint": "http://localhost:6724/test/params/in/overridden/endpoint?some_query=yes"
