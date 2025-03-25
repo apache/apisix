@@ -19,7 +19,6 @@ local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
 local consumer = require("apisix.consumer")
-local consumers = require("apisix.admin.consumers")
 local utils = require("apisix.admin.utils")
 local pairs    = pairs
 
