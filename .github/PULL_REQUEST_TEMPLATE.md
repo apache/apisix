@@ -3,7 +3,12 @@
 <!-- Please include a summary of the change and which issue is fixed. -->
 <!-- Please also include relevant motivation and context. -->
 
-Fixes # (issue)
+#### Which issue(s) this PR fixes:
+<!--
+*Automatically closes linked issue when PR is merged.
+Usage: `Fixes #<issue number>`, or `Fixes (paste link of issue)`.
+-->
+Fixes #
 
 ### Checklist
 
