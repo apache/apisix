@@ -124,13 +124,12 @@ local function request_to_llm(conf, request_table, ctx)
         model_options = conf.options
     }
 
-    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
+    local res, err = ai_driver:request(conf, request_table, extra_opts)
     if err then
         return nil, nil, err
     end
 
     local resp_body, err = res:read_body()
-    httpc:close()
     if err then
         return nil, nil, err
     end
