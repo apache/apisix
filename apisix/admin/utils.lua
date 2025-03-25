@@ -110,4 +110,11 @@ function _M.decrypt_params(decrypt_func, body, schema_type)
     end
 end
 
+_M.plugin_key_map = {
+    ["key-auth"] = "key",
+    ["basic-auth"] = "username",
+    ["jwt-auth"] = "key",
+    ["hmac-auth"] = "key_id"
+}
+
 return _M

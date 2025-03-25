@@ -20,6 +20,7 @@ local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
 local consumer = require("apisix.consumer")
 local consumers = require("apisix.admin.consumers")
+local utils = require("apisix.admin.utils")
 local pairs    = pairs
 
 local function check_conf(id, conf, _need_id, schema)
@@ -48,7 +49,7 @@ local function check_conf(id, conf, _need_id, schema)
             local decrypted_conf = core.table.deepcopy(plugin_conf)
             plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
 
-            local key_field = consumers.plugin_key_map[name]
+            local key_field = utils.plugin_key_map[name]
             if key_field then
                 local key_value = decrypted_conf[key_field]
 
