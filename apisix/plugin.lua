@@ -512,7 +512,7 @@ function _M.filter(ctx, conf, plugins, route_conf, phase)
         -- 3. execute the rewrite phase of the plugins on consumer(phase: rewrite_in_consumer)
         -- in this case, we need to skip the plugins that was already executed(step 1)
         if phase == "rewrite_in_consumer"
-                and (not plugin_conf._from_consumer or plugins.type == "auth") then
+                and (not plugin_conf._from_consumer or plugin_obj.type == "auth") then
             plugin_conf._skip_rewrite_in_consumer = true
         end
 
