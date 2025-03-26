@@ -174,6 +174,7 @@ end
 
 
 function _M.access(conf, ctx)
+    ctx.proxy_nginx_upstream = true
     local client_request_body, err = core.request.get_body()
     if err then
         core.log.warn("failed to get request body: ", err)

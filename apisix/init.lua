@@ -59,6 +59,7 @@ local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
 local ngx_re_match    = ngx.re.match
+local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local control_api_router
 
 local is_http = false
@@ -451,6 +452,10 @@ local function common_phase(phase_name)
 end
 
 
+local function proxy_upstream(api_ctx)
+    -- core.log.error("proxy nginx upstream", api_ctx)
+    return HTTP_BAD_REQUEST
+end
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- some plugins(ai-proxy...) request upstream by http client directly
@@ -532,6 +537,13 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- handle on its own
     if api_ctx.matched_upstream and api_ctx.matched_upstream.scheme == "kafka" then
         return pubsub_kafka.access(api_ctx)
+    end
+
+    -- if proxy_nginx_upstream is true, then proxy the request to upstream
+    if api_ctx.proxy_nginx_upstream then
+        core.log.error("proxy nginx upstream")
+        proxy_upstream(api_ctx)
+        return
     end
 
     local code, err = set_upstream(route, api_ctx)
