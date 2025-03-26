@@ -22,6 +22,7 @@ local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
 local re_split      = require("ngx.re").split
+local before_proxy_func = require("apisix.before_proxy").before_proxy
 local ngx           = ngx
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
@@ -1187,6 +1188,16 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 phase_func = plugins[i]["rewrite"]
             else
                 phase_func = plugins[i][phase]
+                
+                -- Add fallback logic for before_proxy phase
+                if phase == "before_proxy" then
+                    if not phase_func then
+                        core.log.warn("plugin ", plugins[i]["name"], " using before_proxy fallback")
+                        phase_func = before_proxy_func
+                        if phase_func then
+                            core.log.warn("plugin ", plugins[i]["name"], " fallback function loaded")
+                        end
+                end
             end
 
             if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then

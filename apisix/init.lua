@@ -452,11 +452,6 @@ local function common_phase(phase_name)
 end
 
 
-local function proxy_upstream(api_ctx)
-    -- core.log.error("proxy nginx upstream", api_ctx)
-    return HTTP_BAD_REQUEST
-end
-
 function _M.handle_upstream(api_ctx, route, enable_websocket)
     -- some plugins(ai-proxy...) request upstream by http client directly
     if api_ctx.bypass_nginx_upstream then
@@ -539,13 +534,6 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
         return pubsub_kafka.access(api_ctx)
     end
 
-    -- if proxy_nginx_upstream is true, then proxy the request to upstream
-    if api_ctx.proxy_nginx_upstream then
-        core.log.error("proxy nginx upstream")
-        proxy_upstream(api_ctx)
-        return
-    end
-
     local code, err = set_upstream(route, api_ctx)
     if code then
         core.log.error("failed to set upstream: ", err)
@@ -561,6 +549,12 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
     api_ctx.picked_server = server
 
     set_upstream_headers(api_ctx, server)
+
+    -- proxy the request to upstream
+    if api_ctx.proxy_nginx_upstream then
+        common_phase("before_proxy")
+        return
+    end
 
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
@@ -897,7 +891,9 @@ end
 
 
 function _M.http_balancer_phase()
+    core.log.error("enter http_balancer_phase")
     local api_ctx = ngx.ctx.api_ctx
+
     if not api_ctx then
         core.log.error("invalid api_ctx")
         return core.response.exit(500)
