@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local schema = require("apisix.plugins.ai-rewrite.schema").schema
 local require = require
 local pcall = pcall
 local ngx = ngx
@@ -24,6 +23,86 @@ local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local plugin_name = "ai-request-rewrite"
+
+local auth_item_schema = {
+    type = "object",
+    patternProperties = {
+        ["^[a-zA-Z0-9._-]+$"] = {
+            type = "string"
+        }
+    }
+}
+
+local auth_schema = {
+    type = "object",
+    properties = {
+        header = auth_item_schema,
+        query = auth_item_schema
+    },
+    additionalProperties = false
+}
+
+local model_options_schema = {
+    description = "Key/value settings for the model",
+    type = "object",
+    properties = {
+        model = {
+            type = "string",
+            description = "Model to execute. Examples: \"gpt-3.5-turbo\" for openai, " ..
+            "\"deepseek-chat\" for deekseek, or \"qwen-turbo\" for openai-compatible services"
+        }
+    },
+    additionalProperties = true
+}
+
+local schema = {
+    type = "object",
+    properties = {
+        prompt = {
+            type = "string",
+            description = "The prompt to rewrite client request."
+        },
+        provider = {
+            type = "string",
+            description = "Name of the AI service provider.",
+            enum = {"openai", "openai-compatible", "deepseek"} -- add more providers later
+        },
+        auth = auth_schema,
+        options = model_options_schema,
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            maximum = 60000,
+            default = 30000,
+            description = "Total timeout in milliseconds for requests to LLM service, " ..
+            "including connect, send, and read timeouts."
+        },
+        keepalive = {
+            type = "boolean",
+            default = true
+        },
+        keepalive_pool = {
+            type = "integer",
+            minimum = 1,
+            default = 30
+        },
+        ssl_verify = {
+            type = "boolean",
+            default = true
+        },
+        override = {
+            type = "object",
+            properties = {
+                endpoint = {
+                    type = "string",
+                    description = "To be specified to override " ..
+                    "the endpoint of the AI service provider."
+                }
+            }
+        }
+    },
+    required = {"prompt", "provider", "auth"}
+}
 
 local _M = {
     version = 0.1,
@@ -45,12 +124,13 @@ local function request_to_llm(conf, request_table, ctx)
         model_options = conf.options
     }
 
-    local res, err = ai_driver:request(conf, request_table, extra_opts)
+    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
     if err then
         return nil, nil, err
     end
 
     local resp_body, err = res:read_body()
+    httpc:close()
     if err then
         return nil, nil, err
     end
@@ -94,7 +174,6 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.lua_proxy_upstream = true
     local client_request_body, err = core.request.get_body()
     if err then
         core.log.warn("failed to get request body: ", err)
