@@ -35,7 +35,6 @@ add_block_preprocessor(sub {
 
             default_type 'application/json';
 
-
             location /check_extra_options {
                 content_by_lua_block {
                     local json = require("cjson.safe")
@@ -58,7 +57,7 @@ add_block_preprocessor(sub {
                                 }
                             }
                         }
-                        }
+                    }
                     local json = require("cjson.safe")
                     local json_response = json.encode(response)
                     ngx.say(json_response)
@@ -67,20 +66,33 @@ add_block_preprocessor(sub {
 
             location /test/params/in/overridden/endpoint {
                 content_by_lua_block {
+                    ngx.req.read_body()
+
                     local json = require("cjson.safe")
-                    local core = require("apisix.core")
-
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
-                    ngx.log(ngx.INFO, "found query params: ", core.json.stably_encode(ngx.req.get_uri_args()))
-
-                    if query_auth ~= "apikey" then
-                        ngx.status = 401
-                        ngx.say("Unauthorized")
+                    local body = ngx.req.get_body_data()
+                    local request_data = json.decode(body)
+                    local args = ngx.req.get_uri_args()
+                    local response = {
+                        choices = {
+                            {
+                                message = {
+                                    content = request_data.messages[1].content .. ' ' .. request_data.messages[2].content
+                                }
+                            }
+                        }
+                    }
+                    
+                    if not args.some_query or args.some_query ~= "yes" then
+                        ngx.status = 200
+                        response.choices[1].message.content = "missing required query parameter: some_query=yes"
+                        local json_response = json.encode(response)
+                        ngx.say(json_response)
                         return
                     end
 
                     ngx.status = 200
-                    ngx.say("passed")
+                    local json_response = json.encode(response)
+                    ngx.say(json_response)
                 }
             }
         }
@@ -214,10 +226,21 @@ override.endpoint is required for openai-compatible provider
                 }]]
             )
 
-            if code >= 300 then
-                ngx.status = code
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some random content",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+            local json = require("cjson.safe")
+            local response_data = json.decode(actual_body)
+            if response_data.data == 'some prompt to test' .. ' some random content' then
+                ngx.say("passed")
+            else
+                ngx.say(response_data.data)
             end
-            ngx.say(body)
         }
     }
 --- response_body
