@@ -56,11 +56,8 @@ local function check_conf(username, conf, need_username, schema)
                     local key_value = plugin_conf_copy[key_field]
 
                     if key_value then
-                        local consumer, _, err = consumer
+                        local consumer = consumer
                             .find_consumer(plugin_name, key_field, key_value)
-                        if err then
-                            core.log.warn("failed to find consumer: ", err)
-                        end
 
                         if consumer and consumer.username ~= conf.username then
                             return nil, {
