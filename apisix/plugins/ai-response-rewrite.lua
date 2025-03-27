@@ -50,16 +50,15 @@ local function request_to_llm(conf, request_table, ctx)
     }
 
     local res, err = ai_driver:request(conf, request_table, extra_opts)
-    if err then
-        return nil, nil, err
+    if not res then
+        core.log.warn("failed to send request to AI service: ", err)
+        if core.string.find(err, "timeout") then
+            return 504
+        end
+        return internal_server_error
     end
 
-    local resp_body, err = res:read_body()
-    if err then
-        return nil, nil, err
-    end
-
-    return res, resp_body
+    return ai_driver.read_response(ctx, res)
 end
 
 
@@ -101,12 +100,13 @@ function _M.access(conf, ctx)
     ctx.proxy_nginx_upstream = true
 end
 
+
 _M.before_proxy = function (conf, ctx)
     local status, res_body = proxy_upstream(conf, ctx)
     if not res_body then
         return status
     end
-    plugin.lua_body_filter(conf, ctx, res_body)
+    return plugin.lua_body_filter(conf, ctx, res_body)
 end
 
 _M.lua_body_filter = function (conf, ctx, data)
@@ -126,27 +126,8 @@ _M.lua_body_filter = function (conf, ctx, data)
         stream = false
     }
 
-    -- Send request to LLM service
-    local res, resp_body, err = request_to_llm(conf, ai_request_table, ctx)
-    if err then
-        core.log.error("failed to request to LLM service: ", err)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    -- Handle LLM response
-    if res.status > 299 then
-        core.log.error("LLM service returned error status: ", res.status)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    -- Parse LLM response
-    local llm_response, err = parse_llm_response(resp_body)
-    if err then
-        core.log.error("failed to parse LLM response: ", err)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    return res.status, llm_response
+    local status, res_body = request_to_llm(conf, ai_request_table, ctx)
+    return status, res_body
 end
 
 return _M
