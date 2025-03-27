@@ -15,15 +15,19 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
-local schema = require("apisix.plugins.ai-rewrite.schema").schema
+local plugin = require("apisix.plugin")
+local http = require("resty.http")
+local proxy_upstream = require("apisix.proxy_upstream").proxy_upstream
 local require = require
+local schema = require("apisix.plugins.ai-rewrite.schema").schema
 local pcall = pcall
 local ngx = ngx
 local req_set_body_data = ngx.req.set_body_data
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
-local plugin_name = "ai-request-rewrite"
+
+local plugin_name = "ai-response-rewrite"
 
 local _M = {
     version = 0.1,
@@ -95,16 +99,17 @@ end
 
 function _M.access(conf, ctx)
     ctx.proxy_nginx_upstream = true
-    local client_request_body, err = core.request.get_body()
-    if err then
-        core.log.warn("failed to get request body: ", err)
-        return HTTP_BAD_REQUEST
-    end
+end
 
-    if not client_request_body then
-        core.log.warn("missing request body")
-        return
+_M.before_proxy = function (conf, ctx)
+    local status, res_body = proxy_upstream(conf, ctx)
+    if not res_body then
+        return status
     end
+    plugin.lua_body_filter(conf, ctx, res_body)
+end
+
+_M.lua_body_filter = function (conf, ctx, data)
 
     -- Prepare request for LLM service
     local ai_request_table = {
@@ -115,7 +120,7 @@ function _M.access(conf, ctx)
             },
             {
                 role = "user",
-                content = client_request_body
+                content = data
             }
         },
         stream = false
@@ -141,7 +146,7 @@ function _M.access(conf, ctx)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
-    req_set_body_data(llm_response)
+    return res.status, llm_response
 end
 
 return _M

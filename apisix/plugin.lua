@@ -22,7 +22,6 @@ local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
 local re_split      = require("ngx.re").split
-local before_proxy_func = require("apisix.before_proxy").before_proxy
 local ngx           = ngx
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
@@ -1189,16 +1188,16 @@ function _M.run_plugin(phase, plugins, api_ctx)
             else
                 phase_func = plugins[i][phase]
                 
-                -- Add fallback logic for before_proxy phase
-                if phase == "before_proxy" and api_ctx.proxy_nginx_upstream then
-                    if not phase_func then
-                        core.log.warn("plugin ", plugins[i]["name"], " using before_proxy fallback")
-                        phase_func = before_proxy_func
-                        if phase_func then
-                            core.log.warn("plugin ", plugins[i]["name"], " fallback function loaded")
-                        end
-                    end
-                end
+                -- -- Add fallback logic for before_proxy phase
+                -- if phase == "before_proxy" and api_ctx.proxy_nginx_upstream then
+                --     if not phase_func then
+                --         core.log.warn("plugin ", plugins[i]["name"], " using before_proxy fallback")
+                --         phase_func = before_proxy_func
+                --         if phase_func then
+                --             core.log.warn("plugin ", plugins[i]["name"], " fallback function loaded")
+                --         end
+                --     end
+                -- end
             end
 
             if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then
@@ -1296,5 +1295,40 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
     end
 end
 
+
+function _M.lua_body_filter(data, api_ctx)
+    local plugins = api_ctx.plugins
+    if not plugins or #plugins == 0 then
+        return
+    end
+    for i = 1, #plugins, 2 do
+        local phase_func = plugins[i]["lua_body_filter"]
+        if phase_func then
+            local conf = plugins[i + 1]
+            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                goto CONTINUE
+            end
+
+            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+            local code, body = phase_func(conf, api_ctx, data)
+            if code or body then
+                if code >= 400 then
+                    core.log.warn(plugins[i].name, " exits with http status code ", code)
+
+                    if conf._meta and conf._meta.error_response then
+                        -- Whether or not the original error message is output,
+                        -- always return the configured message
+                        -- so the caller can't guess the real error
+                        body = conf._meta.error_response
+                    end
+                end
+
+                return core.response.exit(code, body)
+            end
+        end
+
+        ::CONTINUE::
+    end
+end
 
 return _M

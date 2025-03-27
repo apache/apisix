@@ -17,6 +17,7 @@
 local _M = {}
 local core = require("apisix.core")
 local http = require("resty.http")
+local plugin = require("apisix.plugin")
 local ngx = ngx
 
 local function build_request_opts(conf, ctx)
@@ -58,7 +59,7 @@ local function build_request_opts(conf, ctx)
     return opts
 end
 
-_M.before_proxy = function (conf, ctx)
+_M.proxy_upstream = function (conf, ctx)
     -- Build request options
     local opts, err = build_request_opts(conf, ctx)
     if not opts then
@@ -102,6 +103,7 @@ _M.before_proxy = function (conf, ctx)
         core.response.set_header(k, v)
     end
 
+    plugin.lua_body_filter(res.body, ctx)
     -- Return response body and status code
     return res.status, res.body
 end
