@@ -550,8 +550,8 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
     set_upstream_headers(api_ctx, server)
 
-    -- proxy the request to upstream
-    if api_ctx.proxy_nginx_upstream then
+    -- lua proxy the request to upstream
+    if api_ctx.lua_proxy_upstream then
         common_phase("before_proxy")
         return
     end

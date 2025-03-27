@@ -1187,17 +1187,6 @@ function _M.run_plugin(phase, plugins, api_ctx)
                 phase_func = plugins[i]["rewrite"]
             else
                 phase_func = plugins[i][phase]
-                
-                -- -- Add fallback logic for before_proxy phase
-                -- if phase == "before_proxy" and api_ctx.proxy_nginx_upstream then
-                --     if not phase_func then
-                --         core.log.warn("plugin ", plugins[i]["name"], " using before_proxy fallback")
-                --         phase_func = before_proxy_func
-                --         if phase_func then
-                --             core.log.warn("plugin ", plugins[i]["name"], " fallback function loaded")
-                --         end
-                --     end
-                -- end
             end
 
             if phase == "rewrite_in_consumer" and plugins[i + 1]._skip_rewrite_in_consumer then

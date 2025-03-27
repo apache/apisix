@@ -97,7 +97,7 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.proxy_nginx_upstream = true
+    ctx.lua_proxy_upstream = true
 end
 
 
