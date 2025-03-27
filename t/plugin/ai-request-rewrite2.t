@@ -81,7 +81,7 @@ add_block_preprocessor(sub {
                             }
                         }
                     }
-                    
+
                     if not args.some_query or args.some_query ~= "yes" then
                         ngx.status = 200
                         response.choices[1].message.content = "missing required query parameter: some_query=yes"
@@ -196,8 +196,8 @@ override.endpoint is required for openai-compatible provider
         content_by_lua_block {
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
+                ngx.HTTP_PUT,
+                [[{
                     "uri": "/anything",
                     "plugins": {
                         "ai-request-rewrite": {
