@@ -479,7 +479,12 @@ OIDC introspection failed: Invalid Authorization header format.
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {
@@ -553,7 +558,12 @@ true
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {
@@ -623,7 +633,12 @@ x-userinfo: ey.*
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": true,
                                 "set_id_token_header": false,
-                                "set_userinfo_header": false
+                                "set_userinfo_header": false,
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {
@@ -687,7 +702,12 @@ x-real-ip: 127.0.0.1
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {

@@ -392,7 +392,7 @@ routes:
 plugin_metadata:
   - id: http-logger # note the id is the plugin name
     log_format:
-        host: "$host",
+        host: "$host"
         remote_addr: "$remote_addr"
 #END
 ```

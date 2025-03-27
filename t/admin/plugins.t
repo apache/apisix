@@ -94,10 +94,15 @@ opa
 authz-keycloak
 proxy-cache
 body-transformer
+ai-request-rewrite
+ai-prompt-guard
 ai-prompt-template
 ai-prompt-decorator
 ai-rag
-ai-content-moderation
+ai-aws-content-moderation
+ai-proxy-multi
+ai-proxy
+ai-rate-limiting
 proxy-mirror
 proxy-rewrite
 workflow
@@ -105,7 +110,6 @@ api-breaker
 limit-conn
 limit-count
 limit-req
-ai-proxy
 gzip
 server-info
 traffic-split

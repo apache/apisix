@@ -82,7 +82,8 @@
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
             "plugins/ocsp-stapling",
-            "plugins/ai-content-moderation"
+            "plugins/ai-prompt-guard",
+            "plugins/ai-aws-content-moderation"
           ]
         },
         {
@@ -102,7 +103,8 @@
             "plugins/ai-proxy",
             "plugins/ai-proxy-multi",
             "plugins/attach-consumer-label",
-            "plugins/ai-rag"
+            "plugins/ai-rag",
+            "plugins/ai-request-rewrite"
           ]
         },
         {
@@ -157,7 +159,8 @@
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",
-            "plugins/workflow"
+            "plugins/workflow",
+            "plugins/ai-rate-limiting"
           ]
         },
         {
