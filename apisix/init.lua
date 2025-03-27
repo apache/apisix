@@ -59,7 +59,6 @@ local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
 local ngx_re_match    = ngx.re.match
-local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local control_api_router
 
 local is_http = false
@@ -450,6 +449,7 @@ local function common_phase(phase_name)
 
     return plugin.run_plugin(phase_name, nil, api_ctx)
 end
+
 
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
