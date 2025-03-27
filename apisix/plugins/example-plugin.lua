@@ -18,6 +18,8 @@ local ngx = ngx
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
+local http = require("resty.http")
+local proxy_upstream = require("apisix.proxy_upstream").proxy_upstream
 
 local schema = {
     type = "object",
@@ -85,6 +87,10 @@ function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
 
+    if conf.lua_proxy_upstream then
+        ctx.lua_proxy_upstream = true
+    end
+
     if not conf.ip then
         return
     end
@@ -106,6 +112,39 @@ function _M.access(conf, ctx)
                  ctx.conf_version, up_conf)
     return
 end
+
+
+function _M.before_proxy(conf, ctx)
+    core.log.warn("plugin before_proxy phase, conf: ", core.json.encode(conf))
+
+    if ctx.lua_proxy_upstream then
+        local status, body = proxy_upstream(conf, ctx)
+
+        core.log.debug("proxy upstream response: ", core.json.encode(body))
+
+        plugin.lua_body_filter(conf, ctx, body)
+    end
+end
+
+
+function _M.lua_body_filter(conf, ctx, body)
+    core.log.warn("plugin lua_body_filter phase, conf: ", core.json.encode(conf))
+
+    local httpc, err = http.new()
+    if err then
+        return 500
+    end
+
+    local res, err = httpc:request_uri(conf.request_uri, {
+        method = conf.method,
+    })
+    if err then
+        return 500
+    end
+
+    return res.status, res.body
+end
+
 
 function _M.header_filter(conf, ctx)
     core.log.warn("plugin header_filter phase, conf: ", core.json.encode(conf))
