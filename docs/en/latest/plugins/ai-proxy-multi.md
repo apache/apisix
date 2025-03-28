@@ -156,7 +156,7 @@ Send 10 POST requests to the Route with a system prompt and a sample user questi
 openai_count=0
 deepseek_count=0
 
-for i in {1..10}; do 
+for i in {1..10}; do
   model=$(curl -s "http://127.0.0.1:9080/anything" -X POST \
     -H "Content-Type: application/json" \
     -d '{

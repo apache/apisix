@@ -86,7 +86,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how you can configure the API key, model, and other parameters in the `ai-proxy` Plugin and configure the Plugin on a Route to proxy user prompts to OpenAI.
 
-Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environement variable:
+Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environment variable:
 
 ```shell
 export OPENAI_API_KEY=<your-api-key>
@@ -157,7 +157,7 @@ You should receive a response similar to the following:
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to DeekSeek.
 
-Obtain the DeekSeek API key and save it to an environement variable:
+Obtain the DeekSeek API key and save it to an environment variable:
 
 ```shell
 export DEEPSEEK_API_KEY=<your-api-key>
@@ -231,7 +231,7 @@ You should receive a response similar to the following:
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to other LLM services, such as Azure OpenAI.
 
-Obtain the Azure OpenAI API key and save it to an environement variable:
+Obtain the Azure OpenAI API key and save it to an environment variable:
 
 ```shell
 export AZ_OPENAI_API_KEY=<your-api-key>
@@ -311,7 +311,7 @@ You should receive a response similar to the following:
 
 The following example demonstrates how you can configure the `ai-proxy` Plugin to proxy requests to embedding models. This example will use the OpenAI embedding model endpoint.
 
-Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environement variable:
+Obtain the OpenAI [API key](https://openai.com/blog/openai-api) and save it to an environment variable:
 
 ```shell
 export OPENAI_API_KEY=<your-api-key>
