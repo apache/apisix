@@ -17,8 +17,6 @@
 local _M = {}
 local core = require("apisix.core")
 local http = require("resty.http")
-local plugin = require("apisix.plugin")
-local ngx = ngx
 
 local function build_request_opts(conf, ctx)
     -- Get upstream server
@@ -59,7 +57,7 @@ local function build_request_opts(conf, ctx)
     return opts
 end
 
-_M.proxy_upstream = function (conf, ctx)
+_M.request = function (conf, ctx)
     -- Build request options
     local opts, err = build_request_opts(conf, ctx)
     if not opts then
@@ -77,7 +75,8 @@ _M.proxy_upstream = function (conf, ctx)
     end
 
     -- Send request
-    local res, err = httpc:request_uri(opts.scheme .. "://" .. opts.host .. ":" .. opts.port .. opts.path, {
+    local res, err = httpc:request_uri(opts.scheme .. "://" .. opts.host .. ":" ..
+    opts.port .. opts.path, {
         method = opts.method,
         headers = opts.headers,
         query = opts.query,
@@ -103,7 +102,6 @@ _M.proxy_upstream = function (conf, ctx)
         core.response.set_header(k, v)
     end
 
-    plugin.lua_body_filter(res.body, ctx)
     -- Return response body and status code
     return res.status, res.body
 end

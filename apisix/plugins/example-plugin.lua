@@ -19,7 +19,9 @@ local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
 local http = require("resty.http")
-local proxy_upstream = require("apisix.proxy_upstream").proxy_upstream
+local lua_proxy_request = require("apisix.lua_proxy").request
+
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local schema = {
     type = "object",
@@ -104,7 +106,7 @@ function _M.access(conf, ctx)
 
     local ok, err = upstream.check_schema(up_conf)
     if not ok then
-        return 500, err
+        return HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     local matched_route = ctx.matched_route
@@ -118,8 +120,11 @@ function _M.before_proxy(conf, ctx)
     core.log.warn("plugin before_proxy phase, conf: ", core.json.encode(conf))
 
     if ctx.lua_proxy_upstream then
-        local status, body = proxy_upstream(conf, ctx)
-        core.log.warn("plugin before_proxy phase, lua proxy upstream response: ", core.json.encode(body))
+        local status, body = lua_proxy_request(conf, ctx)
+        if status ~= 200 then
+            return status, body
+        end
+        core.log.warn("lua proxy upstream response: ", core.json.encode(body))
         plugin.lua_body_filter(conf, ctx, body)
     end
 end
@@ -132,27 +137,23 @@ function _M.lua_body_filter(conf, ctx, body)
     local httpc, err = http.new()
     if err then
         core.log.warn("failed to create http client: ", err)
-        return 500
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local res, err = httpc:request_uri(conf.request_uri, {
         method = conf.method,
-
     })
     if not res then
         core.log.warn("failed to request in lua_body_filter: ", err)
-        return 500
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
-    for k, v in pairs(res.headers) do
-        core.response.set_header(k, v)
-    end
     core.response.set_header("Content-Length", nil)
 
     local res_body, err = core.json.decode(res.body)
     if err then
         core.log.warn("failed to decode response body: ", err)
-        return 500
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     return res.status, res_body
