@@ -892,7 +892,6 @@ end
 
 function _M.http_balancer_phase()
     local api_ctx = ngx.ctx.api_ctx
-
     if not api_ctx then
         core.log.error("invalid api_ctx")
         return core.response.exit(500)

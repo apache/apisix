@@ -17,19 +17,28 @@
 local _M = {}
 local core = require("apisix.core")
 local http = require("resty.http")
+local ngx_re = require("ngx.re")
+
+local ngx_print = ngx.print
+local ngx_flush = ngx.flush
+
+local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+
 
 local function handle_error(err)
     if core.string.find(err, "timeout") then
-        return 504
+        return HTTP_GATEWAY_TIMEOUT
     end
-    return 500
+    return HTTP_INTERNAL_SERVER_ERROR
 end
+
 
 local function build_request_opts(conf, ctx)
     -- Get upstream server
-    local server, err = ctx.picked_server
-    if err then
-        return nil, "no picked server: " .. err
+    local server = ctx.picked_server
+    if not server then
+        return nil, "no picked server"
     end
 
     -- Build request options
@@ -66,10 +75,10 @@ end
 
 
 local function read_response(ctx, res)
-    local body_reader, err = res.body_reader
-    if err then
-        core.log.warn("failed to get response body reader: ", err)
-        return 500
+    local body_reader = res.body_reader
+    if not body_reader then
+        core.log.warn("failed to get response body reader: ")
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local content_type = res.headers["Content-Type"]
@@ -80,10 +89,7 @@ local function read_response(ctx, res)
             local chunk, err = body_reader() -- will read chunk by chunk
             if err then
                 core.log.warn("failed to read response chunk: ", err)
-                if core.string.find(err, "timeout") then
-                    return 504
-                end
-                return 500
+                return handle_error(err)
             end
             if not chunk then
                 return
@@ -114,12 +120,10 @@ local function read_response(ctx, res)
                     goto CONTINUE
                 end
 
-                local data, err = core.json.decode(parts[2])
                 if err then
                     core.log.warn("failed to decode data event [", parts[2], "] to json: ", err)
                     goto CONTINUE
                 end
-
             end
 
             ::CONTINUE::
@@ -129,32 +133,29 @@ local function read_response(ctx, res)
     local raw_res_body, err = res:read_body()
     if err then
         core.log.warn("failed to read response body: ", err)
-        if core.string.find(err, "timeout") then
-            return 504
-        end
-        return 500
+        return handle_error(err)
     end
 
     return res.status, raw_res_body
 end
 
 
-_M.request = function (conf, ctx)
+function _M.request(conf, ctx)
     -- Build request options
     local opts, err = build_request_opts(conf, ctx)
     if err then
         core.log.error("failed to build request options: ", err)
-        return 500
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     -- Create HTTP client
     local httpc, err = http.new()
-    if not httpc then
-        return nil, "failed to create http client to send request to LLM server: " .. err
+    if err then
+        return nil, "failed to create http client: " .. err
     end
     httpc:set_timeout(conf.timeout)
 
-    -- Send request
+    -- Connect to upstream
     local ok, err = httpc:connect({
         scheme = opts.scheme,
         host = opts.host,
@@ -168,23 +169,27 @@ _M.request = function (conf, ctx)
         return nil, "failed to connect to upstream: " .. err
     end
 
+    -- Prepare request parameters
     local params = {
         method = opts.method,
         headers = opts.headers,
         keepalive = opts.keepalive,
         ssl_verify = opts.ssl_verify,
         path = opts.path,
-        query = opts.query_params,
+        query = opts.query,
         body = opts.body
     }
 
+    -- Send request
     local res, err = httpc:request(params)
     if not res then
         return nil, err
     end
 
+    -- Handle response
     local code, body = read_response(ctx, res)
 
+    -- Set keepalive for connection reuse
     if opts.keepalive then
         local _, err = httpc:set_keepalive(opts.keepalive_timeout, opts.keepalive_pool)
         if err then
