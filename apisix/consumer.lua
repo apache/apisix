@@ -290,6 +290,8 @@ local function filter(consumer)
         return
     end
 
+    plugin.set_plugins_meta_parent(consumer.value.plugins, consumer)
+
     -- We expect the id is the same as username. Fix up it here if it isn't.
     consumer.value.id = consumer.value.username
 end
