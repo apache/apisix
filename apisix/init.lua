@@ -891,7 +891,6 @@ end
 
 
 function _M.http_balancer_phase()
-    core.log.error("enter http_balancer_phase")
     local api_ctx = ngx.ctx.api_ctx
 
     if not api_ctx then

@@ -119,9 +119,7 @@ function _M.before_proxy(conf, ctx)
 
     if ctx.lua_proxy_upstream then
         local status, body = proxy_upstream(conf, ctx)
-
-        core.log.debug("proxy upstream response: ", core.json.encode(body))
-
+        core.log.warn("plugin before_proxy phase, lua proxy upstream response: ", core.json.encode(body))
         plugin.lua_body_filter(conf, ctx, body)
     end
 end
@@ -129,20 +127,35 @@ end
 
 function _M.lua_body_filter(conf, ctx, body)
     core.log.warn("plugin lua_body_filter phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin lua_body_filter phase, body: ", core.json.encode(body))
 
     local httpc, err = http.new()
     if err then
+        core.log.warn("failed to create http client: ", err)
         return 500
     end
 
     local res, err = httpc:request_uri(conf.request_uri, {
         method = conf.method,
+
     })
-    if err then
+    if not res then
+        core.log.warn("failed to request in lua_body_filter: ", err)
         return 500
     end
 
-    return res.status, res.body
+    for k, v in pairs(res.headers) do
+        core.response.set_header(k, v)
+    end
+    core.response.set_header("Content-Length", nil)
+
+    local res_body, err = core.json.decode(res.body)
+    if err then
+        core.log.warn("failed to decode response body: ", err)
+        return 500
+    end
+
+    return res.status, res_body
 end
 
 
