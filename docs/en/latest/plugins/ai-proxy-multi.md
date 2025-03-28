@@ -335,7 +335,7 @@ You should see a response similar to the following:
 
 The following example demonstrates how you can configure two models for load balancing and apply rate limiting by consumer.
 
-Create a consumer `johndoe` and a rate limiting quota of 10 tokens in a 60-second window on `openai-instance` instance:
+Create a Consumer `johndoe` and a rate limiting quota of 10 tokens in a 60-second window on `openai-instance` instance:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -373,7 +373,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
   }'
 ```
 
-Create another consumer `janedoe` and a rate limiting quota of 10 tokens in a 60-second window on `deepseek-instance` instance:
+Create another Consumer `janedoe` and a rate limiting quota of 10 tokens in a 60-second window on `deepseek-instance` instance:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
