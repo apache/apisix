@@ -63,16 +63,16 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-
       "request_timeout": 3,
       "request_headers": {
         "Authorization": "token"
-      },
-      "batch_span_processor": {
-        "drop_on_queue_full": false,
-        "max_queue_size": 1024,
-        "batch_timeout": 2,
-        "inactive_timeout": 1,
-        "max_export_batch_size": 16
-      },
-      "set_ngx_var": false
-    }
+      }
+    },
+    "batch_span_processor": {
+      "drop_on_queue_full": false,
+      "max_queue_size": 1024,
+      "batch_timeout": 2,
+      "inactive_timeout": 1,
+      "max_export_batch_size": 16
+    },
+    "set_ngx_var": false
 }'
 ```
 
