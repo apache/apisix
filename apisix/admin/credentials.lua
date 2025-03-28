@@ -18,9 +18,33 @@ local core     = require("apisix.core")
 local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
+local consumer = require("apisix.consumer")
+local utils = require("apisix.admin.utils")
 local pairs    = pairs
 
-local function check_conf(_id, conf, _need_id, schema)
+local function check_duplicate_key(id, name, plugin_conf)
+    local decrypted_conf = core.table.deepcopy(plugin_conf)
+    plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
+
+    local key_field = utils.plugin_key_map[name]
+    if not key_field then
+        return true
+    end
+
+    local key_value = decrypted_conf[key_field]
+    if not key_value then
+        return true
+    end
+
+    local consumer = consumer.find_consumer(name, key_field, key_value)
+    if consumer and consumer.credential_id ~= id then
+        return nil, "duplicate key found with consumer: " .. consumer.username
+    end
+
+    return true
+end
+
+local function check_conf(id, conf, _need_id, schema)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -32,13 +56,19 @@ local function check_conf(_id, conf, _need_id, schema)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        for name, _ in pairs(conf.plugins) do
+        for name, plugin_conf in pairs(conf.plugins) do
             local plugin_obj = plugin.get(name)
             if not plugin_obj then
                 return nil, {error_msg = "unknown plugin " .. name}
             end
+
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
+            end
+
+            local ok, err = check_duplicate_key(id, name, plugin_conf)
+            if not ok then
+                return nil, {error_msg = err}
             end
         end
     end
