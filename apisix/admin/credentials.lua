@@ -22,6 +22,28 @@ local consumer = require("apisix.consumer")
 local utils = require("apisix.admin.utils")
 local pairs    = pairs
 
+local function check_duplicate_key(id, name, plugin_conf)
+    local decrypted_conf = core.table.deepcopy(plugin_conf)
+    plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
+
+    local key_field = utils.plugin_key_map[name]
+    if not key_field then
+        return true
+    end
+
+    local key_value = decrypted_conf[key_field]
+    if not key_value then
+        return true
+    end
+
+    local consumer = consumer.find_consumer(name, key_field, key_value)
+    if consumer and consumer.credential_id ~= id then
+        return nil, "duplicate key found with consumer: " .. consumer.username
+    end
+
+    return true
+end
+
 local function check_conf(id, conf, _need_id, schema)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -44,27 +66,10 @@ local function check_conf(id, conf, _need_id, schema)
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
             end
 
-            -- check duplicate key
-            local decrypted_conf = core.table.deepcopy(plugin_conf)
-            plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
-
-            local key_field = utils.plugin_key_map[name]
-            if key_field then
-                local key_value = decrypted_conf[key_field]
-
-                if key_value then
-                    local consumer = consumer
-                      .find_consumer(name, key_field, key_value)
-
-                    if consumer and consumer.credential_id ~= id then
-                        return nil, {
-                          error_msg = "duplicate key found with consumer: "
-                            .. consumer.username
-                        }
-                    end
-                end
+            local ok, err = check_duplicate_key(id, name, plugin_conf)
+            if not ok then
+                return nil, {error_msg = err}
             end
-
         end
     end
 

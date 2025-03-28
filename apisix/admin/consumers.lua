@@ -23,6 +23,45 @@ local consumer = require("apisix.consumer")
 local utils = require("apisix.admin.utils")
 
 
+local function check_duplicate_key(username, plugins_conf)
+    if not plugins_conf then
+        return true
+    end
+
+    for plugin_name, plugin_conf in pairs(plugins_conf) do
+        local plugin_obj = plugin.get(plugin_name)
+        if not plugin_obj then
+            return nil, "unknown plugin " .. plugin_name
+        end
+
+        if plugin_obj.type ~= "auth" then
+            goto continue
+        end
+
+        local plugin_conf_copy = core.table.deepcopy(plugin_conf)
+        plugin.decrypt_conf(plugin_name, plugin_conf_copy, core.schema.TYPE_CONSUMER)
+        
+        local key_field = utils.plugin_key_map[plugin_name]
+        if not key_field then
+            goto continue
+        end
+
+        local key_value = plugin_conf_copy[key_field]
+        if not key_value then
+            goto continue
+        end
+
+        local consumer = consumer.find_consumer(plugin_name, key_field, key_value)
+        if consumer and consumer.username ~= username then
+            return nil, "duplicate key found with consumer: " .. consumer.username
+        end
+
+        ::continue::
+    end
+    
+    return true
+end
+
 local function check_conf(username, conf, need_username, schema)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -39,35 +78,9 @@ local function check_conf(username, conf, need_username, schema)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        -- check duplicate key
-        for plugin_name, plugin_conf in pairs(conf.plugins or {}) do
-            local plugin_obj = plugin.get(plugin_name)
-            if not plugin_obj then
-                return nil, {error_msg = "unknown plugin " .. plugin_name}
-            end
-
-            if plugin_obj.type == "auth" then
-                local plugin_conf_copy = core.table.deepcopy(plugin_conf)
-                plugin.decrypt_conf(plugin_name, plugin_conf_copy, core.schema.TYPE_CONSUMER)
-
-                local key_field = utils.plugin_key_map[plugin_name]
-
-                if key_field then
-                    local key_value = plugin_conf_copy[key_field]
-
-                    if key_value then
-                        local consumer = consumer
-                            .find_consumer(plugin_name, key_field, key_value)
-
-                        if consumer and consumer.username ~= conf.username then
-                            return nil, {
-                                error_msg = "duplicate key found with consumer: "
-                                    .. consumer.username
-                            }
-                        end
-                    end
-                end
-            end
+        local ok, err = check_duplicate_key(conf.username, conf.plugins)
+        if not ok then
+            return nil, {error_msg = err}
         end
     end
 
