@@ -19,7 +19,7 @@
       {
         "type": "panel",
         "id": "timeseries",
-        "name": "Graph",
+        "name": "timeseries",
         "version": ""
       },
       {
