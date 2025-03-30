@@ -18,6 +18,7 @@ local _M = {}
 local core = require("apisix.core")
 local http = require("resty.http")
 local ngx_re = require("ngx.re")
+local ipairs = ipairs
 
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
