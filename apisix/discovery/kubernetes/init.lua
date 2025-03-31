@@ -283,13 +283,21 @@ local function read_env(key)
     return key
 end
 
+local function read_token(token_file)
+    local token, err = util.read_file(token_file)
+    if err then
+        return nil, err
+    end
+
+    -- remove possible extra whitespace
+    return util.trim(token)
+end
 
 local function get_apiserver(conf)
     local apiserver = {
         schema = "",
         host = "",
         port = "",
-        token = ""
     }
 
     apiserver.schema = conf.service.schema
@@ -319,27 +327,36 @@ local function get_apiserver(conf)
     end
 
     if conf.client.token then
-        apiserver.token, err = read_env(conf.client.token)
+        local token, err = read_env(conf.client.token)
         if err then
             return nil, err
         end
+        apiserver.token = util.trim(token)
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        local file
-        file, err = read_env(conf.client.token_file)
-        if err then
-            return nil, err
-        end
+        setmetatable(apiserver, {
+            __index = function(_, key)
+                if key ~= "token" then
+                    return
+                end
 
-        apiserver.token, err = util.read_file(file)
-        if err then
-            return nil, err
-        end
+                local token_file, err = read_env(conf.client.token_file)
+                if err then
+                    core.log.error("failed to read token file path: ", err)
+                    return
+                end
+
+                local token, err = read_token(token_file)
+                if err then
+                    core.log.error("failed to read token from file: ", err)
+                    return
+                end
+                core.log.debug("re-read the token value")
+                return token
+            end
+        })
     else
         return nil, "one of [client.token,client.token_file] should be set but none"
     end
-
-    -- remove possible extra whitespace
-    apiserver.token = apiserver.token:gsub("%s+", "")
 
     if apiserver.schema == "https" and apiserver.token == "" then
         return nil, "apiserver.token should set to non-empty string when service.schema is https"

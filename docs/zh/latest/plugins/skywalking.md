@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - Plugin
   - SkyWalking
-description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking 插件将 metrics 上报到 Apache SkyWalking（一个开源的 APM）。
+description: skywalking 插件支持与 Apache SkyWalking 集成以进行请求跟踪。
 ---
 
 <!--
@@ -27,96 +27,66 @@ description: 本文将介绍 API 网关 Apache APISIX 如何通过 skywalking �
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/skywalking" />
+</head>
+
 ## 描述
 
-`skywalking` 插件用于与 [Apache SkyWalking](https://github.com/apache/skywalking) 集成。
+`skywalking` 插件支持与 [Apache SkyWalking](https://skywalking.apache.org) 集成以进行请求跟踪。
 
-SkyWalking 使用其原生的 NGINX Lua tracer 从服务和 URI 角度提供了分布式追踪、拓扑分析以及 metrics。
+SkyWalking 使用其原生的 Nginx Lua 跟踪器从服务和 URI 角度提供跟踪、拓扑分析和指标。APISIX 支持 HTTP 协议与 SkyWalking 服务器交互。
 
 服务端目前支持 HTTP 和 gRPC 两种协议，在 APISIX 中目前只支持 HTTP 协议。
+
+## 静态配置
+
+默认情况下，插件的服务名称和端点地址已在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中预先配置。
+
+要自定义这些值，请将相应的配置添加到 `config.yaml`。例如：
+
+```yaml
+plugin_attr:
+  skywalking:
+    report_interval: 3      # 上报间隔时间（秒）。
+    service_name: APISIX    # SkyWalking 记者的服务名称。
+    service_instance_name: "APISIX Instance Name"   # SkyWalking 记者的服务实例名称。
+                                                    # 设置为 $hostname 可获取本地主机名。
+    endpoint_addr: http://127.0.0.1:12800           # SkyWalking HTTP 端点。
+```
+
+重新加载 APISIX 以使更改生效。
 
 ## 属性
 
 | 名称         | 类型    | 必选项 | 默认值  | 有效值       | 描述                                                  |
 | ------------ | ------ | ------ | ------ | ------------ | ----------------------------------------------------- |
-| sample_ratio | number | 是     | 1      | [0.00001, 1] | 采样的比例。设置为 `1` 时，将对所有请求进行采样。         |
+| sample_ratio | number | 是     | 1      | [0.00001, 1] | 请求采样频率。将采样率设置为 `1` 表示对所有请求进行采样。 |
 
-### 如何设置 Endpoint
+## 示例
 
-你可以在配置文件（`./conf/config.yaml`）中配置以下属性：
+要遵循示例，请按照 [Skywalking 的文档](https://skywalking.apache.org/docs/main/next/en/setup/backend/backend-docker/) 使用 Docker Compose 启动存储、OAP 和 Booster UI。设置完成后，OAP 服务器应监听 `12800`，您应该能够通过 [http://localhost:8080](http://localhost:8080) 访问 UI。
 
-| 名称                   | 类型    | 默认值                    | 描述                                                               |
-| --------------------- | ------- | ------------------------ | ------------------------------------------------------------------ |
-| service_name          | string  | "APISIX"                 | SkyWalking 上报的服务名称。                                         |
-| service_instance_name | string  | "APISIX Instance Name"   | SkyWalking 上报的服务实例名。设置为 `$hostname` 时，将获取本机主机名。 |
-| endpoint_addr         | string  | "http://127.0.0.1:12800" | SkyWalking 的 HTTP endpoint 地址，例如：`http://127.0.0.1:12800`。  |
-| report_interval       | integer | SkyWalking 客户端内置的值 | 上报间隔时间，单位为秒。                                             |
+更新 APISIX 配置文件以启用 `skywalking` 插件（默认情况下处于禁用状态），并更新端点地址：
 
-以下是配置示例：
+```yaml title="config.yaml"
+plugins:
+  - skywalking
+  - ...
 
-```yaml title="./conf/config.yaml"
 plugin_attr:
   skywalking:
+    report_interval: 3
     service_name: APISIX
-    service_instance_name: "APISIX Instance Name"
-    endpoint_addr: http://127.0.0.1:12800
+    service_instance_name: APISIX Instance
+    endpoint_addr: http://192.168.2.103:12800
 ```
 
-### 上游服务示例代码
+重新加载 APISIX 以使配置更改生效。
 
-```java title="Java with Spring Boot"
-package com.lenovo.ai.controller;
+:::
 
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-import javax.servlet.http.HttpServletRequest;
-
-/**
- * @author cyxinda
- * @create 2020-05-29 14:02
- * @desc skywalking test controller
- **/
-@RestController
-public class TestController {
-    @RequestMapping("/uid/{count}")
-    public String getUidList(@PathVariable("count") String countStr, HttpServletRequest request) {
-        System.out.println("counter:::::"+countStr);
-       return "OK";
-    }
-}
-
-```
-
-在启动服务前，需要配置 SkyWalking agent：
-
-```shell title="agent/config/agent.config"
-agent.service_name=yourservername
-collector.backend_service=10.110.149.175:11800
-```
-
-使用以下命令启动服务脚本：
-
-```shell
-nohup java -javaagent:/root/skywalking/app/agent/skywalking-agent.jar \
--jar /root/skywalking/app/app.jar \
---server.port=8089 \
-2>&1 > /root/skywalking/app/logs/nohup.log &
-```
-
-## 启用插件
-
-该插件默认是禁用状态，你需要将其添加到配置文件（`./conf/config.yaml`）中才可以启用它：
-
-```yaml title="./conf/config.yaml"
-plugins:
-  - ...
-  - skywalking
-```
-
-配置完成后，重新加载 APISIX，此时 APISIX 会创建一个后台定时器，向 SkyWalking OAP 服务定期上报数据。
-
-以下示例展示了如何在指定路由中启用 `skywalking` 插件：
+以下示例展示了如何通过 Admin API 配置插件元数据：
 
 :::note
 
@@ -128,113 +98,83 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 跟踪所有请求
+
+以下示例演示了如何跟踪通过路由的所有请求。
+
+使用 `skywalking` 创建路由，并将采样率配置为 1 以跟踪所有请求：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uris": [
-        "/uid/*"
-    ],
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-route",
+    "uri": "/anything",
     "plugins": {
-        "skywalking": {
-            "sample_ratio": 1
-        }
+      "skywalking": {
+        "sample_ratio": 1
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "10.110.149.175:8089": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
 
-<!-- 你也可以通过 web 界面来完成上面的操作，先增加一个 route，然后在插件页面中添加 SkyWalking 插件：
-
-![plugin_skywalking](../../../assets/images/plugin/skywalking-1.png) -->
-
-## 测试插件
-
-首先你可以通过 [Docker Compose](https://docs.docker.com/compose/install/) 启动 SkyWalking OAP 和 SkyWalking UI：
-
-  - 在 usr/local 中创建 `skywalking.yaml` 文件。
-
-    ```yaml
-    version: "3"
-    services:
-    oap:
-        image: apache/skywalking-oap-server:8.9.1
-        restart: always
-        ports:
-        - "12800:12800/tcp"
-
-    ui:
-        image: apache/skywalking-ui:8.9.1
-        restart: always
-        ports:
-        - "8080:8080/tcp"
-        environment:
-        SW_OAP_ADDRESS: http://oap:12800
-    ```
-
-  - 使用以下命令启动上述创建的文件：
-
-    ```shell
-    docker-compose -f skywalking.yaml up -d
-    ```
-
-    完成上述操作后，就已经启动了 SkyWalking 以及 SkyWalking  Web UI。你可以使用以下命令确认容器是否正常运行：
-
-    ```shell
-    docker ps
-    ```
-
-接下来你可以通过以下命令访问 APISIX：
+向路由发送几个请求：
 
 ```shell
-curl -v http://10.110.149.192:9080/uid/12
+curl -i "http://127.0.0.1:9080/anything"
 ```
 
-```
-HTTP/1.1 200 OK
-OK
-...
-```
+您应该收到 `HTTP/1.1 200 OK` 响应。
 
-完成上述步骤后，打开浏览器，访问 SkyWalking 的 UI 页面，你可以看到如下服务拓扑图：
+在 [Skywalking UI](http://localhost:8080) 中，导航到 __General Service__ > __Services__。您应该看到一个名为 `APISIX` 的服务，其中包含与您的请求相对应的跟踪：
 
-![plugin_skywalking](../../../assets/images/plugin/skywalking-4.png)
+![SkyWalking APISIX 跟踪](https://static.apiseven.com/uploads/2025/01/15/UdwiO8NJ_skywalking-traces.png)
 
-并且可以看到服务追踪列表：
+### 将跟踪与日志关联
 
-![plugin_skywalking](../../../assets/images/plugin/skywalking-5.png)
+以下示例演示了如何在路由上配置 `skywalking-logger` 插件，以记录到达路由的请求信息。
 
-## 删除插件
-
-当你需要禁用 `skywalking` 插件时，可通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+使用 `skywalking-logger` 插件创建路由，并使用你的 OAP 服务器 URI 配置该插件：
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uris": [
-        "/uid/*"
-    ],
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "skywalking-logger-route",
+    "uri": "/anything",
     "plugins": {
+      "skywalking": {
+        "sample_ratio": 1
+      },
+      "skywalking-logger": {
+        "endpoint_addr": "http://192.168.2.103:12800"
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "10.110.149.175:8089": 1
-        }
+      "nodes": {
+        "httpbin.org:80": 1
+      },
+      "type": "roundrobin"
     }
-}'
+  }'
 ```
 
-如果你想完全禁用 `skywalking` 插件，即停掉后台上报数据的定时器，就需要从配置文件（`./conf/config.yaml`）注释该插件：
+生成几个对路由的请求：
 
-```yaml title="./conf/config.yaml"
-plugins:
-  - ...
-  #- skywalking
+```shell
+curl -i "http://127.0.0.1:9080/anything"
 ```
+
+您应该会收到 `HTTP/1.1 200 OK` 响应。
+
+在 [Skywalking UI](http://localhost:8080) 中，导航到 __General Service__ > __Services__。您应该会看到一个名为 `APISIX` 的服务，其中包含与您的请求相对应的跟踪，您可以在其中查看相关日志：
+
+![trace context](https://static.apiseven.com/uploads/2025/01/16/soUpXm6b_trace-view-logs.png)
+
+![associated log](https://static.apiseven.com/uploads/2025/01/16/XD934LvU_associated-logs.png)

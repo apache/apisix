@@ -1,11 +1,11 @@
 ---
-title: ai-content-moderation
+title: ai-aws-content-moderation
 keywords:
   - Apache APISIX
   - API Gateway
   - Plugin
-  - ai-content-moderation
-description: This document contains information about the Apache APISIX ai-content-moderation Plugin.
+  - ai-aws-content-moderation
+description: This document contains information about the Apache APISIX ai-aws-content-moderation Plugin.
 ---
 
 <!--
@@ -29,7 +29,7 @@ description: This document contains information about the Apache APISIX ai-conte
 
 ## Description
 
-The `ai-content-moderation` plugin processes the request body to check for toxicity and rejects the request if it exceeds the configured threshold.
+The `ai-aws-content-moderation` plugin processes the request body to check for toxicity and rejects the request if it exceeds the configured threshold.
 
 **_This plugin must be used in routes that proxy requests to LLMs only._**
 
@@ -37,15 +37,15 @@ The `ai-content-moderation` plugin processes the request body to check for toxic
 
 ## Plugin Attributes
 
-| **Field**                                 | **Required** | **Type** | **Description**                                                                                                                                                                                                                                         |
-| ----------------------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| provider.aws_comprehend.access_key_id     | Yes          | String   | AWS access key ID                                                                                                                                                                                                                                       |
-| provider.aws_comprehend.secret_access_key | Yes          | String   | AWS secret access key                                                                                                                                                                                                                                   |
-| provider.aws_comprehend.region            | Yes          | String   | AWS region                                                                                                                                                                                                                                              |
-| provider.aws_comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                                                                                                                                    |
-| moderation_categories                     | No           | Object   | Key-value pairs of moderation category and their score. In each pair, the key should be one of the `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the value should be between 0 and 1 (inclusive). |
-| moderation_threshold                            | No           | Number   | The degree to which content is harmful, offensive, or inappropriate. A higher value indicates more toxic content allowed. Range: 0 - 1. Default: 0.5                                                                                                    |
-| llm_provider                              | Yes          | String   | Name of the LLM provider that this route will proxy requests to.                                                                                                                                                                                        |
+| **Field**                    | **Required** | **Type** | **Description**                                                                                                                                                                                                                                         |
+| ---------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| comprehend.access_key_id     | Yes          | String   | AWS access key ID                                                                                                                                                                                                                                       |
+| comprehend.secret_access_key | Yes          | String   | AWS secret access key                                                                                                                                                                                                                                   |
+| comprehend.region            | Yes          | String   | AWS region                                                                                                                                                                                                                                              |
+| comprehend.endpoint          | No           | String   | AWS Comprehend service endpoint. Must match the pattern `^https?://`                                                                                                                                                                                    |
+| comprehend.ssl_verify        | No           | String   | Enables SSL certificate verification.                                                                                                                                                                                                                   |
+| moderation_categories        | No           | Object   | Key-value pairs of moderation category and their score. In each pair, the key should be one of the `PROFANITY`, `HATE_SPEECH`, `INSULT`, `HARASSMENT_OR_ABUSE`, `SEXUAL`, or `VIOLENCE_OR_THREAT`; and the value should be between 0 and 1 (inclusive). |
+| moderation_threshold         | No           | Number   | The degree to which content is harmful, offensive, or inappropriate. A higher value indicates more toxic content allowed. Range: 0 - 1. Default: 0.5                                                                                                    |
 
 ## Example usage
 
@@ -58,7 +58,7 @@ SECRET_ACCESS_KEY=aws-comprehend-secret-access-key-here
 OPENAI_KEY=open-ai-key-here
 ```
 
-Create a route with the `ai-content-moderation` and `ai-proxy` plugin like so:
+Create a route with the `ai-aws-content-moderation` and `ai-proxy` plugin like so:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
@@ -66,18 +66,15 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
     "uri": "/post",
     "plugins": {
-      "ai-content-moderation": {
-        "provider": {
-          "aws_comprehend": {
-            "access_key_id": "'"$ACCESS_KEY_ID"'",
-            "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
-            "region": "us-east-1"
-          }
+      "ai-aws-content-moderation": {
+        "comprehend": {
+          "access_key_id": "'"$ACCESS_KEY_ID"'",
+          "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
+          "region": "us-east-1"
         },
         "moderation_categories": {
           "PROFANITY": 0.5
-        },
-        "llm_provider": "openai"
+        }
       },
       "ai-proxy": {
         "auth": {
@@ -167,15 +164,12 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
     "uri": "/post",
     "plugins": {
-      "ai-content-moderation": {
-        "provider": {
-          "aws_comprehend": {
-            "access_key_id": "'"$ACCESS_KEY_ID"'",
-            "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
-            "region": "us-east-1"
-          }
+      "ai-aws-content-moderation": {
+        "comprehend": {
+          "access_key_id": "'"$ACCESS_KEY_ID"'",
+          "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
+          "region": "us-east-1"
         },
-        "llm_provider": "openai",
         "moderation_categories": {
           "PROFANITY": 0.5,
           "HARASSMENT_OR_ABUSE": 0.7,
@@ -216,9 +210,9 @@ curl "http://127.0.0.1:9180/apisix/admin/routes/1" -X PUT \
   -d '{
   "uri": "/post",
   "plugins": {
-    "ai-content-moderation": {
+    "ai-aws-content-moderation": {
       "provider": {
-        "aws_comprehend": {
+        "comprehend": {
           "access_key_id": "'"$ACCESS_KEY_ID"'",
           "secret_access_key": "'"$SECRET_ACCESS_KEY"'",
           "region": "us-east-1"
