@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - IP restriction
   - ip-restriction
-description: This document contains information about the Apache APISIX ip-restriction Plugin.
+description: The ip-restriction Plugin supports restricting access to upstream resources by IP addresses, through either configuring a whitelist or blacklist of IP addresses.
 ---
 
 <!--
@@ -28,11 +28,13 @@ description: This document contains information about the Apache APISIX ip-restr
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/ip-restriction" />
+</head>
+
 ## Description
 
-The `ip-restriction` Plugin allows you to restrict access to a Service or a Route by either whitelisting or blacklisting IP addresses.
-
-Single IPs, multiple IPs or even IP ranges in CIDR notation like `10.10.10.0/24` can be used.
+The `ip-restriction` Plugin supports restricting access to upstream resources by IP addresses, through either configuring a whitelist or blacklist of IP addresses. Restricting IP to resources helps prevent unauthorized access and harden API security.
 
 ## Attributes
 
@@ -45,15 +47,16 @@ Single IPs, multiple IPs or even IP ranges in CIDR notation like `10.10.10.0/24`
 
 :::note
 
-Either one of `whitelist` or `blacklist` attribute must be specified. They cannot be used together.
+At least one of the `whitelist` or `blacklist` should be configured, but they cannot be configured at the same time.
 
 :::
 
-## Enable Plugin
+## Examples
 
-You can enable the Plugin on a Route or a Service as shown below:
+The examples below demonstrate how you can configure the `ip-restriction` Plugin for different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -62,103 +65,90 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### Restrict Access by Whitelisting
+
+The following example demonstrates how you can whitelist a list of IP addresses that should have access to the upstream resource and customize the error message for access denial.
+
+Create a Route with the `ip-restriction` Plugin to whitelist a range of IPs and customize the error message when the access is denied:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    },
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ip-restriction-route",
+    "uri": "/anything",
     "plugins": {
-        "ip-restriction": {
-            "whitelist": [
-                "127.0.0.1",
-                "113.74.26.106/24"
-            ]
-        }
-    }
-}'
-```
-
-To return a custom message when an IP address is not allowed access, configure it in the Plugin as shown below:
-
-```json
-"plugins": {
-    "ip-restriction": {
+      "ip-restriction": {
         "whitelist": [
-            "127.0.0.1",
-            "113.74.26.106/24"
+          "192.168.0.1/24"
         ],
-        "message": "Do you want to do something bad?"
-    }
-}
-```
-
-## Example usage
-
-After you have configured the Plugin as shown above, when you make a request from the IP `127.0.0.1`:
-
-```shell
-curl http://127.0.0.1:9080/index.html -i
-```
-
-```shell
-HTTP/1.1 200 OK
-...
-```
-
-But if you make requests from `127.0.0.2`:
-
-```shell
-curl http://127.0.0.1:9080/index.html -i --interface 127.0.0.2
-```
-
-```
-HTTP/1.1 403 Forbidden
-...
-{"message":"Your IP address is not allowed"}
-```
-
-To change the whitelisted/blacklisted IPs, you can update the Plugin configuration. The changes are hot reloaded and there is no need to restart the service.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+        "message": "Access denied"
+      }
     },
-    "plugins": {
-        "ip-restriction": {
-            "whitelist": [
-                "127.0.0.2",
-                "113.74.26.106/24"
-            ]
-        }
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## Delete Plugin
-
-To remove the `ip-restriction` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+Send a request to the Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri": "/index.html",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
+curl -i "http://127.0.0.1:9080/anything"
 ```
+
+If your IP is allowed, you should receive an `HTTP/1.1 200 OK` response. If not, you should receive an `HTTP/1.1 403 Forbidden` response with the following error message:
+
+```text
+{"message":"Access denied"}
+```
+
+### Restrict Access Using Modified IP
+
+The following example demonstrates how you can modify the IP used for IP restriction, using the `real-ip` Plugin. This is particularly useful if APISIX is behind a reverse proxy and the real client IP is not available to APISIX.
+
+Create a Route with the `ip-restriction` Plugin to whitelist a specific IP address and obtain client IP address from the URL parameter `realip`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "ip-restriction-route",
+    "uri": "/anything",
+    "plugins": {
+      "ip-restriction": {
+        "whitelist": [
+          "192.168.1.241"
+        ]
+      },
+      "real-ip": {
+        "source": "arg_realip"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+      "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?realip=192.168.1.241"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
+Send another request with a different IP address:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?realip=192.168.10.24"
+```
+
+You should receive an `HTTP/1.1 403 Forbidden` response.
