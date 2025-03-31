@@ -65,7 +65,7 @@ local function build_http_request(conf, ctx)
     if conf.with_body then
         local body, err = get_body_for_request()
         if err then
-            core.log.warn(err)
+            core.log.error(err)
         else
             http.body = body
         end
