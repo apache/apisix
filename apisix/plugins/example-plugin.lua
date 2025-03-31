@@ -20,6 +20,7 @@ local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
 local http = require("resty.http")
 local lua_proxy_request = require("apisix.lua_proxy").request
+local plugin_lua_body_filter = require("apisix.lua_proxy").lua_body_filter
 
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
@@ -125,7 +126,7 @@ function _M.before_proxy(conf, ctx)
             return status, body
         end
         core.log.warn("lua proxy upstream response: ", core.json.encode(body))
-        plugin.lua_body_filter(conf, ctx, body)
+        plugin_lua_body_filter(conf, ctx, body)
     end
 end
 
@@ -143,7 +144,7 @@ function _M.lua_body_filter(conf, ctx, body)
     local res, err = httpc:request_uri(conf.request_uri, {
         method = conf.method,
     })
-    if not res then
+    if err then
         core.log.warn("failed to request in lua_body_filter: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
