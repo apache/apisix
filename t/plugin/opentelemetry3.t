@@ -30,12 +30,6 @@ add_block_preprocessor(sub {
 plugins:
     - http-logger
     - opentelemetry
-plugin_attr:
-    opentelemetry:
-        set_ngx_var: true
-        batch_span_processor:
-            max_export_batch_size: 1
-            inactive_timeout: 0.5
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
@@ -93,6 +87,21 @@ __DATA__
                         "opentelemetry_trace_id": "$opentelemetry_trace_id",
                         "opentelemetry_span_id": "$opentelemetry_span_id"
                     }
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return body
+            end
+
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "batch_span_processor": {
+                        "max_export_batch_size": 1,
+                        "inactive_timeout": 0.5
+                    },
+                    "set_ngx_var": true
                 }]]
                 )
             if code >= 300 then
@@ -162,12 +171,33 @@ qr/request log: \{.*"opentelemetry_context_traceparent":"00-\w{32}-\w{16}-01".*\
 plugins:
     - http-logger
     - opentelemetry
-plugin_attr:
-    opentelemetry:
-        set_ngx_var: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            local code, body = t('/apisix/admin/plugin_metadata/opentelemetry',
+                ngx.HTTP_PUT,
+                [[{
+                    "set_ngx_var": false
+                }]]
+                )
+            if code >= 300 then
+                ngx.status = code
+                return body
+            end
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 4: trigger opentelemetry with open set variables
 --- request
 GET /hello
 --- response_body
 hello world
+--- wait: 1
 --- error_log eval
 qr/request log: \{.*"opentelemetry_context_traceparent":"".*\}/

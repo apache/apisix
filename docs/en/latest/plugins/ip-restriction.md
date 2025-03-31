@@ -38,11 +38,12 @@ The `ip-restriction` Plugin supports restricting access to upstream resources by
 
 ## Attributes
 
-| Name      | Type          | Required | Default                         | Valid values | Description                                                 |
-|-----------|---------------|----------|---------------------------------|--------------|-------------------------------------------------------------|
-| whitelist | array[string] | False    |                                 |              | List of IPs to whitelist. Support IPv4, IPv6, and CIDR notations.                   |
-| blacklist | array[string] | False    |                                 |              | List of IPs to blacklist. Support IPv4, IPv6, and CIDR notations.                    |
-| message   | string        | False    | "Your IP address is not allowed" | [1, 1024]    | Message returned when the IP address is denied access. |
+| Name          | Type          | Required | Default                          | Valid values | Description                                                            |
+|---------------|---------------|----------|----------------------------------|--------------|------------------------------------------------------------------------|
+| whitelist     | array[string] | False    |                                  |              | List of IPs or CIDR ranges to whitelist.                               |
+| blacklist     | array[string] | False    |                                  |              | List of IPs or CIDR ranges to blacklist.                               |
+| message       | string        | False    | "Your IP address is not allowed" | [1, 1024]    | Message returned when the IP address is not allowed access.            |
+| response_code | integer       | False    | 403                              | [403, 404]   | HTTP response code returned when the IP address is not allowed access. |
 
 :::note
 

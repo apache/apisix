@@ -35,42 +35,52 @@ description: opentelemetry 插件可用于根据 OpenTelemetry 协议规范上�
 
 `opentelemetry` 插件可用于根据 [OpenTelemetry Specification](https://opentelemetry.io/docs/reference/specification/) 协议规范上报 Traces 数据。该插件仅支持二进制编码的 OLTP over HTTP，即请求类型为 `application/x-protobuf` 的数据上报。
 
-## 静态配置
+## 配置
 
 默认情况下，服务名称、租户 ID、collector 和 batch span processor 的配置已预配置在[默认配置](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)中。
 
-要自定义这些值，请将相应的配置添加到 `config.yaml` 中。例如：
+您可以通过端点 `apisix/admin/plugin_metadata/opentelemetry` 更改插件的配置，例如：
 
-```yaml
-plugin_attr:
-  opentelemetry:
-    trace_id_source: x-request-id     # 指定追踪 ID 的来源，`x-request-id` 或 `random`。当设置为 `x-request-id` 时，
-                                      # `x-request-id` 头的值将用作追踪 ID。
-    resource:                         # 追加到追踪的额外资源。
-      service.name: APISIX            # 为 OpenTelemetry 追踪设置服务名称。
-    collector:
-      address: 127.0.0.1:4318       # 设置要发送追踪的 OpenTelemetry 收集器的地址。
-      request_timeout: 3            # 设置请求 OpenTelemetry 收集器的超时时间（秒）。
-      request_headers:              # 设置请求 OpenTelemetry 收集器时要包含的头信息。
-        Authorization: token        # 设置授权头以包含访问令牌。
-    batch_span_processor:           # 追踪跨度处理器。
-      drop_on_queue_full: false     # 当导出队列满时丢弃跨度。
-      max_queue_size: 1024          # 设置跨度导出队列的最大大小。
-      batch_timeout: 2              # 设置跨度批次在导出队列中等待的超时时间，
-                                    # 然后发送。
-      inactive_timeout: 1           # 设置跨度在导出队列中等待的超时时间，如果队列不满，则发送。
-      max_export_batch_size: 16     # 设置每个批次发送到 OpenTelemetry 收集器的跨度的最大数量。
-    set_ngx_var: false              # 将 opentelemetry 变量导出到 nginx 变量。
+:::note
+您可以从“config.yaml”获取“admin_key”,并使用以下命令保存到环境变量中：
+
+```bash
+admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
-重新加载 APISIX 以使更改生效。
+:::
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "trace_id_source": "x-request-id",
+    "resource": {
+      "service.name": "APISIX"
+    },
+    "collector": {
+      "address": "127.0.0.1:4318",
+      "request_timeout": 3,
+      "request_headers": {
+        "Authorization": "token"
+      }
+    },
+    "batch_span_processor": {
+      "drop_on_queue_full": false,
+      "max_queue_size": 1024,
+      "batch_timeout": 2,
+      "inactive_timeout": 1,
+      "max_export_batch_size": 16
+    },
+    "set_ngx_var": false
+}'
+```
 
 ## 属性
 
 | 名称                                  | 类型           | 必选项    | 默认值        | 有效值        | 描述 |
 |---------------------------------------|---------------|----------|--------------|--------------|-------------|
 | sampler                               | object        | 否       | -            | -            | 采样策略。    |
-| sampler.name                          | string        | 否       | `always_off` | ["always_on", "always_off", "trace_id_ratio", "parent_base"]  | 采样策略。<br>`always_on`：全采样；`always_off`：不采样；`trace_id_ratio`：基于 trace id 的百分比采样；`parent_base`：如果存在 tracing 上游，则使用上游的采样决定，否则使用配置的采样策略决策。|
+| sampler.name                          | string        | 否       | `always_off` | ["always_on", "always_off", "trace_id_ratio", "parent_base"]  | 采样策略。<br />`always_on`：全采样；`always_off`：不采样；`trace_id_ratio`：基于 trace id 的百分比采样；`parent_base`：如果存在 tracing 上游，则使用上游的采样决定，否则使用配置的采样策略决策。|
 | sampler.options                       | object        | 否       | -            | -            | 采样策略参数。 |
 | sampler.options.fraction              | number        | 否       | 0            | [0, 1]       | `trace_id_ratio`：采样策略的百分比。 |
 | sampler.options.root                  | object        | 否       | -            | -            | `parent_base`：采样策略在没有上游 tracing 时，会使用 root 采样策略做决策。|
