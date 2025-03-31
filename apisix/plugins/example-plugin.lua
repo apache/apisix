@@ -137,7 +137,7 @@ function _M.lua_body_filter(conf, ctx, body)
 
     local httpc, err = http.new()
     if err then
-        core.log.warn("failed to create http client: ", err)
+        core.log.error("failed to create http client: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
@@ -145,13 +145,13 @@ function _M.lua_body_filter(conf, ctx, body)
         method = conf.method,
     })
     if err then
-        core.log.warn("failed to request in lua_body_filter: ", err)
+        core.log.error("failed to request in lua_body_filter: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local res_body, err = core.json.decode(res.body)
     if err then
-        core.log.warn("failed to decode response body: ", err)
+        core.log.error("failed to decode response body: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 

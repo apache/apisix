@@ -79,7 +79,7 @@ end
 local function read_response(ctx, res)
     local body_reader = res.body_reader
     if not body_reader then
-        core.log.warn("failed to get response body reader: ")
+        core.log.error("failed to get response body reader")
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
@@ -88,13 +88,13 @@ local function read_response(ctx, res)
 
     -- TODO: support event stream
     if content_type and core.string.find(content_type, "text/event-stream") then
-        core.log.warn("event stream is not supported")
+        core.log.error("event stream is not supported")
        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local raw_res_body, err = res:read_body()
     if err then
-        core.log.warn("failed to read response body: ", err)
+        core.log.error("failed to read response body: ", err)
         return handle_error(err)
     end
 
@@ -155,7 +155,7 @@ function _M.request(conf, ctx)
     if opts.keepalive then
         local _, err = httpc:set_keepalive(opts.keepalive_timeout, opts.keepalive_pool)
         if err then
-            core.log.warn("failed to keepalive connection: ", err)
+            core.log.error("failed to keepalive connection: ", err)
         end
     end
 
