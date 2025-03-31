@@ -148,8 +148,6 @@ function _M.lua_body_filter(conf, ctx, body)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
-    core.response.set_header("Content-Length", nil)
-
     local res_body, err = core.json.decode(res.body)
     if err then
         core.log.warn("failed to decode response body: ", err)

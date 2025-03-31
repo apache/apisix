@@ -42,6 +42,12 @@ local function build_request_opts(conf, ctx)
         return nil, "no picked server"
     end
 
+    local headers = core.request.headers(ctx)
+    -- When content-length is cleared, the HTTP server will automatically calculate and
+    -- set the correct content length when sending the response. This ensures that the
+    -- content length of the response matches the actual data sent, thereby avoiding mismatches.
+    headers["content-length"] = nil
+
     -- Build request options
     local opts = {
         scheme = server.scheme or ctx.upstream_scheme or "http",
@@ -50,11 +56,11 @@ local function build_request_opts(conf, ctx)
         path = ctx.var.uri,
         query = ctx.var.args,
         method = core.request.get_method(),
-        headers = core.request.headers(ctx),
+        headers = headers,
         ssl_verify = conf.ssl_verify,
         keepalive = conf.keepalive,
-        keepalive_timeout = conf.timeout or 60000,
-        keepalive_pool = conf.keepalive_pool or 5
+        keepalive_timeout = conf.timeout,
+        keepalive_pool = conf.keepalive_pool
     }
 
     -- Set upstream URI
@@ -85,50 +91,10 @@ local function read_response(ctx, res)
     local content_type = res.headers["Content-Type"]
     core.response.set_header("Content-Type", content_type)
 
+    -- TODO: support event stream
     if content_type and core.string.find(content_type, "text/event-stream") then
-        while true do
-            local chunk, err = body_reader() -- will read chunk by chunk
-            if err then
-                core.log.warn("failed to read response chunk: ", err)
-                return handle_error(err)
-            end
-            if not chunk then
-                return
-            end
-
-            ngx_print(chunk)
-            ngx_flush(true)
-
-            local events, err = ngx_re.split(chunk, "\n")
-            if err then
-                core.log.warn("failed to split response chunk [", chunk, "] to events: ", err)
-                goto CONTINUE
-            end
-
-            for _, event in ipairs(events) do
-                if not core.string.find(event, "data:") or core.string.find(event, "[DONE]") then
-                    goto CONTINUE
-                end
-
-                local parts, err = ngx_re.split(event, ":", nil, nil, 2)
-                if err then
-                    core.log.warn("failed to split data event [", event,  "] to parts: ", err)
-                    goto CONTINUE
-                end
-
-                if #parts ~= 2 then
-                    core.log.warn("malformed data event: ", event)
-                    goto CONTINUE
-                end
-
-                if err then
-                    core.log.warn("failed to decode data event [", parts[2], "] to json: ", err)
-                    goto CONTINUE
-                end
-            end
-
-            ::CONTINUE::
-        end
+        core.log.warn("event stream is not supported")
+       return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local raw_res_body, err = res:read_body()
@@ -154,16 +120,16 @@ function _M.request(conf, ctx)
     if err then
         return nil, "failed to create http client: " .. err
     end
-    httpc:set_timeout(conf.timeout)
+    httpc:set_timeout(opts.timeout)
 
     -- Connect to upstream
     local ok, err = httpc:connect({
         scheme = opts.scheme,
         host = opts.host,
         port = opts.port,
-        ssl_verify = conf.ssl_verify,
+        ssl_verify = opts.ssl_verify,
         ssl_server_name = opts.host,
-        pool_size = conf.keepalive and conf.keepalive_pool,
+        pool_size = opts.keepalive,
     })
 
     if not ok then
@@ -183,7 +149,7 @@ function _M.request(conf, ctx)
 
     -- Send request
     local res, err = httpc:request(params)
-    if not res then
+    if err then
         return nil, err
     end
 
