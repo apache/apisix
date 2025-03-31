@@ -36,7 +36,7 @@ end
 
 local function get_body_for_request()
     local original_body, err = core.request.get_body()
-    if err ~= nil then
+    if err then
         return nil, "failed to get request body: " .. err
     end
     if original_body == nil then
