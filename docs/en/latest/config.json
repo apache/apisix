@@ -68,6 +68,21 @@
       "items": [
         {
           "type": "category",
+          "label": "AI",
+          "items": [
+            "plugins/ai-proxy",
+            "plugins/ai-proxy-multi",
+            "plugins/ai-rate-limiting",
+            "plugins/ai-prompt-guard",
+            "plugins/ai-aws-content-moderation",
+            "plugins/ai-prompt-decorator",
+            "plugins/ai-prompt-template",
+            "plugins/ai-rag",
+            "plugins/ai-request-rewrite"
+          ]
+        },
+        {
+          "type": "category",
           "label": "General",
           "items": [
             "plugins/batch-requests",
@@ -81,30 +96,22 @@
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
             "plugins/inspect",
-            "plugins/ocsp-stapling",
-            "plugins/ai-prompt-guard",
-            "plugins/ai-aws-content-moderation"
+            "plugins/ocsp-stapling"
           ]
         },
         {
           "type": "category",
           "label": "Transformation",
           "items": [
-            "plugins/ai-prompt-decorator",
             "plugins/response-rewrite",
             "plugins/proxy-rewrite",
             "plugins/grpc-transcode",
             "plugins/grpc-web",
-            "plugins/ai-prompt-template",
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",
             "plugins/body-transformer",
-            "plugins/ai-proxy",
-            "plugins/ai-proxy-multi",
-            "plugins/attach-consumer-label",
-            "plugins/ai-rag",
-            "plugins/ai-request-rewrite"
+            "plugins/attach-consumer-label"
           ]
         },
         {
@@ -159,8 +166,7 @@
             "plugins/request-id",
             "plugins/proxy-control",
             "plugins/client-control",
-            "plugins/workflow",
-            "plugins/ai-rate-limiting"
+            "plugins/workflow"
           ]
         },
         {
