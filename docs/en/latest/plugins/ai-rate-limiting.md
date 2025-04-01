@@ -560,9 +560,9 @@ You should see a response similar to the following:
 
 ### Load Balance and Rate Limit by Consumers
 
-The following example demonstrates how you can configure two models for load balancing and apply rate limiting by consumer.
+The following example demonstrates how you can configure two models for load balancing and apply rate limiting by Consumer.
 
-Create a consumer `johndoe` and a rate limiting quota of 10 tokens in a 60-second window on `openai-instance` instance:
+Create a Consumer `johndoe` and a rate limiting quota of 10 tokens in a 60-second window on `openai-instance` instance:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -600,7 +600,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/johndoe/credentials" -X PUT \
   }'
 ```
 
-Create another consumer `janedoe` and a rate limiting quota of 10 tokens in a 60-second window on `deepseek-instance` instance:
+Create another Consumer `janedoe` and a rate limiting quota of 10 tokens in a 60-second window on `deepseek-instance` instance:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -684,7 +684,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the Route without any consumer key:
+Send a POST request to the Route without any Consumer key:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -870,4 +870,4 @@ You should see a response similar to the following:
 }
 ```
 
-This shows `ai-proxy-multi` load balance the traffic with respect to the rate limiting rules in `ai-rate-limiting` by consumers.
+This shows `ai-proxy-multi` load balance the traffic with respect to the rate limiting rules in `ai-rate-limiting` by Consumers.
