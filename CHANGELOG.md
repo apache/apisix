@@ -84,7 +84,7 @@ title: Changelog
 ### Change
 
 - replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
-- add Expiration Time for All Prometheus Metric [#11838](https://github.com/apache/apisix/pull/11838)
+- add expiration time for all Prometheus metrics [#11838](https://github.com/apache/apisix/pull/11838)
 - allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
 - refactor: ai-content-moderation to ai-aws-content-moderation (#12010)
 - rectify business logic/code in ai-proxy [#12055](https://github.com/apache/apisix/pull/12055)
@@ -132,7 +132,7 @@ title: Changelog
 - store JWT in the request context [#11675](https://github.com/apache/apisix/pull/11675)
 - support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
 - add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
-- make rate-limit response headers configurable [#11831](https://github.com/apache/apisix/pull/11831)
+- make rate limiting response header names configurable [#11831](https://github.com/apache/apisix/pull/11831)
 - support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
 - plugins in multi-auth returns error instead of logging it [#11775](https://github.com/apache/apisix/pull/11775)
 - support configuring `key_claim_name` [#11772](https://github.com/apache/apisix/pull/11772)
