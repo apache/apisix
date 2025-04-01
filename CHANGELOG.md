@@ -83,9 +83,11 @@ title: Changelog
 
 ### Change
 
-- refactor ai-proxy and ai-proxy-multi [#12030](https://github.com/apache/apisix/pull/12030)
 - replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
 - add Expiration Time for All Prometheus Metric [#11838](https://github.com/apache/apisix/pull/11838)
+- allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
+- refactor: ai-content-moderation to ai-aws-content-moderation (#12010)
+- rectify business logic/code in ai-proxy [#12055](https://github.com/apache/apisix/pull/12055)
 
 ### Bugfixes
 
@@ -120,6 +122,7 @@ title: Changelog
 
 ### Plugins
 
+- refactor ai-proxy and ai-proxy-multi [#12030](https://github.com/apache/apisix/pull/12030)
 - support embeddings API [#12062](https://github.com/apache/apisix/pull/12062)
 - implement rate limiting based fallback strategy [#12047](https://github.com/apache/apisix/pull/12047)
 - ai-rate-limiting plugin [#12037](https://github.com/apache/apisix/pull/12037)
@@ -130,7 +133,6 @@ title: Changelog
 - support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
 - add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
 - make rate-limit response headers configurable [#11831](https://github.com/apache/apisix/pull/11831)
-- allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
 - support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
 - plugins in multi-auth returns error instead of logging it [#11775](https://github.com/apache/apisix/pull/11775)
 - support configuring `key_claim_name` [#11772](https://github.com/apache/apisix/pull/11772)
@@ -138,7 +140,6 @@ title: Changelog
 - add ai-rag plugin [#11568](https://github.com/apache/apisix/pull/11568)
 - add ai-content-moderation plugin [#11541](https://github.com/apache/apisix/pull/11541)
 - use setmetatable to set hidden variables without effecting serialisation [#11770](https://github.com/apache/apisix/pull/11770)
-- rectify business logic/code in ai-proxy [#12055](https://github.com/apache/apisix/pull/12055)
 
 ## 3.11.0
 
