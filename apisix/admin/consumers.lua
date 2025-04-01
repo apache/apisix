@@ -40,7 +40,7 @@ local function check_duplicate_key(username, plugins_conf)
 
         local plugin_conf_copy = core.table.deepcopy(plugin_conf)
         plugin.decrypt_conf(plugin_name, plugin_conf_copy, core.schema.TYPE_CONSUMER)
-        
+
         local key_field = utils.plugin_key_map[plugin_name]
         if not key_field then
             goto continue
@@ -58,7 +58,7 @@ local function check_duplicate_key(username, plugins_conf)
 
         ::continue::
     end
-    
+
     return true
 end
 
