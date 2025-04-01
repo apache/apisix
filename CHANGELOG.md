@@ -84,8 +84,8 @@ title: Changelog
 ### Change
 
 - refactor ai-proxy and ai-proxy-multi [#12030](https://github.com/apache/apisix/pull/12030)
-- replace plugin attribute with plugin metadata [#11940](https://github.com/apache/apisix/pull/11940)
-- each metric should have an expire time [#11838](https://github.com/apache/apisix/pull/11838)
+- replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
+- add Expiration Time for All Prometheus Metric [#11838](https://github.com/apache/apisix/pull/11838)
 
 ### Bugfixes
 
@@ -111,7 +111,7 @@ title: Changelog
 ### Core
 
 - upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
-- add support for "system" ssl_trusted_certificate [#11809](https://github.com/apache/apisix/pull/11809)
+- Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
 - support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
 - support anonymous consumer [#11917](https://github.com/apache/apisix/pull/11917)
 - accelerate the creation of the consumer cache [#11840](https://github.com/apache/apisix/pull/11840)
@@ -128,7 +128,7 @@ title: Changelog
 - add jwt audience validator [#11987](https://github.com/apache/apisix/pull/11987)
 - store JWT in the request context [#11675](https://github.com/apache/apisix/pull/11675)
 - support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
-- add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986)
+- add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
 - make rate-limit response headers configurable [#11831](https://github.com/apache/apisix/pull/11831)
 - allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
 - support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
