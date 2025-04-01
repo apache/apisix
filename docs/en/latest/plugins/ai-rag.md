@@ -7,7 +7,7 @@ keywords:
   - ai-rag
   - AI
   - LLM
-description: The ai-rag plugin enhances LLM outputs with Retrieval-Augmented Generation (RAG), efficiently retrieving relevant documents to improve accuracy and contextual relevance in responses.
+description: The ai-rag Plugin enhances LLM outputs with Retrieval-Augmented Generation (RAG), efficiently retrieving relevant documents to improve accuracy and contextual relevance in responses.
 ---
 
 <!--
@@ -35,9 +35,9 @@ description: The ai-rag plugin enhances LLM outputs with Retrieval-Augmented Gen
 
 ## Description
 
-The `ai-rag` plugin provides Retrieval-Augmented Generation (RAG) capabilities with LLMs. It facilitates the efficient retrieval of relevant documents or information from external data sources, which are used to enhance the LLM responses, thereby improving the accuracy and contextual relevance of the generated outputs.
+The `ai-rag` Plugin provides Retrieval-Augmented Generation (RAG) capabilities with LLMs. It facilitates the efficient retrieval of relevant documents or information from external data sources, which are used to enhance the LLM responses, thereby improving the accuracy and contextual relevance of the generated outputs.
 
-The plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search.
+The Plugin supports using [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services for generating embeddings and performing vector search.
 
 **_As of now only [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) and [Azure AI Search](https://azure.microsoft.com/en-us/products/ai-services/ai-search) services are supported for generating embeddings and performing vector search respectively. PRs for introducing support for other service providers are welcomed._**
 
@@ -138,9 +138,9 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 ### Integrate with Azure for RAG-Enhaned Responses
 
-The following example demonstrates how you can use the [`ai-proxy`](./ai-proxy.md) plugin to proxy requests to Azure OpenAI LLM and use the `ai-rag` plugin to generate embeddings and perform vector search to enhance LLM responses.
+The following example demonstrates how you can use the [`ai-proxy`](./ai-proxy.md) Plugin to proxy requests to Azure OpenAI LLM and use the `ai-rag` Plugin to generate embeddings and perform vector search to enhance LLM responses.
 
-Create a route as such:
+Create a Route as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -179,7 +179,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
 }'
 ```
 
-Send a POST request to the route with the vector fields name, embedding model dimensions, and an input prompt in the request body:
+Send a POST request to the Route with the vector fields name, embedding model dimensions, and an input prompt in the request body:
 
 ```shell
 curl "http://127.0.0.1:9080/rag" -X POST \

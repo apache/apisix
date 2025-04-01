@@ -7,7 +7,7 @@ keywords:
   - ai-rate-limiting
   - AI
   - LLM
-description: The ai-rate-limiting plugin enforces token-based rate limiting for LLM service requests, preventing overuse, optimizing API consumption, and ensuring efficient resource allocation.
+description: The ai-rate-limiting Plugin enforces token-based rate limiting for LLM service requests, preventing overuse, optimizing API consumption, and ensuring efficient resource allocation.
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: The ai-rate-limiting plugin enforces token-based rate limiting for 
 
 ## Description
 
-The `ai-rate-limiting` plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) plugin.
+The `ai-rate-limiting` Plugin enforces token-based rate limiting for requests sent to LLM services. It helps manage API usage by controlling the number of tokens consumed within a specified time frame, ensuring fair resource allocation and preventing excessive load on the service. It is often used with [`ai-proxy`](./ai-proxy.md) or [`ai-proxy-multi`](./ai-proxy-multi.md) plugin.
 
 ## Attributes
 
@@ -70,7 +70,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how you can use `ai-proxy` to proxy LLM traffic and use `ai-rate-limiting` to configure token-based rate limiting on the instance.
 
-Create a route as such and update with your LLM providers, models, API keys, and endpoints, if applicable:
+Create a Route as such and update with your LLM providers, models, API keys, and endpoints, if applicable:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -102,7 +102,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route with a system prompt and a sample user question in the request body:
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -142,7 +142,7 @@ If the rate limiting quota of 300 prompt tokens has been consumed in a 30-second
 
 The following example demonstrates how you can use `ai-proxy-multi` to configure two models for load balancing, forwarding 80% of the traffic to one instance and 20% to the other. Additionally, use `ai-rate-limiting` to configure token-based rate limiting on the instance that receives 80% of the traffic, such that when the configured quota is fully consumed, the additional traffic will be forwarded to the other instance.
 
-Create a route which applies rate limiting quota of 100 total tokens in a 30-second window on the `deepseek-instance-1` instance, and update with your LLM providers, models, API keys, and endpoints, if applicable:
+Create a Route which applies rate limiting quota of 100 total tokens in a 30-second window on the `deepseek-instance-1` instance, and update with your LLM providers, models, API keys, and endpoints, if applicable:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -196,7 +196,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route with a system prompt and a sample user question in the request body:
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -238,7 +238,7 @@ The following example demonstrates how you can apply the same rate limiting quot
 
 For demonstration and easier differentiation, you will be configuring one OpenAI instance and one DeepSeek instance as the upstream LLM services.
 
-Create a route which applies a rate limiting quota of 100 total tokens for all instances within a 60-second window, and update with your LLM providers, models, API keys, and endpoints, if applicable:
+Create a Route which applies a rate limiting quota of 100 total tokens for all instances within a 60-second window, and update with your LLM providers, models, API keys, and endpoints, if applicable:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -288,7 +288,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route with a system prompt and a sample user question in the request body:
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -341,7 +341,7 @@ You should receive a response from either LLM instance, similar to the following
 
 Since the `total_tokens` value exceeds the configured quota of `100`, the next request within the 60-second window is expected to be forwarded to the other instance.
 
-Within the same 60-second window, send another POST request to the route:
+Within the same 60-second window, send another POST request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -387,7 +387,7 @@ You should receive a response from the other LLM instance, similar to the follow
 
 Since the `total_tokens` value exceeds the configured quota of `100`, the next request within the 60-second window is expected to be rejected.
 
-Within the same 60-second window, send a third POST request to the route:
+Within the same 60-second window, send a third POST request to the Route:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -413,9 +413,9 @@ X-AI-RateLimit-Reset-deepseek-instance: 0
 
 ### Configure Instance Priority and Rate Limiting
 
-The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `instance_health_and_rate_limiting`, the plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
+The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `instance_health_and_rate_limiting`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
 
-Create a route as such to set rate limiting and a higher priority on `openai-instance` instance and set the `fallback_strategy` to `instance_health_and_rate_limiting`. Update with your LLM providers, models, API keys, and endpoints, if applicable:
+Create a Route as such to set rate limiting and a higher priority on `openai-instance` instance and set the `fallback_strategy` to `instance_health_and_rate_limiting`. Update with your LLM providers, models, API keys, and endpoints, if applicable:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -472,7 +472,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route with a system prompt and a sample user question in the request body:
+Send a POST request to the Route with a system prompt and a sample user question in the request body:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -525,7 +525,7 @@ You should receive a response similar to the following:
 
 Since the `total_tokens` value exceeds the configured quota of `10`, the next request within the 60-second window is expected to be forwarded to the other instance.
 
-Within the same 60-second window, send another POST request to the route:
+Within the same 60-second window, send another POST request to the Route:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -638,7 +638,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/janedoe/credentials" -X PUT \
   }'
 ```
 
-Create a route as such and update with your LLM providers, models, API keys, and endpoints, if applicable:
+Create a Route as such and update with your LLM providers, models, API keys, and endpoints, if applicable:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -684,7 +684,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Send a POST request to the route without any consumer key:
+Send a POST request to the Route without any consumer key:
 
 ```shell
 curl -i "http://127.0.0.1:9080/anything" -X POST \
@@ -699,7 +699,7 @@ curl -i "http://127.0.0.1:9080/anything" -X POST \
 
 You should receive an `HTTP/1.1 401 Unauthorized` response.
 
-Send a POST request to the route with `johndoe`'s key:
+Send a POST request to the Route with `johndoe`'s key:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -753,7 +753,7 @@ You should receive a response similar to the following:
 
 Since the `total_tokens` value exceeds the configured quota of the `openai` instance for `johndoe`, the next request within the 60-second window from `johndoe` is expected to be forwarded to the `deepseek` instance.
 
-Within the same 60-second window, send another POST request to the route with `johndoe`'s key:
+Within the same 60-second window, send another POST request to the Route with `johndoe`'s key:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -787,7 +787,7 @@ You should see a response similar to the following:
 }
 ```
 
-Send a POST request to the route with `janedoe`'s key:
+Send a POST request to the Route with `janedoe`'s key:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
@@ -834,7 +834,7 @@ You should receive a response similar to the following:
 
 Since the `total_tokens` value exceeds the configured quota of the `deepseek` instance for `janedoe`, the next request within the 60-second window from `janedoe` is expected to be forwarded to the `openai` instance.
 
-Within the same 60-second window, send another POST request to the route with `janedoe`'s key:
+Within the same 60-second window, send another POST request to the Route with `janedoe`'s key:
 
 ```shell
 curl "http://127.0.0.1:9080/anything" -X POST \
