@@ -1,63 +1,318 @@
-#
-# Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the NOTICE file distributed with
-# this work for additional information regarding copyright ownership.
-# The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may not use this file except in compliance with
-# the License.  You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
-# If you want to set the specified configuration value, you can set the new
-# in this file. For example if you want to specify the etcd address:
-#
-# deployment:
-#   role: traditional
-#   role_traditional:
-#     config_provider: etcd
-#   etcd:
-#     host:
-#       - http://127.0.0.1:2379
-#
-# To configure via environment variables, you can use `${{VAR}}` syntax. For instance:
-#
-# deployment:
-#   role: traditional
-#   role_traditional:
-#     config_provider: etcd
-#   etcd:
-#     host:
-#       - http://${{ETCD_HOST}}:2379
-#
-# And then run `export ETCD_HOST=$your_host` before `make init`.
-#
-# If the configured environment variable can't be found, an error will be thrown.
-#
-# Also, If you want to use default value when the environment variable not set,
-# Use `${{VAR:=default_value}}` instead. For instance:
-#
-# deployment:
-#   role: traditional
-#   role_traditional:
-#     config_provider: etcd
-#   etcd:
-#     host:
-#       - http://${{ETCD_HOST:=localhost}}:2379
-#
-# This will find environment variable `ETCD_HOST` first, and if it's not exist it will use `localhost` as default value.
-#
+---
+apisix:
+  disable_sync_configuration_during_start: false
+  normalize_uri_like_servlet: false
+  node_listen:
+  - 9080
+  enable_dev_mode: false
+  enable_reuseport: true
+  enable_ipv6: true
+  extra_lua_path: ''
+  extra_lua_cpath: ''
+  enable_resolv_search_opt: true
+  enable_admin: true
+  proxy_mode: http
+  router:
+    http: radixtree_host_uri
+    ssl: radixtree_sni
+  enable_server_tokens: true
+  enable_http2: true
+  data_encryption:
+    keyring:
+    - qeddd145sfvddff3
+    - edd1c9f0985e76a2
+    enable_encrypt_fields: true
+  ssl:
+    listen:
+    - enable_http3: false
+      port: 9443
+    ssl_trusted_certificate: /etc/ssl/certs/ca-certificates.crt
+    enable: true
+    ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
+    ssl_session_tickets: false
+    ssl_protocols: TLSv1.2 TLSv1.3
+  events:
+    module: lua-resty-events
+  resolver_timeout: 5
+  proxy_cache:
+    cache_ttl: 10s
+    zones:
+    - disk_size: 1G
+      disk_path: /tmp/disk_cache_one
+      cache_levels: '1:2'
+      memory_size: 50m
+      name: disk_cache_one
+    - memory_size: 50m
+      name: memory_cache
+  delete_uri_tail_slash: false
+  show_upstream_status_in_response_header: false
+  enable_control: true
+nginx_config:
+  main_configuration_snippet: ''
+  http_configuration_snippet: ''
+  http_server_configuration_snippet: ''
+  http_server_location_configuration_snippet: ''
+  http_admin_configuration_snippet: ''
+  error_log: logs/error.log
+  event:
+    worker_connections: 10620
+  error_log_level: info
+  worker_processes: auto
+  enable_cpu_affinity: false
+  worker_rlimit_nofile: 20480
+  worker_shutdown_timeout: 240s
+  max_pending_timers: 16384
+  max_running_timers: 4096
+  meta:
+    lua_shared_dict:
+      prometheus-metrics: 15m
+  http:
+    access_log_buffer: 16384
+    keepalive_timeout: 60s
+    client_header_timeout: 60s
+    real_ip_from:
+    - 127.0.0.1
+    - 'unix:'
+    client_max_body_size: 0
+    send_timeout: 10s
+    underscores_in_headers: 'on'
+    real_ip_header: X-Real-IP
+    enable_access_log: true
+    access_log: logs/access.log
+    access_log_format: $remote_addr - $remote_user [$time_local] $http_host "$request"
+      $status $body_bytes_sent $request_time "$http_referer" "$http_user_agent" $upstream_addr
+      $upstream_status $upstream_response_time "$upstream_scheme://$upstream_host$upstream_uri"
+    lua_shared_dict:
+      worker-events: 10m
+      lrucache-lock: 10m
+      balancer-ewma: 10m
+      balancer-ewma-locks: 10m
+      balancer-ewma-last-touched-at: 10m
+      etcd-cluster-health-check: 10m
+      plugin-limit-conn: 10m
+      plugin-limit-conn-redis-cluster-slot-lock: 1m
+      plugin-limit-req-redis-cluster-slot-lock: 1m
+      plugin-limit-req: 10m
+      plugin-limit-count: 10m
+      plugin-limit-count-redis-cluster-slot-lock: 1m
+      prometheus-metrics: 10m
+      plugin-api-breaker: 10m
+      discovery: 1m
+      jwks: 1m
+      introspection: 10m
+      access-tokens: 1m
+      ext-plugin: 1m
+      tracing_buffer: 10m
+      tars: 1m
+      cas-auth: 10m
+      ocsp-stapling: 10m
+      internal-status: 10m
+      upstream-healthcheck: 10m
+    access_log_format_escape: default
+    variables_hash_max_size: 2048
+    charset: utf-8
+    client_body_timeout: 60s
+    real_ip_recursive: 'off'
+    proxy_ssl_server_name: true
+    upstream:
+      keepalive_requests: 1000
+      keepalive_timeout: 60s
+      keepalive: 320
+  stream:
+    access_log_format_escape: default
+    lua_shared_dict:
+      etcd-cluster-health-check-stream: 10m
+      lrucache-lock-stream: 10m
+      plugin-limit-conn-stream: 10m
+      worker-events-stream: 10m
+      tars-stream: 1m
+    enable_access_log: false
+    access_log: logs/access_stream.log
+    access_log_format: $remote_addr [$time_local] $protocol $status $bytes_sent $bytes_received
+      $session_time
+  stream_configuration_snippet: ''
+  http_end_configuration_snippet: ''
+etcd:
+  tls:
+    verify: true
+  startup_retry: 2
+  watch_timeout: 50
+  host:
+  - http://127.0.0.1:2379
+  prefix: /apisix
+  timeout: 30
+plugin_attr:
+  zipkin:
+    set_ngx_var: false
+  log-rotate:
+    enable_compression: false
+    max_size: -1
+    timeout: 10000
+    interval: 3600
+    max_kept: 168
+  proxy-mirror:
+    timeout:
+      read: 60s
+      connect: 60s
+      send: 60s
+  prometheus:
+    metric_prefix: apisix_
+    enable_export_server: true
+    export_uri: /apisix/prometheus/metrics
+    export_addr:
+      port: 9091
+      ip: 127.0.0.1
+  skywalking:
+    service_name: APISIX
+    report_interval: 3
+    service_instance_name: APISIX Instance Name
+    endpoint_addr: http://127.0.0.1:12800
+  inspect:
+    hooks_file: /usr/local/apisix/plugin_inspect_hooks.lua
+    delay: 3
+  dubbo-proxy:
+    upstream_multiplex_count: 32
+  server-info:
+    report_ttl: 60
+  opentelemetry:
+    trace_id_source: x-request-id
+    set_ngx_var: false
+    batch_span_processor:
+      drop_on_queue_full: false
+      max_queue_size: 1024
+      batch_timeout: 2
+      inactive_timeout: 1
+      max_export_batch_size: 16
+    collector:
+      address: 127.0.0.1:4318
+      request_timeout: 3
+      request_headers:
+        Authorization: token
+    resource:
+      service.name: APISIX
+stream_plugins:
+- ip-restriction
+- limit-conn
+- mqtt-proxy
+- syslog
 deployment:
   role: traditional
+  config_provider: etcd
+  etcd:
+    tls:
+      verify: true
+    startup_retry: 2
+    watch_timeout: 50
+    host:
+    - http://127.0.0.1:2379
+    prefix: /apisix
+    timeout: 30
   role_traditional:
     config_provider: etcd
   admin:
+    admin_api_version: v3
     admin_key:
-      - name: admin
-        key: ''  # using fixed API token has security risk, please update it when you deploy to production environment. If passed empty then will be autogenerated by APISIX and will be written back here. Recommended is to use external mechanism to generate and store the token.
-        role: admin
+    - role: admin
+      name: admin
+      key: eakaZpqodXhMbuEakOWYuWtgkwUNkkid
+    admin_listen:
+      port: 9180
+      ip: 0.0.0.0
+    admin_key_required: true
+    allow_admin:
+    - 127.0.0.0/24
+    enable_admin_cors: true
+graphql:
+  max_size: 1048576
+plugins:
+- real-ip
+- ai
+- client-control
+- proxy-control
+- request-id
+- zipkin
+- ext-plugin-pre-req
+- fault-injection
+- mocking
+- serverless-pre-function
+- cors
+- ip-restriction
+- ua-restriction
+- referer-restriction
+- csrf
+- uri-blocker
+- request-validation
+- chaitin-waf
+- multi-auth
+- openid-connect
+- cas-auth
+- authz-casbin
+- authz-casdoor
+- wolf-rbac
+- ldap-auth
+- hmac-auth
+- basic-auth
+- jwt-auth
+- jwe-decrypt
+- key-auth
+- consumer-restriction
+- attach-consumer-label
+- forward-auth
+- opa
+- authz-keycloak
+- proxy-cache
+- body-transformer
+- ai-prompt-template
+- ai-prompt-decorator
+- ai-prompt-guard
+- ai-rag
+- ai-proxy-multi
+- ai-proxy
+- ai-aws-content-moderation
+- proxy-mirror
+- proxy-rewrite
+- workflow
+- api-breaker
+- limit-conn
+- limit-count
+- limit-req
+- gzip
+- server-info
+- traffic-split
+- redirect
+- response-rewrite
+- degraphql
+- kafka-proxy
+- grpc-transcode
+- grpc-web
+- http-dubbo
+- public-api
+- prometheus
+- datadog
+- loki-logger
+- elasticsearch-logger
+- echo
+- loggly
+- http-logger
+- splunk-hec-logging
+- skywalking-logger
+- google-cloud-logging
+- sls-logger
+- tcp-logger
+- kafka-logger
+- rocketmq-logger
+- syslog
+- udp-logger
+- file-logger
+- clickhouse-logger
+- tencent-cloud-cls
+- inspect
+- example-plugin
+- aws-lambda
+- azure-functions
+- openwhisk
+- openfunction
+- serverless-post-function
+- ext-plugin-post-req
+- ext-plugin-post-resp
+...

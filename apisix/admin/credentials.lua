@@ -22,23 +22,33 @@ local consumer = require("apisix.consumer")
 local utils = require("apisix.admin.utils")
 local pairs    = pairs
 
-local function check_duplicate_key(id, name, plugin_conf)
-    local decrypted_conf = core.table.deepcopy(plugin_conf)
-    plugin.decrypt_conf(name, decrypted_conf, core.schema.TYPE_CONSUMER)
+local function check_duplicate_key(id, plugins)
+    for name, plugin_conf in pairs(plugins) do
+        local plugin_obj = plugin.get(name)
+        if not plugin_obj then
+            goto continue
+        end
 
-    local key_field = utils.plugin_key_map[name]
-    if not key_field then
-        return true
-    end
+        if plugin_obj.type ~= "auth" then
+            goto continue
+        end
 
-    local key_value = decrypted_conf[key_field]
-    if not key_value then
-        return true
-    end
+        local key_field = utils.plugin_key_map[name]
+        if not key_field then
+            goto continue
+        end
 
-    local consumer = consumer.find_consumer(name, key_field, key_value)
-    if consumer and consumer.credential_id ~= id then
-        return nil, "duplicate key found with consumer: " .. consumer.username
+        local key_value = plugin_conf[key_field]
+        if not key_value then
+            goto continue
+        end
+
+        local consumer = consumer.find_consumer(name, key_field, key_value)
+        if consumer and consumer.credential_id ~= id then
+            return nil, "duplicate key found with consumer: " .. consumer.username
+        end
+
+        ::continue::
     end
 
     return true
@@ -51,6 +61,11 @@ local function check_conf(id, conf, _need_id, schema)
     end
 
     if conf.plugins then
+        local ok, err = check_duplicate_key(id, conf.plugins)
+        if not ok then
+            return nil, {error_msg = err}
+        end
+
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
@@ -64,11 +79,6 @@ local function check_conf(id, conf, _need_id, schema)
 
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
-            end
-
-            local ok, err = check_duplicate_key(id, name, plugin_conf)
-            if not ok then
-                return nil, {error_msg = err}
             end
         end
     end

@@ -38,15 +38,12 @@ local function check_duplicate_key(username, plugins_conf)
             goto continue
         end
 
-        local plugin_conf_copy = core.table.deepcopy(plugin_conf)
-        plugin.decrypt_conf(plugin_name, plugin_conf_copy, core.schema.TYPE_CONSUMER)
-
         local key_field = utils.plugin_key_map[plugin_name]
         if not key_field then
             goto continue
         end
 
-        local key_value = plugin_conf_copy[key_field]
+        local key_value = plugin_conf[key_field]
         if not key_value then
             goto continue
         end
@@ -73,14 +70,14 @@ local function check_conf(username, conf, need_username, schema)
     end
 
     if conf.plugins then
+      local ok, err = check_duplicate_key(conf.username, conf.plugins)
+        if not ok then
+            return nil, {error_msg = err}
+        end
+
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
-        end
-
-        local ok, err = check_duplicate_key(conf.username, conf.plugins)
-        if not ok then
-            return nil, {error_msg = err}
         end
     end
 
