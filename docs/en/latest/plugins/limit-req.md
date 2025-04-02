@@ -5,7 +5,7 @@ keywords:
   - API Gateway
   - Limit Request
   - limit-req
-description: The limit-req Plugin limits the number of requests to your service using the leaky bucket algorithm.
+description: The limit-req Plugin uses the leaky bucket algorithm to rate limit the number of the requests and allow for throttling.
 ---
 
 <!--
@@ -27,39 +27,43 @@ description: The limit-req Plugin limits the number of requests to your service 
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/limit-req" />
+</head>
+
 ## Description
 
-The `limit-req` Plugin limits the number of requests to your service using the [leaky bucket](https://en.wikipedia.org/wiki/Leaky_bucket) algorithm.
+The `limit-req` Plugin uses the [leaky bucket](https://en.wikipedia.org/wiki/Leaky_bucket) algorithm to rate limit the number of the requests and allow for throttling.
 
 ## Attributes
 
-| Name              | Type    | Required | Default | Valid values               | Description                                                                                                                                                                                                                                                                                                                                                                                           |
+| Name              | Type    | Required | Default | Valid values               | Description                                                                                                           |
 |-------------------|---------|----------|---------|----------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| rate              | integer | True     |         | rate > 0                   | Threshold for number of requests per second. Requests exceeding this rate (and below `burst`) will be delayed to match this rate.                                                                                                                                                                                                                                                                     |
-| burst             | integer | True     |         | burst >= 0                 | Number of additional requests allowed to be delayed per second. If the number of requests exceeds this hard limit, they will get rejected immediately.                                                                                                                                                                                                                                                |
-| key_type          | string  | False    | "var"   | ["var", "var_combination"] | Type of user specified key to use.                                                                                                                                                                                                                                                                                                                                                                    |
-| key               | string  | True     |         |  ["remote_addr", "server_addr", "http_x_real_ip", "http_x_forwarded_for", "consumer_name"] | User specified key to base the request limiting on. If the `key_type` attribute is set to `var`, the key will be treated as a name of variable, like `remote_addr` or `consumer_name`. If the `key_type` is set to `var_combination`, the key will be a combination of variables, like `$remote_addr $consumer_name`. If the value of the key is empty, `remote_addr` will be set as the default key. |
-| rejected_code     | integer | False    | 503     | [200,...,599]              | HTTP status code returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                     |
-| rejected_msg      | string  | False    |         | non-empty                  | Body of the response returned when the requests exceeding the threshold are rejected.                                                                                                                                                                                                                                                                                                                 |
-| nodelay           | boolean | False    | false   |                            | If set to `true`, requests within the burst threshold would not be delayed.                                                                                                                                                                                                                                                                                                                           |
-| allow_degradation | boolean | False    | false   |                            | When set to `true` enables Plugin degradation when the Plugin is temporarily unavailable and allows requests to continue.                                                                                                                                                                                                                                                                             |
-| policy            | string  | False                                     | "local"   | ["local", "redis", "redis-cluster"] | Rate-limiting policies to use for retrieving and increment the limit count. When set to `local` the counters will be locally stored in memory on the node. When set to `redis` counters are stored on a Redis server and will be shared across the nodes. It is done usually for global speed limiting, and setting to `redis-cluster` uses a Redis cluster instead of a single instance.                                                                                                            |
-| redis_host        | string  | required when `policy` is `redis`         |         |                            | Address of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                    |
-| redis_port        | integer | False                                     | 6379    | [1,...]                    | Port of the Redis server. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                                                       |
-| redis_username    | string  | False                                     |         |                            | Username for Redis authentication if Redis ACL is used (for Redis version >= 6.0). If you use the legacy authentication method `requirepass` to configure Redis password, configure only the `redis_password`. Used when the `policy` is set to `redis`.                                                                                                                                                  |
-| redis_password    | string  | False                                     |         |                            | Password for Redis authentication. Used when the `policy` is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                                                                     |
-| redis_ssl         | boolean | False                                     | false   |                            | If set to `true`, then uses SSL to connect to redis instance. Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                                                                                   |
-| redis_ssl_verify  | boolean | False                                     | false   |                            | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis`. See [tcpsock:sslhandshake](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                                                                                                                                                      |
-| redis_database    | integer | False                                     | 0       | redis_database >= 0        | Selected database of the Redis server (for single instance operation or when using Redis cloud with a single entrypoint). Used when the `policy` attribute is set to `redis`.                                                                                                                                                                                                                       |
-| redis_timeout     | integer | False                                     | 1000    | [1,...]                    | Timeout in milliseconds for any command submitted to the Redis server. Used when the `policy` attribute is set to `redis` or `redis-cluster`.                                                                                                                                                                                                                                                       |
-| redis_cluster_nodes | array   | required when `policy` is `redis-cluster` |         |                            | Addresses of Redis cluster nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                       |
-| redis_cluster_name | string  | required when `policy` is `redis-cluster` |         |                            | Name of the Redis cluster service nodes. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                                                |
-| redis_cluster_ssl | boolean |  False | false   |                            | If set to `true`, then uses SSL to connect to redis-cluster. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                                            |
-| redis_cluster_ssl_verify | boolean | False | false   |                            | If set to `true`, then verifies the validity of the server SSL certificate. Used when the `policy` attribute is set to `redis-cluster`.                                                                                                                                                                                                                                                             |
+| rate              | integer | True     |         | > 0                   | The maximum number of requests allowed per second. Requests exceeding the rate and below burst will be delayed.                                                                                                                                                                                                                                                                    |
+| burst             | integer | True     |         | >= 0                 | The number of requests allowed to be delayed per second for throttling. Requests exceeding the rate and burst will get rejected.                                                                                                                                                                                                                                               |
+| key_type          | string  | False    | var   | ["var", "var_combination"] | The type of key. If the `key_type` is `var`, the `key` is interpreted a variable. If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables.                                                                                                                                                                                                                                                  |
+| key               | string  | True     |  remote_addr  |   | The key to count requests by. If the `key_type` is `var`, the `key` is interpreted a variable. The variable does not need to be prefixed by a dollar sign (`$`). If the `key_type` is `var_combination`, the `key` is interpreted as a combination of variables. All variables should be prefixed by dollar signs (`$`). For example, to configure the `key` to use a combination of two request headers `custom-a` and `custom-b`, the `key` should be configured as `$http_custom_a $http_custom_b`. |
+| rejected_code     | integer | False    | 503     | [200,...,599]              | The HTTP status code returned when a request is rejected for exceeding the threshold.                                                                   |
+| rejected_msg      | string  | False    |         | non-empty                  | The response body returned when a request is rejected for exceeding the threshold.                                                              |
+| nodelay           | boolean | False    | false   |                            | If true, do not delay requests within the burst threshold.                                                                        |
+| allow_degradation | boolean | False    | false   |                            | If true, allow APISIX to continue handling requests without the Plugin when the Plugin or its dependencies become unavailable.                                                                                                                                                                                                                                                                             |
+| policy            | string  | False                                     | local   | ["local", "redis", "redis-cluster"] | The policy for rate limiting counter. If it is `local`, the counter is stored in memory locally. If it is `redis`, the counter is stored on a Redis instance. If it is `redis-cluster`, the counter is stored in a Redis cluster.                                                                                                            |
+| redis_host        | string  | False         |         |                            | The address of the Redis node. Required when `policy` is `redis`.                                                                  |
+| redis_port        | integer | False                                     | 6379    | [1,...]                    | The port of the Redis node when `policy` is `redis`.                                                                     |
+| redis_username    | string  | False                                     |         |                            | The username for Redis if Redis ACL is used. If you use the legacy authentication method `requirepass`, configure only the `redis_password`. Used when `policy` is `redis`.                                                                                                                                                  |
+| redis_password    | string  | False                                     |         |                            | The password of the Redis node when `policy` is `redis` or `redis-cluster`.                                                   |
+| redis_ssl               | boolean | False                                     | false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is `redis`.                                                                                                                         |
+| redis_ssl_verify        | boolean | False                                     | false         |                                        | If true, verify the server SSL certificate when `policy` is `redis`.                                                                                                         |
+| redis_database          | integer | False                                     | 0             | >= 0                    | The database number in Redis when `policy` is `redis`.                                                                     |
+| redis_timeout           | integer | False                                     | 1000          | [1,...]                                | The Redis timeout value in milliseconds when `policy` is `redis` or `redis-cluster`.                                                                        |
+| redis_cluster_nodes     | array[string]   | False |               |                                        | The list of the Redis cluster nodes with at least two addresses. Required when policy is redis-cluster.                                                                                                                       |
+| redis_cluster_name      | string  | False |               |                                        | The name of the Redis cluster. Required when `policy` is `redis-cluster`.                                                                                                                |
+| redis_cluster_ssl      | boolean  |  False |     false         |                                        | If true, use SSL to connect to Redis cluster when `policy` is                                                                                                                |
+| redis_cluster_ssl_verify      | boolean  | False |    false      |                                        | If true, verify the server SSL certificate when `policy` is `redis-cluster`.                                                                                                               |
 
-## Enable Plugin
+## Examples
 
-You can enable the Plugin on a Route as shown below:
+The examples below demonstrate how you can configure `limit-req` in different scenarios.
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
@@ -68,177 +72,213 @@ You can fetch the `admin_key` from `config.yaml` and save to an environment vari
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
 ```
 
-:::
+### Apply Rate Limiting by Remote Address
+
+The following example demonstrates the rate limiting of HTTP requests by a single variable, `remote_addr`.
+
+Create a Route with `limit-req` Plugin that allows for 1 QPS per remote address:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '
+  {
+    "id": "limit-req-route",
+    "uri": "/get",
     "plugins": {
-        "limit-req": {
-            "rate": 3,
-            "burst": 2,
-            "rejected_code": 503,
-            "key_type": "var",
-            "key": "remote_addr"
-        }
+      "limit-req": {
+        "rate": 1,
+        "burst": 0,
+        "key": "remote_addr",
+        "key_type": "var",
+        "rejected_code": 429,
+        "nodelay": true
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:9001": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-You can also configure the `key_type` to `var_combination` as shown:
+Send a request to verify:
 
-```json
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+```shell
+curl -i "http://127.0.0.1:9080/get"
+```
+
+You should see an `HTTP/1.1 200 OK` response.
+
+The request has consumed all the quota allowed for the time window. If you send the request again within the same second, you should receive an `HTTP/1.1 429 Too Many Requests` response, indicating the request surpasses the quota threshold.
+
+### Implement API Throttling
+
+The following example demonstrates how to configure `burst` to allow overrun of the rate limiting threshold by the configured value and achieve request throttling. You will also see a comparison against when throttling is not implemented.
+
+Create a Route with `limit-req` Plugin that allows for 1 QPS per remote address, with a `burst` of 1 to allow for 1 request exceeding the `rate` to be delayed for processing:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-req-route",
+    "uri": "/get",
     "plugins": {
-        "limit-req": {
-            "rate": 3,
-            "burst": 2,
-            "rejected_code": 503,
-            "key_type": "var_combination",
-            "key": "$consumer_name $remote_addr"
-        }
+      "limit-req": {
+        "rate": 1,
+        "burst": 1,
+        "key": "remote_addr",
+        "rejected_code": 429
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:9001": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}
+  }'
 ```
 
-You can also configure the Plugin on specific consumers to limit their requests.
-
-First, you can create a Consumer and enable the `limit-req` Plugin on it:
+Generate three requests to the Route:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "consumer_jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        },
-        "limit-req": {
-            "rate": 3,
-            "burst": 2,
-            "rejected_code": 403,
-            "key": "consumer_name"
-        }
-    }
-}'
+resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200 responses: $count_200 ; 429 responses: $count_429"
 ```
 
-In this example, the [key-auth](./key-auth.md) Plugin is used to authenticate the Consumer.
+You are likely to see that all three requests are successful:
 
-Next, create a Route and enable the `key-auth` Plugin:
+```text
+200 responses: 3 ; 429 responses: 0
+```
+
+To see the effect without `burst`, update `burst` to 0 or set `nodelay` to `true` as follows:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
+curl "http://127.0.0.1:9180/apisix/admin/routes/limit-req-route" -X PATCH \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
     "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        }
+      "limit-req": {
+        "nodelay": true
+      }
+    }
+  }'
+```
+
+Generate three requests to the Route again:
+
+```shell
+resp=$(seq 3 | xargs -I{} curl -i "http://127.0.0.1:9080/get" -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200 responses: $count_200 ; 429 responses: $count_429"
+```
+
+You should see a response similar to the following, showing requests surpassing the rate have been rejected:
+
+```text
+200 responses: 1 ; 429 responses: 2
+```
+
+### Apply Rate Limiting by Remote Address and Consumer Name
+
+The following example demonstrates the rate limiting of requests by a combination of variables, `remote_addr` and `consumer_name`.
+
+Create a Route with `limit-req` Plugin that allows for 1 QPS per remote address and for each Consumer.
+
+Create a Consumer `john`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john"
+  }'
+```
+
+Create `key-auth` Credential for the Consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+Create a second Consumer `jane`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jane"
+  }'
+```
+
+Create `key-auth` Credential for the Consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jane-key"
+      }
+    }
+  }'
+```
+
+Create a Route with `key-auth` and `limit-req` Plugins, and specify in the `limit-req` Plugin to use a combination of variables as the rate-limiting key:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "limit-req-route",
+    "uri": "/get",
+    "plugins": {
+      "key-auth": {},
+      "limit-req": {
+        "rate": 1,
+        "burst": 0,
+        "key": "$remote_addr $consumer_name",
+        "key_type": "var_combination",
+        "rejected_code": 429
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
 ```
 
-## Example usage
-
-Once you have configured the Plugin as shown above, you can test it out. The above configuration limits to 3 request per second. If the number of requests is greater than 3 but less than 5, a delay will be added. And if the number of requests per second exceeds 5, it will be rejected.
-
-Now if you send a request:
+Send two requests simultaneously, each for one Consumer:
 
 ```shell
-curl -i http://127.0.0.1:9080/index.html
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: jane-key' & \
+curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key' &
 ```
 
-For authenticated requests:
+You should receive `HTTP/1.1 200 OK` for both requests, indicating the request has not exceeded the threshold for each Consumer.
 
-```shell
-curl -i http://127.0.0.1:9080/index.html -H 'apikey: auth-jack'
-```
+If you send more requests as either Consumer within the same second, you should receive an `HTTP/1.1 429 Too Many Requests` response.
 
-If you exceed the limit, you will receive a response with a 503 code:
-
-```html
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-Server: APISIX web server
-
-<html>
-<head><title>503 Service Temporarily Unavailable</title></head>
-<body>
-<center><h1>503 Service Temporarily Unavailable</h1></center>
-<hr><center>openresty</center>
-</body>
-</html>
-```
-
-You can set a custom rejected message by configuring the `rejected_msg` attribute. You will then receive a response like:
-
-```shell
-HTTP/1.1 503 Service Temporarily Unavailable
-Content-Type: text/html
-Content-Length: 194
-Connection: keep-alive
-Server: APISIX web server
-
-{"error_msg":"Requests are too frequent, please try again later."}
-```
-
-## Delete Plugin
-
-To remove the `limit-req` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["GET"],
-    "uri": "/index.html",
-    "id": 1,
-    "plugins": {
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
-    }
-}'
-```
-
-Similarly for removing the Plugin from a Consumer:
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/consumers -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "username": "consumer_jack",
-    "plugins": {
-        "key-auth": {
-            "key": "auth-jack"
-        }
-    }
-}'
-```
+This verifies the Plugin rate limits by the combination of variables, `remote_addr` and `consumer_name`.
