@@ -82,6 +82,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/body-transformer",
             "plugins/attach-consumer-label"
           ]
         },
