@@ -71,12 +71,11 @@ local function check_conf(id, conf, _need_id, schema)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        for name, plugin_conf in pairs(conf.plugins) do
+        for name, _ in pairs(conf.plugins) do
             local plugin_obj = plugin.get(name)
             if not plugin_obj then
                 return nil, {error_msg = "unknown plugin " .. name}
             end
-
             if plugin_obj.type ~= "auth" then
                 return nil, {error_msg = "only supports auth type plugins in consumer credential"}
             end
