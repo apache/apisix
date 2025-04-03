@@ -61,14 +61,17 @@ local function check_conf(id, conf, _need_id, schema)
     end
 
     if conf.plugins then
-        local ok, err = check_duplicate_key(id, conf.plugins)
-        if not ok then
-            return nil, {error_msg = err}
-        end
-
+        -- check_schema encrypts the key in the plugin.
+        -- check duplicate key require the original key.
+        local conf_plugins_copy = core.table.deepcopy(conf.plugins)
         ok, err = plugins.check_schema(conf.plugins, core.schema.TYPE_CONSUMER)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
+        end
+
+        local ok, err = check_duplicate_key(id, conf_plugins_copy)
+        if not ok then
+            return nil, {error_msg = err}
         end
 
         for name, _ in pairs(conf.plugins) do
