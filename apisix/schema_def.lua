@@ -126,163 +126,171 @@ local timeout_def = {
 }
 
 
-local health_checker = {
+local health_checker_active = {
     type = "object",
     properties = {
-        active = {
+        type = {
+            type = "string",
+            enum = {"http", "https", "tcp"},
+            default = "http"
+        },
+        timeout = {type = "number", default = 1},
+        concurrency = {type = "integer", default = 10},
+        host = host_def,
+        port = {
+            type = "integer",
+            minimum = 1,
+            maximum = 65535
+        },
+        http_path = {type = "string", default = "/"},
+        https_verify_certificate = {type = "boolean", default = true},
+        healthy = {
             type = "object",
             properties = {
-                type = {
-                    type = "string",
-                    enum = {"http", "https", "tcp"},
-                    default = "http"
+                interval = {type = "integer", minimum = 1, default = 1},
+                http_statuses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "integer",
+                        minimum = 200,
+                        maximum = 599
+                    },
+                    uniqueItems = true,
+                    default = {200, 302}
                 },
-                timeout = {type = "number", default = 1},
-                concurrency = {type = "integer", default = 10},
-                host = host_def,
-                port = {
+                successes = {
                     type = "integer",
                     minimum = 1,
-                    maximum = 65535
-                },
-                http_path = {type = "string", default = "/"},
-                https_verify_certificate = {type = "boolean", default = true},
-                healthy = {
-                    type = "object",
-                    properties = {
-                        interval = {type = "integer", minimum = 1, default = 1},
-                        http_statuses = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                type = "integer",
-                                minimum = 200,
-                                maximum = 599
-                            },
-                            uniqueItems = true,
-                            default = {200, 302}
-                        },
-                        successes = {
-                            type = "integer",
-                            minimum = 1,
-                            maximum = 254,
-                            default = 2
-                        }
-                    }
-                },
-                unhealthy = {
-                    type = "object",
-                    properties = {
-                        interval = {type = "integer", minimum = 1, default = 1},
-                        http_statuses = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                type = "integer",
-                                minimum = 200,
-                                maximum = 599
-                            },
-                            uniqueItems = true,
-                            default = {429, 404, 500, 501, 502, 503, 504, 505}
-                        },
-                        http_failures = {
-                            type = "integer",
-                            minimum = 1,
-                            maximum = 254,
-                            default = 5
-                        },
-                        tcp_failures = {
-                            type = "integer",
-                            minimum = 1,
-                            maximum = 254,
-                            default = 2
-                        },
-                        timeouts = {
-                            type = "integer",
-                            minimum = 1,
-                            maximum = 254,
-                            default = 3
-                        }
-                    }
-                },
-                req_headers = {
-                  type = "array",
-                  minItems = 1,
-                  items = {
-                      type = "string",
-                      uniqueItems = true,
-                  },
+                    maximum = 254,
+                    default = 2
                 }
             }
         },
-        passive = {
+        unhealthy = {
             type = "object",
             properties = {
-                type = {
-                    type = "string",
-                    enum = {"http", "https", "tcp"},
-                    default = "http"
+                interval = {type = "integer", minimum = 1, default = 1},
+                http_statuses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "integer",
+                        minimum = 200,
+                        maximum = 599
+                    },
+                    uniqueItems = true,
+                    default = {429, 404, 500, 501, 502, 503, 504, 505}
                 },
-                healthy = {
-                    type = "object",
-                    properties = {
-                        http_statuses = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                type = "integer",
-                                minimum = 200,
-                                maximum = 599,
-                            },
-                            uniqueItems = true,
-                            default = {200, 201, 202, 203, 204, 205, 206, 207,
-                                       208, 226, 300, 301, 302, 303, 304, 305,
-                                       306, 307, 308}
-                        },
-                        successes = {
-                            type = "integer",
-                            minimum = 0,
-                            maximum = 254,
-                            default = 5
-                        }
-                    }
+                http_failures = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 254,
+                    default = 5
                 },
-                unhealthy = {
-                    type = "object",
-                    properties = {
-                        http_statuses = {
-                            type = "array",
-                            minItems = 1,
-                            items = {
-                                type = "integer",
-                                minimum = 200,
-                                maximum = 599,
-                            },
-                            uniqueItems = true,
-                            default = {429, 500, 503}
-                        },
-                        tcp_failures = {
-                            type = "integer",
-                            minimum = 0,
-                            maximum = 254,
-                            default = 2
-                        },
-                        timeouts = {
-                            type = "integer",
-                            minimum = 0,
-                            maximum = 254,
-                            default = 7
-                        },
-                        http_failures = {
-                            type = "integer",
-                            minimum = 0,
-                            maximum = 254,
-                            default = 5
-                        },
-                    }
+                tcp_failures = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 254,
+                    default = 2
+                },
+                timeouts = {
+                    type = "integer",
+                    minimum = 1,
+                    maximum = 254,
+                    default = 3
                 }
+            }
+        },
+        req_headers = {
+            type = "array",
+            minItems = 1,
+            items = {
+                type = "string",
+                uniqueItems = true,
             },
         }
+    }
+}
+_M.health_checker_active = health_checker_active
+
+
+local health_checker_passive = {
+    type = "object",
+    properties = {
+        type = {
+            type = "string",
+            enum = {"http", "https", "tcp"},
+            default = "http"
+        },
+        healthy = {
+            type = "object",
+            properties = {
+                http_statuses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "integer",
+                        minimum = 200,
+                        maximum = 599,
+                    },
+                    uniqueItems = true,
+                    default = {200, 201, 202, 203, 204, 205, 206, 207,
+                               208, 226, 300, 301, 302, 303, 304, 305,
+                               306, 307, 308}
+                },
+                successes = {
+                    type = "integer",
+                    minimum = 0,
+                    maximum = 254,
+                    default = 5
+                }
+            }
+        },
+        unhealthy = {
+            type = "object",
+            properties = {
+                http_statuses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        type = "integer",
+                        minimum = 200,
+                        maximum = 599,
+                    },
+                    uniqueItems = true,
+                    default = {429, 500, 503}
+                },
+                tcp_failures = {
+                    type = "integer",
+                    minimum = 0,
+                    maximum = 254,
+                    default = 2
+                },
+                timeouts = {
+                    type = "integer",
+                    minimum = 0,
+                    maximum = 254,
+                    default = 7
+                },
+                http_failures = {
+                    type = "integer",
+                    minimum = 0,
+                    maximum = 254,
+                    default = 5
+                },
+            }
+        }
+    },
+}
+_M.health_checker_passive = health_checker_passive
+
+
+local health_checker = {
+    type = "object",
+    properties = {
+        active = health_checker_active,
+        passive = health_checker_passive,
     },
     anyOf = {
         {required = {"active"}},
@@ -290,7 +298,7 @@ local health_checker = {
     },
     additionalProperties = false,
 }
-
+_M.health_checker = health_checker
 
 local nodes_schema = {
     anyOf = {

@@ -18,6 +18,8 @@ local require = require
 local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
+local set_plugins_meta_parent = require("apisix.plugin").set_plugins_meta_parent
+
 local str_lower = string.lower
 local ipairs  = ipairs
 
@@ -32,6 +34,8 @@ local function filter(route)
     if not route.value then
         return
     end
+
+    set_plugins_meta_parent(route.value.plugins, route)
 
     if route.value.host then
         route.value.host = str_lower(route.value.host)
