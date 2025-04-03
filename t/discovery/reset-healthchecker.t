@@ -58,7 +58,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Validate healthchecker recreation on node changes
+=== TEST 1: Validate healthchecker recreation on node count reduces to 1
 --- http_config
 server {
     listen 3000 ;
