@@ -58,7 +58,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: Validate healthchecker recreation on DNS node changes
+=== TEST 1: Validate healthchecker recreation on node changes
 --- http_config
 server {
     listen 3000 ;
