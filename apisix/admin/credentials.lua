@@ -18,41 +18,8 @@ local core     = require("apisix.core")
 local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
-local consumer = require("apisix.consumer")
 local utils = require("apisix.admin.utils")
 local pairs    = pairs
-
-local function check_duplicate_key(id, plugins)
-    for name, plugin_conf in pairs(plugins) do
-        local plugin_obj = plugin.get(name)
-        if not plugin_obj then
-            goto continue
-        end
-
-        if plugin_obj.type ~= "auth" then
-            goto continue
-        end
-
-        local key_field = utils.plugin_key_map[name]
-        if not key_field then
-            goto continue
-        end
-
-        local key_value = plugin_conf[key_field]
-        if not key_value then
-            goto continue
-        end
-
-        local consumer = consumer.find_consumer(name, key_field, key_value)
-        if consumer and consumer.credential_id ~= id then
-            return nil, "duplicate key found with consumer: " .. consumer.username
-        end
-
-        ::continue::
-    end
-
-    return true
-end
 
 local function check_conf(id, conf, _need_id, schema)
     local ok, err = core.schema.check(schema, conf)
@@ -69,7 +36,7 @@ local function check_conf(id, conf, _need_id, schema)
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
 
-        local ok, err = check_duplicate_key(id, conf_plugins_copy)
+        local ok, err = utils.check_duplicate_key(conf_plugins_copy, nil, id)
         if not ok then
             return nil, {error_msg = err}
         end
