@@ -148,7 +148,8 @@ function _M.check_duplicate_key(plugins_conf, username, credential_id)
 
         local consumer = consumer.find_consumer(plugin_name, key_field, key_value)
         if consumer and
-            ((username and consumer.username ~= username) or (credential_id and consumer.credential_id ~= credential_id)) then
+            ((username and consumer.username ~= username) or
+             (credential_id and consumer.credential_id ~= credential_id)) then
             return nil, "duplicate key found with consumer: " .. consumer.username
         end
 

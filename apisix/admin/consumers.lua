@@ -17,8 +17,6 @@
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local resource = require("apisix.admin.resource")
-local plugin = require("apisix.plugin")
-local pairs = pairs
 local utils = require("apisix.admin.utils")
 
 local function check_conf(username, conf, need_username, schema)
