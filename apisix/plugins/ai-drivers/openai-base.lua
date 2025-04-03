@@ -62,6 +62,103 @@ function _M.validate_request(ctx)
 end
 
 
+local function handle_error(err)
+    if core.string.find(err, "timeout") then
+        return 504
+    end
+    return internal_server_error
+end
+
+
+local function read_response(ctx, res)
+    local body_reader = res.body_reader
+    if not body_reader then
+        core.log.warn("AI service sent no response body")
+        return 500
+    end
+
+    local content_type = res.headers["Content-Type"]
+    core.response.set_header("Content-Type", content_type)
+
+    if content_type and core.string.find(content_type, "text/event-stream") then
+        while true do
+            local chunk, err = body_reader() -- will read chunk by chunk
+            if err then
+                core.log.warn("failed to read response chunk: ", err)
+                return handle_error(err)
+            end
+            if not chunk then
+                return
+            end
+
+            ngx_print(chunk)
+            ngx_flush(true)
+
+            local events, err = ngx_re.split(chunk, "\n")
+            if err then
+                core.log.warn("failed to split response chunk [", chunk, "] to events: ", err)
+                goto CONTINUE
+            end
+
+            for _, event in ipairs(events) do
+                if not core.string.find(event, "data:") or core.string.find(event, "[DONE]") then
+                    goto CONTINUE
+                end
+
+                local parts, err = ngx_re.split(event, ":", nil, nil, 2)
+                if err then
+                    core.log.warn("failed to split data event [", event,  "] to parts: ", err)
+                    goto CONTINUE
+                end
+
+                if #parts ~= 2 then
+                    core.log.warn("malformed data event: ", event)
+                    goto CONTINUE
+                end
+
+                local data, err = core.json.decode(parts[2])
+                if err then
+                    core.log.warn("failed to decode data event [", parts[2], "] to json: ", err)
+                    goto CONTINUE
+                end
+
+                -- usage field is null for non-last events, null is parsed as userdata type
+                if data and data.usage and type(data.usage) ~= "userdata" then
+                    core.log.info("got token usage from ai service: ",
+                                        core.json.delay_encode(data.usage))
+                    ctx.ai_token_usage = {
+                        prompt_tokens = data.usage.prompt_tokens or 0,
+                        completion_tokens = data.usage.completion_tokens or 0,
+                        total_tokens = data.usage.total_tokens or 0,
+                    }
+                end
+            end
+
+            ::CONTINUE::
+        end
+    end
+
+    local raw_res_body, err = res:read_body()
+    if not raw_res_body then
+        core.log.warn("failed to read response body: ", err)
+        return handle_error(err)
+    end
+    local res_body, err = core.json.decode(raw_res_body)
+    if err then
+        core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
+            ", it will cause token usage not available")
+    else
+        core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
+        ctx.ai_token_usage = {
+            prompt_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
+            completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
+            total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
+        }
+    end
+    return res.status, raw_res_body
+end
+
+
 function _M.request(self, conf, request_table, extra_opts)
     local httpc, err = http.new()
     if not httpc then
@@ -123,107 +220,16 @@ function _M.request(self, conf, request_table, extra_opts)
 
     params.body = req_json
 
-    local res, err = httpc:request(params)
-    if not res then
-        return nil, err
-    end
+    local code, body = read_response(ctx, res)
 
-    return res, nil
-end
-
-
-function _M.read_response(ctx, res)
-    local body_reader = res.body_reader
-    if not body_reader then
-        core.log.warn("AI service sent no response body")
-        return 500
-    end
-
-    local content_type = res.headers["Content-Type"]
-    core.response.set_header("Content-Type", content_type)
-
-    if content_type and core.string.find(content_type, "text/event-stream") then
-        while true do
-            local chunk, err = body_reader() -- will read chunk by chunk
-            if err then
-                core.log.warn("failed to read response chunk: ", err)
-                if core.string.find(err, "timeout") then
-                    return 504
-                end
-                return 500
-            end
-            if not chunk then
-                return
-            end
-
-            ngx_print(chunk)
-            ngx_flush(true)
-
-            local events, err = ngx_re.split(chunk, "\n")
-            if err then
-                core.log.warn("failed to split response chunk [", chunk, "] to events: ", err)
-                goto CONTINUE
-            end
-
-            for _, event in ipairs(events) do
-                if not core.string.find(event, "data:") or core.string.find(event, "[DONE]") then
-                    goto CONTINUE
-                end
-
-                local parts, err = ngx_re.split(event, ":", nil, nil, 2)
-                if err then
-                    core.log.warn("failed to split data event [", event,  "] to parts: ", err)
-                    goto CONTINUE
-                end
-
-                if #parts ~= 2 then
-                    core.log.warn("malformed data event: ", event)
-                    goto CONTINUE
-                end
-
-                local data, err = core.json.decode(parts[2])
-                if err then
-                    core.log.warn("failed to decode data event [", parts[2], "] to json: ", err)
-                    goto CONTINUE
-                end
-
-                -- usage field is null for non-last events, null is parsed as userdata type
-                if data and data.usage and type(data.usage) ~= "userdata" then
-                    core.log.info("got token usage from ai service: ",
-                                        core.json.delay_encode(data.usage))
-                    ctx.ai_token_usage = {
-                        prompt_tokens = data.usage.prompt_tokens or 0,
-                        completion_tokens = data.usage.completion_tokens or 0,
-                        total_tokens = data.usage.total_tokens or 0,
-                    }
-                end
-            end
-
-            ::CONTINUE::
+    if conf.keepalive then
+        local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+        if not ok then
+            core.log.warn("failed to keepalive connection: ", err)
         end
     end
 
-    local raw_res_body, err = res:read_body()
-    if not raw_res_body then
-        core.log.warn("failed to read response body: ", err)
-        if core.string.find(err, "timeout") then
-            return 504
-        end
-        return 500
-    end
-    local res_body, err = core.json.decode(raw_res_body)
-    if err then
-        core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
-            ", it will cause token usage not available")
-    else
-        core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
-        ctx.ai_token_usage = {
-            prompt_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
-            completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
-            total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
-        }
-    end
-    return res.status, raw_res_body
+    return code, body
 end
 
 
