@@ -53,7 +53,7 @@ description: API 网关 Apache APISIX file-logger 插件可用于将日志数据
 | include_req_body_expr | array   | 否   | 当 `include_req_body` 属性设置为 `true` 时的过滤器。只有当此处设置的表达式求值为 `true` 时，才会记录请求体。有关更多信息，请参阅 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 。 |
 | include_resp_body      | boolean | 否   | 当设置为 `true` 时，生成的文件包含响应体。                                                                                               |
 | include_resp_body_expr | array   | 否   | 当 `include_resp_body` 属性设置为 `true` 时，使用该属性并基于 [lua-resty-expr](https://github.com/api7/lua-resty-expr) 进行过滤。如果存在，则仅在表达式计算结果为 `true` 时记录响应。       |
-| match        | array[] | 否   |  当设置了这个选项后，只有匹配规则的日志才会被记录。`match` 是一个表达式列表，具体请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
+| match        | array[array] | 否   |  当设置了这个选项后，只有匹配规则的日志才会被记录。`match` 是一个表达式列表，具体请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)。   |
 
 ### 默认日志格式示例
 
@@ -190,11 +190,11 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
   "plugins": {
     "file-logger": {
       "path": "logs/file.log",
-      "match": {
-        {
-          { "arg_name","==","jack" }
-        }
-      }
+      "match": [
+        [
+          [ "arg_name","==","jack" ]
+        ]
+      ]
     }
   },
   "upstream": {
