@@ -1,5 +1,5 @@
 ---
-title: AI Rate Limiting
+title: ai-rate-limiting
 keywords:
   - Apache APISIX
   - API Gateway
