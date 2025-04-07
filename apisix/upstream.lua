@@ -359,10 +359,8 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
-    if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf)
-        api_ctx.up_checker = checker
-    end
+    local checker = fetch_healthchecker(up_conf)
+    api_ctx.up_checker = checker
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
