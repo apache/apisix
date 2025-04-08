@@ -38,92 +38,136 @@ local model_options_schema = {
     description = "Key/value settings for the model",
     type = "object",
     properties = {
-        max_tokens = {
-            type = "integer",
-            description = "Defines the max_tokens, if using chat or completion models.",
-            default = 256
-
+        model = {
+            type = "string",
+            description = "Model to execute.",
         },
-        input_cost = {
-            type = "number",
-            description = "Defines the cost per 1M tokens in your prompt.",
-            minimum = 0
-
-        },
-        output_cost = {
-            type = "number",
-            description = "Defines the cost per 1M tokens in the output of the AI.",
-            minimum = 0
-
-        },
-        temperature = {
-            type = "number",
-            description = "Defines the matching temperature, if using chat or completion models.",
-            minimum = 0.0,
-            maximum = 5.0,
-
-        },
-        top_p = {
-            type = "number",
-            description = "Defines the top-p probability mass, if supported.",
-            minimum = 0,
-            maximum = 1,
-
-        },
-        stream = {
-            description = "Stream response by SSE",
-            type = "boolean",
-            default = false,
-        }
-    }
+    },
+    additionalProperties = true,
 }
 
-local model_schema = {
+local ai_instance_schema = {
+    type = "array",
+    minItems = 1,
+    items = {
+        type = "object",
+        properties = {
+            name = {
+                type = "string",
+                minLength = 1,
+                maxLength = 100,
+                description = "Name of the AI service instance.",
+            },
+            provider = {
+                type = "string",
+                description = "Type of the AI service instance.",
+                enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+
+            },
+            priority = {
+                type = "integer",
+                description = "Priority of the provider for load balancing",
+                default = 0,
+            },
+            weight = {
+                type = "integer",
+                minimum = 0,
+            },
+            auth = auth_schema,
+            options = model_options_schema,
+            override = {
+                type = "object",
+                properties = {
+                    endpoint = {
+                        type = "string",
+                        description = "To be specified to override the endpoint of the AI Instance",
+                    },
+                },
+            },
+        },
+        required = {"name", "provider", "auth", "weight"}
+    },
+}
+
+
+_M.ai_proxy_schema = {
     type = "object",
     properties = {
         provider = {
             type = "string",
-            description = "Name of the AI service provider.",
-            oneOf = { "openai" }, -- add more providers later
+            description = "Type of the AI service instance.",
+            enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
 
         },
-        name = {
-            type = "string",
-            description = "Model name to execute.",
-        },
+        auth = auth_schema,
         options = model_options_schema,
+        timeout = {
+            type = "integer",
+            minimum = 1,
+            default = 30000,
+            description = "timeout in milliseconds",
+        },
+        keepalive = {type = "boolean", default = true},
+        keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        ssl_verify = {type = "boolean", default = true },
         override = {
             type = "object",
             properties = {
                 endpoint = {
                     type = "string",
-                    description = "To be specified to override the host of the AI provider",
+                    description = "To be specified to override the endpoint of the AI Instance",
                 },
-            }
-        }
+            },
+        },
     },
-    required = {"provider", "name"}
+    required = {"provider", "auth"}
 }
 
-_M.plugin_schema = {
+_M.ai_proxy_multi_schema = {
     type = "object",
     properties = {
-        auth = auth_schema,
-        model = model_schema,
-        passthrough = { type = "boolean", default = false },
+        balancer = {
+            type = "object",
+            properties = {
+                algorithm = {
+                    type = "string",
+                    enum = { "chash", "roundrobin" },
+                },
+                hash_on = {
+                    type = "string",
+                    default = "vars",
+                    enum = {
+                      "vars",
+                      "header",
+                      "cookie",
+                      "consumer",
+                      "vars_combinations",
+                    },
+                },
+                key = {
+                    description = "the key of chash for dynamic load balancing",
+                    type = "string",
+                },
+            },
+            default = { algorithm = "roundrobin" }
+        },
+        instances = ai_instance_schema,
+        fallback_strategy = {
+            type = "string",
+            enum = { "instance_health_and_rate_limiting" },
+            default = "instance_health_and_rate_limiting",
+        },
         timeout = {
             type = "integer",
             minimum = 1,
-            maximum = 60000,
-            default = 3000,
+            default = 30000,
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
-        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },
-    required = {"model", "auth"}
+    required = {"instances"}
 }
 
 _M.chat_request_schema = {

@@ -58,6 +58,10 @@ end
 -- or cancelled. Note that Nginx worker exit doesn't trigger the clean handler.
 -- Return an index so that we can cancel it later.
 function _M.add_clean_handler(item, func)
+    if not item.clean_handlers then
+        return nil, "clean handlers for the item are nil"
+    end
+
     if not item.clean_handlers._id then
         item.clean_handlers._id = 1
     end

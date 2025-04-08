@@ -155,10 +155,20 @@ local function create_checker(upstream)
         end
     end
 
+    local check_idx, err = core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+    if not check_idx then
+        upstream.is_creating_checker = nil
+        checker:clear()
+        checker:stop()
+        core.log.error("failed to add clean handler, err:",
+            err, " healthcheck parent:", core.json.delay_encode(healthcheck_parent, true))
+
+        return nil
+    end
+
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
-    healthcheck_parent.checker_idx =
-        core.config_util.add_clean_handler(healthcheck_parent, release_checker)
+    healthcheck_parent.checker_idx = check_idx
 
     upstream.is_creating_checker = nil
 
@@ -290,10 +300,10 @@ function _M.set_by_route(route, api_ctx)
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
             end
 
-            up_conf.nodes = new_nodes
-            up_conf.original_nodes = up_conf.nodes
-
             local new_up_conf = core.table.clone(up_conf)
+            new_up_conf.nodes = new_nodes
+            new_up_conf.original_nodes = up_conf.nodes
+
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
                           core.json.delay_encode(new_up_conf, true))
@@ -349,10 +359,8 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
-    if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf)
-        api_ctx.up_checker = checker
-    end
+    local checker = fetch_healthchecker(up_conf)
+    api_ctx.up_checker = checker
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then

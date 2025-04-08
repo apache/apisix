@@ -59,8 +59,6 @@ qr/(connection refused){1,}/
 --- yaml_config
 apisix:
   node_listen: 1984
-  ssl:
-    ssl_trusted_certificate: t/servroot/conf/cert/etcd.pem
 deployment:
   role: traditional
   role_traditional:

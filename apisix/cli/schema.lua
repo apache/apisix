@@ -208,6 +208,7 @@ local config_schema = {
                     properties = {
                         ssl_trusted_certificate = {
                             type = "string",
+                            default = "system"
                         },
                         listen = {
                             type = "array",

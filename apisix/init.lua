@@ -246,15 +246,7 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    local parent = route.value.upstream.parent
-    if parent then
-        route.value.upstream.parent = nil
-    end
-    route.dns_value = core.table.deepcopy(route.value)
-    if parent then
-        route.value.upstream.parent = parent
-        route.dns_value.upstream.parent = parent
-    end
+    route.dns_value = core.table.deepcopy(route.value, { shallows = { "self.upstream.parent"}})
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -461,6 +453,12 @@ end
 
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
+    -- some plugins(ai-proxy...) request upstream by http client directly
+    if api_ctx.bypass_nginx_upstream then
+        common_phase("before_proxy")
+        return
+    end
+
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin

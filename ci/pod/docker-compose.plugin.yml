@@ -57,6 +57,7 @@ services:
       - ./ci/pod/keycloak/server.key.pem:/opt/keycloak/conf/server.key.pem
       - ./ci/pod/keycloak/kcadm_configure_cas.sh:/tmp/kcadm_configure_cas.sh
       - ./ci/pod/keycloak/kcadm_configure_university.sh:/tmp/kcadm_configure_university.sh
+      - ./ci/pod/keycloak/kcadm_configure_basic.sh:/tmp/kcadm_configure_basic.sh
 
   ## kafka-cluster
   zookeeper-server1:

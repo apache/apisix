@@ -28,6 +28,8 @@ local ngx_encode_base64 = ngx.encode_base64
 local plugin_name   = "hmac-auth"
 local ALLOWED_ALGORITHMS = {"hmac-sha1", "hmac-sha256", "hmac-sha512"}
 local resty_sha256 = require("resty.sha256")
+local schema_def = require("apisix.schema_def")
+local auth_utils = require("apisix.utils.auth")
 
 local schema = {
     type = "object",
@@ -61,6 +63,7 @@ local schema = {
             default = false,
         },
         hide_credentials = {type = "boolean", default = false},
+        anonymous_consumer = schema_def.anonymous_consumer_schema,
     },
 }
 
@@ -123,19 +126,13 @@ local function get_consumer(key_id)
         return nil, "missing key_id"
     end
 
-    local consumer_conf = consumer.plugin(plugin_name)
-    if not consumer_conf then
-        return nil, "Missing related consumer"
+    local cur_consumer, _, err = consumer.find_consumer(plugin_name, "key_id", key_id)
+    if not cur_consumer then
+        return nil, err or "Invalid key_id"
     end
+    core.log.info("consumer: ", core.json.delay_encode(consumer, true))
 
-    local consumers = consumer.consumers_kv(plugin_name, consumer_conf, "key_id")
-    local consumer = consumers[key_id]
-    if not consumer then
-        return nil, "Invalid key_id"
-    end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
-
-    return consumer
+    return cur_consumer
 end
 
 
@@ -186,6 +183,10 @@ end
 
 
 local function validate(ctx, conf, params)
+    if not params then
+        return nil
+    end
+
     if not params.keyId or not params.signature then
         return nil, "keyId or signature missing"
     end
@@ -320,26 +321,51 @@ local function retrieve_hmac_fields(ctx)
     return hmac_params
 end
 
-
-function _M.rewrite(conf, ctx)
+local function find_consumer(conf, ctx)
     local params,err = retrieve_hmac_fields(ctx)
     if err then
-        core.log.warn("client request can't be validated: ", err)
-        return 401, {message = "client request can't be validated: " .. err}
+        if not auth_utils.is_running_under_multi_auth(ctx) then
+            core.log.warn("client request can't be validated: ", err)
+        end
+        return nil, nil, "client request can't be validated: " .. err
+    end
+
+    local validated_consumer, err = validate(ctx, conf, params)
+    if not validated_consumer then
+        err = "client request can't be validated: " .. (err or "Invalid signature")
+        if auth_utils.is_running_under_multi_auth(ctx) then
+            return nil, nil, err
+        end
+        core.log.warn(err)
+        return nil, nil, "client request can't be validated"
+    end
+
+    local consumers_conf = consumer.consumers_conf(plugin_name)
+    return validated_consumer, consumers_conf, err
+end
+
+
+function _M.rewrite(conf, ctx)
+    local cur_consumer, consumers_conf, err = find_consumer(conf, ctx)
+    if not cur_consumer then
+        if not conf.anonymous_consumer then
+            return 401, { message = err }
+        end
+        cur_consumer, consumers_conf, err = consumer.get_anonymous_consumer(conf.anonymous_consumer)
+        if not cur_consumer then
+            if auth_utils.is_running_under_multi_auth(ctx) then
+                return 401, err
+            end
+            core.log.error(err)
+            return 401, { message = "Invalid user authorization" }
+        end
     end
 
     if conf.hide_credentials then
         core.request.set_header("Authorization", nil)
     end
-    local validated_consumer, err = validate(ctx, conf, params)
-    if not validated_consumer then
-        core.log.warn("client request can't be validated: ", err or "Invalid signature")
-        return 401, {message = "client request can't be validated"}
-    end
 
-    local consumer_conf = consumer.plugin(plugin_name)
-    consumer.attach_consumer(ctx, validated_consumer, consumer_conf)
-    core.log.info("hit hmac-auth rewrite")
+    consumer.attach_consumer(ctx, cur_consumer, consumers_conf)
 end
 
 
