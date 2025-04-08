@@ -35,6 +35,9 @@ local type  = type
 local ipairs = ipairs
 local setmetatable = setmetatable
 
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
+
 
 function _M.new(opts)
 
@@ -64,9 +67,9 @@ end
 
 local function handle_error(err)
     if core.string.find(err, "timeout") then
-        return 504
+        return HTTP_GATEWAY_TIMEOUT
     end
-    return internal_server_error
+    return HTTP_INTERNAL_SERVER_ERROR
 end
 
 
@@ -74,7 +77,7 @@ local function read_response(ctx, res)
     local body_reader = res.body_reader
     if not body_reader then
         core.log.warn("AI service sent no response body")
-        return 500
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local content_type = res.headers["Content-Type"]
@@ -159,10 +162,11 @@ local function read_response(ctx, res)
 end
 
 
-function _M.request(self, conf, request_table, extra_opts)
+function _M.request(self, ctx, conf, request_table, extra_opts)
     local httpc, err = http.new()
     if not httpc then
-        return nil, "failed to create http client to send request to LLM server: " .. err
+        core.log.error("failed to create http client to send request to LLM server: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
     end
     httpc:set_timeout(conf.timeout)
 
@@ -172,17 +176,27 @@ function _M.request(self, conf, request_table, extra_opts)
         parsed_url = url.parse(endpoint)
     end
 
+    local scheme = parsed_url and parsed_url.scheme or "https"
+    local host = parsed_url and parsed_url.host or self.host
+    local port = parsed_url and parsed_url.port
+    if not port then
+        if scheme == "https" then
+            port = 443
+        else
+            port = 80
+        end
+    end
     local ok, err = httpc:connect({
-        scheme = parsed_url and parsed_url.scheme or "https",
-        host = parsed_url and parsed_url.host or self.host,
-        port = parsed_url and parsed_url.port or self.port,
+        scheme = scheme,
+        host = host,
+        port = port,
         ssl_verify = conf.ssl_verify,
         ssl_server_name = parsed_url and parsed_url.host or self.host,
-        pool_size = conf.keepalive and conf.keepalive_pool,
     })
 
     if not ok then
-        return nil, "failed to connect to LLM server: " .. err
+        core.log.warn("failed to connect to LLM server: ", err)
+        return handle_error(err)
     end
 
     local query_params = extra_opts.query_params
@@ -201,7 +215,6 @@ function _M.request(self, conf, request_table, extra_opts)
     local params = {
         method = "POST",
         headers = headers,
-        keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
         path = path,
         query = query_params
@@ -219,6 +232,12 @@ function _M.request(self, conf, request_table, extra_opts)
     end
 
     params.body = req_json
+
+    local res, err = httpc:request(params)
+    if not res then
+        core.log.warn("failed to send request to LLM server: ", err)
+        return handle_error(err)
+    end
 
     local code, body = read_response(ctx, res)
 

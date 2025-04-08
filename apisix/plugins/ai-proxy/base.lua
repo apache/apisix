@@ -18,7 +18,6 @@
 local core = require("apisix.core")
 local require = require
 local bad_request = ngx.HTTP_BAD_REQUEST
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local _M = {}
 
