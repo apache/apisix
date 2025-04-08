@@ -30,14 +30,10 @@ APISIX can serve as a stream proxy, in addition to being an application layer pr
 By default, stream proxy is disabled.
 
 To enable this option, set `apisix.proxy_mode` to `stream` or `http&stream`, depending on whether you want stream proxy only or both http and stream. Then add the `apisix.stream_proxy` option in `conf/config.yaml` and specify the list of addresses where APISIX should act as a stream proxy and listen for incoming requests.
-:::note
-
-This "apisix.stream_proxy" option has only been added in versions after 3.2.1.
-
-:::
 
 ```yaml
 apisix:
+  proxy_mode: http&stream  # enable both http and stream proxies
   stream_proxy:
     tcp:
       - 9100 # listen on 9100 ports of all network interfaces for TCP requests
@@ -115,6 +111,7 @@ Here is an example with MySQL:
 
    ```yaml
    apisix:
+     proxy_mode: http&stream  # enable both http and stream proxies
      stream_proxy: # TCP/UDP proxy
        tcp: # TCP proxy address list
          - 9100 # by default uses 0.0.0.0
@@ -182,6 +179,7 @@ First of all, we need to enable TLS for the TCP address:
 
 ```yaml
 apisix:
+  proxy_mode: http&stream  # enable both http and stream proxies
   stream_proxy: # TCP/UDP proxy
     tcp: # TCP proxy address list
       - addr: 9100
@@ -240,6 +238,6 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 }'
 ```
 
-By setting the `scheme` to "tls", APISIX will do TLS handshake with the upstream.
+By setting the `scheme` to `tls`, APISIX will do TLS handshake with the upstream.
 
-When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI "apisix_backend" will be used.
+When the client is also speaking TLS over TCP, the SNI from the client will pass through to the upstream. Otherwise, a dummy SNI `apisix_backend` will be used.

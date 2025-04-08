@@ -27,10 +27,11 @@ APISIX 可以对 TCP/UDP 协议进行代理并实现动态负载均衡。在 ngi
 
 ## 如何开启 Stream 代理
 
-要启用该选项，请将 `apisix.proxy_mode` 设置为 `stream` 或 `http&stream`，具体取决于您是只需要流代理还是需要 http 和流。然后在 conf/config.yaml 中添加 apisix.stream_proxy 选项并指定 APISIX 应充当流代理并侦听传入请求的地址列表。
+要启用该选项，请将 `apisix.proxy_mode` 设置为 `stream` 或 `http&stream`，具体取决于您是只需要 stream 代理还是需要 http 和 stream。然后在 `conf/config.yaml` 中添加 `apisix.stream_proxy` 选项并指定 APISIX 应充当 stream 代理并侦听传入请求的地址列表。
 
 ```yaml
 apisix:
+  proxy_mode: http&stream  # enable both http and stream proxies
   stream_proxy: # TCP/UDP proxy
     tcp: # TCP proxy address list
       - 9100
@@ -102,6 +103,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
    ```yaml
    apisix:
+     proxy_mode: http&stream  # enable both http and stream proxies
      stream_proxy: # TCP/UDP proxy
        tcp: # TCP proxy address list
          - 9100 # by default uses 0.0.0.0
@@ -160,14 +162,15 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 完整的匹配选项列表参见 [Admin API 的 Stream Route](./admin-api.md#stream-route)。
 
-## 接收 TLS over TCP 连接
+## 接收基于 TCP 的 TLS 连接
 
-APISIX 支持接收 TLS over TCP 连接。
+APISIX 支持接收基于 TCP 的 TLS 连接。
 
 首先，我们需要给对应的 TCP 地址启用 TLS：
 
 ```yaml
 apisix:
+  proxy_mode: http&stream  # enable both http and stream proxies
   stream_proxy: # TCP/UDP proxy
     tcp: # TCP proxy address list
       - addr: 9100
@@ -192,7 +195,7 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 }'
 ```
 
-当连接为 TLS over TCP 时，我们可以通过 SNI 来匹配路由，比如：
+当连接为基于 TCP 的 TLS 时，我们可以通过 SNI 来匹配路由，比如：
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
@@ -209,9 +212,9 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 
 在这里，握手时发送 SNI `a.test.com` 的连接会被代理到 `127.0.0.1:5991`。
 
-## 代理到 TLS over TCP 上游
+## 代理到基于 TCP 的 TLS 上游
 
-APISIX 还支持代理到 TLS over TCP 上游。
+APISIX 还支持代理到基于 TCP 的 TLS 上游。
 
 ```shell
 curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
@@ -226,6 +229,6 @@ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_ke
 }'
 ```
 
-通过设置 `scheme` 为 tls，APISIX 将与上游进行 TLS 握手。
+通过设置 `scheme` 为 `tls`，APISIX 将与上游进行 TLS 握手。
 
-当客户端也使用 TLS over TCP，客户端发送的 SNI 将传递给上游。否则，将使用一个假的 SNI "apisix_backend"。
+当客户端也使用基于 TCP 的 TLS 上游时，客户端发送的 SNI 将传递给上游。否则，将使用一个假的 SNI `apisix_backend`。
