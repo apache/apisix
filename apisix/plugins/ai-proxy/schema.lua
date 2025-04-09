@@ -108,6 +108,12 @@ _M.ai_proxy_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
         override = {
@@ -164,6 +170,12 @@ _M.ai_proxy_multi_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },

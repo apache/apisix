@@ -35,6 +35,9 @@ local type  = type
 local ipairs = ipairs
 local setmetatable = setmetatable
 
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
+local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
+
 
 function _M.new(opts)
 
@@ -62,81 +65,19 @@ function _M.validate_request(ctx)
 end
 
 
-function _M.request(self, conf, request_table, extra_opts)
-    local httpc, err = http.new()
-    if not httpc then
-        return nil, "failed to create http client to send request to LLM server: " .. err
+local function handle_error(err)
+    if core.string.find(err, "timeout") then
+        return HTTP_GATEWAY_TIMEOUT
     end
-    httpc:set_timeout(conf.timeout)
-
-    local endpoint = extra_opts.endpoint
-    local parsed_url
-    if endpoint then
-        parsed_url = url.parse(endpoint)
-    end
-
-    local ok, err = httpc:connect({
-        scheme = parsed_url and parsed_url.scheme or "https",
-        host = parsed_url and parsed_url.host or self.host,
-        port = parsed_url and parsed_url.port or self.port,
-        ssl_verify = conf.ssl_verify,
-        ssl_server_name = parsed_url and parsed_url.host or self.host,
-        pool_size = conf.keepalive and conf.keepalive_pool,
-    })
-
-    if not ok then
-        return nil, "failed to connect to LLM server: " .. err
-    end
-
-    local query_params = extra_opts.query_params
-
-    if type(parsed_url) == "table" and parsed_url.query and #parsed_url.query > 0 then
-        local args_tab = core.string.decode_args(parsed_url.query)
-        if type(args_tab) == "table" then
-            core.table.merge(query_params, args_tab)
-        end
-    end
-
-    local path = (parsed_url and parsed_url.path or self.path)
-
-    local headers = extra_opts.headers
-    headers["Content-Type"] = "application/json"
-    local params = {
-        method = "POST",
-        headers = headers,
-        keepalive = conf.keepalive,
-        ssl_verify = conf.ssl_verify,
-        path = path,
-        query = query_params
-    }
-
-    if extra_opts.model_options then
-        for opt, val in pairs(extra_opts.model_options) do
-            request_table[opt] = val
-        end
-    end
-
-    local req_json, err = core.json.encode(request_table)
-    if not req_json then
-        return nil, err
-    end
-
-    params.body = req_json
-
-    local res, err = httpc:request(params)
-    if not res then
-        return nil, err
-    end
-
-    return res, nil
+    return HTTP_INTERNAL_SERVER_ERROR
 end
 
 
-function _M.read_response(ctx, res)
+local function read_response(ctx, res)
     local body_reader = res.body_reader
     if not body_reader then
         core.log.warn("AI service sent no response body")
-        return 500
+        return HTTP_INTERNAL_SERVER_ERROR
     end
 
     local content_type = res.headers["Content-Type"]
@@ -147,10 +88,7 @@ function _M.read_response(ctx, res)
             local chunk, err = body_reader() -- will read chunk by chunk
             if err then
                 core.log.warn("failed to read response chunk: ", err)
-                if core.string.find(err, "timeout") then
-                    return 504
-                end
-                return 500
+                return handle_error(err)
             end
             if not chunk then
                 return
@@ -206,10 +144,7 @@ function _M.read_response(ctx, res)
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
         core.log.warn("failed to read response body: ", err)
-        if core.string.find(err, "timeout") then
-            return 504
-        end
-        return 500
+        return handle_error(err)
     end
     local res_body, err = core.json.decode(raw_res_body)
     if err then
@@ -224,6 +159,96 @@ function _M.read_response(ctx, res)
         }
     end
     return res.status, raw_res_body
+end
+
+
+function _M.request(self, ctx, conf, request_table, extra_opts)
+    local httpc, err = http.new()
+    if not httpc then
+        core.log.error("failed to create http client to send request to LLM server: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+    httpc:set_timeout(conf.timeout)
+
+    local endpoint = extra_opts.endpoint
+    local parsed_url
+    if endpoint then
+        parsed_url = url.parse(endpoint)
+    end
+
+    local scheme = parsed_url and parsed_url.scheme or "https"
+    local host = parsed_url and parsed_url.host or self.host
+    local port = parsed_url and parsed_url.port
+    if not port then
+        if scheme == "https" then
+            port = 443
+        else
+            port = 80
+        end
+    end
+    local ok, err = httpc:connect({
+        scheme = scheme,
+        host = host,
+        port = port,
+        ssl_verify = conf.ssl_verify,
+        ssl_server_name = parsed_url and parsed_url.host or self.host,
+    })
+
+    if not ok then
+        core.log.warn("failed to connect to LLM server: ", err)
+        return handle_error(err)
+    end
+
+    local query_params = extra_opts.query_params
+
+    if type(parsed_url) == "table" and parsed_url.query and #parsed_url.query > 0 then
+        local args_tab = core.string.decode_args(parsed_url.query)
+        if type(args_tab) == "table" then
+            core.table.merge(query_params, args_tab)
+        end
+    end
+
+    local path = (parsed_url and parsed_url.path or self.path)
+
+    local headers = extra_opts.headers
+    headers["Content-Type"] = "application/json"
+    local params = {
+        method = "POST",
+        headers = headers,
+        ssl_verify = conf.ssl_verify,
+        path = path,
+        query = query_params
+    }
+
+    if extra_opts.model_options then
+        for opt, val in pairs(extra_opts.model_options) do
+            request_table[opt] = val
+        end
+    end
+
+    local req_json, err = core.json.encode(request_table)
+    if not req_json then
+        return nil, err
+    end
+
+    params.body = req_json
+
+    local res, err = httpc:request(params)
+    if not res then
+        core.log.warn("failed to send request to LLM server: ", err)
+        return handle_error(err)
+    end
+
+    local code, body = read_response(ctx, res)
+
+    if conf.keepalive then
+        local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+        if not ok then
+            core.log.warn("failed to keepalive connection: ", err)
+        end
+    end
+
+    return code, body
 end
 
 
