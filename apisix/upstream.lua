@@ -82,6 +82,9 @@ _M.set = set_directly
 
 
 local function release_checker(healthcheck_parent)
+    if not healthcheck_parent or not healthcheck_parent.checker then
+        return
+    end
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
     checker:delayed_clear(3)
@@ -327,9 +330,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        if up_conf.parent and up_conf.parent.checker then
-            release_checker(up_conf.parent)
-        end
+        release_checker(up_conf.parent)
         return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
