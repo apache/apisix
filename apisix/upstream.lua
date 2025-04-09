@@ -327,7 +327,9 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        release_checker(up_conf.parent)
+        if up_conf.parent and up_conf.parent.checker then
+            release_checker(up_conf.parent)
+        end
         return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
