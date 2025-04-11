@@ -112,3 +112,58 @@ ok
 --- timeout: 22
 --- no_error_log
 unhealthy TCP increment (10/30)
+
+
+
+=== TEST 2: Validate healthchecker deletion on node count reduces to 0
+--- http_config
+server {
+    listen 3000 ;
+    location / {
+      return 200 'ok';
+    }
+}
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /
+    upstream_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local discovery = require("apisix.discovery.init").discovery
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 3000, weight = 50},
+                        {host = "127.0.0.1", port = 8000, weight = 50},
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(5)
+            discovery.mock = {
+                nodes = function()
+                    return {
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.status = res.status
+            ngx.sleep(5)
+        }
+    }
+--- request
+GET /t
+--- timeout: 22
+--- no_error_log
+unhealthy TCP increment (10/30)
+--- error_code: 503
