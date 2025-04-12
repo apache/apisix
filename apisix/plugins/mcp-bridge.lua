@@ -170,7 +170,6 @@ local function sse_handler(conf, ctx)
     if err ~= "exited" then
         proc:kill(resty_signal.signum("KILL") or 9)
     end
-    ngx.log(ngx.ERR, "886")
 end
 
 
