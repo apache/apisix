@@ -15,12 +15,16 @@
 -- limitations under the License.
 --
 local table_remove = table.remove
-local ngx = ngx
+local ngx          = ngx
+local ngx_sleep    = ngx.sleep
+local re_find      = ngx.re.find
+local re_split     = require("ngx.re").split
 local resty_signal = require("resty.signal")
-local core = require("apisix.core")
-local plugin = require("apisix.plugin")
-local upstream = require("apisix.upstream")
-local pipe = require("ngx.pipe")
+local core         = require("apisix.core")
+local plugin       = require("apisix.plugin")
+local upstream     = require("apisix.upstream")
+local pipe         = require("ngx.pipe")
+
 local mcp_session_manager = require("apisix.plugins.mcp.session")
 
 local V241105_ENDPOINT_SSE = "sse"
@@ -39,16 +43,6 @@ local schema = {
                 type = "string",
             },
             minItems = 0,
-        },
-        ping_interval = {
-            type = "integer",
-            minimum = 1,
-            default = 30000,
-        },
-        session_inactive_timeout = {
-            type = "integer",
-            minimum = 1,
-            default = 60000,
         },
     },
     required = {
@@ -72,16 +66,10 @@ end
 
 
 local function sse_send(id, event, data)
-    if id then
-        ngx.say("id: " .. id)
-    end
-    if event then
-        ngx.say("event: " .. event)
-    end
-    local ok, err = ngx.print("data: " .. data .. "\n\n")
+    local ok, err = ngx.print((id and "id: " .. id .. "\n" or "") ..
+                              "event: " .. event .. "\ndata: " .. data .. "\n\n")
     if not ok then
-        ngx.log(ngx.ERR, "failed to send SSE data to buffer: ", err)
-        return nil, err
+        return ok, "failed to write buffer: " .. err
     end
     return ngx.flush(true)
 end
@@ -91,100 +79,103 @@ local function sse_handler(conf, ctx)
     -- TODO: recover by Last-Event-ID
     local session = mcp_session_manager.new()
 
+    -- spawn subprocess
+    ngx.log(ngx.ERR, core.json.encode({conf.command, unpack(conf.args or {})}))
+    local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
+    if not proc then
+        core.log.error("failed to spawn mcp process: ", err)
+        return 500
+    end
+    proc:set_timeouts(nil, 100, 100)
+
     core.response.set_header("Content-Type", "text/event-stream")
     core.response.set_header("Cache-Control", "no-cache")
 
-    -- spawn subprocess
-    local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
-    if not proc then
-        ngx.log(ngx.ERR, "failed to spawn mcp process: ", err)
-        return 500
-    end
-
     -- send endpoint event to advertise the message endpoint
-    sse_send(nil, "endpoint", "/mcp/message?sessionId=" .. session.id .. "")
+    sse_send(nil, "endpoint", "/mcp/message?sessionId=" .. session.id .. "") --TODO assume or configured
+
+    local stdout_partial, stderr_partial
 
     -- enter loop
     while true do
-        session = mcp_session_manager.recover(session.id)
-        if not session then
-            ngx.log(ngx.ERR, "failed to recover session in loop: ", err)
-            return 500 --TODO throw error by SSE
-        end
-
-        local queue_item_str, queue_item
-        local skip_response
-        local result
-
-        if session.last_active_at + 30 < ngx.time() then
-            session.ping_id = session.ping_id + 1
-            local ok, err = sse_send(nil, "message", '{"jsonrpc": "2.0","method": "ping","id":"ping:'..session.ping_id..'"}')
+        if session:session_need_ping() then
+            local next_ping_id, err = session:session_next_ping_id()
+            if not next_ping_id then
+                core.log.error("session ", session.id, " exit, failed to get next ping id: ", err)
+                break
+            end
+            local ok, err = sse_send(nil, "message", '{"jsonrpc": "2.0","method": "ping","id":"ping:'..next_ping_id..'"}')
             if not ok then
                 core.log.info("session ", session.id, " exit, failed to send ping message: ", err)
                 break
             end
         end
-        if session.last_active_at + 60 < ngx.time() then
-            core.log.info("session ", session.id, " exit, inactive timeout")
+        if session:session_timed_out() then
+            core.log.info("session ", session.id, " exit, timed out")
             break
         end
 
-        queue_item_str, err = session:pop_message_queue()
-        if not queue_item_str then
+        -- pop the message from client in the queue and send it to the mcp server
+        repeat
+            local queue_item, err = session:pop_message_queue()
             if err then
-                core.log.error("session ", session.id, " exit, failed to pop message from queue: ", err)
+                core.log.info("session ", session.id, " exit, failed to pop message from queue: ", err)
                 break
             end
-            goto CONTINUE
-        end
-        queue_item = core.json.decode(queue_item_str)
-
-        -- According to the JSON-RPC specification, if the message does not contain an id,
-        -- it means that it is a notification message from peer and the server does not
-        -- need to respond to it
-        skip_response = queue_item.id == nil
-
-        -- write task to stdio and read result
-        proc:write(queue_item_str .. "\n")
-        if not skip_response then
-            result = proc:stdout_read_line() --TODO: read all
-            core.log.error("session ", session.id, " message from stdout, ", result)
-        end
-
-        -- flush queue modification to storage
-        session:flush_to_storage()
-
-        if result and not skip_response then
-            local ok = sse_send(nil, "message", result)
-            if not ok then
-                core.log.info("session ", session.id, " exit, failed to send response message: ", err)
-                break
+            -- write task message to stdio
+            if queue_item and type(queue_item) == "string" then
+                core.log.info("session ", session.id, " send message to mcp server: ", queue_item)
+                proc:write(queue_item .. "\n")
             end
-        end
+        until not queue_item
 
-        ::CONTINUE::
-        queue_item_str = nil
-        queue_item = nil
-        skip_response = false
-        result = nil
-        ngx.sleep(1)
+        -- read all the messages in stdout's pipe, line by line
+        -- if there is an incomplete message it is buffered and spliced before the next message
+        repeat
+            local line, _
+            line, _, stdout_partial = proc:stdout_read_line()
+            if line then
+                local ok, err = sse_send(nil, "message", stdout_partial and stdout_partial .. line or line)
+                if not ok then
+                    core.log.info("session ", session.id, " exit, failed to send response message: ", err)
+                    break
+                end
+                stdout_partial = nil
+            end
+        until not line
+
+        repeat
+            local line, _
+            line, _, stderr_partial = proc:stderr_read_line()
+            if line then
+                local ok, err = sse_send(nil, "message",
+                    '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
+                    .. (stderr_partial and stderr_partial .. line or line) .. '"}}'
+                )
+                if not ok then
+                    core.log.info("session ", session.id, " exit, failed to send response message: ", err)
+                    break
+                end
+                stderr_partial = ""
+            end
+        until not line
     end
 
     session:destroy()
 
-    -- close the subprocess
+    -- shutdown the subprocess
     proc:shutdown("stdin")
     proc:wait()
     local _, err = proc:wait() -- check if process not exited then kill it
     if err ~= "exited" then
-        proc:kill(resty_signal.signum("KILL"))
+        proc:kill(resty_signal.signum("KILL") or 9)
     end
+    ngx.log(ngx.ERR, "886")
 end
 
 
 local function message_handler(conf, ctx)
     local session_id = ctx.var.arg_sessionId
-    --ngx.log(ngx.ERR, 'sessionId: ', session_id)
     local session = mcp_session_manager.recover(session_id)
 
     if not session then
@@ -201,13 +192,13 @@ local function message_handler(conf, ctx)
         return 400
     end
     if core.string.has_prefix(tostring(body_json.id), "ping") then --TODO check client pong
-        session:session_pong()
+        session:on_session_pong()
         return 202
     end
 
     local ok, err = session:push_message_queue(body)
     if not ok then
-        ngx.log(ngx.ERR, "failed to add task to queue: ", err)
+        core.log.error("failed to add task to queue: ", err)
         return 500
     end
 

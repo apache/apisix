@@ -2,8 +2,29 @@ local table_insert = table.insert
 local shared_dict = ngx.shared["mcp-session"]
 local core = require("apisix.core")
 
+local SESSION_LAST_ACTIVE_AT = "_last_active_at"
+local SESSION_THRESHOLD_PING = 30000
+local SESSION_THRESHOLD_TIMEOUT = 60000
+local STORAGE_SUFFIX_LAST_ACTIVE_AT = ":last_active_at"
+local STORAGE_SUFFIX_PING_ID = ":ping_id"
+local STORAGE_SUFFIX_QUEUE = ":queue"
+
 local _M = {}
-local mt = { __index = _M }
+local mt = {
+    __index = function (table, key)
+        if key == SESSION_LAST_ACTIVE_AT then
+            return shared_dict:get(table.id .. STORAGE_SUFFIX_LAST_ACTIVE_AT) or 0
+        end
+        return rawget(table, key) or _M[key]
+    end,
+    __newindex = function (table, key, value)
+        if key == SESSION_LAST_ACTIVE_AT then
+            shared_dict:set(table.id .. STORAGE_SUFFIX_LAST_ACTIVE_AT, value)
+        else
+            rawset(table, key, value)
+        end
+    end
+}
 
 _M.STATE_UNINITIALIZED = "uninitialized"
 _M.STATE_INITIALIZED = "initialized"
@@ -16,15 +37,12 @@ end
 function _M.new()
     local session = setmetatable({
         id = gen_session_id(),
-        requests = {},
         responses = {},
         queue = {},
         state = _M.STATE_UNINITIALIZED,
-
-        ping_id = 0,
-        last_active_at = ngx.time(),
     }, mt)
-    session:flush_to_storage()
+    shared_dict:set(session.id .. STORAGE_SUFFIX_LAST_ACTIVE_AT, ngx.time())
+    shared_dict:set(session.id .. STORAGE_SUFFIX_PING_ID, 0)
     return session
 end
 
@@ -34,33 +52,44 @@ function _M.session_initialize(self, params)
     self.client_info = params.clientInfo
     self.capabilities = params.capabilities
     self.state = _M.STATE_INITIALIZED
-    return self:flush_to_storage()
 end
 
 
-function _M.session_pong(self)
-    self.last_active_at = ngx.time()
-    return self:flush_to_storage()
+function _M.session_need_ping(self)
+    return self[SESSION_LAST_ACTIVE_AT] + SESSION_THRESHOLD_PING / 1000 <= ngx.time() --TODO allow customize
+end
+
+
+function _M.session_timed_out(self)
+    return self[SESSION_LAST_ACTIVE_AT] + SESSION_THRESHOLD_TIMEOUT / 1000 <= ngx.time() --TODO allow customize
+end
+
+
+function _M.session_next_ping_id(self)
+    return shared_dict:incr(self.id .. STORAGE_SUFFIX_PING_ID, 1)
+end
+
+
+function _M.on_session_pong(self)
+    self[SESSION_LAST_ACTIVE_AT] = ngx.time()
 end
 
 
 function _M.push_message_queue(self, task)
-    return shared_dict:rpush(self.id..":queue", task)
+    return shared_dict:rpush(self.id .. STORAGE_SUFFIX_QUEUE, task)
 end
 
 
 function _M.pop_message_queue(self)
-    return shared_dict:lpop(self.id..":queue")
-end
-
-
-function _M.flush_to_storage(self)
-    return shared_dict:set(self.id, core.json.encode(self))
+    return shared_dict:lpop(self.id .. STORAGE_SUFFIX_QUEUE)
 end
 
 
 function _M.destroy(self)
-    return shared_dict:delete(self.id)
+    shared_dict:delete(self.id)
+    shared_dict:delete(self.id .. STORAGE_SUFFIX_LAST_ACTIVE_AT)
+    shared_dict:delete(self.id .. STORAGE_SUFFIX_PING_ID)
+    shared_dict:delete(self.id .. STORAGE_SUFFIX_QUEUE)
 end
 
 
@@ -68,6 +97,9 @@ function _M.recover(session_id)
     local session, err = shared_dict:get(session_id)
     if not session then
         return nil, err
+    end
+    if type(session) ~= "string" then
+        return nil, "session data is invalid"
     end
     return setmetatable(core.json.decode(session), mt)
 end
