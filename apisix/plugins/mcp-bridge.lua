@@ -14,25 +14,25 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local table_remove = table.remove
 local ngx          = ngx
-local ngx_sleep    = ngx.sleep
-local re_find      = ngx.re.find
-local re_split     = require("ngx.re").split
+local re_match     = ngx.re.match
 local resty_signal = require("resty.signal")
 local core         = require("apisix.core")
-local plugin       = require("apisix.plugin")
-local upstream     = require("apisix.upstream")
 local pipe         = require("ngx.pipe")
 
 local mcp_session_manager = require("apisix.plugins.mcp.session")
 
-local V241105_ENDPOINT_SSE = "sse"
+local V241105_ENDPOINT_SSE     = "sse"
 local V241105_ENDPOINT_MESSAGE = "message"
 
 local schema = {
     type = "object",
     properties = {
+        base_uri = {
+            type = "string",
+            minLength = 1,
+            default = "",
+        },
         command = {
             type = "string",
             minLength = 1,
@@ -80,7 +80,6 @@ local function sse_handler(conf, ctx)
     local session = mcp_session_manager.new()
 
     -- spawn subprocess
-    ngx.log(ngx.ERR, core.json.encode({conf.command, unpack(conf.args or {})}))
     local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
     if not proc then
         core.log.error("failed to spawn mcp process: ", err)
@@ -92,7 +91,7 @@ local function sse_handler(conf, ctx)
     core.response.set_header("Cache-Control", "no-cache")
 
     -- send endpoint event to advertise the message endpoint
-    sse_send(nil, "endpoint", "/mcp/message?sessionId=" .. session.id .. "") --TODO assume or configured
+    sse_send(nil, "endpoint", conf.base_uri .. "/message?sessionId=" .. session.id) --TODO assume or configured
 
     local stdout_partial, stderr_partial
 
@@ -175,9 +174,10 @@ end
 
 local function message_handler(conf, ctx)
     local session_id = ctx.var.arg_sessionId
-    local session = mcp_session_manager.recover(session_id)
+    local session, err = mcp_session_manager.recover(session_id)
 
     if not session then
+        core.log.error("failed to recover session: ", err)
         return 404
     end
 
@@ -206,13 +206,14 @@ end
 
 
 function _M.access(conf, ctx)
-    local action = ctx.var.uri_param_action
-    if not action then
+    local m, err = re_match(ctx.var.uri, "^" .. conf.base_uri .. "/(.*)", "jo")
+    if err then
+        core.log.info("failed to mcp base uri: ", err)
         return 404
     end
-
-    if core.request.get_method() == "OPTIONS" then
-        return 200
+    local action = m and m[1] or false
+    if not action then
+        return 404
     end
 
     if action == V241105_ENDPOINT_SSE and core.request.get_method() == "GET" then

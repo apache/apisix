@@ -1,4 +1,3 @@
-local table_insert = table.insert
 local shared_dict = ngx.shared["mcp-session"]
 local core = require("apisix.core")
 
@@ -26,9 +25,6 @@ local mt = {
     end
 }
 
-_M.STATE_UNINITIALIZED = "uninitialized"
-_M.STATE_INITIALIZED = "initialized"
-
 local function gen_session_id()
     return core.id.gen_uuid_v4()
 end
@@ -37,10 +33,8 @@ end
 function _M.new()
     local session = setmetatable({
         id = gen_session_id(),
-        responses = {},
-        queue = {},
-        state = _M.STATE_UNINITIALIZED,
     }, mt)
+    shared_dict:set(session.id, core.json.encode(session))
     shared_dict:set(session.id .. STORAGE_SUFFIX_LAST_ACTIVE_AT, ngx.time())
     shared_dict:set(session.id .. STORAGE_SUFFIX_PING_ID, 0)
     return session
@@ -103,6 +97,5 @@ function _M.recover(session_id)
     end
     return setmetatable(core.json.decode(session), mt)
 end
-
 
 return _M
