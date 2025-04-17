@@ -68,10 +68,10 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | session.cookie     | object   | False    |     |             |   Cookie configurations.    |
 | session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
 | session_contents   | object   | False    |                   |             | Session content configurations. If unconfigured, all data will be stored in the session. |
-| session_contents.access_token   | boolean   | False    |          |             | If true, store the access token in the seesion.  |
-| session_contents.id_token   | boolean   | False    |          |             | If true, store the ID token in the seesion.  |
-| session_contents.enc_id_token   | boolean   | False    |          |             | If true, store the encrypted ID token in the seesion.  |
-| session_contents.user   | boolean   | False    |          |             | If true, store the user info in the seesion.  |
+| session_contents.access_token   | boolean   | False    |          |             | If true, store the access token in the session.  |
+| session_contents.id_token   | boolean   | False    |          |             | If true, store the ID token in the session.  |
+| session_contents.enc_id_token   | boolean   | False    |          |             | If true, store the encrypted ID token in the session.  |
+| session_contents.user   | boolean   | False    |          |             | If true, store the user info in the session.  |
 | unauth_action      | string   | False    | auth                |  ["auth","deny","pass"]            | Action for unauthenticated requests. When set to `auth`, redirect to the authentication endpoint of the OpenID provider. When set to `pass`, allow the request without authentication. When set to `deny`, return 401 unauthenticated responses rather than start the authorization code grant flow.    |
 | proxy_opts         | object   | False    |     |                | Configurations for the proxy server that the OpenID provider is behind.               |
 | proxy_opts.http_proxy     | string   | False    |     |          | Proxy server address for HTTP requests, such as `http://<proxy_host>:<proxy_port>`.   |
