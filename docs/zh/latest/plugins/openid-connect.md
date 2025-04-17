@@ -68,6 +68,11 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | session.cookie | object | 否 | | | Cookie 配置。 |
 | session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生存时间（秒）。|
 | unauth_action | string | 否 | auth | ["auth","deny","pass"] | 未经身份验证的请求的操作。设置为 `auth` 时，重定向到 OpenID 提供程序的身份验证端点。设置为 `pass` 时，允许请求而无需身份验证。设置为 `deny` 时，返回 401 未经身份验证的响应，而不是启动授权代码授予流程。|
+| session_contents   | object   | 否    |       |        | 会话内容配置。如果未配置，将把所有数据存储在会话中。 |
+| session_contents.access_token   | boolean   | 否    |     true     |        | 若为 true，则将访问令牌存储在会话中。 |
+| session_contents.id_token   | boolean   | 否    |     true     |       | 若为 true，则将 ID 令牌存储在会话中。 |
+| session_contents.enc_id_token   | boolean   | 否    |     true     |        | 若为 true，则将加密的 ID 令牌存储在会话中。 |
+| session_contents.user   | boolean   | 否    |     true     |        | 若为 true，则将用户信息存储在会话中。 |
 | proxy_opts | object | 否 | | | OpenID 提供程序背后的代理服务器的配置。|
 | proxy_opts.http_proxy | string | 否 | |  | HTTP 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。|
 | proxy_opts.https_proxy | string | 否 | | | HTTPS 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。 |
