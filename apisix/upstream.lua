@@ -82,6 +82,9 @@ _M.set = set_directly
 
 
 local function release_checker(healthcheck_parent)
+    if not healthcheck_parent or not healthcheck_parent.checker then
+        return
+    end
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
     checker:delayed_clear(3)
@@ -300,10 +303,10 @@ function _M.set_by_route(route, api_ctx)
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
             end
 
-            up_conf.nodes = new_nodes
-            up_conf.original_nodes = up_conf.nodes
-
             local new_up_conf = core.table.clone(up_conf)
+            new_up_conf.nodes = new_nodes
+            new_up_conf.original_nodes = up_conf.nodes
+
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
                           core.json.delay_encode(new_up_conf, true))
@@ -327,6 +330,7 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
+        release_checker(up_conf.parent)
         return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
@@ -359,10 +363,8 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
-    if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf)
-        api_ctx.up_checker = checker
-    end
+    local checker = fetch_healthchecker(up_conf)
+    api_ctx.up_checker = checker
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then

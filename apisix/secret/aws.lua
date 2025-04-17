@@ -16,9 +16,12 @@
 --
 
 --- AWS Tools.
+require("resty.aws.config") -- to read env vars before initing aws module
+
 local core = require("apisix.core")
 local http = require("resty.http")
 local aws = require("resty.aws")
+local aws_instance
 
 local sub = core.string.sub
 local find = core.string.find
@@ -51,7 +54,9 @@ local _M = {
 }
 
 local function make_request_to_aws(conf, key)
-    local aws_instance = aws()
+    if not aws_instance then
+        aws_instance = aws()
+    end
 
     local region = conf.region
 

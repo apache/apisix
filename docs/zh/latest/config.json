@@ -1,5 +1,5 @@
 {
-  "version": "3.11.0",
+  "version": "3.12.0",
   "sidebar": [
     {
       "type": "category",
@@ -83,6 +83,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/body-transformer",
             "plugins/attach-consumer-label"
           ]
         },
@@ -243,6 +244,10 @@
         {
           "type": "doc",
           "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
         },
         {
           "type": "doc",

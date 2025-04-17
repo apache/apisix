@@ -27,6 +27,7 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
 });
 
 run_tests;
@@ -174,7 +175,12 @@ hello world
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {
@@ -327,7 +333,12 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {

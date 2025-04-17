@@ -14,53 +14,43 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+require("resty.aws.config") -- to read env vars before initing aws module
+
 local core = require("apisix.core")
-local aws_instance = require("resty.aws")()
+local aws = require("resty.aws")
+local aws_instance
+
 local http = require("resty.http")
 local fetch_secrets = require("apisix.secret").fetch_secrets
 
-local next = next
 local pairs = pairs
 local unpack = unpack
 local type = type
 local ipairs = ipairs
-local require = require
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
-
-
-local aws_comprehend_schema = {
-    type = "object",
-    properties = {
-        access_key_id = { type = "string" },
-        secret_access_key = { type = "string" },
-        region = { type = "string" },
-        endpoint = {
-            type = "string",
-            pattern = [[^https?://]]
-        },
-        ssl_verify = {
-            type = "boolean",
-            default = true
-        }
-    },
-    required = { "access_key_id", "secret_access_key", "region", }
-}
 
 local moderation_categories_pattern = "^(PROFANITY|HATE_SPEECH|INSULT|"..
                                       "HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"
 local schema = {
     type = "object",
     properties = {
-        provider = {
+        comprehend = {
             type = "object",
             properties = {
-                aws_comprehend = aws_comprehend_schema
+                access_key_id = { type = "string" },
+                secret_access_key = { type = "string" },
+                region = { type = "string" },
+                endpoint = {
+                    type = "string",
+                    pattern = [[^https?://]]
+                },
+                ssl_verify = {
+                    type = "boolean",
+                    default = true
+                }
             },
-            maxProperties = 1,
-            -- ensure only one provider can be configured while implementing support for
-            -- other providers
-            required = { "aws_comprehend" }
+            required = { "access_key_id", "secret_access_key", "region", }
         },
         moderation_categories = {
             type = "object",
@@ -78,20 +68,16 @@ local schema = {
             minimum = 0,
             maximum = 1,
             default = 0.5
-        },
-        llm_provider = {
-            type = "string",
-            enum = { "openai" },
         }
     },
-    required = { "provider", "llm_provider" },
+    required = { "comprehend" },
 }
 
 
 local _M = {
     version  = 0.1,
-    priority = 1040, -- TODO: might change
-    name     = "ai-content-moderation",
+    priority = 1050,
+    name     = "ai-aws-content-moderation",
     schema   = schema,
 }
 
@@ -107,48 +93,44 @@ function _M.rewrite(conf, ctx)
         return HTTP_INTERNAL_SERVER_ERROR, "failed to retrieve secrets from conf"
     end
 
-    local body, err = core.request.get_json_request_body_table()
+    local body, err = core.request.get_body()
     if not body then
         return HTTP_BAD_REQUEST, err
     end
 
-    local msgs = body.messages
-    if type(msgs) ~= "table" or #msgs < 1 then
-        return HTTP_BAD_REQUEST, "messages not found in request body"
+    local comprehend = conf.comprehend
+
+    if not aws_instance then
+        aws_instance = aws()
     end
-
-    local provider = conf.provider[next(conf.provider)]
-
     local credentials = aws_instance:Credentials({
-        accessKeyId = provider.access_key_id,
-        secretAccessKey = provider.secret_access_key,
-        sessionToken = provider.session_token,
+        accessKeyId = comprehend.access_key_id,
+        secretAccessKey = comprehend.secret_access_key,
+        sessionToken = comprehend.session_token,
     })
 
-    local default_endpoint = "https://comprehend." .. provider.region .. ".amazonaws.com"
-    local scheme, host, port = unpack(http:parse_uri(provider.endpoint or default_endpoint))
+    local default_endpoint = "https://comprehend." .. comprehend.region .. ".amazonaws.com"
+    local scheme, host, port = unpack(http:parse_uri(comprehend.endpoint or default_endpoint))
     local endpoint = scheme .. "://" .. host
     aws_instance.config.endpoint = endpoint
-    aws_instance.config.ssl_verify = provider.ssl_verify
+    aws_instance.config.ssl_verify = comprehend.ssl_verify
 
     local comprehend = aws_instance:Comprehend({
         credentials = credentials,
         endpoint = endpoint,
-        region = provider.region,
+        region = comprehend.region,
         port = port,
     })
 
-    local ai_module = require("apisix.plugins.ai." .. conf.llm_provider)
-    local create_request_text_segments = ai_module.create_request_text_segments
-
-    local text_segments = create_request_text_segments(msgs)
     local res, err = comprehend:detectToxicContent({
         LanguageCode = "en",
-        TextSegments = text_segments,
+        TextSegments = {{
+            Text = body
+        }},
     })
 
     if not res then
-        core.log.error("failed to send request to ", provider, ": ", err)
+        core.log.error("failed to send request to ", endpoint, ": ", err)
         return HTTP_INTERNAL_SERVER_ERROR, err
     end
 

@@ -16,10 +16,12 @@
 #
 
 github:
-    description: The Cloud-Native API Gateway
+    description: The Cloud-Native API Gateway and AI Gateway
     homepage: https://apisix.apache.org/blog/
     labels:
       - api-gateway
+      - ai-gateway
+      - ai
       - cloud-native
       - nginx
       - luajit
@@ -38,7 +40,6 @@ github:
       - docker
       - kubernetes-ingress
       - kubernetes-ingress-controller
-      - service-mesh
 
     enabled_merge_buttons:
       squash:  true
@@ -51,6 +52,10 @@ github:
       master:
         required_pull_request_reviews:
           dismiss_stale_reviews: true
+          require_code_owner_reviews: true
+          required_approving_review_count: 3
+      release/3.12:
+        required_pull_request_reviews:
           require_code_owner_reviews: true
           required_approving_review_count: 3
       release/3.11:

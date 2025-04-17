@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - workflow
   - 流量控制
-description: 本文介绍了关于 Apache APISIX `workflow` 插件的基本信息及使用方法，你可以基于此插件进行复杂的流量操作。
+description: workflow 插件支持根据给定的一组规则有条件地执行对客户端流量的用户定义操作。这提供了一种实现复杂流量管理的细粒度方法。
 ---
 
 <!--
@@ -28,42 +28,25 @@ description: 本文介绍了关于 Apache APISIX `workflow` 插件的基本信�
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/workflow" />
+</head>
+
 ## 描述
 
-`workflow` 插件引入 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 来提供复杂的流量控制功能。
+`workflow` 插件支持根据给定的规则集有条件地执行对客户端流量的用户定义操作，这些规则集使用 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 定义。这为流量管理提供了一种细粒度的方法。
 
 ## 属性
 
 | 名称          | 类型   | 必选项  | 默认值                    | 有效值                                                                                                                                            | 描述 |
 | ------------- | ------ | ------ | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- | ------------- |
-| rules.case | array[array] | 是 |  |                                                                                                                            | 由一个或多个{var, operator, val}元素组成的列表，类似这样：{{var, operator, val}, {var, operator, val}, ...}}。例如：{"arg_name", "==", "json"}，表示当前请求参数 name 是 json。这里的 var 与 NGINX 内部自身变量命名保持一致，所以也可以使用 request_uri、host 等；对于 operator 部分，目前已支持的运算符有 ==、~=、~~、>、<、in、has 和 ! 。关于操作符的具体用法请参考 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) 的 `operator-list` 部分。 |
-| rules.actions | array[object] | 是    |                   |                                                                                                                | 当 `case` 成功匹配时要执行的 `actions`。目前，`actions` 中只支持一个元素。`actions` 的唯一元素的第一个子元素可以是 `return` 或 `limit-count`。 |
+| rules | array[object] | 是 | | | 一对或多对匹配条件和要执行的操作组成的数组。 |
+| rules.case | array[array] | 否 | | | 一个或多个匹配条件的数组，形式为 [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list)，例如 `{"arg_name", "==", "json"}`。 |
+| rules.actions | array[object] | 是 | | | 条件匹配成功后要执行的操作的数组。目前数组只支持一个操作，必须是 `return` 或者 `limit-count`。当操作配置为 `return` 时，可以配置条件匹配成功时返回给客户端的 HTTP 状态码。当操作配置为 `limit-count` 时，可以配置 [`limit-count`](./limit-count.md) 插件除 `group` 之外的所有选项。 |
 
-### `actions` 属性
+## 示例
 
-#### return
-
-| 名称          | 类型   | 必选项  | 默认值                    | 有效值  | 描述 |
-| ------------- | ------ | ------ | ------------------------ | ----| ------------- |
-| actions[1].return | string | 否     |                      |  | 直接返回到客户端。 |
-| actions[1].[2].code | integer | 否 |  | | 返回给客户端的 HTTP 状态码。 |
-
-#### limit-count
-
-| 名称          | 类型   | 必选项  | 默认值                    | 有效值  | 描述 |
-| ------------- | ------ | ------ | ------------------------ | ----| ------------- |
-| actions[1].limit-count | string | 否 |  | | 执行 `limit-count` 插件的功能。 |
-| actions[1].[2] | object | 否 |  | | `limit-count` 插件的配置。 |
-
-:::note
-
-在 `rules` 中，按照 `rules` 的数组下标顺序依次匹配 `case`，如果 `case` 匹配成功，则直接执行对应的 `actions`。
-
-:::
-
-## 启用插件
-
-以下示例展示了如何在路由中启用 `workflow` 插件：
+以下示例演示了如何在不同场景中使用 `workflow` 插件。
 
 :::note
 
@@ -75,102 +58,329 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+### 有条件地返回响应 HTTP 状态代码
+
+以下示例演示了一个简单的规则，其中包含一个匹配条件和一个关联操作，用于有条件地返回 HTTP 状态代码。
+
+使用 `workflow` 插件创建一个路由，当请求的 URI 路径为 `/anything/rejected` 时返回 HTTP 状态代码 403：
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri":"/hello/*",
-    "plugins":{
-        "workflow":{
-            "rules":[
-                {
-                    "case":[
-                        ["uri", "==", "/hello/rejected"]
-                    ],
-                    "actions":[
-                        [
-                            "return",
-                            {"code": 403}
-                        ]
-                    ]
-                },
-                {
-                    "case":[
-                        ["uri", "==", "/hello/v2/appid"]
-                    ],
-                    "actions":[
-                        [
-                            "limit-count",
-                            {
-                                "count":2,
-                                "time_window":60,
-                                "rejected_code":429
-                            }
-                        ]
-                    ]
-                }
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "workflow-route",
+    "uri": "/anything/*",
+    "plugins": {
+      "workflow":{
+        "rules":[
+          {
+            "case":[
+              ["uri", "==", "/anything/rejected"]
+            ],
+            "actions":[
+              [
+                "return",
+                {"code": 403}
+              ]
             ]
-        }
+          }
+        ]
+      }
     },
-    "upstream":{
-        "type":"roundrobin",
-        "nodes":{
-            "127.0.0.1:1980":1
-        }
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
 ```
 
-如上，我们启用了 `workflow` 插件，如果请求与 `rules` 中的 `case` 匹配，则会执行对应的 `actions`。
-
-**示例 1: 如果请求的 uri 是 `/hello/rejected`，则返回给客户端状态码 `403`**
+发送与任何规则都不匹配的请求：
 
 ```shell
-curl http://127.0.0.1:9080/hello/rejected -i
-HTTP/1.1 403 Forbidden
-......
+curl -i "http://127.0.0.1:9080/anything/anything"
+```
 
+您应该收到 `HTTP/1.1 200 OK` 响应。
+
+发送与配置的规则匹配的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything/rejected"
+```
+
+您应该收到以下 `HTTP/1.1 403 Forbidden` 响应：
+
+```text
 {"error_msg":"rejected by workflow"}
 ```
 
-**示例 2: 如果请求的 uri 是 `/hello/v2/appid`，则执行 `limit-count` 插件，限制请求的数量为 2，时间窗口为 60 秒，如果超过限制数量，则返回给客户端状态码 `429`**
+### 通过 URI 和查询参数有条件地应用速率限制
+
+以下示例演示了一条具有两个匹配条件和一个关联操作的规则，用于有条件地限制请求速率。
+
+使用 `workflow` 插件创建路由，以在 URI 路径为 `/anything/rate-limit` 且查询参数 `env` 值为 `v1` 时应用速率限制：
 
 ```shell
-curl http://127.0.0.1:9080/hello/v2/appid -i
-HTTP/1.1 200 OK
-```
-
-```shell
-curl http://127.0.0.1:9080/hello/v2/appid -i
-HTTP/1.1 200 OK
-```
-
-```shell
-curl http://127.0.0.1:9080/hello/v2/appid -i
-HTTP/1.1 429 Too Many Requests
-```
-
-**示例 3: 如果请求不能被任何 `case` 匹配，则 `workflow` 不会执行任何操作**
-
-```shell
-curl http://127.0.0.1:0080/hello/fake -i
-HTTP/1.1 200 OK
-```
-
-## Delete Plugin
-
-当你需要禁用 `workflow` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uri":"/hello/*",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "workflow-route",
+    "uri": "/anything/*",
+    "plugins":{
+      "workflow":{
+        "rules":[
+          {
+            "case":[
+              ["uri", "==", "/anything/rate-limit"],
+              ["arg_env", "==", "v1"]
+            ],
+            "actions":[
+              [
+                "limit-count",
+                {
+                  "count":1,
+                  "time_window":60,
+                  "rejected_code":429
+                }
+              ]
+            ]
+          }
+        ]
+      }
+    },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "127.0.0.1:1980": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
     }
-}'
+  }'
+```
+
+生成两个符合第二条规则的连续请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything/rate-limit?env=v1"
+```
+
+您应该收到 `HTTP/1.1 200 OK` 响应和 `HTTP 429 Too Many Requests` 响应。
+
+生成不符合条件的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/anything/anything?env=v1"
+```
+
+您应该收到所有请求的 `HTTP/1.1 200 OK` 响应，因为它们不受速率限制。
+
+### 消费者有条件地应用速率限制
+
+以下示例演示了如何配置插件以根据以下规范执行速率限制：
+
+* 消费者 `john` 在 30 秒内应有 5 个请求的配额
+* 消费者 `jane` 在 30 秒内应有 3 个请求的配额
+* 所有其他消费者在 30 秒内应有 2 个请求的配额
+
+虽然此示例将使用 [`key-auth`](./key-auth.md)，但您可以轻松地将其替换为其他身份验证插件。
+
+创建消费者 `john`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "john"
+  }'
+```
+
+Create `key-auth` credential for the consumer:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/john/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-john-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "john-key"
+      }
+    }
+  }'
+```
+
+创建第二个消费者 `jane`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jane"
+  }'
+```
+
+为消费者创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jane/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jane-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jane-key"
+      }
+    }
+  }'
+```
+
+创建第三个消费者 `jimmy`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "username": "jimmy"
+  }'
+```
+
+为消费者创建 `key-auth` 凭证：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jimmy/credentials" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "cred-jimmy-key-auth",
+    "plugins": {
+      "key-auth": {
+        "key": "jimmy-key"
+      }
+    }
+  }'
+```
+
+使用 `workflow` 和 `key-auth` 插件创建路由，并设置所需的速率限制规则：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "workflow-route",
+    "uri": "/anything",
+    "plugins":{
+      "key-auth": {},
+      "workflow":{
+        "rules":[
+          {
+            "actions": [
+              [
+                "limit-count",
+                {
+                  "count": 5,
+                  "key": "consumer_john",
+                  "key_type": "constant",
+                  "rejected_code": 429,
+                  "time_window": 30
+                }
+              ]
+            ],
+            "case": [
+              [
+                "consumer_name",
+                "==",
+                "john"
+              ]
+            ]
+          },
+          {
+            "actions": [
+              [
+                "limit-count",
+                {
+                  "count": 3,
+                  "key": "consumer_jane",
+                  "key_type": "constant",
+                  "rejected_code": 429,
+                  "time_window": 30
+                }
+              ]
+            ],
+            "case": [
+              [
+                "consumer_name",
+                "==",
+                "jane"
+              ]
+            ]
+          },
+          {
+            "actions": [
+              [
+                "limit-count",
+                {
+                  "count": 2,
+                  "key": "$consumer_name",
+                  "key_type": "var",
+                  "rejected_code": 429,
+                  "time_window": 30
+                }
+              ]
+            ]
+          }
+        ]
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org": 1
+      }
+    }
+  }'
+```
+
+为了验证，请使用 `john` 的密钥发送 6 个连续的请求：
+
+```shell
+resp=$(seq 6 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: john-key' -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+您应该看到以下响应，显示在 6 个请求中，5 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+
+```text
+200： 5，429： 1
+```
+
+使用 `jane` 的密钥连续发送 6 个请求：
+
+```shell
+resp=$(seq 6 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: jane-key' -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+您应该看到以下响应，显示在 6 个请求中，3 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+
+```text
+200： 3，429： 3
+```
+
+使用 `jimmy` 的密钥发送 3 个连续请求：
+
+```shell
+resp=$(seq 3 | xargs -I{} curl "http://127.0.0.1:9080/anything" -H 'apikey: jimmy-key' -o /dev/null -s -w "%{http_code}\n") && \
+  count_200=$(echo "$resp" | grep "200" | wc -l) && \
+  count_429=$(echo "$resp" | grep "429" | wc -l) && \
+  echo "200": $count_200, "429": $count_429
+```
+
+您应该看到以下响应，显示在 3 个请求中，2 个请求成功（状态代码 200），而其他请求被拒绝（状态代码 429）。
+
+```text
+200： 2，429： 1
 ```

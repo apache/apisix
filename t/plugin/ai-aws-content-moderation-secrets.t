@@ -33,6 +33,12 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $main_config = $block->main_config // <<_EOC_;
+        env AWS_REGION=us-east-1;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
+
     my $http_config = $block->http_config // <<_EOC_;
         server {
             listen 2668;
@@ -114,16 +120,13 @@ Success! Data written to: kv/apisix/foo
                  [[{
                     "uri": "/echo",
                     "plugins": {
-                        "ai-content-moderation": {
-                            "provider": {
-                                "aws_comprehend": {
-                                    "access_key_id": "$secret://vault/test1/foo/access_key_id",
-                                    "secret_access_key": "$secret://vault/test1/foo/secret_access_key",
-                                    "region": "us-east-1",
-                                    "endpoint": "http://localhost:2668"
-                                }
-                            },
-                            "llm_provider": "openai"
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "$secret://vault/test1/foo/access_key_id",
+                                "secret_access_key": "$secret://vault/test1/foo/secret_access_key",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
                         }
                     },
                     "upstream": {
@@ -169,16 +172,13 @@ POST /echo
                  [[{
                     "uri": "/echo",
                     "plugins": {
-                        "ai-content-moderation": {
-                            "provider": {
-                                "aws_comprehend": {
-                                    "access_key_id": "$env://ACCESS_KEY_ID",
-                                    "secret_access_key": "$env://SECRET_ACCESS_KEY",
-                                    "region": "us-east-1",
-                                    "endpoint": "http://localhost:2668"
-                                }
-                            },
-                            "llm_provider": "openai"
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "$env://ACCESS_KEY_ID",
+                                "secret_access_key": "$env://SECRET_ACCESS_KEY",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
+                            }
                         }
                     },
                     "upstream": {
