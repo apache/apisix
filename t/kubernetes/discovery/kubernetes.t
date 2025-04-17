@@ -385,3 +385,39 @@ qr/re-read the token value/
 --- grep_error_log_out
 re-read the token value
 re-read the token value
+
+
+
+=== TEST 8: default value with minimal configuration and large shared_size
+--- yaml_config
+apisix:
+  node_listen: 1984
+  config_center: yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+    shared_size: "1000m"
+--- request
+GET /compare
+{
+  "service": {
+    "schema": "https",
+    "host": "${KUBERNETES_SERVICE_HOST}",
+    "port": "${KUBERNETES_SERVICE_PORT}"
+  },
+  "client": {
+    "token": "${KUBERNETES_CLIENT_TOKEN}"
+  },
+  "watch_endpoint_slices": false,
+  "shared_size": "1000m",
+  "default_weight": 50
+}
+--- more_headers
+Content-type: application/json
+--- response_body
+true

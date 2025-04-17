@@ -51,7 +51,7 @@ The `file-logger` Plugin is used to push log streams to a specific location.
 | include_req_body_expr  | array   | False    | Filter for when the `include_req_body` attribute is set to `true`. Request body is only logged when the expression set here evaluates to `true`. See [lua-resty-expr](https://github.com/api7/lua-resty-expr) for more. |
 | include_resp_body      | boolean | False     | When set to `true` includes the response body in the log file.                                                                                                                                                                |
 | include_resp_body_expr | array   | False     | When the `include_resp_body` attribute is set to `true`, use this to filter based on [lua-resty-expr](https://github.com/api7/lua-resty-expr). If present, only logs the response into file if the expression evaluates to `true`. |
-| match        | array[] | False   | Logs will be recorded when the rule matching is successful if the option is set. See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available expressions.   |
+| match        | array[array] | False   | Logs will be recorded when the rule matching is successful if the option is set. See [lua-resty-expr](https://github.com/api7/lua-resty-expr#operator-list) for a list of available expressions.   |
 
 ### Example of default log format
 
@@ -175,11 +175,11 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 \
   "plugins": {
     "file-logger": {
       "path": "logs/file.log",
-      "match": {
-        {
-          { "arg_name","==","jack" }
-        }
-      }
+      "match": [
+        [
+          [ "arg_name","==","jack" ]
+        ]
+      ]
     }
   },
   "upstream": {
