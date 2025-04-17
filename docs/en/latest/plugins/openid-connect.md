@@ -242,6 +242,8 @@ upstream sent too big header while reading response header from upstream
 
 If so, try adjusting `proxy_buffers`, `proxy_buffer_size`, and `proxy_busy_buffers_size` to larger values.
 
+Another option is to configure the `session_content` attribute to adjust which data to store in session. For instance, you can set `session_content.access_token` to `true`.
+
 #### 5. Invalid Client Secret
 
 Verify if `client_secret` is valid and correct. An invalid `client_secret` would lead to an authentication failure and no token shall be returned and stored in session.

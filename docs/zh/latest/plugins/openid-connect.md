@@ -242,6 +242,8 @@ upstream sent too big header while reading response header from upstream
 
 如果是这样，请尝试将 `proxy_buffers` 、 `proxy_buffer_size` 和 `proxy_busy_buffers_size` 调整为更大的值。
 
+另一个选项是配置 `session_content` 属性来调整在会话中存储哪些数据。例如，你可以将 `session_content.access_token` 设置为 `true`。
+
 #### 5. 无效的客户端密钥
 
 验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在 session 中。
