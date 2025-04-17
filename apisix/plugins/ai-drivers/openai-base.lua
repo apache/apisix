@@ -167,24 +167,24 @@ function _M.read_response(ctx, res)
 
             for _, event in ipairs(events) do
                 if not core.string.find(event, "data:") or core.string.find(event, "[DONE]") then
-                    goto CONTINUE
+                    goto CONTINUEFOR
                 end
 
                 local parts, err = ngx_re.split(event, ":", nil, nil, 2)
                 if err then
                     core.log.warn("failed to split data event [", event,  "] to parts: ", err)
-                    goto CONTINUE
+                    goto CONTINUEFOR
                 end
 
                 if #parts ~= 2 then
                     core.log.warn("malformed data event: ", event)
-                    goto CONTINUE
+                    goto CONTINUEFOR
                 end
 
                 local data, err = core.json.decode(parts[2])
                 if err then
                     core.log.warn("failed to decode data event [", parts[2], "] to json: ", err)
-                    goto CONTINUE
+                    goto CONTINUEFOR
                 end
 
                 -- usage field is null for non-last events, null is parsed as userdata type
@@ -197,6 +197,7 @@ function _M.read_response(ctx, res)
                         total_tokens = data.usage.total_tokens or 0,
                     }
                 end
+                ::CONTINUEFOR::
             end
 
             ::CONTINUE::
