@@ -14,6 +14,9 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local unpack       = unpack
+local type         = type
+local tostring     = tostring
 local ngx          = ngx
 local re_match     = ngx.re.match
 local resty_signal = require("resty.signal")
@@ -91,7 +94,7 @@ local function sse_handler(conf, ctx)
     core.response.set_header("Cache-Control", "no-cache")
 
     -- send endpoint event to advertise the message endpoint
-    sse_send(nil, "endpoint", conf.base_uri .. "/message?sessionId=" .. session.id) --TODO assume or configured
+    sse_send(nil, "endpoint", conf.base_uri .. "/message?sessionId=" .. session.id)
 
     local stdout_partial, stderr_partial
 
@@ -103,7 +106,8 @@ local function sse_handler(conf, ctx)
                 core.log.error("session ", session.id, " exit, failed to get next ping id: ", err)
                 break
             end
-            local ok, err = sse_send(nil, "message", '{"jsonrpc": "2.0","method": "ping","id":"ping:'..next_ping_id..'"}')
+            local ok, err = sse_send(nil, "message",
+                '{"jsonrpc": "2.0","method": "ping","id":"ping:'..next_ping_id..'"}')
             if not ok then
                 core.log.info("session ", session.id, " exit, failed to send ping message: ", err)
                 break
@@ -118,7 +122,8 @@ local function sse_handler(conf, ctx)
         repeat
             local queue_item, err = session:pop_message_queue()
             if err then
-                core.log.info("session ", session.id, " exit, failed to pop message from queue: ", err)
+                core.log.info("session ", session.id,
+                              " exit, failed to pop message from queue: ", err)
                 break
             end
             -- write task message to stdio
@@ -134,12 +139,14 @@ local function sse_handler(conf, ctx)
             local line, _
             line, _, stdout_partial = proc:stdout_read_line()
             if line then
-                local ok, err = sse_send(nil, "message", stdout_partial and stdout_partial .. line or line)
+                local ok, err = sse_send(nil, "message",
+                    stdout_partial and stdout_partial .. line or line)
                 if not ok then
-                    core.log.info("session ", session.id, " exit, failed to send response message: ", err)
+                    core.log.info("session ", session.id,
+                                  " exit, failed to send response message: ", err)
                     break
                 end
-                stdout_partial = nil
+                stdout_partial = nil -- luacheck: ignore
             end
         until not line
 
@@ -152,10 +159,11 @@ local function sse_handler(conf, ctx)
                     .. (stderr_partial and stderr_partial .. line or line) .. '"}}'
                 )
                 if not ok then
-                    core.log.info("session ", session.id, " exit, failed to send response message: ", err)
+                    core.log.info("session ", session.id,
+                                  " exit, failed to send response message: ", err)
                     break
                 end
-                stderr_partial = ""
+                stderr_partial = "" -- luacheck: ignore
             end
         until not line
     end

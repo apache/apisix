@@ -14,15 +14,20 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local shared_dict = ngx.shared["mcp-session"]
-local core = require("apisix.core")
+local type         = type
+local rawget       = rawget
+local rawset       = rawset
+local setmetatable = setmetatable
+local ngx          = ngx
+local shared_dict  = ngx.shared["mcp-session"]
+local core         = require("apisix.core")
 
-local SESSION_LAST_ACTIVE_AT = "_last_active_at"
-local SESSION_THRESHOLD_PING = 30000
-local SESSION_THRESHOLD_TIMEOUT = 60000
+local SESSION_LAST_ACTIVE_AT        = "_last_active_at"
+local SESSION_THRESHOLD_PING        = 30000  --TODO allow customize
+local SESSION_THRESHOLD_TIMEOUT     = 60000  --TODO allow customize
 local STORAGE_SUFFIX_LAST_ACTIVE_AT = ":last_active_at"
-local STORAGE_SUFFIX_PING_ID = ":ping_id"
-local STORAGE_SUFFIX_QUEUE = ":queue"
+local STORAGE_SUFFIX_PING_ID        = ":ping_id"
+local STORAGE_SUFFIX_QUEUE          = ":queue"
 
 local _M = {}
 local mt = {
@@ -66,12 +71,12 @@ end
 
 
 function _M.session_need_ping(self)
-    return self[SESSION_LAST_ACTIVE_AT] + SESSION_THRESHOLD_PING / 1000 <= ngx.time() --TODO allow customize
+    return self[SESSION_LAST_ACTIVE_AT] + SESSION_THRESHOLD_PING / 1000 <= ngx.time()
 end
 
 
 function _M.session_timed_out(self)
-    return self[SESSION_LAST_ACTIVE_AT] + SESSION_THRESHOLD_TIMEOUT / 1000 <= ngx.time() --TODO allow customize
+    return self[SESSION_LAST_ACTIVE_AT] + SESSION_THRESHOLD_TIMEOUT / 1000 <= ngx.time()
 end
 
 
