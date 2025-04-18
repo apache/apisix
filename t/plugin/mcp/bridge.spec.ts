@@ -7,6 +7,7 @@ import path from "node:path";
 const tools = JSON.parse(
   readFileSync(`./assets/bridge-list-tools.json`, "utf-8")
 );
+const sseEndpoint = new URL("http://localhost:1984/mcp/sse");
 
 describe("mcp-bridge", () => {
   let client: Client;
@@ -14,9 +15,7 @@ describe("mcp-bridge", () => {
   beforeEach(async () => {
     client = new Client({ name: "apisix-e2e-test", version: "1.0.0" });
     await expect(
-      client.connect(
-        new SSEClientTransport(new URL("http://localhost:9081/mcp/sse"))
-      )
+      client.connect(new SSEClientTransport(sseEndpoint))
     ).resolves.not.toThrow();
   });
 
@@ -35,14 +34,12 @@ describe("mcp-bridge", () => {
 
   it("should call both clients at the same time", async () => {
     // write test file
-    await writeFile('/tmp/test.txt', 'test file');
+    await writeFile("/tmp/test.txt", "test file");
 
     // create client2
     const client2 = new Client({ name: "apisix-e2e-test", version: "1.0.0" });
     await expect(
-      client2.connect(
-        new SSEClientTransport(new URL("http://localhost:1984/mcp/sse"))
-      )
+      client2.connect(new SSEClientTransport(sseEndpoint))
     ).resolves.not.toThrow();
 
     // list tools both clients
@@ -65,6 +62,6 @@ describe("mcp-bridge", () => {
     await expect(client2.close()).resolves.not.toThrow();
 
     // remove test file
-    await unlink('/tmp/test.txt');
+    await unlink("/tmp/test.txt");
   });
 });
