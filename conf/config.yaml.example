@@ -273,6 +273,7 @@ nginx_config:                     # Config for render the template to generate n
       tars: 1m
       cas-auth: 10m
       ocsp-stapling: 10m
+      mcp-session: 10m
 
 # discovery:                      # Service Discovery
 #  dns:
@@ -498,6 +499,7 @@ plugins:                           # plugin list (sorted by priority)
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
   #- dubbo-proxy                   # priority: 507

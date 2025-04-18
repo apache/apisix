@@ -356,6 +356,10 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
+    {% if enabled_plugins["mcp-bridge"] then %}
+    lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
+    {% end %}
+
     {% if config_center == "xds" then %}
     lua_shared_dict xds-config  10m;
     lua_shared_dict xds-config-version  1m;

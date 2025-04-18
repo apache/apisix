@@ -54,7 +54,7 @@ local plugin_name = "mcp-bridge"
 
 local _M = {
     version = 0.1,
-    priority = 0,
+    priority = 510,
     name = plugin_name,
     schema = schema,
 }
