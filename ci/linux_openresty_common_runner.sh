@@ -68,6 +68,11 @@ do_install() {
     # back to home directory
     cd ../../../
 
+    # install mcp test suite
+    pushd t/plugin/mcp
+    pnpm install
+    popd
+
     # install vault cli capabilities
     install_vault_cli
 
