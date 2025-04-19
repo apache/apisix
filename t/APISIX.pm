@@ -582,6 +582,7 @@ _EOC_
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict ocsp-stapling 10m;
+    lua_shared_dict mcp-session 10m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;

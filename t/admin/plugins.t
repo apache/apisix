@@ -115,6 +115,7 @@ server-info
 traffic-split
 redirect
 response-rewrite
+mcp-bridge
 degraphql
 kafka-proxy
 grpc-transcode
