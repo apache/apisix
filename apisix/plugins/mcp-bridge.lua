@@ -19,10 +19,14 @@ local type         = type
 local tostring     = tostring
 local ngx          = ngx
 local re_match     = ngx.re.match
+local thread_spawn = ngx.thread.spawn
+local thread_kill  = ngx.thread.kill
 local resty_signal = require("resty.signal")
 local core         = require("apisix.core")
 local pipe         = require("ngx.pipe")
 
+local mcp_server = require("apisix.plugins.mcp.server")
+local mcp_server_wrapper  = require("apisix.plugins.mcp.server_wrapper")
 local mcp_session_manager = require("apisix.plugins.mcp.session")
 
 local V241105_ENDPOINT_SSE     = "sse"
@@ -68,171 +72,108 @@ function _M.check_schema(conf, schema_type)
 end
 
 
-local function sse_send(id, event, data)
-    local ok, err = ngx.print((id and "id: " .. id .. "\n" or "") ..
-                              "event: " .. event .. "\ndata: " .. data .. "\n\n")
-    if not ok then
-        return ok, "failed to write buffer: " .. err
-    end
-    return ngx.flush(true)
-end
-
-
-local function sse_handler(conf, ctx)
-    -- TODO: recover by Last-Event-ID
-    local session = mcp_session_manager.new()
-
-    -- spawn subprocess
-    local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
-    if not proc then
-        core.log.error("failed to spawn mcp process: ", err)
-        return 500
-    end
-    proc:set_timeouts(nil, 100, 100)
-
-    core.response.set_header("Content-Type", "text/event-stream")
-    core.response.set_header("Cache-Control", "no-cache")
-
-    -- send endpoint event to advertise the message endpoint
-    sse_send(nil, "endpoint", conf.base_uri .. "/message?sessionId=" .. session.id)
-
-    local stdout_partial, stderr_partial
-
-    -- enter loop
-    while true do
-        if session:session_need_ping() then
-            local next_ping_id, err = session:session_next_ping_id()
-            if not next_ping_id then
-                core.log.error("session ", session.id, " exit, failed to get next ping id: ", err)
-                break
-            end
-            local ok, err = sse_send(nil, "message",
-                '{"jsonrpc": "2.0","method": "ping","id":"ping:'..next_ping_id..'"}')
-            if not ok then
-                core.log.info("session ", session.id, " exit, failed to send ping message: ", err)
-                break
-            end
+local function on_connect(conf, ctx)
+    return function(additional)
+        local proc, err = pipe.spawn({conf.command, unpack(conf.args or {})})
+        if not proc then
+            core.log.error("failed to spawn mcp process: ", err)
+            return 500
         end
-        if session:session_timed_out() then
-            core.log.info("session ", session.id, " exit, timed out")
-            break
-        end
+        proc:set_timeouts(nil, 100, 100)
+        ctx.mcp_bridge_proc = proc
 
-        -- pop the message from client in the queue and send it to the mcp server
-        repeat
-            local queue_item, err = session:pop_message_queue()
-            if err then
-                core.log.info("session ", session.id,
-                              " exit, failed to pop message from queue: ", err)
-                break
-            end
-            -- write task message to stdio
-            if queue_item and type(queue_item) == "string" then
-                core.log.info("session ", session.id, " send message to mcp server: ", queue_item)
-                proc:write(queue_item .. "\n")
-            end
-        until not queue_item
+        local server = additional.server
 
-        -- read all the messages in stdout's pipe, line by line
-        -- if there is an incomplete message it is buffered and spliced before the next message
-        repeat
-            local line, _
-            line, _, stdout_partial = proc:stdout_read_line()
-            if line then
-                local ok, err = sse_send(nil, "message",
-                    stdout_partial and stdout_partial .. line or line)
-                if not ok then
-                    core.log.info("session ", session.id,
-                                  " exit, failed to send response message: ", err)
+        -- ngx_pipe is a yield operation, so we no longer need
+        -- to explicitly yield to other threads by ngx_sleep
+        ctx.mcp_bridge_proc_event_loop = thread_spawn(function ()
+            local stdout_partial, stderr_partial, need_exit
+            while true do
+                -- read all the messages in stdout's pipe, line by line
+                -- if there is an incomplete message it is buffered and spliced before the next message
+                repeat
+                    local line, _
+                    line, _, stdout_partial = proc:stdout_read_line()
+                    if line then
+                        local ok, err = server.transport:send(
+                            stdout_partial and stdout_partial .. line or line
+                        )
+                        if not ok then
+                            core.log.info("session ", server.session_id,
+                                          " exit, failed to send response message: ", err)
+                            need_exit = true
+                            break
+                        end
+                        stdout_partial = nil -- luacheck: ignore
+                    end
+                until not line
+                if need_exit then
                     break
                 end
-                stdout_partial = nil -- luacheck: ignore
-            end
-        until not line
 
-        repeat
-            local line, _
-            line, _, stderr_partial = proc:stderr_read_line()
-            if line then
-                local ok, err = sse_send(nil, "message",
-                    '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
-                    .. (stderr_partial and stderr_partial .. line or line) .. '"}}'
-                )
-                if not ok then
-                    core.log.info("session ", session.id,
-                                  " exit, failed to send response message: ", err)
+                repeat
+                    local line, _
+                    line, _, stderr_partial = proc:stderr_read_line()
+                    if line then
+                        local ok, err = server.transport:send(
+                            '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
+                            .. (stderr_partial and stderr_partial .. line or line) .. '"}}'
+                        )
+                        if not ok then
+                            core.log.info("session ", server.session_id,
+                                          " exit, failed to send response message: ", err)
+                            need_exit = true
+                            break
+                        end
+                        stderr_partial = "" -- luacheck: ignore
+                    end
+                until not line
+                if need_exit then
                     break
                 end
-                stderr_partial = "" -- luacheck: ignore
             end
-        until not line
-    end
-
-    session:destroy()
-
-    -- shutdown the subprocess
-    proc:shutdown("stdin")
-    proc:wait()
-    local _, err = proc:wait() -- check if process not exited then kill it
-    if err ~= "exited" then
-        proc:kill(resty_signal.signum("KILL") or 9)
+        end)
     end
 end
 
 
-local function message_handler(conf, ctx)
-    local session_id = ctx.var.arg_sessionId
-    local session, err = mcp_session_manager.recover(session_id)
-
-    if not session then
-        core.log.error("failed to recover session: ", err)
-        return 404
+local function on_client_message(conf, ctx)
+    return function(message, additional)
+        core.log.info("session ", additional.server.session_id,
+                      " send message to mcp server: ", additional.raw)
+        ctx.mcp_bridge_proc:write(additional.raw .. "\n")
     end
+end
 
-    local body = core.request.get_body(nil, ctx)
-    if not body then
-        return 400
-    end
 
-    local body_json = core.json.decode(body)
-    if not body_json then
-        return 400
-    end
-    if core.string.has_prefix(tostring(body_json.id), "ping") then --TODO check client pong
-        session:on_session_pong()
-        return 202
-    end
+local function on_disconnect(conf, ctx)
+    return function()
+        if ctx.mcp_bridge_proc_event_loop then
+            thread_kill(ctx.mcp_bridge_proc_event_loop)
+            ctx.mcp_bridge_proc_event_loop = nil
+        end
 
-    local ok, err = session:push_message_queue(body)
-    if not ok then
-        core.log.error("failed to add task to queue: ", err)
-        return 500
+        local proc = ctx.mcp_bridge_proc
+        if proc then
+            proc:shutdown("stdin")
+            proc:wait()
+            local _, err = proc:wait() -- check if process not exited then kill it
+            if err ~= "exited" then
+                proc:kill(resty_signal.signum("KILL") or 9)
+            end
+        end
     end
-
-    return 202
 end
 
 
 function _M.access(conf, ctx)
-    local m, err = re_match(ctx.var.uri, "^" .. conf.base_uri .. "/(.*)", "jo")
-    if err then
-        core.log.info("failed to mcp base uri: ", err)
-        return 404
-    end
-    local action = m and m[1] or false
-    if not action then
-        return 404
-    end
-
-    if action == V241105_ENDPOINT_SSE and core.request.get_method() == "GET" then
-        return sse_handler(conf, ctx)
-    end
-
-    if action == V241105_ENDPOINT_MESSAGE and core.request.get_method() == "POST" then
-        return message_handler(conf, ctx)
-    end
-
-    return 200
+    return mcp_server_wrapper.access(conf, ctx, {
+        event_handler = {
+            on_connect = on_connect(conf, ctx),
+            on_client_message = on_client_message(conf, ctx),
+            on_disconnect = on_disconnect(conf, ctx),
+        },
+    })
 end
 
 
