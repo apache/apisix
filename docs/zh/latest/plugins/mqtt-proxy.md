@@ -49,6 +49,7 @@ description: 本文档介绍了 Apache APISIX mqtt-proxy 插件的信息，通�
     router:
         http: 'radixtree_uri'
         ssl: 'radixtree_sni'
+    proxy_mode: http&stream       # open stream model
     stream_proxy:                 # TCP/UDP proxy
       tcp:                        # TCP proxy port list
         - 9100
