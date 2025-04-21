@@ -77,8 +77,7 @@
             "plugins/ai-aws-content-moderation",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
-            "plugins/ai-rag",
-            "plugins/ai-request-rewrite"
+            "plugins/ai-rag"
           ]
         },
         {
