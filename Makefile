@@ -382,6 +382,8 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
 	$(ENV_INSTALL) apisix/plugins/ai-rag/vector-search/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp
+	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
