@@ -731,6 +731,7 @@ _EOC_
         $ipv6_listen_conf = "listen \[::1\]:1984;"
     }
 
+    my $log_config = $block->log_config // '';
     my $config = $block->config // '';
     $config .= <<_EOC_;
         $ipv6_listen_conf
@@ -844,6 +845,7 @@ _EOC_
             }
 
             log_by_lua_block {
+                $log_config
                 apisix.http_log_phase()
             }
         }
