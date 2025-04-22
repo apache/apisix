@@ -1,4 +1,5 @@
 local ngx          = ngx
+local ngx_exit     = ngx.exit
 local re_match     = ngx.re.match
 local core         = require("apisix.core")
 local mcp_server   = require("apisix.plugins.mcp.server")
@@ -31,8 +32,15 @@ local function sse_handler(conf, ctx, opts)
         if code then
             return code, body
         end
-        server:start()
+        server:start() -- this is a sync call that only returns when the client disconnects
     end
+
+    if opts.event_handler.on_disconnect then
+        opts.event_handler.on_disconnect({ server = server })
+        server:close()
+    end
+
+    ngx_exit(0) -- exit current phase, skip the upstream module
 end
 
 

@@ -38,6 +38,7 @@ function _M.new(opts)
         transport = transport,
         message_broker = message_broker,
         event_handler = {},
+        need_exit = false,
     }, mt)
 
     message_broker:on(broker_utils.EVENT_MESSAGE, function (message, additional)
@@ -61,10 +62,17 @@ function _M.start(self)
     -- ping loop
     local ping = thread_spwan(function()
         while true do
+            if self.need_exit then
+                break
+            end
+
             self.next_ping_id = self.next_ping_id + 1
             local ok, err = self.transport:send(
                 '{"jsonrpc": "2.0","method": "ping","id":"ping:' .. self.next_ping_id .. '"}')
             if not ok then
+                core.log.info("session ", self.session_id,
+                               " exit, failed to send ping message: ", err)
+                self.need_exit = true
                 break
             end
             ngx_sleep(30)
@@ -72,6 +80,13 @@ function _M.start(self)
     end)
     thread_wait(ping)
     thread_kill(ping)
+end
+
+
+function _M.close(self)
+    if self.message_broker then
+        self.message_broker:close()
+    end
 end
 
 
