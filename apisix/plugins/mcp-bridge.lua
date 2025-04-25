@@ -27,7 +27,6 @@ local pipe         = require("ngx.pipe")
 
 local mcp_server = require("apisix.plugins.mcp.server")
 local mcp_server_wrapper  = require("apisix.plugins.mcp.server_wrapper")
-local mcp_session_manager = require("apisix.plugins.mcp.session")
 
 local V241105_ENDPOINT_SSE     = "sse"
 local V241105_ENDPOINT_MESSAGE = "message"
