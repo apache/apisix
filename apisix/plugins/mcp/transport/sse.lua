@@ -16,6 +16,9 @@
 --
 local setmetatable = setmetatable
 local type         = type
+local ngx          = ngx
+local ngx_print    = ngx.print
+local ngx_flush    = ngx.flush
 local core         = require("apisix.core")
 
 local _M = {}
@@ -29,12 +32,12 @@ end
 
 function _M.send(self, message, event_type)
     local data = type(message) == "table" and core.json.encode(message) or message
-    local ok, err = ngx.print("event: " .. (event_type or "message") ..
+    local ok, err = ngx_print("event: " .. (event_type or "message") ..
                                 "\ndata: " .. data .. "\n\n")
     if not ok then
         return ok, "failed to write buffer: " .. err
     end
-    return ngx.flush(true)
+    return ngx_flush(true)
 end
 
 
