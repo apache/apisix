@@ -384,6 +384,8 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp
 	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
+	$(ENV_INSTALL) apisix/plugins/mcp/broker/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
+	$(ENV_INSTALL) apisix/plugins/mcp/transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
