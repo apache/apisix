@@ -33,10 +33,6 @@ _M.EVENT_CLIENT_MESSAGE = "event:client_message"
 
 -- TODO: ping requester and handler
 function _M.new(opts)
-    if opts.session_id then -- TODO: check if session_id is exists
-
-    end
-
     local session_id = opts.session_id or core.id.gen_uuid_v4()
 
     -- TODO: configurable broker type

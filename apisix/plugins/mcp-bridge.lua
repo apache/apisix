@@ -15,21 +15,14 @@
 -- limitations under the License.
 --
 local unpack       = unpack
-local type         = type
-local tostring     = tostring
 local ngx          = ngx
-local re_match     = ngx.re.match
 local thread_spawn = ngx.thread.spawn
 local thread_kill  = ngx.thread.kill
 local resty_signal = require("resty.signal")
 local core         = require("apisix.core")
 local pipe         = require("ngx.pipe")
 
-local mcp_server = require("apisix.plugins.mcp.server")
 local mcp_server_wrapper  = require("apisix.plugins.mcp.server_wrapper")
-
-local V241105_ENDPOINT_SSE     = "sse"
-local V241105_ENDPOINT_MESSAGE = "message"
 
 local schema = {
     type = "object",
@@ -89,7 +82,8 @@ local function on_connect(conf, ctx)
             local stdout_partial, stderr_partial, need_exit
             while true do
                 -- read all the messages in stdout's pipe, line by line
-                -- if there is an incomplete message it is buffered and spliced before the next message
+                -- if there is an incomplete message it is buffered and
+                -- spliced before the next message
                 repeat
                     local line, _
                     line, _, stdout_partial = proc:stdout_read_line()
@@ -115,9 +109,8 @@ local function on_connect(conf, ctx)
                     line, _, stderr_partial = proc:stderr_read_line()
                     if line then
                         local ok, err = server.transport:send(
-                            '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
-                            .. (stderr_partial and stderr_partial .. line or line) .. '"}}'
-                        )
+                           '{"jsonrpc":"2.0","method":"notifications/stderr","params":{"content":"'
+                            .. (stderr_partial and stderr_partial .. line or line) .. '"}}')
                         if not ok then
                             core.log.info("session ", server.session_id,
                                           " exit, failed to send response message: ", err)

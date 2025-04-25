@@ -29,7 +29,8 @@ end
 
 function _M.send(self, message, event_type)
     local data = type(message) == "table" and core.json.encode(message) or message
-    local ok, err = ngx.print("event: " .. (event_type or "message") .. "\ndata: " .. data .. "\n\n")
+    local ok, err = ngx.print("event: " .. (event_type or "message") ..
+                                "\ndata: " .. data .. "\n\n")
     if not ok then
         return ok, "failed to write buffer: " .. err
     end
