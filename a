@@ -1,0 +1,6 @@
+String mfileName = "/Name Folder/File.jpg";  
+
+String path = Environment.getExternalStorageDirectory()+fileName;  
+
+File f = new File(path);
+Boolean deleted = f.delete();
