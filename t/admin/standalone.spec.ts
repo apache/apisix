@@ -1,0 +1,144 @@
+import axios from "axios";
+import YAML from "yaml";
+
+const config1 = {
+  routes: [
+    {
+      id: "r1",
+      uri: "/r1",
+      upstream: {
+        nodes: { "127.0.0.1:1980": 1 },
+        type: "roundrobin",
+      },
+      plugins: { "proxy-rewrite": { uri: "/hello" } },
+    },
+  ],
+};
+const config2 = {
+  routes: [
+    {
+      id: "r2",
+      uri: "/r2",
+      upstream: {
+        nodes: { "127.0.0.1:1980": 1 },
+        type: "roundrobin",
+      },
+      plugins: { "proxy-rewrite": { uri: "/hello" } },
+    },
+  ],
+};
+
+describe("Admin - Standalone", () => {
+  const client = axios.create({
+    baseURL: "http://localhost:1984",
+    headers: {
+      "X-API-KEY": "edd1c9f034335f136f87ad84b625c8f1",
+    },
+  });
+  client.interceptors.response.use((response) => {
+    const contentType = response.headers["content-type"] || "";
+    if (
+      contentType.includes("application/yaml") &&
+      typeof response.data === "string"
+    )
+      response.data = YAML.parse(response.data);
+    return response;
+  });
+
+  it("dump empty config (default json format)", async () => {
+    const resp = await client.get("/apisix/admin/configs");
+    expect(resp.status).toEqual(200);
+    expect(resp.headers["content-type"]).toEqual("application/json");
+    expect(resp.headers["x-apisix-conf-version"]).toEqual("0");
+    expect(resp.data).toEqual({});
+  });
+
+  it("dump empty config (yaml format)", async () => {
+    const resp = await client.get("/apisix/admin/configs", {
+      headers: { Accept: "application/yaml" },
+    });
+    expect(resp.status).toEqual(200);
+    expect(resp.headers["content-type"]).toEqual("application/yaml");
+    expect(resp.headers["x-apisix-conf-version"]).toEqual("0");
+
+    // The lyaml-encoded empty Lua table becomes an array, which is expected, but shouldn't be
+    expect(resp.data).toEqual([]);
+  });
+
+  it("update config (add routes, by json)", async () => {
+    const resp = await client.put("/apisix/admin/configs", config1, {
+      params: { conf_version: 1 },
+    });
+    expect(resp.status).toEqual(202);
+  });
+
+  it("dump config (json format)", async () => {
+    const resp = await client.get("/apisix/admin/configs");
+    expect(resp.status).toEqual(200);
+    expect(resp.headers["x-apisix-conf-version"]).toEqual("1");
+  });
+
+  it('check route "r1"', async () => {
+    const resp = await client.get("/r1");
+    expect(resp.status).toEqual(200);
+    expect(resp.data).toEqual("hello world\n");
+  });
+
+  it("update config (add routes, by yaml)", async () => {
+    const resp = await client.put(
+      "/apisix/admin/configs",
+      YAML.stringify(config2),
+      {
+        params: { conf_version: 2 },
+        headers: { "Content-Type": "application/yaml" },
+      }
+    );
+    expect(resp.status).toEqual(202);
+  });
+
+  it("update config (add routes, by yaml)", async () => {
+    const resp = await client.put(
+      "/apisix/admin/configs",
+      YAML.stringify(config2),
+      {
+        params: { conf_version: 2 },
+        headers: { "Content-Type": "application/yaml" },
+      }
+    );
+    expect(resp.status).toEqual(202);
+  });
+
+  it("dump config (json format)", async () => {
+    const resp = await client.get("/apisix/admin/configs");
+    expect(resp.status).toEqual(200);
+    expect(resp.headers["x-apisix-conf-version"]).toEqual("2");
+  });
+
+  it("wait for config sync", () =>
+    new Promise((resolve) => setTimeout(resolve, 500)));
+
+  it('check route "r1"', () =>
+    expect(client.get("/r1")).rejects.toThrow(
+      "Request failed with status code 404"
+    ));
+
+  it('check route "r2"', async () => {
+    const resp = await client.get("/r2");
+    expect(resp.status).toEqual(200);
+    expect(resp.data).toEqual("hello world\n");
+  });
+
+  it("update config (delete routes)", async () => {
+    const resp = await client.put(
+      "/apisix/admin/configs",
+      {},
+      { params: { conf_version: 3 } }
+    );
+    expect(resp.status).toEqual(202);
+  });
+
+  it('check route "r2"', () =>
+    expect(client.get("/r2")).rejects.toThrow(
+      "Request failed with status code 404"
+    ));
+});
