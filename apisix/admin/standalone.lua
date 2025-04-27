@@ -37,8 +37,9 @@ local function update(ctx)
     if ctx.var.arg_conf_version then
         conf_version = tonumber(ctx.var.arg_conf_version)
         if not conf_version then
-            return core.response.exit(400, {error_msg = "invalid conf_version: "..ctx.var.arg_conf_version
-                                          .. ", should be a integer" })
+            return core.response.exit(400, {error_msg = "invalid conf_version: "
+                                            .. ctx.var.arg_conf_version
+                                            .. ", should be a integer"})
         end
     else
         conf_version = ngx.time()
@@ -46,8 +47,10 @@ local function update(ctx)
     -- check if conf_version greater than the current version
     local _, ver = config_yaml._get_config()
     if conf_version <= ver then
-        return core.response.exit(400, {error_msg = "invalid conf_version: conf_version ("..conf_version
-                                        ..") should be greater than the current version (" .. ver .. ")"})
+        return core.response.exit(400, {error_msg = "invalid conf_version: conf_version ("
+                                        .. conf_version
+                                        .. ") should be greater than the current version ("
+                                        .. ver .. ")"})
     end
 
     -- read the request body
