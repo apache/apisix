@@ -259,7 +259,7 @@ end
 
 
 local function is_use_admin_api()
-    local local_conf, err = config_local.local_conf()
+    local local_conf, _ = config_local.local_conf()
     return local_conf and local_conf.apisix and local_conf.apisix.enable_admin
 end
 
