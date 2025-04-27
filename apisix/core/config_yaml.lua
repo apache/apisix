@@ -27,6 +27,7 @@ local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 local lfs          = require("lfs")
 local file         = require("apisix.cli.file")
 local exiting      = ngx.worker.exiting
@@ -63,7 +64,30 @@ local mt = {
 
 
 local apisix_yaml
+local apisix_yaml_raw -- save a deepcopy of the latest configuration for API
 local apisix_yaml_mtime
+
+
+local function update_config(table, mtime)
+    local ok, err = file.resolve_conf_var(table)
+    if not ok then
+        log.error("failed: failed to resolve variables:" .. err)
+        return
+    end
+
+    apisix_yaml = table
+    apisix_yaml_raw = tbl_deepcopy(table)
+    apisix_yaml_mtime = mtime
+end
+_M._update_config = update_config
+
+
+local function get_config()
+    return apisix_yaml, apisix_yaml_mtime, apisix_yaml_raw
+end
+_M._get_config = get_config
+
+
 local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
@@ -106,14 +130,8 @@ local function read_apisix_yaml(premature, pre_mtime)
         return
     end
 
-    local ok, err = file.resolve_conf_var(apisix_yaml_new)
-    if not ok then
-        log.error("failed: failed to resolve variables:" .. err)
-        return
-    end
+    update_config(apisix_yaml_new, last_modification_time)
 
-    apisix_yaml = apisix_yaml_new
-    apisix_yaml_mtime = last_modification_time
     log.warn("config file ", apisix_yaml_path, " reloaded.")
 end
 
@@ -237,6 +255,12 @@ local function sync_data(self)
 
     self.conf_version = apisix_yaml_mtime
     return true
+end
+
+
+local function is_use_admin_api()
+    local local_conf, err = config_local.local_conf()
+    return local_conf and local_conf.apisix and local_conf.apisix.enable_admin
 end
 
 
@@ -376,13 +400,29 @@ function _M.fetch_created_obj(key)
 end
 
 
+function _M.fetch_all_created_obj()
+    return created_obj
+end
+
+
 function _M.init()
+    if is_use_admin_api() then
+        return true
+    end
+
     read_apisix_yaml()
     return true
 end
 
 
 function _M.init_worker()
+    if is_use_admin_api() then
+        apisix_yaml = {}
+        apisix_yaml_raw = {}
+        apisix_yaml_mtime = 0
+        return true
+    end
+
     -- sync data in each non-master process
     ngx.timer.every(1, read_apisix_yaml)
 

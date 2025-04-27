@@ -244,12 +244,6 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    if yaml_conf.apisix.enable_admin and
-        yaml_conf.deployment.config_provider == "yaml"
-    then
-        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
-    end
-
     local or_ver = get_openresty_version()
     if or_ver == nil then
         util.die("can not find openresty\n")
