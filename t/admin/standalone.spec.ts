@@ -40,7 +40,7 @@ describe("Admin - Standalone", () => {
     const contentType = response.headers["content-type"] || "";
     if (
       contentType.includes("application/yaml") &&
-      typeof response.data === "string" && 
+      typeof response.data === "string" &&
       response.config.responseType !== "text"
     )
       response.data = YAML.parse(response.data);
