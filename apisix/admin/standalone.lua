@@ -23,7 +23,6 @@ local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
-local event        = require("apisix.core.event")
 local check_schema = require("apisix.core.schema").check
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
@@ -33,8 +32,10 @@ local _M = {}
 
 local function update(ctx)
     local content_type = core.request.header(nil, "content-type")
-    local is_json_request = content_type and core.string.has_prefix(content_type, "application/json") or true
-    local is_yaml_request = content_type and core.string.has_prefix(content_type, "application/yaml") or false
+    local is_json_request = content_type and
+                                core.string.has_prefix(content_type, "application/json") or true
+    local is_yaml_request = content_type and
+                                core.string.has_prefix(content_type, "application/yaml") or false
 
     if not is_json_request and not is_yaml_request then
         core.response.exit(400, {error_msg = "invalid content type: " .. content_type ..
@@ -45,7 +46,7 @@ local function update(ctx)
     if ctx.var.arg_conf_version then
         conf_version = tonumber(ctx.var.arg_conf_version)
         if not conf_version then
-            core.response.exit(400, {error_msg = "invalid conf_version: " .. ctx.var.arg_conf_version
+            core.response.exit(400, {error_msg = "invalid conf_version: "..ctx.var.arg_conf_version
                                           .. ", should be a integer" })
         end
     else

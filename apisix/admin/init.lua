@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local require = require
-local yaml = require("lyaml")
 local core = require("apisix.core")
 local get_uri_args = ngx.req.get_uri_args
 local route = require("apisix.utils.router")
