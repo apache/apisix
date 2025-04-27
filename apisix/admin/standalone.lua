@@ -31,45 +31,45 @@ local _M = {}
 
 
 local function update(ctx)
-    local content_type = core.request.header(nil, "content-type")
-    local is_json_request = content_type and
-                                core.string.has_prefix(content_type, "application/json") or true
-    local is_yaml_request = content_type and
-                                core.string.has_prefix(content_type, "application/yaml") or false
-
-    if not is_json_request and not is_yaml_request then
-        core.response.exit(400, {error_msg = "invalid content type: " .. content_type ..
-                                             ", should be application/json or application/yaml" })
-    end
+    local content_type = core.request.header(nil, "content-type") or "application/json"
 
     local conf_version
     if ctx.var.arg_conf_version then
         conf_version = tonumber(ctx.var.arg_conf_version)
         if not conf_version then
-            core.response.exit(400, {error_msg = "invalid conf_version: "..ctx.var.arg_conf_version
+            return core.response.exit(400, {error_msg = "invalid conf_version: "..ctx.var.arg_conf_version
                                           .. ", should be a integer" })
         end
     else
         conf_version = ngx.time()
     end
+    -- check if conf_version greater than the current version
+    local _, ver = config_yaml._get_config()
+    if conf_version <= ver then
+        return core.response.exit(400, {error_msg = "invalid conf_version: conf_version ("..conf_version
+                                        ..") should be greater than the current version (" .. ver .. ")"})
+    end
 
     -- read the request body
     local req_body, err = core.request.get_body()
     if err then
-        core.log.error("failed to read request body: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err})
+        return core.response.exit(400, {error_msg = "invalid request body: " .. err})
+    end
+
+    if not req_body or #req_body <= 0 then
+        return core.response.exit(400, {error_msg = "invalid request body: empty request body"})
     end
 
     -- parse the request body
     if req_body then
         local data, err
-        if is_json_request then
-            data, err = core.json.decode(req_body)
-        elseif is_yaml_request then
+        if core.string.has_prefix(content_type, "application/yaml") then
             data = yaml.load(req_body, { all = false })
             if not data or type(data) ~= "table" then
                 err = "invalid yaml request body"
             end
+        else
+            data, err = core.json.decode(req_body)
         end
         if err then
             core.log.error("invalid request body: ", req_body, " err: ", err)
@@ -91,7 +91,8 @@ local function update(ctx)
 
             for index, item in ipairs(req_body[key]) do
                 local valid, err
-                local err_prefix = "invalid " .. key .. " at index " .. index .. ", err: "
+                -- need to recover to 0-based subscript
+                local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
                 if item_schema then
                     valid, err = check_schema(obj.item_schema, item)
                     if not valid then
@@ -121,12 +122,13 @@ local function update(ctx)
         core.response.exit(500, err)
     end
 
+    core.response.set_header("X-APISIX-Conf-Version", tostring(conf_version))
     return core.response.exit(202)
 end
 
 
 local function get(ctx)
-    local accept = core.request.header(nil, "accept")
+    local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
 
     local _, ver, config = config_yaml._get_config()
