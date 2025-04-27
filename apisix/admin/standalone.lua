@@ -39,7 +39,7 @@ local function update(ctx)
         if not conf_version then
             return core.response.exit(400, {error_msg = "invalid conf_version: "
                                             .. ctx.var.arg_conf_version
-                                            .. ", should be a integer"})
+                                            .. ", should be a integer" })
         end
     else
         conf_version = ngx.time()
