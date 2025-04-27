@@ -17,7 +17,7 @@
 local core    = require("apisix.core")
 local plugins = require("apisix.admin.plugins")
 local resource = require("apisix.admin.resource")
-local utils = require("apisix.admin.utils")
+local consumer = require("apisix.consumer")
 
 local function check_conf(username, conf, need_username, schema)
     local ok, err = core.schema.check(schema, conf)
@@ -37,7 +37,7 @@ local function check_conf(username, conf, need_username, schema)
         if not ok then
             return nil, {error_msg = "invalid plugins configuration: " .. err}
         end
-        local ok, err = utils.check_duplicate_key(conf_plugins_copy, conf.username)
+        local ok, err = consumer.check_duplicate_key(conf_plugins_copy, conf.username)
         if not ok then
             return nil, {error_msg = err}
         end

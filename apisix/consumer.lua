@@ -340,5 +340,50 @@ function _M.get_anonymous_consumer(name)
     return anon_consumer, anon_consumer_conf, err
 end
 
+local auth_plugin_key_map = {
+  ["key-auth"] = "key",
+  ["basic-auth"] = "username",
+  ["jwt-auth"] = "key",
+  ["hmac-auth"] = "key_id"
+}
+
+function _M.check_duplicate_key(plugins_conf, username, credential_id)
+  if not plugins_conf then
+      return true
+  end
+
+  for plugin_name, plugin_conf in pairs(plugins_conf) do
+      local plugin_obj = plugin.get(plugin_name)
+      if not plugin_obj then
+          return nil, "unknown plugin " .. plugin_name
+      end
+
+      if plugin_obj.type ~= "auth" then
+          goto continue
+      end
+
+      local key_field = auth_plugin_key_map[plugin_name]
+      if not key_field then
+          goto continue
+      end
+
+      local key_value = plugin_conf[key_field]
+      if not key_value then
+          goto continue
+      end
+
+      local consumer = _M.find_consumer(plugin_name, key_field, key_value)
+      if consumer and
+          ((username and consumer.username ~= username) or
+           (credential_id and consumer.credential_id ~= credential_id)) then
+          return nil, "duplicate key found with consumer: " .. consumer.username
+      end
+
+      ::continue::
+  end
+
+  return true
+end
+
 
 return _M

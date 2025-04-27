@@ -19,8 +19,6 @@ local ngx_time = ngx.time
 local tonumber = tonumber
 local ipairs = ipairs
 local pairs = pairs
-local consumer = require("apisix.consumer")
-local plugin = require("apisix.plugin")
 
 
 local _M = {}
@@ -110,53 +108,6 @@ function _M.decrypt_params(decrypt_func, body, schema_type)
         local conf = body.node and body.node.value
         decrypt_func(conf.name, conf, schema_type)
     end
-end
-
-
-local plugin_key_map = {
-    ["key-auth"] = "key",
-    ["basic-auth"] = "username",
-    ["jwt-auth"] = "key",
-    ["hmac-auth"] = "key_id"
-}
-
-
-function _M.check_duplicate_key(plugins_conf, username, credential_id)
-    if not plugins_conf then
-        return true
-    end
-
-    for plugin_name, plugin_conf in pairs(plugins_conf) do
-        local plugin_obj = plugin.get(plugin_name)
-        if not plugin_obj then
-            return nil, "unknown plugin " .. plugin_name
-        end
-
-        if plugin_obj.type ~= "auth" then
-            goto continue
-        end
-
-        local key_field = plugin_key_map[plugin_name]
-        if not key_field then
-            goto continue
-        end
-
-        local key_value = plugin_conf[key_field]
-        if not key_value then
-            goto continue
-        end
-
-        local consumer = consumer.find_consumer(plugin_name, key_field, key_value)
-        if consumer and
-            ((username and consumer.username ~= username) or
-             (credential_id and consumer.credential_id ~= credential_id)) then
-            return nil, "duplicate key found with consumer: " .. consumer.username
-        end
-
-        ::continue::
-    end
-
-    return true
 end
 
 return _M

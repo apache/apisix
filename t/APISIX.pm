@@ -280,7 +280,7 @@ _EOC_
     }
 
     # set default `timeout` to 5sec
-    my $timeout = $block->timeout // 5;
+    my $timeout = $block->timeout // 15;
     $block->set_value("timeout", $timeout);
 
     my $stream_tls_request = $block->stream_tls_request;
