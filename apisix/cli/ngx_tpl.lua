@@ -67,7 +67,7 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
-    {% if deployment_role == "traditional" and enable_admin then %}
+    {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
     {% end %}
 }

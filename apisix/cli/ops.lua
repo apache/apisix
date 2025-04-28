@@ -602,6 +602,10 @@ Please modify "admin_key" in conf/config.yaml .
             sys_conf[k] = v
         end
     end
+
+    sys_conf.standalone_with_admin_api = env.deployment_role == "traditional" and
+        yaml_conf.apisix.enable_admin and yaml_conf.deployment.config_provider == "yaml"
+
     sys_conf["wasm"] = yaml_conf.wasm
 
 
