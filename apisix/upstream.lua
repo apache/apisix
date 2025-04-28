@@ -31,7 +31,7 @@ local upstreams
 local healthcheck
 
 local healthcheck_shdict_name = "upstream-healthcheck"
-if is_http then
+if not is_http then
     healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
 end
 
