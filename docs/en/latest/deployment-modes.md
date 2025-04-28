@@ -173,7 +173,7 @@ Now, we have two standalone running modes, file-driven and API-driven.
         -H "Accept: application/json" ## or application/yaml
     ```
 
-    The update API validates the input and returns an error if it is invalid. If the configuration is accepted, it responds with a `202 Accepted` status and includes the latest configuration version in the` X-APISIX-Conf-Version` header.
+    The update API validates the input and returns an error if it is invalid. If the configuration is accepted, it responds with a `202 Accepted` status and includes the latest configuration version in the `X-APISIX-Conf-Version` header.
 
     The get API also returns the version number via the `X-APISIX-Conf-Version` header, and returns a response body containing the configuration in a specific format as requested by the client `Accept` header.
 
