@@ -481,15 +481,16 @@ function _M.init_worker()
 
     local is_yaml_config_provider = local_conf.deployment.config_provider == "yaml"
 
-    router = route.new(is_yaml_config_provider and standalone_uri_route or uri_route)
+    if is_yaml_config_provider then
+        router = route.new(standalone_uri_route)
+        standalone.init_worker()
+    else
+        router = route.new(uri_route)
+    end
 
     -- register reload plugin handler
     events = require("apisix.events")
     events:register(reload_plugins, reload_event, "PUT")
-
-    if is_yaml_config_provider then -- init worker for events handler
-        standalone.init_worker()
-    end
 
     if ngx_worker_id() == 0 then
         -- check if admin_key is required
