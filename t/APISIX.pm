@@ -360,10 +360,10 @@ _EOC_
                 content_by_lua_block {
                     local shell = require("resty.shell")
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
-                    ngx.log(ngx.WARN, "stdout: ", stdout)
-                    ngx.log(ngx.WARN, "stderr: ", stderr)
                     if not ok then
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.print("stdout: ", stdout)
+                        ngx.print("stderr: ", stderr)
                         return
                     end
                     ngx.print(stdout)

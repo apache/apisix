@@ -28,10 +28,6 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
-    if (!defined $block->request) {
-        $block->set_value("request", "GET /t");
-    }
-
     if (!defined $block->yaml_config) {
         $block->set_value("yaml_config", <<'EOF');
 deployment:
@@ -58,5 +54,5 @@ __DATA__
 cd t && pnpm test admin/standalone.spec.ts 2>&1
 --- no_error_log
 failed to execute the script with status
---- error_log
-PASS admin/standalone.spec.ts
+--- response_body eval
+qr/PASS admin\/standalone.spec.ts/
