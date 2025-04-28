@@ -461,5 +461,35 @@ function _M.check_tls_bool(fields, conf, plugin_name)
     end
 end
 
+---
+-- Checks if a string is an nginx variable.
+-- An nginx variable starts with the '$' character.
+--
+-- @function core.utils.is_nginx_variable
+-- @tparam string str The string to check
+-- @treturn boolean true if the string starts with '$', false otherwise
+-- @usage
+-- local utils = require("apisix.core.utils")
+--
+-- -- Usage examples:
+-- local is_var = utils.is_nginx_variable("$host")     -- true
+-- local is_var = utils.is_nginx_variable("host")      -- false
+-- local is_var = utils.is_nginx_variable("${host}")   -- true
+-- local is_var = utils.is_nginx_variable("\\$host")   -- false
+--
+-- -- Usage in APISIX context:
+-- if utils.is_nginx_variable(up_conf.service_name) then
+--     -- Handle as nginx variable
+-- else
+--     -- Handle as regular service name
+-- end
+function _M.is_nginx_variable(str)
+    if not str or type(str) ~= "string" then
+        return false
+    end
+
+    -- Check if the string starts with '$' and it's not escaped
+    return str:sub(1, 1) == "$" and not (str:sub(1, 2) == "\\$")
+end
 
 return _M

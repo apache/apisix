@@ -291,7 +291,13 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
-        local new_nodes, err = dis.nodes(up_conf.service_name, up_conf.discovery_args)
+        if core.utils.is_nginx_variable(up_conf.service_name) then
+            local service_name = core.utils.resolve_nginx_variable(up_conf.service_name)
+        else
+            local service_name = up_conf.service_name
+        end
+
+        local new_nodes, err = dis.nodes(service_name, up_conf.discovery_args)
         if not new_nodes then
             return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
         end
