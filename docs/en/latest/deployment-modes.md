@@ -111,23 +111,77 @@ This method is more suitable for two types of users:
 1. Kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
 2. Different configuration centers: There are many implementations of the configuration center, such as Consul, etc., using the full yaml file for intermediate conversion.
 
-The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
+### Modes
 
-*Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
+Now, we have two standalone running modes, file-driven and API-driven.
 
-Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Standalone mode is enabled.
+1. The file-driven mode is the kind APISIX has always supported.
 
-Standalone mode can only be enabled when we set the role of APISIX as data plane. We set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
+    The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
 
-Refer to the example below:
+    *Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
 
-```yaml
-deployment:
-  role: data_plane
-  role_data_plane:
-    config_provider: yaml
-#END
-```
+    This requires we set the APISIX role to data plane. That is, set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
+
+    Refer to the example below:
+
+    ```yaml
+    deployment:
+      role: data_plane
+      role_data_plane:
+        config_provider: yaml
+    #END
+    ```
+
+    This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
+
+2. The API-driven is an emerging paradigm for standalone.
+
+    The routing rules will be entirely in memory and not in a file, and it will need to be updated using the dedicated Standalone Admin API.
+
+    I.e. we need to send an HTTP PUT request to this API containing the configuration in JSON or YAML format, which will flush the configuration used by each worker in the current APISIX instance.
+
+    Changes will overwrite the entire configuration and take effect immediately, no reboot is required as it is hot updated.
+
+    This requires we set the APISIX role to traditional (since we need to start both the API gateway and the Admin API endpoint) and use the yaml config provider. That is, set `deployment.role` to `traditional`, and set `deployment.role_traditional.config_provider` to `yaml`
+
+    Refer to the example below:
+
+    ```yaml
+    deployment:
+      role: traditional
+      role_traditional:
+        config_provider: yaml
+    #END
+    ```
+
+    This disables the local file source of configuration in favor of the API.When APISIX starts, it uses the empty configuration until you update it via the API.
+
+    The following are API endpoints:
+
+    ```text
+    ## Update configuration
+    ## The conf_version is not required, if it is not entered by the client, the current 10-digit epoch time is used by default.
+    curl -X PUT http://127.0.0.1:9180/apisix/admin/configs?conf_version=1234 \
+        -H "X-API-KEY: <apikey>"
+        -H "Content-Type: application/json" ## or application/yaml
+        --data-binary @config.json
+
+    ## Get latest configuration
+    curl -X GET http://127.0.0.1:9180/apisix/admin/configs
+        -H "X-API-KEY: <apikey>"
+        -H "Accept: application/json" ## or application/yaml
+    ```
+
+    The update API checks our inputs and throws an error if they are incorrect. Returns `202 Accpeted` if the configuration was accepted, and returns the latest configuration version via the `X-APISIX-Conf-Version` header.
+
+    The get API also returns the version number via the `X-APISIX-Conf-Version` header, and returns a response body containing the configuration in a specific format as requested by the client `Accept` header.
+
+    These APIs follow the security requirements of the Admin API exactly, i.e. APIKey, TLS/mTLS, CORS, IP allowlist, etc., nothing special.
+
+    The API accepts input in the same format as the file-based mode described above, although it also allows the user to input JSON instead of just YAML. The following example still applies. However, the API does not rely on the `#END` suffix because HTTP will guarantee input integrity.
+
+    *Note*: In this case, the Admin API based on etcd is not available, the configuration can only be flushed as a whole, rather than modifying a part of it, and the client needs to build request containing the complete new configuration to be sent to the API.
 
 ### How to configure rules
 
