@@ -22,6 +22,7 @@ local tostring     = tostring
 local str_lower    = string.lower
 local ngx          = ngx
 local get_method   = ngx.req.get_method
+local shared_dict  = ngx.shared["standalone-config"]
 local table_insert = table.insert
 local table_new    = require("table.new")
 local yaml         = require("lyaml")
@@ -33,6 +34,26 @@ local check_schema = require("apisix.core.schema").check
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
+
+
+local function update_and_broadcast_config(apisix_yaml, conf_version)
+    local config = core.json.encode({
+        conf = apisix_yaml,
+        conf_version = conf_version,
+    })
+
+    if shared_dict then
+        -- the worker that handles Admin API calls is responsible for writing the shared dict
+        local ok, err = shared_dict:set("config", config)
+        if not ok then
+            return nil, "failed to save config to shared dict: " .. err
+        end
+        ngx.log(ngx.NOTICE, "standalone config updated: ", config)
+    else
+        core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
+    end
+    return events:post(EVENT_UPDATE, EVENT_UPDATE)
+end
 
 
 local function update(ctx)
@@ -122,11 +143,8 @@ local function update(ctx)
         end
     end
 
-    local success, err = events:post(EVENT_UPDATE, EVENT_UPDATE, core.json.encode({
-        config = apisix_yaml,
-        conf_version = conf_version,
-    }))
-    if not success then
+    local ok, err = update_and_broadcast_config(apisix_yaml, conf_version)
+    if not ok then
         core.response.exit(500, err)
     end
 
@@ -182,13 +200,19 @@ end
 
 
 function _M.init_worker()
-    local function update_config(data)
-        local data, err = core.json.decode(data)
-        if not data then
+    local function update_config()
+        local config, err = shared_dict:get("config")
+        if not config then
+            core.log.error("failed to get config from shared dict: ", err)
+            return
+        end
+
+        config, err = core.json.decode(config)
+        if not config then
             core.log.error("failed to decode json: ", err)
             return
         end
-        config_yaml._update_config(data.config, data.conf_version)
+        config_yaml._update_config(config.conf, config.conf_version)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
 end

@@ -18,6 +18,7 @@
 import axios from "axios";
 import YAML from "yaml";
 
+const ENDPOINT = "/apisix/admin/configs";
 const config1 = {
   routes: [
     {
@@ -66,7 +67,7 @@ describe("Admin - Standalone", () => {
 
   describe("Normal", () => {
     it("dump empty config (default json format)", async () => {
-      const resp = await client.get("/apisix/admin/configs");
+      const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
       expect(resp.headers["content-type"]).toEqual("application/json");
       expect(resp.headers["x-apisix-conf-version"]).toEqual("0");
@@ -74,7 +75,7 @@ describe("Admin - Standalone", () => {
     });
 
     it("dump empty config (yaml format)", async () => {
-      const resp = await client.get("/apisix/admin/configs", {
+      const resp = await client.get(ENDPOINT, {
         headers: { Accept: "application/yaml" },
       });
       expect(resp.status).toEqual(200);
@@ -86,20 +87,20 @@ describe("Admin - Standalone", () => {
     });
 
     it("update config (add routes, by json)", async () => {
-      const resp = await client.put("/apisix/admin/configs", config1, {
+      const resp = await client.put(ENDPOINT, config1, {
         params: { conf_version: 1 },
       });
       expect(resp.status).toEqual(202);
     });
 
     it("dump config (json format)", async () => {
-      const resp = await client.get("/apisix/admin/configs");
+      const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
       expect(resp.headers["x-apisix-conf-version"]).toEqual("1");
     });
 
     it("dump config (yaml format)", async () => {
-      const resp = await client.get("/apisix/admin/configs", {
+      const resp = await client.get(ENDPOINT, {
         headers: { Accept: "application/yaml" },
         responseType: 'text',
       });
@@ -119,7 +120,7 @@ describe("Admin - Standalone", () => {
 
     it("update config (add routes, by yaml)", async () => {
       const resp = await client.put(
-        "/apisix/admin/configs",
+        ENDPOINT,
         YAML.stringify(config2),
         {
           params: { conf_version: 2 },
@@ -130,7 +131,7 @@ describe("Admin - Standalone", () => {
     });
 
     it("dump config (json format)", async () => {
-      const resp = await client.get("/apisix/admin/configs");
+      const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
       expect(resp.headers["x-apisix-conf-version"]).toEqual("2");
     });
@@ -148,7 +149,7 @@ describe("Admin - Standalone", () => {
 
     it("update config (delete routes)", async () => {
       const resp = await client.put(
-        "/apisix/admin/configs",
+        ENDPOINT,
         {},
         { params: { conf_version: 3 } }
       );
@@ -169,7 +170,7 @@ describe("Admin - Standalone", () => {
 
     it("update config (lower conf_version)", async () => {
       const resp = await clientException.put(
-        "/apisix/admin/configs",
+        ENDPOINT,
         YAML.stringify(config2),
         {
           params: { conf_version: 0 },
@@ -185,7 +186,7 @@ describe("Admin - Standalone", () => {
 
     it("update config (invalid conf_version)", async () => {
       const resp = await clientException.put(
-        "/apisix/admin/configs",
+        ENDPOINT,
         YAML.stringify(config2),
         {
           params: { conf_version: "abc" },
@@ -199,7 +200,7 @@ describe("Admin - Standalone", () => {
     });
 
     it("update config (invalid json format)", async () => {
-      const resp = await clientException.put("/apisix/admin/configs", "{abcd", {
+      const resp = await clientException.put(ENDPOINT, "{abcd", {
         params: { conf_version: 4 },
       });
       expect(resp.status).toEqual(400);
@@ -213,7 +214,7 @@ describe("Admin - Standalone", () => {
     it("update config (not compliant with jsonschema)", async () => {
       const data = structuredClone(config1);
       (data.routes[0].uri as unknown) = 123;
-      const resp = await clientException.put("/apisix/admin/configs", data);
+      const resp = await clientException.put(ENDPOINT, data);
       expect(resp.status).toEqual(400);
       expect(resp.data).toMatchObject({
         error_msg:
@@ -222,7 +223,7 @@ describe("Admin - Standalone", () => {
     });
 
     it("update config (empty request body)", async () => {
-      const resp = await clientException.put("/apisix/admin/configs", "");
+      const resp = await clientException.put(ENDPOINT, "");
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
         error_msg: "invalid request body: empty request body",

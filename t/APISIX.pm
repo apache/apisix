@@ -275,6 +275,7 @@ thread_pool grpc-client-nginx-module threads=1;
 
 lua {
     lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict standalone-config 10m;
 }
 _EOC_
     }

@@ -24,6 +24,7 @@ use t::APISIX 'no_plan';
 repeat_each(1);
 no_long_string();
 no_root_location();
+use_hup();
 
 add_block_preprocessor(sub {
     my ($block) = @_;
@@ -41,6 +42,10 @@ deployment:
               role: admin
 EOF
     }
+
+    if (!defined $block->no_error_log) {
+        $block->set_value("no_error_log", "");
+    }
 });
 
 run_tests();
@@ -56,3 +61,47 @@ cd t && pnpm test admin/standalone.spec.ts 2>&1
 failed to execute the script with status
 --- response_body eval
 qr/PASS admin\/standalone.spec.ts/
+
+
+
+=== TEST 2: configure route
+--- config
+    location /t {} # force the worker to restart by changing the configuration
+--- request
+PUT /apisix/admin/configs?conf_version=101
+{"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 202
+
+
+
+=== TEST 3: test route
+--- config
+    location /t1 {}
+--- request
+GET /r1
+--- error_code: 200
+--- response_body
+hello world
+
+
+
+=== TEST 4: remove route
+--- config
+    location /t2 {}
+--- request
+PUT /apisix/admin/configs?conf_version=102
+{}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 202
+
+
+
+=== TEST 5: test non-exist route
+--- config
+    location /t3 {}
+--- request
+GET /r1
+--- error_code: 404
