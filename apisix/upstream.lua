@@ -291,10 +291,9 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
+        local service_name = up_conf.service_name
         if core.utils.is_nginx_variable(up_conf.service_name) then
-            local service_name = core.utils.resolve_nginx_variable(up_conf.service_name)
-        else
-            local service_name = up_conf.service_name
+            service_name = core.utils.resolve_var(up_conf.service_name, api_ctx.var)
         end
 
         local new_nodes, err = dis.nodes(service_name, up_conf.discovery_args)
