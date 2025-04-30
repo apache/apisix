@@ -90,24 +90,21 @@ local function update(ctx)
     end
 
     -- parse the request body
-    if req_body then
-        local data, err
-        if core.string.has_prefix(content_type, "application/yaml") then
-            data = yaml.load(req_body, { all = false })
-            if not data or type(data) ~= "table" then
-                err = "invalid yaml request body"
-            end
-        else
-            data, err = core.json.decode(req_body)
+    local data
+    if core.string.has_prefix(content_type, "application/yaml") then
+        data = yaml.load(req_body, { all = false })
+        if not data or type(data) ~= "table" then
+            err = "invalid yaml request body"
         end
-        if err then
-            core.log.error("invalid request body: ", req_body, " err: ", err)
-            core.response.exit(400, {error_msg = "invalid request body: " .. err,
-                                     req_body = req_body})
-        end
-
-        req_body = data
+    else
+        data, err = core.json.decode(req_body)
     end
+    if err then
+        core.log.error("invalid request body: ", req_body, " err: ", err)
+        core.response.exit(400, {error_msg = "invalid request body: " .. err,
+                                    req_body = req_body})
+    end
+    req_body = data
 
     -- check input by jsonschema
     local apisix_yaml = {}
