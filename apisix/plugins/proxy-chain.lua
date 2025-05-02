@@ -1,8 +1,19 @@
--- Proxy Chain Plugin for APISIX
--- Author: Vahid Aghazadeh v.opsource@gmail.com
--- Description: This plugin chains multiple upstream service requests, merging their responses into a single payload.
--- It supports passing a custom token header (e.g., Authorization) between services for authentication purposes.
--- License: Apache License 2.0
+--
+-- Licensed to the Apache Software Foundation (ASF) under one or more
+-- contributor license agreements.  See the NOTICE file distributed with
+-- this work for additional information regarding copyright ownership.
+-- The ASF licenses this file to You under the Apache License, Version 2.0
+-- (the "License"); you may not use this file except in compliance with
+-- the License.  You may obtain a copy of the License at
+--
+--     http://www.apache.org/licenses/LICENSE-2.0
+--
+-- Unless required by applicable law or agreed to in writing, software
+-- distributed under the License is distributed on an "AS IS" BASIS,
+-- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+-- See the License for the specific language governing permissions and
+-- limitations under the License.
+--
 
 local core = require("apisix.core")        -- Core APISIX utilities
 local http = require("resty.http")         -- HTTP client for making service calls
