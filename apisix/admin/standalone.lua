@@ -188,7 +188,8 @@ end
 
 function _M.run()
     local ctx = ngx.ctx.api_ctx
-    if str_lower(get_method()) == "put" then
+    local method = str_lower(get_method())
+    if method == "put" then
         return update(ctx)
     else
         return get(ctx)
