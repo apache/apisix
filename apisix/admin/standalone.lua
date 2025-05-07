@@ -101,8 +101,7 @@ local function update(ctx)
     end
     if err then
         core.log.error("invalid request body: ", req_body, " err: ", err)
-        core.response.exit(400, {error_msg = "invalid request body: " .. err,
-                                    req_body = req_body})
+        core.response.exit(400, {error_msg = "invalid request body: " .. err})
     end
     req_body = data
 
@@ -123,16 +122,14 @@ local function update(ctx)
                     valid, err = check_schema(obj.item_schema, item)
                     if not valid then
                         core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err,
-                                                req_body = req_body})
+                        core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
                 if item_checker then
                     valid, err = item_checker(item)
                     if not valid then
                         core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err,
-                                                req_body = req_body})
+                        core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
                 table_insert(apisix_yaml[key], item)
