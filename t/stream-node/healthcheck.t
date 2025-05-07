@@ -142,7 +142,7 @@ passed
 create new checker
 proxy request to 127.0.0.1:9995 while connecting to upstream
 connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995"
-unhealthy TCP increment (1/1) for '(127.0.0.1:9995)'
+unhealthy TCP increment (1/1) for '127.0.0.1(127.0.0.1:9995)'
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
@@ -213,6 +213,25 @@ passed
 --- config
     location /t {
         content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local data, _ = sock:receive()
+            assert(data == nil, "first request should fail")
+            sock:close()
+
+            -- Due to the implementation of lua-resty-events, it relies on the kernel and
+            -- the Nginx event loop to process socket connections.
+            -- When lua-resty-healthcheck handles passive healthchecks and uses lua-resty-events
+            -- as the events module, the synchronization of the first event usually occurs
+            -- before the start of the passive healthcheck. So when the execution finishes and
+            -- healthchecker tries to record the healthcheck status, it will not be able to find
+            -- an existing target (because the synchronization event has not finished yet), which
+            -- will lead to some anomalies that deviate from the original test case, so compatibility
+            -- operations are performed here.
             local sock = ngx.socket.tcp()
             local ok, err = sock:connect("127.0.0.1", 1985)
             if not ok then
