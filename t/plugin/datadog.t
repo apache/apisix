@@ -538,7 +538,7 @@ message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:data
 
 
 
-=== TEST 11: testing behaviour with include_path and include_method
+=== TEST 11: testing behaviour with include_path, include_method, and route level constant_tags
 --- apisix_yaml
 routes:
   - uri: /articles/*/comments
@@ -552,6 +552,9 @@ routes:
         max_retry_count: 0
         include_path: true
         include_method: true
+        constant_tags:
+          - route_tag1:foo
+          - route_tag2:bar
       proxy-rewrite:
         uri: /opentracing
 #END
@@ -563,10 +566,10 @@ opentracing
 --- grep_error_log eval
 qr/message received: apisix(.+?(?=, ))/
 --- grep_error_log_out eval
-qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
-message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
-message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
-message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
-message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
-message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
+qr/message received: apisix\.request\.counter:1\|c\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.request\.latency:[\d.]+\|h\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.upstream\.latency:[\d.]+\|h\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
+message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,scheme:http
 /

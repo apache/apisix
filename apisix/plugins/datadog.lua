@@ -24,6 +24,7 @@ local udp = ngx.socket.udp
 local format = string.format
 local concat = table.concat
 local tostring = tostring
+local ipairs = ipairs
 
 local plugin_name = "datadog"
 local defaults = {
@@ -39,7 +40,12 @@ local schema = {
     properties = {
         prefer_name = {type = "boolean", default = true},
         include_path = {type = "boolean", default = false},
-        include_method = {type = "boolean", default = false}
+        include_method = {type = "boolean", default = false},
+        constant_tags = {
+            type = "array",
+            items = {type = "string"},
+            default = {}
+        }
     }
 }
 
@@ -80,6 +86,12 @@ local function generate_tag(entry, const_tags)
         tags = core.table.clone(const_tags)
     else
         tags = {}
+    end
+
+    if entry.constant_tags and #entry.constant_tags > 0 then
+        for _, tag in ipairs(entry.constant_tags) do
+            core.table.insert(tags, tag)
+        end
     end
 
     if entry.route_id and entry.route_id ~= "" then
@@ -259,6 +271,10 @@ function _M.log(conf, ctx)
 
     if conf.include_method then
         entry.method = ctx.var.method
+    end
+
+    if conf.constant_tags and #conf.constant_tags > 0 then
+        entry.constant_tags = core.table.clone(conf.constant_tags)
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
