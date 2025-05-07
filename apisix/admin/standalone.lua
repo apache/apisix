@@ -48,7 +48,7 @@ local function update_and_broadcast_config(apisix_yaml, conf_version)
         if not ok then
             return nil, "failed to save config to shared dict: " .. err
         end
-        ngx.log(ngx.NOTICE, "standalone config updated: ", config)
+        core.log.notice("standalone config updated: ", config)
     else
         core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
     end
