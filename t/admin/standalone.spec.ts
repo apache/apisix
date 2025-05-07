@@ -207,7 +207,6 @@ describe("Admin - Standalone", () => {
       expect(resp.data).toEqual({
         error_msg:
           "invalid request body: Expected object key string but found invalid token at character 2",
-        req_body: "{abcd",
       });
     });
 
