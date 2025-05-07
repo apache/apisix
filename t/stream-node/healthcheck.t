@@ -282,3 +282,4 @@ unhealthy TCP increment (1/1) for '(127.0.0.1:9995)' while connecting to upstrea
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
+--- timeout: 5
