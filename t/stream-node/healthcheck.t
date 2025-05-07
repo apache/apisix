@@ -14,7 +14,11 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-
+BEGIN {
+    if ($ENV{TEST_EVENTS_MODULE} ne "lua-resty-events") {
+        $SkipReason = "Only for lua-resty-events events module";
+    }
+}
 use t::APISIX 'no_plan';
 
 log_level('info');
