@@ -38,7 +38,8 @@ local schema = {
     type = "object",
     properties = {
         prefer_name = {type = "boolean", default = true},
-        include_path = {type = "boolean", default = false}
+        include_path = {type = "boolean", default = false},
+        include_method = {type = "boolean", default = false}
     }
 }
 
@@ -87,6 +88,10 @@ local function generate_tag(entry, const_tags)
 
     if entry.path and entry.path ~= "" then
         core.table.insert(tags, "path:" .. entry.path)
+    end
+
+    if entry.method and entry.method ~= "" then
+        core.table.insert(tags, "method:" .. entry.method)
     end
 
     if entry.service_id and entry.service_id ~= "" then
@@ -250,6 +255,10 @@ function _M.log(conf, ctx)
         if ctx.curr_req_matched and ctx.curr_req_matched._path then
             entry.path = ctx.curr_req_matched._path
         end
+    end
+
+    if conf.include_method then
+        entry.method = ctx.var.method
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
