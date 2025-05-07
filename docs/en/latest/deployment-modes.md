@@ -159,7 +159,7 @@ Now, we have two standalone running modes, file-driven and API-driven.
 
     The following are API endpoints:
 
-    ```text
+    ```shell
     ## Update configuration
     ## The conf_version is not required, if it is not entered by the client, the current 10-digit epoch time is used by default.
     curl -X PUT http://127.0.0.1:9180/apisix/admin/configs?conf_version=1234 \
@@ -181,7 +181,7 @@ Now, we have two standalone running modes, file-driven and API-driven.
 
     The API accepts input in the same format as the file-based mode described above, although it also allows the user to input JSON instead of just YAML. The following example still applies. However, the API does not rely on the `#END` suffix because HTTP will guarantee input integrity.
 
-    *Note*: In this case, the Admin API based on etcd is not available, the configuration can only be flushed as a whole, rather than modifying a part of it, and the client needs to build request containing the complete new configuration to be sent to the API.
+    *Note*: In this case, the Admin API based on etcd is not available. The configuration can only be flushed as a whole, rather than modified partially, and the client must send a request containing the complete new configuration to the API.
 
 ### How to configure rules
 
