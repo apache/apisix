@@ -16,7 +16,6 @@
 --
 local pairs        = pairs
 local math_random  = math.random
-local table_insert = table.insert
 local ngx          = ngx
 
 local http            = require("resty.http")
