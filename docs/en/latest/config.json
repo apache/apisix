@@ -39,7 +39,8 @@
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
         "tutorials/client-to-apisix-mtls",
-        "tutorials/websocket-authentication"
+        "tutorials/websocket-authentication",
+        "tutorials/keycloak-oidc"
       ]
     },
     {
