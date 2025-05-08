@@ -14,6 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local type         = type
 local pairs        = pairs
 local math_random  = math.random
 local ngx          = ngx
@@ -87,7 +88,7 @@ local schema = {
         },
 
         -- connection layer configurations
-        ssl_verify = {type = "boolean", default = false},
+        ssl_verify = {type = "boolean", default = true},
         timeout = {
             type = "integer",
             minimum = 1,
@@ -104,7 +105,8 @@ local schema = {
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
     },
-    required = {"endpoint_addrs", "token"}
+    required = {"endpoint_addrs", "token", "event_transaction_id", "event_subscription_id",
+                "event_code"}
 }
 schema = batch_processor_manager:wrap_schema(schema)
 
@@ -137,7 +139,7 @@ local function send_http_data(conf, data)
     local params = {
         headers = {
             ["Content-Type"] = "application/json",
-            ["Authorization"] = "Bearer " .. conf.tenant_id,
+            ["Authorization"] = "Bearer " .. conf.token,
         },
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
@@ -186,15 +188,6 @@ function _M.log(conf, ctx)
         return
     end
 
-    local properties = conf.event_properties
-    -- parsing possible variables in value
-    for key, value in pairs(properties) do
-        local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
-        if not err and n_resolved > 0 then
-            properties[key] = new_val
-        end
-    end
-
     local entry = {
         transaction_id = event_transaction_id,
         external_subscription_id = event_subscription_id,
@@ -202,8 +195,14 @@ function _M.log(conf, ctx)
         timestamp = ngx.req.start_time(),
     }
 
-    if #properties > 0 then -- properties is optional
-        entry.properties = properties
+    if conf.event_properties and type(conf.event_properties) == "table" then
+        entry.properties = core.table.deepcopy(conf.event_properties)
+        for key, value in pairs(entry.properties) do
+            local new_val, err, n_resolved = core.utils.resolve_var(value, ctx.var)
+            if not err and n_resolved > 0 then
+                entry.properties[key] = new_val
+            end
+        end
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
