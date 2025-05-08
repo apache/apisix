@@ -27,6 +27,7 @@ local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 local lfs          = require("lfs")
 local file         = require("apisix.cli.file")
 local exiting      = ngx.worker.exiting
@@ -37,6 +38,7 @@ local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
+local ngx_shared   = ngx.shared
 local sub_str      = string.sub
 local tostring     = tostring
 local pcall        = pcall
@@ -45,12 +47,17 @@ local ngx          = ngx
 local re_find      = ngx.re.find
 local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
+local shared_dict
 
 
 local _M = {
     version = 0.2,
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
+
+    ERR_NO_SHARED_DICT = "failed prepare standalone config shared dict, this will degrade "..
+                    "to event broadcasting, and if a worker crashes, the configuration "..
+                    "cannot be restored from other workers and shared dict"
 }
 
 
@@ -63,7 +70,41 @@ local mt = {
 
 
 local apisix_yaml
+local apisix_yaml_raw -- save a deepcopy of the latest configuration for API
 local apisix_yaml_mtime
+
+
+local function update_config(table, mtime)
+    if not table then
+        log.error("failed update config: empty table")
+        return
+    end
+
+    local ok, err = file.resolve_conf_var(table)
+    if not ok then
+        log.error("failed to resolve variables:" .. err)
+        return
+    end
+
+    apisix_yaml = table
+    apisix_yaml_raw = tbl_deepcopy(table)
+    apisix_yaml_mtime = mtime
+end
+_M._update_config = update_config
+
+
+local function get_config()
+    return apisix_yaml, apisix_yaml_mtime, apisix_yaml_raw
+end
+_M._get_config = get_config
+
+
+local function is_use_admin_api()
+    local local_conf, _ = config_local.local_conf()
+    return local_conf and local_conf.apisix and local_conf.apisix.enable_admin
+end
+
+
 local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
@@ -106,14 +147,8 @@ local function read_apisix_yaml(premature, pre_mtime)
         return
     end
 
-    local ok, err = file.resolve_conf_var(apisix_yaml_new)
-    if not ok then
-        log.error("failed: failed to resolve variables:" .. err)
-        return
-    end
+    update_config(apisix_yaml_new, last_modification_time)
 
-    apisix_yaml = apisix_yaml_new
-    apisix_yaml_mtime = last_modification_time
     log.warn("config file ", apisix_yaml_path, " reloaded.")
 end
 
@@ -259,6 +294,48 @@ local function _automatic_fetch(premature, self)
         return
     end
 
+    -- the _automatic_fetch is only called in the timer, and according to the
+    -- documentation, ngx.shared.DICT.get can be executed there.
+    -- if the file's global variables have not yet been assigned values,
+    -- we can assume that the worker has not been initialized yet and try to
+    -- read any old data that may be present from the shared dict
+    -- try load from shared dict only on first startup, otherwise use event mechanism
+    if is_use_admin_api() and not shared_dict then
+        log.info("try to load config from shared dict")
+
+        local config, err
+        shared_dict = ngx_shared["standalone-config"] -- init shared dict in current worker
+        if not shared_dict then
+            log.error("failed to read config from shared dict: shared dict not found")
+            goto SKIP_SHARED_DICT
+        end
+        config, err = shared_dict:get("config")
+        if not config then
+            if err then -- if the key does not exist, the return values are both nil
+                log.error("failed to read config from shared dict: ", err)
+            end
+            log.info("no config found in shared dict")
+            goto SKIP_SHARED_DICT
+        end
+
+        config, err = json.decode(tostring(config))
+        if not config then
+            log.error("failed to decode config from shared dict: ", err)
+            goto SKIP_SHARED_DICT
+        end
+
+        _M._update_config(config.conf, config.conf_version)
+        log.info("config loaded from shared dict")
+
+        ::SKIP_SHARED_DICT::
+        if not shared_dict then
+            log.crit(_M.ERR_NO_SHARED_DICT)
+
+            -- fill that value to make the worker not try to read from shared dict again
+            shared_dict = "error"
+        end
+    end
+
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
@@ -376,13 +453,29 @@ function _M.fetch_created_obj(key)
 end
 
 
+function _M.fetch_all_created_obj()
+    return created_obj
+end
+
+
 function _M.init()
+    if is_use_admin_api() then
+        return true
+    end
+
     read_apisix_yaml()
     return true
 end
 
 
 function _M.init_worker()
+    if is_use_admin_api() then
+        apisix_yaml = {}
+        apisix_yaml_raw = {}
+        apisix_yaml_mtime = 0
+        return true
+    end
+
     -- sync data in each non-master process
     ngx.timer.every(1, read_apisix_yaml)
 
