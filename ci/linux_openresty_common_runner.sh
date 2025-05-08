@@ -68,6 +68,16 @@ do_install() {
     # back to home directory
     cd ../../../
 
+    # install mcp test suite
+    pushd t/plugin/mcp
+    pnpm install
+    popd
+
+    # install common jest test suite
+    pushd t
+    pnpm install
+    popd
+
     # install vault cli capabilities
     install_vault_cli
 

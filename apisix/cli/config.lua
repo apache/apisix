@@ -94,7 +94,8 @@ local _M = {
     },
     meta = {
       lua_shared_dict = {
-        ["prometheus-metrics"] = "15m"
+        ["prometheus-metrics"] = "15m",
+        ["standalone-config"] = "10m",
       }
     },
     stream = {
@@ -172,7 +173,8 @@ local _M = {
         ["ext-plugin"] = "1m",
         tars = "1m",
         ["cas-auth"] = "10m",
-        ["ocsp-stapling"] = "10m"
+        ["ocsp-stapling"] = "10m",
+        ["mcp-session"] = "10m",
       }
     }
   },
@@ -237,6 +239,7 @@ local _M = {
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
     "grpc-transcode",

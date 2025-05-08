@@ -47,23 +47,25 @@ import TabItem from '@theme/TabItem';
 首先，我们需要指定需要安装的版本`APISIX_VERSION`:
 
 ```shell
-APISIX_VERSION='3.11.0'
+APISIX_BRANCH='release/3.12.0'
 ```
 
 然后，你可以运行以下命令，从 Github 克隆 APISIX 源码：
 
 ```shell
-git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
+git clone --depth 1 --branch ${APISIX_BRANCH} https://github.com/apache/apisix.git apisix-${APISIX_BRANCH}
 ```
 
 你可以从[下载页面](https://apisix.apache.org/downloads/)下载源码包。但是官网的源码包缺少测试用例，可能会对你后续操作产生困扰。
 
 另外，你也可以在该页面找到 APISIX Dashboard 和 APISIX Ingress Controller 的源码包。
 
+安装之前，请安装[OpenResty](https://openresty.org/en/installation.html)。
+
 然后切换到 APISIX 源码的目录，创建依赖项并安装 APISIX，命令如下所示：
 
 ```shell
-cd apisix-${APISIX_VERSION}
+cd apisix-${APISIX_BRANCH}
 make deps
 make install
 ```

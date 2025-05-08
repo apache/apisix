@@ -67,6 +67,9 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
+    {% if standalone_with_admin_api then %}
+    lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
+    {% end %}
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -354,6 +357,10 @@ http {
 
     {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+    {% end %}
+
+    {% if enabled_plugins["mcp-bridge"] then %}
+    lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
     {% if config_center == "xds" then %}
