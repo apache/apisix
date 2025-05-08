@@ -15,16 +15,12 @@
 -- limitations under the License.
 --
 local pairs        = pairs
-local ipairs       = ipairs
-local tostring     = tostring
 local math_random  = math.random
 local table_insert = table.insert
 local ngx          = ngx
 
-local new_tab         = require("table.new")
 local http            = require("resty.http")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local str_format      = core.string.format
 
@@ -115,7 +111,7 @@ schema = batch_processor_manager:wrap_schema(schema)
 
 -- According to https://getlago.com/docs/api-reference/events/batch, the maximum batch size is 100,
 -- so we have to override the default batch size to make it work out of the box，the plugin does
--- not set a maximum limit, so if Lago relaxes the limit, then user can modify it 
+-- not set a maximum limit, so if Lago relaxes the limit, then user can modify it
 -- to a larger batch size
 -- This does not affect other plugins, schema is appended after deep copy
 schema.properties.batch_max_size.default = 100
@@ -123,7 +119,7 @@ schema.properties.batch_max_size.default = 100
 
 local _M = {
     version = 0.1,
-    priority = 414,
+    priority = 415,
     name = plugin_name,
     schema = schema,
 }
