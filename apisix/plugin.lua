@@ -1282,4 +1282,39 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
 end
 
 
+function _M.lua_body_filter(data, api_ctx)
+    local plugins = api_ctx.plugins
+    if not plugins or #plugins == 0 then
+        return
+    end
+    for i = 1, #plugins, 2 do
+        local phase_func = plugins[i]["lua_body_filter"]
+        if phase_func then
+            local conf = plugins[i + 1]
+            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                goto CONTINUE
+            end
+
+            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+            local code, body = phase_func(conf, api_ctx, data)
+            if code or body then
+                if code >= 400 then
+                    core.log.warn(plugins[i].name, " exits with http status code ", code)
+
+                    if conf._meta and conf._meta.error_response then
+                        -- Whether or not the original error message is output,
+                        -- always return the configured message
+                        -- so the caller can't guess the real error
+                        body = conf._meta.error_response
+                    end
+                end
+
+                return core.response.exit(code, body)
+            end
+        end
+
+        ::CONTINUE::
+    end
+end
+
 return _M
