@@ -337,7 +337,7 @@ http {
     {% end %}
 
     {% if http.lua_shared_dict["status_report_standalone"] then %}
-    lua_shared_dict status_report {* http.lua_shared_dict["status_report_standalone{% if enable_control then %}"] *};
+    lua_shared_dict status_report_standalone {* http.lua_shared_dict["status_report_standalone"] *};
     {% end %}
 
     {% if enabled_plugins["openid-connect"] then %}
