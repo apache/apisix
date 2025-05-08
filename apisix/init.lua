@@ -859,6 +859,31 @@ local function healthcheck_passive(api_ctx)
 end
 
 
+function _M.status_standalone()
+    core.response.exit(200)
+end
+
+function _M.status_standalone_ready()
+    local status_shdict = ngx.shared.status_report
+    local pids = status_shdict:get_keys()
+    local resp = ""
+    for _, pid in pairs(pids) do
+        local ready = status_shdict:get(pid)
+        if not ready then
+            resp = resp .. "Worker pid: " .. pid .. "has not recieved configuration\n"
+            break
+        end
+    end
+
+    if resp and resp ~= "" then
+        core.response.exit(503, resp)
+        return
+    end
+
+    core.response.exit(200)
+end
+
+
 function _M.http_log_phase()
     local api_ctx = common_phase("log")
     if not api_ctx then

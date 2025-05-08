@@ -132,7 +132,9 @@ apisix:
   events:                             # Event distribution module configuration
     module: lua-resty-events          # Sets the name of the events module used.
                                       # Supported module: lua-resty-worker-events and lua-resty-events
-
+# status_standalone:                       # When enabled, APISIX will provide `/status` and `/status/ready` endpoints                                     
+  #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
+  #   port: 7085                  # /status/ready endpoint will return 503 status code if none of the configured etcd (dp_manager) are available
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
