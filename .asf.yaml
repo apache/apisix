@@ -159,7 +159,7 @@ github:
           require_code_owner_reviews: true
           required_approving_review_count: 2
 
-    notifications:
-      commits:      notifications@apisix.apache.org
-      issues:       notifications@apisix.apache.org
-      pullrequests: notifications@apisix.apache.org
+notifications:
+  commits:      notifications@apisix.apache.org
+  issues:       notifications@apisix.apache.org
+  pullrequests: notifications@apisix.apache.org
