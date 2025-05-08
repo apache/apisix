@@ -124,6 +124,7 @@ http-dubbo
 public-api
 prometheus
 datadog
+lago
 loki-logger
 elasticsearch-logger
 echo
