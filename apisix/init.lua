@@ -860,17 +860,17 @@ end
 
 
 function _M.status_standalone()
-    core.response.exit(200)
+    core.response.exit(200, "ok")
 end
 
 function _M.status_standalone_ready()
-    local status_shdict = ngx.shared.status_report
+    local status_shdict = ngx.shared.status_report_standalone
     local pids = status_shdict:get_keys()
     local resp = ""
     for _, pid in pairs(pids) do
         local ready = status_shdict:get(pid)
         if not ready then
-            resp = resp .. "Worker pid: " .. pid .. "has not recieved configuration\n"
+            resp = resp .. "Worker pid: " .. pid .. " has not recieved configuration\n"
             break
         end
     end
@@ -880,7 +880,7 @@ function _M.status_standalone_ready()
         return
     end
 
-    core.response.exit(200)
+    core.response.exit(200, "ok")
 end
 
 
