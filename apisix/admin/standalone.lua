@@ -30,10 +30,22 @@ local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local check_schema = require("apisix.core.schema").check
+local process      = require("ngx.process")
+local worker_pid   = ngx.worker.pid
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
+
+
+local function sync_status_to_shdict(status)
+    local status_shdict = ngx.shared.status_report_standalone
+    if process.type() ~= "worker" then
+        return
+    end
+    local pid = worker_pid()
+    status_shdict:set(pid, status, 5*60)
+end
 
 
 local function update_and_broadcast_config(apisix_yaml, conf_version)
@@ -208,7 +220,9 @@ function _M.init_worker()
             return
         end
         config_yaml._update_config(config.conf, config.conf_version)
+        sync_status_to_shdict(true)
     end
+    sync_status_to_shdict(false)
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
 end
 

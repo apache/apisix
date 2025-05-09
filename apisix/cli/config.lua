@@ -80,6 +80,9 @@ local _M = {
       module = "lua-resty-events"
     }
   },
+  -- status = {
+
+  -- },
   nginx_config = {
     error_log = "logs/error.log",
     error_log_level = "warn",
@@ -175,6 +178,7 @@ local _M = {
         ["cas-auth"] = "10m",
         ["ocsp-stapling"] = "10m",
         ["mcp-session"] = "10m",
+        status_report_standalone = "1m"
       }
     }
   },

@@ -576,6 +576,7 @@ _EOC_
     lua_shared_dict tracing_buffer 10m;    # plugin skywalking
     lua_shared_dict access-tokens 1m;    # plugin authz-keycloak
     lua_shared_dict discovery 1m;    # plugin authz-keycloak
+    lua_shared_dict status_report_standalone 10m; # standalone mode
     lua_shared_dict plugin-api-breaker 10m;
     lua_capture_error_log 1m;    # plugin error-log-logger
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
@@ -782,6 +783,12 @@ _EOC_
         location /v1/ {
             content_by_lua_block {
                 apisix.http_control()
+            }
+        }
+
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_standalone_ready()
             }
         }
 
