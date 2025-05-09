@@ -25,6 +25,7 @@ local format = string.format
 local concat = table.concat
 local tostring = tostring
 local ipairs = ipairs
+local floor = math.floor
 
 local plugin_name = "datadog"
 local defaults = {
@@ -118,6 +119,9 @@ local function generate_tag(entry, const_tags)
     end
     if entry.response.status then
         core.table.insert(tags, "response_status:" .. entry.response.status)
+
+        local status_class = floor(entry.response.status / 100) .. "xx"
+        core.table.insert(tags, "response_status_class:" .. status_class)
     end
     if entry.scheme ~= "" then
         core.table.insert(tags, "scheme:" .. entry.scheme)
