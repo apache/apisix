@@ -110,7 +110,7 @@ local _M = {
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
-        ["upstream-healthcheck-stream"] = "10m"
+        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
