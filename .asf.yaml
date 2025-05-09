@@ -16,150 +16,150 @@
 #
 
 github:
-    description: The Cloud-Native API Gateway and AI Gateway
-    homepage: https://apisix.apache.org/blog/
-    labels:
-      - api-gateway
-      - ai-gateway
-      - ai
-      - cloud-native
-      - nginx
-      - luajit
-      - apigateway
-      - microservices
-      - api
-      - apis
-      - loadbalancing
-      - reverse-proxy
-      - api-management
-      - apisix
-      - serverless
-      - iot
-      - devops
-      - kubernetes
-      - docker
-      - kubernetes-ingress
-      - kubernetes-ingress-controller
+  description: The Cloud-Native API Gateway and AI Gateway
+  homepage: https://apisix.apache.org/blog/
+  labels:
+    - api-gateway
+    - ai-gateway
+    - ai
+    - cloud-native
+    - nginx
+    - luajit
+    - apigateway
+    - microservices
+    - api
+    - apis
+    - loadbalancing
+    - reverse-proxy
+    - api-management
+    - apisix
+    - serverless
+    - iot
+    - devops
+    - kubernetes
+    - docker
+    - kubernetes-ingress
+    - kubernetes-ingress-controller
+  
+  enabled_merge_buttons:
+    squash:  true
+    # **WARNING**: rebase should only be used
+    # when backport multiple commits to the `release/xx` branch
+    rebase:  true
+    merge:   false
+  
+  protected_branches:
+    master:
+      required_pull_request_reviews:
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+        required_approving_review_count: 3
+    release/3.12:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 3
+    release/3.11:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 3
+    release/3.10:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 3
+    release/3.9:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.8:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.7:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.6:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.5:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.4:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.3:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.2:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.1:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/3.0:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.99:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.15:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.14:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.13:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.12:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.11:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.10:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.9:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.8:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.7:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.6:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.5:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
+    release/2.4:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 2
 
-    enabled_merge_buttons:
-      squash:  true
-      # **WARNING**: rebase should only be used
-      # when backport multiple commits to the `release/xx` branch
-      rebase:  true
-      merge:   false
-
-    protected_branches:
-      master:
-        required_pull_request_reviews:
-          dismiss_stale_reviews: true
-          require_code_owner_reviews: true
-          required_approving_review_count: 3
-      release/3.12:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 3
-      release/3.11:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 3
-      release/3.10:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 3
-      release/3.9:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.8:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.7:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.6:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.5:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.4:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.3:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.2:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.1:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/3.0:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.99:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.15:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.14:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.13:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.12:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.11:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.10:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.9:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.8:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.7:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.6:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.5:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-      release/2.4:
-        required_pull_request_reviews:
-          require_code_owner_reviews: true
-          required_approving_review_count: 2
-
-    notifications:
-      commits:      notifications@apisix.apache.org
-      issues:       notifications@apisix.apache.org
-      pullrequests: notifications@apisix.apache.org
+notifications:
+  commits:      notifications@apisix.apache.org
+  issues:       notifications@apisix.apache.org
+  pullrequests: notifications@apisix.apache.org
