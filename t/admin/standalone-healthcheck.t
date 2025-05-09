@@ -98,13 +98,10 @@ GET /status/ready
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/status/ready"
             local httpc = http.new()
             local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
-            if res.status == 200 then
-                ngx.say("ok")
-            else
-                ngx.say("failed")
-            end
+            ngx.status = res.status
         }
     }
 --- request
 GET /t
 --- error_code: 200
+
