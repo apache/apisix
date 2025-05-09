@@ -94,7 +94,6 @@ GET /status/ready
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.sleep(3)
             local http = require("resty.http")
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/status/ready"
             local httpc = http.new()
