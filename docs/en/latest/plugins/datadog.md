@@ -116,7 +116,8 @@ The metrics will be sent to the DogStatsD agent with the following tags:
 - `service_name`: If a Route has been created with an abstracted Service, the Service name/ID based on the attribute `prefer_name`.
 - `consumer`: If the Route is linked to a Consumer, the username will be added as a tag.
 - `balancer_ip`: IP address of the Upstream balancer that processed the current request.
-- `response_status`: HTTP response status code.
+- `response_status`: HTTP response status code. E.g. "200", "404", "503".
+- `response_status_class`: HTTP response status code class. E.g. "2xx", "4xx", "5xx".
 - `scheme`: Request scheme such as HTTP, gRPC, and gRPCs.
 - `path`: The HTTP path pattern. Only available if the attribute `include_path` is set to true.
 - `method`: The HTTP method. Only available if the attribute `include_method` is set to true.
