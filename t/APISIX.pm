@@ -786,6 +786,12 @@ _EOC_
             }
         }
 
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_standalone_ready()
+            }
+        }
+
         location / {
             set \$upstream_mirror_host        '';
             set \$upstream_mirror_uri         '';
