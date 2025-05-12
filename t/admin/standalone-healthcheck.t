@@ -40,10 +40,6 @@ deployment:
             - name: admin
               key: edd1c9f034335f136f87ad84b625c8f1
               role: admin
-apisix:
-  status_standalone:
-    ip: 127.0.0.1
-    port: 7085
 EOF
     }
 
@@ -69,10 +65,19 @@ qr/PASS admin\/standalone.spec.ts/
 
 
 === TEST 2: send /healthcheck should fail because config is not loaded yet
---- config 
-location /t {}
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
+            local httpc = http.new()
+            local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+        
+            ngx.status = res.status
+        }
+    }
 --- request
-GET /status/ready
+GET /t
 --- error_code: 503
 
 
@@ -94,14 +99,16 @@ GET /status/ready
             if code >= 300 then
                 ngx.status = code
             end
+            ngx.sleep(4)
             local http = require("resty.http")
-            local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/status/ready"
+            local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
             local httpc = http.new()
             local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
+        
             ngx.status = res.status
         }
     }
 --- request
 GET /t
 --- error_code: 200
-
+--- timeout: 12

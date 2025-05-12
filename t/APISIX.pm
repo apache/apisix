@@ -718,6 +718,19 @@ _EOC_
 
     $http_config .= <<_EOC_;
     server {
+        listen 7085 ;
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_standalone_ready()
+            }
+        }
+        location /status {
+            content_by_lua_block {
+                apisix.status_standalone()
+            }
+        }
+    }
+    server {
         listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
         access_log off;
         location / {
@@ -783,12 +796,6 @@ _EOC_
         location /v1/ {
             content_by_lua_block {
                 apisix.http_control()
-            }
-        }
-
-        location /status/ready {
-            content_by_lua_block {
-                apisix.status_standalone_ready()
             }
         }
 
