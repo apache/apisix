@@ -98,7 +98,19 @@ GET /t
             if code >= 300 then
                 ngx.status = code
             end
-            ngx.sleep(4)
+            local code, body = t('/apisix/admin/configs',
+                 ngx.HTTP_PUT,
+                 [[{"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}]],
+                 nil,
+                 {
+                  ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
+                 }
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.sleep(1)
             local http = require("resty.http")
             local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
             local httpc = http.new()
@@ -109,4 +121,4 @@ GET /t
 --- request
 GET /t
 --- error_code: 200
---- timeout: 12
+
