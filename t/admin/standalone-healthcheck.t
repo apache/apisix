@@ -72,7 +72,6 @@ qr/PASS admin\/standalone.spec.ts/
             local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
             local httpc = http.new()
             local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
-        
             ngx.status = res.status
         }
     }
@@ -104,7 +103,6 @@ GET /t
             local healthcheck_uri = "http://127.0.0.1:7085" .. "/status/ready"
             local httpc = http.new()
             local res, _ = httpc:request_uri(healthcheck_uri, {method = "GET", keepalive = false})
-        
             ngx.status = res.status
         }
     }
