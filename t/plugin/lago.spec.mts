@@ -1,5 +1,5 @@
 import { generateKeyPair } from 'node:crypto';
-import { readFile, rm } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
@@ -30,12 +30,12 @@ const downloadComposeFile = async () =>
 
 const launchLago = async () => {
   // patch docker-compose.yml to disable useless port
-  const composeFile = YAML.parse(
-    await readFile(`${LAGO_PATH}/docker-compose.yml`, 'utf8'),
-  );
+  const composeFilePath = `${LAGO_PATH}/docker-compose.yml`;
+  const composeFile = YAML.parse(await readFile(composeFilePath, 'utf8'));
   delete composeFile.services.front; // front-end is not needed for tests
   delete composeFile.services.redis.ports; // prevent port conflict
   delete composeFile.services.db.ports; // prevent port conflict
+  await writeFile(composeFilePath, YAML.stringify(composeFile), 'utf8');
 
   // launch services
   const { privateKey } = await promisify(generateKeyPair)('rsa', {
