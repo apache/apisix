@@ -1,9 +1,11 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
     "target": "esnext",
-    "module": "esnext",
+    "module": "commonjs",
     "lib": ["esnext"],
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true
+  },
+  "include": ["**/*.ts"]
 }
