@@ -1,5 +1,5 @@
 import { generateKeyPair } from 'node:crypto';
-import { rm } from 'node:fs/promises';
+import { readFile, rm } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
@@ -8,6 +8,7 @@ import * as compose from 'docker-compose';
 import { gql, request } from 'graphql-request';
 import { Api as LagoApi, Client as LagoClient } from 'lago-javascript-client';
 import simpleGit from 'simple-git';
+import * as YAML from 'yaml';
 
 import { request as requestAdminAPI } from '../ts/admin_api';
 
@@ -28,6 +29,15 @@ const downloadComposeFile = async () =>
   });
 
 const launchLago = async () => {
+  // patch docker-compose.yml to disable useless port
+  const composeFile = YAML.parse(
+    await readFile(`${LAGO_PATH}/docker-compose.yml`, 'utf8'),
+  );
+  delete composeFile.services.front; // front-end is not needed for tests
+  delete composeFile.services.redis.ports; // prevent port conflict
+  delete composeFile.services.db.ports; // prevent port conflict
+
+  // launch services
   const { privateKey } = await promisify(generateKeyPair)('rsa', {
     modulusLength: 2048,
     publicKeyEncoding: { type: 'pkcs1', format: 'pem' },
