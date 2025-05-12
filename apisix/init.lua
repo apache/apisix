@@ -876,13 +876,13 @@ function _M.status_standalone_ready()
     local status_shdict = ngx.shared.status_report_standalone
     local pids = status_shdict:get_keys()
     local resp = ""
-    
+
     for _, pid in pairs(pids) do
         local ready = status_shdict:get(pid)
         if not ready then
             core.log.warn("worker pid: ", pid,
                 " has not received configuration")
-            resp = resp .. "Worker pid: " .. pid .. " has not recieved configuration\n"
+            resp = resp .. "Worker pid: " .. pid .. " has not received configuration\n"
             break
         end
     end
