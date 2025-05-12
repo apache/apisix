@@ -822,9 +822,18 @@ local function healthcheck_passive(api_ctx)
     local host = up_conf.checks and up_conf.checks.active
                  and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active
-                 and up_conf.checks.active.port
+                 and up_conf.checks.active.port or api_ctx.balancer_port
 
     local resp_status = ngx.status
+
+    if not is_http then
+        -- 200 is the only success status code for TCP
+        if resp_status ~= 200 then
+            checker:report_tcp_failure(api_ctx.balancer_ip, port, host, nil, "passive")
+        end
+        return
+    end
+
     local http_statuses = passive and passive.healthy and
                           passive.healthy.http_statuses
     core.log.info("passive.healthy.http_statuses: ",
@@ -833,7 +842,7 @@ local function healthcheck_passive(api_ctx)
         for i, status in ipairs(http_statuses) do
             if resp_status == status then
                 checker:report_http_status(api_ctx.balancer_ip,
-                                           port or api_ctx.balancer_port,
+                                           port,
                                            host,
                                            resp_status)
             end
@@ -851,7 +860,7 @@ local function healthcheck_passive(api_ctx)
     for i, status in ipairs(http_statuses) do
         if resp_status == status then
             checker:report_http_status(api_ctx.balancer_ip,
-                                       port or api_ctx.balancer_port,
+                                       port,
                                        host,
                                        resp_status)
         end
@@ -1196,6 +1205,8 @@ function _M.stream_log_phase()
     if not api_ctx then
         return
     end
+
+    healthcheck_passive(api_ctx)
 
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then
