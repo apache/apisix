@@ -80,9 +80,6 @@ local _M = {
       module = "lua-resty-events"
     }
   },
-  -- status = {
-
-  -- },
   nginx_config = {
     error_log = "logs/error.log",
     error_log_level = "warn",
