@@ -154,8 +154,6 @@ local function create_checker(upstream)
     local use_node_hdr = upstream.pass_host == "node" or nil
     for _, node in ipairs(upstream.nodes) do
         local host_hdr = up_hdr or (use_node_hdr and node.domain)
-        core.log.warn("ADD TARGET CALLED WITH HOST ", node.host, " PORT ", node.port,
-                      " HOST_HDR ", host_hdr)
         local ok, err = checker:add_target(node.host, port or node.port, host,
                                            true, host_hdr)
         if not ok then

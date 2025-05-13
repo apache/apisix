@@ -1,7 +1,0 @@
-discovery:
-  consul:
-    servers:
-      - "http://consul:8500"
-    dump:
-      path: "logs/consul.dump"
-      expire: 2592000
