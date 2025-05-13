@@ -15,7 +15,7 @@ import { request as requestAdminAPI } from '../ts/admin_api';
 const LAGO_VERSION = 'v1.27.0';
 const LAGO_PATH = '/tmp/lago';
 const LAGO_FRONT_PORT = 59999;
-const LAGO_API_PORT = 3000;
+const LAGO_API_PORT = 30699;
 const LAGO_API_URL = `http://127.0.0.1:${LAGO_API_PORT}`;
 const LAGO_API_GRAPHQL_URL = `${LAGO_API_URL}/graphql`;
 const LAGO_BILLABLE_METRIC_CODE = 'test';
