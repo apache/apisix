@@ -875,7 +875,8 @@ end
 
 function _M.status_ready()
     local_conf = core.config.local_conf()
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_traditional", "config_provider")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_traditional",
+                                              "config_provider")
     if provider == "yaml" then
         local status_shdict = ngx.shared.status_report_standalone
         local pids = status_shdict:get_keys()
