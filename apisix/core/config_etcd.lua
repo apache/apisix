@@ -29,10 +29,12 @@ local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
 local errlog       = require("ngx.errlog")
+local process      = require("ngx.process")
 local log_level    = errlog.get_sys_filter_level()
 local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
+local worker_pid   = ngx.worker.pid
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
@@ -482,6 +484,20 @@ local function short_key(self, str)
 end
 
 
+local function sync_status_to_shdict(status)
+    local local_conf = config_local.local_conf()
+    if not local_conf.apisix.status then
+        return
+    end
+    local status_shdict = ngx.shared.status_report
+    if process.type() ~= "worker" then
+        return
+    end
+    local pid = worker_pid()
+    status_shdict:set(pid, status, 5 * 60) -- expire after 5 minutes
+end
+
+
 local function load_full_data(self, dir_res, headers)
     local err
     local changed = false
@@ -587,6 +603,7 @@ local function load_full_data(self, dir_res, headers)
     end
 
     self.need_reload = false
+    sync_status_to_shdict(self.need_reload)
 end
 
 
@@ -644,6 +661,7 @@ local function sync_data(self)
 
     if not dir_res then
         if err == "compacted" or err == "restarted" then
+            sync_status_to_shdict(self.need_reload)
             self.need_reload = true
             log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
@@ -961,7 +979,9 @@ function _M.new(key, opts)
     if not health_check_timeout or health_check_timeout < 0 then
         health_check_timeout = 10
     end
-
+    if key then
+        sync_status_to_shdict(true)
+    end
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter

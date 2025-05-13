@@ -45,6 +45,7 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
+local etcd_util       = require("apisix.utils.etcd")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -873,26 +874,59 @@ function _M.status()
 end
 
 function _M.status_ready()
-    local status_shdict = ngx.shared.status_report_standalone
-    local pids = status_shdict:get_keys()
-    local resp = ""
+    local_conf = core.config.local_conf()
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_traditional", "config_provider")
+    if provider == "yaml" then
+        local status_shdict = ngx.shared.status_report_standalone
+        local pids = status_shdict:get_keys()
+        local resp = ""
 
-    for _, pid in pairs(pids) do
-        local ready = status_shdict:get(pid)
-        if not ready then
-            core.log.warn("worker pid: ", pid,
-                " has not received configuration")
-            resp = resp .. "Worker pid: " .. pid .. " has not received configuration\n"
-            break
+        for _, pid in pairs(pids) do
+            local ready = status_shdict:get(pid)
+            if not ready then
+                core.log.warn("worker pid: ", pid,
+                    " has not received configuration")
+                resp = resp .. "Worker pid: " .. pid .. " has not received configuration\n"
+                break
+            end
         end
-    end
 
-    if resp and resp ~= "" then
-        core.response.exit(503, resp)
-        return
-    end
+        if resp and resp ~= "" then
+            core.response.exit(503, resp)
+            return
+        end
 
-    core.response.exit(200, "ok")
+        core.response.exit(200, "ok")
+    elseif provider == "etcd" then
+        local status_shdict = ngx.shared.status_report
+        local pids = status_shdict:get_keys()
+        local resp = ""
+        for _, pid in pairs(pids) do
+            local need_reload = status_shdict:get(pid)
+            if need_reload then
+                resp = resp .. "Worker pid: " .. pid .. " is out of sync with etcd\n"
+            end
+        end
+
+        if resp and resp ~= "" then
+            core.response.exit(503, resp)
+            return
+        end
+
+        local yaml_conf = local_conf
+        local res, err
+        for _, host in ipairs(yaml_conf.etcd.host) do
+            res, err = etcd_util.request(host .. "/version", yaml_conf)
+            if res then
+                core.response.exit(200)
+                return
+            end
+        end
+
+        core.response.exit(503, "none of the configured dp_manager available: " .. err)
+    else
+        core.response.exit(503, "unknown config provider: " .. provider)
+    end
 end
 
 

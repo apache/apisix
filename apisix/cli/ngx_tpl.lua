@@ -344,6 +344,10 @@ http {
     lua_shared_dict status_report_standalone {* http.lua_shared_dict["status_report_standalone"] *};
     {% end %}
 
+    {% if http.lua_shared_dict["status_report"] then %}
+    lua_shared_dict status_report {* http.lua_shared_dict["status_report"] *};
+    {% end %}
+
     {% if enabled_plugins["openid-connect"] then %}
     # for openid-connect plugin
     lua_shared_dict jwks {* http.lua_shared_dict["jwks"] *}; # cache for JWKs
