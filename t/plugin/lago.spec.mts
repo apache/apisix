@@ -1,4 +1,5 @@
 import { generateKeyPair } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { promisify } from 'node:util';
 
@@ -11,13 +12,15 @@ import simpleGit from 'simple-git';
 import * as YAML from 'yaml';
 
 import { request as requestAdminAPI } from '../ts/admin_api';
+import { wait } from '../ts/utils';
 
 const LAGO_VERSION = 'v1.27.0';
 const LAGO_PATH = '/tmp/lago';
 const LAGO_FRONT_PORT = 59999;
 const LAGO_API_PORT = 30699;
 const LAGO_API_URL = `http://127.0.0.1:${LAGO_API_PORT}`;
-const LAGO_API_GRAPHQL_URL = `${LAGO_API_URL}/graphql`;
+const LAGO_API_BASEURL = `http://127.0.0.1:${LAGO_API_PORT}/api/v1`;
+const LAGO_API_GRAPHQL_ENDPOINT = `${LAGO_API_URL}/graphql`;
 const LAGO_BILLABLE_METRIC_CODE = 'test';
 const LAGO_EXTERNAL_SUBSCRIPTION_ID = 'jack_test';
 
@@ -32,7 +35,10 @@ const launchLago = async () => {
   // patch docker-compose.yml to disable useless port
   const composeFilePath = `${LAGO_PATH}/docker-compose.yml`;
   const composeFile = YAML.parse(await readFile(composeFilePath, 'utf8'));
-  delete composeFile.services.front; // front-end is not needed for tests
+  //delete composeFile.services.front; // front-end is not needed for tests
+  delete composeFile.services['api-clock']; // clock is not needed for tests
+  delete composeFile.services['api-worker']; // worker is not needed for tests
+  delete composeFile.services['pdf']; // pdf is not needed for tests
   delete composeFile.services.redis.ports; // prevent port conflict
   delete composeFile.services.db.ports; // prevent port conflict
   await writeFile(composeFilePath, YAML.stringify(composeFile), 'utf8');
@@ -67,7 +73,7 @@ const provisionLago = async () => {
   const { registerUser } = await request<{
     registerUser: { token: string; user: { organizations: { id: string } } };
   }>(
-    LAGO_API_GRAPHQL_URL,
+    LAGO_API_GRAPHQL_ENDPOINT,
     gql`
       mutation signup($input: RegisterUserInput!) {
         registerUser(input: $input) {
@@ -101,7 +107,7 @@ const provisionLago = async () => {
   const { apiKeys } = await request<{
     apiKeys: { collection: { id: string }[] };
   }>(
-    LAGO_API_GRAPHQL_URL,
+    LAGO_API_GRAPHQL_ENDPOINT,
     gql`
       query getApiKeys {
         apiKeys(page: 1, limit: 20) {
@@ -117,7 +123,7 @@ const provisionLago = async () => {
 
   // get first api key
   const { apiKey } = await request<{ apiKey: { value: string } }>(
-    LAGO_API_GRAPHQL_URL,
+    LAGO_API_GRAPHQL_ENDPOINT,
     gql`
       query getApiKeyValue($id: ID!) {
         apiKey(id: $id) {
@@ -130,7 +136,7 @@ const provisionLago = async () => {
     requestHeaders,
   );
 
-  const lagoClient = LagoClient(apiKey.value, { baseUrl: LAGO_API_URL });
+  const lagoClient = LagoClient(apiKey.value, { baseUrl: LAGO_API_BASEURL });
 
   // create billable metric
   const { data: billableMetric } =
@@ -193,11 +199,11 @@ const provisionLago = async () => {
     },
   });
 
-  return apiKey.value;
+  return { apiKey: apiKey.value, client: lagoClient };
 };
 
 describe('Plugin - Lago', () => {
-  const JACK_API_KEY = 'my-apikey';
+  const JACK_USERNAME = 'jack_test';
   const client = axios.create({ baseURL: 'http://127.0.0.1:1984' });
 
   let restAPIKey: string;
@@ -205,17 +211,18 @@ describe('Plugin - Lago', () => {
 
   // set up
   beforeAll(async () => {
+    if (existsSync(LAGO_PATH)) await rm(LAGO_PATH, { recursive: true });
     await downloadComposeFile();
     await launchLago();
-    restAPIKey = await provisionLago();
-    lagoClient = LagoClient(restAPIKey, { baseUrl: LAGO_API_URL });
-  }, 90 * 1000);
+    let res = await provisionLago();
+    restAPIKey = res.apiKey;
+    lagoClient = res.client;
+  }, 120 * 1000);
 
   // clean up
   afterAll(async () => {
     await compose.downAll({
       cwd: LAGO_PATH,
-      log: true,
       commandOptions: ['--volumes'],
     });
     await rm(LAGO_PATH, { recursive: true });
@@ -232,12 +239,15 @@ describe('Plugin - Lago', () => {
           type: 'roundrobin',
         },
         plugins: {
+          'request-id': { include_in_response: true }, // for transaction_id
+          'key-auth': {}, // for subscription_id
           lago: {
             endpoint_addrs: [LAGO_API_URL],
             token: restAPIKey,
             event_transaction_id: '${http_x_request_id}',
             event_subscription_id: '${http_x_consumer_username}',
             event_code: 'test',
+            batch_max_size: 1, // does not buffered usage reports
           },
         },
       }),
@@ -253,6 +263,8 @@ describe('Plugin - Lago', () => {
           type: 'roundrobin',
         },
         plugins: {
+          'request-id': { include_in_response: true },
+          'key-auth': {},
           lago: {
             endpoint_addrs: [LAGO_API_URL],
             token: restAPIKey,
@@ -260,7 +272,7 @@ describe('Plugin - Lago', () => {
             event_subscription_id: '${http_x_consumer_username}',
             event_code: 'test',
             event_properties: { tier: 'expensive' },
-            batch_max_size: 1, // does not cache usage reports
+            batch_max_size: 1,
           },
         },
       }),
@@ -269,24 +281,26 @@ describe('Plugin - Lago', () => {
 
   it('should create consumer', async () =>
     expect(
-      requestAdminAPI('/apisix/admin/consumers/jack_test', 'PUT', {
+      requestAdminAPI(`/apisix/admin/consumers/${JACK_USERNAME}`, 'PUT', {
+        username: JACK_USERNAME,
         plugins: {
-          'key-auth': { key: JACK_API_KEY },
+          'key-auth': { key: JACK_USERNAME },
         },
       }),
     ).resolves.not.toThrow());
 
-  it('call API (without key)', () =>
-    expect(client.get('/hello')).rejects.toThrow(
-      'Request failed with status code 401',
-    ));
+  it('call API (without key)', async () => {
+    const res = await client.get('/hello', { validateStatus: () => true });
+    expect(res.status).toEqual(401);
+  });
 
   it('call normal API', async () => {
     for (let i = 0; i < 3; i++) {
       await expect(
-        client.get('/hello', { headers: { apikey: JACK_API_KEY } }),
+        client.get('/hello', { headers: { apikey: JACK_USERNAME } }),
       ).resolves.not.toThrow();
     }
+    await wait(500);
   });
 
   it('check Lago events (normal API)', async () => {
@@ -303,12 +317,13 @@ describe('Plugin - Lago', () => {
     expensiveStartAt = new Date();
     for (let i = 0; i < 3; i++) {
       await expect(
-        client.get('/hello1', { headers: { apikey: JACK_API_KEY } }),
+        client.get('/hello1', { headers: { apikey: JACK_USERNAME } }),
       ).resolves.not.toThrow();
     }
+    await wait(500);
   });
 
-  it('check Lago events (normal API)', async () => {
+  it('check Lago events (expensive API)', async () => {
     const { data } = await lagoClient.events.findAllEvents({
       external_subscription_id: LAGO_EXTERNAL_SUBSCRIPTION_ID,
       timestamp_from: expensiveStartAt.toISOString(),
