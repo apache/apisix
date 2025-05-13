@@ -81,3 +81,128 @@ if ! echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:123
 fi
 
 echo "passed: should verify certificate by default"
+
+
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+    etcd:
+        host:
+            - https://127.0.0.1:12379
+        prefix: "/apisix"
+        timeout: 30
+' > conf/config.yaml
+
+
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml up -d
+sleep 3
+output=$(./bin/apisix init 2>&1 || true)
+make stop
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml down
+
+if ! echo "$output" | grep 'etcd is not allowed to be accessed anonymously when deployment role is data_plane'; then
+    echo "failed: etcd should not be accessed anonymously when deployment role is data_plane"
+    exit 1
+fi
+
+echo "passed: etcd should not be accessed anonymously when deployment role is data_plane"
+
+
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+        etcd:
+            user: reader
+            password: readerpw
+            host:
+                - https://127.0.0.1:12379
+            prefix: "/apisix"
+            timeout: 30
+' > conf/config.yaml
+
+echo '
+version: "3.7"
+
+services:
+  etcd0:
+    image: "gcr.io/etcd-development/etcd:v3.4.15"
+    container_name: etcd0
+    ports:
+      - "23790:2379"
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=no
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd0:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ROOT_PASSWORD=root
+' > t/cli/docker-compose-etcd-data-plane.yaml
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml up -d
+sleep 3
+# create read only user and role
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root user add reader:readerpw
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root role add reader-role
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root role grant-permission reader-role --prefix=true read /
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root user grant-role reader reader-role
+
+out=$(make run 2>&1 || true)
+make stop
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml down
+if ! echo "$out" | grep 'run -> [ Done ]'; then
+    echo "failed: should start data plane with read only user"
+    exit 1
+fi
+
+echo "passed: should start data plane with read only user"
+
+
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+    etcd:
+        user: writer
+        password: writer
+        host:
+            - https://127.0.0.1:12379
+        prefix: "/apisix"
+        timeout: 30
+        
+' > conf/config.yaml
+
+echo '
+version: "3.7"
+
+services:
+  etcd0:
+    image: "gcr.io/etcd-development/etcd:v3.4.15"
+    container_name: etcd0
+    ports:
+      - "23790:2379"
+    environment:
+      - ALLOW_NONE_AUTHENTICATION=no
+      - ETCD_ADVERTISE_CLIENT_URLS=http://etcd0:2379
+      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
+      - ETCD_ROOT_PASSWORD=root
+' > t/cli/docker-compose-etcd-data-plane.yaml
+
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml up -d
+sleep 3
+
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root user add writer:writerpw
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root role add writer-role
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root role grant-permission writer-role --prefix=true readwrite /
+etcdctl --endpoints=http://127.0.0.1:23790 --user=root:root user grant-role writer writer-role
+
+out=$(make run 2>&1 || true)
+make stop
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml down
+if ! echo "$out" | grep 'data plane role should not have write permission to etcd'; then
+    echo "failed: data plane role should not have write permission to etcd"
+    exit 1
+fi
+
+echo "passed: data plane role should not have write permission to etcd"
