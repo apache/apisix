@@ -60,7 +60,6 @@ const launchLago = async () => {
   await compose.exec('api', 'rails db:create', composeOpts);
   await compose.exec('api', 'rails db:migrate', composeOpts);
   await compose.upAll(composeOpts);
-  await compose.stopOne('front', composeOpts);
 };
 
 const provisionLago = async () => {
