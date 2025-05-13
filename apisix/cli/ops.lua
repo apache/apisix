@@ -887,6 +887,17 @@ local function start(env, ...)
 
     if env.deployment_role ~= "data_plane" then
         init_etcd(env, args)
+    else
+        -- etcd write permission is not allowed for data plane
+        local yaml_conf, err = file.read_yaml_conf(env.apisix_home)
+        if not yaml_conf then
+            util.die("failed to read config.yaml: " .. err)
+        end
+
+        local ok, err = etcd.check_etcd_write_permission(yaml_conf)
+        if not ok and err then
+            util.die(err)
+        end
     end
 
     util.execute_cmd(env.openresty_args)
