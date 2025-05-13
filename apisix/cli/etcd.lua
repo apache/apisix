@@ -295,6 +295,24 @@ end
 
 local function check_etcd_write_permission(yaml_conf)
     local etcd_conf = yaml_conf.etcd
+    local headers = {["Content-Type"] = "application/json"}
+    local response_body = {}
+
+    -- if no user and password can still access etcd status, 
+    -- means ALLOW_NONE_AUTHENTICATION is true
+    -- which is not allowed when deployment role is data_plane
+    local auth_status_url = etcd_conf.host[1] .. "/v3/auth/status"
+    local res, code = request({
+        url = auth_status_url,
+        method = "POST",
+        headers = headers
+    }, yaml_conf)
+    if code == 200 then
+      return false, "etcd is not allowed to be accessed anonymously when deployment role is data_plane \n" ..
+          "Please modify the etcd ALLOW_NONE_AUTHENTICATION to false in the etcd config file\n"
+    end
+
+    -- check etcd write permission
     local key = (etcd_conf.prefix or "") .. "/check_write_permission"
     local value = "test"
     local host = etcd_conf.host[1]
@@ -306,16 +324,12 @@ local function check_etcd_write_permission(yaml_conf)
 
     local user = etcd_conf.user
     local password = etcd_conf.password
-    local headers = {["Content-Type"] = "application/json"}
     if user and password then
         local token = get_etcd_token(user, password, host, yaml_conf)
         if token then
             headers["Authorization"] = token
         end
     end
-    
-    local response_body = {}
-
     local res, code = request({
         url = url,
         method = "POST",
@@ -328,14 +342,11 @@ local function check_etcd_write_permission(yaml_conf)
         return true
     end
 
-    local user = etcd_conf.user or "[USER]"
     return false, "data plane role should not have write permission to etcd. " ..
                   "Please modify the etcd user permissions using:\n" ..
                   "etcdctl user grant-role " .. user .. " read\n" ..
                   "etcdctl user revoke-role " .. user .. " root\n"
 end
-
-_M.check_etcd_write_permission = check_etcd_write_permission
 
 
 function _M.init(env, args)
@@ -445,5 +456,6 @@ function _M.init(env, args)
     end
 end
 
+_M.check_etcd_write_permission = check_etcd_write_permission
 
 return _M
