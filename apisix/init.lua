@@ -868,11 +868,11 @@ local function healthcheck_passive(api_ctx)
 end
 
 
-function _M.status_standalone()
+function _M.status()
     core.response.exit(200, "ok")
 end
 
-function _M.status_standalone_ready()
+function _M.status_ready()
     local status_shdict = ngx.shared.status_report_standalone
     local pids = status_shdict:get_keys()
     local resp = ""

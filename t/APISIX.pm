@@ -722,12 +722,12 @@ _EOC_
         listen 7085 ;
         location /status/ready {
             content_by_lua_block {
-                apisix.status_standalone_ready()
+                apisix.status_ready()
             }
         }
         location /status {
             content_by_lua_block {
-                apisix.status_standalone()
+                apisix.status()
             }
         }
     }

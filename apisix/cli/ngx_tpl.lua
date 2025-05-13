@@ -554,18 +554,18 @@ http {
     }
     {% end %}
 
-    {% if status_standalone then %}
+    {% if status then %}
     server {
         listen {* status_server_addr *} enable_process=privileged_agent;
         access_log off;
         location /status {
             content_by_lua_block {
-                apisix.status_standalone()
+                apisix.status()
             }
         }
         location /status/ready {
             content_by_lua_block {
-                apisix.status_standalone_ready()
+                apisix.status_ready()
             }
         }
     }
