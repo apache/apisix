@@ -121,4 +121,3 @@ GET /t
 --- request
 GET /t
 --- error_code: 200
-

@@ -44,7 +44,7 @@ local function sync_status_to_shdict(status)
     end
     local status_shdict = ngx.shared.status_report_standalone
     local pid = worker_pid()
-    core.log.warn("sync status to shared dict, pid: ", pid, " status: ", status)
+    core.log.info("sync status to shared dict, pid: ", pid, " status: ", status)
     status_shdict:set(pid, status, 5*60)
 end
 
@@ -151,7 +151,6 @@ local function update(ctx)
     end
 
     local ok, err = update_and_broadcast_config(apisix_yaml, conf_version)
-    core.log.warn("WHILE UPDATING ",ok, err)
     if not ok then
         core.response.exit(500, err)
     end
@@ -225,7 +224,7 @@ end
 
 
 function _M.init_worker()
-    local ok, err = ngx.timer.at(0, cleanup_on_exit)  -- Start immediately
+    local ok, err = ngx.timer.at(0, cleanup_on_exit)
     if not ok then
         core.log.error("Failed to start cleanup timer: ", err)
     end

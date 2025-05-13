@@ -1,0 +1,27 @@
+{
+	"methods": [
+					"GET"
+	],
+	"uri": "/*",
+	"upstream": {
+					"type": "roundrobin",
+					"node" : {
+						"127.0.0.1:3000": 1,
+ 						"127.0.0.1:8000": 1
+
+					},
+					"checks": {
+									"active": {
+													"http_path": "/",
+													"timeout": 1,
+													"healthy": {
+																	"interval": 1
+													},
+													"unhealthy": {
+																	"tcp_failures": 10
+													}
+									}
+
+					}
+	}
+}

@@ -346,7 +346,8 @@ Please modify "admin_key" in conf/config.yaml .
     local status_server_addr
     if yaml_conf.apisix.status then
         status_server_addr = validate_and_get_listen_addr("status port", "127.0.0.1",
-                             yaml_conf.apisix.status.ip, 7085, yaml_conf.apisix.status.port)
+                             yaml_conf.apisix.status.ip, 7085,
+                             yaml_conf.apisix.status.port)
     end
 
     local control_server_addr

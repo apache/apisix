@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-service-account-token
+  annotations:
+    kubernetes.io/service-account.name: my-service-account
+type: kubernetes.io/service-account-token
