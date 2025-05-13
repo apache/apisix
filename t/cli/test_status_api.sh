@@ -45,7 +45,7 @@ apisix:
 ETCD_NAME_0=etcd0
 ETCD_NAME_1=etcd1
 ETCD_NAME_2=etcd2
-docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
+docker compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 
 make run
 
@@ -71,4 +71,4 @@ docker stop ${ETCD_NAME_2}
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 503 \
 || (echo "failed: status/ready api didn't return 503"; exit 1)
 
-docker-compose -f ./t/cli/docker-compose-etcd-cluster.yaml down
+docker compose -f ./t/cli/docker-compose-etcd-cluster.yaml down
