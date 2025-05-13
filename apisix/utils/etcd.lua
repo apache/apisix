@@ -17,6 +17,7 @@
 local ltn12 = require("ltn12")
 local http  = require("socket.http")
 local https = require("ssl.https")
+local type  = type
 
 local str_sub      = string.sub
 local table_concat = table.concat
