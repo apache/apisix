@@ -165,6 +165,7 @@ nginx_config:                     # Config for render the template to generate n
   meta:
     lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
       prometheus-metrics: 15m
+      standalone-config: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -178,6 +179,7 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
+      upstream-healthcheck-stream: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations

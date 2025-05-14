@@ -275,6 +275,7 @@ thread_pool grpc-client-nginx-module threads=1;
 
 lua {
     lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict standalone-config 10m;
 }
 _EOC_
     }
@@ -362,6 +363,8 @@ _EOC_
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.print("stdout: ", stdout)
+                        ngx.print("stderr: ", stderr)
                         return
                     end
                     ngx.print(stdout)
@@ -394,6 +397,7 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
+    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
