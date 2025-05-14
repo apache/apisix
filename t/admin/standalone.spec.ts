@@ -190,7 +190,7 @@ describe("Admin - Standalone", () => {
         ENDPOINT,
         YAML.stringify(config2),
         {
-          headers: { 
+          headers: {
             "Content-Type": "application/yaml",
             "x-apisix-conf-version-routes": 1,
           },
@@ -209,7 +209,7 @@ describe("Admin - Standalone", () => {
         YAML.stringify(config2),
         {
           params: { conf_version: "abc" },
-          headers: { 
+          headers: {
             "Content-Type": "application/yaml",
             "x-apisix-conf-version-routes": "adc",
           },

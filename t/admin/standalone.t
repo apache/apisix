@@ -110,7 +110,7 @@ GET /r1
 
 === TEST 6: route references upstream, but only updates the route
 --- config
-    location /t6 {} 
+    location /t6 {}
 --- pipelined_requests eval
 [
     "PUT /apisix/admin/configs\n" . "{\"routes\":[{\"id\":\"r1\",\"uri\":\"/r1\",\"upstream_id\":\"u1\",\"plugins\":{\"proxy-rewrite\":{\"uri\":\"/hello\"}}}],\"upstreams\":[{\"id\":\"u1\",\"nodes\":{\"127.0.0.1:1980\":1},\"type\":\"roundrobin\"}]}",
@@ -138,7 +138,7 @@ GET /r1
 
 === TEST 8: put invalid conf_version
 --- config
-    location /t {} 
+    location /t {}
 --- request
 PUT /apisix/admin/configs
 {"routes":[{"id":"r1","uri":"/r2","upstream_id":"u1","plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
