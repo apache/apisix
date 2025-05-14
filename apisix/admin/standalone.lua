@@ -40,11 +40,12 @@ local _M = {}
 
 
 local function get_config()
-    local config, err = shared_dict:get("config")
+    local config = shared_dict:get("config")
     if not config then
         return nil, "not found"
     end
 
+    local err
     config, err = core.json.decode(config)
     if not config then
         return nil, "failed to decode json: " .. err
@@ -101,7 +102,9 @@ local function update(ctx)
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
-            return core.response.exit(500, {error_msg = "failed to get config from shared dict: " .. err})
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
         end
     else
         for key, version in pairs(config.conf_version) do
@@ -215,12 +218,15 @@ local function get(ctx)
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
-            return core.response.exit(500, {error_msg = "failed to get config from shared dict: " .. err})
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
         end
         config = {}
         local created_objs = config_yaml.fetch_all_created_obj()
         for _, obj in pairs(created_objs) do
-            core.response.set_header("X-APISIX-Conf-Version-" .. obj.key, tostring(obj.conf_version))
+            core.response.set_header("X-APISIX-Conf-Version-" .. obj.key,
+                                        tostring(obj.conf_version))
         end
     else
         for key, version in pairs(config.conf_version) do

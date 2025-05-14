@@ -70,12 +70,11 @@ local mt = {
 
 
 local apisix_yaml
-local apisix_yaml_raw -- save a deepcopy of the latest configuration for API
 local apisix_yaml_mtime
 
 local key_conf_version = {}
 
-local function update_config(table, key_conf_version_data)
+local function update_config(table, conf_version)
     if not table then
         log.error("failed update config: empty table")
         return
@@ -87,21 +86,18 @@ local function update_config(table, key_conf_version_data)
         return
     end
 
-    if not key_conf_version_data then
+    if type(conf_version) ~= "table" then
         apisix_yaml = table
-        apisix_yaml_raw = tbl_deepcopy(table)
-        for key, _ in pairs(key_conf_version) do
-            key_conf_version[key] = key_conf_version[key] + 1
-        end
+        apisix_yaml_mtime = conf_version
         return
     end
-    for key, conf_version in pairs(key_conf_version_data) do
+
+    for key, conf_version in pairs(conf_version) do
         if key_conf_version[key] then
             apisix_yaml[key] = table[key]
             key_conf_version[key] = conf_version
         end
     end
-    apisix_yaml_raw = tbl_deepcopy(apisix_yaml)
 end
 _M._update_config = update_config
 
@@ -290,7 +286,8 @@ local function sync_data(self)
             if pre_index then
                 -- remove the old item
                 local pre_val = self.values[pre_index]
-                if pre_val and (not pre_val.modifiedIndex or pre_val.modifiedIndex ~= modifiedIndex) then
+                if pre_val and
+                    (not pre_val.modifiedIndex or pre_val.modifiedIndex ~= modifiedIndex) then
                     log.error("fire all clean handlers for ", self.key, " id: ", id,
                                    " modifiedIndex: ", modifiedIndex)
                     config_util.fire_all_clean_handlers(pre_val)
@@ -437,12 +434,13 @@ function _M.new(key, opts)
         key = sub_str(key, 2)
     end
 
-    key_conf_version[key] = 0
-
-    if item_schema then
-        item_schema.properties.modifiedIndex = {
-            type = "integer",
-        }
+    if is_use_admin_api() then
+        key_conf_version[key] = 0
+        if item_schema then
+            item_schema.properties.modifiedIndex = {
+                type = "integer",
+            }
+        end
     end
     local obj = setmetatable({
         automatic = automatic,
