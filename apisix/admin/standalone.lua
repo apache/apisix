@@ -218,7 +218,7 @@ local function cleanup_on_exit()
     -- Reschedule the timer to check again
     local ok, err = ngx.timer.at(0.1, cleanup_on_exit)
     if not ok then
-        core.log.error("Failed to reschedule cleanup timer: ", err)
+        core.log.error("failed to reschedule cleanup timer: ", err)
     end
 end
 
@@ -226,7 +226,7 @@ end
 function _M.init_worker()
     local ok, err = ngx.timer.at(0, cleanup_on_exit)
     if not ok then
-        core.log.error("Failed to start cleanup timer: ", err)
+        core.log.error("failed to start cleanup timer: ", err)
     end
     local function update_config()
         local config, err = shared_dict:get("config")
