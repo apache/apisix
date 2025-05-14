@@ -179,6 +179,7 @@ local function get_etcd_token(user, password, host, yaml_conf)
                             auth_url, err, retry_time))
     end
 
+    local errmsg
     if not res then
         errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", auth_url, err)
         return nil, errmsg
@@ -298,18 +299,20 @@ local function check_etcd_write_permission(yaml_conf)
     local headers = {["Content-Type"] = "application/json"}
     local response_body = {}
 
-    -- if no user and password can still access etcd status, 
+    -- if no user and password can still access etcd status,
     -- means ALLOW_NONE_AUTHENTICATION is true
     -- which is not allowed when deployment role is data_plane
     local auth_status_url = etcd_conf.host[1] .. "/v3/auth/status"
-    local res, code = request({
+    local _, code = request({
         url = auth_status_url,
         method = "POST",
         headers = headers
     }, yaml_conf)
     if code == 200 then
-      return false, "etcd is not allowed to be accessed anonymously when deployment role is data_plane \n" ..
-          "Please modify the etcd ALLOW_NONE_AUTHENTICATION to false in the etcd config file\n"
+      return false, "etcd is not allowed to be accessed anonymously " ..
+                    "when deployment role is data_plane \n" ..
+                    "Please modify the etcd ALLOW_NONE_AUTHENTICATION to false " ..
+                    "in the etcd config file\n"
     end
 
     -- check etcd write permission
@@ -330,7 +333,7 @@ local function check_etcd_write_permission(yaml_conf)
             headers["Authorization"] = token
         end
     end
-    local res, code = request({
+    local _, code = request({
         url = url,
         method = "POST",
         source = ltn12.source.string(req_body),
