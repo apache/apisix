@@ -16,7 +16,7 @@ jobs:
         run: |
           pip install codespell==2.1.0
           # codespell considers some repo name in go.sum are misspelled
-          git grep --cached -l '' | grep -v go.sum | grep -v pnpm-lock.yaml |xargs codespell --ignore-words=.ignore_words
+          git grep --cached -l '' | grep -v go.sum | grep -v pnpm-lock.yaml |xargs codespell --ignore-words=.ignore_words --skip="*.ts,*.mts"
       - name: Merge conflict
         run: |
           bash ./utils/check-merge-conflict.sh
