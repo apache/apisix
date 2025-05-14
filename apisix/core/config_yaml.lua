@@ -27,7 +27,6 @@ local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
-local tbl_deepcopy = require("apisix.core.table").deepcopy
 local lfs          = require("lfs")
 local file         = require("apisix.cli.file")
 local exiting      = ngx.worker.exiting
@@ -102,12 +101,6 @@ end
 _M._update_config = update_config
 
 
-local function get_config()
-    return apisix_yaml, apisix_yaml_mtime, apisix_yaml_raw
-end
-_M._get_config = get_config
-
-
 local function is_use_admin_api()
     local local_conf, _ = config_local.local_conf()
     return local_conf and local_conf.apisix and local_conf.apisix.enable_admin
@@ -172,7 +165,13 @@ local function sync_data(self)
         return nil, "failed to read local file " .. apisix_yaml_path
     end
 
-    local conf_version = key_conf_version[self.key]
+    local conf_version
+    if is_use_admin_api() then
+        conf_version = key_conf_version[self.key]
+    else
+        conf_version = apisix_yaml_mtime
+    end
+
     if conf_version == self.conf_version then
         return true
     end
@@ -256,7 +255,7 @@ local function sync_data(self)
             local data_valid = true
             if type(item) ~= "table" then
                 data_valid = false
-                log.error("invalid item data of [", self.key .. "/" .. id,
+                log.error("invalid item data of [", self.key .. "/" .. idx,
                           "], val: ", json.delay_encode(item),
                           ", it should be an object")
             end
@@ -518,7 +517,6 @@ end
 function _M.init_worker()
     if is_use_admin_api() then
         apisix_yaml = {}
-        apisix_yaml_raw = {}
         apisix_yaml_mtime = 0
         return true
     end
