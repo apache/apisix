@@ -240,7 +240,7 @@ So even if a retry is triggered because the network causes Lago to send a `succe
 
 The plugin is logically simple and reliable, it just builds a Lago event object for each request, buffers and sends them in bulk. The logic is not coupled to the request proxy path, so this does not cause latency to rise for requests going through the gateway.
 
-Technically, the logic is executed in the NGINX log phase and [batch processor](./batch-processor.md) timer, so this does not affect the request itself.
+Technically, the logic is executed in the NGINX log phase and [batch processor](../batch-processor.md) timer, so this does not affect the request itself.
 
 ### Resource overhead
 
