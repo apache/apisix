@@ -33,6 +33,7 @@ local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
+local pairs        = pairs
 local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
@@ -154,7 +155,7 @@ local function read_apisix_yaml(premature, pre_mtime)
     log.warn("config file ", apisix_yaml_path, " reloaded.")
 end
 
-
+local inspect = require("inspect")
 local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -176,7 +177,11 @@ local function sync_data(self)
         return true
     end
 
+
+
     local items = apisix_yaml[self.key]
+    log.warn("conf_version: ", conf_version, " self.conf_version: ", self.conf_version, " key: ", self.key,
+             " items: ", inspect(items))
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
@@ -185,27 +190,35 @@ local function sync_data(self)
     end
 
     if self.values and #self.values > 0 then
-        local clean_items = {}
-        for _, item in ipairs(items) do
-            if item.modifiedIndex then
-                clean_items[item.id] = item.modifiedIndex
+        if is_use_admin_api() then
+            local clean_items = {}
+            for _, item in ipairs(items) do
+                if item.modifiedIndex then
+                    clean_items[item.id] = item.modifiedIndex
+                end
             end
-        end
-        local new_values = new_tab(#items, 0)
-        self.values_hash = new_tab(0, #items)
-        for _, item in ipairs(self.values) do
-            local id = item.value.id
-            if not clean_items[id]  then
+            local new_values = new_tab(8, 0)
+            self.values_hash = new_tab(0, 8)
+            for _, item in ipairs(self.values) do
+                local id = item.value.id
+                if not clean_items[id]  then
+                    config_util.fire_all_clean_handlers(item)
+                else
+                    insert_tab(new_values, item)
+                    self.values_hash[id] = #new_values
+                end
+            end
+            self.values = new_values
+        else
+            for _, item in ipairs(self.values) do
                 config_util.fire_all_clean_handlers(item)
-            else
-                insert_tab(new_values, item)
-                self.values_hash[id] = #new_values
             end
+            self.values = nil
         end
-        self.values = new_values
     end
 
     if self.single_item then
+        log.warn("single item: ", self.key, " items: ", inspect(items))
         -- treat items as a single item
         self.values = new_tab(1, 0)
         self.values_hash = new_tab(0, 1)
@@ -245,8 +258,8 @@ local function sync_data(self)
 
     else
         if not self.values then
-            self.values = new_tab(#items, 0)
-            self.values_hash = new_tab(0, #items)
+            self.values = new_tab(8, 0)
+            self.values_hash = new_tab(0, 8)
         end
 
         local err
@@ -260,7 +273,7 @@ local function sync_data(self)
                           ", it should be an object")
             end
 
-            local id = item.id or "arr_" .. idx
+            local id = tostring(item.id or "arr_" .. idx)
             local modifiedIndex = item.modifiedIndex or conf_version
             local conf_item = {value = item, modifiedIndex = modifiedIndex,
                             key = "/" .. self.key .. "/" .. id}
@@ -281,29 +294,31 @@ local function sync_data(self)
                 end
             end
 
-            local pre_index = self.values_hash[id]
-            if pre_index then
-                -- remove the old item
-                local pre_val = self.values[pre_index]
-                if pre_val and
-                    (not pre_val.modifiedIndex or pre_val.modifiedIndex ~= modifiedIndex) then
-                    log.error("fire all clean handlers for ", self.key, " id: ", id,
-                                   " modifiedIndex: ", modifiedIndex)
-                    config_util.fire_all_clean_handlers(pre_val)
+            if data_valid then
+                local pre_index = self.values_hash[id]
+                if pre_index then
+                    -- remove the old item
+                    local pre_val = self.values[pre_index]
+                    if pre_val and
+                        (not pre_val.modifiedIndex or pre_val.modifiedIndex ~= modifiedIndex) then
+                        log.error("fire all clean handlers for ", self.key, " id: ", id,
+                                    " modifiedIndex: ", modifiedIndex)
+                        config_util.fire_all_clean_handlers(pre_val)
+                        conf_item.clean_handlers = {}
+                        self.values[pre_index] = conf_item
+                    end
+                else
                     conf_item.clean_handlers = {}
-                    self.values[pre_index] = conf_item
+                    insert_tab(self.values, conf_item)
+                    self.values_hash[id] = #self.values
+                    if not conf_item.value.id then
+                        conf_item.value.id = id
+                    end
                 end
-            else
-                conf_item.clean_handlers = {}
-                insert_tab(self.values, conf_item)
-                self.values_hash[id] = #self.values
-                if not conf_item.value.id then
-                    conf_item.value.id = id
-                end
-            end
 
-            if self.filter then
-                self.filter(conf_item)
+                if self.filter then
+                    self.filter(conf_item)
+                end
             end
         end
     end
@@ -314,6 +329,7 @@ end
 
 
 function _M.get(self, key)
+    log.warn("get config from key: ", key, " values_hash: ", inspect(self.values_hash), " values: ", inspect(self.values))
     if not self.values_hash then
         return
     end
@@ -323,6 +339,7 @@ function _M.get(self, key)
         return nil
     end
 
+    log.warn("upstream get arr_idx: ", arr_idx, " value: ", inspect(self.values[arr_idx]))
     return self.values[arr_idx]
 end
 
