@@ -70,7 +70,7 @@ property "event_properties" validation failed: wrong type: expected object, got 
 --- timeout: 300
 --- max_size: 2048000
 --- exec
-cd t && pnpm test plugin/lago.spec.mts
+cd t && pnpm test plugin/lago.spec.mts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval

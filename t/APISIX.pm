@@ -362,14 +362,12 @@ _EOC_
                     local shell = require("resty.shell")
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
-                        -- The output may be truncated when it is too long, which follows the single line length limit of error.log
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
-                    end
-                    -- Therefore assertions are best based on HTTP responses, which are reliable
-                    ngx.print(stdout)
-                    if stderr and stderr ~= "" then
+                        ngx.print("stdout: ", stdout)
                         ngx.print("stderr: ", stderr)
+                        return
                     end
+                    ngx.print(stdout)
                 }
             }
 _EOC_
