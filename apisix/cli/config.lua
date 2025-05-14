@@ -176,8 +176,8 @@ local _M = {
         ["cas-auth"] = "10m",
         ["ocsp-stapling"] = "10m",
         ["mcp-session"] = "10m",
-        status_report_standalone = "10m",
-        status_report = "10m"
+        status_report_standalone = "1m",
+        status_report = "1m"
       }
     }
   },
