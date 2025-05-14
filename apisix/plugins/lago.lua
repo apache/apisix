@@ -35,19 +35,20 @@ local schema = {
             type = "array",
             minItems = 1,
             items = core.schema.uri_def,
-            description = "Lago API address, like https://api.getlago.com, "
-                        .. "it supports both cloud and self-hosted, "
-                        .. "one of them is randomly selected when configured as more than one",
+            description = "Lago API address, like http://127.0.0.1:3000, "
+                        .. "it supports both self-hosted and cloud. If multiple endpoints are"
+                        .. " configured, the log will be pushed to a randomly determined"
+                        .. " endpoint from the list.",
         },
         endpoint_uri = {
             type = "string",
             minLength = 1,
             default = "/api/v1/events/batch",
-            description = "Lago API endpoint, it needs to be set to the batch send endpoint",
+            description = "Lago API endpoint, it needs to be set to the batch send endpoint.",
         },
         token = {
             type = "string",
-            description = "Lago API API key, create one for your organization on dashboard"
+            description = "Lago API key, create one for your organization on dashboard."
         },
         event_transaction_id = {
             type = "string",
@@ -80,7 +81,7 @@ local schema = {
                 },
             },
             description = "Event's properties, used to attach information to an event, this"
-                        .. " allows you to send certain information on a request to Lago, such"
+                        .. " allows you to send certain information on a event to Lago, such"
                         .. " as sending HTTP status to take a failed request off the bill, or"
                         .. " sending the AI token consumption in the response body for accurate"
                         .. " billing, its keys are fixed strings and its values can be string"
