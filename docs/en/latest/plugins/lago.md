@@ -40,11 +40,13 @@ The `lago` plugin pushes requests and responses to [Lago Self-hosted](https://gi
 This allows for API monetization or let APISIX to be an AI gateway for AI tokens billing scenarios.
 
 :::disclaimer
+
 Lago owns its trademarks and controls its commercial products and open source projects.
 
 The [https://github.com/getlago/lago](https://github.com/getlago/lago) project uses the `AGPL-3.0` license instead of the `Apache-2.0` license that is the same as Apache APISIX. As a user, you will need to evaluate for yourself whether it is applicable to your business to use the project in a compliant way or to obtain another type of license from Lago. Apache APISIX community does not endorse it.
 
 The plugin does not contain any proprietary code or SDKs from Lago, it is contributed by contributors to Apache APISIX and licensed under the `Apache-2.0` license, which is in line with any other part of APISIX and you don't need to worry about its compliance.
+
 :::
 
 When enabled, the plugin will collect information from the request context (e.g. event code, transaction ID, associated subscription ID) as configured and serialize them into [Event JSON objects](https://getlago.com/docs/api-reference/events/event-object) as required by Lago. They will be added to the buffer and sent to Lago in batches of up to 100. This batch size is a [requirement](https://getlago.com/docs/api-reference/events/batch) from Lago. If you want to modify it, see [batch processor](../batch-processor.md) for more details.
