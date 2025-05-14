@@ -68,7 +68,7 @@ qr/PASS admin\/standalone.spec.ts/
 --- config
     location /t {} # force the worker to restart by changing the configuration
 --- request
-PUT /apisix/admin/configs?conf_version=101
+PUT /apisix/admin/configs
 {"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
@@ -91,7 +91,7 @@ hello world
 --- config
     location /t2 {}
 --- request
-PUT /apisix/admin/configs?conf_version=102
+PUT /apisix/admin/configs
 {}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
@@ -105,3 +105,47 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- request
 GET /r1
 --- error_code: 404
+
+
+
+=== TEST 6: route references upstream, but only updates the route
+--- config
+    location /t6 {} 
+--- pipelined_requests eval
+[
+    "PUT /apisix/admin/configs\n" . "{\"routes\":[{\"id\":\"r1\",\"uri\":\"/r1\",\"upstream_id\":\"u1\",\"plugins\":{\"proxy-rewrite\":{\"uri\":\"/hello\"}}}],\"upstreams\":[{\"id\":\"u1\",\"nodes\":{\"127.0.0.1:1980\":1},\"type\":\"roundrobin\"}]}",
+    "PUT /apisix/admin/configs\n" . "{\"routes\":[{\"id\":\"r1\",\"uri\":\"/r2\",\"upstream_id\":\"u1\",\"plugins\":{\"proxy-rewrite\":{\"uri\":\"/hello\"}}}]}"
+]
+--- more_headers eval
+[
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1",
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "x-apisix-conf-version-routes: 100",
+]
+--- error_code eval
+[202, 202]
+
+
+
+=== TEST 8: hit r2
+--- config
+    location /t3 {}
+--- pipelined_requests eval
+["GET /r1", "GET /r2"]
+--- error_code eval
+[404, 200]
+
+
+
+=== TEST 7: put invalid conf_version
+--- config
+    location /t {} 
+--- request
+PUT /apisix/admin/configs
+{"routes":[{"id":"r1","uri":"/r2","upstream_id":"u1","plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+x-apisix-conf-version-routes: 100
+--- error_code: 400
+--- response_body
+{"error_msg":"invalid header: [x-apisix-conf-version-routes: 100] should be greater than the current version (100)"}
+
