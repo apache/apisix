@@ -236,7 +236,6 @@ describe('Plugin - Lago', () => {
   }, 120 * 1000);
 
   // clean up
-  // codespell:ignore afterAll
   afterAll(async () => {
     await compose.downAll({
       cwd: LAGO_PATH,
