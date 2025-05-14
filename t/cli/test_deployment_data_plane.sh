@@ -170,7 +170,6 @@ deployment:
             - https://127.0.0.1:12379
         prefix: "/apisix"
         timeout: 30
-        
 ' > conf/config.yaml
 
 echo '
