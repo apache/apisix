@@ -126,7 +126,7 @@ GET /r1
 
 
 
-=== TEST 8: hit r2
+=== TEST 7: hit r2
 --- config
     location /t3 {}
 --- pipelined_requests eval
@@ -136,7 +136,7 @@ GET /r1
 
 
 
-=== TEST 7: put invalid conf_version
+=== TEST 8: put invalid conf_version
 --- config
     location /t {} 
 --- request
@@ -148,4 +148,3 @@ x-apisix-conf-version-routes: 100
 --- error_code: 400
 --- response_body
 {"error_msg":"invalid header: [x-apisix-conf-version-routes: 100] should be greater than the current version (100)"}
-
