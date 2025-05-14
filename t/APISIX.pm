@@ -367,7 +367,9 @@ _EOC_
                     end
                     -- Therefore assertions are best based on HTTP responses, which are reliable
                     ngx.print(stdout)
-                    ngx.print("stderr: ", stderr)
+                    if stderr and stderr ~= "" then
+                        ngx.print("stderr: ", stderr)
+                    end
                 }
             }
 _EOC_
