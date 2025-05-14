@@ -898,7 +898,9 @@ function _M.status_ready()
         end
 
         core.response.exit(200, "ok")
-    elseif provider == "etcd" then
+        return
+    end
+    if provider == "etcd" then
         local status_shdict = ngx.shared.status_report
         local pids = status_shdict:get_keys()
         local resp = ""
@@ -925,9 +927,9 @@ function _M.status_ready()
         end
 
         core.response.exit(503, "none of the configured dp_manager available: " .. err)
-    else
-        core.response.exit(503, "unknown config provider: " .. provider)
+        return
     end
+    core.response.exit(503, "unknown config provider: " .. provider)
 end
 
 
