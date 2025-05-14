@@ -155,7 +155,7 @@ local function read_apisix_yaml(premature, pre_mtime)
     log.warn("config file ", apisix_yaml_path, " reloaded.")
 end
 
-local inspect = require("inspect")
+
 local function sync_data(self)
     if not self.key then
         return nil, "missing 'key' arguments"
@@ -270,7 +270,8 @@ local function sync_data(self)
                           ", it should be an object")
             end
 
-            local id = tostring(item.id or "arr_" .. idx)
+            local id = tostring(item.id) or ("arr_" .. idx)
+            item.id = id
             local modifiedIndex = item.modifiedIndex or conf_version
             local conf_item = {value = item, modifiedIndex = modifiedIndex,
                             key = "/" .. self.key .. "/" .. id}
