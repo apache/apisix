@@ -211,7 +211,7 @@ Of course, the fact that we make transaction ID, subscription ID as a configurat
 - Use custom authentication: as long as the Lago subscription ID represented by the user ID is registered as an APISIX variable, it will be available from there, so custom authentication is completely possible!
 - Integration with internal services: sometimes you may not need the APISIX built-in `request-id` plugin, it doesn't matter, you can have your internal service (APISIX upstream) generate it and include it in the HTTP response header so that you can access it by way of an NGINX variable in the transaction ID.
 
-Support for event properities is provided, this allows you to set special values on specific APIs, for example if your service has 100 APIs, and you want to enable general billing on all of them and special configure them on a few specific APIs to apply different pricing, this will work, as we did in the demo above.
+Support for event properties is provided, this allows you to set special values on specific APIs, for example if your service has 100 APIs, and you want to enable general billing on all of them and special configure them on a few specific APIs to apply different pricing, this will work, as we did in the demo above.
 
 ### Events are not pushed properly
 
