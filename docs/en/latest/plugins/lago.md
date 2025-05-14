@@ -225,7 +225,7 @@ The error can be diagnosed based on the error code in the `failed to process ent
 
 ### Reliability of reporting
 
-The plugin may encounter a network problem that prevents the node where the gateway is located from communicating with the Lago API, in which case APISIX will discard the batch according to the [batch processor](./batch-processor.md) configuration, the batch will be discarded if the specified number of retries are made and the dosage still cannot be sent.
+The plugin may encounter a network problem that prevents the node where the gateway is located from communicating with the Lago API, in which case APISIX will discard the batch according to the [batch processor](../batch-processor.md) configuration, the batch will be discarded if the specified number of retries are made and the dosage still cannot be sent.
 
 Discarded events are permanently lost, so it is recommended that you use this plugin in conjunction with other logging mechanisms and perform event replay after Lago is unavailable causing data to be discarded to ensure that all logs are correctly sent to Lago.
 
