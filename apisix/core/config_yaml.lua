@@ -270,7 +270,7 @@ local function sync_data(self)
                           ", it should be an object")
             end
 
-            local id = tostring(item.id) or ("arr_" .. idx)
+            local id = item.id and tostring(item.id) or ("arr_" .. idx)
             item.id = id
             local modifiedIndex = item.modifiedIndex or conf_version
             local conf_item = {value = item, modifiedIndex = modifiedIndex,
