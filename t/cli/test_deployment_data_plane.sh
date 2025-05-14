@@ -44,7 +44,7 @@ make run
 
 sleep 1
 
-res=$(etcdctl --endpoints=https://127.0.0.1:43799 --user=root:root get / --prefix | wc -l)
+res=$(etcdctl --endpoints=http://127.0.0.1:43799 --user=root:root get / --prefix | wc -l)
 
 if [ ! $res -eq 0 ]; then
     echo "failed: data_plane should not write data to etcd"
@@ -64,26 +64,26 @@ fi
 
 echo "passed: data_plane should not enable Admin API"
 
-# echo '
-# deployment:
-#     role: data_plane
-#     role_data_plane:
-#         config_provider: etcd
-#     etcd:
-#         host:
-#             - https://127.0.0.1:12379
-#         prefix: "/apisix"
-#         timeout: 30
-# ' > conf/config.yaml
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+    etcd:
+        host:
+            - https://127.0.0.1:43799
+        prefix: "/apisix"
+        timeout: 30
+' > conf/config.yaml
 
-# out=$(make run 2>&1 || true)
-# make stop
-# if ! echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:12379: certificate verify failed'; then
-#     echo "failed: should verify certificate by default"
-#     exit 1
-# fi
+out=$(make run 2>&1 || true)
+make stop
+if ! echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:12379: certificate verify failed'; then
+    echo "failed: should verify certificate by default"
+    exit 1
+fi
 
-# echo "passed: should verify certificate by default"
+echo "passed: should verify certificate by default"
 
 
 # echo '
