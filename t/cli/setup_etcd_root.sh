@@ -14,20 +14,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-version: "3.8"
 
-services:
-  etcd:
-    image: "gcr.io/etcd-development/etcd:v3.5.4"
-    container_name: etcd4
-    
-    ports:
-      - "43799:2379"
-    environment:
-      - ALLOW_NONE_AUTHENTICATION=no
-      - ETCD_ADVERTISE_CLIENT_URLS=http://0.0.0.0:2379
-      - ETCD_LISTEN_CLIENT_URLS=http://0.0.0.0:2379
-      - ETCD_CERT_FILE=/certs/etcd.pem
-      - ETCD_KEY_FILE=/certs/etcd.key
-    volumes:
-      - ../certs:/certs
+# 'make init' operates scripts and related configuration files in the current directory
+# The 'apisix' command is a command in the /usr/local/apisix,
+# and the configuration file for the operation is in the /usr/local/apisix/conf
+
+set -ex
+
+ETCD_ENDPOINTS="http://127.0.0.1:43799"
+ETCD_USER="root"
+ETCD_PASSWORD="root"
+
+echo $ETCD_PASSWORD | etcdctl --endpoints=$ETCD_ENDPOINTS user add $ETCD_USER --interactive=false
+etcdctl --endpoints=$ETCD_ENDPOINTS role add root
+etcdctl --endpoints=$ETCD_ENDPOINTS role grant-permission root --prefix=true readwrite /
+etcdctl --endpoints=$ETCD_ENDPOINTS user grant-role $ETCD_USER root
+etcdctl --endpoints=$ETCD_ENDPOINTS auth enable

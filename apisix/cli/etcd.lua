@@ -320,7 +320,7 @@ local function check_etcd_write_permission(yaml_conf)
     local value = "test"
     local host = etcd_conf.host[1]
     local url = host.. "/v3/kv/put"
-    local req_body = string.format(
+    local req_body = str_format(
         '{"key":"%s","value":"%s"}',
         base64_encode(key), base64_encode(value)
     )
