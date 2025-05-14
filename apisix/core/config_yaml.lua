@@ -270,8 +270,7 @@ local function sync_data(self)
                           ", it should be an object")
             end
 
-            local id = item.id and tostring(item.id) or ("arr_" .. idx)
-            item.id = id
+            local id = item.id or ("arr_" .. idx)
             local modifiedIndex = item.modifiedIndex or conf_version
             local conf_item = {value = item, modifiedIndex = modifiedIndex,
                             key = "/" .. self.key .. "/" .. id}
@@ -293,7 +292,8 @@ local function sync_data(self)
             end
 
             if data_valid then
-                local pre_index = self.values_hash[id]
+                local item_id = tostring(id)
+                local pre_index = self.values_hash[item_id]
                 if pre_index then
                     -- remove the old item
                     local pre_val = self.values[pre_index]
@@ -306,12 +306,10 @@ local function sync_data(self)
                         self.values[pre_index] = conf_item
                     end
                 else
-                    conf_item.clean_handlers = {}
                     insert_tab(self.values, conf_item)
-                    self.values_hash[id] = #self.values
-                    if not conf_item.value.id then
-                        conf_item.value.id = id
-                    end
+                    self.values_hash[item_id] = #self.values
+                    conf_item.value.id = item_id
+                    conf_item.clean_handlers = {}
                 end
 
                 if self.filter then
