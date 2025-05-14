@@ -180,8 +180,6 @@ local function sync_data(self)
 
 
     local items = apisix_yaml[self.key]
-    log.warn("conf_version: ", conf_version, " self.conf_version: ", self.conf_version, " key: ", self.key,
-             " items: ", inspect(items))
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
@@ -218,7 +216,6 @@ local function sync_data(self)
     end
 
     if self.single_item then
-        log.warn("single item: ", self.key, " items: ", inspect(items))
         -- treat items as a single item
         self.values = new_tab(1, 0)
         self.values_hash = new_tab(0, 1)
@@ -329,7 +326,6 @@ end
 
 
 function _M.get(self, key)
-    log.warn("get config from key: ", key, " values_hash: ", inspect(self.values_hash), " values: ", inspect(self.values))
     if not self.values_hash then
         return
     end
@@ -339,7 +335,6 @@ function _M.get(self, key)
         return nil
     end
 
-    log.warn("upstream get arr_idx: ", arr_idx, " value: ", inspect(self.values[arr_idx]))
     return self.values[arr_idx]
 end
 
