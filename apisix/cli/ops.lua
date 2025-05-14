@@ -892,9 +892,11 @@ local function start(env, ...)
             util.die("failed to read config.yaml: " .. err)
         end
 
+        if(yaml_conf.deployment.role_data_plane.config_provider == "etcd") then
         local ok, err = etcd.check_etcd_write_permission(yaml_conf)
-        if not ok and err then
-            util.die(err)
+            if not ok and err then
+                util.die(err)
+            end
         end
     end
 

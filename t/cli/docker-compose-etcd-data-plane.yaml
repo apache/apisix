@@ -20,7 +20,6 @@ services:
   etcd:
     image: "gcr.io/etcd-development/etcd:v3.5.4"
     container_name: etcd4
-    
     ports:
       - "43799:2379"
     environment:
