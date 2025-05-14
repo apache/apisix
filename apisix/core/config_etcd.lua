@@ -485,7 +485,7 @@ local function short_key(self, str)
 end
 
 
-local function sync_status_to_shdict(status)
+local function sync_status_to_shdict(need_reload)
     local local_conf = config_local.local_conf()
     if not local_conf.apisix.status then
         return
@@ -495,7 +495,7 @@ local function sync_status_to_shdict(status)
         return
     end
     local pid = worker_pid()
-    status_shdict:set(pid, status, 5 * 60) -- expire after 5 minutes
+    status_shdict:set(pid, need_reload, 5 * 60) -- expire after 5 minutes
 end
 
 

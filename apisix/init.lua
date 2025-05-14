@@ -926,7 +926,7 @@ function _M.status_ready()
             end
         end
 
-        core.response.exit(503, "none of the configured dp_manager available: " .. err)
+        core.response.exit(503, "none of the configured etcd node available: " .. err)
         return
     end
     core.response.exit(503, "unknown config provider: " .. provider)
