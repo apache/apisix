@@ -662,8 +662,8 @@ local function sync_data(self)
 
     if not dir_res then
         if err == "compacted" or err == "restarted" then
-            sync_status_to_shdict(self.need_reload)
             self.need_reload = true
+            sync_status_to_shdict(self.need_reload)
             log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
             return false
