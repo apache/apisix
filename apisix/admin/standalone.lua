@@ -30,25 +30,61 @@ local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local check_schema = require("apisix.core.schema").check
+local tbl_deepcopy = require("apisix.core.table").deepcopy
+
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
 
-local function update_and_broadcast_config(apisix_yaml, conf_version)
-    local config = core.json.encode({
+
+local function get_config()
+    local config = shared_dict:get("config")
+    if not config then
+        return nil, "not found"
+    end
+
+    local err
+    config, err = core.json.decode(config)
+    if not config then
+        return nil, "failed to decode json: " .. err
+    end
+    return config
+end
+
+
+local function update_and_broadcast_config(old_config, apisix_yaml, conf_version_kv)
+    local config = {
         conf = apisix_yaml,
-        conf_version = conf_version,
-    })
+        conf_version = conf_version_kv
+    }
+
+    if old_config then
+        local ori_config = tbl_deepcopy(old_config)
+        ori_config.conf_version = ori_config.conf_version or {}
+        ori_config.conf = ori_config.conf or {}
+        for key, v in pairs(conf_version_kv) do
+            if v ~= ori_config.conf_version[key] then
+                ori_config.conf[key] = apisix_yaml[key]
+                ori_config.conf_version[key] = v
+            end
+        end
+        config = ori_config
+    end
+
+    local encoded_config, encode_err = core.json.encode(config)
+    if not encoded_config then
+        core.log.error("failed to encode json: ", encode_err)
+        return nil, "failed to encode json: " .. encode_err
+    end
 
     if shared_dict then
-        -- the worker that handles Admin API calls is responsible for writing the shared dict
-        local ok, err = shared_dict:set("config", config)
+        local ok, save_err = shared_dict:set("config", encoded_config)
         if not ok then
-            return nil, "failed to save config to shared dict: " .. err
+            return nil, "failed to save config to shared dict: " .. save_err
         end
-        core.log.info("standalone config updated: ", config)
+        core.log.info("standalone config updated: ", encoded_config)
     else
         core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
     end
@@ -59,24 +95,38 @@ end
 local function update(ctx)
     local content_type = core.request.header(nil, "content-type") or "application/json"
 
-    local conf_version
-    if ctx.var.arg_conf_version then
-        conf_version = tonumber(ctx.var.arg_conf_version)
-        if not conf_version then
-            return core.response.exit(400, {error_msg = "invalid conf_version: "
-                                            .. ctx.var.arg_conf_version
-                                            .. ", should be a integer" })
+
+    local update_keys
+
+    local config, err = get_config()
+    if not config then
+        if err ~= "not found" then
+            core.log.error("failed to get config from shared dict: ", err)
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
         end
     else
-        conf_version = ngx.time()
-    end
-    -- check if conf_version greater than the current version
-    local _, ver = config_yaml._get_config()
-    if conf_version <= ver then
-        return core.response.exit(400, {error_msg = "invalid conf_version: conf_version ("
-                                        .. conf_version
-                                        .. ") should be greater than the current version ("
-                                        .. ver .. ")"})
+        for key, version in pairs(config.conf_version) do
+            local header = "x-apisix-conf-version" .. "-" .. key
+            local req_conf_version = core.request.header(ctx, header)
+            if req_conf_version then
+                if not tonumber(req_conf_version) then
+                    return core.response.exit(400, {error_msg = "invalid header: [" .. header ..
+                        ": " .. req_conf_version .. "]" ..
+                        " should be a integer"})
+                end
+                req_conf_version = tonumber(req_conf_version)
+                if req_conf_version <= version then
+                    return core.response.exit(400, {error_msg = "invalid header: [" .. header ..
+                        ": " .. req_conf_version .. "]" ..
+                        " should be greater than the current version (" .. version .. ")"})
+                else
+                    update_keys = update_keys or {}
+                    update_keys[key] = req_conf_version
+                end
+            end
+        end
     end
 
     -- read the request body
@@ -107,9 +157,19 @@ local function update(ctx)
 
     -- check input by jsonschema
     local apisix_yaml = {}
+    local confi_version_kv = tbl_deepcopy(config and config.conf_version or {})
     local created_objs = config_yaml.fetch_all_created_obj()
+
     for key, obj in pairs(created_objs) do
-        if req_body[key] and #req_body[key] > 0 then
+        local updated = false
+        if not update_keys then
+            confi_version_kv[key] = confi_version_kv[key] and confi_version_kv[key] + 1 or 1
+            updated = true
+        elseif update_keys[key] then
+            confi_version_kv[key] = update_keys[key]
+            updated = true
+        end
+        if updated and req_body[key] and #req_body[key] > 0 then
             apisix_yaml[key] = table_new(1, 0)
             local item_schema = obj.item_schema
             local item_checker = obj.checker
@@ -137,12 +197,15 @@ local function update(ctx)
         end
     end
 
-    local ok, err = update_and_broadcast_config(apisix_yaml, conf_version)
+    local ok, err = update_and_broadcast_config(config, apisix_yaml, confi_version_kv)
     if not ok then
         core.response.exit(500, err)
     end
 
-    core.response.set_header("X-APISIX-Conf-Version", tostring(conf_version))
+    for key, version in pairs(confi_version_kv) do
+        core.response.set_header("X-APISIX-Conf-Version-" .. key, tostring(version))
+    end
+
     return core.response.exit(202)
 end
 
@@ -151,9 +214,26 @@ local function get(ctx)
     local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
 
-    local _, ver, config = config_yaml._get_config()
+    local config, err = get_config()
+    if not config then
+        if err ~= "not found" then
+            core.log.error("failed to get config from shared dict: ", err)
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
+        end
+        config = {}
+        local created_objs = config_yaml.fetch_all_created_obj()
+        for _, obj in pairs(created_objs) do
+            core.response.set_header("X-APISIX-Conf-Version-" .. obj.key,
+                                        tostring(obj.conf_version))
+        end
+    else
+        for key, version in pairs(config.conf_version) do
+            core.response.set_header("X-APISIX-Conf-Version-" .. key, tostring(version))
+        end
+    end
 
-    core.response.set_header("X-APISIX-Conf-Version", tostring(ver))
     local resp, err
     if want_yaml_resp then
         core.response.set_header("Content-Type", "application/yaml")
@@ -195,7 +275,7 @@ end
 
 
 function _M.init_worker()
-    local function update_config()
+    local function update_config(data, event, resource, pid)
         local config, err = shared_dict:get("config")
         if not config then
             core.log.error("failed to get config from shared dict: ", err)

@@ -27,13 +27,13 @@ local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
-local tbl_deepcopy = require("apisix.core.table").deepcopy
 local lfs          = require("lfs")
 local file         = require("apisix.cli.file")
 local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
+local pairs        = pairs
 local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
@@ -70,11 +70,11 @@ local mt = {
 
 
 local apisix_yaml
-local apisix_yaml_raw -- save a deepcopy of the latest configuration for API
 local apisix_yaml_mtime
 
+local key_conf_version = {}
 
-local function update_config(table, mtime)
+local function update_config(table, conf_version)
     if not table then
         log.error("failed update config: empty table")
         return
@@ -86,17 +86,20 @@ local function update_config(table, mtime)
         return
     end
 
-    apisix_yaml = table
-    apisix_yaml_raw = tbl_deepcopy(table)
-    apisix_yaml_mtime = mtime
+    if type(conf_version) ~= "table" then
+        apisix_yaml = table
+        apisix_yaml_mtime = conf_version
+        return
+    end
+
+    for key, conf_version in pairs(conf_version) do
+        if key_conf_version[key] then
+            apisix_yaml[key] = table[key]
+            key_conf_version[key] = conf_version
+        end
+    end
 end
 _M._update_config = update_config
-
-
-local function get_config()
-    return apisix_yaml, apisix_yaml_mtime, apisix_yaml_raw
-end
-_M._get_config = get_config
 
 
 local function is_use_admin_api()
@@ -163,24 +166,53 @@ local function sync_data(self)
         return nil, "failed to read local file " .. apisix_yaml_path
     end
 
-    if self.conf_version == apisix_yaml_mtime then
+    local conf_version
+    if is_use_admin_api() then
+        conf_version = key_conf_version[self.key]
+    else
+        conf_version = apisix_yaml_mtime
+    end
+
+    if conf_version == self.conf_version then
         return true
     end
 
+
+
     local items = apisix_yaml[self.key]
-    log.info(self.key, " items: ", json.delay_encode(items))
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
-        self.conf_version = apisix_yaml_mtime
+        self.conf_version = conf_version
         return true
     end
 
-    if self.values then
-        for _, item in ipairs(self.values) do
-            config_util.fire_all_clean_handlers(item)
+    if self.values and #self.values > 0 then
+        if is_use_admin_api() then
+            local clean_items = {}
+            for _, item in ipairs(items) do
+                if item.modifiedIndex then
+                    clean_items[item.id] = item.modifiedIndex
+                end
+            end
+            local new_values = new_tab(8, 0)
+            self.values_hash = new_tab(0, 8)
+            for _, item in ipairs(self.values) do
+                local id = item.value.id
+                if not clean_items[id]  then
+                    config_util.fire_all_clean_handlers(item)
+                else
+                    insert_tab(new_values, item)
+                    self.values_hash[id] = #new_values
+                end
+            end
+            self.values = new_values
+        else
+            for _, item in ipairs(self.values) do
+                config_util.fire_all_clean_handlers(item)
+            end
+            self.values = nil
         end
-        self.values = nil
     end
 
     if self.single_item then
@@ -189,7 +221,8 @@ local function sync_data(self)
         self.values_hash = new_tab(0, 1)
 
         local item = items
-        local conf_item = {value = item, modifiedIndex = apisix_yaml_mtime,
+        local modifiedIndex = item.modifiedIndex or conf_version
+        local conf_item = {value = item, modifiedIndex = modifiedIndex,
                            key = "/" .. self.key}
 
         local data_valid = true
@@ -221,23 +254,26 @@ local function sync_data(self)
         end
 
     else
-        self.values = new_tab(#items, 0)
-        self.values_hash = new_tab(0, #items)
+        if not self.values then
+            self.values = new_tab(8, 0)
+            self.values_hash = new_tab(0, 8)
+        end
 
         local err
         for i, item in ipairs(items) do
-            local id = tostring(i)
+            local idx = tostring(i)
             local data_valid = true
             if type(item) ~= "table" then
                 data_valid = false
-                log.error("invalid item data of [", self.key .. "/" .. id,
+                log.error("invalid item data of [", self.key .. "/" .. idx,
                           "], val: ", json.delay_encode(item),
                           ", it should be an object")
             end
 
-            local key = item.id or "arr_" .. i
-            local conf_item = {value = item, modifiedIndex = apisix_yaml_mtime,
-                            key = "/" .. self.key .. "/" .. key}
+            local id = item.id or ("arr_" .. idx)
+            local modifiedIndex = item.modifiedIndex or conf_version
+            local conf_item = {value = item, modifiedIndex = modifiedIndex,
+                            key = "/" .. self.key .. "/" .. id}
 
             if data_valid and self.item_schema then
                 data_valid, err = check_schema(self.item_schema, item)
@@ -256,12 +292,25 @@ local function sync_data(self)
             end
 
             if data_valid then
-                insert_tab(self.values, conf_item)
-                local item_id = conf_item.value.id or self.key .. "#" .. id
-                item_id = tostring(item_id)
-                self.values_hash[item_id] = #self.values
-                conf_item.value.id = item_id
-                conf_item.clean_handlers = {}
+                local item_id = tostring(id)
+                local pre_index = self.values_hash[item_id]
+                if pre_index then
+                    -- remove the old item
+                    local pre_val = self.values[pre_index]
+                    if pre_val and
+                        (not pre_val.modifiedIndex or pre_val.modifiedIndex ~= modifiedIndex) then
+                        log.error("fire all clean handlers for ", self.key, " id: ", id,
+                                    " modifiedIndex: ", modifiedIndex)
+                        config_util.fire_all_clean_handlers(pre_val)
+                        conf_item.clean_handlers = {}
+                        self.values[pre_index] = conf_item
+                    end
+                else
+                    insert_tab(self.values, conf_item)
+                    self.values_hash[item_id] = #self.values
+                    conf_item.value.id = item_id
+                    conf_item.clean_handlers = {}
+                end
 
                 if self.filter then
                     self.filter(conf_item)
@@ -270,7 +319,7 @@ local function sync_data(self)
         end
     end
 
-    self.conf_version = apisix_yaml_mtime
+    self.conf_version = conf_version
     return true
 end
 
@@ -395,6 +444,14 @@ function _M.new(key, opts)
         key = sub_str(key, 2)
     end
 
+    if is_use_admin_api() then
+        key_conf_version[key] = 0
+        if item_schema then
+            item_schema.properties.modifiedIndex = {
+                type = "integer",
+            }
+        end
+    end
     local obj = setmetatable({
         automatic = automatic,
         item_schema = item_schema,
@@ -471,7 +528,6 @@ end
 function _M.init_worker()
     if is_use_admin_api() then
         apisix_yaml = {}
-        apisix_yaml_raw = {}
         apisix_yaml_mtime = 0
         return true
     end

@@ -45,6 +45,20 @@ const config2 = {
     },
   ],
 };
+const routeWithModifiedIndex = {
+  routes: [
+    {
+      id: "r1",
+      uri: "/r1",
+      modifiedIndex: 1,
+      upstream: {
+        nodes: { "127.0.0.1:1980": 1 },
+        type: "roundrobin",
+      },
+      plugins: { "proxy-rewrite": { uri: "/hello" } },
+    },
+  ],
+};
 const clientConfig = {
   baseURL: "http://localhost:1984",
   headers: {
@@ -70,7 +84,10 @@ describe("Admin - Standalone", () => {
       const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
       expect(resp.headers["content-type"]).toEqual("application/json");
-      expect(resp.headers["x-apisix-conf-version"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-ssls"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-services"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-upstreams"]).toEqual("0");
       expect(resp.data).toEqual({});
     });
 
@@ -80,23 +97,24 @@ describe("Admin - Standalone", () => {
       });
       expect(resp.status).toEqual(200);
       expect(resp.headers["content-type"]).toEqual("application/yaml");
-      expect(resp.headers["x-apisix-conf-version"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-ssls"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-services"]).toEqual("0");
+      expect(resp.headers["x-apisix-conf-version-upstreams"]).toEqual("0");
 
       // The lyaml-encoded empty Lua table becomes an array, which is expected, but shouldn't be
       expect(resp.data).toEqual([]);
     });
 
     it("update config (add routes, by json)", async () => {
-      const resp = await client.put(ENDPOINT, config1, {
-        params: { conf_version: 1 },
-      });
+      const resp = await client.put(ENDPOINT, config1);
       expect(resp.status).toEqual(202);
     });
 
     it("dump config (json format)", async () => {
       const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
-      expect(resp.headers["x-apisix-conf-version"]).toEqual("1");
+      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("1");
     });
 
     it("dump config (yaml format)", async () => {
@@ -105,7 +123,7 @@ describe("Admin - Standalone", () => {
         responseType: 'text',
       });
       expect(resp.status).toEqual(200);
-      expect(resp.headers["x-apisix-conf-version"]).toEqual("1");
+      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("1");
       expect(resp.data).toContain("routes:")
       expect(resp.data).toContain("id: r1")
       expect(resp.data.startsWith('---')).toBe(false);
@@ -123,7 +141,6 @@ describe("Admin - Standalone", () => {
         ENDPOINT,
         YAML.stringify(config2),
         {
-          params: { conf_version: 2 },
           headers: { "Content-Type": "application/yaml" },
         }
       );
@@ -133,7 +150,7 @@ describe("Admin - Standalone", () => {
     it("dump config (json format)", async () => {
       const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
-      expect(resp.headers["x-apisix-conf-version"]).toEqual("2");
+      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("2");
     });
 
     it('check route "r1"', () =>
@@ -173,14 +190,16 @@ describe("Admin - Standalone", () => {
         ENDPOINT,
         YAML.stringify(config2),
         {
-          params: { conf_version: 0 },
-          headers: { "Content-Type": "application/yaml" },
+          headers: {
+            "Content-Type": "application/yaml",
+            "x-apisix-conf-version-routes": 1,
+          },
         }
       );
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
         error_msg:
-          "invalid conf_version: conf_version (0) should be greater than the current version (3)",
+          "invalid header: [x-apisix-conf-version-routes: 1] should be greater than the current version (3)",
       });
     });
 
@@ -190,12 +209,15 @@ describe("Admin - Standalone", () => {
         YAML.stringify(config2),
         {
           params: { conf_version: "abc" },
-          headers: { "Content-Type": "application/yaml" },
+          headers: {
+            "Content-Type": "application/yaml",
+            "x-apisix-conf-version-routes": "adc",
+          },
         }
       );
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
-        error_msg: "invalid conf_version: abc, should be a integer",
+        error_msg: "invalid header: [x-apisix-conf-version-routes: adc] should be a integer",
       });
     });
 
@@ -227,6 +249,49 @@ describe("Admin - Standalone", () => {
       expect(resp.data).toEqual({
         error_msg: "invalid request body: empty request body",
       });
+    });
+
+    it("control resource changes using modifiedIndex", async () => {
+      const c1 = structuredClone(routeWithModifiedIndex);
+      c1.routes[0].modifiedIndex = 1;
+
+      const c2 = structuredClone(c1);
+      c2.routes[0].uri = "/r2";
+
+      const c3 = structuredClone(c2);
+      c3.routes[0].modifiedIndex = 2;
+
+      // Update with c1
+      const resp = await clientException.put(ENDPOINT, c1);
+      expect(resp.status).toEqual(202);
+
+      // Check route /r1 exists
+      const resp_1 = await client.get("/r1");
+      expect(resp_1.status).toEqual(200);
+
+      // Update with c2
+      const resp2 = await clientException.put(ENDPOINT, c2);
+      expect(resp2.status).toEqual(202);
+
+      // Check route /r1 exists
+      const resp2_2 = await client.get("/r1");
+      expect(resp2_2.status).toEqual(200);
+
+      // Check route /r2 not exists
+      const resp2_1 = await client.get("/r2").catch((err) => err.response);
+      expect(resp2_1.status).toEqual(404);
+
+      // Update with c3
+      const resp3 = await clientException.put(ENDPOINT, c3);
+      expect(resp3.status).toEqual(202);
+
+      // Check route /r1 not exists
+      const resp3_1 = await client.get("/r1").catch((err) => err.response);
+      expect(resp3_1.status).toEqual(404);
+
+      // Check route /r2 exists
+      const resp3_2 = await client.get("/r2");
+      expect(resp3_2.status).toEqual(200);
     });
   });
 });
