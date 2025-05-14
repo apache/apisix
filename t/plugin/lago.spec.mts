@@ -51,7 +51,7 @@ const launchLago = async () => {
   // patch docker-compose.yml to disable useless port
   const composeFilePath = `${LAGO_PATH}/docker-compose.yml`;
   const composeFile = YAML.parse(await readFile(composeFilePath, 'utf8'));
-  //delete composeFile.services.front; // front-end is not needed for tests
+  delete composeFile.services.front; // front-end is not needed for tests
   delete composeFile.services['api-clock']; // clock is not needed for tests
   delete composeFile.services['api-worker']; // worker is not needed for tests
   delete composeFile.services['pdf']; // pdf is not needed for tests
