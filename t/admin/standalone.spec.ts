@@ -45,6 +45,12 @@ const config2 = {
     },
   ],
 };
+const invalidConfVersionConfig1 = {
+  routes_conf_version: -1,
+};
+const invalidConfVersionConfig2 = {
+  routes_conf_version: "adc",
+};
 const routeWithModifiedIndex = {
   routes: [
     {
@@ -83,12 +89,11 @@ describe("Admin - Standalone", () => {
     it("dump empty config (default json format)", async () => {
       const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
-      expect(resp.headers["content-type"]).toEqual("application/json");
-      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("0");
-      expect(resp.headers["x-apisix-conf-version-ssls"]).toEqual("0");
-      expect(resp.headers["x-apisix-conf-version-services"]).toEqual("0");
-      expect(resp.headers["x-apisix-conf-version-upstreams"]).toEqual("0");
-      expect(resp.data).toEqual({});
+      expect(resp.data.routes_conf_version).toEqual(0);
+      expect(resp.data.ssls_conf_version).toEqual(0);
+      expect(resp.data.services_conf_version).toEqual(0);
+      expect(resp.data.upstreams_conf_version).toEqual(0);
+      expect(resp.data.consumers_conf_version).toEqual(0);
     });
 
     it("dump empty config (yaml format)", async () => {
@@ -97,13 +102,11 @@ describe("Admin - Standalone", () => {
       });
       expect(resp.status).toEqual(200);
       expect(resp.headers["content-type"]).toEqual("application/yaml");
-      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("0");
-      expect(resp.headers["x-apisix-conf-version-ssls"]).toEqual("0");
-      expect(resp.headers["x-apisix-conf-version-services"]).toEqual("0");
-      expect(resp.headers["x-apisix-conf-version-upstreams"]).toEqual("0");
-
-      // The lyaml-encoded empty Lua table becomes an array, which is expected, but shouldn't be
-      expect(resp.data).toEqual([]);
+      expect(resp.data.routes_conf_version).toEqual(0);
+      expect(resp.data.ssls_conf_version).toEqual(0);
+      expect(resp.data.services_conf_version).toEqual(0);
+      expect(resp.data.upstreams_conf_version).toEqual(0);
+      expect(resp.data.consumers_conf_version).toEqual(0);
     });
 
     it("update config (add routes, by json)", async () => {
@@ -114,7 +117,11 @@ describe("Admin - Standalone", () => {
     it("dump config (json format)", async () => {
       const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
-      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("1");
+      expect(resp.data.routes_conf_version).toEqual(1);
+      expect(resp.data.ssls_conf_version).toEqual(1);
+      expect(resp.data.services_conf_version).toEqual(1);
+      expect(resp.data.upstreams_conf_version).toEqual(1);
+      expect(resp.data.consumers_conf_version).toEqual(1);
     });
 
     it("dump config (yaml format)", async () => {
@@ -123,7 +130,6 @@ describe("Admin - Standalone", () => {
         responseType: 'text',
       });
       expect(resp.status).toEqual(200);
-      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("1");
       expect(resp.data).toContain("routes:")
       expect(resp.data).toContain("id: r1")
       expect(resp.data.startsWith('---')).toBe(false);
@@ -150,7 +156,11 @@ describe("Admin - Standalone", () => {
     it("dump config (json format)", async () => {
       const resp = await client.get(ENDPOINT);
       expect(resp.status).toEqual(200);
-      expect(resp.headers["x-apisix-conf-version-routes"]).toEqual("2");
+      expect(resp.data.routes_conf_version).toEqual(2);
+      expect(resp.data.ssls_conf_version).toEqual(2);
+      expect(resp.data.services_conf_version).toEqual(2);
+      expect(resp.data.upstreams_conf_version).toEqual(2);
+      expect(resp.data.consumers_conf_version).toEqual(2);
     });
 
     it('check route "r1"', () =>
@@ -188,36 +198,33 @@ describe("Admin - Standalone", () => {
     it("update config (lower conf_version)", async () => {
       const resp = await clientException.put(
         ENDPOINT,
-        YAML.stringify(config2),
+        YAML.stringify(invalidConfVersionConfig1),
         {
           headers: {
             "Content-Type": "application/yaml",
-            "x-apisix-conf-version-routes": 1,
           },
         }
       );
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
         error_msg:
-          "invalid header: [x-apisix-conf-version-routes: 1] should be greater than the current version (3)",
+          "routes_conf_version must be greater than or equal to (3)",
       });
     });
 
     it("update config (invalid conf_version)", async () => {
       const resp = await clientException.put(
         ENDPOINT,
-        YAML.stringify(config2),
+        YAML.stringify(invalidConfVersionConfig2),
         {
-          params: { conf_version: "abc" },
           headers: {
             "Content-Type": "application/yaml",
-            "x-apisix-conf-version-routes": "adc",
           },
         }
       );
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
-        error_msg: "invalid header: [x-apisix-conf-version-routes: adc] should be a integer",
+        error_msg: "routes_conf_version must be a number",
       });
     });
 
@@ -230,6 +237,38 @@ describe("Admin - Standalone", () => {
         error_msg:
           "invalid request body: Expected object key string but found invalid token at character 2",
       });
+    });
+
+    it("only set routes_conf_version", async () => {
+      const resp = await clientException.put(
+        ENDPOINT,
+        YAML.stringify({ routes_conf_version: 15 }),
+        {headers: {"Content-Type": "application/yaml"},
+      });
+      expect(resp.status).toEqual(202);
+
+      const resp_1 = await client.get(ENDPOINT);
+      expect(resp_1.status).toEqual(200);
+      expect(resp_1.data.routes_conf_version).toEqual(15);
+      expect(resp_1.data.ssls_conf_version).toEqual(4);
+      expect(resp_1.data.services_conf_version).toEqual(4);
+      expect(resp_1.data.upstreams_conf_version).toEqual(4);
+      expect(resp_1.data.consumers_conf_version).toEqual(4);
+
+      const resp2 = await clientException.put(
+        ENDPOINT,
+        YAML.stringify({ routes_conf_version: 17 }),
+        {headers: {"Content-Type": "application/yaml"},
+      });
+      expect(resp2.status).toEqual(202);
+
+      const resp2_1 = await client.get(ENDPOINT);
+      expect(resp2_1.status).toEqual(200);
+      expect(resp2_1.data.routes_conf_version).toEqual(17);
+      expect(resp2_1.data.ssls_conf_version).toEqual(5);
+      expect(resp2_1.data.services_conf_version).toEqual(5);
+      expect(resp2_1.data.upstreams_conf_version).toEqual(5);
+      expect(resp2_1.data.consumers_conf_version).toEqual(5);
     });
 
     it("update config (not compliant with jsonschema)", async () => {

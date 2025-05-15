@@ -163,12 +163,11 @@ This disables the local file source of configuration in favor of the API. When A
 
     If no `X-APISIX-Conf-Version-<resource>` headers are provided, APISIX treats the request as a full sync, replacing all existing resources.
 
-    If the supplied version for any resource type is ≤ the server’s current version, the request for that resource will be rejected. 
+    If the supplied version for any resource type is ≤ the server’s current version, the request for that resource will be rejected.
 
 * modifiedIndex per resource
 
     Allow setting an index for each resource, APISIX compares it to its modifiedIndex to determine whether to accept the update.
-
 
 **Example:**
 

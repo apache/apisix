@@ -33,7 +33,6 @@ local exiting      = ngx.worker.exiting
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
-local pairs        = pairs
 local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
@@ -72,8 +71,6 @@ local mt = {
 local apisix_yaml
 local apisix_yaml_mtime
 
-local key_conf_version = {}
-
 local function update_config(table, conf_version)
     if not table then
         log.error("failed update config: empty table")
@@ -86,18 +83,8 @@ local function update_config(table, conf_version)
         return
     end
 
-    if type(conf_version) ~= "table" then
-        apisix_yaml = table
-        apisix_yaml_mtime = conf_version
-        return
-    end
-
-    for key, conf_version in pairs(conf_version) do
-        if key_conf_version[key] then
-            apisix_yaml[key] = table[key]
-            key_conf_version[key] = conf_version
-        end
-    end
+    apisix_yaml = table
+    apisix_yaml_mtime = conf_version
 end
 _M._update_config = update_config
 
@@ -161,23 +148,20 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if not apisix_yaml_mtime then
-        log.warn("wait for more time")
-        return nil, "failed to read local file " .. apisix_yaml_path
-    end
-
     local conf_version
     if is_use_admin_api() then
-        conf_version = key_conf_version[self.key]
+        conf_version = apisix_yaml[self.conf_version_key] or 0
     else
+        if not apisix_yaml_mtime then
+            log.warn("wait for more time")
+            return nil, "failed to read local file " .. apisix_yaml_path
+        end
         conf_version = apisix_yaml_mtime
     end
 
-    if conf_version == self.conf_version then
+    if not conf_version or conf_version == self.conf_version then
         return true
     end
-
-
 
     local items = apisix_yaml[self.key]
     if not items then
@@ -189,17 +173,17 @@ local function sync_data(self)
 
     if self.values and #self.values > 0 then
         if is_use_admin_api() then
-            local clean_items = {}
+            local exist_items = {}
             for _, item in ipairs(items) do
                 if item.modifiedIndex then
-                    clean_items[item.id] = item.modifiedIndex
+                    exist_items[item.id] = item.modifiedIndex
                 end
             end
             local new_values = new_tab(8, 0)
             self.values_hash = new_tab(0, 8)
             for _, item in ipairs(self.values) do
                 local id = item.value.id
-                if not clean_items[id]  then
+                if not exist_items[id]  then
                     config_util.fire_all_clean_handlers(item)
                 else
                     insert_tab(new_values, item)
@@ -302,8 +286,9 @@ local function sync_data(self)
                         log.error("fire all clean handlers for ", self.key, " id: ", id,
                                     " modifiedIndex: ", modifiedIndex)
                         config_util.fire_all_clean_handlers(pre_val)
-                        conf_item.clean_handlers = {}
                         self.values[pre_index] = conf_item
+                        conf_item.value.id = item_id
+                        conf_item.clean_handlers = {}
                     end
                 else
                     insert_tab(self.values, conf_item)
@@ -366,6 +351,7 @@ local function _automatic_fetch(premature, self)
             log.info("no config found in shared dict")
             goto SKIP_SHARED_DICT
         end
+        log.info("startup config loaded from shared dict: ", config)
 
         config, err = json.decode(tostring(config))
         if not config then
@@ -373,7 +359,7 @@ local function _automatic_fetch(premature, self)
             goto SKIP_SHARED_DICT
         end
 
-        _M._update_config(config.conf, config.conf_version)
+        _M._update_config(config)
         log.info("config loaded from shared dict")
 
         ::SKIP_SHARED_DICT::
@@ -445,8 +431,8 @@ function _M.new(key, opts)
     end
 
     if is_use_admin_api() then
-        key_conf_version[key] = 0
-        if item_schema then
+        if item_schema and item_schema.properties then
+            -- allow clients to specify modifiedIndex to control resource changes.
             item_schema.properties.modifiedIndex = {
                 type = "integer",
             }
@@ -465,6 +451,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         key = key,
+        conf_version_key = key and key .. "_conf_version",
         single_item = single_item,
         filter = filter_fun,
     }, mt)
