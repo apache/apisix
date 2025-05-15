@@ -45,7 +45,6 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
-local etcd_util       = require("apisix.utils.etcd")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -870,12 +869,16 @@ end
 
 
 function _M.status()
-    core.response.exit(200, core.json.encode({ status = "ok" }), { ["Content-Type"] = "application/json" })
+    core.response.exit(200, core.json.encode({
+        status = "ok" }),
+        { ["Content-Type"] = "application/json"
+    })
 end
 
 function _M.status_ready()
     local local_conf = core.config.local_conf()
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_traditional", "config_provider")
+    local provider = core.table.try_read_attr(local_conf, "deployment",
+                                              "role_traditional", "config_provider")
     if provider == "yaml" or provider == "etcd" then
         local status_shdict = ngx.shared.status_report
         local pids = status_shdict:get_keys()
@@ -885,7 +888,8 @@ function _M.status_ready()
             local ready = status_shdict:get(pid)
             if not ready then
                 core.log.warn("worker pid: ", pid, " has not received configuration")
-                core.table.insert(errors, "Worker pid: " .. pid .. " has not received configuration")
+                core.table.insert(errors, "worker pid: " .. pid ..
+                                  " has not received configuration")
                 break
             end
         end
@@ -898,7 +902,10 @@ function _M.status_ready()
             return
         end
 
-        core.response.exit(200, core.json.encode({ status = "ok" }), { ["Content-Type"] = "application/json" })
+        core.response.exit(200, core.json.encode({
+            status = "ok" }),
+            { ["Content-Type"] = "application/json"
+        })
         return
     end
 
