@@ -877,8 +877,8 @@ function _M.status_ready()
     local_conf = core.config.local_conf()
     local provider = core.table.try_read_attr(local_conf, "deployment", "role_traditional",
                                               "config_provider")
-    if provider == "yaml" then
-        local status_shdict = ngx.shared.status_report_standalone
+    if provider == "yaml" or provider == "etcd" then
+        local status_shdict = ngx.shared.status_report
         local pids = status_shdict:get_keys()
         local resp = ""
 
@@ -898,35 +898,6 @@ function _M.status_ready()
         end
 
         core.response.exit(200, "ok")
-        return
-    end
-    if provider == "etcd" then
-        local status_shdict = ngx.shared.status_report
-        local pids = status_shdict:get_keys()
-        local resp = ""
-        for _, pid in pairs(pids) do
-            local need_reload = status_shdict:get(pid)
-            if need_reload then
-                resp = resp .. "Worker pid: " .. pid .. " is out of sync with etcd\n"
-            end
-        end
-
-        if resp and resp ~= "" then
-            core.response.exit(503, resp)
-            return
-        end
-
-        local yaml_conf = local_conf
-        local res, err
-        for _, host in ipairs(yaml_conf.etcd.host) do
-            res, err = etcd_util.request(host .. "/version", yaml_conf)
-            if res then
-                core.response.exit(200)
-                return
-            end
-        end
-
-        core.response.exit(503, "none of the configured etcd node available: " .. err)
         return
     end
     core.response.exit(503, "unknown config provider: " .. provider)

@@ -55,7 +55,7 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status | grep 200 \
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 200 \
 || (echo "failed: status/ready api didn't return 200"; exit 1)
 
-# stop two etcd endpoints but status api should return 200 as one etcd endpoint is still active
+# stop two etcd endpoints but status api should return 200 as all workers are synced
 docker stop ${ETCD_NAME_0}
 docker stop ${ETCD_NAME_1}
 
@@ -65,10 +65,10 @@ curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status | grep 200 \
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 200 \
 || (echo "failed: status/ready api didn't return 200"; exit 1)
 
-# stop the last etcd endpoint, now status api must return 503
 docker stop ${ETCD_NAME_2}
 
-curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 503 \
-|| (echo "failed: status/ready api didn't return 503"; exit 1)
+echo "/status/ready returns 200 even when etcd endpoints are down as all workers are synced"
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 200 \
+|| (echo "failed: status/ready api didn't return 200"; exit 1)
 
 docker compose -f ./t/cli/docker-compose-etcd-cluster.yaml down

@@ -485,7 +485,7 @@ local function short_key(self, str)
 end
 
 
-local function sync_status_to_shdict(need_reload)
+local function sync_status_to_shdict(status)
     local local_conf = config_local.local_conf()
     if not local_conf.apisix.status then
         return
@@ -495,7 +495,7 @@ local function sync_status_to_shdict(need_reload)
         return
     end
     local pid = worker_pid()
-    status_shdict:set(pid, need_reload, 5 * 60) -- expire after 5 minutes
+    status_shdict:set(pid, status, 5 * 60) -- expire after 5 minutes
 end
 
 
@@ -604,7 +604,7 @@ local function load_full_data(self, dir_res, headers)
     end
 
     self.need_reload = false
-    sync_status_to_shdict(self.need_reload)
+    sync_status_to_shdict(true)
 end
 
 
@@ -663,7 +663,6 @@ local function sync_data(self)
     if not dir_res then
         if err == "compacted" or err == "restarted" then
             self.need_reload = true
-            sync_status_to_shdict(self.need_reload)
             log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
             return false

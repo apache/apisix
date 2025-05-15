@@ -340,10 +340,6 @@ http {
     lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
     {% end %}
 
-    {% if http.lua_shared_dict["status_report_standalone"] then %}
-    lua_shared_dict status_report_standalone {* http.lua_shared_dict["status_report_standalone"] *};
-    {% end %}
-
     {% if http.lua_shared_dict["status_report"] then %}
     lua_shared_dict status_report {* http.lua_shared_dict["status_report"] *};
     {% end %}
