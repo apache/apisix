@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 
+local ngx = ngx
 local yaml = require("lyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
