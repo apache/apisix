@@ -58,6 +58,7 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
+local tostring       = tostring
 local ngx_re_match    = ngx.re.match
 local control_api_router
 
