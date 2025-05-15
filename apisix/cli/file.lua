@@ -293,7 +293,9 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
-    if default_conf.deployment.config_provider == "yaml" then
+    --- using `not ngx` to check whether the current execution environment is apisix cli module,
+    --- because it is only necessary to parse and validate `apisix.yaml` in apisix cli.
+    if default_conf.deployment.config_provider == "yaml" and not ngx then
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
         if apisix_conf_yaml then
