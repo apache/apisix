@@ -882,7 +882,7 @@ function _M.status_ready()
         local pids = status_shdict:get_keys()
         local resp = ""
 
-        for _, pid in pairs(pids) do
+        for _, pid in ipairs(pids) do
             local ready = status_shdict:get(pid)
             if not ready then
                 core.log.warn("worker pid: ", pid,
