@@ -489,7 +489,7 @@ function _M.is_nginx_variable(str)
     end
 
     -- Check if the string starts with '$' and it's not escaped
-    return str:sub(1, 1) == "$" and not (str:sub(1, 2) == "\\$")
+    return str:sub(1, 1) == "$" and (str:sub(1, 2) ~= "\\$")
 end
 
 return _M
