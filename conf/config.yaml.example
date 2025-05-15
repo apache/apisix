@@ -134,7 +134,7 @@ apisix:
                                       # Supported module: lua-resty-worker-events and lua-resty-events
 # status:                       # When enabled, APISIX will provide `/status` and `/status/ready` endpoints
   #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
-  #   port: 7085                  # /status/ready endpoint will return 503 status code if none of the workers recieved data from etcd
+  #   port: 7085                  # /status/ready endpoint will return 503 status code if none of the workers received data from etcd
                                   # or (standalone mode) the first request hasn't reached on /configs endpoint
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
