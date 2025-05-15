@@ -490,7 +490,7 @@ local function sync_status_to_shdict(status)
     if not local_conf.apisix.status then
         return
     end
-    local status_shdict = ngx.shared.status_report
+    local status_shdict = ngx.shared["status-report"]
     if process.type() ~= "worker" then
         return
     end

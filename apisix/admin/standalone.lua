@@ -42,7 +42,7 @@ local function sync_status_to_shdict(status)
     if process.type() ~= "worker" then
         return
     end
-    local status_shdict = ngx.shared.status_report
+    local status_shdict = ngx.shared["status-report"]
     local pid = worker_pid()
     core.log.info("sync status to shared dict, pid: ", pid, " status: ", status)
     status_shdict:set(pid, status, 5*60)
@@ -208,7 +208,7 @@ end
 
 local function cleanup_on_exit()
     if ngx.worker.exiting() then
-        local status_shdict = ngx.shared.status_report
+        local status_shdict = ngx.shared["status-report"]
         local pid = tostring(ngx.worker.pid())
         status_shdict:delete(pid)
         core.log.info("worker ", pid, " removed itself on exit")

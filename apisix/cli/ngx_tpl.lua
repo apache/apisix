@@ -340,8 +340,8 @@ http {
     lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
     {% end %}
 
-    {% if http.lua_shared_dict["status_report"] then %}
-    lua_shared_dict status_report {* http.lua_shared_dict["status_report"] *};
+    {% if http.lua_shared_dict["status-report"] then %}
+    lua_shared_dict status-report {* http.lua_shared_dict["status-report"] *};
     {% end %}
 
     {% if enabled_plugins["openid-connect"] then %}
