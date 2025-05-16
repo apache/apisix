@@ -215,6 +215,16 @@ Of course, the fact that we make transaction ID, subscription ID as a configurat
 
 Support for event properties is provided, this allows you to set special values on specific APIs, for example if your service has 100 APIs, and you want to enable general billing on all of them and special configure them on a few specific APIs to apply different pricing, this will work, as we did in the demo above.
 
+### Which Lago versions does it work with?
+
+When we first developed the Lago plugin, it was released to `1.17.0`, which we used for integration, so it works at least with `1.17.0`.
+
+Technically, we use the Lago batch event API to submit events in batches, and APISIX will only use this API, so as long as Lago doesn't make any disruptive changes to this API, APISIX will be able to integrate with it.
+
+Here's an [archive page](https://web.archive.org/web/20250516073803/https://getlago.com/docs/api-reference/events/batch) of the API documentation, which allows you to check the differences between the API at the time of our integration and the latest API.
+
+If the latest API changes, then you can submit an issue to inform the APISIX maintainers that this may require some changes.
+
 ### Events are not pushed properly
 
 Look at `error.log` for such a log.
