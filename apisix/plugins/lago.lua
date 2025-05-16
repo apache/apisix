@@ -107,7 +107,8 @@ local schema = {
         keepalive_pool = {type = "integer", minimum = 1, default = 5},
     },
     required = {"endpoint_addrs", "token", "event_transaction_id", "event_subscription_id",
-                "event_code"}
+                "event_code"},
+    encrypt_fields = {"token"},
 }
 schema = batch_processor_manager:wrap_schema(schema)
 
