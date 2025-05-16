@@ -28,6 +28,7 @@ local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local check_schema = require("apisix.core.schema").check
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
@@ -116,7 +117,7 @@ local function update(ctx)
     for key, obj in pairs(created_objs) do
         local conf_version_key = obj.conf_version_key
         local conf_version = config and config[conf_version_key] or obj.conf_version
-
+        local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
         if not new_conf_version then
             new_conf_version = conf_version + 1
@@ -126,7 +127,6 @@ local function update(ctx)
                     error_msg = conf_version_key .. " must be a number",
                 })
             end
-
             if new_conf_version < conf_version then
                 return core.response.exit(400, {
                     error_msg = conf_version_key ..
@@ -138,24 +138,25 @@ local function update(ctx)
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
-        elseif req_body[key] and #req_body[key] > 0 then
-            apisix_yaml[key] = table_new(1, 0)
+        elseif items and #items > 0 then
+            apisix_yaml[key] = table_new(#items, 0)
             local item_schema = obj.item_schema
             local item_checker = obj.checker
 
-            for index, item in ipairs(req_body[key]) do
+            for index, item in ipairs(items) do
+                local item_temp = tbl_deepcopy(item)
                 local valid, err
                 -- need to recover to 0-based subscript
                 local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
                 if item_schema then
-                    valid, err = check_schema(obj.item_schema, item)
+                    valid, err = check_schema(obj.item_schema, item_temp)
                     if not valid then
                         core.log.error(err_prefix, err)
                         core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
                 if item_checker then
-                    valid, err = item_checker(item)
+                    valid, err = item_checker(item_temp)
                     if not valid then
                         core.log.error(err_prefix, err)
                         core.response.exit(400, {error_msg = err_prefix .. err})
@@ -235,7 +236,7 @@ end
 
 
 function _M.init_worker()
-    local function update_config(data, event, resource, pid)
+    local function update_config()
         local config, err = shared_dict:get("config")
         if not config then
             core.log.error("failed to get config from shared dict: ", err)

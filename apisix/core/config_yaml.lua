@@ -25,6 +25,7 @@ local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
@@ -173,17 +174,21 @@ local function sync_data(self)
 
     if self.values and #self.values > 0 then
         if is_use_admin_api() then
-            local exist_items = {}
+            -- used to delete values that do not exist in the new list.
+            -- only when using modifiedIndex, old values need to be retained.
+            -- If modifiedIndex changes, old values need to be removed and cleaned up.
+            local exist_modifiedIndex_items = {}
             for _, item in ipairs(items) do
                 if item.modifiedIndex then
-                    exist_items[item.id] = item.modifiedIndex
+                    exist_modifiedIndex_items[tostring(item.id)] = true
                 end
             end
+
             local new_values = new_tab(8, 0)
             self.values_hash = new_tab(0, 8)
             for _, item in ipairs(self.values) do
                 local id = item.value.id
-                if not exist_items[id]  then
+                if not exist_modifiedIndex_items[id]  then
                     config_util.fire_all_clean_handlers(item)
                 else
                     insert_tab(new_values, item)
@@ -432,10 +437,12 @@ function _M.new(key, opts)
 
     if is_use_admin_api() then
         if item_schema and item_schema.properties then
+            local item_schema_cp = tbl_deepcopy(item_schema)
             -- allow clients to specify modifiedIndex to control resource changes.
-            item_schema.properties.modifiedIndex = {
+            item_schema_cp.properties.modifiedIndex = {
                 type = "integer",
             }
+            item_schema = item_schema_cp
         end
     end
     local obj = setmetatable({

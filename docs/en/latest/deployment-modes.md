@@ -199,17 +199,17 @@ This returns the current configuration in JSON or YAML format.
 
 ```json
 {
-    "consumer_groups_conf_version": 1000,
-    "consumers_conf_version": 1000,
-    "global_rules_conf_version": 1000,
-    "plugin_configs_conf_version": 1000,
-    "plugin_metadata_conf_version": 1000,
-    "protos_conf_version": 1000,
-    "routes_conf_version": 1000,
-    "secrets_conf_version": 1000,
-    "services_conf_version": 1000,
-    "ssls_conf_version": 1000,
-    "upstreams_conf_version": 1000
+    "consumer_groups_conf_version": 0,
+    "consumers_conf_version": 0,
+    "global_rules_conf_version": 0,
+    "plugin_configs_conf_version": 0,
+    "plugin_metadata_conf_version": 0,
+    "protos_conf_version": 0,
+    "routes_conf_version": 0,
+    "secrets_conf_version": 0,
+    "services_conf_version": 0,
+    "ssls_conf_version": 0,
+    "upstreams_conf_version": 0
 }
 ```
 
@@ -244,6 +244,7 @@ curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
     "upstreams_conf_version": 1001,
     "routes": [
         {
+            "modifiedIndex": 1000,
             "id": "r1",
             "uri": "/hello",
             "upstream_id": "u1"
@@ -251,6 +252,7 @@ curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
     ],
     "upstreams": [
         {
+            "modifiedIndex": 1001,
             "id": "u1",
             "nodes": {
                 "127.0.0.1:1980": 1,

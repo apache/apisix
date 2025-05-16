@@ -124,6 +124,12 @@ describe("Admin - Standalone", () => {
       expect(resp.data.consumers_conf_version).toEqual(1);
     });
 
+    it("check default value", async () => {
+      const resp = await client.get(ENDPOINT);
+      expect(resp.status).toEqual(200);
+      expect(resp.data.routes).toEqual(config1.routes);
+    });
+
     it("dump config (yaml format)", async () => {
       const resp = await client.get(ENDPOINT, {
         headers: { Accept: "application/yaml" },
