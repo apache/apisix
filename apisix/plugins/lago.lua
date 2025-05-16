@@ -138,6 +138,10 @@ end
 
 
 local function send_http_data(conf, data)
+    local body, err = core.json.encode(data)
+    if not body then
+        return false, str_format("failed to encode json: %s", err)
+    end
     local params = {
         headers = {
             ["Content-Type"] = "application/json",
@@ -146,7 +150,7 @@ local function send_http_data(conf, data)
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
         method = "POST",
-        body = core.json.encode(data)
+        body = body,
     }
 
     if conf.keepalive then
