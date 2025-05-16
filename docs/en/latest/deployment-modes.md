@@ -157,13 +157,29 @@ This disables the local file source of configuration in favor of the API. When A
 
 ##### API Endpoints
 
-* Per-resource-type version header
+* Per-resource-type conf_version
 
-    Use `X-APISIX-Conf-Version-<resource>` to indicate the client’s current version for each resource type (e.g. routes, upstreams, services, etc.).
+    Use `<resource>_conf_version` to indicate the client’s current version for each resource type (e.g. routes, upstreams, services, etc.).
 
-    If no `X-APISIX-Conf-Version-<resource>` headers are provided, APISIX treats the request as a full sync, replacing all existing resources.
+    ```json
+    {
+      "routes_conf_version": 12,
+      "upstreams_conf_version": 102,
+      "routes": [],
+      "upstreams": []
+    }
+    ```
 
-    If the supplied version for any resource type is ≤ the server’s current version, the request for that resource will be rejected.
+    APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type:
+
+  - **Greater than** the current `conf_version`  
+    If your `<resource>_conf_version` is **higher**, APISIX will **rebuild/reset** that resource type’s data to match your payload.
+
+  - **Equal to** the current `conf_version`  
+    If it is **equal**, APISIX treats the resource as **unchanged** and **ignores** it (no data is rebuilt).
+
+  - **Less than** the current `conf_version`  
+    If it is **lower**, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
 
 * modifiedIndex per resource
 
@@ -179,6 +195,24 @@ curl -X GET http://127.0.0.1:9180/apisix/admin/configs \
     -H "Accept: application/json" ## or application/yaml
 ```
 
+This returns the current configuration in JSON or YAML format.
+
+```json
+{
+    "consumer_groups_conf_version": 1000,
+    "consumers_conf_version": 1000,
+    "global_rules_conf_version": 1000,
+    "plugin_configs_conf_version": 1000,
+    "plugin_metadata_conf_version": 1000,
+    "protos_conf_version": 1000,
+    "routes_conf_version": 1000,
+    "secrets_conf_version": 1000,
+    "services_conf_version": 1000,
+    "ssls_conf_version": 1000,
+    "upstreams_conf_version": 1000
+}
+```
+
 2. full update
 
 ```shell
@@ -190,13 +224,42 @@ curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
 
 3. update based on resource type
 
+In APISIX memory, the current configuration is:
+
+```json
+{
+    "routes_conf_version": 1000,
+    "upstreams_conf_version": 1000,
+}
+
+Due `upstreams_conf_version: 1001` > `upstreams_conf_version: 1000`, APISIX will update the upstreams configuration:
+
 ```shell
 curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
   -H "X-API-KEY: ${API_KEY}" \
-  -H "X-APISIX-Conf-Version-routes: 42" \
-  -H "X-APISIX-Conf-Version-upstreams: 17" \
   -H "Content-Type: application/json" \
-  -d '{"routes":[],"upstreams":[]}'
+  -d '
+{
+    "routes_conf_version": 1000,
+    "upstreams_conf_version": 1001,
+    "routes": [
+        {
+            "id": "r1",
+            "uri": "/hello",
+            "upstream_id": "u1"
+        }
+    ],
+    "upstreams": [
+        {
+            "id": "u1",
+            "nodes": {
+                "127.0.0.1:1980": 1,
+                "127.0.0.1:1980": 1
+            },
+            "type": "roundrobin"
+        }
+    ]
+}'
 ```
 
 :::note
