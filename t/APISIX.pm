@@ -577,6 +577,7 @@ _EOC_
     lua_shared_dict tracing_buffer 10m;    # plugin skywalking
     lua_shared_dict access-tokens 1m;    # plugin authz-keycloak
     lua_shared_dict discovery 1m;    # plugin authz-keycloak
+    lua_shared_dict status_report 1m;
     lua_shared_dict plugin-api-breaker 10m;
     lua_capture_error_log 1m;    # plugin error-log-logger
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
@@ -717,6 +718,19 @@ _EOC_
 _EOC_
 
     $http_config .= <<_EOC_;
+    server {
+        listen 7085 ;
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
+            }
+        }
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+    }
     server {
         listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
         access_log off;
