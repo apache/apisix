@@ -169,6 +169,9 @@ linux_get_dependencies () {
     apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+    
+    # install curl with http3 support
+    install_curl
 }
 
 function start_grpc_server_example() {
