@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import axios, { Method, RawAxiosRequestHeaders } from 'axios';
+import axios, { type Method, type RawAxiosRequestHeaders } from 'axios';
 
 export const request = async (
   uri: string,
