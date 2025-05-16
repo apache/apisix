@@ -1,0 +1,7 @@
+[
+"data: {\"id\":\"cmpl-130\",\"object\":\"chat.completion.chunk\",\"created\":1698999575,\"model\":\"gpt-4o-2024-05-13\",\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\" 1\"},\"finish_reason\":null}]}\n",
+"data: {\"id\":\"cmpl-130\",\"object\":\"chat.completion.chunk\",\"created\":1698999575,\"model\":\"gpt-4o-2024-05-13\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" + 1\"},\"finish_reason\":null}]}\n",
+"data: {\"id\":\"cmpl-130\",\"object\":\"chat.completion.chunk\",\"created\":1698999575,\"model\":\"gpt-4o-2024-05-13\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\" = 2\"},\"finish_reason\":null}]}\n",
+"data: {\"id\":\"cmpl-130\",\"object\":\"chat.completion.chunk\",\"created\":1698999575,\"model\":\"gpt-4o-2024-05-13\",\"choices\":[{\"index\":0,\"delta\":{},\"finish_reason\":\"stop\",\"usage\":{\"prompt_tokens\":19,\"completion_tokens\":13,\"total_tokens\":32}}]}\n",
+"data: [DONE]\n"
+]
