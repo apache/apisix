@@ -32,6 +32,7 @@ header:
     - '**/*.crt'
     - '**/*.pem'
     - '**/*.pb.go'
+    - '**/pnpm-lock.yaml'
     - '.github/'
     - 'conf/mime.types'
     - '**/*.svg'

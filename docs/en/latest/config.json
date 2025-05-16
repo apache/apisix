@@ -211,7 +211,8 @@
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
                 "plugins/tencent-cloud-cls",
-                "plugins/loki-logger"
+                "plugins/loki-logger",
+                "plugins/lago"
               ]
             }
           ]
