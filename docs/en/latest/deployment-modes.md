@@ -172,13 +172,13 @@ This disables the local file source of configuration in favor of the API. When A
 
     APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type:
 
-  - **Greater than** the current `conf_version`  
+  - **Greater than** the current `conf_version`
     If your `<resource>_conf_version` is **higher**, APISIX will **rebuild/reset** that resource type’s data to match your payload.
 
-  - **Equal to** the current `conf_version`  
+  - **Equal to** the current `conf_version`
     If it is **equal**, APISIX treats the resource as **unchanged** and **ignores** it (no data is rebuilt).
 
-  - **Less than** the current `conf_version`  
+  - **Less than** the current `conf_version`
     If it is **lower**, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
 
 * modifiedIndex per resource
