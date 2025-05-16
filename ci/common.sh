@@ -68,8 +68,8 @@ rerun_flaky_tests() {
 
 install_curl () {
     CURL_VERSION="8.13.0"
-    wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz -o curl-linux-amd64-${CURL_VERSION}.tar.xz
-    tar -xf curl-linux-amd64-${CURL_VERSION}.tar.xz
+    wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
+    tar -xf curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
     sudo cp curl /usr/bin
     curl -V
 }
