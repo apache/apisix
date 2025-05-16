@@ -34,7 +34,7 @@ jobs:
         test_dir:
           - t/plugin/[a-k]*
           - t/plugin/[l-z]*
-          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/misc
+          - t/admin t/cli t/config-center-yaml t/control t/core t/debug t/discovery t/error_page t/http3/admin t/misc
           - t/node t/pubsub t/router t/script t/secret t/stream-node t/utils t/wasm t/xds-library t/xrpc
 
     runs-on: ${{ matrix.platform }}
@@ -88,6 +88,14 @@ jobs:
       - name: Free disk space
         run: |
           bash ./ci/free_disk_space.sh
+
+      - name: Linux Before install
+        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
+
+      - name: Linux Install
+        run: |
+          sudo --preserve-env=OPENRESTY_VERSION \
+          ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux launch common services
         run: |
@@ -173,14 +181,6 @@ jobs:
           wget https://github.com/tinygo-org/tinygo/releases/download/v${TINYGO_VER}/tinygo_${TINYGO_VER}_amd64.deb 2>/dev/null
           sudo dpkg -i tinygo_${TINYGO_VER}_amd64.deb
           cd t/wasm && find . -type f -name "*.go" | xargs -Ip tinygo build -o p.wasm -scheduler=none -target=wasi p
-
-      - name: Linux Before install
-        run: sudo ./ci/${{ matrix.os_name }}_runner.sh before_install
-
-      - name: Linux Install
-        run: |
-          sudo --preserve-env=OPENRESTY_VERSION \
-          ./ci/${{ matrix.os_name }}_runner.sh do_install
 
       - name: Linux Script
         env:
