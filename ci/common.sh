@@ -70,7 +70,6 @@ install_curl () {
     CURL_VERSION="8.13.0"
     wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-amd64-${CURL_VERSION}.tar.xz
     tar -xf curl-linux-amd64-${CURL_VERSION}.tar.xz
-    sudo apt remove -y curl
     sudo cp curl /usr/bin
     curl -V
 }
@@ -167,6 +166,7 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 linux_get_dependencies () {
     apt update
     apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev xz-utils
+    apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
 }

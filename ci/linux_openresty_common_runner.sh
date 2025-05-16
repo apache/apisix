@@ -56,6 +56,9 @@ do_install() {
     CGO_ENABLED=0 go build
     cd ../../
 
+    # install curl with http3 support
+    install_curl
+
     # install grpcurl
     install_grpcurl
 
