@@ -101,10 +101,13 @@ make run
 Now you can start writing code and test cases, and testing tools are available:
 
 ```shell
+export TEST_NGINX_BINARY=openresty
+
+# run all tests
 make test
 
 # or run a specify test case file
-TEST_NGINX_BINARY=openresty FLUSH_ETCD=1 prove -Itest-nginx/lib -I. -r t/admin/api.t
+FLUSH_ETCD=1 prove -Itest-nginx/lib -I. -r t/admin/api.t
 ```
 
 ## FAQ
@@ -113,4 +116,4 @@ TEST_NGINX_BINARY=openresty FLUSH_ETCD=1 prove -Itest-nginx/lib -I. -r t/admin/a
 
 It will be on your host, which is where you cloned the APISIX source code, and the container uses the volume to mount the code into the container. Containers contain only the runtime environment, not the source code, so no changes will be lost whether you close or delete the container.
 
-And, the git is already installed in the container, so you can commit a change directly there.
+And, the `git` is already installed in the container, so you can commit a change directly there.
