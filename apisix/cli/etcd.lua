@@ -146,6 +146,57 @@ local function request(url, yaml_conf)
 end
 
 
+local function get_etcd_token(user, password, host, yaml_conf)
+    local auth_url = host .. "/v3/auth/authenticate"
+    local json_auth = {
+        name = user,
+        password = password
+    }
+
+    local post_json_auth = dkjson.encode(json_auth)
+    local response_body = {}
+
+    local res, err
+    local retry_time = 0
+    while retry_time < 2 do
+        res, err = request({
+            url = auth_url,
+            method = "POST",
+            source = ltn12.source.string(post_json_auth),
+            sink = ltn12.sink.table(response_body),
+            headers = {
+                ["Content-Length"] = #post_json_auth
+            }
+        }, yaml_conf)
+        -- In case of failure, request returns nil followed by an error message.
+        -- Else the first return value is just the number 1
+        -- and followed by the response status code.
+        if res then
+            break
+        end
+        retry_time = retry_time + 1
+        print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry time=%s",
+                            auth_url, err, retry_time))
+    end
+
+    local errmsg
+    if not res then
+        errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", auth_url, err)
+        return nil, errmsg
+    end
+
+    local res_auth = table_concat(response_body)
+    local body_auth, _, err_auth = dkjson.decode(res_auth)
+    if err_auth or (body_auth and not body_auth["token"]) then
+        errmsg = str_format("got malformed auth message: \"%s\" from etcd \"%s\"\n",
+                            res_auth, auth_url)
+        return nil, errmsg
+    end
+
+    return body_auth.token
+end
+
+
 local function prepare_dirs_via_http(yaml_conf, args, index, host, host_count)
     local is_success = true
 
@@ -154,52 +205,10 @@ local function prepare_dirs_via_http(yaml_conf, args, index, host, host_count)
     local user = yaml_conf.etcd.user
     local password = yaml_conf.etcd.password
     if user and password then
-        local auth_url = host .. "/v3/auth/authenticate"
-        local json_auth = {
-            name = user,
-            password = password
-        }
-
-        local post_json_auth = dkjson.encode(json_auth)
-        local response_body = {}
-
-        local res, err
-        local retry_time = 0
-        while retry_time < 2 do
-            res, err = request({
-                url = auth_url,
-                method = "POST",
-                source = ltn12.source.string(post_json_auth),
-                sink = ltn12.sink.table(response_body),
-                headers = {
-                    ["Content-Length"] = #post_json_auth
-                }
-            }, yaml_conf)
-            -- In case of failure, request returns nil followed by an error message.
-            -- Else the first return value is just the number 1
-            -- and followed by the response status code.
-            if res then
-                break
-            end
-            retry_time = retry_time + 1
-            print(str_format("Warning! Request etcd endpoint \'%s\' error, %s, retry time=%s",
-                                auth_url, err, retry_time))
-        end
-
-        if not res then
-            errmsg = str_format("request etcd endpoint \"%s\" error, %s\n", auth_url, err)
+        auth_token, errmsg = get_etcd_token(user, password, host, yaml_conf)
+        if not auth_token then
             util.die(errmsg)
         end
-
-        local res_auth = table_concat(response_body)
-        local body_auth, _, err_auth = dkjson.decode(res_auth)
-        if err_auth or (body_auth and not body_auth["token"]) then
-            errmsg = str_format("got malformed auth message: \"%s\" from etcd \"%s\"\n",
-                                res_auth, auth_url)
-            util.die(errmsg)
-        end
-
-        auth_token = body_auth.token
     end
 
 
@@ -282,6 +291,64 @@ end
 
 local function prepare_dirs(yaml_conf, args, index, host, host_count)
     return prepare_dirs_via_http(yaml_conf, args, index, host, host_count)
+end
+
+
+local function check_etcd_write_permission(yaml_conf)
+    local etcd_conf = yaml_conf.etcd
+    local headers = {["Content-Type"] = "application/json"}
+    local response_body = {}
+
+    -- if no user and password can still access etcd status,
+    -- means ALLOW_NONE_AUTHENTICATION is true
+    -- which is not allowed when deployment role is data_plane
+    local auth_status_url = etcd_conf.host[1] .. "/v3/auth/status"
+    local _, code = request({
+        url = auth_status_url,
+        method = "POST",
+        headers = headers
+    }, yaml_conf)
+    if code == 200 then
+      return false, "etcd is not allowed to be accessed anonymously " ..
+                    "when deployment role is data_plane \n" ..
+                    "Please modify the etcd ALLOW_NONE_AUTHENTICATION to false " ..
+                    "in the etcd config file\n"
+    end
+
+    -- check etcd write permission
+    local key = (etcd_conf.prefix or "") .. "/check_write_permission"
+    local value = "test"
+    local host = etcd_conf.host[1]
+    local url = host.. "/v3/kv/put"
+    local req_body = str_format(
+        '{"key":"%s","value":"%s"}',
+        base64_encode(key), base64_encode(value)
+    )
+
+    local user = etcd_conf.user
+    local password = etcd_conf.password
+    if user and password then
+        local token = get_etcd_token(user, password, host, yaml_conf)
+        if token then
+            headers["Authorization"] = token
+        end
+    end
+    local _, code = request({
+        url = url,
+        method = "POST",
+        source = ltn12.source.string(req_body),
+        sink = ltn12.sink.table(response_body),
+        headers = headers
+    }, yaml_conf)
+
+    if code ~= 200 then
+        return true
+    end
+
+    return false, "data plane role should not have write permission to etcd. " ..
+                  "Please modify the etcd user permissions using:\n" ..
+                  "etcdctl user grant-role " .. user .. " read\n" ..
+                  "etcdctl user revoke-role " .. user .. " root\n"
 end
 
 
@@ -392,5 +459,6 @@ function _M.init(env, args)
     end
 end
 
+_M.check_etcd_write_permission = check_etcd_write_permission
 
 return _M
