@@ -236,6 +236,7 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
+    "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
@@ -320,6 +321,9 @@ local _M = {
         ip = "127.0.0.1",
         port = 9091
       }
+    },
+    ["server-info"] = {
+      report_ttl = 60
     },
     ["dubbo-proxy"] = {
       upstream_multiplex_count = 32
