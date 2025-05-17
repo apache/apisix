@@ -86,6 +86,8 @@ This process requires a reliable network connection, and it will access Docker H
 
 Wait some minutes, depending on the internet connection or computer performance, it may take from a few minutes to tens of minutes, you can click on the Progress Bar in the bottom right corner to view a live log where you will be able to check unusual stuck.
 
+If you encounter any problems, you can search or ask questions in [GitHub Issues](https://github.com/apache/apisix/issues) or [GitHub Discussions](https://github.com/apache/apisix/discussions), and community members will respond as promptly as possible.
+
 ![VSCode dev containers building progress bar](../../assets/images/build-devcontainers-vscode-progressbar.png)
 
 When the process in the terminal is complete, the development environment is ready, and even etcd is ready.
