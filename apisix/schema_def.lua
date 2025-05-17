@@ -875,10 +875,15 @@ _M.ssl = {
 _M.proto = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
+        name = rule_name_def,
         desc = desc_def,
+        labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
+
+        -- properties
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -891,10 +896,13 @@ _M.proto = {
 _M.global_rule = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
-        plugins = plugins_schema,
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+
+        -- properties
+        plugins = plugins_schema,
     },
     required = {"id", "plugins"},
     additionalProperties = false,
@@ -947,7 +955,7 @@ _M.stream_route = {
         id = id_schema,
         name = rule_name_def,
         desc = desc_def,
-        labels = labels_def, -- The ingress project need this field
+        labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
 
