@@ -366,6 +366,7 @@ local function get_bearer_access_token(ctx, conf)
     -- Get Authorization header, maybe.
     local auth_header = core.request.header(ctx, conf.auth_accept_token_as_header_name)
     if not auth_header then
+        core.log.error("Authorization header not found.")
         return false, nil, nil
     end
 
