@@ -50,6 +50,7 @@ local str_byte = string.byte
 local str_sub = string.sub
 local str_format = string.format
 
+
 local _M = {}
 
 
@@ -241,12 +242,6 @@ Please modify "admin_key" in conf/config.yaml .
         then
             util.die("missing ssl cert for https admin")
         end
-    end
-
-    if yaml_conf.apisix.enable_admin and
-        yaml_conf.deployment.config_provider == "yaml"
-    then
-        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
     end
 
     local or_ver = get_openresty_version()
@@ -500,21 +495,6 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
-
-    if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
-        local cert_path = yaml_conf.apisix.ssl.ssl_trusted_certificate
-        -- During validation, the path is relative to PWD
-        -- When Nginx starts, the path is relative to conf
-        -- Therefore we need to check the absolute version instead
-        cert_path = pl_path.abspath(cert_path)
-
-        if not pl_path.exists(cert_path) then
-            util.die("certificate path", cert_path, "doesn't exist\n")
-        end
-
-        yaml_conf.apisix.ssl.ssl_trusted_certificate = cert_path
-    end
-
     -- enable ssl with place holder crt&key
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
@@ -622,6 +602,10 @@ Please modify "admin_key" in conf/config.yaml .
             sys_conf[k] = v
         end
     end
+
+    sys_conf.standalone_with_admin_api = env.deployment_role == "traditional" and
+        yaml_conf.apisix.enable_admin and yaml_conf.deployment.config_provider == "yaml"
+
     sys_conf["wasm"] = yaml_conf.wasm
 
 

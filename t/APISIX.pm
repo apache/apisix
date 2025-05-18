@@ -275,6 +275,7 @@ thread_pool grpc-client-nginx-module threads=1;
 
 lua {
     lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict standalone-config 10m;
 }
 _EOC_
     }
@@ -362,6 +363,8 @@ _EOC_
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.print("stdout: ", stdout)
+                        ngx.print("stderr: ", stderr)
                         return
                     end
                     ngx.print(stdout)
@@ -394,6 +397,7 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
+    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
@@ -464,6 +468,8 @@ _EOC_
     if (defined $stream_enable) {
         $block->set_value("stream_config", $stream_config);
     }
+
+    my $custom_trusted_cert = $block->custom_trusted_cert // 'cert/apisix.crt';
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     listen 2005 ssl;
@@ -556,6 +562,8 @@ _EOC_
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
+    lua_shared_dict plugin-ai-rate-limiting 10m;
+    lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events 10m;
@@ -578,6 +586,7 @@ _EOC_
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict ocsp-stapling 10m;
+    lua_shared_dict mcp-session 10m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;
@@ -737,7 +746,7 @@ _EOC_
         http3 off;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
-        lua_ssl_trusted_certificate cert/apisix.crt;
+        lua_ssl_trusted_certificate $custom_trusted_cert;
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 

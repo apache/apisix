@@ -1,5 +1,5 @@
 {
-  "version": "3.10.0",
+  "version": "3.12.0",
   "sidebar": [
     {
       "type": "category",
@@ -65,7 +65,6 @@
             "plugins/gzip",
             "plugins/brotli",
             "plugins/real-ip",
-            "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
@@ -82,6 +81,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/body-transformer",
             "plugins/attach-consumer-label"
           ]
         },
@@ -242,6 +242,10 @@
         {
           "type": "doc",
           "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
         },
         {
           "type": "doc",

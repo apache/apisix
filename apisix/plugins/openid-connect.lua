@@ -22,6 +22,7 @@ local random  = require("resty.random")
 local string  = string
 local ngx     = ngx
 local ipairs  = ipairs
+local type    = type
 local concat  = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
@@ -89,6 +90,47 @@ local schema = {
             type = "string",
             default = "apisix",
         },
+        claim_validator = {
+            type = "object",
+            properties = {
+                issuer = {
+                    description = [[Whitelist the vetted issuers of the jwt.
+                    When not passed by the user, the issuer returned by
+                    discovery endpoint will be used. In case both are missing,
+                    the issuer will not be validated.]],
+                    type = "object",
+                    properties = {
+                        valid_issuers = {
+                            type = "array",
+                            items = {
+                                type = "string"
+                            }
+                        }
+                    }
+                },
+                audience = {
+                    type = "object",
+                    description = "audience claim value to validate",
+                    properties = {
+                        claim = {
+                            type = "string",
+                            description = "custom claim name",
+                            default = "aud",
+                        },
+                        required = {
+                            type = "boolean",
+                            description = "audience claim is required",
+                            default = false,
+                        },
+                        match_with_client_id = {
+                            type = "boolean",
+                            description = "audience must euqal to or includes client_id",
+                            default = false,
+                        }
+                    },
+                },
+            },
+        },
         logout_path = {
             type = "string",
             default = "/logout",
@@ -112,7 +154,7 @@ local schema = {
         public_key = {type = "string"},
         token_signing_alg_values_expected = {type = "string"},
         use_pkce = {
-            description = "when set to true the PKEC(Proof Key for Code Exchange) will be used.",
+            description = "when set to true the PKCE(Proof Key for Code Exchange) will be used.",
             type = "boolean",
             default = false
         },
@@ -368,17 +410,33 @@ local function introspect(ctx, conf)
         end
     end
 
-    -- If we get here, token was found in request.
-
     if conf.public_key or conf.use_jwks then
+        local opts = {}
         -- Validate token against public key or jwks document of the oidc provider.
         -- TODO: In the called method, the openidc module will try to extract
         --  the token by itself again -- from a request header or session cookie.
         --  It is inefficient that we also need to extract it (just from headers)
         --  so we can add it in the configured header. Find a way to use openidc
         --  module's internal methods to extract the token.
-        local res, err = openidc.bearer_jwt_verify(conf)
-
+        local valid_issuers
+        if conf.claim_validator and conf.claim_validator.issuer then
+            valid_issuers = conf.claim_validator.issuer.valid_issuers
+        end
+        if not valid_issuers then
+            local discovery, discovery_err = openidc.get_discovery_doc(conf)
+            if discovery_err then
+                core.log.warn("OIDC access discovery url failed : ", discovery_err)
+            else
+                core.log.info("valid_issuers not provided explicitly," ..
+                              " using issuer from discovery doc: ",
+                              discovery.issuer)
+                valid_issuers = {discovery.issuer}
+            end
+        end
+        if valid_issuers then
+            opts.valid_issuers = valid_issuers
+        end
+        local res, err = openidc.bearer_jwt_verify(conf, opts)
         if err then
             -- Error while validating or token invalid.
             ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
@@ -540,6 +598,40 @@ function _M.rewrite(plugin_conf, ctx)
                     return 403, core.json.encode(error_response)
                 end
             end
+
+            -- jwt audience claim validator
+            local audience_claim = core.table.try_read_attr(conf, "claim_validator",
+                                                             "audience", "claim") or "aud"
+            local audience_value = response[audience_claim]
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "required")
+                and not audience_value then
+                core.log.error("OIDC introspection failed: required audience (",
+                                audience_claim, ") not present")
+                local error_response = { error = "required audience claim not present" }
+                return 403, core.json.encode(error_response)
+            end
+            if core.table.try_read_attr(conf, "claim_validator", "audience", "match_with_client_id")
+                and audience_value ~= nil then
+                local error_response = { error = "mismatched audience" }
+                local matched = false
+                if type(audience_value) == "table" then
+                    for _, v in ipairs(audience_value) do
+                        if conf.client_id == v then
+                            matched = true
+                        end
+                    end
+                    if not matched then
+                        core.log.error("OIDC introspection failed: ",
+                                        "audience list does not contain the client id")
+                        return 403, core.json.encode(error_response)
+                    end
+                elseif conf.client_id ~= audience_value then
+                    core.log.error("OIDC introspection failed: ",
+                                    "audience does not match the client id")
+                    return 403, core.json.encode(error_response)
+                end
+            end
+
             -- Add configured access token header, maybe.
             add_access_token_header(ctx, conf, access_token)
 

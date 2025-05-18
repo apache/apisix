@@ -246,15 +246,7 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    local parent = route.value.upstream.parent
-    if parent then
-        route.value.upstream.parent = nil
-    end
-    route.dns_value = core.table.deepcopy(route.value)
-    if parent then
-        route.value.upstream.parent = parent
-        route.dns_value.upstream.parent = parent
-    end
+    route.dns_value = core.table.deepcopy(route.value, { shallows = { "self.upstream.parent"}})
     route.dns_value.upstream.nodes = new_nodes
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
@@ -461,6 +453,12 @@ end
 
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
+    -- some plugins(ai-proxy...) request upstream by http client directly
+    if api_ctx.bypass_nginx_upstream then
+        common_phase("before_proxy")
+        return
+    end
+
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
@@ -824,9 +822,18 @@ local function healthcheck_passive(api_ctx)
     local host = up_conf.checks and up_conf.checks.active
                  and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active
-                 and up_conf.checks.active.port
+                 and up_conf.checks.active.port or api_ctx.balancer_port
 
     local resp_status = ngx.status
+
+    if not is_http then
+        -- 200 is the only success status code for TCP
+        if resp_status ~= 200 then
+            checker:report_tcp_failure(api_ctx.balancer_ip, port, host, nil, "passive")
+        end
+        return
+    end
+
     local http_statuses = passive and passive.healthy and
                           passive.healthy.http_statuses
     core.log.info("passive.healthy.http_statuses: ",
@@ -835,7 +842,7 @@ local function healthcheck_passive(api_ctx)
         for i, status in ipairs(http_statuses) do
             if resp_status == status then
                 checker:report_http_status(api_ctx.balancer_ip,
-                                           port or api_ctx.balancer_port,
+                                           port,
                                            host,
                                            resp_status)
             end
@@ -853,7 +860,7 @@ local function healthcheck_passive(api_ctx)
     for i, status in ipairs(http_statuses) do
         if resp_status == status then
             checker:report_http_status(api_ctx.balancer_ip,
-                                       port or api_ctx.balancer_port,
+                                       port,
                                        host,
                                        resp_status)
         end
@@ -1170,6 +1177,8 @@ function _M.stream_log_phase()
     if not api_ctx then
         return
     end
+
+    healthcheck_passive(api_ctx)
 
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then
