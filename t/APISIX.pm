@@ -757,7 +757,7 @@ _EOC_
         listen 1994 quic reuseport;
         listen 1994 ssl;
         http2 on;
-        http3 off;
+        http3 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate $custom_trusted_cert;
