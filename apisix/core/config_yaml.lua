@@ -303,7 +303,6 @@ function _M.get(self, key)
 
     return self.values[arr_idx]
 end
-local inspect = require("inspect")
 
 
 local function _automatic_fetch(premature, self)
