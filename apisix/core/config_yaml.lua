@@ -101,7 +101,6 @@ local function update_config(table, mtime)
     apisix_yaml = table
     apisix_yaml_raw = tbl_deepcopy(table)
     apisix_yaml_mtime = mtime
-    log.warn("updated_config called")
     sync_status_to_shdict(true)
 end
 _M._update_config = update_config
@@ -120,7 +119,6 @@ end
 
 
 local function read_apisix_yaml(premature, pre_mtime)
-    log.warn("read_apisix_yaml called")
     if premature then
         return
     end
@@ -339,7 +337,6 @@ local function _automatic_fetch(premature, self)
             log.error("failed to decode config from shared dict: ", err)
             goto SKIP_SHARED_DICT
         end
-        log.warn("CONFIG LOADED FROM SHARED DICT",inspect(config))
         _M._update_config(config.conf, config.conf_version)
         log.info("config loaded from shared dict")
 
