@@ -74,7 +74,7 @@ This Plugin supports using batch processors to aggregate and process events in a
 
 The examples below demonstrate how you can configure `lago` Plugin for typical scenario.
 
-To follow along the examples, start a Lago instance. Refer to [https://github.com/getlago/lago](https://github.com/getlago/lago) or use Lago cloud.
+To follow along the examples, start a Lago instance. Refer to [https://github.com/getlago/lago](https://github.com/getlago/lago) or use Lago Cloud.
 
 Follow these brief steps to configure the Lago:
 
@@ -83,7 +83,7 @@ Follow these brief steps to configure the Lago:
 3. Create a Plan and add the created metric to it. Its code doesn't matter, you can specify as much as you like. In the `Usage-based charges` section, add the billable metric you just created as a `Metered charge` item. Specify the default price as `1$`. Add a filter, use `tier: expensive` to perform the filtering, and specify its price as `10$`.
 4. Select an existing or create a new consumer to assign the Plan you just created to it. You need to specify a `Subscription external ID` (or you can have Lago generate it), which will be used as the APISIX consumer username.
 
-Next we need to configure the APISIX for demonstrates.
+Next we need to configure APISIX for demonstrations.
 
 :::note
 
@@ -99,7 +99,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how you can configure the `lago` Plugin on a Route to measuring API call usage.
 
-Create a Route 1 with the `lago`, `request-id`, `key-auth` Plugin and configure it:
+Create a Route with the `lago`, `request-id`, `key-auth` Plugins as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -129,7 +129,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Create Route 2:
+Create a second route with the `lago`, `request-id`, `key-auth` Plugin as such:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -162,7 +162,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Creating Consumer:
+Create a Consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
@@ -177,7 +177,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Send three requests to two separate routes:
+Send three requests to the two routes respectively:
 
 ```shell
 curl "http://127.0.0.1:9080/get"
@@ -190,13 +190,13 @@ curl "http://127.0.0.1:9080/anything"
 
 You should receive `HTTP/1.1 200 OK` responses for all requests.
 
-Wait a few seconds, go to the `Developer` page in the Lago dashboard, look at `Events` and you will see 6 event entries sent by APISIX.
+Wait a few seconds, then navigate to the __Developer__ page in the Lago dashboard. Under __Events__, you should see 6 event entries sent by APISIX.
 
-If the self-hosted instance's event worker is configured correctly (or if you're using Lago Cloud), you can also see the total amount consumed in real time in the consumer's subscription usage, which should be `3 * 1$ + 3 * 10$ = 33$` according to our demo use case.
+If the self-hosted instance's event worker is configured correctly (or if you're using Lago Cloud), you can also see the total amount consumed in real time in the consumer's subscription usage, which should be `3 * $1 + 3 * $10 = $33` according to our demo use case.
 
 ## FAQ
 
-### What's this for?
+### Purpose of the Plugin
 
 When you make an effort to monetize your API, it's hard to find a ready-made, low-cost solution, so you may have to build your own billing stack, which is complicated.
 
@@ -225,7 +225,7 @@ Here's an [archive page](https://web.archive.org/web/20250516073803/https://getl
 
 If the latest API changes, then you can submit an issue to inform the APISIX maintainers that this may require some changes.
 
-### Events are not pushed properly
+### Why Lago can't receive events?
 
 Look at `error.log` for such a log.
 
@@ -250,7 +250,7 @@ So even if a retry is triggered because the network causes Lago to send a `succe
 
 ### Performance Impacts
 
-The plugin is logically simple and reliable, it just builds a Lago event object for each request, buffers and sends them in bulk. The logic is not coupled to the request proxy path, so this does not cause latency to rise for requests going through the gateway.
+The plugin is logically simple and reliable; it simply builds a Lago event object for each request, buffers and sends them in bulk. The logic is not coupled to the request proxy path, so this does not cause latency to rise for requests going through the gateway.
 
 Technically, the logic is executed in the NGINX log phase and [batch processor](../batch-processor.md) timer, so this does not affect the request itself.
 
