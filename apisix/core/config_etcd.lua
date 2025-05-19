@@ -981,9 +981,6 @@ function _M.new(key, opts)
     if not health_check_timeout or health_check_timeout < 0 then
         health_check_timeout = 10
     end
-    if key then
-        sync_status_to_shdict(true)
-    end
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
