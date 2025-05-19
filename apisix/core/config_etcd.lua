@@ -495,7 +495,7 @@ local function sync_status_to_shdict(status)
     end
     local status_shdict = ngx.shared["status-report"]
     local pid = worker_pid()
-    status_shdict:set(pid, status) -- expire after 5 minutes
+    status_shdict:set(pid, status)
 end
 
 

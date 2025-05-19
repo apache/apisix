@@ -37,7 +37,6 @@ local _M = {}
 
 
 local function update_and_broadcast_config(apisix_yaml, conf_version)
-    core.log.warn("update_and_broadcast_config called bhai")
     local config = core.json.encode({
         conf = apisix_yaml,
         conf_version = conf_version,

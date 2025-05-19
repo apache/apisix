@@ -719,7 +719,7 @@ _EOC_
 
     $http_config .= <<_EOC_;
     server {
-        listen 7085 ;
+        listen 7085;
         location /status/ready {
             content_by_lua_block {
                 apisix.status_ready()
