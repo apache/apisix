@@ -14,18 +14,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import type { Config } from 'jest';
-
-const config: Config = {
-  coverageProvider: 'v8',
-  testEnvironment: 'node',
-  testRegex: '(/__tests__/.*|(\\.|/)(spec|test))\\.(ts|mts)$',
-  transform: {
-    '^.+\\.ts$': ['ts-jest', { useESM: false }],
-    '^.+\\.mts$': ['ts-jest', { useESM: true, tsconfig: 'tsconfig.esm.json' }],
-  },
-  extensionsToTreatAsEsm: ['.mts'],
-  moduleFileExtensions: ['ts', 'mts', 'js'],
-};
-
-export default config;
+export const wait = (ms: number) =>
+  new Promise<void>((resolve) => setTimeout(resolve, ms));
