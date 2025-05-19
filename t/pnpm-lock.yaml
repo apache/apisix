@@ -37,7 +37,7 @@ importers:
         version: 29.7.0(@types/node@22.14.1)(ts-node@10.9.2(@types/node@22.14.1)(typescript@5.8.3))
       lago-javascript-client:
         specifier: ^1.26.0
-        version: 1.26.0
+        version: 1.27.1
       simple-git:
         specifier: ^3.27.0
         version: 3.27.0
@@ -1018,8 +1018,8 @@ packages:
     resolution: {integrity: sha512-eTIzlVOSUR+JxdDFepEYcBMtZ9Qqdef+rnzWdRZuMbOywu5tO2w2N7rqjoANZ5k9vywhL6Br1VRjUIgTQx4E8w==}
     engines: {node: '>=6'}
 
-  lago-javascript-client@1.26.0:
-    resolution: {integrity: sha512-cUMj/3znu0XXKZPLmvKVKbWobJOqNuKYHhRb7Yqvhw0BPHp5bqKB+b0bcSZKlSiNWF6kSyHeAdhPq9DfuXX8uA==}
+  lago-javascript-client@1.27.1:
+    resolution: {integrity: sha512-0TCRgONHbKJwVOFi9VMh7u4XjG7QBu7x13iJT66vSJGLOsIbcmFLEhaofpnh5x7s1qJROGTzamNmVxvQ8afpdA==}
 
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
@@ -2681,7 +2681,7 @@ snapshots:
 
   kleur@3.0.3: {}
 
-  lago-javascript-client@1.26.0: {}
+  lago-javascript-client@1.27.1: {}
 
   leven@3.1.0: {}
 

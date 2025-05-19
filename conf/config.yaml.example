@@ -497,7 +497,6 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
-  - server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
