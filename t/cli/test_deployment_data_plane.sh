@@ -20,10 +20,9 @@
 . ./t/cli/common.sh
 
 docker compose -f t/cli/docker-compose-etcd-data-plane.yaml up -d
-. ./t/cli/setup_etcd_root.sh
 
 # clean etcd data
-etcdctl --endpoints=http://127.0.0.1:43799 --user=root:root del / --prefix
+etcdctl --endpoints=http://127.0.0.1:43799 del / --prefix
 
 # data_plane does not write data to etcd
 echo '
@@ -44,7 +43,7 @@ make run
 
 sleep 1
 
-res=$(etcdctl --endpoints=http://127.0.0.1:43799 --user=root:root get / --prefix | wc -l)
+res=$(etcdctl --endpoints=http://127.0.0.1:43799 get / --prefix | wc -l)
 
 if [ ! $res -eq 0 ]; then
     echo "failed: data_plane should not write data to etcd"
@@ -78,7 +77,7 @@ deployment:
 
 out=$(make run 2>&1 || true)
 make stop
-if ! echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:12379: certificate verify failed'; then
+if ! echo "$out" | grep 'failed to load the configuration: https://127.0.0.1:43799: certificate verify failed'; then
     echo "failed: should verify certificate by default"
     exit 1
 fi
@@ -208,3 +207,4 @@ echo "passed: should verify certificate by default"
 # fi
 
 # echo "passed: data plane role should not have write permission to etcd"
+docker compose -f t/cli/docker-compose-etcd-data-plane.yaml down

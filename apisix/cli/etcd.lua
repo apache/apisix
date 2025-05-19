@@ -299,22 +299,6 @@ local function check_etcd_write_permission(yaml_conf)
     local headers = {["Content-Type"] = "application/json"}
     local response_body = {}
 
-    -- if no user and password can still access etcd status,
-    -- means ALLOW_NONE_AUTHENTICATION is true
-    -- which is not allowed when deployment role is data_plane
-    local auth_status_url = etcd_conf.host[1] .. "/v3/auth/status"
-    local _, code = request({
-        url = auth_status_url,
-        method = "POST",
-        headers = headers
-    }, yaml_conf)
-    if code == 200 then
-      return false, "etcd is not allowed to be accessed anonymously " ..
-                    "when deployment role is data_plane \n" ..
-                    "Please modify the etcd ALLOW_NONE_AUTHENTICATION to false " ..
-                    "in the etcd config file\n"
-    end
-
     -- check etcd write permission
     local key = (etcd_conf.prefix or "") .. "/check_write_permission"
     local value = "test"
@@ -345,10 +329,7 @@ local function check_etcd_write_permission(yaml_conf)
         return true
     end
 
-    return false, "data plane role should not have write permission to etcd. " ..
-                  "Please modify the etcd user permissions using:\n" ..
-                  "etcdctl user grant-role " .. user .. " read\n" ..
-                  "etcdctl user revoke-role " .. user .. " root\n"
+    return false
 end
 
 
