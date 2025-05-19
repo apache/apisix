@@ -174,28 +174,26 @@ local function sync_data(self)
 
     if self.values and #self.values > 0 then
         if is_use_admin_api() then
-            -- used to delete values that do not exist in the new list.
-            -- only when using modifiedIndex, old values need to be retained.
-            -- If modifiedIndex changes, old values need to be removed and cleaned up.
-            local exist_modifiedIndex_items = {}
-            for _, item in ipairs(items) do
-                if item.modifiedIndex then
-                    exist_modifiedIndex_items[tostring(item.id)] = true
-                end
-            end
-
-            local new_values = new_tab(8, 0)
+            -- filter self.values to retain only those whose IDs exist in the new items list.
+            local exist_values = new_tab(8, 0)
             self.values_hash = new_tab(0, 8)
+
+            local exist_items = {}
+            for _, item in ipairs(items) do
+                exist_items[tostring(item.id)] = true
+            end
+            -- remove objects that exist in the self.values but do not exist in the new items.
+            -- for removed items, trigger cleanup handlers.
             for _, item in ipairs(self.values) do
                 local id = item.value.id
-                if not exist_modifiedIndex_items[id]  then
+                if not exist_items[id]  then
                     config_util.fire_all_clean_handlers(item)
                 else
-                    insert_tab(new_values, item)
-                    self.values_hash[id] = #new_values
+                    insert_tab(exist_values, item)
+                    self.values_hash[id] = #exist_values
                 end
             end
-            self.values = new_values
+            self.values = exist_values
         else
             for _, item in ipairs(self.values) do
                 config_util.fire_all_clean_handlers(item)
@@ -287,9 +285,7 @@ local function sync_data(self)
                     -- remove the old item
                     local pre_val = self.values[pre_index]
                     if pre_val and
-                        (not pre_val.modifiedIndex or pre_val.modifiedIndex ~= modifiedIndex) then
-                        log.error("fire all clean handlers for ", self.key, " id: ", id,
-                                    " modifiedIndex: ", modifiedIndex)
+                        (not item.modifiedIndex or pre_val.modifiedIndex ~= item.modifiedIndex) then
                         config_util.fire_all_clean_handlers(pre_val)
                         self.values[pre_index] = conf_item
                         conf_item.value.id = item_id
