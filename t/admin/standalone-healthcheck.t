@@ -65,6 +65,11 @@ qr/PASS admin\/standalone.spec.ts/
 
 
 === TEST 2: send /healthcheck should fail because config is not loaded yet
+--- init_by_lua_block
+    require "resty.core"
+    apisix = require("apisix")
+    local shared_dict  = ngx.shared["standalone-config"]
+    shared_dict:delete("config")
 --- config
     location /t {
         content_by_lua_block {
