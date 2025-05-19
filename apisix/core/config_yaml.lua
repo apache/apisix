@@ -45,6 +45,8 @@ local pcall        = pcall
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
+local process      = require("ngx.process")
+local worker_id   = ngx.worker.id
 local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
 local shared_dict
@@ -73,6 +75,16 @@ local apisix_yaml
 local apisix_yaml_raw -- save a deepcopy of the latest configuration for API
 local apisix_yaml_mtime
 
+local function sync_status_to_shdict(status)
+    if process.type() ~= "worker" then
+        return
+    end
+    local status_shdict = ngx.shared["status-report"]
+    local pid = worker_id()
+    log.info("sync status to shared dict, pid: ", pid, " status: ", status)
+    status_shdict:set(pid, status)
+end
+
 
 local function update_config(table, mtime)
     if not table then
@@ -89,6 +101,8 @@ local function update_config(table, mtime)
     apisix_yaml = table
     apisix_yaml_raw = tbl_deepcopy(table)
     apisix_yaml_mtime = mtime
+    log.warn("updated_config called")
+    sync_status_to_shdict(true)
 end
 _M._update_config = update_config
 
@@ -106,6 +120,7 @@ end
 
 
 local function read_apisix_yaml(premature, pre_mtime)
+    log.warn("read_apisix_yaml called")
     if premature then
         return
     end
@@ -287,6 +302,7 @@ function _M.get(self, key)
 
     return self.values[arr_idx]
 end
+local inspect = require("inspect")
 
 
 local function _automatic_fetch(premature, self)
@@ -323,7 +339,7 @@ local function _automatic_fetch(premature, self)
             log.error("failed to decode config from shared dict: ", err)
             goto SKIP_SHARED_DICT
         end
-
+        log.warn("CONFIG LOADED FROM SHARED DICT",inspect(config))
         _M._update_config(config.conf, config.conf_version)
         log.info("config loaded from shared dict")
 
@@ -469,6 +485,7 @@ end
 
 
 function _M.init_worker()
+    sync_status_to_shdict(false)
     if is_use_admin_api() then
         apisix_yaml = {}
         apisix_yaml_raw = {}

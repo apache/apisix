@@ -30,26 +30,14 @@ local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local check_schema = require("apisix.core.schema").check
-local process      = require("ngx.process")
-local worker_pid   = ngx.worker.pid
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
 
-local function sync_status_to_shdict(status)
-    if process.type() ~= "worker" then
-        return
-    end
-    local status_shdict = ngx.shared["status-report"]
-    local pid = worker_pid()
-    core.log.info("sync status to shared dict, pid: ", pid, " status: ", status)
-    status_shdict:set(pid, status, 5*60)
-end
-
-
 local function update_and_broadcast_config(apisix_yaml, conf_version)
+    core.log.warn("update_and_broadcast_config called bhai")
     local config = core.json.encode({
         conf = apisix_yaml,
         conf_version = conf_version,
@@ -206,28 +194,8 @@ function _M.run()
     end
 end
 
-local function cleanup_on_exit()
-    if ngx.worker.exiting() then
-        local status_shdict = ngx.shared["status-report"]
-        local pid = tostring(ngx.worker.pid())
-        status_shdict:delete(pid)
-        core.log.info("worker ", pid, " removed itself on exit")
-        return
-    end
-
-    -- Reschedule the timer to check again
-    local ok, err = ngx.timer.at(0.1, cleanup_on_exit)
-    if not ok then
-        core.log.error("failed to reschedule cleanup timer: ", err)
-    end
-end
-
 
 function _M.init_worker()
-    local ok, err = ngx.timer.at(0, cleanup_on_exit)
-    if not ok then
-        core.log.error("failed to start cleanup timer: ", err)
-    end
     local function update_config()
         local config, err = shared_dict:get("config")
         if not config then
@@ -241,9 +209,7 @@ function _M.init_worker()
             return
         end
         config_yaml._update_config(config.conf, config.conf_version)
-        sync_status_to_shdict(true)
     end
-    sync_status_to_shdict(false)
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
 end
 

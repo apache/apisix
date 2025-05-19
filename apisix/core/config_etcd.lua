@@ -490,12 +490,12 @@ local function sync_status_to_shdict(status)
     if not local_conf.apisix.status then
         return
     end
-    local status_shdict = ngx.shared["status-report"]
     if process.type() ~= "worker" then
         return
     end
+    local status_shdict = ngx.shared["status-report"]
     local pid = worker_pid()
-    status_shdict:set(pid, status, 5 * 60) -- expire after 5 minutes
+    status_shdict:set(pid, status) -- expire after 5 minutes
 end
 
 
