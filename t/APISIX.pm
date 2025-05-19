@@ -403,6 +403,7 @@ _EOC_
     lua_shared_dict kubernetes-first-stream 1m;
     lua_shared_dict kubernetes-second-stream 1m;
     lua_shared_dict tars-stream 1m;
+    lua_shared_dict status-report-stream 1m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;

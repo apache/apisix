@@ -112,6 +112,7 @@ local _M = {
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
         ["upstream-healthcheck-stream"] = "10m",
+        ["status-report-stream"] = "1m",
       }
     },
     main_configuration_snippet = "",

@@ -155,6 +155,10 @@ stream {
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
     {% end %}
 
+    {% if stream.lua_shared_dict["status-report-stream"] then %}
+    lua_shared_dict status-report-stream {* stream.lua_shared_dict["status-report-stream"] *};
+    {% end %}
+
     # for discovery shared dict
     {% if discovery_shared_dicts then %}
     {% for key, size in pairs(discovery_shared_dicts) do %}

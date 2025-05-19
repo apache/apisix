@@ -50,8 +50,11 @@ local worker_id   = ngx.worker.id
 local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
 local shared_dict
-
-
+local status_report_shared_dict_name = "status-report"
+local is_http = ngx.config.subsystem == "http"
+if not is_http then
+    status_report_shared_dict_name = status_report_shared_dict_name .. "-stream"
+end
 local _M = {
     version = 0.2,
     local_conf = config_local.local_conf,
@@ -79,7 +82,7 @@ local function sync_status_to_shdict(status)
     if process.type() ~= "worker" then
         return
     end
-    local status_shdict = ngx.shared["status-report"]
+    local status_shdict = ngx.shared[status_report_shared_dict_name]
     local pid = worker_id()
     log.info("sync status to shared dict, pid: ", pid, " status: ", status)
     status_shdict:set(pid, status)
