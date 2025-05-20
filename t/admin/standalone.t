@@ -64,11 +64,71 @@ qr/PASS admin\/standalone.spec.ts/
 
 
 
-=== TEST 2: configure route
+=== TEST 2: init conf_version
 --- config
     location /t {} # force the worker to restart by changing the configuration
 --- request
-PUT /apisix/admin/configs?conf_version=101
+PUT /apisix/admin/configs
+{
+    "consumer_groups_conf_version": 1000,
+    "consumers_conf_version": 1000,
+    "global_rules_conf_version": 1000,
+    "plugin_configs_conf_version": 1000,
+    "plugin_metadata_conf_version": 1000,
+    "protos_conf_version": 1000,
+    "routes_conf_version": 1000,
+    "secrets_conf_version": 1000,
+    "services_conf_version": 1000,
+    "ssls_conf_version": 1000,
+    "upstreams_conf_version": 1000
+}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 202
+
+
+
+=== TEST 3: get config
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin")
+            local code, body = t.test('/apisix/admin/configs',
+                ngx.HTTP_GET,
+                nil,
+                [[{
+                    "consumer_groups_conf_version": 1000,
+                    "consumers_conf_version": 1000,
+                    "global_rules_conf_version": 1000,
+                    "plugin_configs_conf_version": 1000,
+                    "plugin_metadata_conf_version": 1000,
+                    "protos_conf_version": 1000,
+                    "routes_conf_version": 1000,
+                    "secrets_conf_version": 1000,
+                    "services_conf_version": 1000,
+                    "ssls_conf_version": 1000,
+                    "upstreams_conf_version": 1000
+                }]],
+                {
+                    ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
+                }
+            )
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: configure route
+--- config
+    location /t {} # force the worker to restart by changing the configuration
+--- request
+PUT /apisix/admin/configs
 {"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
@@ -76,7 +136,7 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 
 
 
-=== TEST 3: test route
+=== TEST 5: test route
 --- config
     location /t1 {}
 --- request
@@ -87,11 +147,11 @@ hello world
 
 
 
-=== TEST 4: remove route
+=== TEST 6: remove route
 --- config
     location /t2 {}
 --- request
-PUT /apisix/admin/configs?conf_version=102
+PUT /apisix/admin/configs
 {}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
@@ -99,9 +159,52 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 
 
 
-=== TEST 5: test non-exist route
+=== TEST 7: test non-exist route
 --- config
     location /t3 {}
 --- request
 GET /r1
 --- error_code: 404
+
+
+
+=== TEST 8: route references upstream, but only updates the route
+--- config
+    location /t6 {}
+--- pipelined_requests eval
+[
+    "PUT /apisix/admin/configs\n" . "{\"routes_conf_version\":1060,\"upstreams_conf_version\":1060,\"routes\":[{\"id\":\"r1\",\"uri\":\"/r1\",\"upstream_id\":\"u1\",\"plugins\":{\"proxy-rewrite\":{\"uri\":\"/hello\"}}}],\"upstreams\":[{\"id\":\"u1\",\"nodes\":{\"127.0.0.1:1980\":1},\"type\":\"roundrobin\"}]}",
+    "PUT /apisix/admin/configs\n" . "{\"routes_conf_version\":1062,\"upstreams_conf_version\":1060,\"routes\":[{\"id\":\"r1\",\"uri\":\"/r2\",\"upstream_id\":\"u1\",\"plugins\":{\"proxy-rewrite\":{\"uri\":\"/hello\"}}}],\"upstreams\":[{\"id\":\"u1\",\"nodes\":{\"127.0.0.1:1980\":1},\"type\":\"roundrobin\"}]}"
+]
+--- more_headers eval
+[
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1",
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "x-apisix-conf-version-routes: 100",
+]
+--- error_code eval
+[202, 202]
+
+
+
+=== TEST 9: hit r2
+--- config
+    location /t3 {}
+--- pipelined_requests eval
+["GET /r1", "GET /r2"]
+--- error_code eval
+[404, 200]
+
+
+
+=== TEST 10: routes_conf_version < 1062 is not allowed
+--- config
+    location /t {}
+--- request
+PUT /apisix/admin/configs
+{"routes_conf_version":1,"routes":[{"id":"r1","uri":"/r2","upstream_id":"u1","plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+x-apisix-conf-version-routes: 100
+--- error_code: 400
+--- response_body
+{"error_msg":"routes_conf_version must be greater than or equal to (1062)"}
