@@ -138,6 +138,9 @@ This makes it possible to disable the Admin API and discover configuration chang
 
 #### API-driven (Experimental)
 
+> This mode is experimental, please do not rely on it in your production environment.
+> We use it to validate certain specific workloads and if it is appropriate we will turn it into an officially supported feature, otherwise it will be removed.
+
 ##### Overview
 
 The API-driven mode is an emerging paradigm for standalone deployment. The routing rules are entirely in memory and not in a file, requiring updates through the dedicated Standalone Admin API. Changes overwrite the entire configuration and take effect immediately without requiring a reboot, as it is hot updated.

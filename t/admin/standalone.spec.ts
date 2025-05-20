@@ -192,7 +192,82 @@ describe("Admin - Standalone", () => {
     it('check route "r2"', () =>
       expect(client.get("/r2")).rejects.toThrow(
         "Request failed with status code 404"
-      ));
+    ));
+
+    it("only set routes_conf_version", async () => {
+      const resp = await client.put(
+        ENDPOINT,
+        YAML.stringify({ routes_conf_version: 15 }),
+        {headers: {"Content-Type": "application/yaml"},
+      });
+      expect(resp.status).toEqual(202);
+
+      const resp_1 = await client.get(ENDPOINT);
+      expect(resp_1.status).toEqual(200);
+      expect(resp_1.data.routes_conf_version).toEqual(15);
+      expect(resp_1.data.ssls_conf_version).toEqual(4);
+      expect(resp_1.data.services_conf_version).toEqual(4);
+      expect(resp_1.data.upstreams_conf_version).toEqual(4);
+      expect(resp_1.data.consumers_conf_version).toEqual(4);
+
+      const resp2 = await client.put(
+        ENDPOINT,
+        YAML.stringify({ routes_conf_version: 17 }),
+        {headers: {"Content-Type": "application/yaml"},
+      });
+      expect(resp2.status).toEqual(202);
+
+      const resp2_1 = await client.get(ENDPOINT);
+      expect(resp2_1.status).toEqual(200);
+      expect(resp2_1.data.routes_conf_version).toEqual(17);
+      expect(resp2_1.data.ssls_conf_version).toEqual(5);
+      expect(resp2_1.data.services_conf_version).toEqual(5);
+      expect(resp2_1.data.upstreams_conf_version).toEqual(5);
+      expect(resp2_1.data.consumers_conf_version).toEqual(5);
+    });
+
+    it("control resource changes using modifiedIndex", async () => {
+      const c1 = structuredClone(routeWithModifiedIndex);
+      c1.routes[0].modifiedIndex = 1;
+
+      const c2 = structuredClone(c1);
+      c2.routes[0].uri = "/r2";
+
+      const c3 = structuredClone(c2);
+      c3.routes[0].modifiedIndex = 2;
+
+      // Update with c1
+      const resp = await client.put(ENDPOINT, c1);
+      expect(resp.status).toEqual(202);
+
+      // Check route /r1 exists
+      const resp_1 = await client.get("/r1");
+      expect(resp_1.status).toEqual(200);
+
+      // Update with c2
+      const resp2 = await client.put(ENDPOINT, c2);
+      expect(resp2.status).toEqual(202);
+
+      // Check route /r1 exists
+      const resp2_2 = await client.get("/r1");
+      expect(resp2_2.status).toEqual(200);
+
+      // Check route /r2 not exists
+      const resp2_1 = await client.get("/r2").catch((err) => err.response);
+      expect(resp2_1.status).toEqual(404);
+
+      // Update with c3
+      const resp3 = await client.put(ENDPOINT, c3);
+      expect(resp3.status).toEqual(202);
+
+      // Check route /r1 not exists
+      const resp3_1 = await client.get("/r1").catch((err) => err.response);
+      expect(resp3_1.status).toEqual(404);
+
+      // Check route /r2 exists
+      const resp3_2 = await client.get("/r2");
+      expect(resp3_2.status).toEqual(200);
+    });
   });
 
   describe("Exceptions", () => {
@@ -214,7 +289,7 @@ describe("Admin - Standalone", () => {
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
         error_msg:
-          "routes_conf_version must be greater than or equal to (3)",
+          "routes_conf_version must be greater than or equal to (20)",
       });
     });
 
@@ -245,38 +320,6 @@ describe("Admin - Standalone", () => {
       });
     });
 
-    it("only set routes_conf_version", async () => {
-      const resp = await clientException.put(
-        ENDPOINT,
-        YAML.stringify({ routes_conf_version: 15 }),
-        {headers: {"Content-Type": "application/yaml"},
-      });
-      expect(resp.status).toEqual(202);
-
-      const resp_1 = await client.get(ENDPOINT);
-      expect(resp_1.status).toEqual(200);
-      expect(resp_1.data.routes_conf_version).toEqual(15);
-      expect(resp_1.data.ssls_conf_version).toEqual(4);
-      expect(resp_1.data.services_conf_version).toEqual(4);
-      expect(resp_1.data.upstreams_conf_version).toEqual(4);
-      expect(resp_1.data.consumers_conf_version).toEqual(4);
-
-      const resp2 = await clientException.put(
-        ENDPOINT,
-        YAML.stringify({ routes_conf_version: 17 }),
-        {headers: {"Content-Type": "application/yaml"},
-      });
-      expect(resp2.status).toEqual(202);
-
-      const resp2_1 = await client.get(ENDPOINT);
-      expect(resp2_1.status).toEqual(200);
-      expect(resp2_1.data.routes_conf_version).toEqual(17);
-      expect(resp2_1.data.ssls_conf_version).toEqual(5);
-      expect(resp2_1.data.services_conf_version).toEqual(5);
-      expect(resp2_1.data.upstreams_conf_version).toEqual(5);
-      expect(resp2_1.data.consumers_conf_version).toEqual(5);
-    });
-
     it("update config (not compliant with jsonschema)", async () => {
       const data = structuredClone(config1);
       (data.routes[0].uri as unknown) = 123;
@@ -294,49 +337,6 @@ describe("Admin - Standalone", () => {
       expect(resp.data).toEqual({
         error_msg: "invalid request body: empty request body",
       });
-    });
-
-    it("control resource changes using modifiedIndex", async () => {
-      const c1 = structuredClone(routeWithModifiedIndex);
-      c1.routes[0].modifiedIndex = 1;
-
-      const c2 = structuredClone(c1);
-      c2.routes[0].uri = "/r2";
-
-      const c3 = structuredClone(c2);
-      c3.routes[0].modifiedIndex = 2;
-
-      // Update with c1
-      const resp = await clientException.put(ENDPOINT, c1);
-      expect(resp.status).toEqual(202);
-
-      // Check route /r1 exists
-      const resp_1 = await client.get("/r1");
-      expect(resp_1.status).toEqual(200);
-
-      // Update with c2
-      const resp2 = await clientException.put(ENDPOINT, c2);
-      expect(resp2.status).toEqual(202);
-
-      // Check route /r1 exists
-      const resp2_2 = await client.get("/r1");
-      expect(resp2_2.status).toEqual(200);
-
-      // Check route /r2 not exists
-      const resp2_1 = await client.get("/r2").catch((err) => err.response);
-      expect(resp2_1.status).toEqual(404);
-
-      // Update with c3
-      const resp3 = await clientException.put(ENDPOINT, c3);
-      expect(resp3.status).toEqual(202);
-
-      // Check route /r1 not exists
-      const resp3_1 = await client.get("/r1").catch((err) => err.response);
-      expect(resp3_1.status).toEqual(404);
-
-      // Check route /r2 exists
-      const resp3_2 = await client.get("/r2");
-      expect(resp3_2.status).toEqual(200);
     });
   });
 });
