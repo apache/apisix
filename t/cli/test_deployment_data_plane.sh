@@ -91,7 +91,7 @@ deployment:
         config_provider: etcd
     etcd:
         host:
-            - https://127.0.0.1:12379
+            - http://127.0.0.1:2379
         prefix: "/apisix"
         timeout: 30
         tls:
@@ -108,3 +108,60 @@ fi
 make stop
 
 echo "passed: show warning when data_plane role has write permission to etcd"
+
+
+. ./t/cli/setup_etcd_root.sh setup
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+    etcd:
+        host:
+            - http://127.0.0.1:2379
+        prefix: "/apisix"
+        timeout: 30
+        user: readonly
+        password: readonlypass
+        tls:
+            verify: false
+' > conf/config.yaml
+res=$(make run 2>&1 || true)
+
+# should not show warning when data_plane role has write permission to etcd
+if echo "$res" | grep 'Warning! Data plane role should not have write permission to etcd. '; then
+    echo "failed: should not show warning when data_plane role has write permission to etcd"
+    exit 1
+fi
+make stop
+
+. ./t/cli/setup_etcd_root.sh cleanup
+echo "passed: not show warning when data_plane role doesn't have write permission to etcd"
+
+
+. ./t/cli/setup_etcd_root.sh setup
+echo '
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: etcd
+    etcd:
+        host:
+            - http://127.0.0.1:2379
+        prefix: "/apisix"
+        timeout: 30
+        user: root
+        password: root
+        tls:
+            verify: false
+' > conf/config.yaml
+res=$(make run 2>&1 || true)
+
+if ! echo "$res" | grep 'Warning! Data plane role should not have write permission to etcd. '; then
+    echo "failed: should not show warning when data_plane role has write permission to etcd"
+    exit 1
+fi
+make stop
+
+. ./t/cli/setup_etcd_root.sh cleanup
+echo "passed:  show warning when data_plane role has write permission to etcd"

@@ -18,15 +18,42 @@
 # 'make init' operates scripts and related configuration files in the current directory
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
+#!/bin/bash
+set -euxo pipefail
+setup() {
+  # create root user
+  echo root | etcdctl user add root --interactive=false || true
+  etcdctl role add root || true
+  etcdctl role grant-permission root --prefix=true readwrite /
+  etcdctl user grant-role root root
 
-set -ex
+  # create readonly user
+  echo readonlypass | etcdctl user add readonly --interactive=false || true
+  etcdctl role add readonly || true
+  etcdctl role grant-permission readonly --prefix=true read /
+  etcdctl user grant-role readonly readonly
 
-ETCD_ENDPOINTS="http://127.0.0.1:43799"
-ETCD_USER="root"
-ETCD_PASSWORD="root"
+  # enable auth
+  etcdctl auth enable
+}
 
-echo $ETCD_PASSWORD | etcdctl --endpoints=$ETCD_ENDPOINTS user add $ETCD_USER --interactive=false
-etcdctl --endpoints=$ETCD_ENDPOINTS role add root
-etcdctl --endpoints=$ETCD_ENDPOINTS role grant-permission root --prefix=true readwrite /
-etcdctl --endpoints=$ETCD_ENDPOINTS user grant-role $ETCD_USER root
-etcdctl --endpoints=$ETCD_ENDPOINTS auth enable
+cleanup() {
+  etcdctl --user=root --password=root auth disable
+  etcdctl user delete root
+  etcdctl role delete root
+  etcdctl user delete readonly
+  etcdctl role delete readonly
+}
+
+case "${1:-}" in
+  setup)
+    setup
+    ;;
+  cleanup)
+    cleanup
+    ;;
+  *)
+    echo "Usage: $0 {setup|cleanup}"
+    exit 1
+    ;;
+esac

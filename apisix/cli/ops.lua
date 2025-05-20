@@ -894,7 +894,7 @@ local function start(env, ...)
 
         if(yaml_conf.deployment.role_data_plane.config_provider == "etcd") then
             local ok = etcd.check_etcd_write_permission(yaml_conf)
-            if not ok then
+            if ok then
                 print('Warning! Data plane role should not have write permission to etcd. ')
             end
         end

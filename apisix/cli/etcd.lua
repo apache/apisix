@@ -294,20 +294,25 @@ local function prepare_dirs(yaml_conf, args, index, host, host_count)
 end
 
 
+local function etcd_request(url, method, body, headers, yaml_conf)
+    local response_body = {}
+    local req = {
+        url = url,
+        method = method,
+        source = ltn12.source.string(body),
+        sink = ltn12.sink.table(response_body),
+        headers = headers
+    }
+    local _, code = request(req, yaml_conf)
+    return table.concat(response_body), code
+end
+
 local function check_etcd_write_permission(yaml_conf)
     local etcd_conf = yaml_conf.etcd
-    local headers = {["Content-Type"] = "application/json"}
-    local response_body = {}
-
-    -- check etcd write permission
+    local headers = { ["Content-Type"] = "application/json" }
     local key = (etcd_conf.prefix or "") .. "/check_write_permission"
     local value = "test"
     local host = etcd_conf.host[1]
-    local url = host.. "/v3/kv/put"
-    local req_body = str_format(
-        '{"key":"%s","value":"%s"}',
-        base64_encode(key), base64_encode(value)
-    )
 
     local user = etcd_conf.user
     local password = etcd_conf.password
@@ -317,19 +322,27 @@ local function check_etcd_write_permission(yaml_conf)
             headers["Authorization"] = token
         end
     end
-    local _, code = request({
-        url = url,
-        method = "POST",
-        source = ltn12.source.string(req_body),
-        sink = ltn12.sink.table(response_body),
-        headers = headers
-    }, yaml_conf)
 
-    if code ~= 200 then
-        return true
+    -- put
+    local put_url = host .. "/v3/kv/put"
+    local put_body = str_format('{"key":"%s","value":"%s"}', base64_encode(key), base64_encode(value))
+    etcd_request(put_url, "POST", put_body, headers, yaml_conf)
+
+    -- get
+    local get_url = host .. "/v3/kv/range"
+    local get_body = str_format('{"key":"%s"}', base64_encode(key))
+    local get_res_body, get_code = etcd_request(get_url, "POST", get_body, headers, yaml_conf)
+
+    if get_code == 200 then
+        -- check if the key is set
+        if get_res_body:find("kvs", 1, true) then
+            -- delete
+            local delete_url = host .. "/v3/kv/deleterange"
+            local delete_body = str_format('{"key":"%s"}', base64_encode(key))
+            etcd_request(delete_url, "POST", delete_body, headers, yaml_conf)
+            return true
+        end
     end
-
-    return false
 end
 
 
