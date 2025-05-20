@@ -88,7 +88,7 @@ local function sync_status_to_shdict(status)
 end
 
 
-local function update_config(table, mtime, conf_version)
+local function update_config(table, conf_version)
     if not table then
         log.error("failed update config: empty table")
         return
@@ -101,7 +101,6 @@ local function update_config(table, mtime, conf_version)
     end
 
     apisix_yaml = table
-    apisix_yaml_mtime = mtime
     sync_status_to_shdict(true)
     apisix_yaml_mtime = conf_version
 end
@@ -377,7 +376,7 @@ local function _automatic_fetch(premature, self)
             log.error("failed to decode config from shared dict: ", err)
             goto SKIP_SHARED_DICT
         end
-        _M._update_config(config.conf, nil, config.conf_version)
+        _M._update_config(config.conf, config.conf_version)
         log.info("config loaded from shared dict")
 
         ::SKIP_SHARED_DICT::
