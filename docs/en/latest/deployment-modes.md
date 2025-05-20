@@ -143,7 +143,7 @@ This makes it possible to disable the Admin API and discover configuration chang
 
 ##### Overview
 
-The API-driven mode is an emerging paradigm for standalone deployment. The routing rules are entirely in memory and not in a file, requiring updates through the dedicated Standalone Admin API. Changes overwrite the entire configuration and take effect immediately without requiring a reboot, as it is hot updated.
+API-driven mode is an emerging paradigm for standalone deployment, where routing rules are stored entirely in memory rather than in a configuration file. Updates must be made through the dedicated Standalone Admin API. Each update replaces the full configuration and takes effect immediately through hot updates, without requiring a restart.
 
 ##### Configuration
 
@@ -160,7 +160,7 @@ This disables the local file source of configuration in favor of the API. When A
 
 ##### API Endpoints
 
-* Per-resource-type conf_version
+* `conf_version` by resource type
 
     Use `<resource>_conf_version` to indicate the client’s current version for each resource type (e.g. routes, upstreams, services, etc.).
 
@@ -173,7 +173,7 @@ This disables the local file source of configuration in favor of the API. When A
     }
     ```
 
-    APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type:
+    APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type. If the provided `<resource>_conf_version` is:
 
   - **Greater than** the current `conf_version`
     If your `<resource>_conf_version` is **higher**, APISIX will **rebuild/reset** that resource type’s data to match your payload.
@@ -184,11 +184,11 @@ This disables the local file source of configuration in favor of the API. When A
   - **Less than** the current `conf_version`
     If it is **lower**, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
 
-* modifiedIndex per resource
+* `modifiedIndex` by individual resource
 
-    Allow setting an index for each resource, APISIX compares it to its modifiedIndex to determine whether to accept the update.
+    Allow setting an index for each resource. APISIX compares this index to its modifiedIndex to determine whether to accept the update.
 
-**Example:**
+##### Example
 
 1. get configuration
 
@@ -235,7 +235,7 @@ In APISIX memory, the current configuration is:
     "upstreams_conf_version": 1000,
 }
 
-Due `upstreams_conf_version: 1001` > `upstreams_conf_version: 1000`, APISIX will update the upstreams configuration:
+Update the previous upstreams configuration by setting a higher version number, such as 1001, to replace the current version 1000:
 
 ```shell
 curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
