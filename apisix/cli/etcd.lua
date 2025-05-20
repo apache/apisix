@@ -304,7 +304,7 @@ local function etcd_request(url, method, body, headers, yaml_conf)
         headers = headers
     }
     local _, code = request(req, yaml_conf)
-    return table.concat(response_body), code
+    return table_concat(response_body), code
 end
 
 local function check_etcd_write_permission(yaml_conf)
