@@ -79,11 +79,14 @@ if ($custom_dns_server) {
 
 
 my $events_module = $ENV{TEST_EVENTS_MODULE} // "lua-resty-events";
-my $default_yaml_config = read_file("conf/config-default.yaml");
-# enable example-plugin as some tests require it
-$default_yaml_config =~ s/#- example-plugin/- example-plugin/;
-$default_yaml_config =~ s/enable_export_server: true/enable_export_server: false/;
-$default_yaml_config =~ s/module: lua-resty-events/module: $events_module/;
+my $test_default_config = <<_EOC_;
+    -- read the default configuration, modify it, and the Lua package
+    -- cache will persist it for loading by other entrypoints
+    -- it is used to replace the test::nginx implementation
+    local default_config = require("apisix.cli.config")
+    default_config.plugin_attr.prometheus.enable_export_server = false
+    default_config.apisix.events.module = "$events_module"
+_EOC_
 
 my $user_yaml_config = read_file("conf/config.yaml");
 my $ssl_crt = read_file("t/certs/apisix.crt");
@@ -272,6 +275,7 @@ thread_pool grpc-client-nginx-module threads=1;
 
 lua {
     lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict standalone-config 10m;
 }
 _EOC_
     }
@@ -359,6 +363,8 @@ _EOC_
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.print("stdout: ", stdout)
+                        ngx.print("stderr: ", stderr)
                         return
                     end
                     ngx.print(stdout)
@@ -391,6 +397,7 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
+    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
@@ -429,6 +436,7 @@ _EOC_
 
     $stream_config .= <<_EOC_;
     init_by_lua_block {
+        $test_default_config
         $stream_init_by_lua_block
         $stream_extra_init_by_lua
     }
@@ -460,6 +468,8 @@ _EOC_
     if (defined $stream_enable) {
         $block->set_value("stream_config", $stream_config);
     }
+
+    my $custom_trusted_cert = $block->custom_trusted_cert // 'cert/apisix.crt';
 
     my $stream_server_config = $block->stream_server_config // <<_EOC_;
     listen 2005 ssl;
@@ -552,6 +562,8 @@ _EOC_
     lua_shared_dict plugin-limit-count 10m;
     lua_shared_dict plugin-limit-count-reset-header 10m;
     lua_shared_dict plugin-limit-conn 10m;
+    lua_shared_dict plugin-ai-rate-limiting 10m;
+    lua_shared_dict plugin-ai-rate-limiting-reset-header 10m;
     lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events 10m;
@@ -574,6 +586,7 @@ _EOC_
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict ocsp-stapling 10m;
+    lua_shared_dict mcp-session 10m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;
@@ -621,6 +634,7 @@ _EOC_
     $dubbo_upstream
 
     init_by_lua_block {
+        $test_default_config
         $init_by_lua_block
     }
 
@@ -729,10 +743,10 @@ _EOC_
         listen 1994 quic reuseport;
         listen 1994 ssl;
         http2 on;
-        http3 off;
+        http3 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
-        lua_ssl_trusted_certificate cert/apisix.crt;
+        lua_ssl_trusted_certificate $custom_trusted_cert;
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
@@ -912,8 +926,6 @@ _EOC_
     $user_files .= <<_EOC_;
 >>> ../conf/$debug_file
 $user_debug_config
->>> ../conf/config-default.yaml
-$default_yaml_config
 >>> ../conf/$config_file
 $yaml_config
 >>> ../conf/cert/apisix.crt

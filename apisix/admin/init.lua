@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local get_uri_args = ngx.req.get_uri_args
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
+local standalone = require("apisix.admin.standalone")
 local v3_adapter = require("apisix.admin.v3_adapter")
 local utils = require("apisix.admin.utils")
 local ngx = ngx
@@ -49,6 +50,7 @@ local resources = {
     services        = require("apisix.admin.services"),
     upstreams       = require("apisix.admin.upstreams"),
     consumers       = require("apisix.admin.consumers"),
+    credentials     = require("apisix.admin.credentials"),
     schema          = require("apisix.admin.schema"),
     ssls            = require("apisix.admin.ssl"),
     plugins         = require("apisix.admin.plugins"),
@@ -184,6 +186,12 @@ local function run()
         end
     end
 
+    if seg_res == "consumers" and #uri_segs >= 6 and uri_segs[6] == "credentials" then
+        seg_sub_path = seg_id .. "/" .. seg_sub_path
+        seg_res = uri_segs[6]
+        seg_id = uri_segs[7]
+    end
+
     local resource = resources[seg_res]
     if not resource then
         core.response.exit(404, {error_msg = "Unsupported resource type: ".. seg_res})
@@ -228,7 +236,7 @@ local function run()
 
     if code then
         if method == "get" and plugin.enable_data_encryption then
-            if seg_res == "consumers" then
+            if seg_res == "consumers" or seg_res == "credentials" then
                 utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_CONSUMER)
             elseif seg_res == "plugin_metadata" then
                 utils.decrypt_params(plugin.decrypt_conf, data, core.schema.TYPE_METADATA)
@@ -411,12 +419,21 @@ local function schema_validate()
 end
 
 
+local function standalone_run()
+    set_ctx_and_check_token()
+    return standalone.run()
+end
+
+
+local http_head_route = {
+    paths = [[/apisix/admin]],
+    methods = {"HEAD"},
+    handler = head,
+}
+
+
 local uri_route = {
-    {
-        paths = [[/apisix/admin]],
-        methods = {"HEAD"},
-        handler = head,
-    },
+    http_head_route,
     {
         paths = [[/apisix/admin/*]],
         methods = {"GET", "PUT", "POST", "DELETE", "PATCH"},
@@ -446,13 +463,30 @@ local uri_route = {
 }
 
 
+local standalone_uri_route = {
+    http_head_route,
+    {
+        paths = [[/apisix/admin/configs]],
+        methods = {"GET", "PUT"},
+        handler = standalone_run,
+    },
+}
+
+
 function _M.init_worker()
     local local_conf = core.config.local_conf()
     if not local_conf.apisix or not local_conf.apisix.enable_admin then
         return
     end
 
-    router = route.new(uri_route)
+    local is_yaml_config_provider = local_conf.deployment.config_provider == "yaml"
+
+    if is_yaml_config_provider then
+        router = route.new(standalone_uri_route)
+        standalone.init_worker()
+    else
+        router = route.new(uri_route)
+    end
 
     -- register reload plugin handler
     events = require("apisix.events")
@@ -464,6 +498,10 @@ function _M.init_worker()
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
                 "please enable `admin_key_required` and set a secure admin key!")
+        end
+
+        if is_yaml_config_provider then -- standalone mode does not need sync to etcd
+            return
         end
 
         local ok, err = ngx_timer_at(0, function(premature)

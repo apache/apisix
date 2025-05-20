@@ -37,7 +37,7 @@ ENV_TAR                ?= tar
 ENV_INSTALL            ?= install
 ENV_RM                 ?= rm -vf
 ENV_DOCKER             ?= docker
-ENV_DOCKER_COMPOSE     ?= docker-compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
+ENV_DOCKER_COMPOSE     ?= docker compose --project-directory $(CURDIR) -p $(project_name) -f $(project_compose_ci)
 ENV_NGINX              ?= $(ENV_NGINX_EXEC) -p $(CURDIR) -c $(CURDIR)/conf/nginx.conf
 ENV_NGINX_EXEC         := $(shell command -v openresty 2>/dev/null || command -v nginx 2>/dev/null)
 ENV_OPENSSL_PREFIX     ?= /usr/local/openresty/openssl3
@@ -251,7 +251,6 @@ install: runtime
 	$(ENV_INSTALL) -d /usr/local/apisix/conf/cert
 	$(ENV_INSTALL) conf/mime.types /usr/local/apisix/conf/mime.types
 	$(ENV_INSTALL) conf/config.yaml /usr/local/apisix/conf/config.yaml
-	$(ENV_INSTALL) conf/config-default.yaml /usr/local/apisix/conf/config-default.yaml
 	$(ENV_INSTALL) conf/debug.yaml /usr/local/apisix/conf/debug.yaml
 	$(ENV_INSTALL) conf/cert/* /usr/local/apisix/conf/cert/
 
@@ -305,9 +304,6 @@ install: runtime
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin
 	$(ENV_INSTALL) apisix/plugins/ext-plugin/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ext-plugin/
-
-	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging
-	$(ENV_INSTALL) apisix/plugins/google-cloud-logging/*.lua $(ENV_INST_LUADIR)/apisix/plugins/google-cloud-logging/
 
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode
 	$(ENV_INSTALL) apisix/plugins/grpc-transcode/*.lua $(ENV_INST_LUADIR)/apisix/plugins/grpc-transcode/
@@ -375,6 +371,20 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/utils
 	$(ENV_INSTALL) apisix/utils/*.lua $(ENV_INST_LUADIR)/apisix/utils/
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
+	$(ENV_INSTALL) apisix/plugins/ai-proxy/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-proxy
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-drivers
+	$(ENV_INSTALL) apisix/plugins/ai-drivers/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-drivers
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
+	$(ENV_INSTALL) apisix/plugins/ai-rag/embeddings/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/embeddings
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
+	$(ENV_INSTALL) apisix/plugins/ai-rag/vector-search/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
+
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp
+	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
+
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
 
@@ -427,7 +437,6 @@ compress-tar:
 	./apisix \
 	./bin \
 	./conf \
-	./apisix-$(VERSION)*.rockspec \
 	./apisix-master-0.rockspec \
 	LICENSE \
 	Makefile \

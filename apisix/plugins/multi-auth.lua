@@ -17,6 +17,8 @@
 local core = require("apisix.core")
 local require = require
 local pairs = pairs
+local type = type
+local plugin = require("apisix.plugin")
 
 local schema = {
     type = "object",
@@ -47,10 +49,10 @@ function _M.check_schema(conf)
     local auth_plugins = conf.auth_plugins
     for k, auth_plugin in pairs(auth_plugins) do
         for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
-            local auth = require("apisix.plugins." .. auth_plugin_name)
+            local auth = plugin.get(auth_plugin_name)
             if auth == nil then
                 return false, auth_plugin_name .. " plugin did not found"
-                else
+            else
                 if auth.type ~= 'auth' then
                     return false, auth_plugin_name .. " plugin is not supported"
                 end
@@ -68,24 +70,34 @@ end
 function _M.rewrite(conf, ctx)
     local auth_plugins = conf.auth_plugins
     local status_code
+    local errors = {}
+
     for k, auth_plugin in pairs(auth_plugins) do
         for auth_plugin_name, auth_plugin_conf in pairs(auth_plugin) do
-            local auth = require("apisix.plugins." .. auth_plugin_name)
+            local auth = plugin.get(auth_plugin_name)
             -- returns 401 HTTP status code if authentication failed, otherwise returns nothing.
-            local auth_code = auth.rewrite(auth_plugin_conf, ctx)
+            local auth_code, err = auth.rewrite(auth_plugin_conf, ctx)
+            if type(err) == "table" then
+                err = err.message  -- compat
+            end
+
             status_code = auth_code
             if auth_code == nil then
                 core.log.debug(auth_plugin_name .. " succeed to authenticate the request")
                 goto authenticated
             else
-                core.log.debug(auth_plugin_name .. " failed to authenticate the request, code: "
-                        .. auth_code)
+                core.table.insert(errors, auth_plugin_name ..
+                        " failed to authenticate the request, code: "
+                        .. auth_code .. ". error: " .. err)
             end
         end
     end
 
     :: authenticated ::
     if status_code ~= nil then
+        for _, error in pairs(errors) do
+            core.log.warn(error)
+        end
         return 401, { message = "Authorization Failed" }
     end
 end

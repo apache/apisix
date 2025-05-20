@@ -20,7 +20,7 @@ local tostring        = tostring
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-local google_oauth    = require("apisix.plugins.google-cloud-logging.oauth")
+local google_oauth    = require("apisix.utils.google-cloud-oauth")
 
 
 local lrucache = core.lrucache.new({
@@ -43,7 +43,7 @@ local schema = {
                     default = "https://oauth2.googleapis.com/token"
                 },
                 -- https://developers.google.com/identity/protocols/oauth2/scopes#logging
-                scopes = {
+                scope = {
                     type = "array",
                     items = {
                         description = "Google OAuth2 Authorization Scopes",
@@ -57,6 +57,15 @@ local schema = {
                         "https://www.googleapis.com/auth/logging.admin",
                         "https://www.googleapis.com/auth/cloud-platform"
                     }
+                },
+                scopes = {
+                    type = "array",
+                    items = {
+                        description = "Google OAuth2 Authorization Scopes",
+                        type = "string",
+                    },
+                    minItems = 1,
+                    uniqueItems = true
                 },
                 entries_uri = {
                     type = "string",
@@ -168,7 +177,9 @@ local function create_oauth_object(conf)
         return nil, err
     end
 
-    return google_oauth:new(auth_conf, conf.ssl_verify)
+    auth_conf.scope = auth_conf.scopes or auth_conf.scope
+
+    return google_oauth.new(auth_conf, conf.ssl_verify)
 end
 
 

@@ -6,7 +6,7 @@ keywords:
   - Plugin
   - BODY TRANSFORMER
   - body-transformer
-description: This document contains information about the Apache APISIX body-transformer Plugin.
+description: The body-transformer Plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
 ---
 
 <!--
@@ -28,34 +28,33 @@ description: This document contains information about the Apache APISIX body-tra
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/body-transformer" />
+</head>
+
 ## Description
 
-This plugin is used to transform the request and/or response body from one
-format to another format, e.g. JSON to XML.
-
-Use cases:
-
-- simple SOAP proxy
-- generic template-based transform, e.g. JSON to JSON, JSON to HTML, XML to YAML
+The `body-transformer` Plugin performs template-based transformations to transform the request and/or response bodies from one format to another, for example, from JSON to JSON, JSON to HTML, or XML to YAML.
 
 ## Attributes
 
-| Name      | Type | Required      | Description |
-| ----------- | ----------- | ----------- | ----------- |
-| `request`      | object       | False      | request body transformation configuration      |
-| `request.input_format`      | string       | False      | request body original format, if not specified, it would be determined from `Content-Type` header.      |
-| `request.template`      | string       | True      | request body transformation template       |
-| `request.template_is_base64`      | boolean       | False    | Set to true if the template is base64 encoded       |
-| `response`      | object       | False      | response body transformation configuration      |
-| `response.input_format`      | string       | False      | response body original format, if not specified, it would be determined from `Content-Type` header.       |
-| `response.template`      | string       | True      | response body transformation template       |
-| `response.template_is_base64`      | boolean       | False     | Set to true if the template is base64 encoded       |
+| Name          | Type    | Required | Default | Valid values | Description                                |
+| ------------- | ------- | -------- | ------- | ------------ | ------------------------------------------ |
+| `request`      | object       | False      | | | Request body transformation configuration.      |
+| `request.input_format`      | string       | False      | | [`xml`,`json`,`encoded`,`args`,`plain`,`multipart`] | Request body original media type. If unspecified, the value would be determined by the `Content-Type` header to apply the corresponding decoder. The `xml` option corresponds to `text/xml` media type. The `json` option corresponds to `application/json` media type. The `encoded` option corresponds to `application/x-www-form-urlencoded` media type. The `args` option corresponds to GET requests. The `plain` option corresponds to `text/plain` media type. The `multipart` option corresponds to `multipart/related` media type. If the media type is neither type, the value would be left unset and the transformation template will be directly applied.      |
+| `request.template`      | string       | True      | | | Request body transformation template. The template uses [lua-resty-template](https://github.com/bungle/lua-resty-template) syntax. See the [template syntax](https://github.com/bungle/lua-resty-template#template-syntax) for more details. You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.    |
+| `request.template_is_base64`      | boolean       | False    | false | | Set to true if the template is base64 encoded.      |
+| `response`      | object       | False      | | | Response body transformation configuration.     |
+| `response.input_format`      | string       | False      | | [`xml`,`json`] | Response body original media type. If unspecified, the value would be determined by the `Content-Type` header to apply the corresponding decoder. If the media type is neither `xml` nor `json`, the value would be left unset and the transformation template will be directly applied.       |
+| `response.template`      | string       | True      | | | Response body transformation template.       |
+| `response.template_is_base64`      | boolean       | False     | false | | Set to true if the template is base64 encoded.       |
 
-## Enable Plugin
+## Examples
 
-You can enable the Plugin on a specific Route as shown below:
+The examples below demonstrate how you can configure `body-transformer` for different scenarios.
 
 :::note
+
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
@@ -64,122 +63,28 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
+The transformation template uses [lua-resty-template](https://github.com/bungle/lua-resty-template) syntax. See the [template syntax](https://github.com/bungle/lua-resty-template#template-syntax) to learn more.
+
+You can also use auxiliary functions `_escape_json()` and `_escape_xml()` to escape special characters such as double quotes, `_body` to access request body, and `_ctx` to access context variables.
+
+In all cases, you should ensure that the transformation template is a valid JSON string.
+
+### Transform between JSON and XML SOAP
+
+The following example demonstrates how to transform the request body from JSON to XML and the response body from XML to JSON when working with a SOAP Upstream service.
+
+Start the sample SOAP service:
+
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["POST"],
-    "uri": "/ws",
-    "plugins": {
-        "body-transformer": {
-            "request": {
-                "template": "..."
-            },
-            "response": {
-                "template": "..."
-            }
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "localhost:8080": 1
-        }
-    }
-}'
-```
-
-## Configuration description
-
-The `request` and `response` correspond to configurations of request body and response body transformation perspectively.
-
-Specify one of them, or both of them, to fit your need.
-
-`request`/`response`:
-
-* `input_format` specifies the body original format:
-  * `xml` (`text/xml`)
-  * `json` (`application/json`)
-* `template` specifies the [template](https://github.com/bungle/lua-resty-template) text used by transformation.
-
-**Notes:**
-
-`{{ ... }}` in lua-resty-template will do html-escape, e.g. space character, so if it's not what you wish, use `{* ... *}` instead.
-
-If you do not specify `input_format` and no `Content-Type` header, or body is `nil`, then this plugin will not parse the body before template rendering.
-In any case, you could access body string via `{{ _body }}`.
-
-This is useful for below use cases:
-
-* you wish to generate body from scratch based on Nginx/APISIX variables, even if the original body is `nil`.
-* you wish to parse the body string yourself in the template via other lua modules, e.g. parse protobuf.
-
-For example, parse YAML to JSON yourself:
-
-```
-{%
-    local yaml = require("lyaml")
-    local body = yaml.load(_body)
-%}
-{"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
-```
-
-You must ensure `template` is a valid JSON string, i.e. you need to take care of special characters escape, e.g. double quote.
-If it's cumbersome to escape big text file or complex file, you could use encode your template text file in base64 format instead.
-
-For example, you could use `base64` command to encode your template text file:
-
-```bash
-curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["POST"],
-    "uri": "/ws",
-    "plugins": {
-        "body-transformer": {
-            "request": {
-                "template": "'"$(base64 -w0 /path/to/my_template_file)"'"
-            }
-        }
-    },
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "localhost:8080": 1
-        }
-    }
-}'
-```
-
-In `template`, you can use below auxiliary functions to escape string to fit specific format:
-
-* `_escape_json()`
-* `_escape_xml()`
-
-Note that `_escape_json()` would double quote the value of string type, so don't repeat double-quote in the template, e.g. `{"foobar":{*_escape_json(name)*}}`.
-
-And, you can refer to `_ctx` to access nginx request context, e.g. `{{ _ctx.var.status }}`.
-
-## Example
-
-Let's take a simple SOAP proxy as example.
-
-* from downstream to upstream, it transforms the request body from JSON to XML
-* from upstream to downstream, it transforms the response body from XML to JSON
-  * the response `template` distinguishes the normal response from the fault response
-
-### Run a test web service server
-
-```bash
 cd /tmp
 git clone https://github.com/spring-guides/gs-soap-service.git
-cd gs-soap-service
+cd gs-soap-service/complete
 ./mvnw spring-boot:run
 ```
 
-### Test
+Create the request and response transformation templates:
 
-```bash
+```shell
 req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
 <?xml version="1.0"?>
 <soap-env:Envelope xmlns:soap-env="http://schemas.xmlsoap.org/soap/envelope/">
@@ -195,63 +100,92 @@ EOF
 rsp_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1' | awk '{$1=$1};1' | tr -d '\r\n'
 {% if Envelope.Body.Fault == nil then %}
 {
-   "status":"{{_ctx.var.status}}",
-   "currency":"{{Envelope.Body.getCountryResponse.country.currency}}",
-   "population":{{Envelope.Body.getCountryResponse.country.population}},
-   "capital":"{{Envelope.Body.getCountryResponse.country.capital}}",
-   "name":"{{Envelope.Body.getCountryResponse.country.name}}"
+  "status":"{{_ctx.var.status}}",
+  "currency":"{{Envelope.Body.getCountryResponse.country.currency}}",
+  "population":{{Envelope.Body.getCountryResponse.country.population}},
+  "capital":"{{Envelope.Body.getCountryResponse.country.capital}}",
+  "name":"{{Envelope.Body.getCountryResponse.country.name}}"
 }
 {% else %}
 {
-   "message":{*_escape_json(Envelope.Body.Fault.faultstring[1])*},
-   "code":"{{Envelope.Body.Fault.faultcode}}"
-   {% if Envelope.Body.Fault.faultactor ~= nil then %}
-   , "actor":"{{Envelope.Body.Fault.faultactor}}"
-   {% end %}
+  "message":{*_escape_json(Envelope.Body.Fault.faultstring[1])*},
+  "code":"{{Envelope.Body.Fault.faultcode}}"
+  {% if Envelope.Body.Fault.faultactor ~= nil then %}
+  , "actor":"{{Envelope.Body.Fault.faultactor}}"
+  {% end %}
 }
 {% end %}
 EOF
 )
+```
 
-curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H "X-API-KEY: $admin_key" -X PUT -d '
-{
+`awk` and `tr` are used above to manipulate the template such that the template would be a valid JSON string.
+
+Create a Route with `body-transformer` using the templates created previously. In the Plugin, set the request input format as JSON, the response input format as XML, and the `Content-Type` header to `text/xml` for the Upstream service to respond properly:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
     "methods": ["POST"],
     "uri": "/ws",
     "plugins": {
-        "proxy-rewrite": {
-            "headers": {
-                "set": {
-                    "Accept-Encoding": "identity",
-                    "Content-Type": "text/xml"
-                }
-            }
+      "body-transformer": {
+        "request": {
+          "template": "'"$req_template"'",
+          "input_format": "json"
         },
-        "response-rewrite": {
-            "headers": {
-                "set": {
-                    "Content-Type": "application/json"
-                }
-            }
-        },
-        "body-transformer": {
-            "request": {
-                "template": "'"$req_template"'"
-            },
-            "response": {
-                "template": "'"$rsp_template"'"
-            }
+        "response": {
+          "template": "'"$rsp_template"'",
+          "input_format": "xml"
         }
+      },
+      "proxy-rewrite": {
+        "headers": {
+          "set": {
+            "Content-Type": "text/xml"
+          }
+        }
+      }
     },
     "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "localhost:8080": 1
-        }
+      "type": "roundrobin",
+      "nodes": {
+        "localhost:8080": 1
+      }
     }
-}'
+  }'
+```
 
-curl -s http://127.0.0.1:9080/ws -H 'content-type: application/json' -X POST -d '{"name": "Spain"}' | jq
+:::tip
+
+If it is cumbersome to adjust complex text files to be valid transformation templates, you can use the base64 utility to encode the files, such as the following:
+
+```json
+"body-transformer": {
+  "request": {
+    "template": "'"$(base64 -w0 /path/to/request_template_file)"'"
+  },
+  "response": {
+    "template": "'"$(base64 -w0 /path/to/response_template_file)"'"
+  }
+}
+```
+
+:::
+
+Send a request with a valid JSON body:
+
+```shell
+curl "http://127.0.0.1:9080/ws" -X POST -d '{"name": "Spain"}'
+```
+
+The JSON body sent in the request will be transformed into XML before being forwarded to the Upstream SOAP service, and the response body will be transformed back from XML to JSON.
+
+You should see a response similar to the following:
+
+```json
 {
   "status": "200",
   "currency": "EUR",
@@ -259,31 +193,417 @@ curl -s http://127.0.0.1:9080/ws -H 'content-type: application/json' -X POST -d 
   "capital": "Madrid",
   "name": "Spain"
 }
+```
 
-# Fault response
-curl -s http://127.0.0.1:9080/ws -H 'content-type: application/json' -X POST -d '{"name": "Spain"}' | jq
+### Modify Request Body
+
+The following example demonstrates how to dynamically modify the request body.
+
+Create a Route with `body-transformer`, in which the template appends the word `world` to the `name` and adds `10` to the `age` to set them as values to `foo` and `bar` respectively:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "template": "{\"foo\":\"{{name .. \" world\"}}\",\"bar\":{{age+10}}}"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/json" \
+  -d '{"name":"hello","age":20}' \
+  -i
+```
+
+You should see a response of the following:
+
+```json
 {
-  "message": "Your name is required.",
-  "code": "SOAP-ENV:Server"
+  "args": {},
+  "data": "{\"foo\":\"hello world\",\"bar\":30}",
+  ...
+  "json": {
+    "bar": 30,
+    "foo": "hello world"
+  },
+  "method": "POST",
+  ...
 }
 ```
 
-## Delete Plugin
+### Generate Request Body Using Variables
 
-To remove the `body-transformer` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
+The following example demonstrates how to generate request body dynamically using the `ctx` context variables.
+
+Create a Route with `body-transformer`, in which the template accesses the request argument using the [Nginx variable](https://nginx.org/en/docs/http/ngx_http_core_module.html) `arg_name`:
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/test_ws \
-    -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "methods": ["POST"],
-    "uri": "/ws",
-    "plugins": {},
-    "upstream": {
-        "type": "roundrobin",
-        "nodes": {
-            "localhost:8080": 1
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "template": "{\"foo\":\"{{_ctx.var.arg_name .. \" world\"}}\"}"
         }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
     }
-}'
+  }'
+```
+
+Send a request to the Route with `name` argument:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything?name=hello"
+```
+
+You should see a response like this:
+
+```json
+{
+  "args": {
+    "name": "hello"
+  },
+  ...,
+  "json": {
+    "foo": "hello world"
+  },
+...
+}
+```
+
+### Transform Body from YAML to JSON
+
+The following example demonstrates how to transform request body from YAML to JSON.
+
+Create the request transformation template:
+
+```shell
+req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1'
+{%
+    local yaml = require("tinyyaml")
+    local body = yaml.parse(_body)
+%}
+{"foobar":"{{body.foobar.foo .. " " .. body.foobar.bar}}"}
+EOF
+)
+```
+
+Create a Route with `body-transformer` that uses the template:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "template": "'"$req_template"'"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route with a YAML body:
+
+```shell
+body='
+foobar:
+  foo: hello
+  bar: world'
+
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -d "$body" \
+  -H "Content-Type: text/yaml" \
+  -i
+```
+
+You should see a response similar to the following, which verifies that the YAML body was appropriately transformed to JSON:
+
+```json
+{
+  "args": {},
+  "data": "{\"foobar\":\"hello world\"}",
+  ...
+  "json": {
+    "foobar": "hello world"
+  },
+...
+}
+```
+
+### Transform Form URL Encoded Body to JSON
+
+The following example demonstrates how to transform `form-urlencoded` body to JSON.
+
+Create a Route with `body-transformer` which sets the `input_format` to `encoded` and configures a template that appends string `world` to the `name` input, add `10` to the `age` input:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "input_format": "encoded",
+          "template": "{\"foo\":\"{{name .. \" world\"}}\",\"bar\":{{age+10}}}"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a POST request to the Route with an encoded body:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d 'name=hello&age=20'
+```
+
+You should see a response similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "{\"foo\":\"hello world\",\"bar\":30}": ""
+  },
+  "headers": {
+    ...
+  },
+  ...
+}
+```
+
+### Transform GET Request Query Parameter to Body
+
+The following example demonstrates how to transform a GET request query parameter to request body. Note that this does not transform the HTTP method. To transform the method, see [`proxy-rewrite`](./proxy-rewrite.md).
+
+Create a Route with `body-transformer`, which sets the `input_format` to `args` and configures a template that adds a message to the request:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "input_format": "args",
+          "template": "{\"message\": \"hello {{name}}\"}"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a GET request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything?name=john"
+```
+
+You should see a response similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "{\"message\": \"hello john\"}",
+  "files": {},
+  "form": {},
+  "headers": {
+    ...
+  },
+  "json": {
+    "message": "hello john"
+  },
+  "method": "GET",
+  ...
+}
+```
+
+### Transform Plain Media Type
+
+The following example demonstrates how to transform requests with `plain` media type.
+
+Create a Route with `body-transformer`, which sets the `input_format` to `plain` and configures a template to remove `not` and a subsequent space from the body string:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "input_format": "plain",
+          "template": "{\"message\": \"{* string.gsub(_body, \"not \", \"\") *}\"}"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a POST request to the Route:
+
+```shell
+curl "http://127.0.0.1:9080/anything" -X POST \
+  -d 'not actually json' \
+  -i
+```
+
+You should see a response similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "{\"message\": \"actually json\"}": ""
+  },
+  "headers": {
+    ...
+  },
+  ...
+}
+```
+
+### Transform Multipart Media Type
+
+The following example demonstrates how to transform requests with `multipart` media type.
+
+Create a request transformation template which adds a `status` to the body based on the `age` provided in the request body:
+
+```shell
+req_template=$(cat <<EOF | awk '{gsub(/"/,"\\\"");};1'
+{%
+  local core = require 'apisix.core'
+  local cjson = require 'cjson'
+
+  if tonumber(context.age) > 18 then
+      context._multipart:set_simple("status", "adult")
+  else
+      context._multipart:set_simple("status", "minor")
+  end
+
+  local body = context._multipart:tostring()
+%}{* body *}
+EOF
+)
+```
+
+Create a Route with `body-transformer`, which sets the `input_format` to `multipart` and uses the previously created request template for transformation:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "body-transformer-route",
+    "uri": "/anything",
+    "plugins": {
+      "body-transformer": {
+        "request": {
+          "input_format": "multipart",
+          "template": "'"$req_template"'"
+        }
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a multipart POST request to the Route:
+
+```shell
+curl -X POST \
+  -F "name=john" \
+  -F "age=10" \
+  "http://127.0.0.1:9080/anything"
+```
+
+You should see a response similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "age": "10",
+    "name": "john",
+    "status": "minor"
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "361",
+    "Content-Type": "multipart/form-data; boundary=------------------------qtPjk4c8ZjmGOXNKzhqnOP",
+    ...
+  },
+  ...
+}
 ```

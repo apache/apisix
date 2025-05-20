@@ -257,6 +257,20 @@ local function do_run_watch(premature)
         end
 
         local rev = tonumber(res.result.header.revision)
+        if rev == nil then
+            log.warn("receive a invalid revision header, header: ", inspect(res.result.header))
+            cancel_watch(http_cli)
+            break
+        end
+
+        if rev < watch_ctx.rev then
+            log.error("received smaller revision, rev=", rev, ", watch_ctx.rev=",
+                      watch_ctx.rev,". etcd may be restarted. resyncing....")
+            watch_ctx.rev = rev
+            produce_res(nil, "restarted")
+            cancel_watch(http_cli)
+            break
+        end
         if rev > watch_ctx.rev then
             watch_ctx.rev = rev + 1
         end
@@ -284,7 +298,8 @@ local function run_watch(premature)
 
     local ok, err = ngx_thread_wait(run_watch_th, check_worker_th)
     if not ok then
-        log.error("check_worker thread terminates failed, retart checker, error: " .. err)
+        log.error("run_watch or check_worker thread terminates failed",
+                        " restart those threads, error: ", inspect(err))
     end
 
     ngx_thread_kill(run_watch_th)
@@ -538,7 +553,7 @@ local function load_full_data(self, dir_res, headers)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item.value)
+                data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item.value))
@@ -563,6 +578,7 @@ local function load_full_data(self, dir_res, headers)
     end
 
     if headers then
+        self.prev_index = tonumber(headers["X-Etcd-Index"]) or 0
         self:upgrade_version(headers["X-Etcd-Index"])
     end
 
@@ -627,7 +643,7 @@ local function sync_data(self)
     log.info("res: ", json.delay_encode(dir_res, true), ", err: ", err)
 
     if not dir_res then
-        if err == "compacted" then
+        if err == "compacted" or err == "restarted" then
             self.need_reload = true
             log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
@@ -671,13 +687,13 @@ local function sync_data(self)
                 log.error("failed to check item data of [", self.key,
                           "] err:", err, " ,val: ", json.encode(res.value))
             end
+        end
 
-            if data_valid and self.checker then
-                data_valid, err = self.checker(res.value)
-                if not data_valid then
-                    log.error("failed to check item data of [", self.key,
-                              "] err:", err, " ,val: ", json.delay_encode(res.value))
-                end
+        if data_valid and res.value and self.checker then
+            data_valid, err = self.checker(res.value, res.key)
+            if not data_valid then
+                log.error("failed to check item data of [", self.key,
+                          "] err:", err, " ,val: ", json.delay_encode(res.value))
             end
         end
 
@@ -847,7 +863,7 @@ local function _automatic_fetch(premature, self)
                             i = i + 1
                             ngx_sleep(backoff_duration)
                             _, err = sync_data(self)
-                            if not err or not string.find(err, err_etcd_unhealthy_all) then
+                            if not err or not core_str.find(err, err_etcd_unhealthy_all) then
                                 log.warn("reconnected to etcd")
                                 reconnected = true
                                 break

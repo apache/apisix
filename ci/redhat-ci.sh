@@ -31,7 +31,7 @@ install_dependencies() {
 
     # install newer curl
     yum makecache
-    yum install -y libnghttp2-devel
+    yum install -y xz
     install_curl
 
     # install apisix-runtime to make apisix's rpm test work
@@ -76,6 +76,8 @@ install_dependencies() {
 
     yum install -y iproute procps
     start_grpc_server_example
+
+    start_sse_server_example
 
     # installing grpcurl
     install_grpcurl

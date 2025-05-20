@@ -472,3 +472,60 @@ hello world
     }
 --- error_log
 "body":"hello world\n"
+
+
+
+=== TEST 16: set incorrect plugin metadata, should have error log
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local key = "/plugin_metadata/sls-logger"
+            local val = {
+                id = "sls-logger",
+                log_format = "bad plugin metadata"
+            }
+            local _, err = core.etcd.set(key, val)
+            if err then
+                ngx.say(err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- error_log
+sync_data(): failed to check item data of [/apisix/plugin_metadata]
+failed to check the configuration of plugin sls-logger
+
+
+
+=== TEST 17: set correct plugin metadata, should no error log
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local key = "/plugin_metadata/sls-logger"
+            local val = {
+                id = "sls-logger",
+                log_format = {
+                    host = "$host",
+                    client_ip = "$remote_addr"
+                }
+            }
+            local _, err = core.etcd.set(key, val)
+            if err then
+                ngx.say(err)
+                return
+            end
+            ngx.say("done")
+        }
+    }
+--- request
+GET /t
+--- response_body
+done
+--- no_error_log

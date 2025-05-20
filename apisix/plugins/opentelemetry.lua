@@ -55,7 +55,7 @@ local lrucache = core.lrucache.new({
 
 local asterisk = string.byte("*", 1)
 
-local attr_schema = {
+local metadata_schema = {
     type = "object",
     properties = {
         trace_id_source = {
@@ -192,18 +192,26 @@ local _M = {
     priority = 12009,
     name = plugin_name,
     schema = schema,
-    attr_schema = attr_schema,
+    metadata_schema = metadata_schema,
 }
 
 
-function _M.check_schema(conf)
+function _M.check_schema(conf, schema_type)
+    if schema_type == core.schema.TYPE_METADATA then
+        local ok, err = core.schema.check(metadata_schema, conf)
+        if not ok then
+            return ok, err
+        end
+        local check = {"collector.address"}
+        core.utils.check_https(check, conf, plugin_name)
+        return true
+    end
     return core.schema.check(schema, conf)
 end
 
 
 local hostname
 local sampler_factory
-local plugin_info
 
 function _M.init()
     if process.type() ~= "worker" then
@@ -217,25 +225,16 @@ function _M.init()
         trace_id_ratio = trace_id_ratio_sampler_new,
     }
     hostname = core.utils.gethostname()
+end
 
-    plugin_info = plugin.plugin_attr(plugin_name) or {}
-    local ok, err = core.schema.check(attr_schema, plugin_info)
-    if not ok then
-        core.log.error("failed to check the plugin_attr[", plugin_name, "]",
-                ": ", err)
-        return
-    end
 
+local function create_tracer_obj(conf, plugin_info)
     if plugin_info.trace_id_source == "x-request-id" then
         id_generator.new_ids = function()
             local trace_id = core.request.headers()["x-request-id"] or ngx_var.request_id
             return trace_id, id_generator.new_span_id()
         end
     end
-end
-
-
-local function create_tracer_obj(conf)
     -- create exporter
     local exporter = otlp_exporter_new(exporter_client_new(plugin_info.collector.address,
                                                             plugin_info.collector.request_timeout,
@@ -308,9 +307,17 @@ end
 
 
 function _M.rewrite(conf, api_ctx)
+    local metadata = plugin.plugin_metadata(plugin_name)
+    if metadata == nil then
+        core.log.warn("plugin_metadata is required for opentelemetry plugin to working properly")
+        return
+    end
+    core.log.info("metadata: ", core.json.delay_encode(metadata))
+    local plugin_info = metadata.value
     local vars = api_ctx.var
 
-    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil, create_tracer_obj, conf)
+    local tracer, err = core.lrucache.plugin_ctx(lrucache, api_ctx, nil,
+                                                create_tracer_obj, conf, plugin_info)
     if not tracer then
         core.log.error("failed to fetch tracer object: ", err)
         return

@@ -49,6 +49,8 @@ local _M = {
 }
 
 function _M.check_schema(conf)
+    local check = {"idp_uri"}
+    core.utils.check_https(check, conf, plugin_name)
     return core.schema.check(schema, conf)
 end
 

@@ -27,6 +27,7 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
 });
 
 run_tests;
@@ -174,7 +175,12 @@ hello world
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {
@@ -257,30 +263,18 @@ hello world
                 ngx.say(body)
             end
 
-            -- resgiter jwt sign api
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-            end
-
-            -- get JWT token
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=test-jwt-a',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
+            local auth_conf = {
+                exp = 1,
+                algorithm = "HS256",
+                base64_secret = false,
+                secret = "test-jwt-secret",
+                key = "test-jwt-a"
+            }
+            local sign = gen_token(auth_conf)
+            if not sign then
+                ngx.status = 500
+                ngx.say("failed to gen_token")
             end
 
             -- verify JWT token
@@ -339,7 +333,12 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                                     [[G70MOLYvGCZxl1o8S3q4X67MxcPlfJaXnbog2AOOGRaFar88XiLFWTbXMCLuz7xD\n]] ..
                                     [[zQIDAQAB\n]] ..
                                     [[-----END PUBLIC KEY-----",
-                                "token_signing_alg_values_expected": "RS256"
+                                "token_signing_alg_values_expected": "RS256",
+                                "claim_validator": {
+                                    "issuer": {
+                                        "valid_issuers": ["Mysoft corp"]
+                                    }
+                                }
                             }
                         },
                         "upstream": {
@@ -423,30 +422,20 @@ qr/ailed to verify jwt: 'exp' claim expired at/
                 ngx.say(body)
             end
 
-            -- resgiter jwt sign api
-            local code, body = t('/apisix/admin/routes/2',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "public-api": {}
-                        },
-                        "uri": "/apisix/plugin/jwt/sign"
-                 }]]
-            )
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-            end
-
             -- get JWT token
-            local code, err, sign = t('/apisix/plugin/jwt/sign?key=test-jwt-a',
-                ngx.HTTP_GET
-            )
-
-            if code > 200 then
-                ngx.status = code
-                ngx.say(err)
-                return
+            local gen_token = require("lib.apisix.plugins.jwt-auth").gen_token
+            local auth_conf = {
+                exp = 1,
+                algorithm = "HS256",
+                base64_secret = false,
+                secret = "test-jwt-secret",
+                key = "test-jwt-a",
+                lifetime_grace_period = 2
+            }
+            local sign = gen_token(auth_conf)
+            if not sign then
+                ngx.status = 500
+                ngx.say("failed to gen_token")
             end
 
             -- verify JWT token

@@ -23,6 +23,9 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.12.0](#3120)
+- [3.11.0](#3110)
+- [3.10.0](#3100)
 - [3.9.0](#390)
 - [3.8.0](#380)
 - [3.7.0](#370)
@@ -75,6 +78,147 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.12.0
+
+### Change
+
+- replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
+- add expiration time for all Prometheus metrics [#11838](https://github.com/apache/apisix/pull/11838)
+- allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
+- refactor: ai-content-moderation to ai-aws-content-moderation (#12010)
+- rectify business logic/code in ai-proxy [#12055](https://github.com/apache/apisix/pull/12055)
+
+### Bugfixes
+
+- Fix: resync etcd when a lower revision is found [#12015](https://github.com/apache/apisix/pull/12015)
+- Fix: remove model options' `stream` default value [#12013](https://github.com/apache/apisix/pull/12013)
+- Fix: grpc-web response contains two trailer chunks [#11988](https://github.com/apache/apisix/pull/11988)
+- Fix: event_id is nil in chaitin-waf [#11651](https://github.com/apache/apisix/pull/11651)
+- Fix: race condition problem while update upstream.nodes [#11916](https://github.com/apache/apisix/pull/11916)
+- Fix: `upstream_obj.upstream` should not be a string [#11932](https://github.com/apache/apisix/pull/11932)
+- Fix: query params in override.endpoint not being sent to LLMs [#11863](https://github.com/apache/apisix/pull/11863)
+- Fix: corrupt data in routes() response due to healthchecker data [#11844](https://github.com/apache/apisix/pull/11844)
+- Fix: deepcopy should copy same table exactly only once [#11861](https://github.com/apache/apisix/pull/11861)
+- Fix: disallow empty key configuration attributes [#11852](https://github.com/apache/apisix/pull/11852)
+- Fix: etcd watch restart when receive invalid revision [#11833](https://github.com/apache/apisix/pull/11833)
+- Fix: missing parsed_url nil check [#11637](https://github.com/apache/apisix/pull/11637)
+- Fix: use `plugin.get` to fetch plugin configured in multi-auth plugin [#11794](https://github.com/apache/apisix/pull/11794)
+- Fix: allow special characters in uri params [#11788](https://github.com/apache/apisix/pull/11788)
+- Fix: add nil check to conf in body-transformer [#11768](https://github.com/apache/apisix/pull/11768)
+- Fix: use max_req_body_bytes field in custom_format [#11771](https://github.com/apache/apisix/pull/11771)
+- Fix: health checker can't be released due to health parent being released early [#11760](https://github.com/apache/apisix/pull/11760)
+- Fix: use right modifiedIndex for consumer when use credential [#11649](https://github.com/apache/apisix/pull/11649)
+
+### Core
+
+- upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
+- Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
+- support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
+- support anonymous consumer [#11917](https://github.com/apache/apisix/pull/11917)
+- accelerate the creation of the consumer cache [#11840](https://github.com/apache/apisix/pull/11840)
+- replace 'string.find' with 'core.string.find' [#11886](https://github.com/apache/apisix/pull/11886)
+- workflow plugin registration [#11832](https://github.com/apache/apisix/pull/11832)
+
+### Plugins
+
+- refactor ai-proxy and ai-proxy-multi [#12030](https://github.com/apache/apisix/pull/12030)
+- support embeddings API [#12062](https://github.com/apache/apisix/pull/12062)
+- implement rate limiting based fallback strategy [#12047](https://github.com/apache/apisix/pull/12047)
+- ai-rate-limiting plugin [#12037](https://github.com/apache/apisix/pull/12037)
+- add `valid_issuers` field in `openid-connect` plugin [#12002](https://github.com/apache/apisix/pull/12002)
+- add ai-prompt-guard plugin [#12008](https://github.com/apache/apisix/pull/12008)
+- add jwt audience validator [#11987](https://github.com/apache/apisix/pull/11987)
+- store JWT in the request context [#11675](https://github.com/apache/apisix/pull/11675)
+- support proxying openai compatible LLMs [#12004](https://github.com/apache/apisix/pull/12004)
+- add `ai-proxy-multi` plugin [#11986](https://github.com/apache/apisix/pull/11986) [#12030](https://github.com/apache/apisix/pull/12030)
+- make rate limiting response header names configurable [#11831](https://github.com/apache/apisix/pull/11831)
+- support mulipart content-type in `body-transformer` [#11767](https://github.com/apache/apisix/pull/11767)
+- plugins in multi-auth returns error instead of logging it [#11775](https://github.com/apache/apisix/pull/11775)
+- support configuring `key_claim_name` [#11772](https://github.com/apache/apisix/pull/11772)
+- add Total request per second panel in grafana dashboard [#11692](https://github.com/apache/apisix/pull/11692)
+- add ai-rag plugin [#11568](https://github.com/apache/apisix/pull/11568)
+- add ai-content-moderation plugin [#11541](https://github.com/apache/apisix/pull/11541)
+- use setmetatable to set hidden variables without effecting serialisation [#11770](https://github.com/apache/apisix/pull/11770)
+
+## 3.11.0
+
+### Change
+
+- remove JWT signing endpoint and no longer require a private key to be uploaded in the jwt-auth plugin. [#11597](https://github.com/apache/apisix/pull/11597)
+- rewrite hmac-auth plugin for usability [#11581](https://github.com/apache/apisix/pull/11581)
+
+### Plugins
+
+- allow configuring keepalive_timeout in splunk-logger [#11611](https://github.com/apache/apisix/pull/11611)
+- add plugin attach-consmer-label [#11604](https://github.com/apache/apisix/pull/11604)
+- ai-proxy plugin [#11499](https://github.com/apache/apisix/pull/11499)
+- ai-prompt-decorator plugin [#11515](https://github.com/apache/apisix/pull/11515)
+- ai-prompt-template plugin [#11517](https://github.com/apache/apisix/pull/11517)
+
+### Bugfixes
+
+- Fix: adjust the position of enums in pb_option_def [#11448](https://github.com/apache/apisix/pull/11448)
+- Fix: encryption/decryption for non-auth plugins in consumer [#11600](https://github.com/apache/apisix/pull/11600)
+- Fix: confusion when substituting ENV in config file [#11545](https://github.com/apache/apisix/pull/11545)
+
+### Core
+
+- support gcp secret manager [#11436](https://github.com/apache/apisix/pull/11436)
+- support aws secret manager [#11417](https://github.com/apache/apisix/pull/11417)
+- add credential resource and include `X-Consumer-Username`, `X-Credential-Identifier`, and `X-Consumer-Custom-ID` headers in requests to upstream services [#11601](https://github.com/apache/apisix/pull/11601)
+
+## 3.10.0
+
+### Change
+
+- remove `core.grpc` module [#11427](https://github.com/apache/apisix/pull/11427)
+- add max req/resp body size attributes [#11133](https://github.com/apache/apisix/pull/11133)
+- autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
+- enable sensitive fields encryption by default [#11076](https://github.com/apache/apisix/pull/11076)
+- support more sensitive fields for encryption [#11095](https://github.com/apache/apisix/pull/11095)
+
+### Plugins
+
+- allow set headers in introspection request [#11090](https://github.com/apache/apisix/pull/11090)
+
+### Bugfixes
+
+- Fix: etcd sync data checker should work [#11457](https://github.com/apache/apisix/pull/11457)
+- Fix: plugin metadata add id value for etcd checker [#11452](https://github.com/apache/apisix/pull/11452)
+- Fix: allow trailing period in SNI and CN for SSL [#11414](https://github.com/apache/apisix/pull/11414)
+- Fix: filter out illegal INT(string) formats [#11367](https://github.com/apache/apisix/pull/11367)
+- Fix: make the message clearer when API key is missing [#11370](https://github.com/apache/apisix/pull/11370)
+- Fix: report consumer username tag in datadog [#11354](https://github.com/apache/apisix/pull/11354)
+- Fix: after updating the header, get the old value from the ctx.var [#11329](https://github.com/apache/apisix/pull/11329)
+- Fix: ssl key rotation caused request failure [#11305](https://github.com/apache/apisix/pull/11305)
+- Fix: validation fails causing etcd events not to be handled correctly [#11268](https://github.com/apache/apisix/pull/11268)
+- Fix: stream route matcher is nil after first match [#11269](https://github.com/apache/apisix/pull/11269)
+- Fix: rectify the way to fetch secret resource by id [#11164](https://github.com/apache/apisix/pull/11164)
+- Fix: multi-auth raise 500 error when use default conf [#11145](https://github.com/apache/apisix/pull/11145)
+- Fix: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
+- Fix: close session in case of error to avoid blocked session [#11089](https://github.com/apache/apisix/pull/11089)
+- Fix: restore `pb.state` appropriately [#11135](https://github.com/apache/apisix/pull/11135)
+- Fix: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
+- Fix: disable features when prometheus plugin is turned off [#11117](https://github.com/apache/apisix/pull/11117)
+- Fix: add post request headers only if auth request method is POST [#11021](https://github.com/apache/apisix/pull/11021)
+- Fix: core.request.header return strings instead of table [#11127](https://github.com/apache/apisix/pull/11127)
+- Fix: brotli partial response [#11087](https://github.com/apache/apisix/pull/11087)
+- Fix: the port value greater than 65535 should not be allowed [#11043](https://github.com/apache/apisix/pull/11043)
+
+### Core
+
+- upgrade openresty version to 1.25.3.2 [#11419](https://github.com/apache/apisix/pull/11419)
+- move config-default.yaml to hardcoded lua file [#11343](https://github.com/apache/apisix/pull/11343)
+- warn log when sending requests to external services insecurely [#11403](https://github.com/apache/apisix/pull/11403)
+- update casbin to 1.41.9 [#11400](https://github.com/apache/apisix/pull/11400)
+- update lua-resty-t1k to 1.1.5 [#11391](https://github.com/apache/apisix/pull/11391)
+- support store ssl.keys ssl.certs in secrets mamager [#11339](https://github.com/apache/apisix/pull/11339)
+- move tinyyaml to lyaml [#11312](https://github.com/apache/apisix/pull/11312)
+- support hcv namespace [#11277](https://github.com/apache/apisix/pull/11277)
+- add discovery k8s dump data interface [#11111](https://github.com/apache/apisix/pull/11111)
+- make fetch_secrets use cache for performance [#11201](https://github.com/apache/apisix/pull/11201)
+- replace 'string.len' with '#' [#11078](https://github.com/apache/apisix/pull/11078)
 
 ## 3.9.0
 

@@ -27,6 +27,11 @@ local plugins_schema = {
     type = "object"
 }
 
+_M.anonymous_consumer_schema = {
+    type = "string",
+    minLength = "1"
+}
+
 local id_schema = {
     anyOf = {
         {
@@ -710,6 +715,20 @@ _M.consumer = {
     additionalProperties = false,
 }
 
+_M.credential = {
+    type = "object",
+    properties = {
+        id = id_schema,
+        plugins = {
+            type = "object",
+            maxProperties = 1,
+        },
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+        desc = desc_def,
+    },
+}
 
 _M.upstream = upstream_schema
 
@@ -1013,8 +1032,15 @@ _M.plugin_injected_schema = {
                 description = "filter determines whether the plugin "..
                                 "needs to be executed at runtime",
                 type  = "array",
-            }
-        }
+            },
+            pre_function = {
+                description = "function to be executed in each phase " ..
+                              "before execution of plugins. The pre_function will have access " ..
+                              "to two arguments: `conf` and `ctx`.",
+                type = "string",
+            },
+        },
+        additionalProperties = false,
     }
 }
 

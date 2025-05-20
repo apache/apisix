@@ -43,6 +43,7 @@ When the Plugin is enabled, APISIX will serialize the request context informatio
 | endpoint.token   | True     |         | Splunk HEC authentication token.                                                                                                                                                 |
 | endpoint.channel | False    |         | Splunk HEC send data channel identifier. Read more: [About HTTP Event Collector Indexer Acknowledgment](https://docs.splunk.com/Documentation/Splunk/8.2.3/Data/AboutHECIDXAck). |
 | endpoint.timeout | False    | 10      | Splunk HEC send data timeout in seconds.                                                                                                                                         |
+| endpoint.keepalive_timeout | False    | 60000      | Keepalive timeout in milliseconds.                                                                                                                                  |
 | ssl_verify       | False    | true    | When set to `true` enables SSL verification as per [OpenResty docs](https://github.com/openresty/lua-nginx-module#tcpsocksslhandshake).                                          |
 | log_format       | False    |  | Log format declared as key value pairs in JSON format. Values only support strings. [APISIX](../apisix-variable.md) or [Nginx](http://nginx.org/en/docs/varindex.html) variables can be used by prefixing the string with `$`. |
 

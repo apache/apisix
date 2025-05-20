@@ -1,5 +1,5 @@
 {
-  "version": "3.9.0",
+  "version": "3.12.0",
   "sidebar": [
     {
       "type": "category",
@@ -49,6 +49,7 @@
         "terminology/api-gateway",
         "terminology/consumer",
         "terminology/consumer-group",
+        "terminology/credential",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -65,6 +66,21 @@
       "type": "category",
       "label": "Plugins",
       "items": [
+        {
+          "type": "category",
+          "label": "AI",
+          "items": [
+            "plugins/ai-proxy",
+            "plugins/ai-proxy-multi",
+            "plugins/ai-rate-limiting",
+            "plugins/ai-prompt-guard",
+            "plugins/ai-aws-content-moderation",
+            "plugins/ai-prompt-decorator",
+            "plugins/ai-prompt-template",
+            "plugins/ai-rag",
+            "plugins/ai-request-rewrite"
+          ]
+        },
         {
           "type": "category",
           "label": "General",
@@ -94,7 +110,8 @@
             "plugins/fault-injection",
             "plugins/mocking",
             "plugins/degraphql",
-            "plugins/body-transformer"
+            "plugins/body-transformer",
+            "plugins/attach-consumer-label"
           ]
         },
         {

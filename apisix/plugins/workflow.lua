@@ -15,7 +15,6 @@
 -- limitations under the License.
 --
 local core        = require("apisix.core")
-local limit_count = require("apisix.plugins.limit-count.init")
 local expr        = require("resty.expr.v1")
 local ipairs      = ipairs
 
@@ -49,7 +48,7 @@ local schema = {
                         }
                     }
                 },
-                required = {"case", "actions"}
+                required = {"actions"}
             }
         }
     },
@@ -93,22 +92,21 @@ local function exit(conf)
 end
 
 
-local function rate_limit(conf, ctx)
-    return limit_count.rate_limit(conf, ctx, "limit-count", 1)
-end
-
 
 local support_action = {
     ["return"] = {
         handler        = exit,
         check_schema   = check_return_schema,
-    },
-    ["limit-count"] = {
-        handler        = rate_limit,
-        check_schema   = limit_count.check_schema,
     }
 }
 
+
+function _M.register(plugin_name, handler, check_schema)
+    support_action[plugin_name] = {
+        handler        = handler,
+        check_schema   = check_schema
+    }
+end
 
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
@@ -117,9 +115,11 @@ function _M.check_schema(conf)
     end
 
     for idx, rule in ipairs(conf.rules) do
-        local ok, err = expr.new(rule.case)
-        if not ok then
-            return false, "failed to validate the 'case' expression: " .. err
+         if rule.case then
+            local ok, err = expr.new(rule.case)
+            if not ok then
+                return false, "failed to validate the 'case' expression: " .. err
+            end
         end
 
         local actions = rule.actions
@@ -143,10 +143,12 @@ end
 
 
 function _M.access(conf, ctx)
-    local match_result
     for _, rule in ipairs(conf.rules) do
-        local expr, _ = expr.new(rule.case)
-        match_result = expr:eval(ctx.var)
+        local match_result = true
+        if rule.case then
+            local expr, _ = expr.new(rule.case)
+            match_result = expr:eval(ctx.var)
+        end
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]

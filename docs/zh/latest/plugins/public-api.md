@@ -4,7 +4,7 @@ keywords:
   - APISIX
   - API 网关
   - Public API
-description: 本文介绍了 public-api 的相关操作，你可以使用 public-api 插件保护你需要暴露的 API 的端点。
+description: public-api 插件公开了一个内部 API 端点，使其可被公开访问。该插件的主要用途之一是公开由其他插件创建的内部端点。
 ---
 
 <!--
@@ -26,159 +26,217 @@ description: 本文介绍了 public-api 的相关操作，你可以使用 public
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/public-api" />
+</head>
+
 ## 描述
 
-`public-api` 插件可用于通过创建路由的方式暴露用户自定义的 API。
-
-你可以通过在路由中添加 `public-api` 插件，来保护**自定义插件为了实现特定功能**而暴露的 API。例如，你可以使用 [`jwt-auth`](./jwt-auth.md) 插件创建一个公共 API 端点 `/apisix/plugin/jwt/sign` 用于 JWT 认证。
-
-:::note 注意
-
-默认情况下，在自定义插件中添加的公共 API 不对外暴露的，你需要手动配置一个路由并启用 `public-api` 插件。
-
-:::
+`public-api` 插件公开了一个内部 API 端点，使其可被公开访问。该插件的主要用途之一是公开由其他插件创建的内部端点。
 
 ## 属性
 
-| 名称  | 类型   | 必选项    | 默认值   | 描述                                                        |
-|------|--------|----------|---------|------------------------------------------------------------|
-| uri  | string | 否       | ""      | 公共 API 的 URI。在设置路由时，使用此属性来配置初始的公共 API URI。 |
+| 名称  | 类型   | 必选项 | 默认值 | 有效值 | 描述 |
+|------|--------|-------|-------|------|------|
+| uri  | string | 否    |    |   | 内部端点的 URI。如果未配置，则暴露路由的 URI。|
 
-## 启用插件
+## 示例
 
-`public-api` 插件需要与授权插件一起配合使用，以下示例分别用到了 [`jwt-auth`](./jwt-auth.md) 插件和 [`key-auth`](./key-auth.md) 插件。
+以下示例展示了如何在不同场景中配置 `public-api`。
 
-### 基本用法
+### 在自定义端点暴露 Prometheus 指标
 
-首先，你需要启用并配置 `jwt-auth` 插件，详细使用方法请参考 [`jwt-auth`](./jwt-auth.md) 插件文档。
+以下示例演示如何禁用默认在端口 `9091` 上暴露端点的 Prometheus 导出服务器，并在 APISIX 用于监听其他客户端请求的端口 `9080` 上，通过新的公共 API 端点暴露 APISIX 的 Prometheus 指标。
 
-然后，使用以下命令在指定路由上启用并配置 `public-api` 插件：
+此外，还会配置路由，使内部端点 `/apisix/prometheus/metrics` 通过自定义端点对外公开。
 
-:::note
+:::caution
 
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+如果收集了大量指标，插件可能会占用大量 CPU 资源用于计算，从而影响正常请求的处理。
 
-```bash
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-```
+为了解决这个问题，APISIX 使用 [特权代理进程](https://github.com/openresty/lua-resty-core/blob/master/lib/ngx/process.md#enable_privileged_agent) ，并将指标计算卸载至独立进程。如果使用配置文件中 `plugin_attr.prometheus.export_addr` 设定的指标端点，该优化将自动生效。但如果通过 `public-api` 插件暴露指标端点，则不会受益于此优化。
 
 :::
 
+在配置文件中禁用 Prometheus 导出服务器，并重新加载 APISIX 以使更改生效：
+
+```yaml
+plugin_attr:
+  prometheus:
+    enable_export_server: false
+```
+
+接下来，创建一个带有 `public-api` 插件的路由，并为 APISIX 指标暴露一个公共 API 端点。你应将路由的 `uri` 设置为自定义端点路径，并将插件的 `uri` 设置为要暴露的内部端点。
+
 ```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
-    -H "X-API-KEY: $admin_key" \
-    -H 'Content-Type: application/json' \
-    -d '{
-    "uri": "/apisix/plugin/jwt/sign",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H 'X-API-KEY: ${admin_key}' \
+  -d '{
+    "id": "prometheus-metrics",
+    "uri": "/prometheus_metrics",
     "plugins": {
-        "public-api": {}
+      "public-api": {
+        "uri": "/apisix/prometheus/metrics"
+      }
     }
-}'
+  }'
 ```
 
-**测试插件**
-
-向配置的 URI 发出访问请求，如果返回一个包含 JWT Token 的响应，则代表插件生效：
+向自定义指标端点发送请求：
 
 ```shell
-curl 'http://127.0.0.1:9080/apisix/plugin/jwt/sign?key=user-key'
+curl http://127.0.0.1:9080/prometheus_metrics
 ```
 
-```shell
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1MzIsImtleSI6InVzZXIta2V5In0.NhrWrO-da4kXezxTLdgFBX2rJA2dF1qESs8IgmwhNd0
+你应看到类似以下的输出：
+
+```text
+# HELP apisix_http_requests_total The total number of client requests since APISIX started
+# TYPE apisix_http_requests_total gauge
+apisix_http_requests_total 1
+# HELP apisix_nginx_http_current_connections Number of HTTP connections
+# TYPE apisix_nginx_http_current_connections gauge
+apisix_nginx_http_current_connections{state="accepted"} 1
+apisix_nginx_http_current_connections{state="active"} 1
+apisix_nginx_http_current_connections{state="handled"} 1
+apisix_nginx_http_current_connections{state="reading"} 0
+apisix_nginx_http_current_connections{state="waiting"} 0
+apisix_nginx_http_current_connections{state="writing"} 1
+...
 ```
 
-### 使用自定义 URI
+### 暴露批量请求端点
 
-首先，你需要启用并配置 `jwt-auth` 插件，详细使用方法请参考 [`jwt-auth`](./jwt-auth.md) 插件文档。
+以下示例展示了如何使用 `public-api` 插件来暴露 `batch-requests` 插件的端点，该插件用于将多个请求组合成一个请求，然后将它们发送到网关。
 
-然后，你可以使用一个自定义的 URI 来暴露 API：
+创建一个样本路由到 httpbin 的 `/anything` 端点，用于验证目的：
 
 ```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
-    -H "X-API-KEY: $admin_key" \
-    -H 'Content-Type: application/json' \
-    -d '{
-    "uri": "/gen_token",
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "httpbin-anything",
+    "uri": "/anything",
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+创建一个带有 `public-api` 插件的路由，并将路由的 `uri` 设置为要暴露的内部端点：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "batch-requests",
+    "uri": "/apisix/batch-requests",
     "plugins": {
-        "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
-        }
+      "public-api": {}
     }
-}'
+  }'
 ```
 
-**测试插件**
-
-向自定义的 URI 发出访问请求，如果返回一个包含 JWT Token 的响应，则代表插件生效：
+向暴露的批量请求端点发送一个包含 GET 和 POST 请求的流水线请求：
 
 ```shell
-curl 'http://127.0.0.1:9080/gen_token?key=user-key'
-```
-
-```shell
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTk0Mjg1NjIsImtleSI6InVzZXIta2V5In0.UVkXWbyGb8ajBNtxs0iAaFb2jTEWIlqTR125xr1ZMLc
-```
-
-### 确保 Route 安全
-
-你可以配合使用 `key-auth` 插件来添加认证，从而确保路由的安全：
-
-```shell
-curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r2' \
-    -H "X-API-KEY: $admin_key" \
-    -H 'Content-Type: application/json' \
-    -d '{
-    "uri": "/gen_token",
-    "plugins": {
-        "public-api": {
-            "uri": "/apisix/plugin/jwt/sign"
-        },
-        "key-auth": {
-            "key": "test-apikey"
-        }
-    }
-}'
-```
-
-**测试插件**
-
-通过上述命令启用插件并添加认证后，只有经过认证的请求才能访问。
-
-发出访问请求并指定 `apikey`，如果返回 `200` HTTP 状态码，则说明请求被允许：
-
-```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key' \
-    -H "apikey: test-apikey"
-```
-
-```shell
-HTTP/1.1 200 OK
-```
-
-发出访问请求，如果返回 `401` HTTP 状态码，则说明请求被阻止，插件生效：
-
-```shell
-curl -i 'http://127.0.0.1:9080/gen_token?key=user-key'
-```
-
-```shell
-HTTP/1.1 401 Unauthorized
-```
-
-## 删除插件
-
-当你需要删除该插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
-
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
+curl "http://127.0.0.1:9080/apisix/batch-requests" -X POST -d '
 {
-  "uri": "/hello",
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "127.0.0.1:1980": 1
+  "pipeline": [
+    {
+      "method": "GET",
+      "path": "/anything"
+    },
+    {
+      "method": "POST",
+      "path": "/anything",
+      "body": "a post request"
     }
-  }
+  ]
 }'
+```
+
+您应该会收到两个请求的响应，类似于以下内容：
+
+```json
+[
+  {
+    "reason": "OK",
+    "body": "{\n  \"args\": {}, \n  \"data\": \"\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"*/*\", \n    \"Host\": \"127.0.0.1\", \n    \"User-Agent\": \"curl/8.6.0\", \n    \"X-Amzn-Trace-Id\": \"Root=1-67b6e33b-5a30174f5534287928c54ca9\", \n    \"X-Forwarded-Host\": \"127.0.0.1\"\n  }, \n  \"json\": null, \n  \"method\": \"GET\", \n  \"origin\": \"192.168.107.1, 43.252.208.84\", \n  \"url\": \"http://127.0.0.1/anything\"\n}\n",
+    "headers": {
+      ...
+    },
+    "status": 200
+  },
+  {
+    "reason": "OK",
+    "body": "{\n  \"args\": {}, \n  \"data\": \"a post request\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"*/*\", \n    \"Content-Length\": \"14\", \n    \"Host\": \"127.0.0.1\", \n    \"User-Agent\": \"curl/8.6.0\", \n    \"X-Amzn-Trace-Id\": \"Root=1-67b6e33b-0eddcec07f154dac0d77876f\", \n    \"X-Forwarded-Host\": \"127.0.0.1\"\n  }, \n  \"json\": null, \n  \"method\": \"POST\", \n  \"origin\": \"192.168.107.1, 43.252.208.84\", \n  \"url\": \"http://127.0.0.1/anything\"\n}\n",
+    "headers": {
+      ...
+    },
+    "status": 200
+  }
+]
+```
+
+如果您希望在自定义端点处暴露批量请求端点，请创建一个带有 `public-api` 插件的路由。您应该将路由的 `uri` 设置为自定义端点路径，并将插件的 uri 设置为要暴露的内部端点。
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${admin_key}" \
+  -d '{
+    "id": "batch-requests",
+    "uri": "/batch-requests",
+    "plugins": {
+      "public-api": {
+        "uri": "/apisix/batch-requests"
+      }
+    }
+  }'
+```
+
+现在批量请求端点应该被暴露为 `/batch-requests`，而不是 `/apisix/batch-requests`。
+向暴露的批量请求端点发送一个包含 GET 和 POST 请求的流水线请求：
+
+```shell
+curl "http://127.0.0.1:9080/batch-requests" -X POST -d '
+{
+  "pipeline": [
+    {
+      "method": "GET",
+      "path": "/anything"
+    },
+    {
+      "method": "POST",
+      "path": "/anything",
+      "body": "a post request"
+    }
+  ]
+}'
+```
+
+您应该会收到两个请求的响应，类似于以下内容：
+
+```json
+[
+  {
+    "reason": "OK",
+    "body": "{\n  \"args\": {}, \n  \"data\": \"\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"*/*\", \n    \"Host\": \"127.0.0.1\", \n    \"User-Agent\": \"curl/8.6.0\", \n    \"X-Amzn-Trace-Id\": \"Root=1-67b6e33b-5a30174f5534287928c54ca9\", \n    \"X-Forwarded-Host\": \"127.0.0.1\"\n  }, \n  \"json\": null, \n  \"method\": \"GET\", \n  \"origin\": \"192.168.107.1, 43.252.208.84\", \n  \"url\": \"http://127.0.0.1/anything\"\n}\n",
+    "headers": {
+      ...
+    },
+    "status": 200
+  },
+  {
+    "reason": "OK",
+    "body": "{\n  \"args\": {}, \n  \"data\": \"a post request\", \n  \"files\": {}, \n  \"form\": {}, \n  \"headers\": {\n    \"Accept\": \"*/*\", \n    \"Content-Length\": \"14\", \n    \"Host\": \"127.0.0.1\", \n    \"User-Agent\": \"curl/8.6.0\", \n    \"X-Amzn-Trace-Id\": \"Root=1-67b6e33b-0eddcec07f154dac0d77876f\", \n    \"X-Forwarded-Host\": \"127.0.0.1\"\n  }, \n  \"json\": null, \n  \"method\": \"POST\", \n  \"origin\": \"192.168.107.1, 43.252.208.84\", \n  \"url\": \"http://127.0.0.1/anything\"\n}\n",
+    "headers": {
+      ...
+    },
+    "status": 200
+  }
+]
 ```

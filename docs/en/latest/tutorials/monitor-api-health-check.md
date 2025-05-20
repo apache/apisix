@@ -120,7 +120,7 @@ To generate some metrics, you try to send few requests to the route we created i
 curl -i -X GET "http://localhost:9080/"
 ```
 
-If you run the above requests a couple of times, you can see from responses that APISX routes some requests to `node1` and others to `node2`. That’s how Gateway load balancing works!
+If you run the above requests a couple of times, you can see from responses that APISIX routes some requests to `node1` and others to `node2`. That’s how Gateway load balancing works!
 
 ```bash
 HTTP/1.1 200 OK

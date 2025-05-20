@@ -119,7 +119,7 @@ Server: APISIX/2.10.2
 Hello, APISIX
 ```
 
-Another example of a request where the client communicates with APISIX via HTTP/2 is shown below (make sure you have configured `enable_http2: true` in your default configuration file (`config-default.yaml`). You can do this by uncommenting the port `9081` from the field `apisix.node_listen`):
+Another example of a request where the client communicates with APISIX via HTTP/2 is shown below. Before proceeding, make sure you have configured `enable_http2: true` in your configuration file `config.yaml` for port `9081` and reloaded APISIX. See [`config.yaml.example`](https://github.com/apache/apisix/blob/master/conf/config.yaml.example) for the example configuration.
 
 ```shell
 curl -i -XGET --http2 --http2-prior-knowledge http://localhost:9081/azure\?name=APISIX

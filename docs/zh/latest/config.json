@@ -1,5 +1,5 @@
 {
-  "version": "3.9.0",
+  "version": "3.12.0",
   "sidebar": [
     {
       "type": "category",
@@ -38,6 +38,7 @@
         "terminology/api-gateway",
         "terminology/consumer",
         "terminology/consumer-group",
+        "terminology/credential",
         "terminology/global-rule",
         "terminology/plugin",
         "terminology/plugin-config",
@@ -80,7 +81,9 @@
             "plugins/grpc-transcode",
             "plugins/grpc-web",
             "plugins/fault-injection",
-            "plugins/mocking"
+            "plugins/mocking",
+            "plugins/body-transformer",
+            "plugins/attach-consumer-label"
           ]
         },
         {
@@ -240,6 +243,10 @@
         {
           "type": "doc",
           "id": "external-plugin"
+        },
+        {
+          "type": "doc",
+          "id": "wasm"
         },
         {
           "type": "doc",
