@@ -110,7 +110,8 @@ make stop
 echo "passed: show warning when data_plane role has write permission to etcd"
 
 
-. ./t/cli/setup_etcd_root.sh setup
+. ./t/cli/setup_etcd_user.sh setup
+
 echo '
 deployment:
     role: data_plane
@@ -126,20 +127,22 @@ deployment:
         tls:
             verify: false
 ' > conf/config.yaml
+
 res=$(make run 2>&1 || true)
 
-# should not show warning when data_plane role has write permission to etcd
 if echo "$res" | grep 'Warning! Data plane role should not have write permission to etcd. '; then
     echo "failed: should not show warning when data_plane role has write permission to etcd"
     exit 1
 fi
+
 make stop
 
-. ./t/cli/setup_etcd_root.sh cleanup
+. ./t/cli/setup_etcd_user.sh cleanup
+
 echo "passed: not show warning when data_plane role doesn't have write permission to etcd"
 
 
-. ./t/cli/setup_etcd_root.sh setup
+. ./t/cli/setup_etcd_user.sh setup
 echo '
 deployment:
     role: data_plane
@@ -163,5 +166,5 @@ if ! echo "$res" | grep 'Warning! Data plane role should not have write permissi
 fi
 make stop
 
-. ./t/cli/setup_etcd_root.sh cleanup
+. ./t/cli/setup_etcd_user.sh cleanup
 echo "passed:  show warning when data_plane role has write permission to etcd"
