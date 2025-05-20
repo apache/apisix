@@ -153,7 +153,7 @@ To enable this mode, set the APISIX role to `traditional` (to start both the API
 deployment:
   role: traditional
   role_traditional:
-    config_provider: yamls
+    config_provider: yaml
 ```
 
 This disables the local file source of configuration in favor of the API. When APISIX starts, it uses an empty configuration until updated via the API.
@@ -175,14 +175,11 @@ This disables the local file source of configuration in favor of the API. When A
 
     APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type. If the provided `<resource>_conf_version` is:
 
-  - **Greater than** the current `conf_version`
-    If your `<resource>_conf_version` is **higher**, APISIX will **rebuild/reset** that resource type’s data to match your payload.
+  - **Greater than** the current `conf_version`, APISIX will **rebuild/reset** that resource type’s data to match your payload.
 
-  - **Equal to** the current `conf_version`
-    If it is **equal**, APISIX treats the resource as **unchanged** and **ignores** it (no data is rebuilt).
+  - **Equal to** the current `conf_version`, APISIX treats the resource as **unchanged** and **ignores** it (no data is rebuilt).
 
-  - **Less than** the current `conf_version`
-    If it is **lower**, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
+  - **Less than** the current `conf_version`, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
 
 * `modifiedIndex` by individual resource
 
@@ -234,7 +231,7 @@ In APISIX memory, the current configuration is:
     "routes_conf_version": 1000,
     "upstreams_conf_version": 1000,
 }
-
+```
 Update the previous upstreams configuration by setting a higher version number, such as 1001, to replace the current version 1000:
 
 ```shell
