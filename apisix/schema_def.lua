@@ -742,6 +742,7 @@ _M.credential = {
             maxProperties = 1,
         },
     },
+    additionalProperties = false,
 }
 
 _M.upstream = upstream_schema
