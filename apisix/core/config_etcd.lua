@@ -69,10 +69,6 @@ local err_etcd_grpc_ngx_timeout = "timeout"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
 local health_check_shm_name = "etcd-cluster-health-check"
 local status_report_shared_dict_name = "status-report"
-if not is_http then
-    health_check_shm_name = health_check_shm_name .. "-stream"
-    status_report_shared_dict_name = status_report_shared_dict_name .. "-stream"
-end
 local created_obj  = {}
 local loaded_configuration = {}
 local watch_ctx

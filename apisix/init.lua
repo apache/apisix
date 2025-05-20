@@ -883,7 +883,7 @@ function _M.status_ready()
                     core.table.try_read_attr(local_conf, "deployment",
                                               "role_data_plane", "config_provider")
     if provider == "yaml" or provider == "etcd" then
-        local status_shdict = ngx.shared["status-report"] or ngx.shared["status-report-stream"]
+        local status_shdict = ngx.shared["status-report"]
         local pids = status_shdict:get_keys()
         local errors = {}
 

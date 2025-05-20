@@ -96,6 +96,7 @@ local _M = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
         ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {
@@ -112,7 +113,6 @@ local _M = {
         ["worker-events-stream"] = "10m",
         ["tars-stream"] = "1m",
         ["upstream-healthcheck-stream"] = "10m",
-        ["status-report-stream"] = "1m",
       }
     },
     main_configuration_snippet = "",
@@ -177,7 +177,6 @@ local _M = {
         ["cas-auth"] = "10m",
         ["ocsp-stapling"] = "10m",
         ["mcp-session"] = "10m",
-        ["status-report"] = "1m",
       }
     }
   },

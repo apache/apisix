@@ -51,10 +51,7 @@ local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
 local shared_dict
 local status_report_shared_dict_name = "status-report"
-local is_http = ngx.config.subsystem == "http"
-if not is_http then
-    status_report_shared_dict_name = status_report_shared_dict_name .. "-stream"
-end
+
 local _M = {
     version = 0.2,
     local_conf = config_local.local_conf,

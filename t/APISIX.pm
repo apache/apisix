@@ -276,6 +276,7 @@ thread_pool grpc-client-nginx-module threads=1;
 lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict standalone-config 10m;
+    lua_shared_dict status-report 1m;
 }
 _EOC_
     }
@@ -403,7 +404,6 @@ _EOC_
     lua_shared_dict kubernetes-first-stream 1m;
     lua_shared_dict kubernetes-second-stream 1m;
     lua_shared_dict tars-stream 1m;
-    lua_shared_dict status-report-stream 1m;
 
     upstream apisix_backend {
         server 127.0.0.1:1900;
@@ -578,7 +578,6 @@ _EOC_
     lua_shared_dict tracing_buffer 10m;    # plugin skywalking
     lua_shared_dict access-tokens 1m;    # plugin authz-keycloak
     lua_shared_dict discovery 1m;    # plugin authz-keycloak
-    lua_shared_dict status-report 1m;
     lua_shared_dict plugin-api-breaker 10m;
     lua_capture_error_log 1m;    # plugin error-log-logger
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check

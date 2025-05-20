@@ -70,6 +70,7 @@ lua {
     {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
     {% end %}
+    lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -153,10 +154,6 @@ stream {
 
     {% if enabled_stream_plugins["limit-conn"] then %}
     lua_shared_dict plugin-limit-conn-stream {* stream.lua_shared_dict["plugin-limit-conn-stream"] *};
-    {% end %}
-
-    {% if stream.lua_shared_dict["status-report-stream"] then %}
-    lua_shared_dict status-report-stream {* stream.lua_shared_dict["status-report-stream"] *};
     {% end %}
 
     # for discovery shared dict
@@ -342,10 +339,6 @@ http {
     {% if enabled_plugins["openid-connect"] or enabled_plugins["authz-keycloak"] then %}
     # for openid-connect and authz-keycloak plugin
     lua_shared_dict discovery {* http.lua_shared_dict["discovery"] *}; # cache for discovery metadata documents
-    {% end %}
-
-    {% if http.lua_shared_dict["status-report"] then %}
-    lua_shared_dict status-report {* http.lua_shared_dict["status-report"] *};
     {% end %}
 
     {% if enabled_plugins["openid-connect"] then %}
