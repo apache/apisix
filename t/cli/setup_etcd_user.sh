@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -18,7 +19,6 @@
 # 'make init' operates scripts and related configuration files in the current directory
 # The 'apisix' command is a command in the /usr/local/apisix,
 # and the configuration file for the operation is in the /usr/local/apisix/conf
-#!/bin/bash
 set -euxo pipefail
 setup() {
   # create root user
