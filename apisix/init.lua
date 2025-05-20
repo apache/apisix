@@ -870,10 +870,7 @@ end
 
 
 function _M.status()
-    core.response.exit(200, core.json.encode({
-        status = "ok" }),
-        { ["Content-Type"] = "application/json"
-    })
+    core.response.exit(200, core.json.encode({ status = "ok" }))
 end
 
 function _M.status_ready()
@@ -895,7 +892,7 @@ function _M.status_ready()
             core.response.exit(503, core.json.encode({
                 status = "error",
                 error = error
-            }), { ["Content-Type"] = "application/json" })
+            }))
             return
         end
         for _, id in ipairs(ids) do
@@ -911,15 +908,12 @@ function _M.status_ready()
         if error then
             core.response.exit(503, core.json.encode({
                 status = "error",
-                errors = error
-            }), { ["Content-Type"] = "application/json" })
+                error = error
+            }))
             return
         end
 
-        core.response.exit(200, core.json.encode({
-            status = "ok" }),
-            { ["Content-Type"] = "application/json"
-        })
+        core.response.exit(200, core.json.encode({ status = "ok" }))
         return
     end
 
