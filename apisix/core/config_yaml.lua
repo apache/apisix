@@ -376,7 +376,7 @@ local function _automatic_fetch(premature, self)
             log.error("failed to decode config from shared dict: ", err)
             goto SKIP_SHARED_DICT
         end
-        _M._update_config(config.conf, config.conf_version)
+        _M._update_config(config, config.conf_version)
         log.info("config loaded from shared dict")
 
         ::SKIP_SHARED_DICT::
