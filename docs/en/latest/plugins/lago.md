@@ -29,17 +29,13 @@ description: The lago plugin reports usage to a Lago instance, which allows user
 #
 -->
 
-<head>
-  <link rel="canonical" href="https://docs.api7.ai/hub/lago" />
-</head>
-
 ## Description
 
 The `lago` plugin pushes requests and responses to [Lago Self-hosted](https://github.com/getlago/lago) and [Lago Cloud](https://getlago.com) via the Lago REST API. the plugin allows you to use it with a variety of APISIX built-in features, such as the APISIX consumer and the request-id plugin.
 
 This allows for API monetization or let APISIX to be an AI gateway for AI tokens billing scenarios.
 
-:::disclaimer
+:::note disclaimer
 
 Lago owns its trademarks and controls its commercial products and open source projects.
 
@@ -211,7 +207,7 @@ In addition to typical API monetization scenarios, APISIX can also do AI tokens-
 Of course, the fact that we make transaction ID, subscription ID as a configuration item and allow you to use APISIX and NGINX variables in it means that it's simple to integrate the plugin with any existing or your own authentication and internal services.
 
 - Use custom authentication: as long as the Lago subscription ID represented by the user ID is registered as an APISIX variable, it will be available from there, so custom authentication is completely possible!
-- Integration with internal services: sometimes you may not need the APISIX built-in `request-id` plugin, it doesn't matter, you can have your internal service (APISIX upstream) generate it and include it in the HTTP response header so that you can access it by way of an NGINX variable in the transaction ID.
+- Integration with internal services: You might not need the APISIX built-in request-id plugin. That's OK. You can have your internal service (APISIX upstream) generate it and include it in the HTTP response header. Then you can access it via an NGINX variable in the transaction ID.
 
 Event properties are supported, allowing you to set special values for specific APIs. For example, if your service has 100 APIs, you can enable general billing for all of them while customizing a few with different pricing—just as demonstrated above.
 
@@ -256,4 +252,4 @@ Technically, the logic is executed in the NGINX log phase and [batch processor](
 
 ### Resource overhead
 
-For the reasons mentioned above in performance impact section, the plugin does not result in a significant resource overhead, it only consumes a few worker memory to buffer events for batching.
+As explained earlier in the performance impact section, the plugin doesn't cause a significant increase in system resources. It only uses a small amount of memory to store events for batching.
