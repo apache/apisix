@@ -325,7 +325,9 @@ local function check_etcd_write_permission(yaml_conf)
 
     -- put
     local put_url = host .. "/v3/kv/put"
-    local put_body = str_format('{"key":"%s","value":"%s"}', base64_encode(key), base64_encode(value))
+    local put_body = str_format('{"key":"%s","value":"%s"}',
+        base64_encode(key),
+        base64_encode(value))
     etcd_request(put_url, "POST", put_body, headers, yaml_conf)
 
     -- get
