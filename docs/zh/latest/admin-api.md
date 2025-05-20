@@ -904,6 +904,7 @@ Credential 资源请求地址：/apisix/admin/consumers/{username}/credentials/{
 | 名称        | 必选项 | 类型     | 描述                    | 示例值                                             |
 | ----------- |-----| ------- |-----------------------| ------------------------------------------------ |
 | plugins     | 是   | Plugin   | 该 Credential 对应的插件配置。 |                                                  |
+| name        | 否   | 辅助     | 消费者 Credential 名     | credential_primary                               |
 | desc        | 否   | 辅助     | Credential 描述。        |                                                  |
 | labels      | 否   | 匹配规则  | 标识附加属性的键值对。           | {"version":"v2","build":"16","env":"production"} |
 
@@ -1275,6 +1276,7 @@ SSL 资源请求地址：/apisix/admin/ssls/{id}
 | client.depth | 否   | 辅助 |  设置客户端证书校验的深度，默认为 1。该特性需要 OpenResty 为 1.19 及以上版本。 |                                             |
 | client.skip_mtls_uri_regex | 否   | PCRE 正则表达式数组 |  用来匹配请求的 URI，如果匹配，则该请求将绕过客户端证书的检查，也就是跳过 MTLS。 | ["/hello[0-9]+", "/foobar"]                                            |
 | snis        | 是   | 匹配规则       | 非空数组形式，可以匹配多个 SNI。                                                                         |                                                  |
+| desc        | 否   | 辅助          | 证书描述。        | certs for production env                                               |
 | labels      | 否   | 匹配规则       | 标识附加属性的键值对。                                                                                   | {"version":"v2","build":"16","env":"production"} |
 | type        | 否   | 辅助           | 标识证书的类型，默认值为 `server`。                                                                     | `client` 表示证书是客户端证书，APISIX 访问上游时使用；`server` 表示证书是服务端证书，APISIX 验证客户端请求时使用。     |
 | status      | 否   | 辅助           | 当设置为 `1` 时，启用此 SSL，默认值为 `1`。                                                               | `1` 表示启用，`0` 表示禁用                       |
@@ -1342,6 +1344,7 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 | 名称      | 必选项  | 类型  | 描述                                          | 示例值 |
 |--------- |--------- |------|----------------------------------------------- |------|
 |plugins  | 是        |Plugin| 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |      |
+|name     | 否        | 辅助 | 消费者组名            | premium-tier                           |
 |desc     | 否        | 辅助 | 标识描述、使用场景等。                          | Consumer 测试。|
 |labels   | 否        | 辅助 | 标识附加属性的键值对。                          |{"version":"v2","build":"16","env":"production"}|
 
@@ -1500,6 +1503,9 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 | 名称             | 必选项 | 类型     | 描述                                                                           | 示例值 |
 | ---------------- | ------| -------- | ------------------------------------------------------------------------------| ------  |
+| name             | 否    | 辅助     | Stream 路由名            | postgres-proxy                                   |
+| desc             | 否    | 辅助     | Stream 路由描述          | proxy endpoint for postgresql                    |
+| labels           | 否    | 匹配规则  | 标识附加属性的键值对。           | {"version":"17","service":"user","env":"production"} |
 | upstream         | 否    | Upstream | Upstream 配置，详细信息请参考 [Upstream](terminology/upstream.md)。             |         |
 | upstream_id      | 否    | Upstream | 需要使用的 Upstream id，详细信息请 [Upstream](terminology/upstream.md)。       |         |
 | service_id       | 否    | String   | 需要使用的 [Service](terminology/service.md) id.                   |                               |
