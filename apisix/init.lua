@@ -879,26 +879,39 @@ end
 function _M.status_ready()
     local local_conf = core.config.local_conf()
     local role = core.table.try_read_attr(local_conf, "deployment", "role")
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" .. role, "config_provider")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
+                                              role, "config_provider")
     if provider == "yaml" or provider == "etcd" then
         local status_shdict = ngx.shared["status-report"]
         local ids = status_shdict:get_keys()
-        local errors = {}
-
+        local error
+        local worker_count = ngx.worker.count()
+       if #ids ~= worker_count then
+            core.log.warn("worker count: ", worker_count, " but status report count: ", #ids)
+            error = "worker count: " .. ngx.worker.count() ..
+            " but status report count: " .. #ids
+        end
+        if error then
+            core.response.exit(503, core.json.encode({
+                status = "error",
+                error = error
+            }), { ["Content-Type"] = "application/json" })
+            return
+        end
         for _, id in ipairs(ids) do
             local ready = status_shdict:get(id)
             if not ready then
-                core.log.warn("worker pid: ", id, " has not received configuration")
-                core.table.insert(errors, "worker pid: " .. id ..
-                                  " has not received configuration")
+                core.log.warn("worker id: ", id, " has not received configuration")
+                error = "worker id: " .. id ..
+                                  " has not received configuration"
                 break
             end
         end
 
-        if #errors > 0 then
+        if error then
             core.response.exit(503, core.json.encode({
                 status = "error",
-                errors = errors
+                errors = error
             }), { ["Content-Type"] = "application/json" })
             return
         end

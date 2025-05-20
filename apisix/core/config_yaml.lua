@@ -46,7 +46,7 @@ local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
 local process      = require("ngx.process")
-local worker_id   = ngx.worker.id
+local worker_id    = ngx.worker.id
 local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
 local shared_dict
@@ -84,7 +84,7 @@ local function sync_status_to_shdict(status)
         return
     end
     local id = worker_id()
-    log.info("sync status to shared dict, pid: ", id, " status: ", status)
+    log.info("sync status to shared dict, id: ", id, " status: ", status)
     status_shdict:set(id, status)
 end
 
