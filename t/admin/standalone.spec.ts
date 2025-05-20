@@ -249,6 +249,7 @@ describe("Admin - Standalone", () => {
       expect(resp2.status).toEqual(202);
 
       // Check route /r1 exists
+      // But it is not applied because the modifiedIndex is the same as the old value
       const resp2_2 = await client.get("/r1");
       expect(resp2_2.status).toEqual(200);
 
