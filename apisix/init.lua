@@ -878,20 +878,18 @@ end
 
 function _M.status_ready()
     local local_conf = core.config.local_conf()
-    local provider = core.table.try_read_attr(local_conf, "deployment",
-                                              "role_traditional", "config_provider") or
-                    core.table.try_read_attr(local_conf, "deployment",
-                                              "role_data_plane", "config_provider")
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" .. role, "config_provider")
     if provider == "yaml" or provider == "etcd" then
         local status_shdict = ngx.shared["status-report"]
-        local pids = status_shdict:get_keys()
+        local ids = status_shdict:get_keys()
         local errors = {}
 
-        for _, pid in ipairs(pids) do
-            local ready = status_shdict:get(pid)
+        for _, id in ipairs(ids) do
+            local ready = status_shdict:get(id)
             if not ready then
-                core.log.warn("worker pid: ", pid, " has not received configuration")
-                core.table.insert(errors, "worker pid: " .. pid ..
+                core.log.warn("worker pid: ", id, " has not received configuration")
+                core.table.insert(errors, "worker pid: " .. id ..
                                   " has not received configuration")
                 break
             end

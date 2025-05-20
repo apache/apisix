@@ -34,7 +34,7 @@ local log_level    = errlog.get_sys_filter_level()
 local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
-local worker_pid   = ngx.worker.pid
+local worker_id   = ngx.worker.id
 local insert_tab   = table.insert
 local type         = type
 local ipairs       = ipairs
@@ -69,6 +69,9 @@ local err_etcd_grpc_ngx_timeout = "timeout"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
 local health_check_shm_name = "etcd-cluster-health-check"
 local status_report_shared_dict_name = "status-report"
+if not is_http then
+    health_check_shm_name = health_check_shm_name .. "-stream"
+end
 local created_obj  = {}
 local loaded_configuration = {}
 local watch_ctx
@@ -492,8 +495,11 @@ local function sync_status_to_shdict(status)
         return
     end
     local status_shdict = ngx.shared[status_report_shared_dict_name]
-    local pid = worker_pid()
-    status_shdict:set(pid, status)
+    if not status_shdict then
+        return
+    end
+    local id = worker_id()
+    status_shdict:set(id, status)
 end
 
 
@@ -1143,6 +1149,7 @@ end
 
 
 function _M.init_worker()
+    sync_status_to_shdict(false)
     local local_conf, err = config_local.local_conf()
     if not local_conf then
         return nil, err

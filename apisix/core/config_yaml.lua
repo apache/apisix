@@ -80,9 +80,12 @@ local function sync_status_to_shdict(status)
         return
     end
     local status_shdict = ngx.shared[status_report_shared_dict_name]
-    local pid = worker_id()
-    log.info("sync status to shared dict, pid: ", pid, " status: ", status)
-    status_shdict:set(pid, status)
+    if not status_shdict then
+        return
+    end
+    local id = worker_id()
+    log.info("sync status to shared dict, pid: ", id, " status: ", status)
+    status_shdict:set(id, status)
 end
 
 
