@@ -55,13 +55,13 @@ When enabled, the plugin will collect information from the request context (e.g.
 
 | Name | Type | Required | Default | Valid values | Description |
 |---|---|---|---|---|---|
-| endpoint_addrs | array[string] | True |  | | Lago API address, like `http://127.0.0.1:3000`, it supports both self-hosted and cloud. If multiple endpoints are configured, the log will be pushed to a randomly determined endpoint from the list. |
-| endpoint_uri | string | False | /api/v1/events/batch | | Lago API endpoint, it needs to be set to the batch send endpoint. |
-| token | string | True |  | | Lago API key, create one for your organization on Lago dashboard. |
-| event_transaction_id | string | True |  | | Event's transaction ID, it is used to identify and de-duplicate the event, it supports string templates containing APISIX and NGINX variables, like `req_${request_id}`, which allows you to use values returned by upstream services or request-id plugin integration |
-| event_subscription_id | string | True |  | | Event's subscription ID, which is automatically generated or specified by you when you assign the plan to the customer on Lago, used to associate API consumption to a customer subscription, it supports string templates containing APISIX and NGINX variables, like `cus_${consumer_name}`, which allows you to use values returned by upstream services or APISIX consumer |
-| event_code | string | True |  | | Lago billable metric's code for associating an event to a specified billable item |
-| event_properties | object | False |  | | Event's properties, used to attach information to an event, this allows you to send certain information on a event to Lago, such as sending HTTP status to take a failed request off the bill, or sending the AI token consumption in the response body for accurate billing, its keys are fixed strings and its values can be string templates containing APISIX and NGINX variables, like `${status}` |
+| endpoint_addrs | array[string] | True |  | | Lago API address, such as `http://127.0.0.1:3000`. It supports both self-hosted Lago and Lago Cloud. If multiple endpoints are configured, the log will be pushed to a randomly selected endpoint from the list. |
+| endpoint_uri | string | False | /api/v1/events/batch | | Lago API endpoint for [batch usage events](https://docs.getlago.com/api-reference/events/batch). |
+| token | string | True |  | | Lago API key created in the Lago dashboard. |
+| event_transaction_id | string | True |  | | Event's transaction ID, used to identify and de-duplicate the event. It supports string templates containing APISIX and NGINX variables, such as `req_${request_id}`, which allows you to use values returned by upstream services or the `request-id` plugin. |
+| event_subscription_id | string | True |  | | Event's subscription ID, which is automatically generated or configured when you assign the plan to the customer on Lago. This is used to associate API consumption to a customer subscription and supports string templates containing APISIX and NGINX variables, such as `cus_${consumer_name}`, which allows you to use values returned by upstream services or APISIX consumer. |
+| event_code | string | True |  | | Lago billable metric's code for associating an event to a specified billable item. |
+| event_properties | object | False |  | | Event's properties, used to attach information to an event. This allows you to send certain information on an event to Lago, such as the HTTP status to exclude failed requests from billing, or the AI token consumption in the response body for accurate billing. The keys are fixed strings, while the values can be string templates containing APISIX and NGINX variables, such as `${status}`. |
 | ssl_verify        | boolean       | False    | true | | If true, verify Lago's SSL certificates. |
 | timeout           | integer       | False    | 3000 | [1, 60000] | Timeout for the Lago service HTTP call in milliseconds.  |
 | keepalive         | boolean       | False    | true |  | If true, keep the connection alive for multiple requests. |
@@ -76,12 +76,12 @@ The examples below demonstrate how you can configure `lago` Plugin for typical s
 
 To follow along the examples, start a Lago instance. Refer to [https://github.com/getlago/lago](https://github.com/getlago/lago) or use Lago Cloud.
 
-Follow these brief steps to configure the Lago:
+Follow these brief steps to configure Lago:
 
-1. Get the Lago API Key (also known as `token`), from the Developer page of the Lago dashboard.
-2. Next, create the Billable metric used by APISIX, assuming its code is `test`. Set the `Aggregation type` to `Count`; and add a filter with a key of `tier` whose value contains `expensive` to allow us to distinguish between API values, which will be demonstrated later.
-3. Create a Plan and add the created metric to it. Its code doesn't matter, you can specify as much as you like. In the `Usage-based charges` section, add the billable metric you just created as a `Metered charge` item. Specify the default price as `1$`. Add a filter, use `tier: expensive` to perform the filtering, and specify its price as `10$`.
-4. Select an existing or create a new consumer to assign the Plan you just created to it. You need to specify a `Subscription external ID` (or you can have Lago generate it), which will be used as the APISIX consumer username.
+1. Get the Lago API Key (also known as `token`), from the __Developer__ page of the Lago dashboard.
+2. Next, create a billable metric used by APISIX, assuming its code is `test`. Set the `Aggregation type` to `Count`; and add a filter with a key of `tier` whose value contains `expensive` to allow us to distinguish between API values, which will be demonstrated later.
+3. Create a plan and add the created metric to it. Its code can be configured however you like. In the __Usage-based charges__ section, add the billable metric created previously as a `Metered charge` item. Specify the default price as `$1`. Add a filter, use `tier: expensive` to perform the filtering, and specify its price as `$10`.
+4. Select an existing consumer or create a new one to assign the plan you just created. You need to specify a `Subscription external ID` (or you can have Lago generate it), which will be used as the APISIX consumer username.
 
 Next we need to configure APISIX for demonstrations.
 
@@ -213,7 +213,7 @@ Of course, the fact that we make transaction ID, subscription ID as a configurat
 - Use custom authentication: as long as the Lago subscription ID represented by the user ID is registered as an APISIX variable, it will be available from there, so custom authentication is completely possible!
 - Integration with internal services: sometimes you may not need the APISIX built-in `request-id` plugin, it doesn't matter, you can have your internal service (APISIX upstream) generate it and include it in the HTTP response header so that you can access it by way of an NGINX variable in the transaction ID.
 
-Support for event properties is provided, this allows you to set special values on specific APIs, for example if your service has 100 APIs, and you want to enable general billing on all of them and special configure them on a few specific APIs to apply different pricing, this will work, as we did in the demo above.
+Event properties are supported, allowing you to set special values for specific APIs. For example, if your service has 100 APIs, you can enable general billing for all of them while customizing a few with different pricing—just as demonstrated above.
 
 ### Which Lago versions does it work with?
 
@@ -223,7 +223,7 @@ Technically, we use the Lago batch event API to submit events in batches, and AP
 
 Here's an [archive page](https://web.archive.org/web/20250516073803/https://getlago.com/docs/api-reference/events/batch) of the API documentation, which allows you to check the differences between the API at the time of our integration and the latest API.
 
-If the latest API changes, then you can submit an issue to inform the APISIX maintainers that this may require some changes.
+If the latest API changes, you can submit an issue to inform the APISIX maintainers that this may require some changes.
 
 ### Why Lago can't receive events?
 
