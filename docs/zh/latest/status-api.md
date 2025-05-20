@@ -21,7 +21,7 @@ title: Status API
 #
 -->
 
-在 Apache APISIX 中，状态 API 用于:
+在 Apache APISIX 中，状态 API 用于：
 
 * 检查 APISIX 是否已成功启动并正确运行
 * 检查所有工作人员是否已收到并加载配置。

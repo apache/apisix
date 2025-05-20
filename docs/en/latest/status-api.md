@@ -24,7 +24,7 @@ title: Status API
 In Apache APISIX, the status API is used to:
 
 * Check if APISIX has successfully started and running correctly.
-* Check if all of the workers have recieved and loaded the configuration.
+* Check if all of the workers have received and loaded the configuration.
 
 To change the default endpoint (`127.0.0.1:7085`) of the Status API server, change the `ip` and `port` in the `status` section in your configuration file (`conf/config.yaml`):
 
