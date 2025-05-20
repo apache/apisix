@@ -115,73 +115,163 @@ This method is more suitable for two types of users:
 
 Now, we have two standalone running modes, file-driven and API-driven.
 
-1. The file-driven mode is the kind APISIX has always supported.
+#### File-driven
 
-    The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. At each interval (default: 1 second), APISIX checks for updates to the file. If changes are detected, it reloads the rules.
+The file-driven mode is the kind APISIX has always supported.
 
-    *Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
+The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. At each interval (default: 1 second), APISIX checks for updates to the file. If changes are detected, it reloads the rules.
 
-    This requires us to set the APISIX role to data plane. That is, set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
+*Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
 
-    Refer to the example below:
+This requires us to set the APISIX role to data plane. That is, set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
 
-    ```yaml
-    deployment:
-      role: data_plane
-      role_data_plane:
-        config_provider: yaml
-    #END
+Refer to the example below:
+
+```yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+```
+
+This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
+
+#### API-driven (Experimental)
+
+> This mode is experimental, please do not rely on it in your production environment.
+> We use it to validate certain specific workloads and if it is appropriate we will turn it into an officially supported feature, otherwise it will be removed.
+
+##### Overview
+
+API-driven mode is an emerging paradigm for standalone deployment, where routing rules are stored entirely in memory rather than in a configuration file. Updates must be made through the dedicated Standalone Admin API. Each update replaces the full configuration and takes effect immediately through hot updates, without requiring a restart.
+
+##### Configuration
+
+To enable this mode, set the APISIX role to `traditional` (to start both the API gateway and the Admin API endpoint) and use the YAML config provider. Example configuration:
+
+```yaml
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: yaml
+```
+
+This disables the local file source of configuration in favor of the API. When APISIX starts, it uses an empty configuration until updated via the API.
+
+##### API Endpoints
+
+* `conf_version` by resource type
+
+    Use `<resource>_conf_version` to indicate the client’s current version for each resource type (e.g. routes, upstreams, services, etc.).
+
+    ```json
+    {
+      "routes_conf_version": 12,
+      "upstreams_conf_version": 102,
+      "routes": [],
+      "upstreams": []
+    }
     ```
 
-    This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
+    APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type. If the provided `<resource>_conf_version` is:
 
-2. The API-driven is an emerging paradigm for standalone.
+  - **Greater than** the current `conf_version`, APISIX will **rebuild/reset** that resource type’s data to match your payload.
 
-    The routing rules will be entirely in memory and not in a file, and it will need to be updated using the dedicated Standalone Admin API.
+  - **Equal to** the current `conf_version`, APISIX treats the resource as **unchanged** and **ignores** it (no data is rebuilt).
 
-    I.e. we need to send an HTTP PUT request to this API containing the configuration in JSON or YAML format, which will flush the configuration used by each worker in the current APISIX instance.
+  - **Less than** the current `conf_version`, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
 
-    Changes will overwrite the entire configuration and take effect immediately without requiring a reboot, as it is hot updated.
+* `modifiedIndex` by individual resource
 
-    This requires us to set the APISIX role to traditional (since we need to start both the API gateway and the Admin API endpoint) and use the yaml config provider. That is, set `deployment.role` to `traditional` and `deployment.role_traditional.config_provider` to `yaml`.
+    Allow setting an index for each resource. APISIX compares this index to its modifiedIndex to determine whether to accept the update.
 
-    Refer to the example below:
+##### Example
 
-    ```yaml
-    deployment:
-      role: traditional
-      role_traditional:
-        config_provider: yaml
-    #END
-    ```
+1. get configuration
 
-    This disables the local file source of configuration in favor of the API. When APISIX starts, it uses the empty configuration until you update it via the API.
+```shell
+curl -X GET http://127.0.0.1:9180/apisix/admin/configs \
+    -H "X-API-KEY: <apikey>" \
+    -H "Accept: application/json" ## or application/yaml
+```
 
-    The following are API endpoints:
+This returns the current configuration in JSON or YAML format.
 
-    ```shell
-    ## Update configuration
-    ## The conf_version is not required, if it is not entered by the client, the current 10-digit epoch time is used by default.
-    curl -X PUT http://127.0.0.1:9180/apisix/admin/configs?conf_version=1234 \
-        -H "X-API-KEY: <apikey>"
-        -H "Content-Type: application/json" ## or application/yaml
-        --data-binary @config.json
+```json
+{
+    "consumer_groups_conf_version": 0,
+    "consumers_conf_version": 0,
+    "global_rules_conf_version": 0,
+    "plugin_configs_conf_version": 0,
+    "plugin_metadata_conf_version": 0,
+    "protos_conf_version": 0,
+    "routes_conf_version": 0,
+    "secrets_conf_version": 0,
+    "services_conf_version": 0,
+    "ssls_conf_version": 0,
+    "upstreams_conf_version": 0
+}
+```
 
-    ## Get latest configuration
-    curl -X GET http://127.0.0.1:9180/apisix/admin/configs
-        -H "X-API-KEY: <apikey>"
-        -H "Accept: application/json" ## or application/yaml
-    ```
+2. full update
 
-    The update API validates the input and returns an error if it is invalid. If the configuration is accepted, it responds with a `202 Accepted` status and includes the latest configuration version in the `X-APISIX-Conf-Version` header.
+```shell
+curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
+    -H "X-API-KEY: <apikey>" \
+    -H "Content-Type: application/json" ## or application/yaml \
+    -d '{}'
+```
 
-    The get API also returns the version number via the `X-APISIX-Conf-Version` header, and returns a response body containing the configuration in a specific format as requested by the client `Accept` header.
+3. update based on resource type
 
-    These APIs apply the same security requirements as the Admin API  — such as API key, TLS/mTLS, CORS, and IP allowlist — no changes or additions.
+In APISIX memory, the current configuration is:
 
-    The API accepts input in the same format as the file-based mode described above, although it also allows the user to input JSON instead of just YAML. The following example still applies. However, the API does not rely on the `#END` suffix because HTTP will guarantee input integrity.
+```json
+{
+    "routes_conf_version": 1000,
+    "upstreams_conf_version": 1000,
+}
+```
 
-    *Note*: In this case, the Admin API based on etcd is not available. The configuration can only be flushed as a whole, rather than modified partially, and the client must send a request containing the complete new configuration to the API.
+Update the previous upstreams configuration by setting a higher version number, such as 1001, to replace the current version 1000:
+
+```shell
+curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
+  -H "X-API-KEY: ${API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '
+{
+    "routes_conf_version": 1000,
+    "upstreams_conf_version": 1001,
+    "routes": [
+        {
+            "modifiedIndex": 1000,
+            "id": "r1",
+            "uri": "/hello",
+            "upstream_id": "u1"
+        }
+    ],
+    "upstreams": [
+        {
+            "modifiedIndex": 1001,
+            "id": "u1",
+            "nodes": {
+                "127.0.0.1:1980": 1,
+                "127.0.0.1:1980": 1
+            },
+            "type": "roundrobin"
+        }
+    ]
+}'
+```
+
+:::note
+
+These APIs apply the same security requirements as the Admin API, including API key, TLS/mTLS, CORS, and IP allowlist.
+
+The API accepts input in the same format as the file-based mode, supporting both JSON and YAML. Unlike the file-based mode, the API does not rely on the `#END` suffix, as HTTP guarantees input integrity.
+
+:::
 
 ### How to configure rules
 
