@@ -232,6 +232,7 @@ In APISIX memory, the current configuration is:
     "upstreams_conf_version": 1000,
 }
 ```
+
 Update the previous upstreams configuration by setting a higher version number, such as 1001, to replace the current version 1000:
 
 ```shell
