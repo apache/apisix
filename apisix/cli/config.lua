@@ -96,6 +96,7 @@ local _M = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
         ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {

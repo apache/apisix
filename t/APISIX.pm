@@ -276,6 +276,7 @@ thread_pool grpc-client-nginx-module threads=1;
 lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict standalone-config 10m;
+    lua_shared_dict status-report 1m;
 }
 _EOC_
     }
@@ -717,6 +718,19 @@ _EOC_
 _EOC_
 
     $http_config .= <<_EOC_;
+    server {
+        listen 7085;
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
+            }
+        }
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+    }
     server {
         listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
         access_log off;
