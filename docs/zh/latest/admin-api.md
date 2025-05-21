@@ -1344,7 +1344,7 @@ Consumer Group 资源请求地址：/apisix/admin/consumer_groups/{id}
 | 名称      | 必选项  | 类型  | 描述                                          | 示例值 |
 |--------- |--------- |------|----------------------------------------------- |------|
 |plugins  | 是        |Plugin| 插件配置。详细信息请参考 [Plugin](terminology/plugin.md)。 |      |
-|name     | 否        | 辅助 | 消费者组名            | premium-tier                           |
+|name     | 否        | 辅助 | 消费者组名。            | premium-tier                           |
 |desc     | 否        | 辅助 | 标识描述、使用场景等。                          | Consumer 测试。|
 |labels   | 否        | 辅助 | 标识附加属性的键值对。                          |{"version":"v2","build":"16","env":"production"}|
 
@@ -1503,8 +1503,8 @@ Plugin 资源请求地址：/apisix/admin/stream_routes/{id}
 
 | 名称             | 必选项 | 类型     | 描述                                                                           | 示例值 |
 | ---------------- | ------| -------- | ------------------------------------------------------------------------------| ------  |
-| name             | 否    | 辅助     | Stream 路由名            | postgres-proxy                                   |
-| desc             | 否    | 辅助     | Stream 路由描述          | proxy endpoint for postgresql                    |
+| name             | 否    | 辅助     | Stream 路由名。            | postgres-proxy                                   |
+| desc             | 否    | 辅助     | Stream 路由描述。          | proxy endpoint for postgresql                    |
 | labels           | 否    | 匹配规则  | 标识附加属性的键值对。           | {"version":"17","service":"user","env":"production"} |
 | upstream         | 否    | Upstream | Upstream 配置，详细信息请参考 [Upstream](terminology/upstream.md)。             |         |
 | upstream_id      | 否    | Upstream | 需要使用的 Upstream id，详细信息请 [Upstream](terminology/upstream.md)。       |         |

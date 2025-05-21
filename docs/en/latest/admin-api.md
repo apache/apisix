@@ -1692,7 +1692,7 @@ Proto resource request address: /apisix/admin/protos/{id}
 
 | Parameter | Required | Type      | Description                          | Example                       |
 |-----------|----------|-----------|--------------------------------------| ----------------------------- |
-| content   | True     | String    | content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
 | name      | False    | Auxiliary | Identifier for the Protobuf definition. | user-proto                    |
 | desc      | False    | Auxiliary | Description of usage scenarios.      | protobuf for user service     |
 | labels    | False    | Match Rules | Attributes of the Proto specified as key-value pairs. | {"version":"v2","service":"user","env":"production"}     |
