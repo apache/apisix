@@ -70,6 +70,9 @@ lua {
     {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
     {% end %}
+    {% if status then %}
+    lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
+    {% end %}
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -545,6 +548,23 @@ http {
         location / {
             content_by_lua_block {
                 apisix.http_control()
+            }
+        }
+    }
+    {% end %}
+
+    {% if status then %}
+    server {
+        listen {* status_server_addr *} enable_process=privileged_agent;
+        access_log off;
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
             }
         }
     }
