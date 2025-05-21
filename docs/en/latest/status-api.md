@@ -39,7 +39,7 @@ This API can be used to perform readiness probes on APISIX before APISIX starts 
 
 ### GET /status
 
-Returns a JSON reporting the status of APISIX workers
+Returns a JSON reporting the status of APISIX workers. If APISIX is not running, the request will error out while establishing TCP connection. Otherwise this endpoint will always return ok if request reaches a running worker.
 
 ```json
 {
@@ -59,7 +59,7 @@ When all workers have loaded the configuration:
 }
 ```
 
-When 1 workers has't been initialised
+When 1 workers has't been initialised:
 
 ```json
 {
@@ -68,7 +68,7 @@ When 1 workers has't been initialised
 }
 ```
 
-When a particular worker hasn't loaded the configuration
+When a particular worker hasn't loaded the configuration:
 
 ```json
 {
