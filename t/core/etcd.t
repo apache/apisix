@@ -447,6 +447,7 @@ deployment:
         content_by_lua_block {
             local etcd = require("apisix.core.etcd")
             etcd.set("foo", "bar")
+            etcd.delete("foo")
         }
     }
 --- request
@@ -476,6 +477,7 @@ routes:
         content_by_lua_block {
             local etcd = require("apisix.core.etcd")
             etcd.set("foo", "bar")
+            etcd.delete("foo")
         }
     }
 --- request
@@ -502,6 +504,7 @@ deployment:
         content_by_lua_block {
             local etcd = require("apisix.core.etcd")
             etcd.set("foo", "bar")
+            etcd.delete("foo")
         }
     }
 --- request
