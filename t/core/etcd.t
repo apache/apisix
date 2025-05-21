@@ -456,7 +456,7 @@ qr/data plane role should not write to etcd, it will be deprecated in the future
 
 
 
-=== TEST 10: should warn when data_plane + yaml
+=== TEST 10: should not warn when data_plane + yaml
 --- yaml_config
 deployment:
   role: data_plane

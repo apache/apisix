@@ -46,7 +46,7 @@ local function warn_if_data_plane_write()
     end
 
     local role = try_read_attr(local_conf, "deployment", "role")
-    local config_provider = try_read_attr(local_conf, "deployment", 
+    local config_provider = try_read_attr(local_conf, "deployment",
         "role_data_plane", "config_provider")
     if role == "data_plane" and config_provider == "etcd" then
         log.warn("data plane role should not write to etcd, " ..
