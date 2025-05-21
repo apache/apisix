@@ -247,9 +247,9 @@ POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=not-found&password=123456
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
---- error_code: 200
+--- error_code: 401
 --- response_body
-{"message":"request to wolf-server failed!"}
+{"message":"username or password is incorrect"}
 --- grep_error_log eval
 qr/ERR_USER_NOT_FOUND/
 --- grep_error_log_out eval
@@ -263,9 +263,9 @@ POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=admin&password=wrong-password
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
---- error_code: 200
+--- error_code: 401
 --- response_body
-{"message":"request to wolf-server failed!"}
+{"message":"username or password is incorrect"}
 --- grep_error_log eval
 qr/ERR_PASSWORD_ERROR/
 --- grep_error_log_out eval
@@ -735,3 +735,45 @@ X-Nickname: administrator
 consumer merge echo plugins
 --- no_error_log
 [error]
+
+
+
+=== TEST 29: add consumer with custom error message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_custom_msg",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-custom-msg",
+                            "server": "http://127.0.0.1:1982",
+                            "error_message": "custom error message"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 30: test custom error message
+--- request
+POST /apisix/plugin/wolf-rbac/login
+appid=wolf-rbac-custom-msg&username=admin&password=123456
+--- more_headers
+Content-Type: application/x-www-form-urlencoded
+--- error_code: 200
+--- response_body
+{"message":"custom error message"}

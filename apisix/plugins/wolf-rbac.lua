@@ -48,6 +48,10 @@ local schema = {
             type = "string",
             default = "X-"
         },
+        error_message = {
+            type = "string",
+            default = "request to wolf-server failed!"
+        },
     }
 }
 
@@ -356,13 +360,14 @@ local function request_to_wolf_server(method, uri, headers, body)
         }
     )
 
+    local consumer_conf = consumer.plugin(plugin_name)
+    local err_msg = consumer_conf and consumer_conf.error_message or "request to wolf-server failed!"
+
     core.log.info("request [", request_debug, "] ....")
     local res, err = http_req(method, uri, core.json.encode(body), headers, timeout)
     if not res then
         core.log.error("request [", request_debug, "] failed! err: ", err)
-        return core.response.exit(500,
-            fail_response("request to wolf-server failed!")
-        )
+        return core.response.exit(500, fail_response(err_msg))
     end
     core.log.info("request [", request_debug, "] status: ", res.status,
                   ", body: ", res.body)
@@ -370,19 +375,22 @@ local function request_to_wolf_server(method, uri, headers, body)
     if res.status ~= 200 then
         core.log.error("request [", request_debug, "] failed! status: ",
                         res.status)
-        return core.response.exit(500,
-        fail_response("request to wolf-server failed!")
-        )
+        return core.response.exit(500, fail_response(err_msg))
     end
     local body, err = json.decode(res.body)
     if not body then
         core.log.error("request [", request_debug, "] failed! err:", err)
-        return core.response.exit(500, fail_response("request to wolf-server failed!"))
+        return core.response.exit(500, fail_response(err_msg))
     end
     if not body.ok then
         core.log.error("request [", request_debug, "] failed! response body:",
                        core.json.delay_encode(body))
-        return core.response.exit(200, fail_response("request to wolf-server failed!"))
+        local msg = err_msg
+        if body.reason == "ERR_USER_NOT_FOUND" or body.reason == "ERR_PASSWORD_ERROR" then
+            msg = "username or password is incorrect"
+            return core.response.exit(401, fail_response(msg))
+        end
+        return core.response.exit(200, fail_response(msg))
     end
 
     core.log.info("request [", request_debug, "] success! response body:",

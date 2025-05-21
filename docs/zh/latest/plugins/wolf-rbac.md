@@ -39,6 +39,7 @@ description: 本文介绍了关于 Apache APISIX `wolf-rbac` 插件的基本信�
 | server        | string | 否     | "http://127.0.0.1:12180" |  `wolf-server` 的服务地址。                                                                                                                          |
 | appid         | string | 否     | "unset"                  | 在 `wolf-console` 中已经添加的应用 id。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。                                       |
 | header_prefix | string | 否     | "X-"                     | 自定义 HTTP 头的前缀。`wolf-rbac` 在鉴权成功后，会在请求头 (用于传给后端) 及响应头 (用于传给前端) 中添加 3 个 header：`X-UserId`, `X-Username`, `X-Nickname`。|
+| error_message | string | 否     | "request to wolf-server failed!" | 当请求 wolf server 失败时的自定义错误消息。注意：对于用户名/密码错误的情况，无论此设置如何，都会返回固定的错误消息 "username or password is incorrect"。 |
 
 ## 接口
 

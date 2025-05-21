@@ -39,6 +39,7 @@ The `wolf-rbac` Plugin provides a [role-based access control](https://en.wikiped
 | server        | string | False    | "http://127.0.0.1:12180" | Service address of wolf server.                                                                                                                                                                                             |
 | appid         | string | False    | "unset"                  | App id added in wolf console. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.            |
 | header_prefix | string | False    | "X-"                     | Prefix for a custom HTTP header. After authentication is successful, three headers will be added to the request header (for backend) and response header (for frontend) namely: `X-UserId`, `X-Username`, and `X-Nickname`. |
+| error_message | string | False    | "request to wolf-server failed!" | Custom error message when request to wolf server fails. Note that for username/password errors, a fixed message "username or password is incorrect" will be returned regardless of this setting. |
 
 ## API
 
