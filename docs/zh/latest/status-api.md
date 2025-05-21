@@ -39,7 +39,7 @@ apisix:
 
 ### GET /status
 
-返回报告 APISIX 工作人员状态的 JSON。如果 APISIX 未运行，则建立 TCP 连接时请求将出错。否则，如果请求到达正在运行的工作线程，此端点将始终返回 ok
+返回报告 APISIX 工作人员状态的 JSON。如果 APISIX 未运行，建立 TCP 连接时请求将报错。否则，如果请求到达正在运行的 worker，此端点将始终返回 ok。
 
 ```json
 {
@@ -51,7 +51,7 @@ apisix:
 
 当所有 worker 都已加载配置时，返回 `ok`；否则，返回特定错误，错误代码为 `503`。以下是具体示例。
 
-当所有 worker 都已加载配置时:
+当所有 worker 都已加载配置时：
 
 ```json
 {
@@ -59,7 +59,7 @@ apisix:
 }
 ```
 
-当 1 个 workers 尚未初始化时:
+当 1 个 workers 尚未初始化时：
 
 ```json
 {
