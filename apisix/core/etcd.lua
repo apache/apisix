@@ -22,6 +22,8 @@
 local require           = require
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local array_mt          = require("apisix.core.json").array_mt
+local log               = require("apisix.core.log")
+local try_read_attr     = require("apisix.core.table").try_read_attr
 local v3_adapter        = require("apisix.admin.v3_adapter")
 local etcd              = require("resty.etcd")
 local clone_tab         = require("table.clone")
@@ -35,6 +37,22 @@ local ngx_get_phase     = ngx.get_phase
 
 
 local _M = {}
+
+
+local function warn_if_data_plane_write()
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        return nil, err
+    end
+
+    local role = try_read_attr(local_conf, "deployment", "role")
+    local config_provider = try_read_attr(local_conf, "deployment", 
+        "role_data_plane", "config_provider")
+    if role == "data_plane" and config_provider == "etcd" then
+        log.warn("data plane role should not write to etcd, " ..
+            "it will be deprecated in the future. ")
+    end
+end
 
 
 local function _new(etcd_conf)
@@ -337,6 +355,7 @@ end
 
 
 local function set(key, value, ttl)
+    warn_if_data_plane_write()
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -386,6 +405,7 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
+    warn_if_data_plane_write()
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -444,6 +464,7 @@ end
 
 
 function _M.push(key, value, ttl)
+    warn_if_data_plane_write()
     local etcd_cli, _, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -476,6 +497,7 @@ end
 
 
 function _M.delete(key)
+    warn_if_data_plane_write()
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -502,6 +524,7 @@ function _M.delete(key)
 end
 
 function _M.rmdir(key, opts)
+    warn_if_data_plane_write()
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err

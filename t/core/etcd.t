@@ -427,3 +427,84 @@ GET /t
 --- response_body
 ab
 abc
+
+
+
+=== TEST 9: should warn when data_plane + etcd
+--- yaml_config
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            etcd.set("foo", "bar")
+        }
+    }
+--- request
+GET /t
+--- error_log eval
+qr/data plane role should not write to etcd, it will be deprecated in the future./
+
+
+
+=== TEST 10: should warn when data_plane + yaml
+--- yaml_config
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      nodes:
+        "127.0.0.1:1980": 1
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            etcd.set("foo", "bar")
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+qr/data plane role should not write to etcd, it will be deprecated in the future./
+
+
+
+=== TEST 11: should not warn when not data_plane
+--- yaml_config
+deployment:
+  role: control_plane
+  role_control_plane:
+    config_provider: etcd
+    etcd:
+        host:
+        - "http://127.0.0.1:2379"
+        prefix: "/apisix"
+        tls:
+        verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            etcd.set("foo", "bar")
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+qr/data plane role should not write to etcd, it will be deprecated in the future./
