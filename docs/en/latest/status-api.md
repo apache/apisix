@@ -51,7 +51,7 @@ Returns a JSON reporting the status of APISIX workers
 
 Returns `ok` when all workers have loaded the configuration, otherwise returns the specific error with `503` error code. Below are specific examples.
 
-When all workers have loaded the configuration
+When all workers have loaded the configuration:
 
 ```json
 {

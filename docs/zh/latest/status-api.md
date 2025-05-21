@@ -21,10 +21,10 @@ title: Status API
 #
 -->
 
-在 Apache APISIX 中，状态 API 用于：
+在 Apache APISIX 中，Status API 用于：
 
 * 检查 APISIX 是否已成功启动并正确运行
-* 检查所有工作人员是否已收到并加载配置。
+* 检查所有 workers 是否已收到配置并加载。
 
 要更改 Status API 服务器的默认端点（`127.0.0.1:7085`），请更改配置文件（`conf/config.yaml`）中 `status` 部分中的 `ip` 和 `port`：
 
@@ -39,7 +39,7 @@ apisix:
 
 ### GET /status
 
-返回报告 APISIX 工作者状态的 JSON
+返回报告 APISIX worker 状态的 JSON：
 
 ```json
 {
@@ -49,9 +49,9 @@ apisix:
 
 ### GET /status/ready
 
-当所有 Worker 都已加载配置时，返回 `ok`；否则，返回特定错误，错误代码为 `503`。以下是具体示例。
+当所有 worker 都已加载配置时，返回 `ok`；否则，返回特定错误，错误代码为 `503`。以下是具体示例。
 
-当所有 Worker 都已加载配置时
+当所有 worker 都已加载配置时
 
 ```json
 {
@@ -68,7 +68,7 @@ apisix:
 }
 ```
 
-当特定工作器尚未加载配置时
+当特定 worker 尚未加载配置时：
 
 ```json
 {
