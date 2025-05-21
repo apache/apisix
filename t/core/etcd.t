@@ -453,7 +453,7 @@ deployment:
 --- request
 GET /t
 --- error_log eval
-qr/data plane role should not write to etcd, it will be deprecated in the future./
+qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
 
 
 
@@ -483,7 +483,7 @@ routes:
 --- request
 GET /t
 --- no_error_log
-qr/data plane role should not write to etcd, it will be deprecated in the future./
+qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
 
 
 
@@ -510,4 +510,4 @@ deployment:
 --- request
 GET /t
 --- no_error_log
-qr/data plane role should not write to etcd, it will be deprecated in the future./
+qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
