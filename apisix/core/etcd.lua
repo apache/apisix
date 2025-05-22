@@ -49,7 +49,7 @@ local function check_data_plane_role()
     end
 
     local role = try_read_attr(local_conf, "deployment", "role")
-    if role == "data_plane"  then
+    if role == "data_plane" or role == "traditional" then
        return true
     end
 

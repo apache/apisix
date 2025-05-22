@@ -493,12 +493,12 @@ deployment:
   role: control_plane
   role_control_plane:
     config_provider: etcd
-    etcd:
-        host:
-        - "http://127.0.0.1:2379"
-        prefix: "/apisix"
-        tls:
-        verify: false
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
 --- config
     location /t {
         content_by_lua_block {
@@ -510,4 +510,32 @@ deployment:
 --- request
 GET /t
 --- no_error_log
+Data plane role should not write to etcd. This operation will be deprecated in future releases.
+
+
+
+
+=== TEST 12: should warn when traditional + etcd
+--- yaml_config
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local etcd = require("apisix.core.etcd")
+            etcd.set("foo", "bar")
+            etcd.delete("foo")
+        }
+    }
+--- request
+GET /t
+--- error_log eval
 qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
