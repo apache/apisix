@@ -42,20 +42,18 @@ local _M = {}
 local NOT_ALLOW_WRITE_ETCD_WARN = 'Data plane role should not write to etcd. ' ..
     'This operation will be deprecated in future releases.'
 
-local function should_allow_etcd_write()
+local function check_data_plane_role()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, err
     end
 
     local role = try_read_attr(local_conf, "deployment", "role")
-    local config_provider = try_read_attr(local_conf, "deployment",
-        "role_data_plane", "config_provider")
-    if role == "data_plane" and config_provider == "etcd" then
-       return false
+    if role == "data_plane"  then
+       return true
     end
 
-    return true
+    return false
 end
 
 
@@ -359,8 +357,8 @@ end
 
 
 local function set(key, value, ttl)
-    local allow_write = should_allow_etcd_write()
-    if not allow_write then
+    local is_data_plane = check_data_plane_role()
+    if is_data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -413,8 +411,8 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
-    local allow_write = should_allow_etcd_write()
-    if not allow_write then
+    local is_data_plane = check_data_plane_role()
+    if is_data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -477,8 +475,8 @@ end
 
 
 function _M.push(key, value, ttl)
-    local allow_write = should_allow_etcd_write()
-    if not allow_write then
+    local is_data_plane = check_data_plane_role()
+    if is_data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -514,8 +512,8 @@ end
 
 
 function _M.delete(key)
-    local allow_write = should_allow_etcd_write()
-    if not allow_write then
+    local is_data_plane = check_data_plane_role()
+    if is_data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -545,8 +543,8 @@ function _M.delete(key)
 end
 
 function _M.rmdir(key, opts)
-    local allow_write = should_allow_etcd_write()
-    if not allow_write then
+    local is_data_plane = check_data_plane_role()
+    if is_data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 

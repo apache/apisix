@@ -457,7 +457,7 @@ qr/Data plane role should not write to etcd. This operation will be deprecated i
 
 
 
-=== TEST 10: should not warn when data_plane + yaml
+=== TEST 10: should warn when data_plane + yaml
 --- yaml_config
 deployment:
   role: data_plane
@@ -482,7 +482,7 @@ routes:
     }
 --- request
 GET /t
---- no_error_log
+--- error_log eval
 qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
 
 
