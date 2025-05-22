@@ -45,6 +45,7 @@ description: loki-logger 插件通过 Loki HTTP API /loki/api/v1/push 将请求�
 | end_addrs | array[string] | 是 | | | Loki API URL，例如 `http://127.0.0.1:3100`。如果配置了多个端点，日志将被推送到列表中随机确定的端点。 |
 | end_uri | string | 否 | /loki/api/v1/push | | Loki 提取端点的 URI 路径。 |
 | tenant_id | string | 否 | fake | | Loki 租户 ID。根据 Loki 的 [多租户文档](https://grafana.com/docs/loki/latest/operations/multi-tenancy/#multi-tenancy)，在单租户下默认值设置为 `fake`。 |
+| authorization | string | 否 |  |  | HTTP Authorization Header, 用于认证。 |
 | log_labels | object | 否 | {job = "apisix"} | | Loki 日志标签。支持 [NGINX 变量](https://nginx.org/en/docs/varindex.html) 和值中的常量字符串。变量应以 `$` 符号为前缀。例如，标签可以是 `{"origin" = "apisix"}` 或 `{"origin" = "$remote_addr"}`。|
 | ssl_verify | boolean | 否 | true | | 如果为 true，则验证 Loki 的 SSL 证书。|
 | timeout | integer | 否 | 3000 | [1, 60000] | Loki 服务 HTTP 调用的超时时间（以毫秒为单位）。|
