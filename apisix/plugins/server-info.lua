@@ -260,6 +260,7 @@ end
 
 
 function _M.init()
+    core.log.warn("The server-info plugin is deprecated and will be removed in a future release.")
     if core.config ~= require("apisix.core.config_etcd") then
         -- we don't need to report server info if etcd is not in use.
         return
