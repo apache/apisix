@@ -58,6 +58,7 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
+local tostring       = tostring
 local ngx_re_match    = ngx.re.match
 local control_api_router
 
@@ -865,6 +866,61 @@ local function healthcheck_passive(api_ctx)
                                        resp_status)
         end
     end
+end
+
+
+function _M.status()
+    core.response.exit(200, core.json.encode({ status = "ok" }))
+end
+
+function _M.status_ready()
+    local local_conf = core.config.local_conf()
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
+                                              role, "config_provider")
+    if provider == "yaml" or provider == "etcd" then
+        local status_shdict = ngx.shared["status-report"]
+        local ids = status_shdict:get_keys()
+        local error
+        local worker_count = ngx.worker.count()
+       if #ids ~= worker_count then
+            core.log.warn("worker count: ", worker_count, " but status report count: ", #ids)
+            error = "worker count: " .. ngx.worker.count() ..
+            " but status report count: " .. #ids
+        end
+        if error then
+            core.response.exit(503, core.json.encode({
+                status = "error",
+                error = error
+            }))
+            return
+        end
+        for _, id in ipairs(ids) do
+            local ready = status_shdict:get(id)
+            if not ready then
+                core.log.warn("worker id: ", id, " has not received configuration")
+                error = "worker id: " .. id ..
+                                  " has not received configuration"
+                break
+            end
+        end
+
+        if error then
+            core.response.exit(503, core.json.encode({
+                status = "error",
+                error = error
+            }))
+            return
+        end
+
+        core.response.exit(200, core.json.encode({ status = "ok" }))
+        return
+    end
+
+    core.response.exit(503, core.json.encode({
+        status = "error",
+        message = "unknown config provider: " .. tostring(provider)
+    }), { ["Content-Type"] = "application/json" })
 end
 
 
