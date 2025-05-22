@@ -25,9 +25,9 @@ local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
-local tbl_deepcopy = require("apisix.core.table").deepcopy
 local lfs          = require("lfs")
 local file         = require("apisix.cli.file")
 local exiting      = ngx.worker.exiting
@@ -45,10 +45,12 @@ local pcall        = pcall
 local io           = io
 local ngx          = ngx
 local re_find      = ngx.re.find
+local process      = require("ngx.process")
+local worker_id    = ngx.worker.id
 local apisix_yaml_path = profile:yaml_path("apisix")
 local created_obj  = {}
 local shared_dict
-
+local status_report_shared_dict_name = "status-report"
 
 local _M = {
     version = 0.2,
@@ -70,11 +72,23 @@ local mt = {
 
 
 local apisix_yaml
-local apisix_yaml_raw -- save a deepcopy of the latest configuration for API
 local apisix_yaml_mtime
 
+local function sync_status_to_shdict(status)
+    if process.type() ~= "worker" then
+        return
+    end
+    local status_shdict = ngx.shared[status_report_shared_dict_name]
+    if not status_shdict then
+        return
+    end
+    local id = worker_id()
+    log.info("sync status to shared dict, id: ", id, " status: ", status)
+    status_shdict:set(id, status)
+end
 
-local function update_config(table, mtime)
+
+local function update_config(table, conf_version)
     if not table then
         log.error("failed update config: empty table")
         return
@@ -87,16 +101,10 @@ local function update_config(table, mtime)
     end
 
     apisix_yaml = table
-    apisix_yaml_raw = tbl_deepcopy(table)
-    apisix_yaml_mtime = mtime
+    sync_status_to_shdict(true)
+    apisix_yaml_mtime = conf_version
 end
 _M._update_config = update_config
-
-
-local function get_config()
-    return apisix_yaml, apisix_yaml_mtime, apisix_yaml_raw
-end
-_M._get_config = get_config
 
 
 local function is_use_admin_api()
@@ -158,29 +166,57 @@ local function sync_data(self)
         return nil, "missing 'key' arguments"
     end
 
-    if not apisix_yaml_mtime then
-        log.warn("wait for more time")
-        return nil, "failed to read local file " .. apisix_yaml_path
+    local conf_version
+    if is_use_admin_api() then
+        conf_version = apisix_yaml[self.conf_version_key] or 0
+    else
+        if not apisix_yaml_mtime then
+            log.warn("wait for more time")
+            return nil, "failed to read local file " .. apisix_yaml_path
+        end
+        conf_version = apisix_yaml_mtime
     end
 
-    if self.conf_version == apisix_yaml_mtime then
+    if not conf_version or conf_version == self.conf_version then
         return true
     end
 
     local items = apisix_yaml[self.key]
-    log.info(self.key, " items: ", json.delay_encode(items))
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
-        self.conf_version = apisix_yaml_mtime
+        self.conf_version = conf_version
         return true
     end
 
-    if self.values then
-        for _, item in ipairs(self.values) do
-            config_util.fire_all_clean_handlers(item)
+    if self.values and #self.values > 0 then
+        if is_use_admin_api() then
+            -- filter self.values to retain only those whose IDs exist in the new items list.
+            local exist_values = new_tab(8, 0)
+            self.values_hash = new_tab(0, 8)
+
+            local exist_items = {}
+            for _, item in ipairs(items) do
+                exist_items[tostring(item.id)] = true
+            end
+            -- remove objects that exist in the self.values but do not exist in the new items.
+            -- for removed items, trigger cleanup handlers.
+            for _, item in ipairs(self.values) do
+                local id = item.value.id
+                if not exist_items[id]  then
+                    config_util.fire_all_clean_handlers(item)
+                else
+                    insert_tab(exist_values, item)
+                    self.values_hash[id] = #exist_values
+                end
+            end
+            self.values = exist_values
+        else
+            for _, item in ipairs(self.values) do
+                config_util.fire_all_clean_handlers(item)
+            end
+            self.values = nil
         end
-        self.values = nil
     end
 
     if self.single_item then
@@ -189,7 +225,8 @@ local function sync_data(self)
         self.values_hash = new_tab(0, 1)
 
         local item = items
-        local conf_item = {value = item, modifiedIndex = apisix_yaml_mtime,
+        local modifiedIndex = item.modifiedIndex or conf_version
+        local conf_item = {value = item, modifiedIndex = modifiedIndex,
                            key = "/" .. self.key}
 
         local data_valid = true
@@ -221,23 +258,26 @@ local function sync_data(self)
         end
 
     else
-        self.values = new_tab(#items, 0)
-        self.values_hash = new_tab(0, #items)
+        if not self.values then
+            self.values = new_tab(8, 0)
+            self.values_hash = new_tab(0, 8)
+        end
 
         local err
         for i, item in ipairs(items) do
-            local id = tostring(i)
+            local idx = tostring(i)
             local data_valid = true
             if type(item) ~= "table" then
                 data_valid = false
-                log.error("invalid item data of [", self.key .. "/" .. id,
+                log.error("invalid item data of [", self.key .. "/" .. idx,
                           "], val: ", json.delay_encode(item),
                           ", it should be an object")
             end
 
-            local key = item.id or "arr_" .. i
-            local conf_item = {value = item, modifiedIndex = apisix_yaml_mtime,
-                            key = "/" .. self.key .. "/" .. key}
+            local id = item.id or ("arr_" .. idx)
+            local modifiedIndex = item.modifiedIndex or conf_version
+            local conf_item = {value = item, modifiedIndex = modifiedIndex,
+                            key = "/" .. self.key .. "/" .. id}
 
             if data_valid and self.item_schema then
                 data_valid, err = check_schema(self.item_schema, item)
@@ -256,12 +296,24 @@ local function sync_data(self)
             end
 
             if data_valid then
-                insert_tab(self.values, conf_item)
-                local item_id = conf_item.value.id or self.key .. "#" .. id
-                item_id = tostring(item_id)
-                self.values_hash[item_id] = #self.values
-                conf_item.value.id = item_id
-                conf_item.clean_handlers = {}
+                local item_id = tostring(id)
+                local pre_index = self.values_hash[item_id]
+                if pre_index then
+                    -- remove the old item
+                    local pre_val = self.values[pre_index]
+                    if pre_val and
+                        (not item.modifiedIndex or pre_val.modifiedIndex ~= item.modifiedIndex) then
+                        config_util.fire_all_clean_handlers(pre_val)
+                        self.values[pre_index] = conf_item
+                        conf_item.value.id = item_id
+                        conf_item.clean_handlers = {}
+                    end
+                else
+                    insert_tab(self.values, conf_item)
+                    self.values_hash[item_id] = #self.values
+                    conf_item.value.id = item_id
+                    conf_item.clean_handlers = {}
+                end
 
                 if self.filter then
                     self.filter(conf_item)
@@ -270,7 +322,7 @@ local function sync_data(self)
         end
     end
 
-    self.conf_version = apisix_yaml_mtime
+    self.conf_version = conf_version
     return true
 end
 
@@ -317,14 +369,14 @@ local function _automatic_fetch(premature, self)
             log.info("no config found in shared dict")
             goto SKIP_SHARED_DICT
         end
+        log.info("startup config loaded from shared dict: ", config)
 
         config, err = json.decode(tostring(config))
         if not config then
             log.error("failed to decode config from shared dict: ", err)
             goto SKIP_SHARED_DICT
         end
-
-        _M._update_config(config.conf, config.conf_version)
+        _M._update_config(config)
         log.info("config loaded from shared dict")
 
         ::SKIP_SHARED_DICT::
@@ -395,6 +447,16 @@ function _M.new(key, opts)
         key = sub_str(key, 2)
     end
 
+    if is_use_admin_api() then
+        if item_schema and item_schema.properties then
+            local item_schema_cp = tbl_deepcopy(item_schema)
+            -- allow clients to specify modifiedIndex to control resource changes.
+            item_schema_cp.properties.modifiedIndex = {
+                type = "integer",
+            }
+            item_schema = item_schema_cp
+        end
+    end
     local obj = setmetatable({
         automatic = automatic,
         item_schema = item_schema,
@@ -408,6 +470,7 @@ function _M.new(key, opts)
         last_err = nil,
         last_err_time = nil,
         key = key,
+        conf_version_key = key and key .. "_conf_version",
         single_item = single_item,
         filter = filter_fun,
     }, mt)
@@ -469,9 +532,9 @@ end
 
 
 function _M.init_worker()
+    sync_status_to_shdict(false)
     if is_use_admin_api() then
         apisix_yaml = {}
-        apisix_yaml_raw = {}
         apisix_yaml_mtime = 0
         return true
     end

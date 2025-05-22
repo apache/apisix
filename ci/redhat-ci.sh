@@ -31,7 +31,7 @@ install_dependencies() {
 
     # install newer curl
     yum makecache
-    yum install -y libnghttp2-devel
+    yum install -y xz
     install_curl
 
     # install apisix-runtime to make apisix's rpm test work
