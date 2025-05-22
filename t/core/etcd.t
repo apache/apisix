@@ -514,7 +514,6 @@ Data plane role should not write to etcd. This operation will be deprecated in f
 
 
 
-
 === TEST 12: should warn when traditional + etcd
 --- yaml_config
 deployment:
