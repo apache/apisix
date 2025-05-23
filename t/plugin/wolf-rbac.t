@@ -54,7 +54,7 @@ __DATA__
         }
     }
 --- response_body_like eval
-qr/\{"appid":"unset","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
+qr/\{"appid":"unset","error_message":"request to wolf-server failed!","header_prefix":"X-","server":"http:\/\/127\.0\.0\.1:12180"\}/
 
 
 
@@ -247,9 +247,9 @@ POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=not-found&password=123456
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
---- error_code: 200
+--- error_code: 401
 --- response_body
-{"message":"request to wolf-server failed!"}
+{"message":"username or password is incorrect"}
 --- grep_error_log eval
 qr/ERR_USER_NOT_FOUND/
 --- grep_error_log_out eval
@@ -263,9 +263,9 @@ POST /apisix/plugin/wolf-rbac/login
 appid=wolf-rbac-app&username=admin&password=wrong-password
 --- more_headers
 Content-Type: application/x-www-form-urlencoded
---- error_code: 200
+--- error_code: 401
 --- response_body
-{"message":"request to wolf-server failed!"}
+{"message":"username or password is incorrect"}
 --- grep_error_log eval
 qr/ERR_PASSWORD_ERROR/
 --- grep_error_log_out eval
@@ -735,3 +735,79 @@ X-Nickname: administrator
 consumer merge echo plugins
 --- no_error_log
 [error]
+
+
+
+=== TEST 38: add consumer with custom error message
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_custom_msg",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-custom-msg",
+                            "server": "http://127.0.0.1:1982",
+                            "error_message": "custom error message"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 39: test error_message configuration
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            -- 创建 consumer
+            local code, body = t('/apisix/admin/consumers',
+                ngx.HTTP_PUT,
+                [[{
+                    "username": "wolf_rbac_error_msg_test",
+                    "plugins": {
+                        "wolf-rbac": {
+                            "appid": "wolf-rbac-error-msg",
+                            "server": "http://127.0.0.1:1982/500",
+                            "error_message": "custom error message for test"
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                return ngx.say(body)
+            end
+
+            -- 测试 wolf server 请求失败时的错误消息
+            local code, body = t('/apisix/plugin/wolf-rbac/login',
+                ngx.HTTP_POST,
+                [[
+                {"appid": "wolf-rbac-error-msg", "username": "admin", "password": "123456"}
+                ]],
+                [[
+                {"message":"custom error message for test"}
+                ]],
+                {["Content-Type"] = "application/json"}
+                )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+{"message":"custom error message for test"}
