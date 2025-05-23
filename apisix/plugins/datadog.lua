@@ -24,6 +24,8 @@ local udp = ngx.socket.udp
 local format = string.format
 local concat = table.concat
 local tostring = tostring
+local pairs = pairs
+local floor = math.floor
 
 local plugin_name = "datadog"
 local defaults = {
@@ -37,7 +39,14 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
-        prefer_name = {type = "boolean", default = true}
+        prefer_name = {type = "boolean", default = true},
+        include_path = {type = "boolean", default = false},
+        include_method = {type = "boolean", default = false},
+        constant_tags = {
+            type = "array",
+            items = {type = "string"},
+            default = {}
+        }
     }
 }
 
@@ -80,8 +89,22 @@ local function generate_tag(entry, const_tags)
         tags = {}
     end
 
+    if entry.constant_tags and #entry.constant_tags > 0 then
+        for _, tag in pairs(entry.constant_tags) do
+            core.table.insert(tags, tag)
+        end
+    end
+
     if entry.route_id and entry.route_id ~= "" then
         core.table.insert(tags, "route_name:" .. entry.route_id)
+    end
+
+    if entry.path and entry.path ~= "" then
+        core.table.insert(tags, "path:" .. entry.path)
+    end
+
+    if entry.method and entry.method ~= "" then
+        core.table.insert(tags, "method:" .. entry.method)
     end
 
     if entry.service_id and entry.service_id ~= "" then
@@ -96,6 +119,9 @@ local function generate_tag(entry, const_tags)
     end
     if entry.response.status then
         core.table.insert(tags, "response_status:" .. entry.response.status)
+
+        local status_class = floor(entry.response.status / 100) .. "xx"
+        core.table.insert(tags, "response_status_class:" .. status_class)
     end
     if entry.scheme ~= "" then
         core.table.insert(tags, "scheme:" .. entry.scheme)
@@ -239,6 +265,20 @@ function _M.log(conf, ctx)
         if ctx.route_name and ctx.route_name ~= "" then
             entry.route_id = ctx.route_name
         end
+    end
+
+    if conf.include_path then
+        if ctx.curr_req_matched and ctx.curr_req_matched._path then
+            entry.path = ctx.curr_req_matched._path
+        end
+    end
+
+    if conf.include_method then
+        entry.method = ctx.var.method
+    end
+
+    if conf.constant_tags and #conf.constant_tags > 0 then
+        entry.constant_tags = core.table.clone(conf.constant_tags)
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
