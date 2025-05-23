@@ -22,6 +22,8 @@
 local require           = require
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local array_mt          = require("apisix.core.json").array_mt
+local log               = require("apisix.core.log")
+local try_read_attr     = require("apisix.core.table").try_read_attr
 local v3_adapter        = require("apisix.admin.v3_adapter")
 local etcd              = require("resty.etcd")
 local clone_tab         = require("table.clone")
@@ -35,6 +37,24 @@ local ngx_get_phase     = ngx.get_phase
 
 
 local _M = {}
+
+
+local NOT_ALLOW_WRITE_ETCD_WARN = 'Data plane role should not write to etcd. ' ..
+    'This operation will be deprecated in future releases.'
+
+local function is_data_plane()
+    local local_conf, err = fetch_local_conf()
+    if not local_conf then
+        return nil, err
+    end
+
+    local role = try_read_attr(local_conf, "deployment", "role")
+    if role == "data_plane" then
+       return true
+    end
+
+    return false
+end
 
 
 local function _new(etcd_conf)
@@ -337,6 +357,16 @@ end
 
 
 local function set(key, value, ttl)
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
+        log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
+    end
+
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -386,6 +416,16 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
+        log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
+    end
+
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -443,7 +483,18 @@ function _M.atomic_set(key, value, ttl, mod_revision)
 end
 
 
+
 function _M.push(key, value, ttl)
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
+        log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
+    end
+
     local etcd_cli, _, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -476,6 +527,16 @@ end
 
 
 function _M.delete(key)
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
+        log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
+    end
+
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
@@ -502,6 +563,16 @@ function _M.delete(key)
 end
 
 function _M.rmdir(key, opts)
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
+        log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
+    end
+
     local etcd_cli, prefix, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err
