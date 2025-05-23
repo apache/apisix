@@ -383,8 +383,15 @@ local private_key_schema = {
 local upstream_schema = {
     type = "object",
     properties = {
+        -- metadata
+        id = id_schema,
+        name = rule_name_def,
+        desc = desc_def,
+        labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
+
+        -- properties
         nodes = nodes_schema,
         retries = {
             type = "integer",
@@ -466,7 +473,6 @@ local upstream_schema = {
                 " For L4 proxy, it can be one of tcp/tls/udp." ..
                 " For specific protocols, it can be kafka."
         },
-        labels = labels_def,
         discovery_type = {
             description = "discovery type",
             type = "string",
@@ -491,14 +497,11 @@ local upstream_schema = {
             default = "pass"
         },
         upstream_host = host_def,
-        name = rule_name_def,
-        desc = desc_def,
         service_name = {
             type = "string",
             maxLength = 256,
             minLength = 1
         },
-        id = id_schema,
     },
     oneOf = {
         {required = {"nodes"}},
@@ -542,8 +545,15 @@ _M.method_schema = method_schema
 _M.route = {
     type = "object",
     properties = {
+        -- metadata
+        id = id_schema,
+        name = rule_name_def,
+        desc = desc_def,
+        labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
+
+        -- properties
         uri = {type = "string", minLength = 1, maxLength = 4096},
         uris = {
             type = "array",
@@ -554,8 +564,6 @@ _M.route = {
             minItems = 1,
             uniqueItems = true,
         },
-        name = rule_name_def,
-        desc = desc_def,
         priority = {type = "integer", default = 0},
 
         methods = {
@@ -596,8 +604,6 @@ _M.route = {
 
         upstream = upstream_schema,
 
-        labels = labels_def,
-
         service_id = id_schema,
         upstream_id = id_schema,
 
@@ -605,8 +611,6 @@ _M.route = {
             description = "enable websocket for request",
             type        = "boolean",
         },
-
-        id = id_schema,
 
         status = {
             description = "route status, 1 to enable, 0 to disable",
@@ -672,16 +676,19 @@ _M.route = {
 _M.service = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
-        plugins = plugins_schema,
-        upstream = upstream_schema,
-        upstream_id = id_schema,
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
-        script = {type = "string", minLength = 10, maxLength = 102400},
         create_time = timestamp_def,
         update_time = timestamp_def,
+
+        -- properties
+        plugins = plugins_schema,
+        upstream = upstream_schema,
+        upstream_id = id_schema,
+        script = {type = "string", minLength = 10, maxLength = 102400},
         enable_websocket = {
             description = "enable websocket for request",
             type        = "boolean",
@@ -700,16 +707,19 @@ _M.service = {
 _M.consumer = {
     type = "object",
     properties = {
+        -- metadata
         username = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
             pattern = [[^[a-zA-Z0-9_]+$]]
         },
-        group_id = id_schema,
-        plugins = plugins_schema,
+        desc = desc_def,
         labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
-        desc = desc_def,
+
+        -- properties
+        group_id = id_schema,
+        plugins = plugins_schema,
     },
     required = {"username"},
     additionalProperties = false,
@@ -718,16 +728,21 @@ _M.consumer = {
 _M.credential = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
+        name = rule_name_def,
+        desc = desc_def,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+
+        -- properties
         plugins = {
             type = "object",
             maxProperties = 1,
         },
-        labels = labels_def,
-        create_time = timestamp_def,
-        update_time = timestamp_def,
-        desc = desc_def,
     },
+    additionalProperties = false,
 }
 
 _M.upstream = upstream_schema
@@ -742,7 +757,14 @@ local secret_uri_schema = {
 _M.ssl = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
+        desc = desc_def,
+        labels = labels_def,
+        create_time = timestamp_def,
+        update_time = timestamp_def,
+
+        -- properties
         type = {
             description = "ssl certificate type, " ..
                             "server to server certificate, " ..
@@ -814,7 +836,6 @@ _M.ssl = {
             },
             required = {"ca"},
         },
-        labels = labels_def,
         status = {
             description = "ssl status, 1 to enable, 0 to disable",
             type = "integer",
@@ -830,8 +851,6 @@ _M.ssl = {
                 enum = {"TLSv1.1", "TLSv1.2", "TLSv1.3"}
             },
         },
-        create_time = timestamp_def,
-        update_time = timestamp_def
     },
     ["if"] = {
         properties = {
@@ -852,13 +871,20 @@ _M.ssl = {
 
 
 
+-- TODO: Design a plugin resource registration framework used by plugins and move the proto
+--       resource to grpc-transcode plugin, which should not be an APISIX core resource
 _M.proto = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
+        name = rule_name_def,
         desc = desc_def,
+        labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
+
+        -- properties
         content = {
             type = "string", minLength = 1, maxLength = 1024*1024
         }
@@ -871,10 +897,13 @@ _M.proto = {
 _M.global_rule = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
-        plugins = plugins_schema,
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+
+        -- properties
+        plugins = plugins_schema,
     },
     required = {"id", "plugins"},
     additionalProperties = false,
@@ -923,12 +952,16 @@ local xrpc_protocol_schema = {
 _M.stream_route = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
+        name = rule_name_def,
         desc = desc_def,
+        labels = labels_def,
         create_time = timestamp_def,
         update_time = timestamp_def,
+
+        -- properties
         remote_addr = remote_addr_def,
-        labels = labels_def, -- The ingress project need this field
         server_addr = {
             description = "server IP",
             type = "string",
@@ -977,15 +1010,18 @@ _M.plugins = {
 _M.plugin_config = {
     type = "object",
     properties = {
+        -- metadata
+        id = id_schema,
         name = {
             type = "string",
         },
-        id = id_schema,
         desc = desc_def,
-        plugins = plugins_schema,
         labels = labels_def,
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+
+        -- properties
+        plugins = plugins_schema,
     },
     required = {"id", "plugins"},
     additionalProperties = false,
@@ -995,12 +1031,16 @@ _M.plugin_config = {
 _M.consumer_group = {
     type = "object",
     properties = {
+        -- metadata
         id = id_schema,
+        name = rule_name_def,
         desc = desc_def,
-        plugins = plugins_schema,
         labels = labels_def,
         create_time = timestamp_def,
-        update_time = timestamp_def
+        update_time = timestamp_def,
+
+        -- properties
+        plugins = plugins_schema,
     },
     required = {"id", "plugins"},
     additionalProperties = false,

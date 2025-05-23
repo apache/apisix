@@ -891,6 +891,7 @@ Credential resource request address：/apisix/admin/consumers/{username}/credent
 | Parameter   | Required | Type        | Description                                                | Example                                         |
 | ----------- |-----| ------- |------------------------------------------------------------|-------------------------------------------------|
 | plugins     | False    | Plugin      | Auth plugins configuration.                                |                                                 |
+| name        | False    | Auxiliary   | Identifier for the Credential.                             | credential_primary                              |
 | desc        | False    | Auxiliary   | Description of usage scenarios.                            | credential xxxx                                 |
 | labels      | False    | Match Rules | Attributes of the Credential specified as key-value pairs. | {"version":"v2","build":"16","env":"production"} |
 
@@ -1275,6 +1276,7 @@ For notes on ID syntax please refer to: [ID Syntax](#quick-note-on-id-syntax)
 | client.depth | False    | Certificate              | Sets the verification depth in client certificate chains. Defaults to 1. Requires OpenResty 1.19+.             |                                                  |
 | client.skip_mtls_uri_regex | False    | An array of regular expressions, in PCRE format              | Used to match URI, if matched, this request bypasses the client certificate checking, i.e. skip the MTLS.             | ["/hello[0-9]+", "/foobar"]                                                |
 | snis         | True, only if `type` is `server`     | Match Rules              | A non-empty array of HTTPS SNI                                                                                 |                                                  |
+| desc         | False    | Auxiliary                | Description of usage scenarios. | certs for production env |
 | labels       | False    | Match Rules              | Attributes of the resource specified as key-value pairs.                                                       | {"version":"v2","build":"16","env":"production"} |
 | type         | False    | Auxiliary            | Identifies the type of certificate, default  `server`.                                                                             | `client` Indicates that the certificate is a client certificate, which is used when APISIX accesses the upstream; `server` Indicates that the certificate is a server-side certificate, which is used by APISIX when verifying client requests.     |
 | status       | False    | Auxiliary                | Enables the current SSL. Set to `1` (enabled) by default.                                                      | `1` to enable, `0` to disable                    |
@@ -1342,6 +1344,7 @@ Consumer group resource request address: /apisix/admin/consumer_groups/{id}
 | Parameter   | Required | Description                                                                                                        | Example                                          |
 | ----------- | -------- | ------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------ |
 | plugins     | True     | Plugins that are executed during the request/response cycle. See [Plugin](terminology/plugin.md) for more. |                                                  |
+| name        | False    | Identifier for the consumer group.                                                                                 | premium-tier                            |
 | desc        | False    | Description of usage scenarios.                                                                                    | customer xxxx                                    |
 | labels      | False    | Attributes of the Consumer group specified as key-value pairs.                                                      | {"version":"v2","build":"16","env":"production"} |
 
@@ -1491,6 +1494,9 @@ Stream Route resource request address:  /apisix/admin/stream_routes/{id}
 
 | Parameter   | Required | Type     | Description                                                         | Example                       |
 | ----------- | -------- | -------- | ------------------------------------------------------------------- | ----------------------------- |
+| name        | False    | Auxiliary | Identifier for the Stream Route.                                   | postgres-proxy                |
+| desc        | False    | Auxiliary | Description of usage scenarios.                                    | proxy endpoint for postgresql |
+| labels      | False    | Match Rules | Attributes of the Proto specified as key-value pairs.    | {"version":"17","service":"user","env":"production"}     |
 | upstream    | False    | Upstream | Configuration of the [Upstream](./terminology/upstream.md). |                               |
 | upstream_id | False    | Upstream | Id of the [Upstream](terminology/upstream.md) service.      |                               |
 | service_id  | False    | String   | Id of the [Service](terminology/service.md) service.        |                               |
@@ -1684,9 +1690,12 @@ Proto resource request address: /apisix/admin/protos/{id}
 
 ### Request Body Parameters
 
-| Parameter | Required | Type    | Description                          | Example                       |
-|-----------|----------|---------|--------------------------------------| ----------------------------- |
-| content   | True     | String  | content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| Parameter | Required | Type      | Description                          | Example                       |
+|-----------|----------|-----------|--------------------------------------| ----------------------------- |
+| content   | True     | String    | Content of `.proto` or `.pb` files   | See [here](./plugins/grpc-transcode.md#enabling-the-plugin)         |
+| name      | False    | Auxiliary | Identifier for the Protobuf definition. | user-proto                    |
+| desc      | False    | Auxiliary | Description of usage scenarios.      | protobuf for user service     |
+| labels    | False    | Match Rules | Attributes of the Proto specified as key-value pairs. | {"version":"v2","service":"user","env":"production"}     |
 
 ## Schema validation
 
