@@ -312,11 +312,6 @@ local function fetch_full_registry(premature)
         local query_path = instance_list_path .. service_info.service_name
                            .. token_param .. namespace_param .. group_name_param
                            .. signature_param
-        data, err = get_url(base_uri, query_path)
-        if err then
-            log.error('get_url:', query_path, ' err:', err)
-            goto CONTINUE
-        end
 
         if not up_apps[namespace_id] then
             up_apps[namespace_id] = {}
@@ -324,6 +319,19 @@ local function fetch_full_registry(premature)
 
         if not up_apps[namespace_id][group_name] then
             up_apps[namespace_id][group_name] = {}
+        end
+
+        data, err = get_url(base_uri, query_path)
+        if err then
+            local exist_data = applications and applications[namespace_id] and
+                                applications[namespace_id][group_name] and
+                                applications[namespace_id][group_name][service_info.service_name]
+            if exist_data then
+                up_apps[namespace_id][group_name][service_info.service_name] = exist_data
+            end
+            log.error('request failed, will continue using existing data that may be outdated,'
+                            , 'get_url:', query_path, ' err:', err)
+            goto CONTINUE
         end
 
         for _, host in ipairs(data.hosts) do
