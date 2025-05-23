@@ -42,14 +42,14 @@ local _M = {}
 local NOT_ALLOW_WRITE_ETCD_WARN = 'Data plane role should not write to etcd. ' ..
     'This operation will be deprecated in future releases.'
 
-local function check_data_plane_role()
+local function is_data_plane()
     local local_conf, err = fetch_local_conf()
     if not local_conf then
         return nil, err
     end
 
     local role = try_read_attr(local_conf, "deployment", "role")
-    if role == "data_plane" or role == "traditional" then
+    if role == "data_plane" then
        return true
     end
 
@@ -357,8 +357,13 @@ end
 
 
 local function set(key, value, ttl)
-    local is_data_plane = check_data_plane_role()
-    if is_data_plane then
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -411,8 +416,13 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
-    local is_data_plane = check_data_plane_role()
-    if is_data_plane then
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -475,8 +485,13 @@ end
 
 
 function _M.push(key, value, ttl)
-    local is_data_plane = check_data_plane_role()
-    if is_data_plane then
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -512,8 +527,13 @@ end
 
 
 function _M.delete(key)
-    local is_data_plane = check_data_plane_role()
-    if is_data_plane then
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 
@@ -543,8 +563,13 @@ function _M.delete(key)
 end
 
 function _M.rmdir(key, opts)
-    local is_data_plane = check_data_plane_role()
-    if is_data_plane then
+    local data_plane, err = is_data_plane()
+    if err then
+        log.error("failed to check data plane role: ", err)
+        return nil, err
+    end
+
+    if data_plane then
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
     end
 

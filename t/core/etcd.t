@@ -514,7 +514,7 @@ Data plane role should not write to etcd. This operation will be deprecated in f
 
 
 
-=== TEST 12: should warn when traditional + etcd
+=== TEST 12: should not warn when traditional + etcd
 --- yaml_config
 deployment:
   role: traditional
@@ -536,5 +536,5 @@ deployment:
     }
 --- request
 GET /t
---- error_log eval
-qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
+--- no_error_log
+Data plane role should not write to etcd. This operation will be deprecated in future releases.
