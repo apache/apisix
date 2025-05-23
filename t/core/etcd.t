@@ -538,3 +538,136 @@ deployment:
 GET /t
 --- no_error_log
 Data plane role should not write to etcd. This operation will be deprecated in future releases.
+
+
+
+=== TEST 13: add example-plugin with etcd
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "example-plugin": {
+                            "i": 1,
+                            "etcd": {
+                                "key": "/foo",
+                                "value": "bar"
+                            }
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 14: should show warn when example-plugin try to write to etcd
+--- yaml_config
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/hello')
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_log eval
+qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
+
+
+
+=== TEST 15: add example-plugin without etcd
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "example-plugin": {
+                            "i": 1
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+
+=== TEST 16: should show not warn when example-plugin not to write to etcd
+--- yaml_config
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t("/hello")
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- no_error_log
+Data plane role should not write to etcd. This operation will be deprecated in future releases.
