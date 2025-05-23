@@ -645,7 +645,6 @@ passed
 
 
 
-
 === TEST 16: should show not warn when example-plugin not to write to etcd
 --- yaml_config
 deployment:
