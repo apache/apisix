@@ -32,6 +32,12 @@ description: This document contains information about the Apache APISIX server-i
 
 The `server-info` Plugin periodically reports basic server information to etcd.
 
+:::warning
+
+The `server-info` Plugin is deprecated and will be removed in a future release.
+
+:::
+
 The information reported by the Plugin is explained below:
 
 | Name         | Type    | Description                                                                                                            |
