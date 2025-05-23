@@ -144,7 +144,7 @@ verification.
 
 :::
 
-The input parameter **schema_type** is used to distinguish between different schemas types. For example, many plugins need to use some [metadata](./terminology/plugin-metadata), so they define the plugin's `metadata_schema`. Another example, the [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) plugin needs to provide a `consumer_schema` to check the configuration of the `plugins` attribute of the `consumer` resource in order to be used with the [Consumer](./admin-api.md#consumer) resource.
+The input parameter **schema_type** is used to distinguish between different schemas types. For example, many plugins need to use some [metadata](./terminology/plugin-metadata.md), so they define the plugin's `metadata_schema`. Another example, the [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) plugin needs to provide a `consumer_schema` to check the configuration of the `plugins` attribute of the `consumer` resource in order to be used with the [Consumer](./admin-api.md#consumer) resource.
 
 ```lua
 local metadata_schema = {
@@ -180,7 +180,7 @@ end
 
 ### Choose phase to run
 
-Determine which [phase](./terminology/plugin#plugins-execution-lifecycle) to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
+Determine which [phase](./terminology/plugin.md#plugins-execution-lifecycle) to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
 recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
 Similarly, if you want to modify or process the response body or headers you can do that in the `body_filter` or in the `header_filter` phases respectively.

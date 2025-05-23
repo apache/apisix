@@ -27,7 +27,7 @@ title: 插件开发
 
 在 `conf/config.yaml` 中配置 `extra_lua_path` 指定自定义的 lua 插件目录下的代码 (或者配置 `extra_lua_cpath` 指定编译的 .so 或 .dll 文件)。
 
-比如，你可以创建一个目录 `/path/to/example` 作为 `extra_lua_path` 配置的值:
+比如，你可以创建一个目录 `/path/to/example` 作为 `extra_lua_path` 配置的值：
 
 ```yaml
 apisix:
@@ -76,7 +76,7 @@ plugins: # 请参阅 `conf/config.yaml.example` 示例
 
 ## 编写插件
 
-[example-plugin](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) 插件 (本地位置: **apisix/plugins/example-plugin.lua**) 提供了一个示例。
+[example-plugin](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) 插件 (本地位置： **apisix/plugins/example-plugin.lua**) 提供了一个示例。
 
 ### 命名和优先级
 
@@ -147,7 +147,7 @@ end
 
 :::
 
-通过函数输入参数 **schema_type** 对不同类型的的 schema 进行对应的校验。例如很多插件需要使用一些[元数据](./terminology/plugin-metadata)，可以定义插件的 `metadata_schema`。例如 [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) 这个插件为了跟 [Consumer](./admin-api.md#consumer) 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `Consumer` 资源的 `plugins` 属性里面的配置。
+通过函数输入参数 **schema_type** 对不同类型的的 schema 进行对应的校验。例如很多插件需要使用一些[元数据](./terminology/plugin-metadata.md)，可以定义插件的 `metadata_schema`。例如 [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) 这个插件为了跟 [Consumer](./admin-api.md#consumer) 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `Consumer` 资源的 `plugins` 属性里面的配置。
 
 ```lua
 local metadata_schema = {
@@ -183,7 +183,7 @@ end
 
 ### 确定执行阶段
 
-根据业务功能，确定你的插件需要在哪个[阶段](./terminology/plugin#插件执行生命周期)执行。
+根据业务功能，确定你的插件需要在哪个[阶段](./terminology/plugin.md#插件执行生命周期)执行。
 
 以 `key-auth` 为例， `key-auth`是一个认证插件，所以需要在 rewrite 阶段执行。在 APISIX，只有认证逻辑可以在 rewrite 阶段里面完成，其他需要在代理到上游之前执行的逻辑都是在 access 阶段完成的。
 
@@ -476,4 +476,3 @@ __t/servroot__ 会被当成 Nginx 的工作目录，启动 Nginx 实例。根据
 - [Apache APISIX 扩展指南](https://apisix.apache.org/zh/blog/2021/10/26/extension-guide/)
 - [Create a Custom Plugin in Lua](https://docs.api7.ai/apisix/how-to-guide/custom-plugins/create-plugin-in-lua)
 - [example-plugin 代码](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua)
-
