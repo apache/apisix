@@ -91,7 +91,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: send request
 --- log_config
 local api_ctx = ngx.ctx.api_ctx
