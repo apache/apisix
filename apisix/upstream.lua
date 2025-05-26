@@ -30,6 +30,10 @@ local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
+local healthcheck_shdict_name = "upstream-healthcheck"
+if not is_http then
+    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
+end
 
 local set_upstream_tls_client_param
 local ok, apisix_ngx_upstream = pcall(require, "resty.apisix.upstream")
@@ -119,7 +123,7 @@ local function create_checker(upstream)
 
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
-        shm_name = "upstream-healthcheck",
+        shm_name = healthcheck_shdict_name,
         checks = upstream.checks,
         -- the events.init_worker will be executed in the init_worker phase,
         -- events.healthcheck_events_module is set
@@ -359,6 +363,8 @@ function _M.set_by_route(route, api_ctx)
             end
         end
 
+        local checker = fetch_healthchecker(up_conf)
+        api_ctx.up_checker = checker
         return
     end
 

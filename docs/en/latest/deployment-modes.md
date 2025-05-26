@@ -27,11 +27,11 @@ description: Documentation about the three deployment modes of Apache APISIX.
 
 APISIX has three different deployment modes for different production use cases. The table below summarises the deployment modes:
 
-| Deployment mode | Roles                      | Description                                                                                               |
-|-----------------|----------------------------|-----------------------------------------------------------------------------------------------------------|
-| traditional     | traditional                | Data plane and control plane are deployed together. `enable_admin` attribute should be disabled manually. |
-| decoupled       | data_plane / control_plane | Data plane and control plane are deployed independently.                                                  |
-| standalone      | data_plane                 | Only `data_plane` is deployed and the configurations are loaded from a local YAML file.                     |
+| Deployment mode | Roles                      | Description                                                                                                         |
+|-----------------|----------------------------|---------------------------------------------------------------------------------------------------------------------|
+| traditional     | traditional                | Data plane and control plane are deployed together. `enable_admin` attribute should be disabled manually.           |
+| decoupled       | data_plane / control_plane | Data plane and control plane are deployed independently.                                                            |
+| standalone      | data_plane / traditional   | The `data_plane` mode loads configuration from a local YAML file, while the traditional mode expects configuration through Admin API.   |
 
 Each of these deployment modes are explained in detail below.
 
@@ -111,13 +111,19 @@ This method is more suitable for two types of users:
 1. Kubernetes(k8s)：Declarative API that dynamically updates the routing rules with a full yaml configuration.
 2. Different configuration centers: There are many implementations of the configuration center, such as Consul, etc., using the full yaml file for intermediate conversion.
 
-The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. And every time interval (default 1 second), will try to detect whether the file content is updated, if there is an update, reload the rule.
+### Modes
+
+Now, we have two standalone running modes, file-driven and API-driven.
+
+#### File-driven
+
+The file-driven mode is the kind APISIX has always supported.
+
+The routing rules in the `conf/apisix.yaml` file are loaded into memory immediately after the APISIX node service starts. At each interval (default: 1 second), APISIX checks for updates to the file. If changes are detected, it reloads the rules.
 
 *Note*: Reloading and updating routing rules are all hot memory updates. There is no replacement of working processes, since it's a hot update.
 
-Since the current Admin API is based on the etcd configuration center solution, enable Admin API is not allowed when the Standalone mode is enabled.
-
-Standalone mode can only be enabled when we set the role of APISIX as data plane. We set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
+This requires us to set the APISIX role to data plane. That is, set `deployment.role` to `data_plane` and `deployment.role_data_plane.config_provider` to `yaml`.
 
 Refer to the example below:
 
@@ -126,8 +132,146 @@ deployment:
   role: data_plane
   role_data_plane:
     config_provider: yaml
-#END
 ```
+
+This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
+
+#### API-driven (Experimental)
+
+> This mode is experimental, please do not rely on it in your production environment.
+> We use it to validate certain specific workloads and if it is appropriate we will turn it into an officially supported feature, otherwise it will be removed.
+
+##### Overview
+
+API-driven mode is an emerging paradigm for standalone deployment, where routing rules are stored entirely in memory rather than in a configuration file. Updates must be made through the dedicated Standalone Admin API. Each update replaces the full configuration and takes effect immediately through hot updates, without requiring a restart.
+
+##### Configuration
+
+To enable this mode, set the APISIX role to `traditional` (to start both the API gateway and the Admin API endpoint) and use the YAML config provider. Example configuration:
+
+```yaml
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: yaml
+```
+
+This disables the local file source of configuration in favor of the API. When APISIX starts, it uses an empty configuration until updated via the API.
+
+##### API Endpoints
+
+* `conf_version` by resource type
+
+    Use `<resource>_conf_version` to indicate the client’s current version for each resource type (e.g. routes, upstreams, services, etc.).
+
+    ```json
+    {
+      "routes_conf_version": 12,
+      "upstreams_conf_version": 102,
+      "routes": [],
+      "upstreams": []
+    }
+    ```
+
+    APISIX compares each provided `<resource>_conf_version` against its in-memory `<resource>_conf_version` for that resource type. If the provided `<resource>_conf_version` is:
+
+  - **Greater than** the current `conf_version`, APISIX will **rebuild/reset** that resource type’s data to match your payload.
+
+  - **Equal to** the current `conf_version`, APISIX treats the resource as **unchanged** and **ignores** it (no data is rebuilt).
+
+  - **Less than** the current `conf_version`, APISIX considers your update **stale** and **rejects** the request for that resource type with a **400 Bad Request**.
+
+* `modifiedIndex` by individual resource
+
+    Allow setting an index for each resource. APISIX compares this index to its modifiedIndex to determine whether to accept the update.
+
+##### Example
+
+1. get configuration
+
+```shell
+curl -X GET http://127.0.0.1:9180/apisix/admin/configs \
+    -H "X-API-KEY: <apikey>" \
+    -H "Accept: application/json" ## or application/yaml
+```
+
+This returns the current configuration in JSON or YAML format.
+
+```json
+{
+    "consumer_groups_conf_version": 0,
+    "consumers_conf_version": 0,
+    "global_rules_conf_version": 0,
+    "plugin_configs_conf_version": 0,
+    "plugin_metadata_conf_version": 0,
+    "protos_conf_version": 0,
+    "routes_conf_version": 0,
+    "secrets_conf_version": 0,
+    "services_conf_version": 0,
+    "ssls_conf_version": 0,
+    "upstreams_conf_version": 0
+}
+```
+
+2. full update
+
+```shell
+curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
+    -H "X-API-KEY: <apikey>" \
+    -H "Content-Type: application/json" ## or application/yaml \
+    -d '{}'
+```
+
+3. update based on resource type
+
+In APISIX memory, the current configuration is:
+
+```json
+{
+    "routes_conf_version": 1000,
+    "upstreams_conf_version": 1000,
+}
+```
+
+Update the previous upstreams configuration by setting a higher version number, such as 1001, to replace the current version 1000:
+
+```shell
+curl -X PUT http://127.0.0.1:9180/apisix/admin/configs \
+  -H "X-API-KEY: ${API_KEY}" \
+  -H "Content-Type: application/json" \
+  -d '
+{
+    "routes_conf_version": 1000,
+    "upstreams_conf_version": 1001,
+    "routes": [
+        {
+            "modifiedIndex": 1000,
+            "id": "r1",
+            "uri": "/hello",
+            "upstream_id": "u1"
+        }
+    ],
+    "upstreams": [
+        {
+            "modifiedIndex": 1001,
+            "id": "u1",
+            "nodes": {
+                "127.0.0.1:1980": 1,
+                "127.0.0.1:1980": 1
+            },
+            "type": "roundrobin"
+        }
+    ]
+}'
+```
+
+:::note
+
+These APIs apply the same security requirements as the Admin API, including API key, TLS/mTLS, CORS, and IP allowlist.
+
+The API accepts input in the same format as the file-based mode, supporting both JSON and YAML. Unlike the file-based mode, the API does not rely on the `#END` suffix, as HTTP guarantees input integrity.
+
+:::
 
 ### How to configure rules
 

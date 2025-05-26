@@ -67,6 +67,12 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
+    {% if standalone_with_admin_api then %}
+    lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
+    {% end %}
+    {% if status then %}
+    lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
+    {% end %}
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -139,6 +145,10 @@ stream {
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
+
+    {% if stream.lua_shared_dict["upstream-healthcheck-stream"] then %}
+    lua_shared_dict upstream-healthcheck-stream {* stream.lua_shared_dict["upstream-healthcheck-stream"] *};
+    {% end %}
 
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
@@ -356,6 +366,10 @@ http {
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
     {% end %}
 
+    {% if enabled_plugins["mcp-bridge"] then %}
+    lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
+    {% end %}
+
     {% if config_center == "xds" then %}
     lua_shared_dict xds-config  10m;
     lua_shared_dict xds-config-version  1m;
@@ -534,6 +548,23 @@ http {
         location / {
             content_by_lua_block {
                 apisix.http_control()
+            }
+        }
+    }
+    {% end %}
+
+    {% if status then %}
+    server {
+        listen {* status_server_addr *} enable_process=privileged_agent;
+        access_log off;
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
             }
         }
     }
