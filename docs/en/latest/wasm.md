@@ -102,7 +102,7 @@ Attributes below can be configured in the plugin:
 
 | Name           | Type                 | Requirement | Default        | Valid                                                                      | Description                                                                                                                                         |
 | --------------------------------------| ------------| -------------- | -------- | --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-|  conf         | string | required |   |  != ""      | the plugin ctx configuration which can be fetched via Proxy Wasm SDK |
+|  conf         | string or object | required |   |  != "" and != {}     | the plugin ctx configuration which can be fetched via Proxy Wasm SDK |
 
 Here is the mapping between Proxy Wasm callbacks and APISIX's phases:
 
