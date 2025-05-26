@@ -44,7 +44,10 @@ local consumers_count_for_lrucache = 4096
 local function remove_etcd_prefix(key)
     local prefix = ""
     local local_conf = config_local.local_conf()
-    if local_conf.etcd and local_conf.etcd.prefix then
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
+    role, "config_provider")
+    if provider == "etcd" and local_conf.etcd and local_conf.etcd.prefix then
         prefix = local_conf.etcd.prefix
     end
     return string_sub(key, #prefix + 1)
@@ -290,8 +293,9 @@ local function filter(consumer)
         return
     end
 
-    -- We expect the id is the same as username. Fix up it here if it isn't.
-    consumer.value.id = consumer.value.username
+    if not is_credential_etcd_key(consumer.key) then
+        consumer.value.id = consumer.value.username
+    end
 end
 
 

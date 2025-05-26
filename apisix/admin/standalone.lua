@@ -156,7 +156,12 @@ local function update(ctx)
                     end
                 end
                 if item_checker then
-                    valid, err = item_checker(item_temp)
+                    local item_checker_key
+                    if item.id then
+                        -- credential need to check key
+                        item_checker_key = "/" .. key .. "/" .. item_temp.id
+                    end
+                    valid, err = item_checker(item_temp, item_checker_key)
                     if not valid then
                         core.log.error(err_prefix, err)
                         core.response.exit(400, {error_msg = err_prefix .. err})
@@ -235,6 +240,37 @@ function _M.run()
 end
 
 
+local schema_patch
+do
+    local resource_schema = {
+        "proto",
+        "global_rule",
+        "route",
+        "service",
+        "upstream",
+        "consumer",
+        "consumer_group",
+        "credential",
+        "ssl",
+        "plugin_config",
+    }
+    function schema_patch()
+        for _, name in ipairs(resource_schema) do
+            local schema = core.schema[name]
+            if not schema then
+                core.log.error("schema for ", name, " not found")
+                return nil, "schema for " .. name .. " not found"
+            end
+            if schema.properties then
+                schema.properties.modifiedIndex = {
+                    type = "integer",
+                }
+            end
+        end
+    end
+end
+
+
 function _M.init_worker()
     local function update_config()
         local config, err = shared_dict:get("config")
@@ -251,6 +287,12 @@ function _M.init_worker()
         config_yaml._update_config(config)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
+
+    local ok, err = schema_patch()
+    if not ok then
+        core.log.error("failed to patch schema: ", err)
+        return
+    end
 end
 
 

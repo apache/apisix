@@ -274,7 +274,7 @@ local function sync_data(self)
                           ", it should be an object")
             end
 
-            local id = item.id or ("arr_" .. idx)
+            local id = item.id or item.username or ("arr_" .. idx)
             local modifiedIndex = item.modifiedIndex or conf_version
             local conf_item = {value = item, modifiedIndex = modifiedIndex,
                             key = "/" .. self.key .. "/" .. id}
@@ -288,7 +288,7 @@ local function sync_data(self)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item)
+                data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item))

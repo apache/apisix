@@ -718,7 +718,18 @@ _M.consumer = {
 _M.credential = {
     type = "object",
     properties = {
-        id = id_schema,
+        id = {
+            oneOf = {
+                id_schema,
+                -- id: "${consumer_name}/credentials/${credential_id}" from standalone mode
+                {
+                    type = "string",
+                    minLength = 15,
+                    maxLength = 128,
+                    pattern = [[^[a-zA-Z0-9]+/credentials/[a-zA-Z0-9]+$]],
+                }
+            }
+        },
         plugins = {
             type = "object",
             maxProperties = 1,
