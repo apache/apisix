@@ -25,7 +25,6 @@ local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
-local tbl_deepcopy = require("apisix.core.table").deepcopy
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
@@ -239,7 +238,8 @@ local function sync_data(self)
             end
 
             if data_valid and self.checker then
-                -- TODO: An opts table should be used, as different checkers may use different parameters.
+                -- TODO: An opts table should be used
+                -- as different checkers may use different parameters
                 data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
