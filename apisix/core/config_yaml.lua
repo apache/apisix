@@ -447,16 +447,6 @@ function _M.new(key, opts)
         key = sub_str(key, 2)
     end
 
-    if is_use_admin_api() then
-        if item_schema and item_schema.properties then
-            local item_schema_cp = tbl_deepcopy(item_schema)
-            -- allow clients to specify modifiedIndex to control resource changes.
-            item_schema_cp.properties.modifiedIndex = {
-                type = "integer",
-            }
-            item_schema = item_schema_cp
-        end
-    end
     local obj = setmetatable({
         automatic = automatic,
         item_schema = item_schema,

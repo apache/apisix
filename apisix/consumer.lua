@@ -294,6 +294,7 @@ local function filter(consumer)
     end
 
     if not is_credential_etcd_key(consumer.key) then
+        -- We expect the id is the same as username. Fix up it here if it isn't.
         consumer.value.id = consumer.value.username
     end
 end
