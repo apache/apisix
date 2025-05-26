@@ -239,7 +239,8 @@ local function sync_data(self)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item)
+                -- TODO: An opts table should be used, as different checkers may use different parameters.
+                data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item))

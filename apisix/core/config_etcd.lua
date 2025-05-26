@@ -574,6 +574,7 @@ local function load_full_data(self, dir_res, headers)
             end
 
             if data_valid and self.checker then
+                -- TODO: An opts table should be used, as different checkers may use different parameters.
                 data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
