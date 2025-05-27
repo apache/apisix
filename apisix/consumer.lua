@@ -288,12 +288,27 @@ local function check_consumer(consumer, key)
 end
 
 
+local function filter(consumer)
+    if not consumer.value then
+        return
+    end
+
+    if not is_credential_etcd_key(consumer.key) then
+        -- We expect the id is the same as username. Fix up it here if it isn't.
+        consumer.value.id = consumer.value.username
+    end
+end
+
+
 function _M.init_worker()
     local err
     local cfg = {
         automatic = true,
         checker = check_consumer,
     }
+    if core.config.type ~= "etcd" then
+        cfg.filter = filter
+    end
 
     consumers, err = core.config.new("/consumers", cfg)
     if not consumers then
