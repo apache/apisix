@@ -284,6 +284,7 @@ http {
     lua_shared_dict balancer-ewma {* http.lua_shared_dict["balancer-ewma"] *};
     lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
+    lua_shared_dict balancer-least-conn {* http.lua_shared_dict["balancer-least-conn"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
 
     # for discovery shared dict
