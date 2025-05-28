@@ -81,8 +81,8 @@ local function generate_new_config_from_old(discovery_conf)
         },
         default_weight = discovery_conf.weight,
         timeout = discovery_conf.timeout,
+        old_conf = true
     }
-
     return {config}
 end
 

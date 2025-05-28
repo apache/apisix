@@ -18,14 +18,18 @@
 local core = require("apisix.core")
 local http = require('resty.http')
 local utils = require("apisix.discovery.nacos.utils")
-
+local string             = string
+local string_sub         = string.sub
+local str_byte           = string.byte
+local str_find           = core.string.find
 local ngx_timer_at = ngx.timer.at
 local math_random  = math.random
 local nacos_dict = ngx.shared.nacos
-
+local ngx = ngx
+local ngx_re             = require('ngx.re')
 local NACOS_LOGIN_PATH = "/auth/login"
-local NACOS_INSTANCE_PATH = "ns/instance/list"
-
+local NACOS_INSTANCE_PATH = "/ns/instance/list"
+local inspect = require("inspect")
 local _M = {}
 
 
@@ -68,14 +72,40 @@ local function _request(method, uri, params, headers, body, options)
 end
 
 
-local function request_login(self, username, password)
+local function get_base_uri(hosts)
+    local host = hosts
+    core.log.warn("HOSTS ", inspect(host))
+    -- TODO Add health check to get healthy nodes.
+    local url = host[math_random(#host)]
+    local auth_idx = core.string.rfind_char(url, '@')
+    local username, password
+    if auth_idx then
+        local protocol_idx = str_find(url, '://')
+        local protocol = string_sub(url, 1, protocol_idx + 2)
+        local user_and_password = string_sub(url, protocol_idx + 3, auth_idx - 1)
+        local arr = ngx_re.split(user_and_password, ':')
+        if #arr == 2 then
+            username = arr[1]
+            password = arr[2]
+        end
+        local other = string_sub(url, auth_idx + 1)
+        url = protocol .. other
+    end
+    core.log.warn("RETURNED URL2 ", url)
+    return url, username, password
+end
+
+local function request_login(self, host, username, password)
     local params = {
        ["username"] = username,
        ["password"] = password,
     }
+    -- backward compat: NACOS_LOGIN_PATH starts with "/" so we need to remove the last "/" from prefix
+    if string_sub(self.config.prefix, -1) == "/" then
+        self.config.prefix = string_sub(self.config.prefix, 1, -2)
+    end
+    local uri = host .. self.config.prefix .. NACOS_LOGIN_PATH
 
-    local hosts = self.config.hosts
-    local uri = hosts[math_random(#hosts)] .. self.config.prefix .. NACOS_LOGIN_PATH
     local headers = {
         ["Content-Type"] ="application/x-www-form-urlencoded"
     }
@@ -89,11 +119,14 @@ local function request_login(self, username, password)
     return resp.accessToken
 end
 
-local inspect = require("inspect")
-local function request_instance_list(self, params)
-    local hosts = self.config.hosts
-    core.log.warn("FIRST CONCATENATAE ", inspect(hosts[math_random(#hosts)]))
-    local uri = hosts[math_random(#hosts)] .. self.config.prefix .. NACOS_INSTANCE_PATH
+
+local function request_instance_list(self, params, host)
+    core.log.warn("FIRST CONCATENATAE ", inspect(host))
+    -- backward compat: NACOS_INSTANCE_PATH starts with "/" so we need to remove the last "/" from prefix
+    if string_sub(self.config.prefix, -1) == "/" then
+        self.config.prefix = string_sub(self.config.prefix, 1, -2)
+    end
+    local uri = host .. self.config.prefix .. NACOS_INSTANCE_PATH
 
     local resp, err = _request("GET", uri, params)
     if not resp then
@@ -103,6 +136,7 @@ local function request_instance_list(self, params)
 
     return resp.hosts or {}
 end
+
 
 local function fetch_instances(self, serv)
     local config = self.config
@@ -115,9 +149,24 @@ local function fetch_instances(self, serv)
     }
 
     local auth = config.auth or {}
-    if (auth.username and auth.username ~= "") and (auth.password and auth.password ~= "") then
-       local token = request_login(self, auth.username, auth.password)
-       params["accessToken"] = token
+    -- for backward compat:
+    -- In older method, we passed username and password inside of host
+    -- In new method its passed separately
+    local username, password, host
+    if config.old_conf then
+        -- extract username and password from host
+        host, username, password = get_base_uri(config.hosts)
+    else
+        host = config.hosts[math_random(#config.hosts)]
+        if (auth.username and auth.username ~= "") and (auth.password and auth.password ~= "") then
+            username = auth.username
+            password = auth.password
+         end
+    end
+    core.log.warn("USERNAME AND PASSWORD ", username, password, " AND HOST ", host)
+    if username and username ~= "" and password and password ~= "" then
+        local token = request_login(self, host, username, password)
+        params["accessToken"] = token
     end
 
     if auth.token and auth.token ~= "" then
@@ -131,7 +180,7 @@ local function fetch_instances(self, serv)
        params["signature"] = signature
     end
 
-    local instances = request_instance_list(self, params)
+    local instances = request_instance_list(self, params, host)
     local nodes = {}
     for _, instance in ipairs(instances) do
         local node = {
