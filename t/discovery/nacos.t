@@ -857,8 +857,8 @@ discovery:
 --- request
 GET /t
 --- response_body
-server 2
 server 1
+server 3
 --- timeout: 10
 
 
