@@ -21,7 +21,6 @@ local ngx = ngx
 local utils = require("apisix.discovery.nacos.utils")
 local string             = string
 local string_sub         = string.sub
-local str_byte           = string.byte
 local str_find           = core.string.find
 local ngx_timer_at = ngx.timer.at
 local math_random  = math.random
@@ -118,7 +117,7 @@ local function request_login(self, host, username, password)
     local headers = {
         ["Content-Type"] ="application/x-www-form-urlencoded"
     }
-    
+
     local resp, err = _request("POST", uri, nil, headers, utils.generate_request_params(params), {timeout=self.config.timeout})
     if not resp then
         core.log.error("failed to fetch token from nacos, uri: ", uri, " err: ", err)
