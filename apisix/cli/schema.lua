@@ -376,7 +376,7 @@ local deployment_schema = {
             role_traditional = {
                 properties = {
                     config_provider = {
-                        enum = {"etcd"}
+                        enum = {"etcd", "yaml"}
                     },
                 },
                 required = {"config_provider"}
