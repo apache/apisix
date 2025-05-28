@@ -90,3 +90,4 @@ stream_routes:
 #END
 --- error_log
 no valid upstream node
+--- timeout: 10

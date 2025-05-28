@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local nacos_factory = require("apisix.discovery.nacos.factory")
 local utils = require("apisix.discovery.nacos.utils")
 local process = require("ngx.process")
+local local_conf         = require('apisix.core.config_local').local_conf()
 local ngx = ngx
 
 local shdict_name = "nacos"
@@ -163,5 +164,40 @@ function _M.get_health_checkers()
     return result
 end
 
+local cjson = require "cjson"
+
+function _M.dump_data()
+    local applications = {}
+    local keys = nacos_dict:get_keys() or {}
+    
+    for _, key in ipairs(keys) do
+        local parts = {}
+        for part in key:gmatch("[^/]+") do
+            table.insert(parts, part)
+        end
+        
+        if #parts == 3 then
+            local namespace_id, group_name, service_name = parts[1], parts[2], parts[3]
+            local data_str = nacos_dict:get(key)
+            
+            if data_str and data_str ~= "" then
+                -- Decode JSON string to Lua table
+                local success, data = pcall(cjson.decode, data_str)
+                if success then
+                    applications[namespace_id] = applications[namespace_id] or {}
+                    applications[namespace_id][group_name] = applications[namespace_id][group_name] or {}
+                    applications[namespace_id][group_name][service_name] = data
+                else
+                    ngx.log(ngx.ERR, "failed to decode data for key ", key, ": ", data)
+                end
+            end
+        end
+    end
+
+    return {
+        config = local_conf.discovery.nacos,
+        services = applications
+    }
+end
 
 return _M

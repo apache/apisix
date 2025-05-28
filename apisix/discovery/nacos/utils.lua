@@ -47,6 +47,16 @@ end
 
 _M.parse_service_name = parse_service_name
 
+local function de_duplication(services, namespace_id, group_name, service_name, scheme)
+    for _, service in ipairs(services) do
+        if service.namespace_id == namespace_id and service.group_name == group_name
+                and service.service_name == service_name and service.scheme == scheme then
+            return true
+        end
+    end
+    return false
+end
+
 local function iter_and_add_service(services, hash, id, values)
     if not values then
         return
@@ -83,6 +93,11 @@ local function iter_and_add_service(services, hash, id, values)
         end
         if not group_name or group_name == "" then
             group_name = upstream.discovery_args and upstream.discovery_args.group_name or default_group_name
+        end
+        local dup = de_duplication(services, namespace_id, group_name,
+        upstream.service_name, upstream.scheme)
+        if dup then
+            goto CONTINUE
         end
         core.table.insert(services, {
             name = name,
