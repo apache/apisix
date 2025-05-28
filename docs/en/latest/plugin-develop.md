@@ -26,7 +26,7 @@ see [external plugin](./external-plugin.md).
 
 ## Where to put your plugins
 
-Setup the `extra_lua_path` in `conf/config.yaml` to load your own code (or `extra_lua_cpath` for compiled .so or .dll file).
+Use the `extra_lua_path` parameter in `conf/config.yaml` file to load your custom plugin code (or use `extra_lua_cpath` for compiled `.so` or `.dll` file).
 
 For example, you can create a directory `/path/to/example`:
 
@@ -40,9 +40,12 @@ The structure of the `example` directory should look like this:
 
 ```
 ├── example
-│   └── apisix
-│       └── plugins
-│           └── 3rd-party.lua
+│   └── apisix
+│       ├── plugins
+│       │   └── 3rd-party.lua
+│       └── stream
+│           └── plugins
+│               └── 3rd-party.lua
 ```
 
 :::note
@@ -65,13 +68,13 @@ plugins: # See `conf/config.yaml.example` for an example
 
 In particular, most APISIX plugins are enabled by default when the plugins field configuration is not defined (The default enabled plugins can be found in [apisix/cli/config.lua](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua)).
 
-Once the plugins configuration is defined in `conf/config.yaml`, the new plugins list will replace the default configuration instead of merging. Therefore, when defining the `plugins` field, make sure to include the built-in plugins that are being used. To maintain consistency with the default behavior, you can include all the default enabled plugins defined in **apisix/cli/config.lua**.
+Once the plugins configuration is defined in `conf/config.yaml`, the new plugins list will replace the default configuration instead of merging. Therefore, when defining the `plugins` field, make sure to include the built-in plugins that are being used. To maintain consistency with the default behavior, you can include all the default enabled plugins defined in `apisix/cli/config.lua`.
 
 :::
 
 ## Writing plugins
 
-The [example-plugin](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) plugin (local location: **apisix/plugins/example-plugin.lua**) provides an example.
+The [`example-plugin`](https://github.com/apache/apisix/blob/master/apisix/plugins/example-plugin.lua) plugin in this repo provides an example.
 
 ### Naming and priority
 
@@ -292,7 +295,7 @@ The example of [my_hook.lua](https://github.com/apache/apisix/blob/master/exampl
 
 ## Check external dependencies
 
-If you have dependencies on external libraries, check the dependent items. if your plugin needs to use shared memory, it
+If you have dependencies on external libraries, check the dependent items. If your plugin needs to use shared memory, it
 needs to declare via [customizing Nginx configuration](./customize-nginx-configuration.md), for example :
 
 ```yaml
@@ -309,15 +312,11 @@ The plugin itself provides the init method. It is convenient for plugins to perf
 the plugin is loaded. If you need to clean up the initialization, you can put it in the corresponding destroy method.
 
 Note : if the dependency of some plugin needs to be initialized when Nginx start, you may need to add logic to the initialization
-method "http_init" in the file __apisix/init.lua__, and you may need to add some processing on generated part of Nginx
-configuration file in __apisix/cli/ngx_tpl.lua__ file. But it is easy to have an impact on the overall situation according to the
+method "http_init" in the file `apisix/init.lua`, and you may need to add some processing on generated part of Nginx
+configuration file in `apisix/cli/ngx_tpl.lua` file. But it is easy to have an impact on the overall situation according to the
 existing plugin mechanism, **we do not recommend this unless you have a complete grasp of the code**.
 
 ## Encrypted storage fields
-
-::: note
-APISIX version is not less than 3.1
-:::
 
 Some plugins require parameters to be stored encrypted, such as the `password` parameter of the `basic-auth` plugin. This plugin needs to specify in the `schema` which parameters need to be stored encrypted.
 
@@ -338,20 +337,17 @@ Currently not supported yet:
 
 Parameters can be stored encrypted by specifying `encrypt_fields = {"password"}` in the `schema`. APISIX will provide the following functionality.
 
-- When adding and updating resources via the `Admin API`, APISIX automatically encrypts the parameters declared in `encrypt_fields` and stores them in etcd
-- When fetching resources via the `Admin API` and when running the plugin, APISIX automatically decrypts the parameters declared in `encrypt_fields`
+- When adding and updating resources, APISIX automatically encrypts the parameters declared in `encrypt_fields` and stores them in etcd
+- When fetching resources and when running the plugin, APISIX automatically decrypts the parameters declared in `encrypt_fields`
 
-How to enable this feature?
-
-Enable `data_encryption` in `config.yaml`.
+By default, APISIX has `data_encryption` enabled with [two default keys](https://github.com/apache/apisix/blob/85563f016c35834763376894e45908b2fb582d87/apisix/cli/config.lua#L75), you can modify them in `config.yaml`.
 
 ```yaml
 apisix:
     data_encryption:
         enable: true
         keyring:
-            - edd1c9f0985e76a2
-            - qeddd145sfvddff4
+            - ...
 ```
 
 APISIX will try to decrypt the data with keys in the order of the keys in the keyring (only for parameters declared in `encrypt_fields`). If the decryption fails, the next key will be tried until the decryption succeeds.

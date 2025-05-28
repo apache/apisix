@@ -25,7 +25,7 @@ title: 插件开发
 
 ## 插件放置路径
 
-在 `conf/config.yaml` 中配置 `extra_lua_path` 指定自定义的 lua 插件目录下的代码 (或者配置 `extra_lua_cpath` 指定编译的 .so 或 .dll 文件)。
+通过在 `conf/config.yaml` 中配置 `extra_lua_path` 来加载你自定义的 lua 插件代码 (或者配置 `extra_lua_cpath` 指定编译的 .so 或 .dll 文件)。
 
 比如，你可以创建一个目录 `/path/to/example` 作为 `extra_lua_path` 配置的值：
 
@@ -40,8 +40,11 @@ apisix:
 ```
 ├── example
 │   └── apisix
-│       └── plugins
-│           └── 3rd-party.lua
+│       ├── plugins
+│       │   └── 3rd-party.lua
+│       └── stream
+│           └── plugins
+│               └── 3rd-party.lua
 ```
 
 :::note
@@ -70,7 +73,7 @@ plugins: # 请参阅 `conf/config.yaml.example` 示例
 
 特别注意的是，在默认情况下 plugins 字段配置没有定义的情况下，大多数 APISIX 插件都是启用的状态 (默认启用的插件请参考[apisix/cli/config.lua](https://github.com/apache/apisix/blob/master/apisix/cli/config.lua))。
 
-一旦在 `conf/config.yaml` 中定义了 plugins 配置，新的 plugins 列表将会替代默认的配置，而是不是合并，因此在新增配置`plugins`字段时请确保包含正在使用的内置插件。为了在定义 plugins 配置的同时与默认行为保持一致，可以在 plugins 中包含 **apisix/cli/config.lua** 定义的所有默认启用的插件。
+一旦在 `conf/config.yaml` 中定义了 plugins 配置，新的 plugins 列表将会替代默认的配置，而是不是合并，因此在新增配置`plugins`字段时请确保包含正在使用的内置插件。为了在定义 plugins 配置的同时与默认行为保持一致，可以在 plugins 中包含 `apisix/cli/config.lua` 定义的所有默认启用的插件。
 
 :::
 
@@ -297,13 +300,9 @@ nginx_config:
 
 插件本身提供了 init 方法。方便插件加载后做初始化动作。如果你需要清理初始化动作创建出来的内容，你可以在对应的 destroy 方法里完成这一操作。
 
-注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 **apisix/init.lua** 文件的初始化方法 http_init 中添加逻辑，并且可能需要在 __apisix/cli/ngx_tpl.lua__ 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
+注：如果部分插件的功能实现，需要在 Nginx 初始化启动，则可能需要在 `apisix/init.lua` 文件的初始化方法 http_init 中添加逻辑，并且可能需要在 `apisix/cli/ngx_tpl.lua` 文件中，对 Nginx 配置文件生成的部分，添加一些你需要的处理。但是这样容易对全局产生影响，根据现有的插件机制，**我们不建议这样做，除非你已经对代码完全掌握**。
 
 ## 加密存储字段
-
-::: note
-需要 APISIX 版本不小于 3.1
-:::
 
 有些插件需要将参数加密存储，比如 `basic-auth` 插件的 `password` 参数。这个插件需要在 `schema` 中指定哪些参数需要被加密存储。
 
@@ -324,20 +323,17 @@ encrypt_fields = {"clickhouse.password"}
 
 通过在 `schema` 中指定 `encrypt_fields = {"password"}`，可以将参数加密存储。APISIX 将提供以下功能：
 
-- 通过 `Admin API` 来新增和更新资源时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动加密存储在 etcd 中
-- 通过 `Admin API` 来获取资源时，以及在运行插件时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动解密
+- 新增和更新资源时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动加密存储在 etcd 中
+- 获取资源时，以及在运行插件时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动解密
 
-如何开启该功能？
-
-在 `config.yaml` 中开启 `data_encryption`：
+默认情况下, APISIX启用数据加密并使用[两个默认的密钥](https://github.com/apache/apisix/blob/85563f016c35834763376894e45908b2fb582d87/apisix/cli/config.lua#L75)，你可以在 `config.yaml` 中修改：
 
 ```yaml
 apisix:
     data_encryption:
     enable: true
     keyring:
-        - edd1c9f0985e76a2
-        - qeddd145sfvddff4
+        - ...
 ```
 
 `keyring` 是一个数组，可以指定多个 key，APISIX 会按照 keyring 中 key 的顺序，依次尝试用 key 来解密数据（只对在 `encrypt_fields` 声明的参数）。如果解密失败，会尝试下一个 key，直到解密成功。
