@@ -47,8 +47,15 @@ local schema = {
             default = "/loki/api/v1/push"
         },
         tenant_id = {type = "string", default = "fake"},
-
-        -- authorization header
+        request_headers = {
+            type = "object",
+            patternProperties = {
+                [".*"] = {
+                    type = "string",
+                    minLength = 1,
+                },
+            },
+        },
         authorization = { type = "string", minLength = 1, description = "Authorization header" },
         log_labels = {
             type = "object",
@@ -100,7 +107,6 @@ local schema = {
             }
         },
     },
-    encrypt_fields = {"authorization"},
     required = {"endpoint_addrs"}
 }
 
@@ -140,18 +146,16 @@ function _M.check_schema(conf, schema_type)
     return log_util.check_log_schema(conf)
 end
 
+
 local function send_http_data(conf, log)
-    -- set headers
-    local headers = {
-        ["Content-Type"] = "application/json",
-    }
+    local headers = {}
+    if conf.request_headers ~= nil then
+        headers = conf.request_headers
+    end
     if conf.tenant_id then
         headers["X-Scope-OrgID"] = conf.tenant_id
     end
-
-    if conf.authorization then
-        headers["Authorization"] = conf.authorization
-    end
+    headers ["Content-Type"] = "application/json"
 
     local params = {
         headers = headers,
@@ -178,6 +182,7 @@ local function send_http_data(conf, log)
     if not res then
         return false, err
     end
+
 
     if res.status >= 300 then
         return false, str_format("loki server returned status: %d, body: %s",
@@ -246,5 +251,6 @@ function _M.log(conf, ctx)
 
     batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
+
 
 return _M

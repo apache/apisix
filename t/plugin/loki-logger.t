@@ -44,7 +44,7 @@ __DATA__
                 {endpoint_addrs = {"http://127.0.0.1:8199"}, endpoint_uri = "/loki/api/v1/push"},
                 {endpoint_addrs = {"http://127.0.0.1:8199"}, endpoint_uri = 1234},
                 {endpoint_addrs = {"http://127.0.0.1:8199"}, tenant_id = 1234},
-                {endpoint_addrs = {"http://127.0.0.1:8199"}, authorization = 1234},
+                {endpoint_addrs = {"http://127.0.0.1:8199"}, request_headers = 1234},
                 {endpoint_addrs = {"http://127.0.0.1:8199"}, log_labels = "1234"},
                 {endpoint_addrs = {"http://127.0.0.1:8199"}, log_labels = {job = "apisix6"}},
             }
@@ -64,7 +64,7 @@ property "endpoint_addrs" is required
 done
 property "endpoint_uri" validation failed: wrong type: expected string, got number
 property "tenant_id" validation failed: wrong type: expected string, got number
-property "authorization" validation failed: wrong type: expected string, got number
+property "request_headers" validation failed: wrong type: expected object, got number
 property "log_labels" validation failed: wrong type: expected object, got string
 done
 
@@ -82,7 +82,6 @@ done
                         "loki-logger": {
                             "endpoint_addrs": ["http://127.0.0.1:3100"],
                             "tenant_id": "tenant_1",
-                            "authorization": "Bearer 1234",
                             "batch_max_size": 1
                         }
                     },
