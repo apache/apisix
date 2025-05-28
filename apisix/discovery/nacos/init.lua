@@ -24,11 +24,11 @@ local nacos_dict = ngx.shared.nacos
 local OLD_CONFIG_ID = utils.old_config_id
 local _M = {}
 local nacos_clients = {}
-
+local inspect = require("inspect")
 
 function _M.nodes(service_name, discovery_args)
     local value = nacos_dict:get_stale(service_name)
-
+    core.log.warn("fetched nodes being used", inspect(value))
     local nodes = {}
     if not value then
          -- maximum waiting time: 5 seconds

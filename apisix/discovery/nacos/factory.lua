@@ -35,6 +35,7 @@ local _M = {}
 
 local function _request(method, uri, params, headers, body, options)
     local url = uri
+    core.log.warn("PARAM IS ", inspect(params))
     if params ~= nil and params ~= {} then
         url = uri .. "?" .. utils.generate_request_params(params)
     end
@@ -61,7 +62,7 @@ local function _request(method, uri, params, headers, body, options)
         return nil, 'status = ' .. res.status
     end
 
-    core.log.info("request to nacos, uri: ", uri, "response: ", res.body)
+    core.log.info("request to nacos, uri: ", url, "response: ", res.body)
 
     local data, err = core.json.decode(res.body)
     if not data then
@@ -133,7 +134,7 @@ local function request_instance_list(self, params, host)
         core.log.error("failed to fetch instances list from nacos, uri: ", uri, " err: ", err)
         return {}
     end
-
+    core.log.warn("RETURNED HOSTS: ", inspect(resp.hosts), " for uri", uri)
     return resp.hosts or {}
 end
 
@@ -192,7 +193,7 @@ local function fetch_instances(self, serv)
 
         core.table.insert(nodes, node)
     end
-
+    core.log.warn("NODE RETURNED BY fetch_instances: ", inspect(nodes))
     return nodes
 end
 
@@ -212,6 +213,7 @@ local function fetch_full_registry(self)
             end
 
             local nodes = self:fetch_instances(serv)
+            core.log.warn("fetched nodes being set ", inspect(nodes))
             if #nodes > 0 then
                 local content = core.json.encode(nodes)
                 nacos_dict:set(serv.service_name, content, self.config.fetch_interval * 10)
