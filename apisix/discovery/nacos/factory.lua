@@ -55,6 +55,7 @@ local function _request(method, uri, params, headers, body, options)
     })
 
     if not res then
+        core.log.warn("ERR ASHISH ", err)
         return nil, err
     end
 
@@ -97,6 +98,7 @@ local function get_base_uri(hosts)
 end
 
 local function request_login(self, host, username, password)
+    core.log.warn("USERNAME AND PASS ARE ", username, password, " AND HOST ", host)
     local params = {
        ["username"] = username,
        ["password"] = password,
@@ -110,13 +112,13 @@ local function request_login(self, host, username, password)
     local headers = {
         ["Content-Type"] ="application/x-www-form-urlencoded"
     }
-
+    
     local resp, err = _request("POST", uri, nil, headers, utils.generate_request_params(params), {timeout=self.config.timeout})
     if not resp then
         core.log.error("failed to fetch token from nacos, uri: ", uri, " err: ", err)
         return ""
     end
-
+    core.log.warn("RETURNING ACCESS TOKEN", resp.accessToken)
     return resp.accessToken
 end
 
@@ -167,6 +169,7 @@ local function fetch_instances(self, serv)
     core.log.warn("USERNAME AND PASSWORD ", username, password, " AND HOST ", host)
     if username and username ~= "" and password and password ~= "" then
         local token = request_login(self, host, username, password)
+        core.log.warn("TOKEN IS ", token)
         params["accessToken"] = token
     end
 

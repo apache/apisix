@@ -127,6 +127,7 @@ end
 
 
 function _M.generate_request_params(params)
+    core.log.warn("RECIEVED PARAMS in generate", inspect(params))
     if params == nil then
         return ""
     end
