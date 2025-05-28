@@ -175,18 +175,19 @@ function _M.dump_data()
             table.insert(parts, part)
         end
 
-        if #parts == 3 then
-            local namespace_id, group_name, service_name = parts[1], parts[2], parts[3]
+        if #parts == 4 then
+            local id, namespace_id, group_name, service_name = parts[1], parts[2], parts[3], parts[4]
             local data_str = nacos_dict:get(key)
 
             if data_str and data_str ~= "" then
                 -- Decode JSON string to Lua table
                 local success, data = pcall(cjson.decode, data_str)
                 if success then
-                    applications[namespace_id] = applications[namespace_id] or {}
-                    applications[namespace_id][group_name] = applications[namespace_id][group_name]
+                    applications[id] = applications[id] or {}
+                    applications[id][namespace_id] = applications[id][namespace_id] or {}
+                    applications[id][namespace_id][group_name] = applications[id][namespace_id][group_name]
                                                                                             or {}
-                    applications[namespace_id][group_name][service_name] = data
+                    applications[id][namespace_id][group_name][service_name] = data
                 else
                     ngx.log(ngx.ERR, "failed to decode data for key ", key, ": ", data)
                 end
