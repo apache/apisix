@@ -84,6 +84,7 @@ GET /hello
 qr/server [1-2]/
 --- error_log
 err:status = 502
+--- timeout: 10
 
 
 
@@ -128,6 +129,7 @@ err:status = 502
     }
 --- response_body
 done
+--- timeout: 10
 
 
 
@@ -160,6 +162,7 @@ routes:
 ]
 --- no_error_log
 [error, error]
+--- timeout: 10
 
 
 
@@ -214,6 +217,7 @@ routes:
     }
 --- response_body
 done
+--- timeout: 10
 
 
 
@@ -315,3 +319,4 @@ discovery:
     }
 --- response_body
 2
+--- timeout: 10
