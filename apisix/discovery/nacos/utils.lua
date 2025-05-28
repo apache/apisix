@@ -24,7 +24,7 @@ local default_group_name = "DEFAULT_GROUP"
 local _M = {
   old_config_id = OLD_CONFIG_ID,
 }
-
+local inspect = require("inspect")
 
 local function parse_service_name(service_name)
     -- support old data
@@ -75,12 +75,14 @@ local function iter_and_add_service(services, hash, id, values)
         if service_registry_id ~= id then
             goto CONTINUE
         end
-        core.log.warn("NAME IS ",name)
+        core.log.warn("NAMESPACE IS IS ",namespace_id)
+        core.log.warn("discovery_args in upstream",inspect(upstream.discovery_args.namespace_id))
         if not namespace_id or namespace_id == "" then
-            namespace_id = upstream.namespace_id or default_namespace_id
+            namespace_id = upstream.discovery_args.namespace_id or default_namespace_id
+            core.log.warn("NEW NAMESPACE IS IS ",namespace_id)
         end
         if not group_name or group_name == "" then
-            group_name = upstream.group_name or default_group_name
+            group_name = upstream.discovery_args.group_name or default_group_name
         end
         core.table.insert(services, {
             name = name,
