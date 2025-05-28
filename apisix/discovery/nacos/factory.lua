@@ -17,6 +17,7 @@
 
 local core = require("apisix.core")
 local http = require('resty.http')
+local ngx = ngx
 local utils = require("apisix.discovery.nacos.utils")
 local string             = string
 local string_sub         = string.sub
@@ -24,7 +25,12 @@ local str_byte           = string.byte
 local str_find           = core.string.find
 local ngx_timer_at = ngx.timer.at
 local math_random  = math.random
-local nacos_dict = ngx.shared.nacos
+local shdict_name = "nacos"
+if ngx.config.subsystem == "stream" then
+    shdict_name = shdict_name .. "-stream"
+end
+
+local nacos_dict = ngx.shared[shdict_name]
 local ngx = ngx
 local ngx_re             = require('ngx.re')
 local NACOS_LOGIN_PATH = "/auth/login"

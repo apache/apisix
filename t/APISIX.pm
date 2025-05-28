@@ -403,7 +403,7 @@ _EOC_
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
     lua_shared_dict kubernetes-second-stream 1m;
-    lua_shared_dict nacos 10m;
+    lua_shared_dict nacos-stream 10m;
     lua_shared_dict tars-stream 1m;
 
     upstream apisix_backend {

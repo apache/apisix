@@ -19,8 +19,14 @@ local core = require("apisix.core")
 local nacos_factory = require("apisix.discovery.nacos.factory")
 local utils = require("apisix.discovery.nacos.utils")
 local process = require("ngx.process")
+local ngx = ngx
 
-local nacos_dict = ngx.shared.nacos
+local shdict_name = "nacos"
+if ngx.config.subsystem == "stream" then
+    shdict_name = shdict_name .. "-stream"
+end
+
+local nacos_dict = ngx.shared[shdict_name]
 local OLD_CONFIG_ID = utils.old_config_id
 local _M = {}
 local nacos_clients = {}
