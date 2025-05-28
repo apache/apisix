@@ -42,10 +42,9 @@ local function _request(method, uri, params, headers, body, options)
     local url = uri
     core.log.warn("PARAM IS ", inspect(params))
     if params ~= nil and params ~= {} then
-        url = uri .. "?" .. utils.generate_request_params(params)
+        url = uri .. "?" .. ngx.encode_args(params)
     end
     core.log.warn("final uri: ", url)
-    core.log.warn("BODY ASHISH: ", inspect(body))
     local httpc = http.new()
     local timeout = options and options.timeout or {}
     local connect_timeout = timeout.connect and timeout.connect * 1000 or 2000
@@ -118,8 +117,8 @@ local function request_login(self, host, username, password)
     local headers = {
         ["Content-Type"] ="application/x-www-form-urlencoded"
     }
-
-    local resp, err = _request("POST", uri, nil, headers, utils.generate_request_params(params), {timeout=self.config.timeout})
+    
+    local resp, err = _request("POST", uri, params, headers, nil, {timeout=self.config.timeout})
     if not resp then
         core.log.error("failed to fetch token from nacos, uri: ", uri, " err: ", err)
         return ""
