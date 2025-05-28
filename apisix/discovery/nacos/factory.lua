@@ -108,7 +108,8 @@ local function request_login(self, host, username, password)
        ["username"] = username,
        ["password"] = password,
     }
-    -- backward compat: NACOS_LOGIN_PATH starts with "/" so we need to remove the last "/" from prefix
+    -- backward compat: NACOS_LOGIN_PATH starts with "/" so 
+    -- we need to remove the last "/" from prefix
     if string_sub(self.config.prefix, -1) == "/" then
         self.config.prefix = string_sub(self.config.prefix, 1, -2)
     end
@@ -117,7 +118,7 @@ local function request_login(self, host, username, password)
     local headers = {
         ["Content-Type"] ="application/x-www-form-urlencoded"
     }
-    
+
     local resp, err = _request("POST", uri, params, headers, nil, {timeout=self.config.timeout})
     if not resp then
         core.log.error("failed to fetch token from nacos, uri: ", uri, " err: ", err)
@@ -130,7 +131,8 @@ end
 
 local function request_instance_list(self, params, host)
     core.log.warn("FIRST CONCATENATAE ", inspect(host))
-    -- backward compat: NACOS_INSTANCE_PATH starts with "/" so we need to remove the last "/" from prefix
+    -- backward compat: NACOS_INSTANCE_PATH starts with "/" so 
+    -- we need to remove the last "/" from prefix
     if string_sub(self.config.prefix, -1) == "/" then
         self.config.prefix = string_sub(self.config.prefix, 1, -2)
     end
@@ -182,8 +184,10 @@ local function fetch_instances(self, serv)
         params["accessToken"] = auth.token
     end
 
-    if (auth.access_key and auth.access_key ~= "") and (auth.secret_key and auth.secret_key ~= "") then
-       local ak, data, signature = utils.generate_signature(serv.group_name, serv.name, auth.access_key, auth.secret_key)
+    if (auth.access_key and auth.access_key ~= "") and
+       (auth.secret_key and auth.secret_key ~= "") then
+       local ak, data, signature = utils.generate_signature(serv.group_name,
+                                  serv.name, auth.access_key, auth.secret_key)
        params["ak"] = ak
        params["data"] = data
        params["signature"] = signature
@@ -272,11 +276,14 @@ function _M.new(config)
             checks = config.check
         })
 
-        local ok, err = checker:add_target(config.check.active.host, config.check.active.port, nil, false)
+        local ok, err = checker:add_target(config.check.active.host,
+                               config.check.active.port, nil, false)
         if not ok then
-            core.log.error("failed to add health check target", core.json.encode(config), " err: ", err)
+            core.log.error("failed to add health check target",
+                          core.json.encode(config), " err: ", err)
         else
-            core.log.info("success to add health checker, id ", config.id, " host ", config.check.active.host, " port ", config.check.active.port)
+            core.log.info("success to add health checker, id ", config.id,
+                         " host ", config.check.active.host, " port ", config.check.active.port)
             client.checker = checker
         end
     end

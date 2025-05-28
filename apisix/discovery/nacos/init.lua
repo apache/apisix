@@ -169,17 +169,17 @@ local cjson = require "cjson"
 function _M.dump_data()
     local applications = {}
     local keys = nacos_dict:get_keys() or {}
-    
+
     for _, key in ipairs(keys) do
         local parts = {}
         for part in key:gmatch("[^/]+") do
             table.insert(parts, part)
         end
-        
+
         if #parts == 3 then
             local namespace_id, group_name, service_name = parts[1], parts[2], parts[3]
             local data_str = nacos_dict:get(key)
-            
+ 
             if data_str and data_str ~= "" then
                 -- Decode JSON string to Lua table
                 local success, data = pcall(cjson.decode, data_str)

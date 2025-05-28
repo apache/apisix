@@ -26,11 +26,11 @@ local _M = {
   default_namespace_id = default_namespace_id,
   default_group_name = default_group_name,
 }
-local inspect = require("inspect")
 
 local function parse_service_name(service_name)
     -- support old data
-    -- NOTE: If old service_name contains "/", it will be parsed as registry_id/namespace_id/group_name/service_name
+    -- NOTE: If old service_name contains "/", it will be parsed as
+    -- registry_id/namespace_id/group_name/service_name
     -- and termed invalid
     if not service_name:find("/") then
          return OLD_CONFIG_ID, "", "",  service_name
@@ -83,16 +83,19 @@ local function iter_and_add_service(services, hash, id, values)
             goto CONTINUE
         end
 
-        local service_registry_id, namespace_id, group_name, name = parse_service_name(upstream.service_name)
+        local service_registry_id, namespace_id,
+              group_name, name = parse_service_name(upstream.service_name)
         if service_registry_id ~= id then
             goto CONTINUE
         end
 
         if not namespace_id or namespace_id == "" then
-            namespace_id = upstream.discovery_args and upstream.discovery_args.namespace_id or default_namespace_id
+            namespace_id = upstream.discovery_args and upstream.discovery_args.namespace_id
+                           or default_namespace_id
         end
         if not group_name or group_name == "" then
-            group_name = upstream.discovery_args and upstream.discovery_args.group_name or default_group_name
+            group_name = upstream.discovery_args and upstream.discovery_args.group_name
+                         or default_group_name
         end
         local dup = de_duplication(services, namespace_id, group_name,
         upstream.service_name, upstream.scheme)
