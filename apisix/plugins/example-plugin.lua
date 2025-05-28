@@ -27,14 +27,6 @@ local schema = {
         t = {type = "array", minItems = 1},
         ip = {type = "string"},
         port = {type = "integer"},
-        etcd = {
-            type = "object",
-            properties = {
-                key = { type = "string" },
-                value = { type = "string" },
-            },
-            required = {"key", "value"},
-        },
     },
     required = {"i"},
 }
@@ -92,13 +84,6 @@ end
 function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
-
-    if conf.etcd then
-        local res, err = core.etcd.set(conf.etcd.key, conf.etcd.value)
-        if not res then
-            core.log.warn("failed to set etcd: ", err)
-        end
-    end
 
     if not conf.ip then
         return

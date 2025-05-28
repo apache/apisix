@@ -541,7 +541,7 @@ Data plane role should not write to etcd. This operation will be deprecated in f
 
 
 
-=== TEST 13: add example-plugin with etcd
+=== TEST 13: add serverless-pre-function with etcd
 --- config
     location /t {
         content_by_lua_block {
@@ -550,12 +550,11 @@ Data plane role should not write to etcd. This operation will be deprecated in f
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
-                        "example-plugin": {
-                            "i": 1,
-                            "etcd": {
-                                "key": "/foo",
-                                "value": "bar"
-                            }
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : [
+                                "return function() local core = require(\"apisix.core\") core.etcd.set(\"/my-test-key\", {value = \"hello from serverless\"}) end"
+                            ]
                         }
                     },
                     "upstream": {
@@ -581,7 +580,7 @@ passed
 
 
 
-=== TEST 14: should show warn when example-plugin try to write to etcd
+=== TEST 14: should show warn when serverless-pre-function try to write to etcd
 --- yaml_config
 deployment:
   role: data_plane
@@ -609,7 +608,7 @@ qr/Data plane role should not write to etcd. This operation will be deprecated i
 
 
 
-=== TEST 15: add example-plugin without etcd
+=== TEST 15: add serverless-pre-function without etcd write
 --- config
     location /t {
         content_by_lua_block {
@@ -618,8 +617,11 @@ qr/Data plane role should not write to etcd. This operation will be deprecated i
                  ngx.HTTP_PUT,
                  [[{
                     "plugins": {
-                        "example-plugin": {
-                            "i": 1
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : [
+                                "return function() local core = require(\"apisix.core\") core.etcd.get(\"/my-test-key\") end"
+                            ]
                         }
                     },
                     "upstream": {
