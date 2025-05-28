@@ -45,6 +45,7 @@ local function _request(method, uri, params, headers, body, options)
         url = uri .. "?" .. utils.generate_request_params(params)
     end
     core.log.warn("final uri: ", url)
+    core.log.warn("BODY ASHISH: ", inspect(body))
     local httpc = http.new()
     local timeout = options and options.timeout or {}
     local connect_timeout = timeout.connect and timeout.connect * 1000 or 2000
