@@ -34,17 +34,14 @@ local ngx = ngx
 local ngx_re             = require('ngx.re')
 local NACOS_LOGIN_PATH = "/auth/login"
 local NACOS_INSTANCE_PATH = "/ns/instance/list"
-local inspect = require("inspect")
 local _M = {}
 
 
 local function _request(method, uri, params, headers, body, options)
     local url = uri
-    core.log.warn("PARAM IS ", inspect(params))
     if params ~= nil and params ~= {} then
         url = uri .. "?" .. ngx.encode_args(params)
     end
-    core.log.warn("final uri: ", url)
     local httpc = http.new()
     local timeout = options and options.timeout or {}
     local connect_timeout = timeout.connect and timeout.connect * 1000 or 2000
@@ -60,7 +57,6 @@ local function _request(method, uri, params, headers, body, options)
     })
 
     if not res then
-        core.log.warn("ERR ASHISH ", err)
         return nil, err
     end
 
@@ -81,7 +77,6 @@ end
 
 local function get_base_uri(hosts)
     local host = hosts
-    core.log.warn("HOSTS ", inspect(host))
     -- TODO Add health check to get healthy nodes.
     local url = host[math_random(#host)]
     local auth_idx = core.string.rfind_char(url, '@')
@@ -98,17 +93,15 @@ local function get_base_uri(hosts)
         local other = string_sub(url, auth_idx + 1)
         url = protocol .. other
     end
-    core.log.warn("RETURNED URL2 ", url)
     return url, username, password
 end
 
 local function request_login(self, host, username, password)
-    core.log.warn("USERNAME AND PASS ARE ", username, password, " AND HOST ", host)
     local params = {
        ["username"] = username,
        ["password"] = password,
     }
-    -- backward compat: NACOS_LOGIN_PATH starts with "/" so 
+    -- backward compat: NACOS_LOGIN_PATH starts with "/" so
     -- we need to remove the last "/" from prefix
     if string_sub(self.config.prefix, -1) == "/" then
         self.config.prefix = string_sub(self.config.prefix, 1, -2)
@@ -124,14 +117,12 @@ local function request_login(self, host, username, password)
         core.log.error("failed to fetch token from nacos, uri: ", uri, " err: ", err)
         return ""
     end
-    core.log.warn("RETURNING ACCESS TOKEN", resp.accessToken)
     return resp.accessToken
 end
 
 
 local function request_instance_list(self, params, host)
-    core.log.warn("FIRST CONCATENATAE ", inspect(host))
-    -- backward compat: NACOS_INSTANCE_PATH starts with "/" so 
+    -- backward compat: NACOS_INSTANCE_PATH starts with "/" so
     -- we need to remove the last "/" from prefix
     if string_sub(self.config.prefix, -1) == "/" then
         self.config.prefix = string_sub(self.config.prefix, 1, -2)
@@ -143,7 +134,6 @@ local function request_instance_list(self, params, host)
         core.log.error("failed to fetch instances list from nacos, uri: ", uri, " err: ", err)
         return {}
     end
-    core.log.warn("RETURNED HOSTS: ", inspect(resp.hosts), " for uri", uri)
     return resp.hosts or {}
 end
 
@@ -173,10 +163,8 @@ local function fetch_instances(self, serv)
             password = auth.password
          end
     end
-    core.log.warn("USERNAME AND PASSWORD ", username, password, " AND HOST ", host)
     if username and username ~= "" and password and password ~= "" then
         local token = request_login(self, host, username, password)
-        core.log.warn("TOKEN IS ", token)
         params["accessToken"] = token
     end
 
@@ -205,7 +193,6 @@ local function fetch_instances(self, serv)
 
         core.table.insert(nodes, node)
     end
-    core.log.warn("NODE RETURNED BY fetch_instances: ", inspect(nodes))
     return nodes
 end
 
@@ -225,11 +212,10 @@ local function fetch_full_registry(self)
             end
 
             local nodes = self:fetch_instances(serv)
-            core.log.warn("NODES ARE", inspect(nodes), "FOR service ", inspect(serv))
             if #nodes > 0 then
                 local content = core.json.encode(nodes)
-                local key = utils.generate_key(serv.id, serv.namespace_id, serv.group_name, serv.name)
-                core.log.warn("[SET]", "key=", key,"; CONTENT=",content)
+                local key = utils.generate_key(serv.id, serv.namespace_id,
+                                               serv.group_name, serv.name)
                 nacos_dict:set(key, content, self.config.fetch_interval * 10)
              end
         end

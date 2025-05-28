@@ -31,7 +31,6 @@ local nacos_dict = ngx.shared[shdict_name]
 local OLD_CONFIG_ID = utils.old_config_id
 local _M = {}
 local nacos_clients = {}
-local inspect = require("inspect")
 
 function _M.nodes(service_name, discovery_args)
     local ns_id = discovery_args and discovery_args.namespace_id or utils.default_namespace_id
@@ -50,7 +49,6 @@ function _M.nodes(service_name, discovery_args)
         local logged = false
         while not value and waiting_time > 0 do
             if not logged then
-                core.log.warn("nacos service not found: ", service_name, " waiting for ", waiting_time, " seconds")
                 logged = true
             end
 
@@ -180,13 +178,14 @@ function _M.dump_data()
         if #parts == 3 then
             local namespace_id, group_name, service_name = parts[1], parts[2], parts[3]
             local data_str = nacos_dict:get(key)
- 
+
             if data_str and data_str ~= "" then
                 -- Decode JSON string to Lua table
                 local success, data = pcall(cjson.decode, data_str)
                 if success then
                     applications[namespace_id] = applications[namespace_id] or {}
-                    applications[namespace_id][group_name] = applications[namespace_id][group_name] or {}
+                    applications[namespace_id][group_name] = applications[namespace_id][group_name]
+                                                                                            or {}
                     applications[namespace_id][group_name][service_name] = data
                 else
                     ngx.log(ngx.ERR, "failed to decode data for key ", key, ": ", data)

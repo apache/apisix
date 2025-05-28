@@ -115,7 +115,7 @@ local function iter_and_add_service(services, hash, id, values)
 end
 
 function _M.generate_key(id, ns_id, group_name, service_name)
-    -- new data expects service_name to be in the format and 
+    -- new data expects service_name to be in the format and
     -- will use that as key directly
 
     if service_name:find("/") then
