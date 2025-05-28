@@ -395,6 +395,7 @@ res:12
 res:7
 
 
+
 === TEST X: is_nginx_variable
 --- config
     location /t {
