@@ -36,11 +36,12 @@ local inspect = require("inspect")
 function _M.nodes(service_name, discovery_args)
     local ns_id = discovery_args and discovery_args.namespace_id or utils.default_namespace_id
     local group_name = discovery_args and discovery_args.group_name or utils.default_group_name
-    local key = utils.generate_key(ns_id,
+    local id = discovery_args and discovery_args.id or OLD_CONFIG_ID
+    local key = utils.generate_key(id,
+                                   ns_id,
                                    group_name,
                                    service_name)
     local value = nacos_dict:get_stale(key)
-    core.log.warn("[GET] service_name=",key, "; VALUE=",value)
     local nodes = {}
     if not value then
          -- maximum waiting time: 5 seconds

@@ -107,14 +107,21 @@ local function iter_and_add_service(services, hash, id, values)
             namespace_id = namespace_id,
             group_name = group_name,
             service_name = upstream.service_name,
+            id = id,
         })
 
         ::CONTINUE::
     end
 end
 
-function _M.generate_key(ns_id, group_name, service_name)
-    return str_format("%s/%s/%s", ns_id, group_name, service_name)
+function _M.generate_key(id, ns_id, group_name, service_name)
+    -- new data expects service_name to be in the format and 
+    -- will use that as key directly
+
+    if service_name:find("/") then
+        return service_name
+   end
+    return str_format("%s/%s/%s/%s", id, ns_id, group_name, service_name)
 end
 
 function _M.get_nacos_services(service_registry_id)
