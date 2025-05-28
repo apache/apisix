@@ -37,7 +37,7 @@ function _M.nodes(service_name, discovery_args)
     local nodes = {}
     if not value then
          -- maximum waiting time: 5 seconds
-        local waiting_time = 3
+        local waiting_time = 5
         local step = 0.1
         local logged = false
         while not value and waiting_time > 0 do
