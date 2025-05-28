@@ -92,7 +92,7 @@ end
 local inspect = require("inspect")
 local function request_instance_list(self, params)
     local hosts = self.config.hosts
-		core.log.warn("FIRST CONCATENATAE ", inspect(hosts[math_random(#hosts)]))
+    core.log.warn("FIRST CONCATENATAE ", inspect(hosts[math_random(#hosts)]))
     local uri = hosts[math_random(#hosts)] .. self.config.prefix .. NACOS_INSTANCE_PATH
 
     local resp, err = _request("GET", uri, params)

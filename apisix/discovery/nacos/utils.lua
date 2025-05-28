@@ -22,17 +22,17 @@ local OLD_CONFIG_ID = "0"
 local default_namespace_id = "public"
 local default_group_name = "DEFAULT_GROUP"
 local _M = {
-	old_config_id = OLD_CONFIG_ID,
+  old_config_id = OLD_CONFIG_ID,
 }
 
 
 local function parse_service_name(service_name)
-	  -- support old data
-		-- NOTE: If old service_name contains "/", it will be parsed as registry_id/namespace_id/group_name/service_name
-		-- and termed invalid
-		if not service_name:find("/") then
-				return OLD_CONFIG_ID, "", "",  service_name
-		end
+    -- support old data
+    -- NOTE: If old service_name contains "/", it will be parsed as registry_id/namespace_id/group_name/service_name
+    -- and termed invalid
+    if not service_name:find("/") then
+         return OLD_CONFIG_ID, "", "",  service_name
+    end
     local pattern = "^(.*)/(.*)/(.*)/(.*)$" -- registry_id/namespace_id/group_name/service_name
     local match = ngx.re.match(service_name, pattern, "jo")
     if not match then
@@ -75,13 +75,13 @@ local function iter_and_add_service(services, hash, id, values)
         if service_registry_id ~= id then
             goto CONTINUE
         end
-				core.log.warn("NAME IS ",name)
-				if not namespace_id or namespace_id == "" then
-						namespace_id = upstream.namespace_id or default_namespace_id
-				end
-				if not group_name or group_name == "" then
-						group_name = upstream.group_name or default_group_name
-				end
+        core.log.warn("NAME IS ",name)
+        if not namespace_id or namespace_id == "" then
+            namespace_id = upstream.namespace_id or default_namespace_id
+        end
+        if not group_name or group_name == "" then
+            group_name = upstream.group_name or default_group_name
+        end
         core.table.insert(services, {
             name = name,
             namespace_id = namespace_id,
