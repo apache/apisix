@@ -83,7 +83,7 @@ GET /hello
 --- response_body_like eval
 qr/server [1-2]/
 --- error_log
-err:status = 502
+err: status = 502
 --- timeout: 10
 
 
