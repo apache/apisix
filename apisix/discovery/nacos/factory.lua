@@ -213,10 +213,12 @@ local function fetch_full_registry(self)
             end
 
             local nodes = self:fetch_instances(serv)
-            core.log.warn("fetched nodes being set ", inspect(nodes))
+            core.log.warn("NODES ARE", inspect(nodes), "FOR service ", inspect(serv))
             if #nodes > 0 then
                 local content = core.json.encode(nodes)
-                nacos_dict:set(serv.service_name, content, self.config.fetch_interval * 10)
+                local key = utils.generate_key(serv.namespace_id, serv.group_name, serv.name)
+                core.log.warn("[SET]", "key=", key,"; CONTENT=",content)
+                nacos_dict:set(key, content, self.config.fetch_interval * 10)
              end
         end
 

@@ -27,12 +27,17 @@ local nacos_clients = {}
 local inspect = require("inspect")
 
 function _M.nodes(service_name, discovery_args)
-    local value = nacos_dict:get_stale(service_name)
-    core.log.warn("fetched nodes being used", inspect(value))
+    local ns_id = discovery_args and discovery_args.namespace_id or utils.default_namespace_id
+    local group_name = discovery_args and discovery_args.group_name or utils.default_group_name
+    local key = utils.generate_key(ns_id,
+                                   group_name,
+                                   service_name)
+    local value = nacos_dict:get_stale(key)
+    core.log.warn("[GET] service_name=",key, "; VALUE=",value)
     local nodes = {}
     if not value then
          -- maximum waiting time: 5 seconds
-        local waiting_time = 5
+        local waiting_time = 3
         local step = 0.1
         local logged = false
         while not value and waiting_time > 0 do
@@ -43,10 +48,9 @@ function _M.nodes(service_name, discovery_args)
 
             ngx.sleep(step)
             waiting_time = waiting_time - step
-            value = nacos_dict:get_stale(service_name)
+            value = nacos_dict:get_stale(key)
         end
     end
-
     if not value then
         core.log.error("nacos service not found: ", service_name)
         return nodes
