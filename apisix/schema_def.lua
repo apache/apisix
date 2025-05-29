@@ -729,18 +729,7 @@ _M.credential = {
     type = "object",
     properties = {
         -- metadata
-        id = {
-            oneOf = {
-                id_schema,
-                -- id: "${consumer_name}/credentials/${credential_id}" from standalone mode
-                {
-                    type = "string",
-                    minLength = 15,
-                    maxLength = 128,
-                    pattern = [[^[a-zA-Z0-9]+/credentials/[a-zA-Z0-9]+$]],
-                }
-            }
-        },
+        id = id_schema,
         name = rule_name_def,
         desc = desc_def,
         labels = labels_def,
