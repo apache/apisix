@@ -14,15 +14,16 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local type         = type
-local setmetatable = setmetatable
-local ngx          = ngx
-local ngx_sleep    = ngx.sleep
-local thread_spawn = ngx.thread.spawn
-local thread_kill  = ngx.thread.kill
-local shared_dict  = ngx.shared["mcp-session"] -- TODO: rename to something like mcp-broker
-local core         = require("apisix.core")
-local broker_utils = require("apisix.plugins.mcp.broker.utils")
+local type           = type
+local setmetatable   = setmetatable
+local ngx            = ngx
+local ngx_sleep      = ngx.sleep
+local thread_spawn   = ngx.thread.spawn
+local thread_kill    = ngx.thread.kill
+local worker_exiting = ngx.worker.exiting
+local shared_dict    = ngx.shared["mcp-session"] -- TODO: rename to something like mcp-broker
+local core           = require("apisix.core")
+local broker_utils   = require("apisix.plugins.mcp.broker.utils")
 
 local _M = {}
 local mt = { __index = _M }
@@ -58,7 +59,7 @@ end
 
 function _M.start(self)
     self.thread = thread_spawn(function()
-        while true do
+        while not worker_exiting() do
             local item, err = shared_dict:lpop(self.session_id .. STORAGE_SUFFIX_QUEUE)
             if err then
                 core.log.info("session ", self.session_id,

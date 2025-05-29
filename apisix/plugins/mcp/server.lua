@@ -14,15 +14,16 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local require      = require
-local setmetatable = setmetatable
-local ngx          = ngx
-local ngx_sleep    = ngx.sleep
-local thread_spwan = ngx.thread.spawn
-local thread_wait  = ngx.thread.wait
-local thread_kill  = ngx.thread.kill
-local core         = require("apisix.core")
-local broker_utils = require("apisix.plugins.mcp.broker.utils")
+local require        = require
+local setmetatable   = setmetatable
+local ngx            = ngx
+local ngx_sleep      = ngx.sleep
+local thread_spwan   = ngx.thread.spawn
+local thread_wait    = ngx.thread.wait
+local thread_kill    = ngx.thread.kill
+local worker_exiting = ngx.worker.exiting
+local core           = require("apisix.core")
+local broker_utils   = require("apisix.plugins.mcp.broker.utils")
 
 
 local _M = {}
@@ -74,7 +75,7 @@ function _M.start(self)
 
     -- ping loop
     local ping = thread_spwan(function()
-        while true do
+        while not worker_exiting() do
             if self.need_exit then
                 break
             end
