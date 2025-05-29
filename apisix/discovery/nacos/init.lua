@@ -176,7 +176,8 @@ function _M.dump_data()
         end
 
         if #parts == 4 then
-            local id, namespace_id, group_name, service_name = parts[1], parts[2], parts[3], parts[4]
+            local id, namespace_id,
+                  group_name, service_name = parts[1], parts[2], parts[3], parts[4]
             local data_str = nacos_dict:get(key)
 
             if data_str and data_str ~= "" then
@@ -185,8 +186,8 @@ function _M.dump_data()
                 if success then
                     applications[id] = applications[id] or {}
                     applications[id][namespace_id] = applications[id][namespace_id] or {}
-                    applications[id][namespace_id][group_name] = applications[id][namespace_id][group_name]
-                                                                                            or {}
+                    applications[id][namespace_id][group_name] = applications[id]
+                                                                 [namespace_id][group_name] or {}
                     applications[id][namespace_id][group_name][service_name] = data
                 else
                     ngx.log(ngx.ERR, "failed to decode data for key ", key, ": ", data)

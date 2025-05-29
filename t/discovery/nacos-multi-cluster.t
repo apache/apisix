@@ -120,6 +120,7 @@ no valid upstream node
 --- timeout: 10
 
 
+
 === TEST 3: get APISIX-NACOS info from NACOS - auth
 --- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
