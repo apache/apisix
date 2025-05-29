@@ -24,6 +24,8 @@ local string_sub         = string.sub
 local str_find           = core.string.find
 local ngx_timer_at = ngx.timer.at
 local math_random  = math.random
+local ipairs = ipairs
+local require = require
 local shdict_name = "nacos"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"

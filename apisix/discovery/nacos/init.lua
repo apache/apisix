@@ -19,6 +19,10 @@ local core = require("apisix.core")
 local nacos_factory = require("apisix.discovery.nacos.factory")
 local utils = require("apisix.discovery.nacos.utils")
 local process = require("ngx.process")
+local ipairs = ipairs
+local require = require
+local table = require("apisix.core.table")
+local pcall = pcall
 local local_conf         = require('apisix.core.config_local').local_conf()
 local ngx = ngx
 

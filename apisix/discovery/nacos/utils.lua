@@ -16,7 +16,10 @@
 --
 
 local core = require("apisix.core")
-
+local ngx = ngx
+local ipairs = ipairs
+local require = require
+local pairs = pairs
 local str_format    = string.format
 local OLD_CONFIG_ID = "0"
 local default_namespace_id = "public"
