@@ -14,13 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local unpack       = unpack
-local ngx          = ngx
-local thread_spawn = ngx.thread.spawn
-local thread_kill  = ngx.thread.kill
-local resty_signal = require("resty.signal")
-local core         = require("apisix.core")
-local pipe         = require("ngx.pipe")
+local unpack         = unpack
+local ngx            = ngx
+local thread_spawn   = ngx.thread.spawn
+local thread_kill    = ngx.thread.kill
+local worker_exiting = ngx.worker.exiting()
+local resty_signal   = require("resty.signal")
+local core           = require("apisix.core")
+local pipe           = require("ngx.pipe")
 
 local mcp_server_wrapper  = require("apisix.plugins.mcp.server_wrapper")
 
@@ -80,7 +81,7 @@ local function on_connect(conf, ctx)
         -- to explicitly yield to other threads by ngx_sleep
         ctx.mcp_bridge_proc_event_loop = thread_spawn(function ()
             local stdout_partial, stderr_partial, need_exit
-            while true do
+            while not worker_exiting() do
                 -- read all the messages in stdout's pipe, line by line
                 -- if there is an incomplete message it is buffered and
                 -- spliced before the next message
