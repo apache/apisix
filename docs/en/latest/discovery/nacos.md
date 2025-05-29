@@ -120,7 +120,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
         "discovery_type": "nacos"
         "discovery_args":{
           "id": "nacos-cluster-1"
-        }  
+        }
     }
 }'
 ```
