@@ -33,6 +33,7 @@ local base           = require("resty.core.base")
 local open           = io.open
 local sub_str        = string.sub
 local str_byte       = string.byte
+local str_gsub       = string.gsub
 local tonumber       = tonumber
 local tostring       = tostring
 local re_gsub        = ngx.re.gsub
@@ -42,6 +43,7 @@ local type           = type
 local io_popen       = io.popen
 local C              = ffi.C
 local ffi_string     = ffi.string
+local ffi_new        = ffi.new
 local get_string_buf = base.get_string_buf
 local exiting        = ngx.worker.exiting
 local ngx_sleep      = ngx.sleep
@@ -56,6 +58,8 @@ local max_sleep_interval = 1
 ffi.cdef[[
     int ngx_escape_uri(char *dst, const char *src,
         size_t size, int type);
+    int gethostname(char *name, size_t len);
+    char *strerror(int errnum);
 ]]
 
 
@@ -256,19 +260,17 @@ function _M.gethostname()
         return hostname
     end
 
-    local hd = io_popen("/bin/hostname")
-    local data, err = hd:read("*a")
-    if err == nil then
-        hostname = data
-        if string.has_suffix(hostname, "\r\n") then
-            hostname = sub_str(hostname, 1, -3)
-        elseif string.has_suffix(hostname, "\n") then
-            hostname = sub_str(hostname, 1, -2)
-        end
+    local size = 256
+    local buf = ffi_new("unsigned char[?]", size)
+
+    local res = C.gethostname(buf, size)
+    if res == 0 then
+        local data = ffi_string(buf, size)
+        hostname = str_gsub(data, "%z+$", "")
 
     else
         hostname = "unknown"
-        log.error("failed to read output of \"/bin/hostname\": ", err)
+        log.error("gethostname error:", ffi_string(C.strerror(ffi.errno())))
     end
 
     return hostname
