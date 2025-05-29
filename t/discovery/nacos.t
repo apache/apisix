@@ -112,7 +112,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -140,7 +139,6 @@ routes:
 ]
 --- no_error_log
 [error, error]
---- timeout: 10
 
 
 
@@ -161,7 +159,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -190,7 +187,6 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -239,7 +235,6 @@ discovery:
 GET /t
 --- response_body
 passed
---- timeout: 10
 
 
 
@@ -260,7 +255,6 @@ discovery:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -287,7 +281,6 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -309,7 +302,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -340,7 +332,6 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -392,7 +383,6 @@ discovery:
 GET /t
 --- response_body
 passed
---- timeout: 10
 
 
 
@@ -413,7 +403,6 @@ discovery:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -440,7 +429,6 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -462,7 +450,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -493,7 +480,6 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -545,7 +531,6 @@ discovery:
 GET /t
 --- response_body
 passed
---- timeout: 10
 
 
 
@@ -566,7 +551,6 @@ discovery:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -594,7 +578,6 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -617,7 +600,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -640,7 +622,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -663,7 +644,6 @@ GET /hello
 --- error_code: 503
 --- error_log
 no valid upstream node
---- timeout: 10
 
 
 
@@ -695,7 +675,6 @@ services:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -748,7 +727,6 @@ discovery:
 GET /t
 --- response_body
 passed
---- timeout: 10
 
 
 
@@ -769,7 +747,6 @@ discovery:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
---- timeout: 10
 
 
 
@@ -860,7 +837,6 @@ GET /t
 --- response_body
 server 1
 server 3
---- timeout: 10
 
 
 
@@ -951,4 +927,3 @@ GET /t
 --- response_body
 server 1
 server 4
---- timeout: 10

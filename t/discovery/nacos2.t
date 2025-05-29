@@ -315,4 +315,3 @@ discovery:
     }
 --- response_body
 2
---- timeout: 10
