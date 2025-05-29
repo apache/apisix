@@ -29,7 +29,7 @@ The performance of this module needs to be improved:
 
 ### Configuration for Nacos
 
-There are two ways to configure Nacos. Single instance and Multi instance method.
+Nacos can be configured in two ways: single instance or multi-instance.
 
 Add following configuration in `conf/config.yaml` :
 
@@ -99,7 +99,7 @@ discovery:
 
 #### L7
 
-Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" configured with id `nacos-cluster-1` and use nacos discovery client in the registry:
+The following is an example of routing requests matching the URI `/nacos/*` to a service at `http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS`, configured with the ID `nacos-cluster-1` and using the Nacos discovery client in the registry.”
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
