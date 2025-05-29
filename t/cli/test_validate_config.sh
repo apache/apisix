@@ -28,7 +28,9 @@ discovery:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'property "host" validation failed: wrong type: expected array, got string'; then
+
+if ! echo "$out" | grep 'invalid discovery nacos configuration: value should match only one schema, but matches none'; then
+cat  logs/error.log
     echo "failed: should check discovery schema during init"
     exit 1
 fi
