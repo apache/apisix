@@ -259,9 +259,8 @@ do
             local schema = core.schema[name]
             if not schema then
                 core.log.error("schema for ", name, " not found")
-                return nil, "schema for " .. name .. " not found"
             end
-            if schema.properties then
+            if schema and schema.properties then
                 schema.properties.modifiedIndex = {
                     type = "integer",
                 }
@@ -288,11 +287,7 @@ function _M.init_worker()
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
 
-    local ok, err = schema_patch()
-    if not ok then
-        core.log.error("failed to patch schema: ", err)
-        return
-    end
+    schema_patch()
 end
 
 
