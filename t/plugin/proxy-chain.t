@@ -1,22 +1,33 @@
-use Test::Nginx::Socket::Lua;
-use Cwd qw(cwd);
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
 
-# Repeat each test case 1 time (for consistency)
-repeat_each(1);
+use t::APISIX 'no_plan';
 
-# Set timeout for tests
-plan tests => repeat_each() * (3 * blocks());
+add_block_preprocessor(sub {
+    my ($block) = @_;
+    $block->set_value("no_error_log", "[error]");
+    $block;
+});
 
-# Run tests with APISIX Lua module
-my $pwd = cwd();
-our $HttpConfig = qq{
-    lua_package_path "$pwd/?.lua;;";
-    lua_package_cpath "$pwd/?.so;;";
-};
-
-# Enable APISIX test helpers
 no_long_string();
-run_tests();
+no_shuffle();
+no_root_location();
+
+run_tests;
 
 __DATA__
 
@@ -25,9 +36,10 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.proxy-chain")
+            local core = require("apisix.core")
             local ok, err = plugin.check_schema({
                 services = {
-                    { uri = "http://127.0.0.1:1980/test", method = "POST" }
+                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test", method = "POST" }
                 },
                 token_header = "Token"
             })
@@ -57,7 +69,7 @@ schema check passed
 
             local conf = {
                 services = {
-                    { uri = "http://127.0.0.1:1980/test", method = "POST" }
+                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test", method = "POST" }
                 },
                 token_header = "Token"
             }
@@ -96,8 +108,8 @@ POST /t
 
             local conf = {
                 services = {
-                    { uri = "http://127.0.0.1:1980/test1", method = "POST" },
-                    { uri = "http://127.0.0.1:1980/test2", method = "POST" }
+                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test1", method = "POST" },
+                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test2", method = "POST" }
                 },
                 token_header = "Token"
             }
@@ -157,3 +169,41 @@ Failed to call service: http://127.0.0.1:1999/nonexistent
 --- error_code: 500
 --- error_log
 Failed to call service http://127.0.0.1:1999/nonexistent
+
+=== TEST 5: Handle missing token
+--- config
+    location /t {
+        access_by_lua_block {
+            local plugin = require("apisix.plugins.proxy-chain")
+            local core = require("apisix.core")
+            local ctx = { var = { method = "POST" } }
+            ctx.var.request_body = '{"order_id": "12345"}'
+
+            local conf = {
+                services = {
+                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test", method = "POST" }
+                },
+                token_header = "Token"
+            }
+
+            local code, body = plugin.access(conf, ctx)
+            if code then
+                ngx.status = code
+                ngx.say(body.error)
+            else
+                ngx.say(ctx.var.request_body)
+            end
+        }
+    }
+    location /test {
+        content_by_lua_block {
+            ngx.say('{"user_id": "67890"}')
+        }
+    }
+--- request
+POST /t
+{"order_id": "12345"}
+--- response_body
+{"order_id":"12345","user_id":"67890"}
+--- no_error_log
+[error]
