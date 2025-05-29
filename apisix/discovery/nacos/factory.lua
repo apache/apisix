@@ -137,6 +137,14 @@ local function request_instance_list(self, params, host)
     return resp.hosts or {}
 end
 
+local function is_grpc(scheme)
+    if scheme == 'grpc' or scheme == 'grpcs' then
+        return true
+    end
+
+    return false
+end
+
 
 local function fetch_instances(self, serv)
     local config = self.config
@@ -190,7 +198,10 @@ local function fetch_instances(self, serv)
             weight = instance.weight or self.config.default_weight,
             metadata = instance.metadata,
         }
-
+        -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
+        if is_grpc(instance.scheme) and instance.metadata and instance.metadata.gRPC_port then
+            node.port = host.metadata.gRPC_port
+        end
         core.table.insert(nodes, node)
     end
     return nodes

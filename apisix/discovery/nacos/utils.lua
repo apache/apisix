@@ -107,6 +107,7 @@ local function iter_and_add_service(services, hash, id, values)
             namespace_id = namespace_id,
             group_name = group_name,
             service_name = upstream.service_name,
+            scheme = upstream.scheme,
             id = id,
         })
 
