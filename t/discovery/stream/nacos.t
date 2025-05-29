@@ -50,6 +50,7 @@ add_block_preprocessor(sub {
     if (!$block->stream_request) {
         $block->set_value("stream_request", "GET /hello HTTP/1.1\r\nHost: 127.0.0.1:1985\r\nConnection: close\r\n\r\n");
     }
+    $block->set_value("timeout", "10");
 
 });
 

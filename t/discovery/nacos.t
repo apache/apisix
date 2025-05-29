@@ -65,6 +65,12 @@ discovery:
 
 _EOC_
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+    $block->set_value("timeout", "10");
+
+});
+
 run_tests();
 
 __DATA__

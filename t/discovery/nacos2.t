@@ -24,6 +24,7 @@ add_block_preprocessor(sub {
     if (!$block->request) {
         $block->set_value("request", "GET /t");
     }
+    $block->set_value("timeout", "10");
 });
 
 run_tests();
