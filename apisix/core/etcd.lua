@@ -50,7 +50,7 @@ local function is_data_plane()
 
     local role = try_read_attr(local_conf, "deployment", "role")
     if role == "data_plane" then
-       return true
+      return true
     end
 
     return false
@@ -58,20 +58,59 @@ end
 
 
 
-local function check_data_plane()
+local function block_write_if_data_plane()
     local data_plane, err = is_data_plane()
     if err then
         log.error("failed to check data plane role: ", err)
-        return false, err
+        return true, err
     end
 
     if data_plane then
-        -- current only warn, will be return error in future releases
+        -- current only warn, will be return false in future releases
+        -- to block etcd write
         log.warn(NOT_ALLOW_WRITE_ETCD_WARN)
-        return true
+        return false
     end
 
-    return true
+    return false, nil
+end
+
+
+local function wrap_etcd_client(etcd_cli)
+    -- note: methods txn can read and write, don't use txn to write when data plane role
+    local methods_to_wrap = {
+        "set",
+        "setnx",
+        "setx",
+        "delete",
+        "rmdir",
+        "grant",
+        "revoke",
+        "keepalive"
+    }
+
+    local original_methods = {}
+    for _, method in ipairs(methods_to_wrap) do
+        if not etcd_cli[method] then
+            log.error("method ", method, " not found in etcd client")
+            return nil, "method " .. method .. " not found in etcd client"
+        end
+
+        original_methods[method] = etcd_cli[method]
+    end
+
+    for _, method in ipairs(methods_to_wrap) do
+        etcd_cli[method] = function(self, ...)
+            local block, err = block_write_if_data_plane()
+            if block then
+                return nil, err
+            end
+
+            return original_methods[method](self, ...)
+        end
+    end
+
+    return etcd_cli
 end
 
 
@@ -104,6 +143,8 @@ local function _new(etcd_conf)
     if not etcd_cli then
         return nil, nil, err
     end
+
+    etcd_cli = wrap_etcd_client(etcd_cli)
 
     return etcd_cli, prefix
 end
@@ -375,8 +416,8 @@ end
 
 
 local function set(key, value, ttl)
-    local ok, err = check_data_plane()
-    if not ok then
+    local block, err = block_write_if_data_plane()
+    if block then
         return nil, err
     end
 
@@ -430,8 +471,8 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
-    local ok, err = check_data_plane()
-    if not ok then
+    local block, err = block_write_if_data_plane()
+    if block then
         return nil, err
     end
 
@@ -494,8 +535,8 @@ end
 
 
 function _M.push(key, value, ttl)
-    local ok, err = check_data_plane()
-    if not ok then
+    local block, err = block_write_if_data_plane()
+    if block then
         return nil, err
     end
 
@@ -531,8 +572,8 @@ end
 
 
 function _M.delete(key)
-    local ok, err = check_data_plane()
-    if not ok then
+    local block, err = block_write_if_data_plane()
+    if block then
         return nil, err
     end
 
@@ -562,8 +603,8 @@ function _M.delete(key)
 end
 
 function _M.rmdir(key, opts)
-    local ok, err = check_data_plane()
-    if not ok then
+    local block, err = block_write_if_data_plane()
+    if block then
         return nil, err
     end
 
@@ -613,6 +654,11 @@ end
 
 
 function _M.keepalive(id)
+    local block, err = block_write_if_data_plane()
+    if block then
+        return nil, err
+    end
+
     local etcd_cli, _, err = get_etcd_cli()
     if not etcd_cli then
         return nil, err

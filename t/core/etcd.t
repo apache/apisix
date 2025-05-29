@@ -541,7 +541,7 @@ Data plane role should not write to etcd. This operation will be deprecated in f
 
 
 
-=== TEST 13: add serverless-pre-function with etcd
+=== TEST 13: add serverless-pre-function with etcd set
 --- config
     location /t {
         content_by_lua_block {
@@ -672,3 +672,137 @@ deployment:
 GET /t
 --- no_error_log
 Data plane role should not write to etcd. This operation will be deprecated in future releases.
+
+
+
+=== TEST 17: add serverless-pre-function with etcd delete
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : [
+                                "return function() local etcd_cli = require(\"apisix.core.etcd\").new() etcd_cli:delete(\"/test-key\") end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+
+=== TEST 18: should show warn when serverless-pre-function try to write to etcd with cli delete
+--- yaml_config
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/hello')
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_log eval
+qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
+
+
+
+=== TEST 19: add serverless-pre-function with etcd grant
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "serverless-pre-function": {
+                            "phase": "rewrite",
+                            "functions" : [
+                                "return function() local etcd_cli = require(\"apisix.core.etcd\").new() etcd_cli:grant(10) end"
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 20: should show warn when serverless-pre-function try to write to etcd with cli grant
+--- yaml_config
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: etcd
+  etcd:
+    host:
+      - "http://127.0.0.1:2379"
+    prefix: "/apisix"
+    tls:
+      verify: false
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/hello')
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- error_log eval
+qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
+
+
+
