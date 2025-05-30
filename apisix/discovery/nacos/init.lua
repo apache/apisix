@@ -15,26 +15,26 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
+local core          = require("apisix.core")
 local nacos_factory = require("apisix.discovery.nacos.factory")
-local utils = require("apisix.discovery.nacos.utils")
-local process = require("ngx.process")
-local ipairs = ipairs
-local require = require
-local table = require("apisix.core.table")
-local pcall = pcall
-local pairs = pairs
-local local_conf         = require('apisix.core.config_local').local_conf()
-local ngx = ngx
+local utils         = require("apisix.discovery.nacos.utils")
+local process       = require("ngx.process")
+local ipairs        = ipairs
+local require       = require
+local table         = require("apisix.core.table")
+local pcall         = pcall
+local pairs         = pairs
+local local_conf    = require('apisix.core.config_local').local_conf()
+local ngx           = ngx
 
 local shdict_name = "nacos"
 if ngx.config.subsystem == "stream" then
     shdict_name = shdict_name .. "-stream"
 end
 
-local nacos_dict = ngx.shared[shdict_name]
+local nacos_dict    = ngx.shared[shdict_name]
 local OLD_CONFIG_ID = utils.old_config_id
-local _M = {}
+local _M            = {}
 local nacos_clients = {}
 
 function _M.nodes(service_name, discovery_args)

@@ -15,15 +15,15 @@
 -- limitations under the License.
 --
 
-local core = require("apisix.core")
-local ngx = ngx
-local ipairs = ipairs
-local require = require
-local pairs = pairs
-local str_format    = string.format
-local OLD_CONFIG_ID = "0"
+local core                 = require("apisix.core")
+local ngx                  = ngx
+local ipairs               = ipairs
+local require              = require
+local pairs                = pairs
+local str_format           = string.format
+local OLD_CONFIG_ID        = "0"
 local default_namespace_id = "public"
-local default_group_name = "DEFAULT_GROUP"
+local default_group_name   = "DEFAULT_GROUP"
 local _M = {
   old_config_id = OLD_CONFIG_ID,
   default_namespace_id = default_namespace_id,
@@ -121,7 +121,6 @@ end
 function _M.generate_key(id, ns_id, group_name, service_name)
     -- new data expects service_name to be in the format and
     -- will use that as key directly
-
     if service_name:find("/") then
         return service_name
    end
