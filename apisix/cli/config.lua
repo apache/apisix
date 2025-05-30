@@ -237,7 +237,8 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
-    "server-info",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
