@@ -326,7 +326,7 @@ encrypt_fields = {"clickhouse.password"}
 - 新增和更新资源时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动加密存储在 etcd 中
 - 获取资源时，以及在运行插件时，对于 `encrypt_fields` 中声明的参数，APISIX 会自动解密
 
-默认情况下，APISIX启用数据加密并使用[两个默认的密钥](https://github.com/apache/apisix/blob/85563f016c35834763376894e45908b2fb582d87/apisix/cli/config.lua#L75)，你可以在 `config.yaml` 中修改：
+默认情况下，APISIX 启用数据加密并使用[两个默认的密钥](https://github.com/apache/apisix/blob/85563f016c35834763376894e45908b2fb582d87/apisix/cli/config.lua#L75)，你可以在 `config.yaml` 中修改：
 
 ```yaml
 apisix:
