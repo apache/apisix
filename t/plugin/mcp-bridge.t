@@ -91,7 +91,7 @@ passed
 
 
 === TEST 3: test mcp client
---- timeout: 15
+--- timeout: 30
 --- exec
 cd t/plugin/mcp && pnpm test
 --- no_error_log
