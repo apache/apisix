@@ -19,41 +19,106 @@ local prefix_pattern = [[^[\/a-zA-Z0-9-_.]+$]]
 
 
 return {
-    type = 'object',
-    properties = {
-        host = {
+    oneOf = {
+        -- Legacy object format
+        {
+            type = 'object',
+            properties = {
+                host = {
+                    type = 'array',
+                    minItems = 1,
+                    items = {
+                        type = 'string',
+                        pattern = host_pattern,
+                        minLength = 2,
+                        maxLength = 100,
+                    },
+                },
+                fetch_interval = {type = 'integer', minimum = 1, default = 30},
+                prefix = {
+                    type = 'string',
+                    pattern = prefix_pattern,
+                    maxLength = 100,
+                    default = '/nacos/v1/'
+                },
+                weight = {type = 'integer', minimum = 1, default = 100},
+                timeout = {
+                    type = 'object',
+                    properties = {
+                        connect = {type = 'integer', minimum = 1, default = 2000},
+                        send = {type = 'integer', minimum = 1, default = 2000},
+                        read = {type = 'integer', minimum = 1, default = 5000},
+                    },
+                    default = {
+                        connect = 2000,
+                        send = 2000,
+                        read = 5000,
+                    }
+                },
+                access_key = {type = 'string', default = ''},
+                secret_key = {type = 'string', default = ''},
+            },
+            required = {'host'},
+            additionalProperties = false
+        },
+        -- New array format
+        {
             type = 'array',
             minItems = 1,
             items = {
-                type = 'string',
-                pattern = host_pattern,
-                minLength = 2,
-                maxLength = 100,
-            },
-        },
-        fetch_interval = {type = 'integer', minimum = 1, default = 30},
-        prefix = {
-            type = 'string',
-            pattern = prefix_pattern,
-            maxLength = 100,
-            default = '/nacos/v1/'
-        },
-        weight = {type = 'integer', minimum = 1, default = 100},
-        timeout = {
-            type = 'object',
-            properties = {
-                connect = {type = 'integer', minimum = 1, default = 2000},
-                send = {type = 'integer', minimum = 1, default = 2000},
-                read = {type = 'integer', minimum = 1, default = 5000},
-            },
-            default = {
-                connect = 2000,
-                send = 2000,
-                read = 5000,
+                type = 'object',
+                properties = {
+                    id = {
+                        type = 'string',
+                        minLength = 1,
+                        maxLength = 50,
+                        pattern = '^[a-zA-Z0-9_-]+$'
+                    },
+                    hosts = {
+                        type = 'array',
+                        minItems = 1,
+                        items = {
+                            type = 'string',
+                            pattern = host_pattern,
+                            minLength = 2,
+                            maxLength = 100,
+                        },
+                    },
+                    prefix = {
+                        type = 'string',
+                        pattern = prefix_pattern,
+                        maxLength = 100,
+                        default = '/nacos/v1/'
+                    },
+                    fetch_interval = {type = 'integer', minimum = 1, default = 30},
+                    default_weight = {type = 'integer', minimum = 1, default = 100},
+                    timeout = {
+                        type = 'object',
+                        properties = {
+                            connect = {type = 'integer', minimum = 1, default = 2000},
+                            send = {type = 'integer', minimum = 1, default = 2000},
+                            read = {type = 'integer', minimum = 1, default = 5000},
+                        },
+                        default = {
+                            connect = 2000,
+                            send = 2000,
+                            read = 5000,
+                        }
+                    },
+                    auth = {
+                        type = 'object',
+                        properties = {
+                            username = {type = 'string', default = ''},
+                            password = {type = 'string', default = ''},
+                            access_key = {type = 'string', default = ''},
+                            secret_key = {type = 'string', default = ''},
+                        },
+                        default = {}
+                    }
+                },
+                required = {'id', 'hosts'},
+                additionalProperties = false
             }
-        },
-        access_key = {type = 'string', default = ''},
-        secret_key = {type = 'string', default = ''},
-    },
-    required = {'host'}
+        }
+    }
 }

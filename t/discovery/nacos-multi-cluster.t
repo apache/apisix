@@ -14,20 +14,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-# we can't use mse nacos to test, access_key and secret_key won't affect the open source nacos
 use t::APISIX 'no_plan';
 
+repeat_each(1);
+log_level('info');
+worker_connections(256);
+no_root_location();
+no_shuffle();
 workers(4);
-
-add_block_preprocessor(sub {
-    my ($block) = @_;
-
-    if (!$block->request) {
-        $block->set_value("request", "GET /t");
-    }
-    $block->set_value("timeout", "10");
-});
 
 our $yaml_config = <<_EOC_;
 apisix:
@@ -38,17 +32,41 @@ deployment:
     config_provider: yaml
 discovery:
   nacos:
-    host:
+    - id: "0"
+      hosts:
       - "http://127.0.0.1:8858"
-    prefix: "/nacos/v1/"
-    fetch_interval: 1
-    weight: 1
-    timeout:
-      connect: 2000
-      send: 2000
-      read: 5000
-    access_key: "my_access_key"
-    secret_key: "my_secret_key"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      default_weight: 1
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
+
+_EOC_
+
+our $yaml_auth_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  nacos:
+    - id: "0"
+      hosts:
+      - "http://127.0.0.1:8858"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      default_weight: 1
+      auth:
+        username: nacos
+        password: nacos
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
 
 _EOC_
 
@@ -56,254 +74,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: error service_name
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-
-#END
---- request
-GET /hello
---- error_code: 503
---- error_log
-no valid upstream node
-
-
-
-=== TEST 2: error namespace_id
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        namespace_id: err_ns
-#END
---- request
-GET /hello
---- error_code: 503
---- error_log
-no valid upstream node
-
-
-
-=== TEST 3: error group_name
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        group_name: err_group_name
-#END
---- request
-GET /hello
---- error_code: 503
---- error_log
-no valid upstream node
-
-
-
-=== TEST 4: error namespace_id and error group_name
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        namespace_id: err_ns
-        group_name: err_group_name
-#END
---- request
-GET /hello
---- error_code: 503
---- error_log
-no valid upstream node
-
-
-
-=== TEST 5: error group_name and correct namespace_id
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        namespace_id: test_ns
-        group_name: err_group_name
-#END
---- request
-GET /hello
---- error_code: 503
---- error_log
-no valid upstream node
-
-
-
-=== TEST 6: error namespace_id and correct group_name
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        namespace_id: err_ns
-        group_name: test_group
-#END
---- request
-GET /hello
---- error_code: 503
---- error_log
-no valid upstream node
-
-
-
-=== TEST 7: get APISIX-NACOS info from NACOS - configured in services
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    service_id: 1
-services:
-  -
-    id: 1
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-#END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
-
-
-
-=== TEST 8: get APISIX-NACOS info from NACOS - configured in services with group_name
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    service_id: 1
-services:
-  -
-    id: 1
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        group_name: test_group
-#END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
-
-
-
-=== TEST 9: get APISIX-NACOS info from NACOS - configured in services with namespace_id
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    service_id: 1
-services:
-  -
-    id: 1
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        namespace_id: test_ns
-#END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
-
-
-
-=== TEST 10: get APISIX-NACOS info from NACOS - configured in services with group_name and namespace_id
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    service_id: 1
-services:
-  -
-    id: 1
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        group_name: test_group
-        namespace_id: test_ns
-#END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
-
-
-
-=== TEST 11: get APISIX-NACOS info from NACOS - configured in upstreams
+=== TEST 1: get APISIX-NACOS info from NACOS - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -329,8 +100,29 @@ routes:
 
 
 
-=== TEST 12: get APISIX-NACOS info from NACOS - configured in upstreams with namespace_id
+=== TEST 2: error service_name name - no auth
 --- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 3: get APISIX-NACOS info from NACOS - auth
+--- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
 routes:
   -
@@ -339,8 +131,7 @@ routes:
       service_name: APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
-      discovery_args:
-        namespace_id: test_ns
+
 #END
 --- pipelined_requests eval
 [
@@ -352,21 +143,47 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+--- no_error_log
+[error, error]
+--- timeout: 10
 
 
 
-=== TEST 13: get APISIX-NACOS info from NACOS - configured in upstreams with group_name
---- yaml_config eval: $::yaml_config
+=== TEST 4: error service_name name - auth
+--- yaml_config eval: $::yaml_auth_config
 --- apisix_yaml
 routes:
   -
     uri: /hello
     upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 5: get APISIX-NACOS info from NACOS - configured in services
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    service_id: 1
+services:
+  -
+    id: 1
+    upstream:
       service_name: APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
-      discovery_args:
-        group_name: test_group
 #END
 --- pipelined_requests eval
 [
@@ -378,45 +195,17 @@ routes:
     qr/server [1-2]/,
     qr/server [1-2]/,
 ]
+--- timeout: 10
 
 
 
-=== TEST 14: get APISIX-NACOS info from NACOS - configured in upstreams with namespace_id and group_name
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        namespace_id: test_ns
-        group_name: test_group
-#END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
-
-
-
-=== TEST 15: get APISIX-NACOS info from NACOS - configured in upstreams + etcd
+=== TEST 6: get APISIX-NACOS info from NACOS - configured in upstreams + etcd
 --- extra_yaml_config
 discovery:
   nacos:
-    host:
-      - "http://127.0.0.1:8858"
-    fetch_interval: 1
-    access_key: "my_access_key"
-    secret_key: "my_secret_key"
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
 --- config
     location /t {
         content_by_lua_block {
@@ -451,20 +240,551 @@ discovery:
             ngx.say(body)
         }
     }
+--- request
+GET /t
 --- response_body
 passed
+--- timeout: 10
 
 
 
-=== TEST 16: same namespace_id and service_name, different group_name
+=== TEST 7: hit
 --- extra_yaml_config
 discovery:
   nacos:
-    host:
-      - "http://127.0.0.1:8858"
-    fetch_interval: 1
-    access_key: "my_access_key"
-    secret_key: "my_secret_key"
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 8: get APISIX-NACOS info from NACOS - no auth with namespace
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 9: error namespace_id - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: err_ns
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 10: get APISIX-NACOS info from NACOS - configured in services with namespace
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    service_id: 1
+services:
+  -
+    id: 1
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 11: get APISIX-NACOS info from NACOS - configured in upstreams + etcd with namespace
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_name": "APISIX-NACOS",
+                    "discovery_type": "nacos",
+                    "type": "roundrobin",
+                    "discovery_args": {
+                      "namespace_id": "test_ns"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- timeout: 10
+
+
+
+=== TEST 12: hit with namespace
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 13: get APISIX-NACOS info from NACOS - no auth with group_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        group_name: test_group
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 14: error group_name - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        group_name: err_group_name
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 15: get APISIX-NACOS info from NACOS - configured in services with group_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    service_id: 1
+services:
+  -
+    id: 1
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        group_name: test_group
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 16: get APISIX-NACOS info from NACOS - configured in upstreams + etcd with group_name
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_name": "APISIX-NACOS",
+                    "discovery_type": "nacos",
+                    "type": "roundrobin",
+                    "discovery_args": {
+                      "group_name": "test_group"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- timeout: 10
+
+
+
+=== TEST 17: hit with group_name
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 18: get APISIX-NACOS info from NACOS - no auth with namespace_id and group_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+        group_name: test_group
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 19: error group_name and correct namespace_id - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+        group_name: err_group_name
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 20: error namespace_id and correct group_name - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: err_ns
+        group_name: test_group
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 21: error namespace_id and error group_name - no auth
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS-DEMO
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: err_ns
+        group_name: err_group_name
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+--- timeout: 10
+
+
+
+=== TEST 22: get APISIX-NACOS info from NACOS - configured in services with namespace_id and group_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    service_id: 1
+services:
+  -
+    id: 1
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        namespace_id: test_ns
+        group_name: test_group
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 23: get APISIX-NACOS info from NACOS - configured in upstreams + etcd with namespace_id and group_name
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/upstreams/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "service_name": "APISIX-NACOS",
+                    "discovery_type": "nacos",
+                    "type": "roundrobin",
+                    "discovery_args": {
+                      "namespace_id": "test_ns",
+                      "group_name": "test_group"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream_id": 1
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- timeout: 10
+
+
+
+=== TEST 24: hit with namespace_id and group_name
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
+--- timeout: 10
+
+
+
+=== TEST 25: same namespace_id and service_name, different group_name
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
 --- config
     location /t {
         content_by_lua_block {
@@ -545,18 +865,17 @@ GET /t
 --- response_body
 server 1
 server 3
+--- timeout: 10
 
 
 
-=== TEST 17: same group_name and service_name, different namespace_id
+=== TEST 26: same group_name and service_name, different namespace_id
 --- extra_yaml_config
 discovery:
   nacos:
-    host:
-      - "http://127.0.0.1:8858"
-    fetch_interval: 1
-    access_key: "my_access_key"
-    secret_key: "my_secret_key"
+      host:
+        - "http://127.0.0.1:8858"
+      fetch_interval: 1
 --- config
     location /t {
         content_by_lua_block {
@@ -637,3 +956,4 @@ GET /t
 --- response_body
 server 1
 server 4
+--- timeout: 10
