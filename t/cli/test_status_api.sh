@@ -52,6 +52,8 @@ make run
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status | grep 200 \
 || (echo "failed: status api didn't return 200"; exit 1)
 
+sleep 2
+
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status/ready | grep 200 \
 || (echo "failed: status/ready api didn't return 200"; exit 1)
 
