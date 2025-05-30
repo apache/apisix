@@ -93,6 +93,8 @@ passed
 === TEST 3: test mcp client
 --- timeout: 15
 --- exec
-cd t/plugin/mcp && pnpm test
+cd t/plugin/mcp && pnpm test 2>&1
 --- no_error_log
 failed to execute the script with status
+--- response_body eval
+qr/PASS .\/bridge.spec.ts/
