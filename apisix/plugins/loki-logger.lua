@@ -47,6 +47,16 @@ local schema = {
             default = "/loki/api/v1/push"
         },
         tenant_id = {type = "string", default = "fake"},
+        request_headers = {
+            type = "object",
+            patternProperties = {
+                [".*"] = {
+                    type = "string",
+                    minLength = 1,
+                },
+            },
+        },
+        authorization = { type = "string", minLength = 1, description = "Authorization header" },
         log_labels = {
             type = "object",
             patternProperties = {
@@ -138,11 +148,17 @@ end
 
 
 local function send_http_data(conf, log)
+    local headers = {}
+    if conf.request_headers ~= nil then
+        headers = conf.request_headers
+    end
+    if conf.tenant_id then
+        headers["X-Scope-OrgID"] = conf.tenant_id
+    end
+    headers ["Content-Type"] = "application/json"
+
     local params = {
-        headers = {
-            ["Content-Type"] = "application/json",
-            ["X-Scope-OrgID"] = conf.tenant_id,
-        },
+        headers = headers,
         keepalive = conf.keepalive,
         ssl_verify = conf.ssl_verify,
         method = "POST",
@@ -167,6 +183,7 @@ local function send_http_data(conf, log)
         return false, err
     end
 
+
     if res.status >= 300 then
         return false, str_format("loki server returned status: %d, body: %s",
             res.status, res.body or "")
@@ -179,7 +196,6 @@ end
 function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
-
 
 function _M.log(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
