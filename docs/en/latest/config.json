@@ -265,6 +265,10 @@
       "items": [
         {
           "type": "doc",
+          "id": "build-apisix-dev-environment-devcontainers"
+        },
+        {
+          "type": "doc",
           "id": "building-apisix"
         },
         {
