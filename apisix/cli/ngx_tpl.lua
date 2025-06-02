@@ -646,6 +646,21 @@ http {
                 apisix.http_admin()
             }
         }
+
+        {% if enable_admin_ui then %}
+        location = /ui {
+            return 301 /ui/;
+        }
+        location ^~ /ui/ {
+            rewrite ^/ui/(.*)$ /$1 break;
+            root {* apisix_lua_home *}/ui;
+            try_files $uri /index.html =404;
+            gzip on;
+            gzip_types text/css application/javascript application/json;
+            expires 7200s;
+            add_header Cache-Control "private,max-age=7200";
+        }
+        {% end %}
     }
     {% end %}
 

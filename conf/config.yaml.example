@@ -674,6 +674,7 @@ deployment:                    # Deployment configurations
       #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    enable_admin_ui: true         # Enable embeded APISIX Dashboard UI.
     allow_admin:                  # Limit Admin API access by IP addresses.
       - 127.0.0.0/24              # If not set, any IP address is allowed.
       # - "::/64"
