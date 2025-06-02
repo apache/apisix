@@ -337,6 +337,24 @@ do
     end
 end
 -- Resolve ngx.var in the given string
+-- @function core.utils.resolve_var
+-- @tparam string tpl The template string to resolve variables in
+-- @tparam table ctx The context table containing variables
+-- @tparam function escaper Optional function to escape resolved values
+-- @treturn string The resolved string
+-- @treturn string|nil Error message if any
+-- @treturn number Number of variables replaced
+-- @usage
+-- local utils = require("apisix.core.utils")
+--
+-- -- Usage examples:
+-- local res = utils.resolve_var("$host", ctx.var)     -- "example.com"
+-- local res = utils.resolve_var("${host}", ctx.var)   -- "example.com"
+-- local res = utils.resolve_var("TMP_${VAR1}_${VAR2}", ctx.var) -- "TMP_value1_value2"
+-- local res = utils.resolve_var("\\$host", ctx.var)   -- "$host"
+--
+-- -- Usage in APISIX context:
+-- local service_name = utils.resolve_var(up_conf.service_name, api_ctx.var)
 _M.resolve_var = resolve_var
 
 
@@ -459,37 +477,6 @@ function _M.check_tls_bool(fields, conf, plugin_name)
                      plugin_name, " configuration is a security risk")
         end
     end
-end
-
----
--- Checks if a string is an nginx variable.
--- An nginx variable starts with the '$' character.
---
--- @function core.utils.is_nginx_variable
--- @tparam string str The string to check
--- @treturn boolean true if the string starts with '$', false otherwise
--- @usage
--- local utils = require("apisix.core.utils")
---
--- -- Usage examples:
--- local is_var = utils.is_nginx_variable("$host")     -- true
--- local is_var = utils.is_nginx_variable("host")      -- false
--- local is_var = utils.is_nginx_variable("${host}")   -- true
--- local is_var = utils.is_nginx_variable("\\$host")   -- false
---
--- -- Usage in APISIX context:
--- if utils.is_nginx_variable(up_conf.service_name) then
---     -- Handle as nginx variable
--- else
---     -- Handle as regular service name
--- end
-function _M.is_nginx_variable(str)
-    if not str or type(str) ~= "string" then
-        return false
-    end
-
-    -- Check if the string starts with '$' and it's not escaped
-    return str:sub(1, 1) == "$" and (str:sub(1, 2) ~= "\\$")
 end
 
 return _M

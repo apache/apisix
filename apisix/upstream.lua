@@ -295,9 +295,9 @@ function _M.set_by_route(route, api_ctx)
             return 503, err
         end
 
-        local service_name = up_conf.service_name
-        if core.utils.is_nginx_variable(up_conf.service_name) then
-            service_name = core.utils.resolve_var(up_conf.service_name, api_ctx.var)
+        local service_name, err = core.utils.resolve_var(up_conf.service_name, api_ctx.var)
+        if not service_name then
+            return 503, "service_name is empty: " .. (err or "nil")
         end
 
         local new_nodes, err = dis.nodes(service_name, up_conf.discovery_args)

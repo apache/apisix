@@ -395,31 +395,3 @@ res:12
 res:7
 
 
-
-=== TEST X: is_nginx_variable
---- config
-    location /t {
-        content_by_lua_block {
-            local is_nginx_variable = require("apisix.core.utils").is_nginx_variable
-
-            local cases = {
-                {str = "$host", expected = true},
-                {str = "host", expected = false},
-                {str = "${host}", expected = true},
-                {str = "\\$host", expected = false},
-                {str = nil, expected = false},
-                {str = 123, expected = false},
-                {str = "", expected = false},
-            }
-
-            for _, case in ipairs(cases) do
-                local res = is_nginx_variable(case.str)
-                assert(res == case.expected,
-                       string.format("case %s failed: got %s, expected %s",
-                                   case.str, res, case.expected))
-            end
-        }
-    }
---- request
-GET /t
---- response_body
