@@ -24,7 +24,7 @@ jobs:
 
         sudo -E ./ci/linux-install-openresty.sh
         ./utils/linux-install-luarocks.sh
-        sudo -E luarocks install luacheck
+        sudo -E luarocks install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 luacheck
 
     - name: Script
       run: |
