@@ -133,7 +133,10 @@ deps: install-runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
-		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
+		# --only-server is a temporary fix until https://github.com/luarocks/luarocks/issues/1797 is resolved. \
+		# NOTE: This fix is taken from https://github.com/luarocks/luarocks/issues/1797#issuecomment-2927856212 \
+		# and no packages after 29th May 2025 can be installed. This is to be removed as soon as the luarocks issue is fixed \
+		$(ENV_LUAROCKS) install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
 		exit 1; \
