@@ -35,7 +35,7 @@ make run
 
 ## check /ui redirects to /ui/
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/ui)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui)
 if [ ! $code -eq 301 ]; then
     echo "failed: failed to redirect /ui to /ui/"
     exit 1
@@ -48,7 +48,7 @@ echo "test_html" > ui/index.html
 echo "test_js" > ui/assets/test.js
 echo "test_css" > ui/assets/test.css
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/ui/)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/)
 if [ ! $code -eq 200 ]; then
     echo "failed: /ui/ not accessible"
     exit 1
@@ -56,7 +56,7 @@ fi
 
 ## check /ui/index.html accessible
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/ui/index.html)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/index.html)
 if [ ! $code -eq 200 ]; then
     echo "failed: /ui/index.html not accessible"
     exit 1
@@ -64,7 +64,7 @@ fi
 
 ## check /ui/assets/test.js accessible
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/ui/assets/test.js)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/test.js)
 if [ ! $code -eq 200 ]; then
     echo "failed: /ui/assets/test.js not accessible"
     exit 1
@@ -72,7 +72,7 @@ fi
 
 ## check /ui/assets/test.css accessible
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/ui/assets/test.css)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/assets/test.css)
 if [ ! $code -eq 200 ]; then
     echo "failed: /ui/assets/test.css not accessible"
     exit 1
@@ -80,11 +80,13 @@ fi
 
 ## check /ui/ single-page-application fallback
 
-code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} https://127.0.0.1:9180/ui/not_exist)
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/not_exist)
 if [ ! $code -eq 200 ]; then
     echo "failed: /ui/not_exist not accessible"
     exit 1
 fi
+
+make stop
 
 # test admin ui disabled
 
