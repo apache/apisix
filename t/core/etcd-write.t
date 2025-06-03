@@ -62,7 +62,6 @@ GET /t
 
 
 
-
 === TEST 2: should show warn when serverless-pre-function try to write to etcd with cli delete
 --- yaml_config
 deployment:
@@ -153,7 +152,6 @@ deployment:
 GET /t
 --- error_log eval
 qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
-
 
 
 
@@ -349,7 +347,6 @@ deployment:
 GET /t
 --- error_log eval
 qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
-
 
 
 
@@ -749,7 +746,6 @@ qr/Data plane role should not write to etcd. This operation will be deprecated i
 
 
 
-
 === TEST 23: add serverless-pre-function with etcd function push
 --- config
     location /t {
@@ -814,7 +810,6 @@ deployment:
 GET /t
 --- error_log eval
 qr/Data plane role should not write to etcd. This operation will be deprecated in future releases./
-
 
 
 
