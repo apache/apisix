@@ -136,10 +136,7 @@ local schema = {
 同时，需要实现 **check_schema(conf, schema_type)** 方法，完成配置参数的合法性校验。
 
 ```lua
-function _M.check_schema(conf, schema_type)
-    if schema_type == core.schema.TYPE_METADATA then
-        return core.schema.check(metadata_schema, conf)
-    end
+function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 ```
@@ -150,9 +147,12 @@ end
 
 :::
 
-通过函数输入参数 **schema_type** 对不同类型的的 schema 进行对应的校验。例如很多插件需要使用一些[元数据](./terminology/plugin-metadata.md)，可以定义插件的 `metadata_schema`。例如 [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) 这个插件为了跟 [Consumer](./admin-api.md#consumer) 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `Consumer` 资源的 `plugins` 属性里面的配置。
+通过函数输入参数 **schema_type** 可以对不同类型的 schema 进行对应的校验。例如很多插件需要使用一些[元数据](./terminology/plugin-metadata.md)，可以定义插件的 `metadata_schema`。
 
 ```lua
+-- example-plugin.lua
+
+-- schema definition for metadata
 local metadata_schema = {
     type = "object",
     properties = {
@@ -162,19 +162,28 @@ local metadata_schema = {
     required = {"ikey", "skey"},
 }
 
-local plugin_name = "example-plugin"
-
-local _M = {
-    version = 0.1,
-    priority = 0,        -- TODO: add a type field, may be a good idea
-    name = plugin_name,
-    schema = schema,
-    metadata_schema = metadata_schema,
-}
+function _M.check_schema(conf, schema_type)
+    --- check schema for metadata
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+    return core.schema.check(schema, conf)
+end
 ```
 
+再比如 [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) 插件为了跟 [Consumer](./admin-api.md#consumer) 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `Consumer` 资源的 `plugins` 属性里面的配置。
+
 ```lua
--- key-auth
+-- key-auth.lua
+
+local consumer_schema = {
+    type = "object",
+    properties = {
+        key = {type = "string"},
+    },
+    required = {"key"},
+}
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
         return core.schema.check(consumer_schema, conf)

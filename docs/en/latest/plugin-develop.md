@@ -132,10 +132,7 @@ The schema defines a non-negative number `i`, a string `s`, a non-empty array of
 At the same time, we need to implement the __check_schema(conf, schema_type)__ method to complete the specification verification.
 
 ```lua
-function _M.check_schema(conf, schema_type)
-    if schema_type == core.schema.TYPE_METADATA then
-        return core.schema.check(metadata_schema, conf)
-    end
+function _M.check_schema(conf)
     return core.schema.check(schema, conf)
 end
 ```
@@ -147,9 +144,12 @@ verification.
 
 :::
 
-The input parameter **schema_type** is used to distinguish between different schemas types. For example, many plugins need to use some [metadata](./terminology/plugin-metadata.md), so they define the plugin's `metadata_schema`. Another example, the [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) plugin needs to provide a `consumer_schema` to check the configuration of the `plugins` attribute of the `consumer` resource in order to be used with the [Consumer](./admin-api.md#consumer) resource.
+The input parameter **schema_type** is used to distinguish between different schemas types. For example, many plugins need to use some [metadata](./terminology/plugin-metadata.md), so they define the plugin's `metadata_schema`.
 
 ```lua
+-- example-plugin.lua
+
+-- schema definition for metadata
 local metadata_schema = {
     type = "object",
     properties = {
@@ -159,19 +159,28 @@ local metadata_schema = {
     required = {"ikey", "skey"},
 }
 
-local plugin_name = "example-plugin"
-
-local _M = {
-    version = 0.1,
-    priority = 0,        -- TODO: add a type field, may be a good idea
-    name = plugin_name,
-    schema = schema,
-    metadata_schema = metadata_schema,
-}
+function _M.check_schema(conf, schema_type)
+    --- check schema for metadata
+    if schema_type == core.schema.TYPE_METADATA then
+        return core.schema.check(metadata_schema, conf)
+    end
+    return core.schema.check(schema, conf)
+end
 ```
 
+Another example, the [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) plugin needs to provide a `consumer_schema` to check the configuration of the `plugins` attribute of the `consumer` resource in order to be used with the [Consumer](./admin-api.md#consumer) resource.
+
 ```lua
--- key-auth
+-- key-auth.lua
+
+local consumer_schema = {
+    type = "object",
+    properties = {
+        key = {type = "string"},
+    },
+    required = {"key"},
+}
+
 function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_CONSUMER then
         return core.schema.check(consumer_schema, conf)
