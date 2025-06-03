@@ -377,6 +377,8 @@ hello world
     }
 --- error_code: 200
 
+
+
 === TEST 15: setup route (test headers)
 --- config
     location /t {
@@ -412,7 +414,9 @@ hello world
 --- response_body
 passed
 
-=== TEST 16: hit route
+
+
+=== TEST 16: hit route (test headers)
 --- request
 GET /hello
 --- response_body
