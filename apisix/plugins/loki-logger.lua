@@ -147,10 +147,7 @@ end
 
 
 local function send_http_data(conf, log)
-    local headers = {}
-    if conf.headers ~= nil then
-        headers = conf.headers
-    end
+    local headers = conf.headers or {}
     headers["X-Scope-OrgID"] = conf.tenant_id
     headers["Content-Type"] = "application/json"
 
