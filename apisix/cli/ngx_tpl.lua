@@ -632,16 +632,16 @@ http {
         set $upstream_host               $http_host;
         set $upstream_uri                '';
 
-        location /apisix/admin {
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
+        {%if allow_admin then%}
+        {% for _, allow_ip in ipairs(allow_admin) do %}
+        allow {*allow_ip*};
+        {% end %}
+        deny all;
+        {%else%}
+        allow all;
+        {%end%}
 
+        location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
             }
