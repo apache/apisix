@@ -298,7 +298,7 @@ function _M.set_by_route(route, api_ctx)
         end
 
         local service_name, err = core.utils.resolve_var(up_conf.service_name, api_ctx.var)
-        if not service_name then
+        if not service_name or service_name == "" then
             return 503, "service_name is empty: " .. (err or "nil")
         end
 
