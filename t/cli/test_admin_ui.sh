@@ -88,6 +88,28 @@ fi
 
 make stop
 
+# test ip restriction
+
+git checkout conf/config.yaml
+
+echo "
+deployment:
+    admin:
+        enable_admin_ui: true
+        allow_admin:
+            - 1.1.1.1/32
+" > conf/config.yaml
+
+make run
+
+code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/ui/)
+if [ ! $code -eq 403 ]; then
+    echo "failed: ip restriction not working, expected 403, got $code"
+    exit 1
+fi
+
+make stop
+
 # test admin ui disabled
 
 git checkout conf/config.yaml
@@ -100,8 +122,27 @@ deployment:
 
 make init
 
-grep "location ^~ /ui/" conf/nginx.conf > /dev/null
-if [ $? -eq 0 ]; then
+#### When grep cannot find the value, it uses 1 as the exit code.
+#### Due to the use of set -e, any non-zero exit will terminate the
+#### script, so grep is written inside the if statement here.
+if grep "location ^~ /ui/" conf/nginx.conf > /dev/null; then
     echo "failed: failed to disable embedded admin ui"
+    exit 1
+fi
+
+# test admin UI explicitly enabled
+
+git checkout conf/config.yaml
+
+echo "
+deployment:
+    admin:
+        enable_admin_ui: true
+" > conf/config.yaml
+
+make init
+
+if ! grep "location ^~ /ui/" conf/nginx.conf > /dev/null; then
+    echo "failed: failed to explicitly enable embedded admin ui"
     exit 1
 fi
