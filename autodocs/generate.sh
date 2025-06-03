@@ -25,7 +25,10 @@ build() {
     apt-get -y update --fix-missing
     apt-get -y install lua5.1 liblua5.1-0-dev
     curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash -
-    luarocks install ldoc
+    # --only-server is a temporary fix until https://github.com/luarocks/luarocks/issues/1797 is resolved. \
+    # NOTE: This fix is taken from https://github.com/luarocks/luarocks/issues/1797#issuecomment-2927856212 \
+    # and no packages after 29th May 2025 can be installed. This is to be removed as soon as the luarocks issue is fixed \
+    luarocks install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 ldoc
 
     # generate docs
     rm -rf autodocs/output || true
