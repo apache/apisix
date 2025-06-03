@@ -49,6 +49,8 @@ docker compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d
 
 make run
 
+sleep 0.5
+
 curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:7085/status | grep 200 \
 || (echo "failed: status api didn't return 200"; exit 1)
 

@@ -25,7 +25,6 @@ local yaml         = require("lyaml")
 local log          = require("apisix.core.log")
 local json         = require("apisix.core.json")
 local new_tab      = require("table.new")
-local tbl_deepcopy = require("apisix.core.table").deepcopy
 local check_schema = require("apisix.core.schema").check
 local profile      = require("apisix.core.profile")
 local lfs          = require("lfs")
@@ -239,7 +238,9 @@ local function sync_data(self)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item)
+                -- TODO: An opts table should be used
+                -- as different checkers may use different parameters
+                data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item))
@@ -274,7 +275,7 @@ local function sync_data(self)
                           ", it should be an object")
             end
 
-            local id = item.id or ("arr_" .. idx)
+            local id = item.id or item.username or ("arr_" .. idx)
             local modifiedIndex = item.modifiedIndex or conf_version
             local conf_item = {value = item, modifiedIndex = modifiedIndex,
                             key = "/" .. self.key .. "/" .. id}
@@ -288,7 +289,7 @@ local function sync_data(self)
             end
 
             if data_valid and self.checker then
-                data_valid, err = self.checker(item)
+                data_valid, err = self.checker(item, conf_item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
                               "] err:", err, " ,val: ", json.delay_encode(item))
@@ -447,16 +448,6 @@ function _M.new(key, opts)
         key = sub_str(key, 2)
     end
 
-    if is_use_admin_api() then
-        if item_schema and item_schema.properties then
-            local item_schema_cp = tbl_deepcopy(item_schema)
-            -- allow clients to specify modifiedIndex to control resource changes.
-            item_schema_cp.properties.modifiedIndex = {
-                type = "integer",
-            }
-            item_schema = item_schema_cp
-        end
-    end
     local obj = setmetatable({
         automatic = automatic,
         item_schema = item_schema,

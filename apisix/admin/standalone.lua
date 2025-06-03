@@ -156,7 +156,12 @@ local function update(ctx)
                     end
                 end
                 if item_checker then
-                    valid, err = item_checker(item_temp)
+                    local item_checker_key
+                    if item.id then
+                        -- credential need to check key
+                        item_checker_key = "/" .. key .. "/" .. item_temp.id
+                    end
+                    valid, err = item_checker(item_temp, item_checker_key)
                     if not valid then
                         core.log.error(err_prefix, err)
                         core.response.exit(400, {error_msg = err_prefix .. err})
@@ -235,6 +240,56 @@ function _M.run()
 end
 
 
+local patch_schema
+do
+    local resource_schema = {
+        "proto",
+        "global_rule",
+        "route",
+        "service",
+        "upstream",
+        "consumer",
+        "consumer_group",
+        "credential",
+        "ssl",
+        "plugin_config",
+    }
+    local function attach_modifiedIndex_schema(name)
+        local schema = core.schema[name]
+        if not schema then
+            core.log.error("schema for ", name, " not found")
+            return
+        end
+        if schema.properties and not schema.properties.modifiedIndex then
+            schema.properties.modifiedIndex = {
+                type = "integer",
+            }
+        end
+    end
+
+    local function patch_credential_schema()
+        local credential_schema = core.schema["credential"]
+        if credential_schema and credential_schema.properties then
+            credential_schema.properties.id = {
+                type = "string",
+                minLength = 15,
+                maxLength = 128,
+                pattern = [[^[a-zA-Z0-9]+/credentials/[a-zA-Z0-9]+$]],
+            }
+        end
+    end
+
+    function patch_schema()
+        -- attach modifiedIndex schema to all resource schemas
+        for _, name in ipairs(resource_schema) do
+            attach_modifiedIndex_schema(name)
+        end
+        -- patch credential schema
+        patch_credential_schema()
+    end
+end
+
+
 function _M.init_worker()
     local function update_config()
         local config, err = shared_dict:get("config")
@@ -251,6 +306,8 @@ function _M.init_worker()
         config_yaml._update_config(config)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
+
+    patch_schema()
 end
 
 
