@@ -299,7 +299,7 @@ function _M.set_by_route(route, api_ctx)
 
         local service_name, err = core.utils.resolve_var(up_conf.service_name, api_ctx.var)
         if not service_name or service_name == "" then
-            return 503, "service_name is empty: " .. (err or "nil")
+            return 503, "resolve_var resolves to empty string: " .. (err or "nil")
         end
 
         local new_nodes, err = dis.nodes(service_name, up_conf.discovery_args)
