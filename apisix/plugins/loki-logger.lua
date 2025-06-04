@@ -148,6 +148,7 @@ end
 
 local function send_http_data(conf, log)
     local headers = conf.headers or {}
+    headers = core.table.clone(headers)
     headers["X-Scope-OrgID"] = conf.tenant_id
     headers["Content-Type"] = "application/json"
 
