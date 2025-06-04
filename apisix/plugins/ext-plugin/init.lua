@@ -705,11 +705,11 @@ local rpc_handlers = {
                     end
                 end
 
-                core.request.set_uri_args(ctx, args)
+            end
+            core.request.set_uri_args(ctx, args)
 
-                if path then
-                    var.upstream_uri = path .. '?' .. var.args
-                end
+            if path then
+                var.upstream_uri = path .. '?' .. var.args
             end
         end
 
