@@ -48,7 +48,7 @@ function _M.nodes(service_name, discovery_args)
     local value = nacos_dict:get_stale(key)
     local nodes = {}
     if not value then
-         -- maximum waiting time: 5 seconds
+        -- maximum waiting time: 5 seconds
         local waiting_time = 5
         local step = 0.1
         local logged = false

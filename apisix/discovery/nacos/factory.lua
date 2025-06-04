@@ -99,8 +99,8 @@ end
 
 local function request_login(self, host, username, password)
     local params = {
-       ["username"] = username,
-       ["password"] = password,
+        username = username,
+        password = password,
     }
     -- backward compat: NACOS_LOGIN_PATH starts with "/" so
     -- we need to remove the last "/" from prefix
@@ -139,11 +139,7 @@ local function request_instance_list(self, params, host)
 end
 
 local function is_grpc(scheme)
-    if scheme == 'grpc' or scheme == 'grpcs' then
-        return true
-    end
-
-    return false
+    return scheme == "grpc" or scheme == "grpcs"
 end
 
 
