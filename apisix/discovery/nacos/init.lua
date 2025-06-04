@@ -28,9 +28,6 @@ local local_conf    = require('apisix.core.config_local').local_conf()
 local ngx           = ngx
 
 local shdict_name = "nacos"
-if ngx.config.subsystem == "stream" then
-    shdict_name = shdict_name .. "-stream"
-end
 
 local nacos_dict    = ngx.shared[shdict_name]
 local OLD_CONFIG_ID = utils.old_config_id

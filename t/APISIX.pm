@@ -277,6 +277,7 @@ lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict standalone-config 10m;
     lua_shared_dict status-report 1m;
+    lua_shared_dict nacos 10m;
 }
 _EOC_
     }
@@ -403,7 +404,6 @@ _EOC_
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
     lua_shared_dict kubernetes-second-stream 1m;
-    lua_shared_dict nacos-stream 10m;
     lua_shared_dict tars-stream 1m;
 
     upstream apisix_backend {
@@ -584,7 +584,6 @@ _EOC_
     lua_shared_dict etcd-cluster-health-check 10m; # etcd health check
     lua_shared_dict ext-plugin 1m;
     lua_shared_dict kubernetes 1m;
-    lua_shared_dict nacos 10m;
     lua_shared_dict kubernetes-first 1m;
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
