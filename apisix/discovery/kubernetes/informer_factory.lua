@@ -298,7 +298,7 @@ local function list_watch(informer, apiserver)
     end
 
     informer.fetch_state = "list finished"
-    if informer.post_List then
+    if informer.post_list then
         informer:post_list()
     end
 
