@@ -210,21 +210,29 @@ local function fetch_full_registry(self)
 
         local config = self.config
         local services_in_use = utils.get_nacos_services(config.id)
+        local service_names = {}
         for _, serv in ipairs(services_in_use) do
             if self.stop_flag then
                 core.log.error("nacos client is exited, id: ", config.id)
                 return
             end
 
+            service_names[serv.service_name] = true
             local nodes = self:fetch_instances(serv)
             if #nodes > 0 then
                 local content = core.json.encode(nodes)
                 local key = utils.generate_key(serv.id, serv.namespace_id,
                                                serv.group_name, serv.name)
-                nacos_dict:set(key, content, self.config.fetch_interval * 10)
+                nacos_dict:set(key, content)
              end
         end
-
+        -- delete unused service names
+        local keys = nacos_dict:get_keys(0)
+        for _, key in ipairs(keys) do
+            if core.string.has_prefix(key, config.id) and not service_names[key] then
+                nacos_dict:delete(key)
+            end
+        end
         ngx_timer_at(self.config.fetch_interval, self:fetch_full_registry())
     end
 end
