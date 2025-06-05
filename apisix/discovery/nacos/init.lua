@@ -23,7 +23,6 @@ local ipairs        = ipairs
 local require       = require
 local table         = require("apisix.core.table")
 local pcall         = pcall
-local pairs         = pairs
 local local_conf    = require('apisix.core.config_local').local_conf()
 local ngx           = ngx
 
