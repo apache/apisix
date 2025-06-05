@@ -32,7 +32,6 @@ local shdict_name = "nacos"
 local nacos_dict    = ngx.shared[shdict_name]
 local OLD_CONFIG_ID = utils.old_config_id
 local _M            = {}
-local nacos_clients = {}
 
 function _M.nodes(service_name, discovery_args)
     local ns_id = discovery_args and discovery_args.namespace_id or utils.default_namespace_id
@@ -91,38 +90,13 @@ function _M.init_worker()
         return
     end
 
-    local keep = {}
     -- support old way
     if discovery_conf.host then
         discovery_conf = generate_new_config_from_old(discovery_conf)
     end
     for _, val in ipairs(discovery_conf) do
-        local id = val.id
-        local version = ngx.md5(core.json.encode(val, true))
-        keep[id] = true
-
-        -- The nacos config has not been changed.
-        if nacos_clients[id] and nacos_clients[id].version == version then
-            goto CONTINUE
-        end
-
-        if nacos_clients[id] then
-            nacos_clients[id]:stop()
-        end
         local new_client = nacos_factory.new(val)
         new_client:start()
-        nacos_clients[id] = new_client
-
-        ::CONTINUE::
-    end
-
-
-    for id, client in pairs(nacos_clients) do
-        -- The nacos config has been deleted.
-        if not keep[client.id] then
-            client:stop()
-            nacos_clients[id] = nil
-        end
     end
 end
 
@@ -132,23 +106,6 @@ function _M.list_all_services()
     return {}
 end
 
-
-function _M.get_health_checkers()
-    local result = core.table.new(0, 4)
-    if nacos_clients == nil then
-        return result
-    end
-
-    for id in pairs(nacos_clients) do
-        local health_check = require("resty.healthcheck")
-        local list = health_check.get_target_list(id, "nacos")
-        if list then
-            result[id] = list
-        end
-    end
-
-    return result
-end
 
 local cjson = require "cjson"
 
