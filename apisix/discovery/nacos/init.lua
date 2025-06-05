@@ -44,6 +44,21 @@ function _M.nodes(service_name, discovery_args)
     local value = nacos_dict:get(key)
     local nodes = {}
     if not value then
+        -- maximum waiting time: 5 seconds
+        local waiting_time = 5
+        local step = 0.1
+        local logged = false
+        while not value and waiting_time > 0 do
+            if not logged then
+                logged = true
+            end
+
+            ngx.sleep(step)
+            waiting_time = waiting_time - step
+            value = nacos_dict:get(key)
+        end
+    end
+    if not value then
         core.log.error("nacos service not found: ", service_name)
         return nodes
     end
