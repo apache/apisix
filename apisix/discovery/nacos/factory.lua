@@ -216,13 +216,13 @@ local function fetch_full_registry(self)
                 core.log.error("nacos client is exited, id: ", config.id)
                 return
             end
-
-            service_names[serv.service_name] = true
+            local key = utils.generate_key(serv.id, serv.namespace_id,
+                                          serv.group_name, serv.name)
+            service_names[key] = true
             local nodes = self:fetch_instances(serv)
             if #nodes > 0 then
                 local content = core.json.encode(nodes)
-                local key = utils.generate_key(serv.id, serv.namespace_id,
-                                               serv.group_name, serv.name)
+                local key = key
                 nacos_dict:set(key, content)
              end
         end
