@@ -272,7 +272,7 @@ title: Proxy Chain Plugin for APISIX
               - uri: "http://customer_service/api/v1/user"
                 method: "POST"
 
-      ```
+        ```
     - Apply the CRD:
 
       ```bash
