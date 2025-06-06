@@ -932,7 +932,7 @@ passed
                 end
                 local code, body = t('/apisix/admin/stream_routes/' .. i,
                     ngx.HTTP_PUT,
-                    json.encode(route),
+                    json.encode(route)
                 )
             end
 
