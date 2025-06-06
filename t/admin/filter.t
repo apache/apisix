@@ -946,7 +946,7 @@ passed
             res = json.decode(res)
 
             assert(#res.list == 5, "expected 5 stream routes with service_id 1, got " .. #res.list)
-            
+
             for i = 1, #res.list do
                 assert(tonumber(res.list[i].value.id) % 2 == 0,
                        "expected stream route id to be even, got " .. res.list[i].value.id)
@@ -961,7 +961,7 @@ passed
             )
             res = json.decode(res)
             assert(#res.list == 6, "expected 6 stream routes with upstream_id 1, got " .. #res.list)
-            
+
             for i = 1, #res.list do
                 assert(tonumber(res.list[i].value.id) % 2 == 1,
                        "expected stream route id to be odd, got " .. res.list[i].value.id)
