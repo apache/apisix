@@ -864,11 +864,11 @@ passed
             )
             res = json.decode(res)
             assert(#res.list == 5, "expected 5 routes with service_id 1, got " .. #res.list)
-            
+
             for i = 1, #res.list do
-                assert(tonumber(res.list[i].value.id) % 2 == 0, 
+                assert(tonumber(res.list[i].value.id) % 2 == 0,
                        "expected route id to be even, got " .. res.list[i].value.id)
-                assert(res.list[i].value.service_id == "1", 
+                assert(res.list[i].value.service_id == "1",
                        "expected service_id 1, got " .. tostring(res.list[i].value.service_id))
             end
 
@@ -879,11 +879,11 @@ passed
             )
             res = json.decode(res)
             assert(#res.list == 6, "expected 6 routes with upstream_id 1, got " .. #res.list)
-            
+
             for i = 1, #res.list do
-                assert(tonumber(res.list[i].value.id) % 2 == 1, 
+                assert(tonumber(res.list[i].value.id) % 2 == 1,
                        "expected route id to be odd, got " .. res.list[i].value.id)
-                assert(res.list[i].value.upstream_id == "1", 
+                assert(res.list[i].value.upstream_id == "1",
                        "expected upstream_id 1, got " .. tostring(res.list[i].value.upstream_id))
             end
         }
@@ -932,7 +932,7 @@ passed
                 end
                 local code, body = t('/apisix/admin/stream_routes/' .. i,
                     ngx.HTTP_PUT,
-                    json.encode(route)
+                    json.encode(route),
                 )
             end
 
@@ -944,13 +944,13 @@ passed
                 ngx.HTTP_GET
             )
             res = json.decode(res)
-            
+
             assert(#res.list == 5, "expected 5 stream routes with service_id 1, got " .. #res.list)
             
             for i = 1, #res.list do
-                assert(tonumber(res.list[i].value.id) % 2 == 0, 
+                assert(tonumber(res.list[i].value.id) % 2 == 0,
                        "expected stream route id to be even, got " .. res.list[i].value.id)
-                assert(res.list[i].value.service_id == "1", 
+                assert(res.list[i].value.service_id == "1",
                        "expected service_id 1, got " .. tostring(res.list[i].value.service_id))
             end
 
@@ -963,9 +963,9 @@ passed
             assert(#res.list == 6, "expected 6 stream routes with upstream_id 1, got " .. #res.list)
             
             for i = 1, #res.list do
-                assert(tonumber(res.list[i].value.id) % 2 == 1, 
+                assert(tonumber(res.list[i].value.id) % 2 == 1,
                        "expected stream route id to be odd, got " .. res.list[i].value.id)
-                assert(res.list[i].value.upstream_id == "1", 
+                assert(res.list[i].value.upstream_id == "1",
                        "expected upstream_id 1, got " .. tostring(res.list[i].value.upstream_id))
             end
         }
