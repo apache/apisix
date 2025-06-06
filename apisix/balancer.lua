@@ -204,11 +204,18 @@ local function pick_server(route, ctx)
 
     local nodes_count = #up_conf.nodes
     if nodes_count == 1 then
-        local node = up_conf.nodes[1]
-        ctx.balancer_ip = node.host
-        ctx.balancer_port = node.port
-        node.upstream_host = parse_server_for_upstream_host(node, ctx.upstream_scheme)
-        return node
+        -- For least_conn balancer, we still need to use the balancer even with single node
+        -- to track connection counts for future load balancing decisions
+        if up_conf.type == "least_conn" then
+            core.log.debug("single node with least_conn balancer - still using balancer for connection tracking")
+        else
+            core.log.info("single node with ", up_conf.type, " balancer - skipping balancer")
+            local node = up_conf.nodes[1]
+            ctx.balancer_ip = node.host
+            ctx.balancer_port = node.port
+            node.upstream_host = parse_server_for_upstream_host(node, ctx.upstream_scheme)
+            return node
+        end
     end
 
     local version = ctx.upstream_version
