@@ -296,7 +296,7 @@ It is encoded in the following manner.
 filter=escape_uri(key1=value2&key2=value2)
 ```
 
-The following example filters routes using `service_id`. When multiple filters are input at the same time, the result will be the intersection of them.
+The following example filters routes using `service_id`. Applying multiple filters simultaneously will return results that match all filter conditions.
 
 ```shell
 curl 'http://127.0.0.1:9180/apisix/admin/routes?filter=service_id%3D1' \
