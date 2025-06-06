@@ -15,6 +15,11 @@
 -- limitations under the License.
 --
 
+local type              = type
+local pairs             = pairs
+local tonumber          = tonumber
+local ngx               = ngx
+local re_find           = ngx.re.find
 local fetch_local_conf  = require("apisix.core.config_local").local_conf
 local try_read_attr     = require("apisix.core.table").try_read_attr
 local deepcopy          = require("apisix.core.table").deepcopy
@@ -22,9 +27,6 @@ local log               = require("apisix.core.log")
 local request           = require("apisix.core.request")
 local response          = require("apisix.core.response")
 local table             = require("apisix.core.table")
-local tonumber          = tonumber
-local re_find           = ngx.re.find
-local pairs             = pairs
 
 local _M = {}
 
