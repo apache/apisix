@@ -143,5 +143,6 @@ return resource.new({
     name = "routes",
     kind = "route",
     schema = core.schema.route,
-    checker = check_conf
+    checker = check_conf,
+    list_filter_fields = { "service_id", "upstream_id" },
 })

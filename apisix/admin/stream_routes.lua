@@ -73,5 +73,6 @@ return resource.new({
     kind = "stream route",
     schema = core.schema.stream_route,
     checker = check_conf,
-    unsupported_methods = {"patch"}
+    unsupported_methods = { "patch" },
+    list_filter_fields = { "service_id", "upstream_id" },
 })
