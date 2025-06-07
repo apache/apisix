@@ -29,7 +29,15 @@ The performance of this module needs to be improved:
 
 ### Configuration for Nacos
 
+```yaml title="conf/config.yaml"
+Nacos can be configured in two ways: single instance or multi-instance.
+```
+
 Add following configuration in `conf/config.yaml` :
+
+### Single Instance method
+
+The below is a single nacos instance method that is also supported.
 
 ```yaml
 discovery:
@@ -56,11 +64,44 @@ discovery:
       - "http://192.168.33.1:8848"
 ```
 
+#### Multi Instance method
+
+```yaml
+discovery:
+  nacos:
+    - id: "nacos-cluster-1"            # Unique ID for this Nacos cluster (required)
+      hosts:                           # List of Nacos hosts (required)
+        - "http://${host1}:${port1}"
+      prefix: "/nacos/v1/"             # API prefix
+      fetch_interval: 30               # default 30 sec
+      default_weight: 100               # default 100
+      auth:                            # Authentication credentials
+        username: username
+        password: password
+      timeout:
+        connect: 2000                  # default 2000 ms
+        send: 2000                     # default 2000 ms
+        read: 5000                     # default 5000 ms
+    - id: "nacos-cluster-2"            # Unique ID for this Nacos cluster (required)
+      hosts:                           # List of Nacos hosts (required)
+        - "http://${host2}:${port2}"
+      prefix: "/nacos/v1/"             # API prefix
+      fetch_interval: 30               # default 30 sec
+      default_weight: 100               # default 100
+      auth:                            # Authentication credentials
+        username: username2
+        password: password2
+      timeout:
+        connect: 2000                  # default 2000 ms
+        send: 2000                     # default 2000 ms
+        read: 5000                     # default 5000 ms
+```
+
 ### Upstream setting
 
 #### L7
 
-Here is an example of routing a request with an URI of "/nacos/*" to a service which named "http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS" and use nacos discovery client in the registry:
+The following is an example of routing requests matching the URI `/nacos/*` to a service at `http://192.168.33.1:8848/nacos/v1/ns/instance/list?serviceName=APISIX-NACOS`, configured with the ID `nacos-cluster-1` and using the Nacos discovery client in the registry.”
 
 :::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
@@ -79,6 +120,9 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
         "service_name": "APISIX-NACOS",
         "type": "roundrobin",
         "discovery_type": "nacos"
+        "discovery_args":{
+          "id": "nacos-cluster-1"
+        }
     }
 }'
 ```
@@ -100,7 +144,10 @@ The formatted response as below:
         "scheme": "http",
         "service_name": "APISIX-NACOS",
         "type": "roundrobin",
-        "discovery_type": "nacos"
+        "discovery_type": "nacos",
+        "discovery_args":{
+          "id": "nacos-cluster-1"
+        }
       },
       "priority": 0,
       "uri": "\/nacos\/*"
@@ -130,6 +177,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 
 | Name         | Type   | Requirement | Default | Valid | Description                                                  |
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
+| id | string | optional    | "0"     |       | (Used in multi instance mode)This parameter is used to specify the unique ID of a nacos instance. |
 | namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
 | group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
 
