@@ -25,10 +25,8 @@ local type = type
 
 
 local _M = {
-    need_v3_filter = true,
+    list_filter_fields = {},
 }
-
-
 local mt = {
     __index = _M
 }
