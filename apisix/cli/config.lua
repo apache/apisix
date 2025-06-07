@@ -96,6 +96,7 @@ local _M = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
         ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {
@@ -110,7 +111,8 @@ local _M = {
         ["lrucache-lock-stream"] = "10m",
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
-        ["tars-stream"] = "1m"
+        ["tars-stream"] = "1m",
+        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -248,6 +250,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "lago",
     "loki-logger",
     "elasticsearch-logger",
     "echo",
@@ -357,6 +360,7 @@ local _M = {
         }
       },
       enable_admin_cors = true,
+      enable_admin_ui = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
         ip = "0.0.0.0",

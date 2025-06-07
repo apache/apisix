@@ -212,7 +212,8 @@
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
                 "plugins/tencent-cloud-cls",
-                "plugins/loki-logger"
+                "plugins/loki-logger",
+                "plugins/lago"
               ]
             }
           ]
@@ -251,6 +252,10 @@
         {
           "type": "doc",
           "id": "control-api"
+        },
+        {
+          "type": "doc",
+          "id": "status-api"
         }
       ]
     },
@@ -258,6 +263,10 @@
       "type": "category",
       "label": "Development",
       "items": [
+        {
+          "type": "doc",
+          "id": "build-apisix-dev-environment-devcontainers"
+        },
         {
           "type": "doc",
           "id": "building-apisix"

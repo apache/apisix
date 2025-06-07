@@ -35,7 +35,10 @@ create_lua_deps() {
     make deps
 
     # just for jwt-auth test
-    luarocks install lua-resty-openssl --tree deps
+    # --only-server is a temporary fix until https://github.com/luarocks/luarocks/issues/1797 is resolved. \
+    # NOTE: This fix is taken from https://github.com/luarocks/luarocks/issues/1797#issuecomment-2927856212 \
+    # and no packages after 29th May 2025 can be installed. This is to be removed as soon as the luarocks issue is fixed \
+    luarocks install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 lua-resty-openssl --tree deps
 
     # maybe reopen this feature later
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
@@ -67,16 +70,10 @@ rerun_flaky_tests() {
 }
 
 install_curl () {
-    CURL_VERSION="7.88.0"
-    wget -q https://curl.se/download/curl-${CURL_VERSION}.tar.gz
-    tar -xzf curl-${CURL_VERSION}.tar.gz
-    cd curl-${CURL_VERSION}
-    ./configure --prefix=/usr/local --with-openssl --with-nghttp2
-    make
-    sudo make install
-    sudo ldconfig
-    cd ..
-    rm -rf curl-${CURL_VERSION}
+    CURL_VERSION="8.13.0"
+    wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
+    tar -xf curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
+    sudo cp curl /usr/bin
     curl -V
 }
 
@@ -171,9 +168,13 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 
 linux_get_dependencies () {
     apt update
-    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev
+    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev xz-utils
+    apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+
+    # install curl with http3 support
+    install_curl
 }
 
 function start_grpc_server_example() {
