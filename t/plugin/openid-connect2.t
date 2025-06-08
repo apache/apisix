@@ -619,6 +619,8 @@ passed
 --- error_log
 property "user1" is required
 
+
+
 === TEST 15: Set up route with plugin matching  URI `/*` and point plugin to local Keycloak instance and set invalid claim schema.
 --- config
     location /t {
