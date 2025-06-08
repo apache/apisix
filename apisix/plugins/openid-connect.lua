@@ -368,7 +368,7 @@ function _M.check_schema(conf)
     if conf.claim_schema then
         local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
         if not ok then
-            return false, "generate claim_schema validator failed"
+            return false, "generate claim_schema validator failed: " .. tostring(res)
         end
         generic_claim_validator = res
     end

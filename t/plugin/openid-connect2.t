@@ -618,3 +618,58 @@ passed
 --- error_code: 401
 --- error_log
 property "user1" is required
+
+=== TEST 15: Set up route with plugin matching  URI `/*` and point plugin to local Keycloak instance and set invalid claim schema.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "openid-connect": {
+                                "discovery": "http://127.0.0.1:8080/realms/University/.well-known/openid-configuration",
+                                "realm": "University",
+                                "client_id": "course_management",
+                                "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
+                                "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
+                                "ssl_verify": false,
+                                "timeout": 10,
+                                "introspection_endpoint_auth_method": "client_secret_post",
+                                "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
+                                "set_access_token_header": true,
+                                "access_token_in_authorization_header": false,
+                                "set_id_token_header": true,
+                                "set_userinfo_header": true,
+                                "set_refresh_token_header": true,
+                                "claim_schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "access_token": { "type" : "string"},
+                                        "id_token": { "type" : "object"},
+                                        "user": { "type" : "invalid_type"}
+                                    },
+                                    "required" : ["access_token","id_token","user"]
+                                }
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/*"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body_like
+{"error_msg":"failed to check the configuration of plugin openid-connect err: generate claim_schema validator failed: .*: invalid JSON type: invalid_type"}
