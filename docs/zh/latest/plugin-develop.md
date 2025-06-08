@@ -149,9 +149,7 @@ end
 
 通过函数输入参数 **schema_type** 可以对不同类型的 schema 进行对应的校验。例如很多插件需要使用一些[元数据](./terminology/plugin-metadata.md)，可以定义插件的 `metadata_schema`。
 
-```lua
--- example-plugin.lua
-
+```lua title="example-plugin.lua"
 -- schema definition for metadata
 local metadata_schema = {
     type = "object",
@@ -173,8 +171,7 @@ end
 
 再比如 [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) 插件为了跟 [Consumer](./admin-api.md#consumer) 资源一起使用，认证插件需要提供一个 `consumer_schema` 来检验 `Consumer` 资源的 `plugins` 属性里面的配置。
 
-```lua
--- key-auth.lua
+```lua title="key-auth.lua"
 
 local consumer_schema = {
     type = "object",

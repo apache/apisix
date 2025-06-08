@@ -146,9 +146,7 @@ verification.
 
 The input parameter **schema_type** is used to distinguish between different schemas types. For example, many plugins need to use some [metadata](./terminology/plugin-metadata.md), so they define the plugin's `metadata_schema`.
 
-```lua
--- example-plugin.lua
-
+```lua title="example-plugin.lua"
 -- schema definition for metadata
 local metadata_schema = {
     type = "object",
@@ -170,8 +168,7 @@ end
 
 Another example, the [key-auth](https://github.com/apache/apisix/blob/master/apisix/plugins/key-auth.lua) plugin needs to provide a `consumer_schema` to check the configuration of the `plugins` attribute of the `consumer` resource in order to be used with the [Consumer](./admin-api.md#consumer) resource.
 
-```lua
--- key-auth.lua
+```lua title="key-auth.lua"
 
 local consumer_schema = {
     type = "object",
@@ -193,7 +190,7 @@ end
 ### Choose phase to run
 
 Determine which [phase](./terminology/plugin.md#plugins-execution-lifecycle) to run, generally access or rewrite. If you don't know the [OpenResty lifecycle](https://github.com/openresty/lua-nginx-module/blob/master/README.markdown#directives), it's
-recommended to know it in advance. For example key-auth is an authentication plugin, thus the authentication should be completed
+recommended to learn about it in advance. For example `key-auth` is an authentication plugin, thus the authentication should be completed
 before forwarding the request to any upstream service. Therefore, the plugin must be executed in the rewrite phases.
 Similarly, if you want to modify or process the response body or headers you can do that in the `body_filter` or in the `header_filter` phases respectively.
 
@@ -290,7 +287,7 @@ Using `require "apisix.plugins.3rd-party"` will load your plugin, just like `req
 Sometimes you may want to override a method instead of a whole file. In this case, you can configure `lua_module_hook` in `conf/config.yaml`
 to introduce your hook.
 
-Assumed your configuration is:
+Assume that your configuration is as follows:
 
 ```yaml
 apisix:
