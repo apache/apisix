@@ -15,17 +15,18 @@
 -- limitations under the License.
 --
 
-local core    = require("apisix.core")
-local ngx_re  = require("ngx.re")
-local openidc = require("resty.openidc")
-local random  = require("resty.random")
-local jsonschema = require('jsonschema')
-local string  = string
-local ngx     = ngx
-local ipairs  = ipairs
-local type    = type
-local pcall   = pcall
-local concat  = table.concat
+local core              = require("apisix.core")
+local ngx_re            = require("ngx.re")
+local openidc           = require("resty.openidc")
+local random            = require("resty.random")
+local jsonschema        = require('jsonschema')
+local string            = string
+local ngx               = ngx
+local ipairs            = ipairs
+local type              = type
+local tostring          = tostring
+local pcall             = pcall
+local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
