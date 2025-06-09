@@ -336,25 +336,6 @@ do
         return res, nil, n_resolved
     end
 end
--- Resolve ngx.var in the given string
--- @function core.utils.resolve_var
--- @tparam string tpl The template string to resolve variables in
--- @tparam table ctx The context table containing variables
--- @tparam function escaper Optional function to escape resolved values
--- @treturn string The resolved string
--- @treturn string|nil Error message if any
--- @treturn number Number of variables replaced
--- @usage
--- local utils = require("apisix.core.utils")
---
--- -- Usage examples:
--- local res = utils.resolve_var("$host", ctx.var)     -- "example.com"
--- local res = utils.resolve_var("${host}", ctx.var)   -- "example.com"
--- local res = utils.resolve_var("TMP_${VAR1}_${VAR2}", ctx.var) -- "TMP_value1_value2"
--- local res = utils.resolve_var("\\$host", ctx.var)   -- "$host"
---
--- -- Usage in APISIX context:
--- local service_name = utils.resolve_var(up_conf.service_name, api_ctx.var)
 _M.resolve_var = resolve_var
 
 
