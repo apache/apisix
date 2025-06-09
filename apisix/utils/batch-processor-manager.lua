@@ -57,7 +57,7 @@ local function remove_stale_objects(premature, self)
 
     for key, batch in pairs(self.buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
+            core.log.info("removing batch processor stale object, conf: ",
                           core.json.delay_encode(key))
            self.buffers[key] = nil
         end
