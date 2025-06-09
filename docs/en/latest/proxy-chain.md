@@ -54,6 +54,7 @@ title: Proxy Chain Plugin for APISIX
       COPY ./plugins/proxy-chain.lua /usr/local/apisix/apisix/plugins/proxy-chain.lua
       RUN chown -R apisix:apisix /usr/local/apisix/apisix/plugins/proxy-chain.lua
       CMD ["apisix", "start"]
+
       ```
 
 3. **Build and Run**:
@@ -132,50 +133,50 @@ title: Proxy Chain Plugin for APISIX
 
       ```yaml
 
-      apiVersion: apps/v1
-      kind: Deployment
-      metadata:
-        name: apisix
-      spec:
-        replicas: 1
-        selector:
-          matchLabels:
-            app: apisix
-        template:
+          apiVersion: apps/v1
+          kind: Deployment
           metadata:
-            labels:
-              app: apisix
+            name: apisix
           spec:
-            containers:
-            - name: apisix
-              image: apache/apisix:3.11.0-debian
-              ports:
-              - containerPort: 9080
-              - containerPort: 9180
-              volumeMounts:
-              - name: plugins-volume
-                mountPath: /usr/local/apisix/apisix/plugins/proxy-chain.lua
-                subPath: proxy-chain.lua
-            volumes:
-            - name: plugins-volume
-              configMap:
-                name: apisix-plugins
+            replicas: 1
+            selector:
+              matchLabels:
+                app: apisix
+            template:
+              metadata:
+                labels:
+                  app: apisix
+              spec:
+                containers:
+                - name: apisix
+                  image: apache/apisix:3.11.0-debian
+                  ports:
+                  - containerPort: 9080
+                  - containerPort: 9180
+                  volumeMounts:
+                  - name: plugins-volume
+                    mountPath: /usr/local/apisix/apisix/plugins/proxy-chain.lua
+                    subPath: proxy-chain.lua
+                volumes:
+                - name: plugins-volume
+                  configMap:
+                    name: apisix-plugins
       ---
-      apiVersion: v1
-      kind: Service
-      metadata:
-        name: apisix-service
-      spec:
-        ports:
-        - port: 9080
-          targetPort: 9080
-          name: gateway
-        - port: 9180
-          targetPort: 9180
-          name: admin
-        selector:
-          app: apisix
-        type: LoadBalancer
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: apisix-service
+          spec:
+            ports:
+            - port: 9080
+              targetPort: 9080
+              name: gateway
+            - port: 9180
+              targetPort: 9180
+              name: admin
+            selector:
+              app: apisix
+            type: LoadBalancer
 
       ```
 
@@ -273,6 +274,7 @@ title: Proxy Chain Plugin for APISIX
                 method: "POST"
 
         ```
+
     - Apply the CRD:
 
       ```bash
@@ -280,6 +282,7 @@ title: Proxy Chain Plugin for APISIX
       kubectl apply -f route.yaml
 
       ```
+
     - Alternatively, use the Admin API via port-forwarding:
 
       ```bash
