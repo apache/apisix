@@ -105,10 +105,10 @@ const credential1 = {
   routes: routeWithKeyAuth.routes,
   consumers: [
     {
-      "username": "john"
+      "username": "john_1"
     },
     {
-      "id": "john/credentials/a",
+      "id": "john_1/credentials/john-a",
       "plugins": {
         "key-auth": {
           "key": "auth-a"
@@ -116,7 +116,7 @@ const credential1 = {
       }
     },
     {
-      "id": "john/credentials/b",
+      "id": "john_1/credentials/john-b",
       "plugins": {
         "key-auth": {
           "key": "auth-b"
