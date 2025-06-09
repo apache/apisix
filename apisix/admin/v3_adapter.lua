@@ -147,8 +147,7 @@ local function _filter(item, args, resource)
             value = value[#value] -- get the last value in the table
         end
 
-        local matched = re_find(item[key], value, "jo")
-        if not matched then
+        if item[key] ~= value then
             return false
         end
 
