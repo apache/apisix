@@ -781,3 +781,121 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+
+
+=== TEST 16: test service_name as variable in route configuration
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: "${backend}"
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Set nginx map variable
+            ngx.var.backend = "service_a"
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "service_name": "${backend}",
+                        "discovery_type": "consul",
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(1.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/server [1-2]\n/
+--- no_error_log
+[error]
+
+=== TEST 17: test empty variable in service_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: "${backend}"
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Set empty nginx map variable
+            ngx.var.backend = ""
+
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/hello",
+                    "upstream": {
+                        "service_name": "${backend}",
+                        "discovery_type": "consul",
+                        "type": "roundrobin"
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(body)
+                return
+            end
+
+            ngx.sleep(1.5)
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+503
+--- error_log
+resolve_var resolves to empty string
