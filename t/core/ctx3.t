@@ -58,7 +58,7 @@ __DATA__
                         "plugins": {
                             "serverless-pre-function": {
                                 "phase": "header_filter",
-                                "functions" : ["return function(conf, ctx) 
+                                "functions" : ["return function(conf, ctx)
                                                 ngx.log(ngx.WARN, 'find ctx._graphql: ', ctx.var.graphql_name == \"repo\");
                                                 ngx.log(ngx.WARN, 'find ctx._graphql: ', ctx.var.graphql_name == \"repo\");
                                                 ngx.log(ngx.WARN, 'find ctx._graphql: ', ctx.var.graphql_name == \"repo\");
