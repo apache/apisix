@@ -43,7 +43,7 @@ __DATA__
 === TEST 1: validate consumer
 --- apisix_yaml
 consumers:
-  - username: jwt-auth
+  - username: jwt&auth
 routes:
   - uri: /hello
     upstream:
