@@ -710,7 +710,7 @@ _M.consumer = {
         -- metadata
         username = {
             type = "string", minLength = 1, maxLength = rule_name_def.maxLength,
-            pattern = [[^[a-zA-Z0-9_]+$]]
+            pattern = [[^[a-zA-Z0-9_\-]+$]]
         },
         desc = desc_def,
         labels = labels_def,
