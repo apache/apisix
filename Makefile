@@ -493,7 +493,6 @@ push-multiarch-dev-on-debian:
 	cp ./docker/utils/check_standalone_config.sh ./docker/debian-dev/check_standalone_config.sh
 	$(ENV_DOCKER) buildx build --network=host --push \
 		-t $(IMAGE_NAME):dev \
-		--platform linux/amd64,linux/arm64 \
-		-f ./docker/debian-dev/Dockerfile debian-dev
+		-f ./docker/debian-dev/Dockerfile ./docker/debian-dev
 	rm -f ./docker/debian-dev/check_standalone_config.sh
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
