@@ -108,7 +108,7 @@ const credential1 = {
       "username": "john"
     },
     {
-      "id": "john/credentials/a",
+      "id": "john/credentials/john-a",
       "plugins": {
         "key-auth": {
           "key": "auth-a"
@@ -116,7 +116,7 @@ const credential1 = {
       }
     },
     {
-      "id": "john/credentials/b",
+      "id": "john/credentials/john-b",
       "plugins": {
         "key-auth": {
           "key": "auth-b"
