@@ -32,7 +32,6 @@ run_tests();
 
 __DATA__
 
-
 === TEST 1: setup route with plugin
 --- config
     location /t {
@@ -68,11 +67,15 @@ __DATA__
 --- response_body
 passed
 
+
+
 === TEST 2: hit route (with empty request)
 --- request
 POST /hello
 --- response_body
 hello world
+
+
 
 === TEST 3: hit route (with json request)
 --- request
@@ -82,6 +85,8 @@ POST /hello
 }
 --- response_body
 hello world
+
+
 
 === TEST 4: hit route (with non-json request)
 --- request
