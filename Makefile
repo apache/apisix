@@ -49,6 +49,8 @@ ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
+IMAGE_NAME = apache/apisix
+
 -include .requirements
 export
 
@@ -482,4 +484,16 @@ ci-env-down:
 ci-env-stop:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_DOCKER_COMPOSE) stop
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### push-on-alpine : Push apache/apisix:dev image
+.PHONY: push-multiarch-dev-on-debian
+push-multiarch-dev-on-debian:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	cp ./docker/utils/check_standalone_config.sh ./docker/debian-dev/check_standalone_config.sh
+	$(ENV_DOCKER) buildx build --network=host --push \
+		-t $(IMAGE_NAME):dev \
+		--platform linux/amd64,linux/arm64 \
+		-f ./docker/debian-dev/Dockerfile debian-dev
+	rm -f ./docker/debian-dev/check_standalone_config.sh
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
