@@ -486,7 +486,7 @@ ci-env-stop:
 	$(ENV_DOCKER_COMPOSE) stop
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
-### push-on-alpine : Push apache/apisix:dev image
+### push-multiarch-dev-on-debian : Push apache/apisix:dev image
 .PHONY: push-multiarch-dev-on-debian
 push-multiarch-dev-on-debian:
 	@$(call func_echo_status, "$@ -> [ Start ]")
