@@ -216,6 +216,35 @@ Server: APISIX web server
 {"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin", "discovery_type": "eureka"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925}}
 ```
 
+You can also use variables in the service name. For example, to route requests based on the host header using nginx map:
+
+First, configure the map in your nginx configuration:
+
+```nginx
+map $http_host $backend {
+    hostnames;
+    default service_a;
+    x.domain.local service_x;
+    y.domain.local service_y;
+}
+```
+
+Then use the mapped variable in your route configuration:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/*",
+    "upstream": {
+        "service_name": "${backend}",
+        "type": "roundrobin",
+        "discovery_type": "eureka"
+    }
+}'
+```
+
+In this example, requests to `x.domain.local` will be routed to the service named "service_a", while requests to `y.domain.local` will be routed to "service_b".
+
 Because the upstream interface URL may have conflict, usually in the gateway by prefix to distinguish:
 
 ```shell
