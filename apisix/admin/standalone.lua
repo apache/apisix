@@ -274,7 +274,7 @@ do
                 type = "string",
                 minLength = 15,
                 maxLength = 128,
-                pattern = [[^[a-zA-Z0-9-_.]+/credentials/[a-zA-Z0-9-_.]+$]],
+                pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
             }
         end
     end
