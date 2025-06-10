@@ -90,7 +90,7 @@ When a new request is routed:
 3. Increment connection count in shared dictionary
 4. Update server position in the heap
 
-#### 2. Connection Completion  
+#### 2. Connection Completion
 When a request completes:
 1. Calculate new score as `(current_count - 1) / weight`
 2. Ensure score is not negative (minimum 0)
