@@ -14,7 +14,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+use t::APISIX 'no_plan';
 
-APISIX_PACKAGE_NAME=apisix
+repeat_each(1);
+no_long_string();
+no_root_location();
+use_hup();
 
-APISIX_RUNTIME=1.3.1
+run_tests();
+
+__DATA__
+
+=== TEST 1: test
+--- timeout: 15
+--- max_size: 204800
+--- exec
+cd t && pnpm test admin/metadata.spec.ts 2>&1
+--- no_error_log
+failed to execute the script with status
+--- response_body eval
+qr/PASS admin\/metadata.spec.ts/

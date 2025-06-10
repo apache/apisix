@@ -15,6 +15,23 @@
 # limitations under the License.
 #
 
-APISIX_PACKAGE_NAME=apisix
+services:
+  apisix:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: sleep infinity
+    volumes:
+      - ..:/workspace:cached
+    network_mode: service:etcd
+  etcd:
+    image: bitnami/etcd:3.5
+    volumes:
+      - etcd_data:/bitnami/etcd
+    environment:
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://127.0.0.1:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
 
-APISIX_RUNTIME=1.3.1
+volumes:
+  etcd_data:

@@ -14,22 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import axios, { type Method, type RawAxiosRequestHeaders } from 'axios';
+import axios, {
+  type AxiosRequestConfig,
+  type Method,
+  type RawAxiosRequestHeaders,
+} from 'axios';
 
 export const request = async (
-  uri: string,
+  url: string,
   method: Method = 'GET',
   body?: object,
   headers?: RawAxiosRequestHeaders,
+  config?: AxiosRequestConfig,
 ) => {
   return axios.request({
     method,
     // TODO: use 9180 for admin api
-    url: `http://127.0.0.1:1984/${uri}`,
+    baseURL: 'http://127.0.0.1:1984',
+    url,
     data: body,
     headers: {
       'X-API-KEY': 'edd1c9f034335f136f87ad84b625c8f1',
       ...headers,
     },
+    ...config,
   });
 };
