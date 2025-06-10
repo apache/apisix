@@ -58,7 +58,7 @@ end
 
 
 
-local function block_write_if_data_plane()
+local function disable_write_if_data_plane()
     local data_plane, err = is_data_plane()
     if err then
         log.error("failed to check data plane role: ", err)
@@ -101,8 +101,8 @@ local function wrap_etcd_client(etcd_cli)
 
     for _, method in ipairs(methods_to_wrap) do
         etcd_cli[method] = function(self, ...)
-            local block, err = block_write_if_data_plane()
-            if block then
+            local disable, err = disable_write_if_data_plane()
+            if disable then
                 return nil, err
             end
 
@@ -416,8 +416,8 @@ end
 
 
 local function set(key, value, ttl)
-    local block, err = block_write_if_data_plane()
-    if block then
+    local disable, err = disable_write_if_data_plane()
+    if disable then
         return nil, err
     end
 
@@ -471,8 +471,8 @@ _M.set = set
 
 
 function _M.atomic_set(key, value, ttl, mod_revision)
-    local block, err = block_write_if_data_plane()
-    if block then
+    local disable, err = disable_write_if_data_plane()
+    if disable then
         return nil, err
     end
 
@@ -535,8 +535,8 @@ end
 
 
 function _M.push(key, value, ttl)
-    local block, err = block_write_if_data_plane()
-    if block then
+    local disable, err = disable_write_if_data_plane()
+    if disable then
         return nil, err
     end
 
@@ -572,8 +572,8 @@ end
 
 
 function _M.delete(key)
-    local block, err = block_write_if_data_plane()
-    if block then
+    local disable, err = disable_write_if_data_plane()
+    if disable then
         return nil, err
     end
 
@@ -603,8 +603,8 @@ function _M.delete(key)
 end
 
 function _M.rmdir(key, opts)
-    local block, err = block_write_if_data_plane()
-    if block then
+    local disable, err = disable_write_if_data_plane()
+    if disable then
         return nil, err
     end
 
@@ -654,8 +654,8 @@ end
 
 
 function _M.keepalive(id)
-    local block, err = block_write_if_data_plane()
-    if block then
+    local disable, err = disable_write_if_data_plane()
+    if disable then
         return nil, err
     end
 
