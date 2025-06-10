@@ -244,7 +244,6 @@ title: Changelog
   - [#11027](https://github.com/apache/apisix/pull/11027)
 - :sunrise: add plugins/reload to control api [#10905](https://github.com/apache/apisix/pull/10905)
 - :sunrise: consul deduplicate and sort [#10941](https://github.com/apache/apisix/pull/10941)
-- :sunrise: update lua-resty-t1k to 1.1.1 [#11029](https://github.com/apache/apisix/pull/11029)
 - :sunrise: support uri_arg_ when use radixtree_uri_with_parameter [#10645](https://github.com/apache/apisix/pull/10645)
 
 ### Plugins
