@@ -140,6 +140,7 @@ location /consul3 {
     "PUT /consul1/deregister/service_b2",
     "PUT /consul1/deregister/service_a3",
     "PUT /consul1/deregister/service_a4",
+    "PUT /consul1/deregister/service_no_port",
     "PUT /consul2/deregister/service_a1",
     "PUT /consul2/deregister/service_a2",
     "PUT /consul3/deregister/service_a1",
@@ -148,13 +149,14 @@ location /consul3 {
     "PUT /consul1/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_a3\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"localhost\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul1/register\n" . "{\"ID\":\"service_a4\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"localhost\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /consul1/register\n" . "{\"ID\":\"service_no_port\",\"Name\":\"service_no_port\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Meta\":{\"service_version\":\"1.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul2/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul2/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul3/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
     "PUT /consul3/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
 ]
 --- error_code eval
-[200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]
+[200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200]
 
 
 
@@ -187,7 +189,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
 
 
 
@@ -221,7 +223,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
 
 
 
@@ -255,7 +257,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
 
 
 
@@ -289,38 +291,11 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1},{"host":"127.0.0.1","port":30512,"weight":1},{"host":"localhost","port":30511,"weight":1},{"host":"localhost","port":30512,"weight":1}],"service_no_port":[{"host":"127.0.0.1","port":80,"weight":1}]}
 
 
 
-=== TEST 6: service without port should default to port 80
---- config
-location /consul1 {
-    rewrite  ^/consul1/(.*) /v1/agent/service/$1 break;
-    proxy_pass http://127.0.0.1:9500;
-}
---- pipelined_requests eval
-[
-    "PUT /consul1/deregister/service_no_port",
-    "PUT /consul1/register\n" . "{\"ID\":\"service_no_port\",\"Name\":\"service_no_port\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Meta\":{\"service_version\":\"1.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-]
---- error_code eval
-[200, 200]
---- yaml_config
-apisix:
-  node_listen: 1984
-  enable_control: true
-discovery:
-  consul:
-    servers:
-      - "http://127.0.0.1:9500"
-    dump:
-      path: "consul.dump"
-      load_on_init: false
-
-
-
-=== TEST 7: show dump services for service without port
+=== TEST 6: verify service without port defaults to port 80
 --- yaml_config
 apisix:
   node_listen: 1984
