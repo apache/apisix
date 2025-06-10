@@ -317,7 +317,7 @@ discovery:
             local code, body, res = t.test('/v1/discovery/consul/show_dump_file',
                 ngx.HTTP_GET)
             local entity = json.decode(res)
-            
+
             -- Check that service_no_port exists and has default port 80
             local service_no_port = entity.services.service_no_port
             if service_no_port and #service_no_port > 0 then
