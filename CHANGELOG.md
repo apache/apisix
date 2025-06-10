@@ -84,6 +84,7 @@ title: Changelog
 ### Change
 
 - replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
+- refactor: ai-content-moderation to ai-aws-content-moderation [#11596](https://github.com/apache/apisix/pull/11596])
 - add expiration time for all Prometheus metrics [#11838](https://github.com/apache/apisix/pull/11838)
 - allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
 - refactor: ai-content-moderation to ai-aws-content-moderation (#12010)
@@ -91,6 +92,11 @@ title: Changelog
 
 ### Bugfixes
 
+- Fix: timeout risk in usages of lua-resty-aws [#12070](https://github.com/apache/apisix/pull/12070)
+- Fix: ai-rate-limiting not allowed to limit to a single instance [#12061](https://github.com/apache/apisix/pull/12061)
+- Fix: update watch_ctx.revision to avoid multiple resyncs [#12021](https://github.com/apache/apisix/pull/12021)
+- Fix: ai-proxy dead loop when retrying [#12012](https://github.com/apache/apisix/pull/12012)
+- Fix: error while trying to log table in ai-content-moderation plugin [#11994](https://github.com/apache/apisix/pull/11994)
 - Fix: resync etcd when a lower revision is found [#12015](https://github.com/apache/apisix/pull/12015)
 - Fix: remove model options' `stream` default value [#12013](https://github.com/apache/apisix/pull/12013)
 - Fix: grpc-web response contains two trailer chunks [#11988](https://github.com/apache/apisix/pull/11988)
@@ -98,6 +104,7 @@ title: Changelog
 - Fix: race condition problem while update upstream.nodes [#11916](https://github.com/apache/apisix/pull/11916)
 - Fix: `upstream_obj.upstream` should not be a string [#11932](https://github.com/apache/apisix/pull/11932)
 - Fix: query params in override.endpoint not being sent to LLMs [#11863](https://github.com/apache/apisix/pull/11863)
+- Fix: add support for ignoring "load" global variable [#11862](https://github.com/apache/apisix/pull/11862)
 - Fix: corrupt data in routes() response due to healthchecker data [#11844](https://github.com/apache/apisix/pull/11844)
 - Fix: deepcopy should copy same table exactly only once [#11861](https://github.com/apache/apisix/pull/11861)
 - Fix: disallow empty key configuration attributes [#11852](https://github.com/apache/apisix/pull/11852)
@@ -112,6 +119,7 @@ title: Changelog
 
 ### Core
 
+- set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
 - upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
 - Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
 - support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
@@ -184,6 +192,7 @@ title: Changelog
 
 ### Bugfixes
 
+- Fix: add libyaml-dev dependency for apt [#11291](https://github.com/apache/apisix/pull/11291)
 - Fix: etcd sync data checker should work [#11457](https://github.com/apache/apisix/pull/11457)
 - Fix: plugin metadata add id value for etcd checker [#11452](https://github.com/apache/apisix/pull/11452)
 - Fix: allow trailing period in SNI and CN for SSL [#11414](https://github.com/apache/apisix/pull/11414)
@@ -234,6 +243,9 @@ title: Changelog
   - [#11010](https://github.com/apache/apisix/pull/11010)
   - [#11027](https://github.com/apache/apisix/pull/11027)
 - :sunrise: add plugins/reload to control api [#10905](https://github.com/apache/apisix/pull/10905)
+- :sunrise: consul deduplicate and sort [#10941](https://github.com/apache/apisix/pull/10941)
+- :sunrise: update lua-resty-t1k to 1.1.1 [#11029](https://github.com/apache/apisix/pull/11029)
+- :sunrise: support uri_arg_ when use radixtree_uri_with_parameter [#10645](https://github.com/apache/apisix/pull/10645)
 
 ### Plugins
 
@@ -253,6 +265,8 @@ title: Changelog
 
 ### Bug Fixes
 
+- Fix: keep different strategy response header consistency [#11048](https://github.com/apache/apisix/pull/11048)
+- Fix: add apisix/plugin/limit-req to makefile [#10955](https://github.com/apache/apisix/pull/10959)
 - Fix: wrong namespace related endpoint in k8s [#10917](https://github.com/apache/apisix/pull/10917)
 - Fix: when delete the secret cause 500 error [#10902](https://github.com/apache/apisix/pull/10902)
 - Fix: jwe-decrypt secret length restriction [#10928](https://github.com/apache/apisix/pull/10928)
@@ -262,6 +276,7 @@ title: Changelog
 - Fix: add compatibility headers [#10828](https://github.com/apache/apisix/pull/10828)
 - Fix: missing trailers issue [#10851](https://github.com/apache/apisix/pull/10851)
 - Fix: decryption failure [#10843](https://github.com/apache/apisix/pull/10843)
+- Fix: linux-install-luarocks are not compatible with the openresty environment [#10813](https://github.com/apache/apisix/pull/10813)
 - Fix: server-side sessions locked by not calling explicit session:close() [#10788](https://github.com/apache/apisix/pull/10788)
 - Fix: skip brotli compression for upstream compressed response [#10740](https://github.com/apache/apisix/pull/10740)
 - Fix: use_jwks breaking authentication header [#10670](https://github.com/apache/apisix/pull/10670)
