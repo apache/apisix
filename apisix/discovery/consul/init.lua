@@ -516,8 +516,8 @@ function _M.connect(premature, consul_server, retry_delay)
                     end
 
                     local svc_address, svc_port = node.Service.Address, node.Service.Port
-                    -- Handle nil port case - default to 80 for HTTP services
-                    if not svc_port then
+                    -- Handle nil or 0 port case - default to 80 for HTTP services
+                    if not svc_port or svc_port == 0 then
                         svc_port = 80
                     end
                     -- if nodes is nil, new nodes table and set to up_services
