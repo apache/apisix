@@ -22,7 +22,7 @@ if [ -z ${OPENRESTY_PREFIX} ]; then
     OPENRESTY_PREFIX="/usr/local/openresty"
 fi
 
-LUAROCKS_VER=3.8.0
+LUAROCKS_VER=3.12.0
 wget -q https://github.com/luarocks/luarocks/archive/v"$LUAROCKS_VER".tar.gz
 tar -xf v"$LUAROCKS_VER".tar.gz
 rm -f v"$LUAROCKS_VER".tar.gz
