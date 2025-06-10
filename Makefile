@@ -50,6 +50,7 @@ ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
 IMAGE_NAME = apache/apisix
+ENV_APISIX_IMAGE_TAG_NAME  ?= $(IMAGE_NAME):$(VERSION)
 
 -include .requirements
 export
@@ -489,6 +490,15 @@ ci-env-down:
 ci-env-stop:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_DOCKER_COMPOSE) stop
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### build-on-debian-dev : Build apache/apisix:xx-debian-dev image
+.PHONY: build-on-debian-dev
+build-on-debian-dev:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	cp ./utils/check_standalone_config.sh debian-dev/check_standalone_config.sh
+	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev -f ./docker/debian-dev/Dockerfile ./docker/debian-dev
+	rm -f debian-dev/check_standalone_config.sh
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 ### push-multiarch-dev-on-debian : Push apache/apisix:dev image
