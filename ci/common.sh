@@ -35,10 +35,7 @@ create_lua_deps() {
     make deps
 
     # just for jwt-auth test
-    # --only-server is a temporary fix until https://github.com/luarocks/luarocks/issues/1797 is resolved. \
-    # NOTE: This fix is taken from https://github.com/luarocks/luarocks/issues/1797#issuecomment-2927856212 \
-    # and no packages after 29th May 2025 can be installed. This is to be removed as soon as the luarocks issue is fixed \
-    luarocks install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 lua-resty-openssl --tree deps
+    luarocks install lua-resty-openssl --tree deps
 
     # maybe reopen this feature later
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
