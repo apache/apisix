@@ -336,6 +336,7 @@ do
         return res, nil, n_resolved
     end
 end
+-- Resolve ngx.var in the given string
 _M.resolve_var = resolve_var
 
 
