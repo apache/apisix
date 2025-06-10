@@ -110,6 +110,11 @@ discovery:
         fail_timeout: 1
         weight: 1
         max_fails: 1
+nginx_config:
+  http_configuration_snippet: |
+    map $http_host $backend {
+      default service_a;
+    }
 _EOC_
 
 our $yaml_config_with_acl = <<_EOC_;
@@ -798,31 +803,6 @@ routes:
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-
-            -- Set nginx map variable
-            ngx.var.backend = "service_a"
-
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "service_name": "${backend}",
-                        "discovery_type": "consul",
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.sleep(1.5)
-
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
@@ -856,30 +836,8 @@ routes:
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-
             -- Set empty nginx map variable
             ngx.var.backend = ""
-
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/hello",
-                    "upstream": {
-                        "service_name": "${backend}",
-                        "discovery_type": "consul",
-                        "type": "roundrobin"
-                    }
-                }]]
-                )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.sleep(1.5)
 
             local http = require "resty.http"
             local httpc = http.new()
