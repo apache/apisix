@@ -95,6 +95,7 @@ title: Changelog
 - Fix: timeout risk in usages of lua-resty-aws [#12070](https://github.com/apache/apisix/pull/12070)
 - Fix: ai-rate-limiting not allowed to limit to a single instance [#12061](https://github.com/apache/apisix/pull/12061)
 - Fix: update watch_ctx.revision to avoid multiple resyncs [#12021](https://github.com/apache/apisix/pull/12021)
+- Fix: ai-proxy remove passthrough [#12014](https://github.com/apache/apisix/pull/12014)
 - Fix: ai-proxy dead loop when retrying [#12012](https://github.com/apache/apisix/pull/12012)
 - Fix: error while trying to log table in ai-content-moderation plugin [#11994](https://github.com/apache/apisix/pull/11994)
 - Fix: resync etcd when a lower revision is found [#12015](https://github.com/apache/apisix/pull/12015)
