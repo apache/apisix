@@ -79,7 +79,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 2. Create 2 `key-auth` Credentials for the Consumer.
 
     ```shell
-    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/key-auth-one \
+    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/key-auth-one \
     -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {
@@ -91,7 +91,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
     ```
 
     ```shell
-    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/key-auth-two \
+    curl http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials/key-auth-two \
     -H "X-API-KEY: $admin_key" -X PUT -d '
     {
         "plugins": {

@@ -63,7 +63,7 @@ curl -i http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -
 
 |名称 | 类型 | 要求 | 默认 | 有效 | 描述|
 |---|---|---|---|---|---|
-|conf|字符串 | 必填 | 无 | 不得为空 |插件 ctx 配置，可以通过 Proxy Wasm SDK 获取|
+|conf|字符串或结构体 | 必填 | 无 | 不得为空 |插件 ctx 配置，可以通过 Proxy Wasm SDK 获取|
 
 这里是 Proxy Wasm 回调与 APISIX 阶段的映射：
 

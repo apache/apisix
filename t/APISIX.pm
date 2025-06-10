@@ -275,6 +275,8 @@ thread_pool grpc-client-nginx-module threads=1;
 
 lua {
     lua_shared_dict prometheus-metrics 15m;
+    lua_shared_dict standalone-config 10m;
+    lua_shared_dict status-report 1m;
 }
 _EOC_
     }
@@ -362,6 +364,8 @@ _EOC_
                     local ok, stdout, stderr, reason, status = shell.run([[ $exec_snippet ]], $stdin, @{[$timeout*1000]}, $max_size)
                     if not ok then
                         ngx.log(ngx.WARN, "failed to execute the script with status: " .. status .. ", reason: " .. reason .. ", stderr: " .. stderr)
+                        ngx.print("stdout: ", stdout)
+                        ngx.print("stderr: ", stderr)
                         return
                     end
                     ngx.print(stdout)
@@ -394,6 +398,7 @@ _EOC_
     lua_shared_dict plugin-limit-conn-stream 10m;
     lua_shared_dict etcd-cluster-health-check-stream 10m;
     lua_shared_dict worker-events-stream 10m;
+    lua_shared_dict upstream-healthcheck-stream 10m;
 
     lua_shared_dict kubernetes-stream 1m;
     lua_shared_dict kubernetes-first-stream 1m;
@@ -582,6 +587,7 @@ _EOC_
     lua_shared_dict kubernetes-second 1m;
     lua_shared_dict tars 1m;
     lua_shared_dict ocsp-stapling 10m;
+    lua_shared_dict mcp-session 10m;
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;
@@ -713,6 +719,19 @@ _EOC_
 
     $http_config .= <<_EOC_;
     server {
+        listen 7085;
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
+            }
+        }
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+    }
+    server {
         listen unix:$apisix_home/t/servroot/logs/worker_events.sock;
         access_log off;
         location / {
@@ -738,7 +757,7 @@ _EOC_
         listen 1994 quic reuseport;
         listen 1994 ssl;
         http2 on;
-        http3 off;
+        http3 on;
         ssl_certificate             cert/apisix.crt;
         ssl_certificate_key         cert/apisix.key;
         lua_ssl_trusted_certificate $custom_trusted_cert;

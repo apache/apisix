@@ -18,7 +18,6 @@
 local core = require("apisix.core")
 local require = require
 local bad_request = ngx.HTTP_BAD_REQUEST
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local _M = {}
 
@@ -44,16 +43,7 @@ function _M.before_proxy(conf, ctx)
         }
     end
 
-    local res, err = ai_driver:request(conf, request_body, extra_opts)
-    if not res then
-        core.log.warn("failed to send request to AI service: ", err)
-        if core.string.find(err, "timeout") then
-            return 504
-        end
-        return internal_server_error
-    end
-
-    return ai_driver.read_response(ctx, res)
+    return ai_driver:request(ctx, conf, request_body, extra_opts)
 end
 
 

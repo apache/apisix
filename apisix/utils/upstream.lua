@@ -35,6 +35,10 @@ local function compare_upstream_node(up_conf, new_t)
     end
 
     local old_t = up_conf.original_nodes or up_conf.nodes
+    if old_t == new_t then
+        return true
+    end
+
     if type(old_t) ~= "table" then
         return false
     end

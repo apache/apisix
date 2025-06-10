@@ -33,7 +33,7 @@ description: real-ip 插件允许 Apache APISIX 通过 HTTP 请求头或 HTTP �
 
 ## 描述
 
-`real-ip` 插件允许 APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。当 APISIX 位于反向代理之后时，此功能尤其有用，因为否则代理可能会被视为请求发起客户端。
+`real-ip` 插件允许 APISIX 通过 HTTP 请求头或 HTTP 查询字符串中传递的 IP 地址设置客户端的真实 IP。当 APISIX 位于反向代理之后时，此功能尤其有用，因为在这种情况下，代理可能会被视为请求发起客户端。
 
 该插件在功能上类似于 NGINX 的 [ngx_http_realip_module](https://nginx.org/en/docs/http/ngx_http_realip_module.html)，但提供了更多的灵活性。
 
