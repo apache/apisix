@@ -26,18 +26,18 @@ COPY ${CODE_PATH} /apisix
 
 WORKDIR /apisix
 
-RUN set -x &&
-    apt-get -y update --fix-missing &&
-    apt-get install -y \
+RUN set -x \
+    && apt-get -y update --fix-missing \
+    && apt-get install -y \
         make \
-        git \
+        git  \
         sudo \
-        libyaml-dev &&
-    ls -al &&
-    make deps &&
-    mkdir -p ${ENV_INST_LUADIR} &&
-    cp -r deps ${ENV_INST_LUADIR} &&
-    make install
+        libyaml-dev \
+    && ls -al \
+    && make deps \
+    && mkdir -p ${ENV_INST_LUADIR} \
+    && cp -r deps ${ENV_INST_LUADIR} \
+    && make install
 
 FROM debian:bullseye-slim
 
@@ -51,15 +51,15 @@ COPY --from=build /usr/bin/apisix /usr/bin/apisix
 COPY --from=build /usr/lib/x86_64-linux-gnu/libyaml* /usr/local/lib/
 
 COPY ${INSTALL_BROTLI} /install-brotli.sh
-RUN chmod +x /install-brotli.sh &&
-    cd / && ./install-brotli.sh && rm -rf /install-brotli.sh
+RUN chmod +x /install-brotli.sh \
+    && cd / && ./install-brotli.sh && rm -rf /install-brotli.sh
 
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
 WORKDIR /usr/local/apisix
 
-RUN ln -sf /dev/stdout /usr/local/apisix/logs/access.log &&
-    ln -sf /dev/stderr /usr/local/apisix/logs/error.log
+RUN ln -sf /dev/stdout /usr/local/apisix/logs/access.log \
+    && ln -sf /dev/stderr /usr/local/apisix/logs/error.log
 
 EXPOSE 9080 9443
 
