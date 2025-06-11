@@ -508,7 +508,6 @@ build-on-debian-dev:
 .PHONY: push-multiarch-dev-on-debian
 push-multiarch-dev-on-debian:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	cp ./docker/utils/check_standalone_config.sh ./docker/debian-dev/check_standalone_config.sh
 	$(ENV_DOCKER) buildx build --network=host --push \
 		-t $(IMAGE_NAME):dev \
 		--platform linux/amd64,linux/arm64 \

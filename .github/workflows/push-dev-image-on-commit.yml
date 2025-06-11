@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
-      APISIX_VERSION: master
       APISIX_DOCKER_TAG: master-debian-dev
 
     steps:
