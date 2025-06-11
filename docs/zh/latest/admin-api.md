@@ -290,7 +290,7 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 这个特性于 APISIX 3.13.0 引入。
 
-它现在支持通过路由和 Stream 路由上的 `service_id` 和 `upstream_id` 字段进行过滤。不支持其他资源或其他字段。
+APISIX 支持通过 `service_id` 和 `upstream_id` 查询路由和 Stream 路由。现在不支持其他资源或字段。
 
 :::
 
