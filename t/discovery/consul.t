@@ -822,6 +822,8 @@ qr/server [1-2]\n/
 --- no_error_log
 [error]
 
+
+
 === TEST 17: test empty variable in service_name
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
