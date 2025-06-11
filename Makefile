@@ -496,9 +496,12 @@ ci-env-stop:
 .PHONY: build-on-debian-dev
 build-on-debian-dev:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	cp ./utils/check_standalone_config.sh debian-dev/check_standalone_config.sh
-	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev -f ./docker/debian-dev/Dockerfile ./docker/debian-dev
-	rm -f debian-dev/check_standalone_config.sh
+	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev \
+		--build-arg CODE_PATH=. \
+		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
+		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
+		--build-arg CHECK_STANDALONE_CONFIG=./docker/utils/check_standalone_config.sh \
+		-f ./docker/debian-dev/Dockerfile .
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
 ### push-multiarch-dev-on-debian : Push apache/apisix:dev image
