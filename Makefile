@@ -506,8 +506,9 @@ build-on-debian-dev:
 push-multiarch-dev-on-debian:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	cp ./docker/utils/check_standalone_config.sh ./docker/debian-dev/check_standalone_config.sh
-	$(ENV_DOCKER) buildx build --network=host \
+	$(ENV_DOCKER) buildx build --network=host --push \
 		-t $(IMAGE_NAME):dev \
+		--platform linux/amd64,linux/arm64 \
 		--build-arg CODE_PATH=. \
 		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
 		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
