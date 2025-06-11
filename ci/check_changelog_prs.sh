@@ -18,19 +18,16 @@
 
 set -euo pipefail
 
-old_tag=$1
-new_tag=$2
-
 # Function to compare versions
 version_gt() {
-    test "$(printf '%s\n' "$@" | sort -V | head -n1)" != "$1"
+    local v1=$1
+    local v2=$2
+    # Remove 'v' prefix if present
+    v1=${v1#v}
+    v2=${v2#v}
+    # Compare versions using sort -V
+    [ "$(printf '%s\n' "$v1" "$v2" | sort -V | head -n1)" != "$v1" ]
 }
-
-# Check if versions are above 3.8.0
-if ! version_gt "${old_tag#v}" "3.8.0"; then
-    echo "Skipping check for versions below or equal to 3.8.0"
-    exit 0
-fi
 
 # Configure PR types to ignore
 IGNORE_TYPES=(
@@ -56,55 +53,75 @@ IGNORE_PRS=(
 # - Direct keyword prefix (e.g., "docs:")
 ignore_pattern=$(IFS="|"; echo "(${IGNORE_TYPES[*]}):|(${IGNORE_TYPES[*]})\([^)]*\):")
 
-# Extract PRs between two versions from CHANGELOG.md
-echo "Extracting PRs between $old_tag and $new_tag from CHANGELOG.md..."
-changelog_prs=$(awk -v start="$new_tag" -v end="$old_tag" '
-    BEGIN { flag = 0 }
-    $0 ~ "^## " {
-        if ($0 ~ start) { flag = 1; next }
-        if (flag && $0 ~ end) { flag = 0 }
-    }
-    flag { print }
-' CHANGELOG.md | grep -oE '#[0-9]+' | sort -n)
+# Get all versions from CHANGELOG.md
+versions=($(grep -E '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | sed 's/^## //'))
 
-# Extract actual PRs from git log, filtering out configured types and specified PR numbers
-echo -e "\nExtracting actual PRs from git log (excluding: ${IGNORE_TYPES[*]} and PRs: ${IGNORE_PRS[*]})..."
-git_prs=$(git log "$old_tag".."$new_tag" --oneline | grep -vE "$ignore_pattern" | grep -oE '#[0-9]+' | sort -n)
+# Initialize error flag
+has_errors=0
 
-# Filter out specified PR numbers
-for pr in "${IGNORE_PRS[@]}"; do
-    git_prs=$(echo "$git_prs" | grep -v "#$pr")
+# Process each pair of consecutive versions
+for ((i=0; i<${#versions[@]}-1; i++)); do
+    new_tag=${versions[i]}
+    old_tag=${versions[i+1]}
+    
+    # Skip if new_tag is less than or equal to 3.8.0
+    if ! version_gt "$new_tag" "3.8.0"; then
+        continue
+    fi
+
+    echo -e "\n=== Checking changes between $new_tag and $old_tag ==="
+
+    # Extract PRs between two versions from CHANGELOG.md
+    echo "Extracting PRs from CHANGELOG.md..."
+    changelog_prs=$(awk -v start="$new_tag" -v end="$old_tag" '
+        BEGIN { flag = 0 }
+        $0 ~ "^## " {
+            if ($0 ~ start) { flag = 1; next }
+            if (flag && $0 ~ end) { flag = 0 }
+        }
+        flag { print }
+    ' CHANGELOG.md | grep -oE '#[0-9]+' | sort -n)
+
+    # Extract actual PRs from git log, filtering out configured types and specified PR numbers
+    echo "Extracting actual PRs from git log (excluding: ${IGNORE_TYPES[*]} and PRs: ${IGNORE_PRS[*]})..."
+    git_prs=$(git log "$old_tag".."$new_tag" --oneline | grep -vE "$ignore_pattern" | grep -oE '#[0-9]+' | sort -n)
+
+    # Filter out specified PR numbers
+    for pr in "${IGNORE_PRS[@]}"; do
+        git_prs=$(echo "$git_prs" | grep -v "#$pr")
+    done
+
+    # Compare the two lists
+    echo "Comparing PRs..."
+    missing_prs=$(comm -23 <(echo "$git_prs") <(echo "$changelog_prs"))
+
+    # Print comparison results
+    echo -e "\n=== PR Comparison Results for $new_tag ==="
+
+    if [ -z "$missing_prs" ]; then
+        echo -e "\n✅ All PRs are included in CHANGELOG.md for version $new_tag"
+    else
+        echo -e "\n❌ [ERROR] Missing PRs in CHANGELOG.md for version $new_tag (sorted):"
+        echo "$missing_prs" | sed 's/^/  /'
+        
+        # Get detailed information for each missing PR
+        echo -e "\nDetailed information about missing PRs for version $new_tag:"
+        for pr in $missing_prs; do
+            pr_num=${pr#\#}  # Remove # symbol
+            echo -e "\nPR $pr :"
+            # Get PR commit information
+            git log "$old_tag".."$new_tag" --oneline | grep "$pr" | while read -r line; do
+                echo "  - $line"
+            done
+            # Try to get PR title (if possible)
+            echo "  - PR URL: https://github.com/apache/apisix/pull/$pr_num"
+        done
+        echo "Note: If you confirm that a PR should not appear in the changelog, please add its number to the IGNORE_PRS array in this script."
+        has_errors=1
+    fi
 done
 
-# Compare the two lists
-echo -e "\nComparing PRs..."
-missing_prs=$(comm -23 <(echo "$git_prs") <(echo "$changelog_prs"))
-
-# Print comparison results
-echo -e "\n=== PR Comparison Results ==="
-echo -e "\nPRs in git log (sorted, excluding configured types):"
-echo "$git_prs" | sed 's/^/  /'
-
-echo -e "\nPRs in CHANGELOG.md (sorted):"
-echo "$changelog_prs" | sed 's/^/  /'
-
-if [ -z "$missing_prs" ]; then
-    echo -e "\n✅ All PRs are included in CHANGELOG.md"
-else
-    echo -e "\n❌ Missing PRs in CHANGELOG.md (sorted):"
-    echo "$missing_prs" | sed 's/^/  /'
-    
-    # Get detailed information for each missing PR
-    echo -e "\nDetailed information about missing PRs:"
-    for pr in $missing_prs; do
-        pr_num=${pr#\#}  # Remove # symbol
-        echo -e "\nPR $pr:"
-        # Get PR commit information
-        git log "$old_tag".."$new_tag" --oneline | grep "$pr" | while read -r line; do
-            echo "  - $line"
-        done
-        # Try to get PR title (if possible)
-        echo "  - PR URL: https://github.com/apache/apisix/pull/$pr_num"
-    done
+# Exit with error if any version had missing PRs
+if [ $has_errors -eq 1 ]; then
     exit 1
 fi
