@@ -19,8 +19,8 @@ FROM debian:bullseye-slim AS build
 ARG ENABLE_PROXY=false
 ARG CODE_PATH
 
-ENV DEBIAN_FRONTEND noninteractive
-ENV ENV_INST_LUADIR /usr/local/apisix
+ENV DEBIAN_FRONTEND=noninteractive
+ENV ENV_INST_LUADIR=/usr/local/apisix
 
 COPY ${CODE_PATH} /apisix
 
@@ -43,7 +43,7 @@ FROM debian:bullseye-slim
 
 ARG ENTRYPOINT_PATH=./docker-entrypoint.sh
 ARG INSTALL_BROTLI=./install-brotli.sh
-ARG CHECK_STANDALONE_CONFIG=./install-brotli.sh
+ARG CHECK_STANDALONE_CONFIG=./check_standalone_config.sh
 
 COPY --from=build /usr/local/apisix /usr/local/apisix
 COPY --from=build /usr/local/openresty /usr/local/openresty
