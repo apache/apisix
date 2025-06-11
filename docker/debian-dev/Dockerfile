@@ -65,6 +65,7 @@ EXPOSE 9080 9443
 
 COPY ${ENTRYPOINT_PATH} /docker-entrypoint.sh
 COPY ${CHECK_STANDALONE_CONFIG} /check_standalone_config.sh
+RUN chmod +x /docker-entrypoint.sh /check_standalone_config.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 

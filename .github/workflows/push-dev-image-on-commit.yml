@@ -25,7 +25,7 @@ jobs:
       - name: Build and run
         run: |
           make build-on-debian-dev
-          docker compose -f ./compose/docker-compose-master.yaml up -d
+          docker compose -f ./docker/compose/docker-compose-master.yaml up -d
           sleep 30
           docker logs compose-apisix-1
 
