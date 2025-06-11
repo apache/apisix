@@ -293,7 +293,7 @@ When getting a list of resources, it supports a `filter` for filtering resources
 It is encoded in the following manner.
 
 ```text
-filter=escape_uri(key1=value2&key2=value2)
+filter=escape_uri(key1=value1&key2=value2)
 ```
 
 The following example filters routes using `service_id`. Applying multiple filters simultaneously will return results that match all filter conditions.

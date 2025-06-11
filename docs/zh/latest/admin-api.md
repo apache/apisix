@@ -299,7 +299,7 @@ APISIX 支持通过 `service_id` 和 `upstream_id` 查询路由和 Stream 路由
 它以以下方式编码：
 
 ```text
-filter=escape_uri(key1=value2&key2=value2)
+filter=escape_uri(key1=value1&key2=value2)
 ```
 
 以下是一个使用 `service_id` 进行路由列表过滤的例子。当同时设置了多个过滤条件，结果将为它们的交集。
