@@ -1,0 +1,30 @@
+name: Check Changelog
+
+on:
+  push:
+    paths:
+      - 'CHANGELOG.md'
+  pull_request:
+    paths:
+      - 'CHANGELOG.md'
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run check_changelog_prs script
+        run: |
+          # Extract the latest two versions from CHANGELOG.md
+          versions=($(grep -E '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | head -n 2 | sed 's/^## //'))
+          if [ ${#versions[@]} -ge 2 ]; then
+            new_tag=${versions[0]}
+            old_tag=${versions[1]}
+            bash ci/check_changelog_prs.sh "$old_tag" "$new_tag"
+          else
+            echo "Not enough versions found in CHANGELOG.md"
+            exit 1
+          fi
