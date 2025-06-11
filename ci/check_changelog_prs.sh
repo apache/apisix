@@ -29,6 +29,16 @@ version_gt() {
     [ "$(printf '%s\n' "$v1" "$v2" | sort -V | head -n1)" != "$v1" ]
 }
 
+# Function to get git reference (tag or HEAD)
+get_git_ref() {
+    local version=$1
+    if git rev-parse "$version" >/dev/null 2>&1; then
+        echo "$version"
+    else
+        echo "HEAD"
+    fi
+}
+
 # Configure PR types to ignore
 IGNORE_TYPES=(
     "docs"
@@ -69,7 +79,11 @@ for ((i=0; i<${#versions[@]}-1; i++)); do
         continue
     fi
 
-    echo -e "\n=== Checking changes between $new_tag and $old_tag ==="
+    # Get git references
+    new_ref=$(get_git_ref "$new_tag")
+    old_ref=$(get_git_ref "$old_tag")
+
+    echo -e "\n=== Checking changes between $new_tag ($new_ref) and $old_tag ($old_ref) ==="
 
     # Extract PRs between two versions from CHANGELOG.md
     echo "Extracting PRs from CHANGELOG.md..."
@@ -84,7 +98,7 @@ for ((i=0; i<${#versions[@]}-1; i++)); do
 
     # Extract actual PRs from git log, filtering out configured types and specified PR numbers
     echo "Extracting actual PRs from git log (excluding: ${IGNORE_TYPES[*]} and PRs: ${IGNORE_PRS[*]})..."
-    git_prs=$(git log "$old_tag".."$new_tag" --oneline | grep -vE "$ignore_pattern" | grep -oE '#[0-9]+' | sort -n)
+    git_prs=$(git log "$old_ref..$new_ref" --oneline | grep -vE "$ignore_pattern" | grep -oE '#[0-9]+' | sort -n)
 
     # Filter out specified PR numbers
     for pr in "${IGNORE_PRS[@]}"; do
@@ -102,7 +116,6 @@ for ((i=0; i<${#versions[@]}-1; i++)); do
         echo -e "\n✅ All PRs are included in CHANGELOG.md for version $new_tag"
     else
         echo -e "\n❌ [ERROR] Missing PRs in CHANGELOG.md for version $new_tag (sorted):"
-
         printf '  %s\n' "$missing_prs"
 
         # Get detailed information for each missing PR
@@ -111,7 +124,7 @@ for ((i=0; i<${#versions[@]}-1; i++)); do
             pr_num=${pr#\#}  # Remove # symbol
             echo -e "\nPR $pr :"
             # Get PR commit information
-            git log "$old_tag".."$new_tag" --oneline | grep "$pr" | while read -r line; do
+            git log "$old_ref..$new_ref" --oneline | grep "$pr" | while read -r line; do
                 echo "  - $line"
             done
             # Try to get PR title (if possible)
