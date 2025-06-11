@@ -14,67 +14,60 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-FROM api7/apisix-runtime:dev AS build
+FROM debian:bullseye-slim AS build
 
 ARG ENABLE_PROXY=false
+ARG CODE_PATH
 
 ENV DEBIAN_FRONTEND noninteractive
+ENV ENV_INST_LUADIR /usr/local/apisix
+
+COPY ${CODE_PATH} /apisix
+
+WORKDIR /apisix
 
 RUN set -x \
-    && (test "${ENABLE_PROXY}" != "true" || /bin/sed -i 's,http://deb.debian.org,https://mirrors.aliyun.com,g' /etc/apt/sources.list) \
     && apt-get -y update --fix-missing \
-    && apt-get install -y curl \
-        gawk \
-        git \
-        libldap2-dev \
-        liblua5.1-0-dev \
-        lua5.1 \
+    && apt-get install -y \
         make \
+        git  \
         sudo \
-        unzip \
-        wget \
         libyaml-dev \
-    && curl https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh -sL | bash - \
-    && luarocks install https://raw.githubusercontent.com/apache/apisix/master/apisix-master-0.rockspec --tree=/usr/local/apisix/deps PCRE_DIR=/usr/local/openresty/pcre \
-    && cp -v /usr/local/apisix/deps/lib/luarocks/rocks-5.1/apisix/master-0/bin/apisix /usr/bin/ \
-    && mv /usr/local/apisix/deps/share/lua/5.1/apisix /usr/local/apisix \
-    # forward request and error logs to docker log collector
-    && ln -sf /dev/stdout /usr/local/apisix/logs/access.log \
-    && ln -sf /dev/stderr /usr/local/apisix/logs/error.log
+    && ls -al \
+    && make deps \
+    && mkdir -p ${ENV_INST_LUADIR} \
+    && cp -r deps ${ENV_INST_LUADIR} \
+    && make install
 
-FROM api7/apisix-runtime:dev AS production-stage
+FROM debian:bullseye-slim
 
-# Install the runtime libyaml package
-RUN apt-get -y update --fix-missing \
-    && apt-get install -y libldap2-dev libyaml-0-2 \
-    && apt-get remove --purge --auto-remove -y
+ARG ENTRYPOINT_PATH=./docker-entrypoint.sh
+ARG INSTALL_BROTLI=./install-brotli.sh
+ARG CHECK_STANDALONE_CONFIG=./install-brotli.sh
 
 COPY --from=build /usr/local/apisix /usr/local/apisix
+COPY --from=build /usr/local/openresty /usr/local/openresty
 COPY --from=build /usr/bin/apisix /usr/bin/apisix
+COPY --from=build /usr/lib/x86_64-linux-gnu/libyaml* /usr/local/lib/
 
-ENV DEBIAN_FRONTEND noninteractive
-RUN apt-get -y update --fix-missing \
-    && apt-get install -y \
-        libldap2-dev \
-    && apt-get remove --purge --auto-remove -y
-
-COPY ./install-brotli.sh /install-brotli.sh
-RUN chmod +x /install-brotli.sh \
+COPY ${INSTALL_BROTLI} /install-brotli.sh
+RUN chmod +x /install-brotli.sh \  
     && cd / && ./install-brotli.sh && rm -rf /install-brotli.sh
-
-WORKDIR /usr/local/apisix
 
 ENV PATH=$PATH:/usr/local/openresty/luajit/bin:/usr/local/openresty/nginx/sbin:/usr/local/openresty/bin
 
+WORKDIR /usr/local/apisix
+
+RUN ln -sf /dev/stdout /usr/local/apisix/logs/access.log \
+    && ln -sf /dev/stderr /usr/local/apisix/logs/error.log
+
 EXPOSE 9080 9443
 
-COPY ./docker-entrypoint.sh /docker-entrypoint.sh
-COPY ./check_standalone_config.sh /check_standalone_config.sh
+COPY ${ENTRYPOINT_PATH} /docker-entrypoint.sh
+COPY ${CHECK_STANDALONE_CONFIG} /check_standalone_config.sh
 
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["docker-start"]
-
 
 STOPSIGNAL SIGQUIT
