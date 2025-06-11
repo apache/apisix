@@ -284,7 +284,7 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 
 This feature was introduced in APISIX 3.13.0.
 
-APISIX supports querying routes and stream routes by `service_id` and `upstream_id`. Other resources or fields are not currently supported.  
+APISIX supports querying routes and stream routes by `service_id` and `upstream_id`. Other resources or fields are not currently supported.
 
 :::
 
