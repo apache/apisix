@@ -54,7 +54,7 @@ IGNORE_PRS=(
 ignore_pattern=$(IFS="|"; echo "(${IGNORE_TYPES[*]}):|(${IGNORE_TYPES[*]})\([^)]*\):")
 
 # Get all versions from CHANGELOG.md
-versions=($(grep -E '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | sed 's/^## //'))
+mapfile -t versions < <(grep -E '^## [0-9]+\.[0-9]+\.[0-9]+' CHANGELOG.md | sed 's/^## //')
 
 # Initialize error flag
 has_errors=0
@@ -63,7 +63,7 @@ has_errors=0
 for ((i=0; i<${#versions[@]}-1; i++)); do
     new_tag=${versions[i]}
     old_tag=${versions[i+1]}
-    
+
     # Skip if new_tag is less than or equal to 3.8.0
     if ! version_gt "$new_tag" "3.8.0"; then
         continue
@@ -102,8 +102,9 @@ for ((i=0; i<${#versions[@]}-1; i++)); do
         echo -e "\n✅ All PRs are included in CHANGELOG.md for version $new_tag"
     else
         echo -e "\n❌ [ERROR] Missing PRs in CHANGELOG.md for version $new_tag (sorted):"
-        echo "$missing_prs" | sed 's/^/  /'
-        
+
+        printf '  %s\n' "$missing_prs"
+
         # Get detailed information for each missing PR
         echo -e "\nDetailed information about missing PRs for version $new_tag:"
         for pr in $missing_prs; do
