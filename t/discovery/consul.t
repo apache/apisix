@@ -112,7 +112,7 @@ discovery:
         max_fails: 1
 nginx_config:
   http_configuration_snippet: |
-    map $http_host $backend {
+    map \${http_host} \${backend} {
       default service_a;
     }
 _EOC_
