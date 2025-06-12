@@ -27,6 +27,7 @@ local str_find           = core.string.find
 local ngx_timer_at       = ngx.timer.at
 local math_random        = math.random
 local ipairs             = ipairs
+local pairs              = pairs
 local shdict_name        = "nacos"
 
 local nacos_dict          = ngx.shared[shdict_name]
