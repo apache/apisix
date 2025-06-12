@@ -1,0 +1,21 @@
+name: Check Changelog
+
+on:
+  push:
+    paths:
+      - 'CHANGELOG.md'
+  pull_request:
+    paths:
+      - 'CHANGELOG.md'
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run check_changelog_prs script
+        run: |
+          bash ci/check_changelog_prs.sh
