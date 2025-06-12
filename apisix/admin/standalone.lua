@@ -34,6 +34,25 @@ local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
+local function check_duplicate(item, key, id_set)
+    local identifier, identifier_type
+    if key == "consumer" then
+        identifier = item.username
+        identifier_type = "username"
+    else
+        identifier = item.id
+        identifier_type = "id"
+    end
+
+    if not identifier then
+        return
+    end
+
+    if id_set[identifier] then
+        return "duplicate " .. identifier_type .. " found " .. identifier
+    end
+    id_set[identifier] = true
+end
 
 local function get_config()
     local config = shared_dict:get("config")
@@ -142,6 +161,7 @@ local function update(ctx)
             apisix_yaml[key] = table_new(#items, 0)
             local item_schema = obj.item_schema
             local item_checker = obj.checker
+            local id_set = {}
 
             for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
@@ -167,6 +187,13 @@ local function update(ctx)
                         core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
+                -- check duplicate resource
+                local err = check_duplicate(item, key, id_set)
+                if err then
+                    core.log.error(err_prefix, err)
+                    core.response.exit(400, { error_msg = err_prefix .. err })
+                end
+
                 table_insert(apisix_yaml[key], item)
             end
         end
