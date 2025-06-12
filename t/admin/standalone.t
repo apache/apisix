@@ -210,6 +210,7 @@ x-apisix-conf-version-routes: 100
 {"error_msg":"routes_conf_version must be greater than or equal to (1062)"}
 
 
+
 === TEST 11: duplicate route id found
 --- config
     location /t11 {}
@@ -222,6 +223,7 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 400
 --- response_body
 {"error_msg":"duplicate id found r1"}
+
 
 
 === TEST 12: duplicate consumer username found
