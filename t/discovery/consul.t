@@ -26,6 +26,9 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
+    map \${http_host} \${backend} {
+      default service_a;
+    }
 
     server {
         listen 20999;
@@ -110,11 +113,6 @@ discovery:
         fail_timeout: 1
         weight: 1
         max_fails: 1
-nginx_config:
-  http_configuration_snippet: |
-    map \${http_host} \${backend} {
-      default service_a;
-    }
 _EOC_
 
 our $yaml_config_with_acl = <<_EOC_;
