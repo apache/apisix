@@ -201,7 +201,7 @@ local function fetch_instances(self, serv)
     return nodes
 end
 
-
+local curr_services_in_use
 local function fetch_full_registry(self)
     return function (premature)
         if premature then
@@ -227,10 +227,19 @@ local function fetch_full_registry(self)
              end
         end
         -- delete unused service names
-        local keys = nacos_dict:get_keys(0)
-        for _, key in ipairs(keys) do
-            if core.string.has_prefix(key, config.id) and not service_names[key] then
-                nacos_dict:delete(key)
+        if not curr_services_in_use then
+            curr_services_in_use = {}
+        end
+        if not curr_services_in_use[config.id] then
+            curr_services_in_use[config.id] = {}
+        end
+        for name in pairs(service_names) do
+            curr_services_in_use[config.id][name] = true
+        end
+        for name in pairs(curr_services_in_use[config.id]) do
+            if not service_names[name] then
+                nacos_dict:delete(name)
+                curr_services_in_use[config.id][name] = nil
             end
         end
         ngx_timer_at(self.config.fetch_interval, self:fetch_full_registry())
