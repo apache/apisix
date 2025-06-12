@@ -36,7 +36,7 @@ local _M = {}
 
 local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
-    if key == "consumer" then
+    if key == "consumers" then
         identifier = item.username
         identifier_type = "username"
     else
@@ -190,8 +190,8 @@ local function update(ctx)
                 -- check duplicate resource
                 local err = check_duplicate(item, key, id_set)
                 if err then
-                    core.log.error(err_prefix, err)
-                    core.response.exit(400, { error_msg = err_prefix .. err })
+                    core.log.error(err)
+                    core.response.exit(400, { error_msg = err })
                 end
 
                 table_insert(apisix_yaml[key], item)
