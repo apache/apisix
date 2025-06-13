@@ -263,6 +263,10 @@
         {
           "type": "doc",
           "id": "debug-mode"
+        },
+        {
+          "type": "doc",
+          "id": "balancer-least-conn"
         }
       ]
     },
