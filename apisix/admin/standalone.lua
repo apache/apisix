@@ -37,8 +37,8 @@ local _M = {}
 local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
     if key == "consumers" then
-        identifier = item.username
-        identifier_type = "username"
+        identifier = item.id or item.username
+        identifier_type = item.id and "credential id" or "username"
     else
         identifier = item.id
         identifier_type = "id"
