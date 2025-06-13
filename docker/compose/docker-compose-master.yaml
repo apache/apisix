@@ -34,7 +34,7 @@ services:
       - apisix
 
   etcd:
-    image: bitnami/etcd:3.5
+    image: bitnami/etcd:3.6
     restart: always
     environment:
       ETCD_DATA_DIR: /etcd_data
