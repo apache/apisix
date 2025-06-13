@@ -504,16 +504,19 @@ build-on-debian-dev:
 		-f ./docker/debian-dev/Dockerfile .
 	@$(call func_echo_success_status, "$@ -> [ Done ]")
 
-### push-multiarch-dev-on-debian : Push apache/apisix:dev image
-.PHONY: push-multiarch-dev-on-debian
-push-multiarch-dev-on-debian:
+.PHONY: push-on-debian-dev
+push-on-debian-dev:
 	@$(call func_echo_status, "$@ -> [ Start ]")
-	$(ENV_DOCKER) buildx build --network=host --push \
-		-t $(IMAGE_NAME):dev \
-		--platform linux/amd64,linux/arm64 \
-		--build-arg CODE_PATH=. \
-		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
-		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
-		--build-arg CHECK_STANDALONE_CONFIG=./docker/utils/check_standalone_config.sh \
-		-f ./docker/debian-dev/Dockerfile .
+	$(ENV_DOCKER) tag $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev $(IMAGE_NAME):dev-$(ENV_OS_ARCH)
+	$(ENV_DOCKER) push $(IMAGE_NAME):dev-$(ENV_OS_ARCH)
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### merge-dev-tags : Merge architecture-specific dev tags into a single dev tag
+.PHONY: merge-dev-tags
+merge-dev-tags:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) manifest create $(IMAGE_NAME):dev \
+		$(IMAGE_NAME):dev-amd64 \
+		$(IMAGE_NAME):dev-arm64
+	$(ENV_DOCKER) manifest push $(IMAGE_NAME):dev
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

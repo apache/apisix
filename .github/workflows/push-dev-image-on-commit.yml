@@ -12,8 +12,16 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  build-test-push:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            arch: amd64
+          - runner: ubuntu-latest-arm64
+            arch: arm64
+
+    runs-on: ${{ matrix.runner }}
 
     env:
       APISIX_DOCKER_TAG: master-debian-dev
@@ -47,22 +55,27 @@ jobs:
             exit 125
           fi
 
-      - name: Login to Docker Hub
+      - name: Push apisix image to Docker Hub
         if: github.ref == 'refs/heads/master'
+        run: |
+          make push-on-debian-dev
+        env:
+          ENV_OS_ARCH: ${{ matrix.arch }}
+
+  merge-tags:
+    needs: build-test
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKERHUB_USER }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set up QEMU
-        if: github.ref == 'refs/heads/master'
-        uses: docker/setup-qemu-action@v1
+      - name: Check out the repo
+        uses: actions/checkout@v4
 
-      - name: Set up Docker Buildx
-        if: github.ref == 'refs/heads/master'
-        uses: docker/setup-buildx-action@v1
-
-      - name: Push apisix image to Docker Hub
-        if: github.ref == 'refs/heads/master'
+      - name: Merge architecture-specific tags
         run: |
-          make push-multiarch-dev-on-debian
+          make merge-dev-tags

@@ -18,6 +18,7 @@ FROM debian:bullseye-slim AS build
 
 ARG ENABLE_PROXY=false
 ARG CODE_PATH
+ARG TARGETARCH
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV ENV_INST_LUADIR=/usr/local/apisix
@@ -48,7 +49,7 @@ ARG CHECK_STANDALONE_CONFIG=./check_standalone_config.sh
 COPY --from=build /usr/local/apisix /usr/local/apisix
 COPY --from=build /usr/local/openresty /usr/local/openresty
 COPY --from=build /usr/bin/apisix /usr/bin/apisix
-COPY --from=build /usr/lib/x86_64-linux-gnu/libyaml* /usr/local/lib/
+COPY --from=build /usr/lib/${TARGETARCH}-linux-gnu/libyaml* /usr/local/lib/
 
 COPY ${INSTALL_BROTLI} /install-brotli.sh
 RUN chmod +x /install-brotli.sh \
