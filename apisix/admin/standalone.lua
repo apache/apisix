@@ -45,9 +45,10 @@ local function check_duplicate(item, key, id_set)
     end
 
     if id_set[identifier] then
-        return "duplicate " .. identifier_type .. " found " .. identifier
+        return true,"duplicate " .. identifier_type .. " found " .. identifier
     end
     id_set[identifier] = true
+    return false
 end
 
 local function get_config()
@@ -183,9 +184,10 @@ local function update(ctx)
                         core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
-                -- check duplicate resource
-                local err = check_duplicate(item, key, id_set)
-                if err then
+                -- prevent updating resource with the same ID
+                -- (e.g., service ID or other resource IDs) in a single request
+                local duplicated, err = check_duplicate(item, key, id_set)
+                if duplicated then
                     core.log.error(err)
                     core.response.exit(400, { error_msg = err })
                 end
