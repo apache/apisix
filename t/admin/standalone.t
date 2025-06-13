@@ -222,7 +222,7 @@ PUT /apisix/admin/configs
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 400
 --- response_body
-{"error_msg":"duplicate id found r1"}
+{"error_msg":"found duplicate id r1 in routes"}
 
 
 
@@ -237,4 +237,4 @@ PUT /apisix/admin/configs
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 400
 --- response_body
-{"error_msg":"duplicate username found consumer1"}
+{"error_msg":"found duplicate username consumer1 in consumers"}

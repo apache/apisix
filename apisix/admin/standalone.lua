@@ -45,7 +45,7 @@ local function check_duplicate(item, key, id_set)
     end
 
     if id_set[identifier] then
-        return true,"duplicate " .. identifier_type .. " found " .. identifier
+        return true, "found duplicate " .. identifier_type .. " " .. identifier .. " in " .. key
     end
     id_set[identifier] = true
     return false
