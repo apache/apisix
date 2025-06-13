@@ -26,6 +26,9 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
+    map \${http_host} \${backend} {
+      default service_a;
+    }
 
     server {
         listen 20999;
@@ -781,3 +784,79 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+
+
+=== TEST 16: test service_name as variable in route configuration
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: "${backend}"
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Set nginx map variable
+            ngx.var.backend = "service_a"
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.body)
+        }
+    }
+--- request
+GET /t
+--- response_body_like eval
+qr/server [1-2]\n/
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: test empty variable in service_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: "${backend}"
+      discovery_type: consul
+      type: roundrobin
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            -- Set empty nginx map variable
+            ngx.var.backend = ""
+
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+503
+--- error_log
+resolve_var resolves to empty string
