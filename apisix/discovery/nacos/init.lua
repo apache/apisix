@@ -155,7 +155,6 @@ function _M.dump_data()
     end
 
     return {
-        config = local_conf.discovery.nacos,
         services = applications
     }
 end

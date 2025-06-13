@@ -52,7 +52,7 @@ local function _request(method, uri, params, headers, body, options)
         method = method,
         headers = headers,
         body = body,
-        ssl_verify = false,
+        ssl_verify = true,
     })
 
     if not res then
@@ -145,10 +145,10 @@ local function fetch_instances(self, serv)
     local config = self.config
 
     local params = {
-        ["namespaceId"] = serv.namespace_id or "",
-        ["groupName"] = serv.group_name or "DEFAULT_GROUP",
-        ["serviceName"] = serv.name,
-        ["healthyOnly"] = "true"
+        namespaceId = serv.namespace_id or "",
+        groupName = serv.group_name or "DEFAULT_GROUP",
+        serviceName = serv.name,
+        healthyOnly = "true"
     }
 
     local auth = config.auth or {}
