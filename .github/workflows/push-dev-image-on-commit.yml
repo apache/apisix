@@ -60,7 +60,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: github.ref == 'refs/heads/master'
-        uses: docker/setup-buildx-action@v1
+        uses: docker/setup-buildx-action@v3
 
       - name: Push apisix image to Docker Hub
         if: github.ref == 'refs/heads/master'
