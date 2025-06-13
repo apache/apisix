@@ -46,6 +46,23 @@ discovery:
 
 _EOC_
 
+    our $single_yaml_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    service:
+      host: "127.0.0.1"
+      port: "6443"
+    client:
+      token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+    watch_endpoint_slices: true
+_EOC_
+
     our $scale_ns_c = <<_EOC_;
 [
   {
@@ -423,6 +440,15 @@ qr{ 0 0 2 2 0 0 0 0 2 2 0 0 }
 
 === TEST 4: test dump
 --- yaml_config eval: $::yaml_config
+--- request
+GET /dump
+--- response_body_like
+.*"name":"default/kubernetes".*
+
+
+
+=== TEST 5: test single mode dump
+--- yaml_config eval: $::single_yaml_config
 --- request
 GET /dump
 --- response_body_like
