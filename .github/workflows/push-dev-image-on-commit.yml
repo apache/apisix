@@ -26,6 +26,7 @@ jobs:
     env:
       APISIX_DOCKER_TAG: master-debian-dev
       ENV_OS_ARCH: ${{ matrix.arch }}
+      DOCKER_BUILDKIT: 1
 
     steps:
       - name: Check out the repo
@@ -39,6 +40,8 @@ jobs:
           docker logs compose-apisix-1
 
       - name: Test APISIX
+        # TODO: remove this once we updated the etcd version
+        if: matrix.arch == 'amd64'
         run: |
           curl http://127.0.0.1:9180/apisix/admin/routes/1 \
           -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
