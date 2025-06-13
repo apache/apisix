@@ -34,7 +34,7 @@ services:
       - apisix
 
   etcd:
-    image: bitnami/etcd:3.4.9
+    image: bitnami/etcd:3.5
     user: root
     restart: always
     environment:
