@@ -16,9 +16,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - runner: ubuntu-latest
+          - runner: ubuntu-24.04
             arch: amd64
-          - runner: ubuntu-latest-arm64
+          - runner: ubuntu-24.04-arm
             arch: arm64
 
     runs-on: ${{ matrix.runner }}
