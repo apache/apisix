@@ -25,6 +25,7 @@ jobs:
 
     env:
       APISIX_DOCKER_TAG: master-debian-dev
+      ENV_OS_ARCH: ${{ matrix.arch }}
 
     steps:
       - name: Check out the repo
@@ -59,8 +60,6 @@ jobs:
         if: github.ref == 'refs/heads/master'
         run: |
           make push-on-debian-dev
-        env:
-          ENV_OS_ARCH: ${{ matrix.arch }}
 
   merge-tags:
     needs: build-test-push
