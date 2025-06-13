@@ -28,8 +28,6 @@ description: This document introduces the Least Connection Load Balancer (`least
 #
 -->
 
-# Least Connection Load Balancer
-
 ## Overview
 
 The `least_conn` load balancer in Apache APISIX implements a dynamic load balancing algorithm that routes requests to the upstream server with the fewest active connections. This algorithm is particularly effective for scenarios where request processing times vary significantly or when dealing with long-lived connections such as WebSocket connections.
