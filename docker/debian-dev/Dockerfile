@@ -45,10 +45,14 @@ ARG ENTRYPOINT_PATH=./docker-entrypoint.sh
 ARG INSTALL_BROTLI=./install-brotli.sh
 ARG CHECK_STANDALONE_CONFIG=./check_standalone_config.sh
 
+# Install the runtime libyaml package
+RUN apt-get -y update --fix-missing \
+    && apt-get install -y libldap2-dev libyaml-0-2 \
+    && apt-get remove --purge --auto-remove -y
+
 COPY --from=build /usr/local/apisix /usr/local/apisix
 COPY --from=build /usr/local/openresty /usr/local/openresty
 COPY --from=build /usr/bin/apisix /usr/bin/apisix
-COPY --from=build /usr/lib/x86_64-linux-gnu/libyaml* /usr/local/lib/
 
 COPY ${INSTALL_BROTLI} /install-brotli.sh
 RUN chmod +x /install-brotli.sh \
