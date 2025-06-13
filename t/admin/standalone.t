@@ -238,3 +238,21 @@ X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 --- error_code: 400
 --- response_body
 {"error_msg":"found duplicate username consumer1 in consumers"}
+
+
+
+=== TEST 13: duplicate consumer credential id found
+--- config
+    location /t13 {}
+--- request
+PUT /apisix/admin/configs
+{"consumers_conf_version":1065,"consumers":[
+    {"username": "john_1"},
+    {"id":"john_1/credentials/john-a","plugins":{"key-auth":{"key":"auth-a"}}},
+    {"id":"john_1/credentials/john-a","plugins":{"key-auth":{"key":"auth-a"}}}
+]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+--- error_code: 400
+--- response_body
+{"error_msg":"found duplicate credential id john_1/credentials/john-a in consumers"}
