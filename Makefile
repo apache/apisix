@@ -498,6 +498,7 @@ build-on-debian-dev:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev \
 		--platform linux/$(ENV_OS_ARCH) \
+		--build-arg TARGETARCH=$(ENV_OS_ARCH) \
 		--build-arg CODE_PATH=. \
 		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
 		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
