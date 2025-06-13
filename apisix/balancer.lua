@@ -207,7 +207,10 @@ local function pick_server(route, ctx)
         -- For least_conn balancer, we still need to use the balancer even with single node
         -- to track connection counts for future load balancing decisions
         if up_conf.type == "least_conn" then
-            core.log.debug("single node with least_conn balancer - still using balancer for connection tracking")
+            core.log.debug(
+                    "single node with least_conn balancer",
+                    "still using balancer for connection tracking"
+            )
         else
             core.log.info("single node with ", up_conf.type, " balancer - skipping balancer")
             local node = up_conf.nodes[1]

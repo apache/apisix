@@ -61,19 +61,6 @@ local function get_server_conn_count(upstream, server)
     return result
 end
 
-
--- Set the connection count for a server in shared dict
-local function set_server_conn_count(upstream, server, count)
-    local key = get_conn_count_key(upstream, server)
-    local ok, err = conn_count_dict:set(key, count)
-    if not ok then
-        core.log.error("failed to set connection count for ", server, ": ", err)
-    else
-        core.log.debug("set connection count for server ", server, " to ", count)
-    end
-end
-
-
 -- Increment the connection count for a server
 local function incr_server_conn_count(upstream, server, delta)
     local key = get_conn_count_key(upstream, server)
@@ -110,7 +97,8 @@ local function cleanup_stale_conn_counts(upstream, current_servers)
                 -- This server is no longer in the upstream, clean it up
                 local ok, delete_err = conn_count_dict:delete(key)
                 if not ok and delete_err then
-                    core.log.error("failed to delete stale connection count for server ", server, ": ", delete_err)
+                    core.log.error("failed to delete stale connection count for server ",
+                            server, ": ", delete_err)
                 else
                     core.log.info("cleaned up stale connection count for server: ", server)
                 end

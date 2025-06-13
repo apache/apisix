@@ -21,6 +21,7 @@ score = (connection_count + 1) / weight
 ```
 
 其中：
+
 - `connection_count` - 当前到服务器的活跃连接数
 - `weight` - 服务器权重配置值
 
@@ -29,18 +30,22 @@ score = (connection_count + 1) / weight
 ### 连接状态管理
 
 #### 实时更新
+
 - **连接开始**：连接计数递增，得分更新为 `(new_count + 1) / weight`
 - **连接结束**：连接计数递减，得分更新为 `(new_count - 1) / weight`
 - **堆维护**：二进制堆自动按得分重新排序服务器
 - **得分保护**：通过设置最小得分为 0 防止出现负分
 
 #### 持久化策略
+
 连接计数存储在 nginx 共享字典中，使用结构化键：
+
 ```
 conn_count:{upstream_id}:{server_address}
 ```
 
 这确保连接状态在以下情况下保持：
+
 - 上游配置变更
 - 负载均衡器实例重建
 - 工作进程重启
@@ -51,6 +56,7 @@ conn_count:{upstream_id}:{server_address}
 #### 持久状态管理
 
 负载均衡器使用 nginx 共享字典（`balancer-least-conn`）在以下情况下维护连接计数：
+
 - 负载均衡器实例重建
 - 上游配置变更
 - 工作进程重启
@@ -59,11 +65,13 @@ conn_count:{upstream_id}:{server_address}
 #### 连接计数键
 
 连接计数使用结构化键存储：
+
 ```
 conn_count:{upstream_id}:{server_address}
 ```
 
 其中：
+
 - `upstream_id` - 上游配置的唯一标识符
 - `server_address` - 服务器地址（例如："127.0.0.1:8080"）
 
@@ -84,21 +92,27 @@ end
 ### 连接生命周期
 
 #### 1. 连接建立
+
 当路由新请求时：
+
 1. 从堆中选择得分最低的服务器
 2. 将服务器得分更新为 `(current_count + 1) / weight`
 3. 在共享字典中递增连接计数
 4. 更新堆中服务器的位置
 
 #### 2. 连接完成
+
 当请求完成时：
+
 1. 计算新得分为 `(current_count - 1) / weight`
 2. 保证得分不为负（最小为 0）
 3. 在共享字典中递减连接计数
 4. 更新堆中服务器的位置
 
 #### 3. 清理过程
+
 在负载均衡器重建期间：
+
 1. 识别当前活跃的服务器
 2. 移除不再在上游中的服务器的连接计数
 3. 保留现有服务器的计数
@@ -106,11 +120,13 @@ end
 ### 数据结构
 
 #### 二进制堆
+
 - **类型**：基于服务器得分的最小堆
 - **目的**：高效选择得分最低的服务器
 - **操作**：O(log n) 插入、删除和更新
 
 #### 共享字典
+
 - **名称**：`balancer-least-conn`
 - **大小**：10MB（可配置）
 - **范围**：在所有工作进程间共享
@@ -148,15 +164,18 @@ upstreams:
 ## 性能特征
 
 ### 时间复杂度
+
 - **服务器选择**：O(1) - 堆查看操作
 - **连接更新**：O(log n) - 堆更新操作
 - **清理**：O(k)，其中 k 是存储键的数量
 
 ### 内存使用
+
 - **每个服务器**：约 100 字节（键 + 值 + 开销）
 - **总计**：与所有上游的服务器数量线性扩展
 
 ### 可扩展性
+
 - **服务器**：高效处理每个上游数百个服务器
 - **上游**：支持多个上游，具有隔离的连接跟踪
 - **请求**：最小的每请求开销
@@ -164,12 +183,14 @@ upstreams:
 ## 使用场景
 
 ### 最佳场景
+
 1. **WebSocket 应用**：长连接受益于准确的负载分布
 2. **可变处理时间**：持续时间不可预测的请求
 3. **资源密集型操作**：CPU 或内存密集型后端处理
 4. **数据库连接**：连接池场景
 
 ### 注意事项
+
 1. **短连接**：对于非常短的请求，可能比轮询有更高的开销
 2. **统一处理**：对于统一的请求处理，轮询可能更简单
 3. **内存使用**：需要共享内存来存储连接状态
@@ -179,14 +200,17 @@ upstreams:
 ### 日志消息
 
 #### 调试日志
+
 启用调试日志来监控负载均衡器行为：
 
 **负载均衡器创建**
+
 ```
 creating new least_conn balancer for upstream: upstream_123
 ```
 
 **连接数操作**
+
 ```
 generated connection count key: conn_count:upstream_123:127.0.0.1:8080
 retrieved connection count for 127.0.0.1:8080: 5
@@ -195,23 +219,27 @@ incrementing connection count for 127.0.0.1:8080 by 1, new count: 6
 ```
 
 **服务器选择**
+
 ```
 selected server: 127.0.0.1:8080 with current score: 1.2
 after_balance for server: 127.0.0.1:8080, before_retry: false
 ```
 
 **清理操作**
+
 ```
 cleaning up stale connection counts for upstream: upstream_123
 cleaned up stale connection count for server: 127.0.0.1:8082
 ```
 
 #### 初始化
+
 ```
 initializing server 127.0.0.1:8080 with weight 1, base_score 1, conn_count 0, final_score 1
 ```
 
 #### 错误
+
 ```
 failed to set connection count for 127.0.0.1:8080: no memory
 failed to increment connection count for 127.0.0.1:8080: no memory
@@ -220,6 +248,7 @@ failed to increment connection count for 127.0.0.1:8080: no memory
 ### 共享字典监控
 
 检查共享字典使用情况：
+
 ```lua
 local dict = ngx.shared["balancer-least-conn"]
 local free_space = dict:free_space()
@@ -229,18 +258,23 @@ local capacity = dict:capacity()
 ## 错误处理
 
 ### 缺少共享字典
+
 如果共享字典不可用（在默认配置下不应该发生），负载均衡器将初始化失败并显示：
+
 ```
 shared dict 'balancer-least-conn' not found
 ```
 
 ### 内存耗尽
+
 当共享字典内存不足时：
+
 - 连接计数更新将失败
 - 将记录警告消息
 - 负载均衡器继续运行，但可能使用过时的计数
 
 ### 恢复策略
+
 1. **增加字典大小**：分配更多内存
 2. **清理频率**：实现过时条目的定期清理
 3. **监控**：为字典使用情况设置警报
@@ -248,16 +282,19 @@ shared dict 'balancer-least-conn' not found
 ## 最佳实践
 
 ### 配置
+
 1. **字典大小**：默认 10MB 对大多数情况足够（支持约 10 万连接）
 2. **服务器权重**：使用适当的权重来反映服务器容量
 3. **健康检查**：与健康检查结合使用以实现稳健的负载均衡
 
 ### 监控
+
 1. **连接计数**：监控意外的累积
 2. **内存使用**：跟踪共享字典利用率
 3. **性能**：测量请求分布的有效性
 
 ### 故障排除
+
 1. **不均匀分布**：检查连接计数累积
 2. **内存问题**：监控共享字典可用空间
 3. **配置**：验证共享字典是否正确配置
@@ -265,11 +302,13 @@ shared dict 'balancer-least-conn' not found
 ## 迁移和兼容性
 
 ### 向后兼容性
+
 - 当共享字典不可用时优雅降级
 - 对现有 API 无破坏性更改
 - 保持现有行为模式
 
 ### 升级注意事项
+
 1. **配置**：共享字典自动配置
 2. **内存**：默认分配对大多数用例应该足够
 3. **测试**：在测试环境中验证负载分布
