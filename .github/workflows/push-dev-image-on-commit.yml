@@ -63,7 +63,7 @@ jobs:
           ENV_OS_ARCH: ${{ matrix.arch }}
 
   merge-tags:
-    needs: build-test
+    needs: build-test-push
     if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
