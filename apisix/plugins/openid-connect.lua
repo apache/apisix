@@ -339,7 +339,7 @@ local _M = {
     schema = schema,
 }
 
-local generic_claim_validator = nil;
+local generic_claim_validator = nil
 
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
