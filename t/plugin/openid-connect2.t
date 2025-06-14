@@ -604,7 +604,6 @@ passed
                 })
 
             if not res then
-            ngx.say('here error',err)
                 -- No response, must be an error.
                 ngx.status = 500
                 ngx.say(err)
