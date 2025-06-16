@@ -636,7 +636,7 @@ end
 local function dump_endpoints_from_dict(endpoint_dict, id)
     local keys, err = endpoint_dict:get_keys()
     if err then
-        error(err)
+        core.log.error("get keys from discovery dict failed: ", err)
     end
 
     if not keys then
