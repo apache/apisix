@@ -162,7 +162,6 @@ When APISIX retrieves service information from Consul, it handles port values as
 - If the service registration includes a valid port number, that port will be used.
 - If the port is `nil` (not specified) or `0`, APISIX will default to port `80` for HTTP services.
 
-
 ### Upstream setting
 
 #### L7
