@@ -225,8 +225,8 @@ local function watch_catalog(consul_server)
     ::RETRY::
     local watch_result, watch_err = client:get(consul_server.consul_watch_catalog_url)
     local watch_error_info = (watch_err ~= nil and watch_err)
-                            or ((watch_result ~= nil and watch_result.status ~= 200)
-                            and watch_result.status)
+                             or ((watch_result ~= nil and watch_result.status ~= 200)
+                             and watch_result.status)
     if watch_error_info then
         log.error("connect consul: ", consul_server.consul_server_url,
             " by sub url: ", consul_server.consul_watch_catalog_url,
@@ -516,8 +516,8 @@ function _M.connect(premature, consul_server, retry_delay)
                     end
 
                     local svc_address, svc_port = node.Service.Address, node.Service.Port
-                    -- Handle nil port case - default to 80 for HTTP services
-                    if not svc_port then
+                    -- Handle nil or 0 port case - default to 80 for HTTP services
+                    if not svc_port or svc_port == 0 then
                         svc_port = 80
                     end
                     -- if nodes is nil, new nodes table and set to up_services
