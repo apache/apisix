@@ -637,10 +637,11 @@ local function dump_endpoints_from_dict(endpoint_dict, id)
     local keys, err = endpoint_dict:get_keys()
     if err then
         core.log.error("get keys from discovery dict failed: ", err)
+        return
     end
 
     if not keys then
-        return nil
+        return
     end
 
     local k8s = {}
