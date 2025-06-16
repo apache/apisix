@@ -26,10 +26,6 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
-    map \${http_host} \${backend} {
-      default service_a;
-    }
-
     server {
         listen 20999;
 
@@ -800,10 +796,8 @@ routes:
 #END
 --- config
     location /t {
+        set $backend "service_a";
         content_by_lua_block {
-            -- Set nginx map variable
-            ngx.var.backend = "service_a"
-
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
@@ -838,6 +832,7 @@ routes:
 #END
 --- config
     location /t {
+        set $backend "service_a";
         content_by_lua_block {
             -- Set empty nginx map variable
             ngx.var.backend = ""
