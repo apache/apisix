@@ -29,6 +29,7 @@ function _M.new(name)
     return setmetatable({
         stale_timer_running = false,
         buffers = {},
+        total_pushed_entries = 0,
         name = name,
     }, mt)
 end
@@ -85,7 +86,19 @@ do
 end
 
 
+local function total_processed_entries(self)
+    local processed_entries = 0
+    for _, log_buffer in pairs(self.buffers) do
+        processed_entries = processed_entries + log_buffer.processed_entries()
+    end
+    return processed_entries
+end
+
 function _M:add_entry(conf, entry)
+    if self.total_pushed_entries - total_processed_entries(self) > conf.max_pending_entries then
+        core.log.error("max pending entries limit exceeded. discarding entry")
+        return
+    end
     check_stale(self)
 
     local log_buffer = self.buffers[conf]
@@ -94,11 +107,16 @@ function _M:add_entry(conf, entry)
     end
 
     log_buffer:push(entry)
+    self.total_pushed_entries = self.total_pushed_entries + 1
     return true
 end
 
 
 function _M:add_entry_to_new_processor(conf, entry, ctx, func)
+    if self.total_pushed_entries - total_processed_entries(self) > conf.max_pending_entries then
+        core.log.error("max pending entries limit exceeded. discarding entry")
+        return
+    end
     check_stale(self)
 
     local config = {
@@ -120,6 +138,7 @@ function _M:add_entry_to_new_processor(conf, entry, ctx, func)
 
     log_buffer:push(entry)
     self.buffers[conf] = log_buffer
+    self.total_pushed_entries = self.total_pushed_entries + 1
     return true
 end
 
