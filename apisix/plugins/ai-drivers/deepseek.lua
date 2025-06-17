@@ -15,7 +15,7 @@
 -- limitations under the License.
 --
 
-return require("apisix.plugins.ai-drivers.openai-compatible").new(
+return require("apisix.plugins.ai-drivers.openai-base").new(
     {
         host = "api.deepseek.com",
         path = "/chat/completions",

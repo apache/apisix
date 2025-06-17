@@ -155,7 +155,7 @@ echo "passed: when proxy_ssl_verify is enabled and ssl_trusted_certificate is wr
 echo '
 apisix:
   ssl:
-    ssl_trusted_certificate: system, t/certs/apisix.crt
+    ssl_trusted_certificate: t/certs/apisix.crt
 nginx_config:
   http_configuration_snippet: |
     server {

@@ -208,9 +208,7 @@ local config_schema = {
                     properties = {
                         ssl_trusted_certificate = {
                             type = "string",
-                        },
-                        ssl_trusted_combined_path = {
-                            type = "string",
+                            default = "system"
                         },
                         listen = {
                             type = "array",
@@ -378,7 +376,7 @@ local deployment_schema = {
             role_traditional = {
                 properties = {
                     config_provider = {
-                        enum = {"etcd"}
+                        enum = {"etcd", "yaml"}
                     },
                 },
                 required = {"config_provider"}

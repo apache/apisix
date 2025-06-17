@@ -52,26 +52,6 @@ _EOC_
 
             default_type 'application/json';
 
-            location /anything {
-                content_by_lua_block {
-                    local json = require("cjson.safe")
-
-                    if ngx.req.get_method() ~= "POST" then
-                        ngx.status = 400
-                        ngx.say("Unsupported request method: ", ngx.req.get_method())
-                    end
-                    ngx.req.read_body()
-                    local body = ngx.req.get_body_data()
-
-                    if body ~= "SELECT * FROM STUDENTS" then
-                        ngx.status = 503
-                        ngx.say("passthrough doesn't work")
-                        return
-                    end
-                    ngx.say('{"foo", "bar"}')
-                }
-            }
-
             location /v1/chat/completions {
                 content_by_lua_block {
                     local json = require("cjson.safe")
@@ -153,10 +133,13 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy-multi")
             local ok, err = plugin.check_schema({
-                providers = {
+                instances = {
                     {
-                        name = "openai",
-                        model = "gpt-4",
+                        name = "openai-official",
+                        provider = "openai",
+                        options = {
+                            model = "gpt-4",
+                        },
                         weight = 1,
                         auth = {
                             header = {
@@ -185,10 +168,13 @@ passed
         content_by_lua_block {
             local plugin = require("apisix.plugins.ai-proxy-multi")
             local ok, err = plugin.check_schema({
-                providers = {
+                instances = {
                     {
-                        name = "some-unique",
-                        model = "gpt-4",
+                        name = "self-hosted",
+                        provider = "some-unique",
+                        options = {
+                            model = "gpt-4",
+                        },
                         weight = 1,
                         auth = {
                             header = {
@@ -207,7 +193,7 @@ passed
         }
     }
 --- response_body eval
-qr/.*provider: some-unique is not supported.*/
+qr/.*property "provider" validation failed: matches none of the enum values*/
 
 
 
@@ -222,10 +208,10 @@ qr/.*provider: some-unique is not supported.*/
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-4",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -233,6 +219,7 @@ qr/.*provider: some-unique is not supported.*/
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-4",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -242,12 +229,6 @@ qr/.*provider: some-unique is not supported.*/
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -285,10 +266,10 @@ Unauthorized
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-4",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -296,6 +277,7 @@ Unauthorized
                                         }
                                     },
                                     "options": {
+                                        "model": "gpt-4",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -305,12 +287,6 @@ Unauthorized
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -380,23 +356,11 @@ prompt%3Dwhat%2520is%25201%2520%252B%25201
 Content-Type: application/x-www-form-urlencoded
 --- error_code: 400
 --- response_body chomp
-unsupported content-type: application/x-www-form-urlencoded
+unsupported content-type: application/x-www-form-urlencoded, only application/json is supported
 
 
 
-=== TEST 11: request schema validity check
---- request
-POST /anything
-{ "messages-missing": [ { "role": "system", "content": "xyz" } ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 400
---- response_body chomp
-request format doesn't match schema: property "messages" is required
-
-
-
-=== TEST 12: model options being merged to request body
+=== TEST 11: model options being merged to request body
 --- config
     location /t {
         content_by_lua_block {
@@ -407,10 +371,10 @@ request format doesn't match schema: property "messages" is required
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "some-model",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -418,6 +382,7 @@ request format doesn't match schema: property "messages" is required
                                         }
                                     },
                                     "options": {
+                                        "model": "some-model",
                                         "foo": "bar",
                                         "temperature": 1.0
                                     },
@@ -427,12 +392,6 @@ request format doesn't match schema: property "messages" is required
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                  }]]
@@ -470,7 +429,7 @@ options_works
 
 
 
-=== TEST 13: override path
+=== TEST 12: override path
 --- config
     location /t {
         content_by_lua_block {
@@ -481,10 +440,10 @@ options_works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "some-model",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -492,6 +451,7 @@ options_works
                                         }
                                     },
                                     "options": {
+                                        "model": "some-model",
                                         "foo": "bar",
                                         "temperature": 1.0
                                     },
@@ -501,12 +461,6 @@ options_works
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                  }]]
@@ -543,7 +497,7 @@ path override works
 
 
 
-=== TEST 14: set route with right auth header
+=== TEST 13: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -554,10 +508,10 @@ path override works
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy-multi": {
-                            "providers": [
+                            "instances": [
                                 {
-                                    "name": "openai",
-                                    "model": "gpt-35-turbo-instruct",
+                                    "name": "openai-official",
+                                    "provider": "openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -565,72 +519,7 @@ path override works
                                         }
                                     },
                                     "options": {
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false,
-                            "passthrough": true
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "127.0.0.1:6724": 1
-                        }
-                    }
-                 }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 15: send request with wrong method should work
---- request
-POST /anything
-{ "messages": [ { "role": "user", "content": "write an SQL query to get all rows from student table" } ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 200
---- response_body
-{"foo", "bar"}
-
-
-
-=== TEST 16: set route with stream = true (SSE)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "providers": [
-                                {
-                                    "name": "openai",
-                                    "model": "gpt-35-turbo-instruct",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
+                                        "model": "gpt-35-turbo-instruct",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true
@@ -642,12 +531,6 @@ Authorization: Bearer token
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                  }]]
             )
@@ -663,7 +546,7 @@ passed
 
 
 
-=== TEST 17: test is SSE works as expected
+=== TEST 14: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {

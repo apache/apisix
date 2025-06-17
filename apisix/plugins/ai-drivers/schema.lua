@@ -14,20 +14,31 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core = require("apisix.core")
-local ipairs = ipairs
-
 local _M = {}
 
-
-function _M.create_request_text_segments(msgs)
-    local text_segments = {}
-    for _, msg in ipairs(msgs) do
-        core.table.insert_tail(text_segments, {
-            Text = msg.content
-        })
-    end
-    return text_segments
-end
+_M.chat_request_schema = {
+    type = "object",
+    properties = {
+        messages = {
+            type = "array",
+            minItems = 1,
+            items = {
+                properties = {
+                    role = {
+                        type = "string",
+                        enum = {"system", "user", "assistant"}
+                    },
+                    content = {
+                        type = "string",
+                        minLength = "1",
+                    },
+                },
+                additionalProperties = false,
+                required = {"role", "content"},
+            },
+        }
+    },
+    required = {"messages"}
+}
 
 return  _M

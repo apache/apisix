@@ -41,8 +41,8 @@ description: In this tutorial, you will learn how to publish and manage multiple
 The most common way to version an API is in the URI path and is often done with the prefix "v". This method employs URI routing to direct requests to a specific version of the API.
 
 ```shell
-http://apisix.org/v1/hello
-http://apisix.org/v2/hello
+http://apisix.apache.org/v1/hello
+http://apisix.apache.org/v2/hello
 ```
 
 #### Query parameters
@@ -50,8 +50,8 @@ http://apisix.org/v2/hello
 In this method, the version number is included in the URI, but as a query parameter instead of in the path.
 
 ```shell
-http://apisix.org/hello?version=1
-http://apisix.org/hello?version=2
+http://apisix.apache.org/hello?version=1
+http://apisix.apache.org/hello?version=2
 ```
 
 #### Custom request Header
@@ -59,8 +59,8 @@ http://apisix.org/hello?version=2
 You can also set the version number using custom headers in requests and responses. This leaves the URI of your resources unchanged.
 
 ```shell
-http://apisix.org/hello -H 'Version: 1'
-http://apisix.org/hello -H 'Version: 2'
+http://apisix.apache.org/hello -H 'Version: 1'
+http://apisix.apache.org/hello -H 'Version: 2'
 ```
 
 The primary goal of versioning is to provide users of an API with the most functionality possible while causing minimal inconvenience. Keeping this goal in mind, let’s have a look in this tutorial at how to _publish and manage multiple versions of your API_ with Apache APISIX.
@@ -122,7 +122,7 @@ curl http://apisix:9180/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PUT -d '
 At this stage, we do not have yet any version and you can query the gateway as below:
 
 ```shell
-curl http://apisix.org/hello
+curl http://apisix.apache.org/hello
 ```
 
 ```shell title="output"
@@ -130,7 +130,7 @@ Hello world
 ```
 
 ```shell
-curl http://apisix.org/hello/Joe
+curl http://apisix.apache.org/hello/Joe
 ```
 
 ```shell title="output"
@@ -189,7 +189,7 @@ curl http://apisix:9180/apisix/admin/routes/2 -H 'X-API-KEY: xyz' -X PUT -d '
 At this stage, we have configured two routes, one versioned and the other non-versioned:
 
 ```shell
-curl http://apisix.org/hello
+curl http://apisix.apache.org/hello
 ```
 
 ```shell title="output"
@@ -197,7 +197,7 @@ Hello world
 ```
 
 ```shell
-curl http://apisix.org/v1/hello
+curl http://apisix.apache.org/v1/hello
 ```
 
 ```shell title="output"
@@ -206,7 +206,7 @@ Hello world
 
 ## Route API requests from the old version to the new one
 
-We have versioned our API, but our API consumers probably still use the legacy non-versioned API. We want them to migrate, but we cannot just delete the legacy route as our users are unaware of it. Fortunately, the `301 HTTP` status code is our friend: we can let users know that the resource has moved from `http://apisix.org/hello` to `http://apisix.org/v1/hello`. It requires configuring the [redirect plugin](https://apisix.apache.org/docs/apisix/plugins/redirect/) on the initial route:
+We have versioned our API, but our API consumers probably still use the legacy non-versioned API. We want them to migrate, but we cannot just delete the legacy route as our users are unaware of it. Fortunately, the `301 HTTP` status code is our friend: we can let users know that the resource has moved from `http://apisix.apache.org/hello` to `http://apisix.apache.org/v1/hello`. It requires configuring the [redirect plugin](https://apisix.apache.org/docs/apisix/plugins/redirect/) on the initial route:
 
 ```shell
 curl http://apisix:9180/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PATCH -d '
@@ -225,7 +225,7 @@ curl http://apisix:9180/apisix/admin/routes/1 -H 'X-API-KEY: xyz' -X PATCH -d '
 Now when we try to request the first non-versioned API endpoint, you will get an expected output:
 
 ```shell
-curl http://apisix.org/hello
+curl http://apisix.apache.org/hello
 
 <html>
 <head><title>301 Moved Permanently</title></head>

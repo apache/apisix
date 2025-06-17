@@ -26,6 +26,12 @@ no_root_location();
 add_block_preprocessor(sub {
     my ($block) = @_;
 
+    my $main_config = $block->main_config // <<_EOC_;
+        env AWS_REGION=us-east-1;
+_EOC_
+
+    $block->set_value("main_config", $main_config);
+
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
@@ -45,14 +51,12 @@ __DATA__
                 [[{
                     "uri": "/echo",
                     "plugins": {
-                        "ai-content-moderation": {
-                            "provider": {
-                                "aws_comprehend": {
-                                    "access_key_id": "access",
-                                    "secret_access_key": "ea+secret",
-                                    "region": "us-east-1",
-                                    "endpoint": "http://localhost:2668"
-                                }
+                        "ai-aws-content-moderation": {
+                            "comprehend": {
+                                "access_key_id": "access",
+                                "secret_access_key": "ea+secret",
+                                "region": "us-east-1",
+                                "endpoint": "http://localhost:2668"
                             },
                             "llm_provider": "openai"
                         }
@@ -80,7 +84,7 @@ passed
 === TEST 2: request should fail
 --- request
 POST /echo
-{"model":"gpt-4o-mini","messages":[{"role":"user","content":"toxic"}]}
+toxic
 --- error_code: 500
 --- response_body chomp
 Comprehend:detectToxicContent() failed to connect to 'http://localhost:2668': connection refused

@@ -58,6 +58,7 @@ local str_sub         = string.sub
 local tonumber        = tonumber
 local type            = type
 local pairs           = pairs
+local tostring       = tostring
 local ngx_re_match    = ngx.re.match
 local control_api_router
 
@@ -453,6 +454,12 @@ end
 
 
 function _M.handle_upstream(api_ctx, route, enable_websocket)
+    -- some plugins(ai-proxy...) request upstream by http client directly
+    if api_ctx.bypass_nginx_upstream then
+        common_phase("before_proxy")
+        return
+    end
+
     local up_id = route.value.upstream_id
 
     -- used for the traffic-split plugin
@@ -816,9 +823,18 @@ local function healthcheck_passive(api_ctx)
     local host = up_conf.checks and up_conf.checks.active
                  and up_conf.checks.active.host
     local port = up_conf.checks and up_conf.checks.active
-                 and up_conf.checks.active.port
+                 and up_conf.checks.active.port or api_ctx.balancer_port
 
     local resp_status = ngx.status
+
+    if not is_http then
+        -- 200 is the only success status code for TCP
+        if resp_status ~= 200 then
+            checker:report_tcp_failure(api_ctx.balancer_ip, port, host, nil, "passive")
+        end
+        return
+    end
+
     local http_statuses = passive and passive.healthy and
                           passive.healthy.http_statuses
     core.log.info("passive.healthy.http_statuses: ",
@@ -827,7 +843,7 @@ local function healthcheck_passive(api_ctx)
         for i, status in ipairs(http_statuses) do
             if resp_status == status then
                 checker:report_http_status(api_ctx.balancer_ip,
-                                           port or api_ctx.balancer_port,
+                                           port,
                                            host,
                                            resp_status)
             end
@@ -845,11 +861,66 @@ local function healthcheck_passive(api_ctx)
     for i, status in ipairs(http_statuses) do
         if resp_status == status then
             checker:report_http_status(api_ctx.balancer_ip,
-                                       port or api_ctx.balancer_port,
+                                       port,
                                        host,
                                        resp_status)
         end
     end
+end
+
+
+function _M.status()
+    core.response.exit(200, core.json.encode({ status = "ok" }))
+end
+
+function _M.status_ready()
+    local local_conf = core.config.local_conf()
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
+                                              role, "config_provider")
+    if provider == "yaml" or provider == "etcd" then
+        local status_shdict = ngx.shared["status-report"]
+        local ids = status_shdict:get_keys()
+        local error
+        local worker_count = ngx.worker.count()
+       if #ids ~= worker_count then
+            core.log.warn("worker count: ", worker_count, " but status report count: ", #ids)
+            error = "worker count: " .. ngx.worker.count() ..
+            " but status report count: " .. #ids
+        end
+        if error then
+            core.response.exit(503, core.json.encode({
+                status = "error",
+                error = error
+            }))
+            return
+        end
+        for _, id in ipairs(ids) do
+            local ready = status_shdict:get(id)
+            if not ready then
+                core.log.warn("worker id: ", id, " has not received configuration")
+                error = "worker id: " .. id ..
+                                  " has not received configuration"
+                break
+            end
+        end
+
+        if error then
+            core.response.exit(503, core.json.encode({
+                status = "error",
+                error = error
+            }))
+            return
+        end
+
+        core.response.exit(200, core.json.encode({ status = "ok" }))
+        return
+    end
+
+    core.response.exit(503, core.json.encode({
+        status = "error",
+        message = "unknown config provider: " .. tostring(provider)
+    }), { ["Content-Type"] = "application/json" })
 end
 
 
@@ -1162,6 +1233,8 @@ function _M.stream_log_phase()
     if not api_ctx then
         return
     end
+
+    healthcheck_passive(api_ctx)
 
     core.ctx.release_vars(api_ctx)
     if api_ctx.plugins then

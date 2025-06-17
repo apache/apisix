@@ -30,6 +30,10 @@ local is_http = ngx.config.subsystem == "http"
 local upstreams
 local healthcheck
 
+local healthcheck_shdict_name = "upstream-healthcheck"
+if not is_http then
+    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
+end
 
 local set_upstream_tls_client_param
 local ok, apisix_ngx_upstream = pcall(require, "resty.apisix.upstream")
@@ -82,6 +86,9 @@ _M.set = set_directly
 
 
 local function release_checker(healthcheck_parent)
+    if not healthcheck_parent or not healthcheck_parent.checker then
+        return
+    end
     local checker = healthcheck_parent.checker
     core.log.info("try to release checker: ", tostring(checker))
     checker:delayed_clear(3)
@@ -101,7 +108,8 @@ local function create_checker(upstream)
     end
 
     local healthcheck_parent = upstream.parent
-    if healthcheck_parent.checker and healthcheck_parent.checker_upstream == upstream then
+    if healthcheck_parent.checker and healthcheck_parent.checker_upstream == upstream
+        and healthcheck_parent.checker_nodes_ver == upstream._nodes_ver then
         return healthcheck_parent.checker
     end
 
@@ -116,7 +124,7 @@ local function create_checker(upstream)
 
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(healthcheck_parent),
-        shm_name = "upstream-healthcheck",
+        shm_name = healthcheck_shdict_name,
         checks = upstream.checks,
         -- the events.init_worker will be executed in the init_worker phase,
         -- events.healthcheck_events_module is set
@@ -168,6 +176,7 @@ local function create_checker(upstream)
 
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
+    healthcheck_parent.checker_nodes_ver = upstream._nodes_ver
     healthcheck_parent.checker_idx = check_idx
 
     upstream.is_creating_checker = nil
@@ -295,27 +304,21 @@ function _M.set_by_route(route, api_ctx)
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
+            if not up_conf._nodes_ver then
+                up_conf._nodes_ver = 0
+            end
+            up_conf._nodes_ver = up_conf._nodes_ver + 1
+
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
             end
 
-            local new_up_conf = core.table.clone(up_conf)
-            new_up_conf.nodes = new_nodes
-            new_up_conf.original_nodes = up_conf.nodes
+            up_conf.nodes = new_nodes
 
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
-                          core.json.delay_encode(new_up_conf, true))
-
-            local parent = up_conf.parent
-            if parent.value.upstream then
-                -- the up_conf comes from route or service
-                parent.value.upstream = new_up_conf
-            else
-                parent.value = new_up_conf
-            end
-            up_conf = new_up_conf
+                          core.json.delay_encode(up_conf, true))
         end
     end
 
@@ -323,10 +326,12 @@ function _M.set_by_route(route, api_ctx)
     local conf_version = up_conf.parent.modifiedIndex
     -- include the upstream object as part of the version, because the upstream will be changed
     -- by service discovery or dns resolver.
-    set_directly(api_ctx, id, conf_version .. "#" .. tostring(up_conf), up_conf)
+    set_directly(api_ctx, id, conf_version .. "#" .. tostring(up_conf) .. "#"
+                                    .. tostring(up_conf._nodes_ver or ''), up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
+        release_checker(up_conf.parent)
         return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
@@ -349,6 +354,8 @@ function _M.set_by_route(route, api_ctx)
             end
         end
 
+        local checker = fetch_healthchecker(up_conf)
+        api_ctx.up_checker = checker
         return
     end
 
@@ -359,10 +366,8 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
-    if nodes_count > 1 then
-        local checker = fetch_healthchecker(up_conf)
-        api_ctx.up_checker = checker
-    end
+    local checker = fetch_healthchecker(up_conf)
+    api_ctx.up_checker = checker
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then

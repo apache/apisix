@@ -49,8 +49,6 @@ local str_find = string.find
 local str_byte = string.byte
 local str_sub = string.sub
 local str_format = string.format
-local string = string
-local table = table
 
 
 local _M = {}
@@ -246,12 +244,6 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    if yaml_conf.apisix.enable_admin and
-        yaml_conf.deployment.config_provider == "yaml"
-    then
-        util.die("ERROR: Admin API can only be used with etcd config_provider.\n")
-    end
-
     local or_ver = get_openresty_version()
     if or_ver == nil then
         util.die("can not find openresty\n")
@@ -349,6 +341,13 @@ Please modify "admin_key" in conf/config.yaml .
         local port = yaml_conf.deployment.admin.admin_listen.port
         admin_server_addr = validate_and_get_listen_addr("admin port", "0.0.0.0", ip,
                                                           9180, port)
+    end
+
+    local status_server_addr
+    if yaml_conf.apisix.status then
+        status_server_addr = validate_and_get_listen_addr("status port", "127.0.0.1",
+                             yaml_conf.apisix.status.ip, 7085,
+                             yaml_conf.apisix.status.port)
     end
 
     local control_server_addr
@@ -503,38 +502,6 @@ Please modify "admin_key" in conf/config.yaml .
     yaml_conf.apisix.ssl.listen = ssl_listen
     yaml_conf.apisix.enable_http3_in_server_context = enable_http3_in_server_context
 
-
-    if yaml_conf.apisix.ssl.ssl_trusted_certificate ~= nil then
-        local cert_paths = {}
-        local ssl_certificates = yaml_conf.apisix.ssl.ssl_trusted_certificate
-        for cert_path in string.gmatch(ssl_certificates, '([^,]+)') do
-            cert_path = util.trim(cert_path)
-            if cert_path == "system" then
-                local trusted_certs_path, err = util.get_system_trusted_certs_filepath()
-                if not trusted_certs_path then
-                    util.die(err)
-                end
-                table.insert(cert_paths, trusted_certs_path)
-            else
-                -- During validation, the path is relative to PWD
-                -- When Nginx starts, the path is relative to conf
-                -- Therefore we need to check the absolute version instead
-                cert_path = pl_path.abspath(cert_path)
-                if not pl_path.exists(cert_path) then
-                    util.die("certificate path", cert_path, "doesn't exist\n")
-                end
-
-                table.insert(cert_paths, cert_path)
-            end
-        end
-
-        local combined_cert_filepath = yaml_conf.apisix.ssl.ssl_trusted_combined_path
-                                       or "/usr/local/apisix/conf/ssl_trusted_combined.pem"
-        util.gen_trusted_certs_combined_file(combined_cert_filepath, cert_paths)
-
-        yaml_conf.apisix.ssl.ssl_trusted_certificate = combined_cert_filepath
-    end
-
     -- enable ssl with place holder crt&key
     yaml_conf.apisix.ssl.ssl_cert = "cert/ssl_PLACE_HOLDER.crt"
     yaml_conf.apisix.ssl.ssl_cert_key = "cert/ssl_PLACE_HOLDER.key"
@@ -608,6 +575,7 @@ Please modify "admin_key" in conf/config.yaml .
         enabled_plugins = enabled_plugins,
         enabled_stream_plugins = enabled_stream_plugins,
         dubbo_upstream_multiplex_count = dubbo_upstream_multiplex_count,
+        status_server_addr = status_server_addr,
         tcp_enable_ssl = tcp_enable_ssl,
         admin_server_addr = admin_server_addr,
         control_server_addr = control_server_addr,
@@ -642,6 +610,10 @@ Please modify "admin_key" in conf/config.yaml .
             sys_conf[k] = v
         end
     end
+
+    sys_conf.standalone_with_admin_api = env.deployment_role == "traditional" and
+        yaml_conf.apisix.enable_admin and yaml_conf.deployment.config_provider == "yaml"
+
     sys_conf["wasm"] = yaml_conf.wasm
 
 

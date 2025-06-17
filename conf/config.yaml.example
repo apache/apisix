@@ -99,9 +99,7 @@ apisix:
       # - ip: 127.0.0.3                           # If not set, default to `0.0.0.0`.
       #   port: 9445
       #   enable_http3: true
-    ssl_trusted_combined_path: /usr/local/apisix/conf/ssl_trusted_combined.pem # All the trusted certificates will be combined into a single file
-    #ssl_trusted_certificate: system              # Specifies comma separated list of trusted CA. Value can be either "system"(for using system available ca certs) or
-                                                # a file path with trusted CA certificates in the PEM format
+    #ssl_trusted_certificate: system              # Specifies a file path with trusted CA certificates in the PEM format. The default value is "system".
     ssl_protocols: TLSv1.2 TLSv1.3                # TLS versions supported.
     ssl_ciphers: ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384
     ssl_session_tickets: false  # If true, session tickets are used for SSL/TLS connections.
@@ -134,7 +132,10 @@ apisix:
   events:                             # Event distribution module configuration
     module: lua-resty-events          # Sets the name of the events module used.
                                       # Supported module: lua-resty-worker-events and lua-resty-events
-
+# status:                       # When enabled, APISIX will provide `/status` and `/status/ready` endpoints
+  #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
+  #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
+                                  # or (standalone mode) the config isn't loaded yet either via file or Admin API.
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -167,6 +168,7 @@ nginx_config:                     # Config for render the template to generate n
   meta:
     lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
       prometheus-metrics: 15m
+      standalone-config: 10m
 
   stream:
     enable_access_log: false                 # Enable stream proxy access logging.
@@ -180,6 +182,7 @@ nginx_config:                     # Config for render the template to generate n
       plugin-limit-conn-stream: 10m
       worker-events-stream: 10m
       tars-stream: 1m
+      upstream-healthcheck-stream: 10m
 
   # Add other custom Nginx configurations.
   # Users are responsible for validating the custom configurations
@@ -275,6 +278,7 @@ nginx_config:                     # Config for render the template to generate n
       tars: 1m
       cas-auth: 10m
       ocsp-stapling: 10m
+      mcp-session: 10m
 
 # discovery:                      # Service Discovery
 #  dns:
@@ -480,8 +484,10 @@ plugins:                           # plugin list (sorted by priority)
   - body-transformer               # priority: 1080
   - ai-prompt-template             # priority: 1071
   - ai-prompt-decorator            # priority: 1070
+  - ai-prompt-guard                # priority: 1072
   - ai-rag                         # priority: 1060
-  - ai-content-moderation          # priority: 1040 TODO: compare priority with other ai plugins
+  - ai-rate-limiting               # priority: 1030
+  - ai-aws-content-moderation      # priority: 1040 TODO: compare priority with other ai plugins
   - proxy-mirror                   # priority: 1010
   - proxy-rewrite                  # priority: 1008
   - workflow                       # priority: 1006
@@ -494,10 +500,11 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
-  - server-info                    # priority: 990
+  #- server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
+  - mcp-bridge                     # priority: 510
   - degraphql                      # priority: 509
   - kafka-proxy                    # priority: 508
   #- dubbo-proxy                   # priority: 507
@@ -507,6 +514,7 @@ plugins:                           # plugin list (sorted by priority)
   - public-api                     # priority: 501
   - prometheus                     # priority: 500
   - datadog                        # priority: 495
+  - lago                           # priority: 415
   - loki-logger                    # priority: 414
   - elasticsearch-logger           # priority: 413
   - echo                           # priority: 412
@@ -666,6 +674,7 @@ deployment:                    # Deployment configurations
       #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    enable_admin_ui: true         # Enable embedded APISIX Dashboard UI.
     allow_admin:                  # Limit Admin API access by IP addresses.
       - 127.0.0.0/24              # If not set, any IP address is allowed.
       # - "::/64"

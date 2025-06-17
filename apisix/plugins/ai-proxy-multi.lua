@@ -17,15 +17,14 @@
 
 local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
+local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
-local base = require("apisix.plugins.ai-proxy.base")
 
 local require = require
 local pcall = pcall
 local ipairs = ipairs
 local type = type
 
-local internal_server_error = ngx.HTTP_INTERNAL_SERVER_ERROR
 local priority_balancer = require("apisix.balancer.priority")
 
 local pickers = {}
@@ -36,7 +35,7 @@ local lrucache_server_picker = core.lrucache.new({
 local plugin_name = "ai-proxy-multi"
 local _M = {
     version = 0.5,
-    priority = 998,
+    priority = 1041,
     name = plugin_name,
     schema = schema.ai_proxy_multi_schema,
 }
@@ -64,10 +63,16 @@ end
 
 
 function _M.check_schema(conf)
-    for _, provider in ipairs(conf.providers) do
-        local ai_driver = pcall(require, "apisix.plugins.ai-drivers." .. provider.name)
+    local ok, err = core.schema.check(schema.ai_proxy_multi_schema, conf)
+    if not ok then
+        return false, err
+    end
+
+    for _, instance in ipairs(conf.instances) do
+        local ai_driver, err = pcall(require, "apisix.plugins.ai-drivers." .. instance.provider)
         if not ai_driver then
-            return false, "provider: " .. provider.name .. " is not supported."
+            core.log.warn("fail to require ai provider: ", instance.provider, ", err", err)
+            return false, "ai provider: " .. instance.provider .. " is not supported."
         end
     end
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
@@ -96,21 +101,21 @@ function _M.check_schema(conf)
         end
     end
 
-    return core.schema.check(schema.ai_proxy_multi_schema, conf)
+    return ok
 end
 
 
-local function transform_providers(new_providers, provider)
-    if not new_providers._priority_index then
-        new_providers._priority_index = {}
+local function transform_instances(new_instances, instance)
+    if not new_instances._priority_index then
+        new_instances._priority_index = {}
     end
 
-    if not new_providers[provider.priority] then
-        new_providers[provider.priority] = {}
-        core.table.insert(new_providers._priority_index, provider.priority)
+    if not new_instances[instance.priority] then
+        new_instances[instance.priority] = {}
+        core.table.insert(new_instances._priority_index, instance.priority)
     end
 
-    new_providers[provider.priority][provider.name] = provider.weight
+    new_instances[instance.priority][instance.name] = instance.weight
 end
 
 
@@ -120,80 +125,83 @@ local function create_server_picker(conf, ups_tab)
         pickers[conf.balancer.algorithm] = require("apisix.balancer." .. conf.balancer.algorithm)
         picker = pickers[conf.balancer.algorithm]
     end
-    local new_providers = {}
-    for i, provider in ipairs(conf.providers) do
-        transform_providers(new_providers, provider)
+    local new_instances = {}
+    for _, ins in ipairs(conf.instances) do
+        transform_instances(new_instances, ins)
     end
 
-    if #new_providers._priority_index > 1 then
-        core.log.info("new providers: ", core.json.delay_encode(new_providers))
-        return priority_balancer.new(new_providers, ups_tab, picker)
+    if #new_instances._priority_index > 1 then
+        core.log.info("new instances: ", core.json.delay_encode(new_instances))
+        return priority_balancer.new(new_instances, ups_tab, picker)
     end
     core.log.info("upstream nodes: ",
-                core.json.delay_encode(new_providers[new_providers._priority_index[1]]))
-    return picker.new(new_providers[new_providers._priority_index[1]], ups_tab)
+                core.json.delay_encode(new_instances[new_instances._priority_index[1]]))
+    return picker.new(new_instances[new_instances._priority_index[1]], ups_tab)
 end
 
 
-local function get_provider_conf(providers, name)
-    for i, provider in ipairs(providers) do
-        if provider.name == name then
-            return provider
+local function get_instance_conf(instances, name)
+    for _, ins in ipairs(instances) do
+        if ins.name == name then
+            return ins
         end
     end
 end
 
 
 local function pick_target(ctx, conf, ups_tab)
-    ctx.ai_balancer_try_count = (ctx.ai_balancer_try_count or 0) + 1
-    if ctx.ai_balancer_try_count > 1 then
-        if ctx.server_picker and ctx.server_picker.after_balance then
-            ctx.server_picker.after_balance(ctx, true)
-        end
-    end
-
     local server_picker = ctx.server_picker
     if not server_picker then
         server_picker = lrucache_server_picker(ctx.matched_route.key, plugin.conf_version(conf),
                                                create_server_picker, conf, ups_tab)
     end
     if not server_picker then
-        return internal_server_error, "failed to fetch server picker"
+        return nil, nil, "failed to fetch server picker"
     end
-
-    local provider_name = server_picker.get(ctx)
-    local provider_conf = get_provider_conf(conf.providers, provider_name)
-
-    ctx.balancer_server = provider_name
     ctx.server_picker = server_picker
 
-    return provider_name, provider_conf
+    local instance_name, err = server_picker.get(ctx)
+    if err then
+        return nil, nil, err
+    end
+    ctx.balancer_server = instance_name
+    if conf.fallback_strategy == "instance_health_and_rate_limiting" then
+        local ai_rate_limiting = require("apisix.plugins.ai-rate-limiting")
+        for _ = 1, #conf.instances do
+            if ai_rate_limiting.check_instance_status(nil, ctx, instance_name) then
+                break
+            end
+            core.log.info("ai instance: ", instance_name,
+                             " is not available, try to pick another one")
+            server_picker.after_balance(ctx, true)
+            instance_name, err = server_picker.get(ctx)
+            if err then
+                return nil, nil, err
+            end
+            ctx.balancer_server = instance_name
+        end
+    end
+
+    local instance_conf = get_instance_conf(conf.instances, instance_name)
+    return instance_name, instance_conf
 end
 
 
-local function get_load_balanced_provider(ctx, conf, ups_tab, request_table)
-    local provider_name, provider_conf
-    if #conf.providers == 1 then
-        provider_name = conf.providers[1].name
-        provider_conf = conf.providers[1]
+local function pick_ai_instance(ctx, conf, ups_tab)
+    local instance_name, instance_conf, err
+    if #conf.instances == 1 then
+        instance_name = conf.instances[1].name
+        instance_conf = conf.instances[1]
     else
-        provider_name, provider_conf = pick_target(ctx, conf, ups_tab)
+        instance_name, instance_conf, err = pick_target(ctx, conf, ups_tab)
     end
 
-    core.log.info("picked provider: ", provider_name)
-    if provider_conf.model then
-        request_table.model = provider_conf.model
-    end
-
-    provider_conf.__name = provider_name
-    return provider_name, provider_conf
-end
-
-local function get_model_name(...)
+    core.log.info("picked instance: ", instance_name)
+    return instance_name, instance_conf, err
 end
 
 
-local function proxy_request_to_llm(conf, request_table, ctx)
+function _M.access(conf, ctx)
     local ups_tab = {}
     local algo = core.table.try_read_attr(conf, "balancer", "algorithm")
     if algo == "chash" then
@@ -203,31 +211,17 @@ local function proxy_request_to_llm(conf, request_table, ctx)
         ups_tab["hash_on"] = hash_on
     end
 
-    ::retry::
-    local provider, provider_conf = get_load_balanced_provider(ctx, conf, ups_tab, request_table)
-    local extra_opts = {
-        endpoint = core.table.try_read_attr(provider_conf, "override", "endpoint"),
-        query_params = provider_conf.auth.query or {},
-        headers = (provider_conf.auth.header or {}),
-        model_options = provider_conf.options,
-    }
-
-    local ai_driver = require("apisix.plugins.ai-drivers." .. provider)
-    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
-    if not res then
-        if (ctx.balancer_try_count or 0) < 1 then
-            core.log.warn("failed to send request to LLM: ", err, ". Retrying...")
-            goto retry
-        end
-        return nil, err, nil
+    local name, ai_instance, err = pick_ai_instance(ctx, conf, ups_tab)
+    if err then
+        return 503, err
     end
-
-    request_table.model = provider_conf.model
-    return res, nil, httpc
+    ctx.picked_ai_instance_name = name
+    ctx.picked_ai_instance = ai_instance
+    ctx.bypass_nginx_upstream = true
 end
 
 
-_M.access = base.new(proxy_request_to_llm, get_model_name)
+_M.before_proxy = base.before_proxy
 
 
 return _M

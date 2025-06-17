@@ -67,7 +67,8 @@ local _M = {
         "ECDHE-ECDSA-CHACHA20-POLY1305", "ECDHE-RSA-CHACHA20-POLY1305",
         "DHE-RSA-AES128-GCM-SHA256", "DHE-RSA-AES256-GCM-SHA384",
       }, ":"),
-      ssl_session_tickets = false
+      ssl_session_tickets = false,
+      ssl_trusted_certificate = "system"
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,
@@ -93,7 +94,9 @@ local _M = {
     },
     meta = {
       lua_shared_dict = {
-        ["prometheus-metrics"] = "15m"
+        ["prometheus-metrics"] = "15m",
+        ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {
@@ -108,7 +111,8 @@ local _M = {
         ["lrucache-lock-stream"] = "10m",
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
-        ["tars-stream"] = "1m"
+        ["tars-stream"] = "1m",
+        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -159,6 +163,8 @@ local _M = {
         ["plugin-limit-req-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-count-redis-cluster-slot-lock"] = "1m",
         ["plugin-limit-conn-redis-cluster-slot-lock"] = "1m",
+        ["plugin-ai-rate-limiting"] = "10m",
+        ["plugin-ai-rate-limiting-reset-header"] = "10m",
         tracing_buffer = "10m",
         ["plugin-api-breaker"] = "10m",
         ["etcd-cluster-health-check"] = "10m",
@@ -169,7 +175,8 @@ local _M = {
         ["ext-plugin"] = "1m",
         tars = "1m",
         ["cas-auth"] = "10m",
-        ["ocsp-stapling"] = "10m"
+        ["ocsp-stapling"] = "10m",
+        ["mcp-session"] = "10m",
       }
     }
   },
@@ -216,22 +223,26 @@ local _M = {
     "body-transformer",
     "ai-prompt-template",
     "ai-prompt-decorator",
+    "ai-prompt-guard",
     "ai-rag",
-    "ai-content-moderation",
+    "ai-rate-limiting",
+    "ai-proxy-multi",
+    "ai-proxy",
+    "ai-aws-content-moderation",
     "proxy-mirror",
     "proxy-rewrite",
     "workflow",
     "api-breaker",
-    "ai-proxy",
-    "ai-proxy-multi",
     "limit-conn",
     "limit-count",
     "limit-req",
     "gzip",
-    "server-info",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
     "grpc-transcode",
@@ -240,6 +251,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "lago",
     "loki-logger",
     "elasticsearch-logger",
     "echo",
@@ -266,6 +278,7 @@ local _M = {
     "serverless-post-function",
     "ext-plugin-post-req",
     "ext-plugin-post-resp",
+    "ai-request-rewrite",
   },
   stream_plugins = { "ip-restriction", "limit-conn", "mqtt-proxy", "syslog" },
   plugin_attr = {
@@ -348,6 +361,7 @@ local _M = {
         }
       },
       enable_admin_cors = true,
+      enable_admin_ui = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
         ip = "0.0.0.0",

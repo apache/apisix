@@ -67,16 +67,10 @@ rerun_flaky_tests() {
 }
 
 install_curl () {
-    CURL_VERSION="7.88.0"
-    wget -q https://curl.se/download/curl-${CURL_VERSION}.tar.gz
-    tar -xzf curl-${CURL_VERSION}.tar.gz
-    cd curl-${CURL_VERSION}
-    ./configure --prefix=/usr/local --with-openssl --with-nghttp2
-    make
-    sudo make install
-    sudo ldconfig
-    cd ..
-    rm -rf curl-${CURL_VERSION}
+    CURL_VERSION="8.13.0"
+    wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
+    tar -xf curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
+    sudo cp curl /usr/bin
     curl -V
 }
 
@@ -96,24 +90,13 @@ install_grpcurl () {
 
 install_vault_cli () {
     VAULT_VERSION="1.9.0"
-    # the certificate can't be verified in CentOS7, see
-    # https://blog.devgenius.io/lets-encrypt-change-affects-openssl-1-0-x-and-centos-7-49bd66016af3
-    wget -q --no-check-certificate https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
+    wget -q https://releases.hashicorp.com/vault/${VAULT_VERSION}/vault_${VAULT_VERSION}_linux_amd64.zip
     unzip vault_${VAULT_VERSION}_linux_amd64.zip && mv ./vault /usr/local/bin
 }
 
 install_nodejs () {
-    NODEJS_PREFIX="/usr/local/node"
-    NODEJS_VERSION="16.13.1"
-    wget -q https://nodejs.org/dist/v${NODEJS_VERSION}/node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    tar -xf node-v${NODEJS_VERSION}-linux-x64.tar.xz
-    rm -f /usr/local/bin/node
-    rm -f /usr/local/bin/npm
-    mv node-v${NODEJS_VERSION}-linux-x64 ${NODEJS_PREFIX}
-    ln -s ${NODEJS_PREFIX}/bin/node /usr/local/bin/node
-    ln -s ${NODEJS_PREFIX}/bin/npm /usr/local/bin/npm
-
-    npm config set registry https://registry.npmjs.org/
+    curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s install --cleanup lts
+    corepack enable pnpm
 }
 
 install_brotli () {
@@ -182,9 +165,13 @@ GRPC_SERVER_EXAMPLE_VER=20210819
 
 linux_get_dependencies () {
     apt update
-    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev
+    apt install -y cpanminus build-essential libncurses5-dev libreadline-dev libssl-dev perl libpcre3 libpcre3-dev xz-utils
+    apt remove -y curl
     apt-get install -y libyaml-dev
     wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
+
+    # install curl with http3 support
+    install_curl
 }
 
 function start_grpc_server_example() {

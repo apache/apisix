@@ -15,11 +15,14 @@
 -- limitations under the License.
 --
 
+local ngx = ngx
 local yaml = require("lyaml")
 local profile = require("apisix.core.profile")
 local util = require("apisix.cli.util")
+local schema = require("apisix.cli.schema")
 local default_conf = require("apisix.cli.config")
 local dkjson = require("dkjson")
+local pl_path = require("pl.path")
 
 local pairs = pairs
 local type = type
@@ -263,10 +266,18 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
+    -- fill the default value by the schema
+    local ok, err = schema.validate(default_conf)
+    if not ok then
+        return nil, err
+    end
     if default_conf.deployment then
         default_conf.deployment.config_provider = "etcd"
         if default_conf.deployment.role == "traditional" then
             default_conf.etcd = default_conf.deployment.etcd
+            if default_conf.deployment.role_traditional.config_provider == "yaml" then
+                default_conf.deployment.config_provider = "yaml"
+            end
 
         elseif default_conf.deployment.role == "control_plane" then
             default_conf.etcd = default_conf.deployment.etcd
@@ -283,7 +294,9 @@ function _M.read_yaml_conf(apisix_home)
         end
     end
 
-    if default_conf.deployment.config_provider == "yaml" then
+    --- using `not ngx` to check whether the current execution environment is apisix cli module,
+    --- because it is only necessary to parse and validate `apisix.yaml` in apisix cli.
+    if default_conf.deployment.config_provider == "yaml" and not ngx then
         local apisix_conf_path = profile:yaml_path("apisix")
         local apisix_conf_yaml, _ = util.read_file(apisix_conf_path)
         if apisix_conf_yaml then
@@ -294,6 +307,28 @@ function _M.read_yaml_conf(apisix_home)
                     return nil, err
                 end
             end
+        end
+    end
+
+    local apisix_ssl = default_conf.apisix.ssl
+    if apisix_ssl and apisix_ssl.ssl_trusted_certificate then
+        -- default value is set to "system" during schema validation
+        if apisix_ssl.ssl_trusted_certificate == "system" then
+            local trusted_certs_path, err = util.get_system_trusted_certs_filepath()
+            if not trusted_certs_path then
+                util.die(err)
+            end
+
+            apisix_ssl.ssl_trusted_certificate = trusted_certs_path
+        else
+            -- During validation, the path is relative to PWD
+            -- When Nginx starts, the path is relative to conf
+            -- Therefore we need to check the absolute version instead
+            local cert_path = pl_path.abspath(apisix_ssl.ssl_trusted_certificate)
+            if not pl_path.exists(cert_path) then
+                util.die("certificate path", cert_path, "doesn't exist\n")
+            end
+            apisix_ssl.ssl_trusted_certificate = cert_path
         end
     end
 

@@ -29,10 +29,12 @@ local core_str     = require("apisix.core.string")
 local new_tab      = require("table.new")
 local inspect      = require("inspect")
 local errlog       = require("ngx.errlog")
+local process      = require("ngx.process")
 local log_level    = errlog.get_sys_filter_level()
 local NGX_INFO     = ngx.INFO
 local check_schema = require("apisix.core.schema").check
 local exiting      = ngx.worker.exiting
+local worker_id    = ngx.worker.id
 local insert_tab   = table.insert
 local remove_tab   = table.remove
 local type         = type
@@ -41,6 +43,7 @@ local setmetatable = setmetatable
 local ngx_sleep    = require("apisix.core.utils").sleep
 local ngx_timer_at = ngx.timer.at
 local ngx_time     = ngx.time
+local ngx          = ngx
 local sub_str      = string.sub
 local tostring     = tostring
 local tonumber     = tonumber
@@ -66,6 +69,7 @@ local err_etcd_grpc_engine_timeout = "context deadline exceeded"
 local err_etcd_grpc_ngx_timeout = "timeout"
 local err_etcd_unhealthy_all = "has no healthy etcd endpoint available"
 local health_check_shm_name = "etcd-cluster-health-check"
+local status_report_shared_dict_name = "status-report"
 if not is_http then
     health_check_shm_name = health_check_shm_name .. "-stream"
 end
@@ -260,6 +264,15 @@ local function do_run_watch(premature)
         local rev = tonumber(res.result.header.revision)
         if rev == nil then
             log.warn("receive a invalid revision header, header: ", inspect(res.result.header))
+            cancel_watch(http_cli)
+            break
+        end
+
+        if rev < watch_ctx.rev then
+            log.error("received smaller revision, rev=", rev, ", watch_ctx.rev=",
+                      watch_ctx.rev,". etcd may be restarted. resyncing....")
+            watch_ctx.rev = rev
+            produce_res(nil, "restarted")
             cancel_watch(http_cli)
             break
         end
@@ -474,6 +487,23 @@ local function short_key(self, str)
 end
 
 
+local function sync_status_to_shdict(status)
+    local local_conf = config_local.local_conf()
+    if not local_conf.apisix.status then
+        return
+    end
+    if process.type() ~= "worker" then
+        return
+    end
+    local status_shdict = ngx.shared[status_report_shared_dict_name]
+    if not status_shdict then
+        return
+    end
+    local id = worker_id()
+    status_shdict:set(id, status)
+end
+
+
 local function load_full_data(self, dir_res, headers)
     local err
     local changed = false
@@ -545,6 +575,8 @@ local function load_full_data(self, dir_res, headers)
             end
 
             if data_valid and self.checker then
+                -- TODO: An opts table should be used
+                -- as different checkers may use different parameters
                 data_valid, err = self.checker(item.value, item.key)
                 if not data_valid then
                     log.error("failed to check item data of [", self.key,
@@ -570,6 +602,7 @@ local function load_full_data(self, dir_res, headers)
     end
 
     if headers then
+        self.prev_index = tonumber(headers["X-Etcd-Index"]) or 0
         self:upgrade_version(headers["X-Etcd-Index"])
     end
 
@@ -578,6 +611,7 @@ local function load_full_data(self, dir_res, headers)
     end
 
     self.need_reload = false
+    sync_status_to_shdict(true)
 end
 
 
@@ -634,7 +668,7 @@ local function sync_data(self)
     log.info("res: ", json.delay_encode(dir_res, true), ", err: ", err)
 
     if not dir_res then
-        if err == "compacted" then
+        if err == "compacted" or err == "restarted" then
             self.need_reload = true
             log.error("waitdir [", self.key, "] err: ", err,
                      ", will read the configuration again via readdir")
@@ -953,7 +987,6 @@ function _M.new(key, opts)
     if not health_check_timeout or health_check_timeout < 0 then
         health_check_timeout = 10
     end
-
     local automatic = opts and opts.automatic
     local item_schema = opts and opts.item_schema
     local filter_fun = opts and opts.filter
@@ -1120,6 +1153,7 @@ end
 
 
 function _M.init_worker()
+    sync_status_to_shdict(false)
     local local_conf, err = config_local.local_conf()
     if not local_conf then
         return nil, err
