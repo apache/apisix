@@ -34,6 +34,22 @@ local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
+local function check_duplicate(item, key, id_set)
+    local identifier, identifier_type
+    if key == "consumers" then
+        identifier = item.id or item.username
+        identifier_type = item.id and "credential id" or "username"
+    else
+        identifier = item.id
+        identifier_type = "id"
+    end
+
+    if id_set[identifier] then
+        return true, "found duplicate " .. identifier_type .. " " .. identifier .. " in " .. key
+    end
+    id_set[identifier] = true
+    return false
+end
 
 local function get_config()
     local config = shared_dict:get("config")
@@ -142,6 +158,7 @@ local function update(ctx)
             apisix_yaml[key] = table_new(#items, 0)
             local item_schema = obj.item_schema
             local item_checker = obj.checker
+            local id_set = {}
 
             for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
@@ -156,12 +173,25 @@ local function update(ctx)
                     end
                 end
                 if item_checker then
-                    valid, err = item_checker(item_temp)
+                    local item_checker_key
+                    if item.id then
+                        -- credential need to check key
+                        item_checker_key = "/" .. key .. "/" .. item_temp.id
+                    end
+                    valid, err = item_checker(item_temp, item_checker_key)
                     if not valid then
                         core.log.error(err_prefix, err)
                         core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
+                -- prevent updating resource with the same ID
+                -- (e.g., service ID or other resource IDs) in a single request
+                local duplicated, err = check_duplicate(item, key, id_set)
+                if duplicated then
+                    core.log.error(err)
+                    core.response.exit(400, { error_msg = err })
+                end
+
                 table_insert(apisix_yaml[key], item)
             end
         end
@@ -235,6 +265,56 @@ function _M.run()
 end
 
 
+local patch_schema
+do
+    local resource_schema = {
+        "proto",
+        "global_rule",
+        "route",
+        "service",
+        "upstream",
+        "consumer",
+        "consumer_group",
+        "credential",
+        "ssl",
+        "plugin_config",
+    }
+    local function attach_modifiedIndex_schema(name)
+        local schema = core.schema[name]
+        if not schema then
+            core.log.error("schema for ", name, " not found")
+            return
+        end
+        if schema.properties and not schema.properties.modifiedIndex then
+            schema.properties.modifiedIndex = {
+                type = "integer",
+            }
+        end
+    end
+
+    local function patch_credential_schema()
+        local credential_schema = core.schema["credential"]
+        if credential_schema and credential_schema.properties then
+            credential_schema.properties.id = {
+                type = "string",
+                minLength = 15,
+                maxLength = 128,
+                pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
+            }
+        end
+    end
+
+    function patch_schema()
+        -- attach modifiedIndex schema to all resource schemas
+        for _, name in ipairs(resource_schema) do
+            attach_modifiedIndex_schema(name)
+        end
+        -- patch credential schema
+        patch_credential_schema()
+    end
+end
+
+
 function _M.init_worker()
     local function update_config()
         local config, err = shared_dict:get("config")
@@ -251,6 +331,8 @@ function _M.init_worker()
         config_yaml._update_config(config)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
+
+    patch_schema()
 end
 
 

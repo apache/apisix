@@ -500,7 +500,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
-  - server-info                    # priority: 990
+  #- server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
@@ -674,6 +674,7 @@ deployment:                    # Deployment configurations
       #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    enable_admin_ui: true         # Enable embedded APISIX Dashboard UI.
     allow_admin:                  # Limit Admin API access by IP addresses.
       - 127.0.0.0/24              # If not set, any IP address is allowed.
       # - "::/64"
