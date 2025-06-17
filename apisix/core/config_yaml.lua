@@ -62,17 +62,22 @@ local _M = {
                     "cannot be restored from other workers and shared dict"
 }
 
+local file_configs = {
+    {path = apisix_yaml_path, type = "yaml"},
+    {path = apisix_json_path, type = "json"}
+}
+-- file_type: 'yaml' or 'json'
+local file_type
+-- file_path: apisix_yaml_path or apisix_json_path
+local file_path
 
 local mt = {
     __index = _M,
     __tostring = function(self)
-        return "apisix.yaml key: " .. (self.key or "")
+        return "apisix." .. file_type .. " key: " .. (self.key or "")
     end
 }
 
--- file_type: yaml or json
-local file_type
-local file_path
 local apisix_yaml
 local apisix_yaml_mtime
 
@@ -119,19 +124,14 @@ local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
     end
-    local file_configs = {
-        {path = apisix_yaml_path, type = "yaml"},
-        {path = apisix_json_path, type = "json"}
-    }
-    
-
+    local last_modification_time
     for _, config in ipairs(file_configs) do
         local attributes, err = lfs.attributes(config.path)
         if attributes then
             file_type = config.type
             file_path = config.path
 
-            local last_modification_time = attributes.modification
+            last_modification_time = attributes.modification
             if apisix_yaml_mtime == last_modification_time then
                 return
             end
@@ -142,8 +142,8 @@ local function read_apisix_yaml(premature, pre_mtime)
         end
     end
 
-    if not file_path then
-        log.error("Faild to find any configuration file with path ", apisix_yaml_path, " or path ", apisix_json_path, ".")
+    if not file_path or not file_type then
+        log.error("Faild to find any configuration file with path ", apisix_yaml_path, " or ", apisix_json_path, ".")
         return
     end
 
@@ -168,23 +168,22 @@ local function read_apisix_yaml(premature, pre_mtime)
     local raw_config = f:read("*a")
     f:close()
 
+    local apisix_config_new
     if file_type == "yaml" then
-        local apisix_yaml_new = yaml.load(raw_config)
-        if not apisix_yaml_new then
-            log.error("failed to parse the content of file " .. file_path)
-            return
-        end
+        apisix_config_new = yaml.load(raw_config)
+    elseif file_type == "json" then
+        apisix_config_new = json.decode(raw_config)
+    else
+        log.error("invalid file type: ", file_type)
+        return
     end
 
-    if file_type == "json" then
-        local apisix_yaml_new = json.decode(raw_config)
-        if not apisix_yaml_new then
-            log.error("failed to parse the content of file " .. file_path)
-            return
-        end
+    if not apisix_config_new then
+        log.error("failed to parse the content of file " .. file_path)
+        return
     end
 
-    update_config(apisix_yaml_new, last_modification_time)
+    update_config(apisix_config_new, last_modification_time)
 
     log.warn("config file ", file_path, " reloaded.")
 end
@@ -528,7 +527,7 @@ end
 
 
 function _M.server_version(self)
-    return "apisix.yaml " .. _M.version
+    return "apisix." .. file_type .. _M.version
 end
 
 
