@@ -25,38 +25,20 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->request) {
-        $block->set_value("request", "GET /hello?apikey=one");
-    }
-
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
+        $block->set_value("request", "GET /hello");
     }
 });
-
 
 run_tests();
 
 __DATA__
+
 === TEST 1: sanity
 --- apisix_json
 {
-  "routes": [
+  "plugin_configs": [
     {
-      "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
-      "upstream": {
-        "nodes": {
-          "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-      }
-    }
-  ],
-  "consumer_groups": [
-    {
-      "id": "foobar",
+      "id": 1,
       "plugins": {
         "response-rewrite": {
           "body": "hello\n"
@@ -64,113 +46,72 @@ __DATA__
       }
     }
   ],
-  "consumers": [
+  "routes": [
     {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
+      "id": 1,
+      "uri": "/hello",
+      "plugin_config_id": 1,
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
       }
     }
   ]
 }
 --- response_body
 hello
-
-
-
-=== TEST 2: consumer group not found
+=== TEST 2: plugin_config not found
 --- apisix_json
 {
   "routes": [
     {
+      "id": 1,
       "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
+      "plugin_config_id": 1,
       "upstream": {
         "nodes": {
           "127.0.0.1:1980": 1
         },
         "type": "roundrobin"
-      }
-    }
-  ],
-  "consumers": [
-    {
-      "username": "one",
-      "group_id": "invalid_group",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
       }
     }
   ]
 }
 --- error_code: 503
 --- error_log
-failed to fetch consumer group config by id: invalid_group
-
-
-
-=== TEST 3: plugin priority
+failed to fetch plugin config by id: 1
+=== TEST 3: mix plugins & plugin_config_id
 --- apisix_json
 {
-  "routes": [
+  "plugin_configs": [
     {
-      "uri": "/hello",
+      "id": 1,
       "plugins": {
-        "key-auth": {}
-      },
-      "upstream": {
-        "nodes": {
-          "127.0.0.1:1980": 1
+        "example-plugin": {
+          "i": 1
         },
-        "type": "roundrobin"
-      }
-    }
-  ],
-  "consumer_groups": [
-    {
-      "id": "foobar",
-      "plugins": {
         "response-rewrite": {
           "body": "hello\n"
         }
       }
     }
   ],
-  "consumers": [
+  "routes": [
     {
-      "username": "one",
-      "group_id": "foobar",
+      "id": 1,
+      "uri": "/echo",
+      "plugin_config_id": 1,
       "plugins": {
-        "key-auth": {
-          "key": "one"
+        "proxy-rewrite": {
+          "headers": {
+            "in": "out"
+          }
         },
         "response-rewrite": {
           "body": "world\n"
         }
-      }
-    }
-  ]
-}
---- response_body
-world
-
-
-
-=== TEST 4: invalid plugin
---- apisix_json
-{
-  "routes": [
-    {
-      "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
       },
       "upstream": {
         "nodes": {
@@ -179,10 +120,22 @@ world
         "type": "roundrobin"
       }
     }
-  ],
-  "consumer_groups": [
+  ]
+}
+--- request
+GET /echo
+--- response_body
+world
+--- response_headers
+in: out
+--- error_log eval
+qr/conf_version: \d+#\d+,/
+=== TEST 4: invalid plugin
+--- apisix_json
+{
+  "plugin_configs": [
     {
-      "id": "foobar",
+      "id": 1,
       "plugins": {
         "example-plugin": {
           "skey": "s"
@@ -193,14 +146,16 @@ world
       }
     }
   ],
-  "consumers": [
+  "routes": [
     {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
+      "id": 1,
+      "uri": "/hello",
+      "plugin_config_id": 1,
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
       }
     }
   ]
@@ -208,4 +163,4 @@ world
 --- error_code: 503
 --- error_log
 failed to check the configuration of plugin example-plugin
-failed to fetch consumer group config by id: foobar
+failed to fetch plugin config by id: 1

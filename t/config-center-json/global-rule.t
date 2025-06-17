@@ -25,27 +25,25 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     if (!$block->request) {
-        $block->set_value("request", "GET /hello?apikey=one");
+        $block->set_value("request", "GET /hello");
     }
 
-    if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
-        $block->set_value("no_error_log", "[error]");
+    if (!$block->error_log && !$block->no_error_log) {
+        $block->set_value("no_error_log", "[error]\n[alert]");
     }
 });
-
 
 run_tests();
 
 __DATA__
+
 === TEST 1: sanity
 --- apisix_json
 {
   "routes": [
     {
+      "id": 1,
       "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
       "upstream": {
         "nodes": {
           "127.0.0.1:1980": 1
@@ -54,23 +52,12 @@ __DATA__
       }
     }
   ],
-  "consumer_groups": [
+  "global_rules": [
     {
-      "id": "foobar",
+      "id": 1,
       "plugins": {
         "response-rewrite": {
           "body": "hello\n"
-        }
-      }
-    }
-  ],
-  "consumers": [
-    {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
         }
       }
     }
@@ -78,18 +65,13 @@ __DATA__
 }
 --- response_body
 hello
-
-
-
-=== TEST 2: consumer group not found
+=== TEST 2: global rule with bad plugin
 --- apisix_json
 {
   "routes": [
     {
+      "id": 1,
       "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
       "upstream": {
         "nodes": {
           "127.0.0.1:1980": 1
@@ -98,80 +80,28 @@ hello
       }
     }
   ],
-  "consumers": [
+  "global_rules": [
     {
-      "username": "one",
-      "group_id": "invalid_group",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
-      }
-    }
-  ]
-}
---- error_code: 503
---- error_log
-failed to fetch consumer group config by id: invalid_group
-
-
-
-=== TEST 3: plugin priority
---- apisix_json
-{
-  "routes": [
-    {
-      "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
-      "upstream": {
-        "nodes": {
-          "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-      }
-    }
-  ],
-  "consumer_groups": [
-    {
-      "id": "foobar",
+      "id": 1,
       "plugins": {
         "response-rewrite": {
-          "body": "hello\n"
-        }
-      }
-    }
-  ],
-  "consumers": [
-    {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        },
-        "response-rewrite": {
-          "body": "world\n"
+          "body": 4
         }
       }
     }
   ]
 }
 --- response_body
-world
-
-
-
-=== TEST 4: invalid plugin
+hello world
+--- error_log
+property "body" validation failed
+=== TEST 3: fix global rule with default value
 --- apisix_json
 {
   "routes": [
     {
+      "id": 1,
       "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
       "upstream": {
         "nodes": {
           "127.0.0.1:1980": 1
@@ -180,32 +110,42 @@ world
       }
     }
   ],
-  "consumer_groups": [
+  "global_rules": [
     {
-      "id": "foobar",
+      "id": 1,
       "plugins": {
-        "example-plugin": {
-          "skey": "s"
-        },
-        "response-rewrite": {
-          "body": "hello\n"
-        }
-      }
-    }
-  ],
-  "consumers": [
-    {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
+        "uri-blocker": {
+          "block_rules": [
+            "/h*"
+          ]
         }
       }
     }
   ]
 }
---- error_code: 503
---- error_log
-failed to check the configuration of plugin example-plugin
-failed to fetch consumer group config by id: foobar
+--- error_code: 403
+=== TEST 4: common phase without matched route
+--- apisix_json
+{
+  "routes": [
+    {
+      "uri": "/apisix/prometheus/metrics",
+      "plugins": {
+        "public-api": {}
+      }
+    }
+  ],
+  "global_rules": [
+    {
+      "id": 1,
+      "plugins": {
+        "cors": {
+          "allow_origins": "http://a.com,http://b.com"
+        }
+      }
+    }
+  ]
+}
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200

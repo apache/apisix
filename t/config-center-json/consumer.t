@@ -33,19 +33,16 @@ add_block_preprocessor(sub {
     }
 });
 
-
 run_tests();
 
 __DATA__
-=== TEST 1: sanity
+
+=== TEST 1: validate consumer
 --- apisix_json
 {
   "routes": [
     {
       "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
       "upstream": {
         "nodes": {
           "127.0.0.1:1980": 1
@@ -54,77 +51,33 @@ __DATA__
       }
     }
   ],
-  "consumer_groups": [
-    {
-      "id": "foobar",
-      "plugins": {
-        "response-rewrite": {
-          "body": "hello\n"
-        }
-      }
-    }
-  ],
   "consumers": [
     {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
-      }
+      "username": "jwt#auth"
     }
   ]
 }
+--- request
+GET /hello
 --- response_body
-hello
-
-
-
-=== TEST 2: consumer group not found
---- apisix_json
-{
-  "routes": [
-    {
-      "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
-      "upstream": {
-        "nodes": {
-          "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-      }
-    }
-  ],
-  "consumers": [
-    {
-      "username": "one",
-      "group_id": "invalid_group",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
-      }
-    }
-  ]
-}
---- error_code: 503
+hello world
 --- error_log
-failed to fetch consumer group config by id: invalid_group
+property "username" validation failed
 
 
 
-=== TEST 3: plugin priority
+=== TEST 2: validate the plugin under consumer
 --- apisix_json
 {
   "routes": [
     {
-      "uri": "/hello",
+      "uri": "/apisix/plugin/jwt/sign",
       "plugins": {
-        "key-auth": {}
-      },
+        "public-api": {}
+      }
+    },
+    {
+      "uri": "/hello",
       "upstream": {
         "nodes": {
           "127.0.0.1:1980": 1
@@ -133,79 +86,97 @@ failed to fetch consumer group config by id: invalid_group
       }
     }
   ],
-  "consumer_groups": [
-    {
-      "id": "foobar",
-      "plugins": {
-        "response-rewrite": {
-          "body": "hello\n"
-        }
-      }
-    }
-  ],
   "consumers": [
     {
-      "username": "one",
-      "group_id": "foobar",
+      "username": "jwt",
       "plugins": {
-        "key-auth": {
-          "key": "one"
-        },
-        "response-rewrite": {
-          "body": "world\n"
+        "jwt-auth": {
+          "secret": "my-secret-key"
         }
       }
     }
   ]
 }
---- response_body
-world
-
-
-
-=== TEST 4: invalid plugin
---- apisix_json
-{
-  "routes": [
-    {
-      "uri": "/hello",
-      "plugins": {
-        "key-auth": {}
-      },
-      "upstream": {
-        "nodes": {
-          "127.0.0.1:1980": 1
-        },
-        "type": "roundrobin"
-      }
-    }
-  ],
-  "consumer_groups": [
-    {
-      "id": "foobar",
-      "plugins": {
-        "example-plugin": {
-          "skey": "s"
-        },
-        "response-rewrite": {
-          "body": "hello\n"
-        }
-      }
-    }
-  ],
-  "consumers": [
-    {
-      "username": "one",
-      "group_id": "foobar",
-      "plugins": {
-        "key-auth": {
-          "key": "one"
-        }
-      }
-    }
-  ]
-}
---- error_code: 503
+--- request
+GET /apisix/plugin/jwt/sign?key=user-key
 --- error_log
-failed to check the configuration of plugin example-plugin
-failed to fetch consumer group config by id: foobar
+plugin jwt-auth err: property "key" is required
+--- error_code: 404
+
+
+
+=== TEST 3: provide default value for the plugin
+--- apisix_json
+{
+  "routes": [
+    {
+      "uri": "/apisix/plugin/jwt/sign",
+      "plugins": {
+        "public-api": {}
+      }
+    },
+    {
+      "uri": "/hello",
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ],
+  "consumers": [
+    {
+      "username": "jwt",
+      "plugins": {
+        "jwt-auth": {
+          "key": "user-key",
+          "secret": "my-secret-key"
+        }
+      }
+    }
+  ]
+}
+--- request
+GET /apisix/plugin/jwt/sign?key=user-key
+--- error_code: 200
+
+
+
+=== TEST 4: consumer restriction
+--- apisix_json
+{
+  "consumers": [
+    {
+      "username": "jack",
+      "plugins": {
+        "key-auth": {
+          "key": "user-key"
+        }
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": "1",
+      "methods": ["POST"],
+      "uri": "/hello",
+      "plugins": {
+        "key-auth": {},
+        "consumer-restriction": {
+          "whitelist": ["jack"]
+        }
+      },
+      "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+          "127.0.0.1:1980": 1
+        }
+      }
+    }
+  ]
+}
+--- more_headers
+apikey: user-key
+--- request
+POST /hello
