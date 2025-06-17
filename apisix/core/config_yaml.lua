@@ -125,7 +125,7 @@ local function read_apisix_config(premature, pre_mtime)
         return
     end
     local last_modification_time
-    local paths = ""
+    local paths_str = ""
     for i, config in ipairs(file_configs) do
         local attributes, err = lfs.attributes(config.path)
         if attributes then
@@ -139,16 +139,16 @@ local function read_apisix_config(premature, pre_mtime)
 
             break
         else
-            paths = paths .. config.path
+            paths_str = paths_str .. config.path
             if i < #file_configs then
-                paths = paths .. ", "
+                paths_str = paths_str .. ", "
             end
             log.warn("failed to fetch ", config.path, " attributes: ", err)
         end
     end
 
     if not file_path or not file_type then
-        log.error("Faild to find any configuration file with path ", paths)
+        log.error("Faild to find any configuration file with path ", paths_str)
         return
     end
 
