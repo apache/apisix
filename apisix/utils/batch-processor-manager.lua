@@ -95,7 +95,7 @@ local function total_processed_entries(self)
 end
 
 function _M:add_entry(conf, entry)
-    if self.total_pushed_entries - total_processed_entries(self) > (conf.max_pending_entries or 2000) then
+    if conf.max_pending_entries and self.total_pushed_entries - total_processed_entries(self) > conf.max_pending_entries then
         core.log.error("max pending entries limit exceeded. discarding entry")
         return
     end
@@ -113,7 +113,7 @@ end
 
 
 function _M:add_entry_to_new_processor(conf, entry, ctx, func)
-    if self.total_pushed_entries - total_processed_entries(self) > (conf.max_pending_entries or 2000) then
+    if conf.max_pending_entries and self.total_pushed_entries - total_processed_entries(self) > conf.max_pending_entries then
         core.log.error("max pending entries limit exceeded. discarding entry")
         return
     end
