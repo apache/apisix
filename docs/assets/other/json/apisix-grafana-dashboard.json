@@ -18,8 +18,8 @@
     },
     {
       "type": "panel",
-      "id": "graph",
-      "name": "Graph",
+      "id": "timeseries",
+      "name": "timeseries",
       "version": ""
     },
     {
@@ -30,8 +30,8 @@
     },
     {
       "type": "panel",
-      "id": "singlestat",
-      "name": "Singlestat",
+      "id": "stat",
+      "name": "stat",
       "version": ""
     },
     {
@@ -158,7 +158,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Total Requests",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -249,7 +249,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Accepted Connections",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -340,7 +340,7 @@
       "timeFrom": null,
       "timeShift": null,
       "title": "Handled Connections",
-      "type": "singlestat",
+      "type": "stat",
       "valueFontSize": "80%",
       "valueMaps": [
         {
@@ -420,7 +420,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -535,7 +535,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -640,7 +640,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -746,7 +746,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -871,7 +871,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -978,7 +978,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -1096,7 +1096,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -1219,7 +1219,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -1344,7 +1344,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -1466,7 +1466,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -1579,7 +1579,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
@@ -1800,7 +1800,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "type": "graph",
+      "type": "timeseries",
       "xaxis": {
         "buckets": null,
         "mode": "time",
