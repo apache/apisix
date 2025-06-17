@@ -78,8 +78,8 @@ local mt = {
     end
 }
 
-local apisix_yaml
-local apisix_yaml_mtime
+local apisix_config
+local apisix_config_mtime
 
 local function sync_status_to_shdict(status)
     if process.type() ~= "worker" then
@@ -107,9 +107,9 @@ local function update_config(table, conf_version)
         return
     end
 
-    apisix_yaml = table
+    apisix_config = table
     sync_status_to_shdict(true)
-    apisix_yaml_mtime = conf_version
+    apisix_config_mtime = conf_version
 end
 _M._update_config = update_config
 
@@ -120,7 +120,7 @@ local function is_use_admin_api()
 end
 
 
-local function read_apisix_yaml(premature, pre_mtime)
+local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
     end
@@ -132,7 +132,7 @@ local function read_apisix_yaml(premature, pre_mtime)
             file_path = config.path
 
             last_modification_time = attributes.modification
-            if apisix_yaml_mtime == last_modification_time then
+            if apisix_config_mtime == last_modification_time then
                 return
             end
 
@@ -196,20 +196,20 @@ local function sync_data(self)
 
     local conf_version
     if is_use_admin_api() then
-        conf_version = apisix_yaml[self.conf_version_key] or 0
+        conf_version = apisix_config[self.conf_version_key] or 0
     else
-        if not apisix_yaml_mtime then
+        if not apisix_config_mtime then
             log.warn("wait for more time")
-            return nil, "failed to read local file " .. apisix_yaml_path
+            return nil, "failed to read local file " .. file_path
         end
-        conf_version = apisix_yaml_mtime
+        conf_version = apisix_config_mtime
     end
 
     if not conf_version or conf_version == self.conf_version then
         return true
     end
 
-    local items = apisix_yaml[self.key]
+    local items = apisix_config[self.key]
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
@@ -424,7 +424,7 @@ local function _automatic_fetch(premature, self)
         local ok, ok2, err = pcall(sync_data, self)
         if not ok then
             err = ok2
-            log.error("failed to fetch data from local file " .. apisix_yaml_path .. ": ",
+            log.error("failed to fetch data from local file " .. file_path .. ": ",
                       err, ", ", tostring(self))
             ngx_sleep(3)
             break
@@ -432,7 +432,7 @@ local function _automatic_fetch(premature, self)
         elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
-                log.error("failed to fetch data from local file " .. apisix_yaml_path .. ": ",
+                log.error("failed to fetch data from local file " .. file_path .. ": ",
                           err, ", ", tostring(self))
             end
 
@@ -506,7 +506,7 @@ function _M.new(key, opts)
         end
 
         if err then
-            log.error("failed to fetch data from local file ", apisix_yaml_path, ": ",
+            log.error("failed to fetch data from local file ", file_path, ": ",
                       err, ", ", key)
         end
 
@@ -546,7 +546,7 @@ function _M.init()
         return true
     end
 
-    read_apisix_yaml()
+    read_apisix_config()
     return true
 end
 
@@ -554,13 +554,13 @@ end
 function _M.init_worker()
     sync_status_to_shdict(false)
     if is_use_admin_api() then
-        apisix_yaml = {}
-        apisix_yaml_mtime = 0
+        apisix_config = {}
+        apisix_config_mtime = 0
         return true
     end
 
     -- sync data in each non-master process
-    ngx.timer.every(1, read_apisix_yaml)
+    ngx.timer.every(1, read_apisix_config)
 
     return true
 end
