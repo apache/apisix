@@ -47,6 +47,7 @@ local re_find      = ngx.re.find
 local process      = require("ngx.process")
 local worker_id    = ngx.worker.id
 local apisix_yaml_path = profile:yaml_path("apisix")
+local apisix_json_path = ngx.re.sub(apisix_yaml_path, [[\.yaml$]], ".json", "jo")
 local created_obj  = {}
 local shared_dict
 local status_report_shared_dict_name = "status-report"
@@ -69,7 +70,9 @@ local mt = {
     end
 }
 
-
+-- file_type: yaml or json
+local file_type
+local file_path
 local apisix_yaml
 local apisix_yaml_mtime
 
@@ -116,20 +119,37 @@ local function read_apisix_yaml(premature, pre_mtime)
     if premature then
         return
     end
-    local attributes, err = lfs.attributes(apisix_yaml_path)
-    if not attributes then
-        log.error("failed to fetch ", apisix_yaml_path, " attributes: ", err)
+    local file_configs = {
+        {path = apisix_yaml_path, type = "yaml"},
+        {path = apisix_json_path, type = "json"}
+    }
+    
+
+    for _, config in ipairs(file_configs) do
+        local attributes, err = lfs.attributes(config.path)
+        if attributes then
+            file_type = config.type
+            file_path = config.path
+
+            local last_modification_time = attributes.modification
+            if apisix_yaml_mtime == last_modification_time then
+                return
+            end
+
+            break
+        else
+            log.warn("failed to fetch ", config.path, " attributes: ", err)
+        end
+    end
+
+    if not file_path then
+        log.error("Faild to find any configuration file with path ", apisix_yaml_path, " or path ", apisix_json_path, ".")
         return
     end
 
-    local last_modification_time = attributes.modification
-    if apisix_yaml_mtime == last_modification_time then
-        return
-    end
-
-    local f, err = io.open(apisix_yaml_path, "r")
+    local f, err = io.open(file_path, "r")
     if not f then
-        log.error("failed to open file ", apisix_yaml_path, " : ", err)
+        log.error("failed to open file ", file_path, " : ", err)
         return
     end
 
@@ -140,23 +160,33 @@ local function read_apisix_yaml(premature, pre_mtime)
 
     if not found_end_flag then
         f:close()
-        log.warn("missing valid end flag in file ", apisix_yaml_path)
+        log.warn("missing valid end flag in file ", file_path)
         return
     end
 
     f:seek('set')
-    local yaml_config = f:read("*a")
+    local raw_config = f:read("*a")
     f:close()
 
-    local apisix_yaml_new = yaml.load(yaml_config)
-    if not apisix_yaml_new then
-        log.error("failed to parse the content of file " .. apisix_yaml_path)
-        return
+    if file_type == "yaml" then
+        local apisix_yaml_new = yaml.load(raw_config)
+        if not apisix_yaml_new then
+            log.error("failed to parse the content of file " .. file_path)
+            return
+        end
+    end
+
+    if file_type == "json" then
+        local apisix_yaml_new = json.decode(raw_config)
+        if not apisix_yaml_new then
+            log.error("failed to parse the content of file " .. file_path)
+            return
+        end
     end
 
     update_config(apisix_yaml_new, last_modification_time)
 
-    log.warn("config file ", apisix_yaml_path, " reloaded.")
+    log.warn("config file ", file_path, " reloaded.")
 end
 
 
