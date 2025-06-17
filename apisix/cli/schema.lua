@@ -405,7 +405,7 @@ local deployment_schema = {
             role_data_plane = {
                 properties = {
                     config_provider = {
-                        enum = {"etcd", "yaml", "xds", "json"}
+                        enum = {"etcd", "yaml", "xds"}
                     },
                 },
                 required = {"config_provider"}

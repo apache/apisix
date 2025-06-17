@@ -173,9 +173,6 @@ local function read_apisix_config(premature, pre_mtime)
         apisix_config_new = yaml.load(raw_config)
     elseif file_type == "json" then
         apisix_config_new = json.decode(raw_config)
-    else
-        log.error("invalid file type: ", file_type)
-        return
     end
 
     if not apisix_config_new then

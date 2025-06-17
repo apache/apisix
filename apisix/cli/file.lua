@@ -287,8 +287,6 @@ function _M.read_yaml_conf(apisix_home)
             default_conf.etcd = default_conf.deployment.etcd
             if default_conf.deployment.role_data_plane.config_provider == "yaml" then
                 default_conf.deployment.config_provider = "yaml"
-            elseif default_conf.deployment.role_data_plane.config_provider == "json" then
-                default_conf.deployment.config_provider = "json"
             elseif default_conf.deployment.role_data_plane.config_provider == "xds" then
                 default_conf.deployment.config_provider = "xds"
             end
