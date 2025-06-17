@@ -176,10 +176,6 @@ function batch_processor:new(func, config)
     return setmetatable(processor, batch_processor_mt)
 end
 
-function batch_processor:processed_entries()
-    return self.processed_entries
-end
-
 function batch_processor:push(entry)
     -- if the batch size is one then immediately send for processing
     if self.batch_max_size == 1 then
