@@ -158,26 +158,32 @@ local function read_apisix_config(premature, pre_mtime)
         return
     end
 
-    f:seek('end', -10)
-    local end_flag = f:read("*a")
-    -- log.info("flag: ", end_flag)
-    local found_end_flag = re_find(end_flag, [[#END\s*$]], "jo")
-
-    if not found_end_flag then
-        f:close()
-        log.warn("missing valid end flag in file ", file_path)
-        return
-    end
-
-    f:seek('set')
-    local raw_config = f:read("*a")
-    f:close()
-
     local apisix_config_new
     if file_type == "yaml" then
+        f:seek('end', -10)
+        local end_flag = f:read("*a")
+        local found_end_flag = re_find(end_flag, [[#END\s*$]], "jo")
+
+        if not found_end_flag then
+            f:close()
+            log.warn("missing valid end flag in file ", file_path)
+            return
+        end
+
+        f:seek('set')
+        local raw_config = f:read("*a")
+        f:close()
+
         apisix_config_new = yaml.load(raw_config)
     elseif file_type == "json" then
-        apisix_config_new = json.decode(raw_config)
+        local raw_config = f:read("*a")
+        f:close()
+
+        apisix_config_new, err = json.decode(raw_config)
+        if err then
+            log.error("failed to decode json: ", err, " raw_config: ", raw_config)
+            return
+        end
     end
 
     if not apisix_config_new then
