@@ -94,7 +94,7 @@ local function get_config_file_info()
         end
     end
 
-    log.error("Failed to find any configuration file with path ", paths_str)
+    return nil, nil, nil, "Failed to find any configuration file with path " .. paths_str
 end
 
 
@@ -142,9 +142,13 @@ local function read_apisix_config(premature, pre_mtime)
         return
     end
 
-    local file_path, file_type, last_modification_time = get_config_file_info()
+    local file_path, file_type, last_modification_time, err = get_config_file_info()
+    if err then
+        log.error("failed to get config file info: ", err)
+        return
+    end
 
-    if not file_path or apisix_config_mtime == last_modification_time then
+    if apisix_config_mtime == last_modification_time then
         return
     end
 
@@ -424,9 +428,6 @@ local function _automatic_fetch(premature, self)
     end
 
     local file_path = get_config_file_info()
-    if not file_path then
-        return
-    end
 
     local i = 0
     while not exiting() and self.running and i <= 32 do
@@ -516,9 +517,6 @@ function _M.new(key, opts)
         end
 
         local file_path = get_config_file_info()
-        if not file_path then
-            return
-        end
 
         if err then
             log.error("failed to fetch data from local file ", file_path, ": ",
