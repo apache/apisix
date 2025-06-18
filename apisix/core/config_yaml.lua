@@ -542,7 +542,7 @@ end
 
 
 function _M.server_version(self)
-    return "apisix.yaml" .. _M.version
+    return "apisix.yaml " .. _M.version
 end
 
 
