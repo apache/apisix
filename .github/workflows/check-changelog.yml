@@ -19,7 +19,7 @@ jobs:
       - name: Install bun
         run: |
           curl -fsSL https://bun.sh/install | bash
-          export PATH="$HOME/.bun/bin:$PATH"
+          source /home/runner/.bashrc
 
       - name: Run check_changelog_prs script
         working-directory: ci
