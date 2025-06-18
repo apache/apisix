@@ -139,7 +139,7 @@ local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
     end
-    
+
     local file_path, file_type, last_modification_time = get_config_file_info()
 
     if not file_path or apisix_config_mtime == last_modification_time then
@@ -202,6 +202,7 @@ local function sync_data(self)
     else
         if not apisix_config_mtime then
             log.warn("wait for more time")
+            local file_path = get_config_file_info()
             return nil, "failed to read local file " .. file_path
         end
         conf_version = apisix_config_mtime
