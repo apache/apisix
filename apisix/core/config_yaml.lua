@@ -46,8 +46,6 @@ local ngx          = ngx
 local re_find      = ngx.re.find
 local process      = require("ngx.process")
 local worker_id    = ngx.worker.id
-local apisix_yaml_path = profile:yaml_path("apisix")
-local apisix_json_path = ngx.re.sub(apisix_yaml_path, [[\.yaml$]], ".json", "jo")
 local created_obj  = {}
 local shared_dict
 local status_report_shared_dict_name = "status-report"
@@ -62,19 +60,17 @@ local _M = {
                     "cannot be restored from other workers and shared dict"
 }
 
+local apisix_yaml_path = profile:yaml_path("apisix")
+local apisix_json_path = ngx.re.sub(apisix_yaml_path, [[\.yaml$]], ".json", "jo")
 local file_configs = {
     {path = apisix_yaml_path, type = "yaml"},
     {path = apisix_json_path, type = "json"}
 }
--- file_type: 'yaml' or 'json'
-local file_type
--- file_path: apisix_yaml_path or apisix_json_path
-local file_path
 
 local mt = {
     __index = _M,
     __tostring = function(self)
-        return "apisix." .. file_type .. " key: " .. (self.key or "")
+        return "apisix.yaml" .. " key: " .. (self.key or "")
     end
 }
 
@@ -119,25 +115,13 @@ local function is_use_admin_api()
     return local_conf and local_conf.apisix and local_conf.apisix.enable_admin
 end
 
-
-local function read_apisix_config(premature, pre_mtime)
-    if premature then
-        return
-    end
-    local last_modification_time
+local function get_config_file_info()
     local paths_str = ""
     for i, config in ipairs(file_configs) do
         local attributes, err = lfs.attributes(config.path)
         if attributes then
-            file_type = config.type
-            file_path = config.path
-
-            last_modification_time = attributes.modification
-            if apisix_config_mtime == last_modification_time then
-                return
-            end
-
-            break
+            local last_modification_time = attributes.modification
+            return config.path, config.type, last_modification_time
         else
             paths_str = paths_str .. config.path
             if i < #file_configs then
@@ -147,8 +131,18 @@ local function read_apisix_config(premature, pre_mtime)
         end
     end
 
-    if not file_path or not file_type then
-        log.error("Faild to find any configuration file with path ", paths_str)
+    log.error("Faild to find any configuration file with path ", paths_str)
+end
+
+
+local function read_apisix_config(premature, pre_mtime)
+    if premature then
+        return
+    end
+    
+    local file_path, file_type, last_modification_time = get_config_file_info()
+
+    if not file_path or apisix_config_mtime == last_modification_time then
         return
     end
 
@@ -426,6 +420,11 @@ local function _automatic_fetch(premature, self)
         end
     end
 
+    local file_path = get_config_file_info()
+    if not file_path then
+        return
+    end
+
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
@@ -513,6 +512,11 @@ function _M.new(key, opts)
             err = ok2
         end
 
+        local file_path = get_config_file_info()
+        if not file_path then
+            return
+        end
+
         if err then
             log.error("failed to fetch data from local file ", file_path, ": ",
                       err, ", ", key)
@@ -535,7 +539,7 @@ end
 
 
 function _M.server_version(self)
-    return "apisix." .. file_type .. _M.version
+    return "apisix.yaml" .. _M.version
 end
 
 
