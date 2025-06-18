@@ -60,6 +60,16 @@ local _M = {
                     "cannot be restored from other workers and shared dict"
 }
 
+local mt = {
+    __index = _M,
+    __tostring = function(self)
+        return "apisix.yaml key: " .. (self.key or "")
+    end
+}
+
+local apisix_config
+local apisix_config_mtime
+
 local apisix_yaml_path = profile:yaml_path("apisix")
 local apisix_json_path = ngx.re.sub(apisix_yaml_path, [[\.yaml$]], ".json", "jo")
 local file_configs = {
@@ -67,15 +77,25 @@ local file_configs = {
     {path = apisix_json_path, type = "json"}
 }
 
-local mt = {
-    __index = _M,
-    __tostring = function(self)
-        return "apisix.yaml" .. " key: " .. (self.key or "")
+local function get_config_file_info()
+    local paths_str = ""
+    for i, config in ipairs(file_configs) do
+        local attributes, err = lfs.attributes(config.path)
+        if attributes then
+            local last_modification_time = attributes.modification
+            return config.path, config.type, last_modification_time
+        else
+            paths_str = paths_str .. config.path
+            if i < #file_configs then
+                paths_str = paths_str .. ", "
+            end
+            log.warn("failed to fetch ", config.path, " attributes: ", err)
+        end
     end
-}
 
-local apisix_config
-local apisix_config_mtime
+    log.error("Faild to find any configuration file with path ", paths_str)
+end
+
 
 local function sync_status_to_shdict(status)
     if process.type() ~= "worker" then
@@ -113,25 +133,6 @@ _M._update_config = update_config
 local function is_use_admin_api()
     local local_conf, _ = config_local.local_conf()
     return local_conf and local_conf.apisix and local_conf.apisix.enable_admin
-end
-
-local function get_config_file_info()
-    local paths_str = ""
-    for i, config in ipairs(file_configs) do
-        local attributes, err = lfs.attributes(config.path)
-        if attributes then
-            local last_modification_time = attributes.modification
-            return config.path, config.type, last_modification_time
-        else
-            paths_str = paths_str .. config.path
-            if i < #file_configs then
-                paths_str = paths_str .. ", "
-            end
-            log.warn("failed to fetch ", config.path, " attributes: ", err)
-        end
-    end
-
-    log.error("Faild to find any configuration file with path ", paths_str)
 end
 
 
