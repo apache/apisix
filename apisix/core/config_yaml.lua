@@ -70,6 +70,7 @@ local mt = {
 
 local apisix_config
 local apisix_config_mtime
+local apisix_config_path
 
 local apisix_yaml_path = profile:yaml_path("apisix")
 local apisix_json_path = ngx.re.sub(apisix_yaml_path, [[\.yaml$]], ".json", "jo")
@@ -143,6 +144,9 @@ local function read_apisix_config(premature, pre_mtime)
     end
 
     local file_path, file_type, last_modification_time, err = get_config_file_info()
+
+    apisix_config_path = file_path
+
     if err then
         log.error("failed to get config file info: ", err)
         return
@@ -208,8 +212,7 @@ local function sync_data(self)
     else
         if not apisix_config_mtime then
             log.warn("wait for more time")
-            local file_path = get_config_file_info()
-            return nil, "failed to read local file " .. file_path
+            return nil, "failed to read local file " .. apisix_config_path
         end
         conf_version = apisix_config_mtime
     end
@@ -427,15 +430,13 @@ local function _automatic_fetch(premature, self)
         end
     end
 
-    local file_path = get_config_file_info()
-
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
         local ok, ok2, err = pcall(sync_data, self)
         if not ok then
             err = ok2
-            log.error("failed to fetch data from local file " .. file_path .. ": ",
+            log.error("failed to fetch data from local file " .. apisix_config_path .. ": ",
                       err, ", ", tostring(self))
             ngx_sleep(3)
             break
@@ -443,7 +444,7 @@ local function _automatic_fetch(premature, self)
         elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
-                log.error("failed to fetch data from local file " .. file_path .. ": ",
+                log.error("failed to fetch data from local file " .. apisix_config_path .. ": ",
                           err, ", ", tostring(self))
             end
 
@@ -516,10 +517,8 @@ function _M.new(key, opts)
             err = ok2
         end
 
-        local file_path = get_config_file_info()
-
         if err then
-            log.error("failed to fetch data from local file ", file_path, ": ",
+            log.error("failed to fetch data from local file ", apisix_config_path, ": ",
                       err, ", ", key)
         end
 
