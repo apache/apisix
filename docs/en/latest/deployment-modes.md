@@ -31,7 +31,7 @@ APISIX has three different deployment modes for different production use cases. 
 |-----------------|----------------------------|---------------------------------------------------------------------------------------------------------------------|
 | traditional     | traditional                | Data plane and control plane are deployed together. `enable_admin` attribute should be disabled manually.           |
 | decoupled       | data_plane / control_plane | Data plane and control plane are deployed independently.                                                            |
-| standalone      | data_plane / traditional   | The `data_plane` mode loads configuration from a local YAML file, while the traditional mode expects configuration through Admin API.   |
+| standalone      | data_plane / traditional   | The `data_plane` mode loads configuration from a local YAML / JSON file, while the traditional mode expects configuration through Admin API.   |
 
 Each of these deployment modes are explained in detail below.
 
