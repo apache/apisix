@@ -1,0 +1,27 @@
+name: Check Changelog
+
+on:
+  push:
+    paths:
+      - 'CHANGELOG.md'
+  pull_request:
+    paths:
+      - 'CHANGELOG.md'
+
+jobs:
+  check-changelog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install bun
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export PATH="$HOME/.bun/bin:$PATH"
+
+      - name: Run check_changelog_prs script
+        working-directory: ci
+        run: |
+          bun run check_changelog_prs.ts
