@@ -21,6 +21,30 @@ log_level('info');
 no_root_location();
 no_shuffle();
 
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->apisix_json) {
+        my $json_config = <<_EOC_;
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+_EOC_
+
+        $block->set_value("apisix_json", $json_config);
+    }
+});
+
 run_tests();
 
 __DATA__
