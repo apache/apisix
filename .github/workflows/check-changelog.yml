@@ -24,4 +24,5 @@ jobs:
       - name: Run check_changelog_prs script
         working-directory: ci
         run: |
+          export PATH="$HOME/.bun/bin:$PATH"
           bun run check_changelog_prs.ts
