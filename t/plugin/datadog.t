@@ -573,3 +573,29 @@ message received: apisix\.apisix\.latency:[\d.]+\|h\|#source:apisix,route_tag1:f
 message received: apisix\.ingress\.size:[\d]+\|ms\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,response_status_class:2xx,scheme:http
 message received: apisix\.egress\.size:[\d]+\|ms\|#source:apisix,route_tag1:foo,route_tag2:bar,route_name:datadog,path:\/articles\/\*\/comments,method:GET,balancer_ip:[\d.]+,response_status:200,response_status_class:2xx,scheme:http
 /
+
+
+
+=== TEST 12: fails on invalid constant_tags value
+--- apisix_yaml
+routes:
+  - uri: /articles/*/comments
+    name: datadog
+    upstream:
+      nodes:
+        "127.0.0.1:1982": 1
+    plugins:
+      datadog:
+        batch_max_size: 1
+        max_retry_count: 0
+        constant_tags:
+          - "1 invalid tag"
+      proxy-rewrite:
+        uri: /opentracing
+#END
+--- request
+GET /articles/12345/comments?foo=bar
+--- error_code: 404
+--- wait: 0.5
+--- error_log
+property "constant_tags" validation failed

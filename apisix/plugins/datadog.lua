@@ -36,6 +36,22 @@ local defaults = {
 }
 
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
+
+-- Shared schema for individual tag strings.
+local tag_schema = {
+    type = "string",
+    -- Tags must be between 1 and 200 characters.
+    minLength = 1,
+    maxLength = 200,
+    -- Tags must follow the Datadog tag format:
+    --   - `^[\p{L}]`: Must start with any kind of Unicode letter.
+    --   - `[\p{L}\p{N}_.:/-]*`: Followed by Unicode letters (\p{L}), numbers (\p{N}),
+    --     or the allowed special characters (underscore, hyphen, colon,
+    --     period, and slash).
+    --   - `(?<!:)$`: Must not end with a colon.
+    pattern = [[^[\p{L}][\p{L}\p{N}_.:/-]*(?<!:)$]]
+}
+
 local schema = {
     type = "object",
     properties = {
@@ -44,7 +60,7 @@ local schema = {
         include_method = {type = "boolean", default = false},
         constant_tags = {
             type = "array",
-            items = {type = "string"},
+            items = tag_schema,
             default = {}
         }
     }
@@ -58,7 +74,7 @@ local metadata_schema = {
         namespace = {type = "string", default = defaults.namespace},
         constant_tags = {
             type = "array",
-            items = {type = "string"},
+            items = tag_schema,
             default = defaults.constant_tags
         }
     },
