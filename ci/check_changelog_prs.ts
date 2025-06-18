@@ -206,7 +206,7 @@ async function main() {
             if (missingPRs.length === 0) {
                 console.log(`\n✅ All PRs are included in CHANGELOG.md for version ${newVersion.tag}`);
             } else {
-                console.log(`\n❌ [ERROR] Missing PRs in CHANGELOG.md for version ${newVersion.tag} (sorted):`);
+                console.log(`\n❌ Missing PRs in CHANGELOG.md for version ${newVersion.tag} (sorted):`);
                 missingPRs.forEach(pr => {
                     console.log(`  #${pr.number}`);
                 });
