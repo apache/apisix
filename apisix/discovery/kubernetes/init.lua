@@ -633,14 +633,14 @@ function _M.init_worker()
 end
 
 
-local function dump_endpoints_from_dict(endpoint_dict, id)
+local function dump_endpoints_from_dict(endpoint_dict)
     local keys, err = endpoint_dict:get_keys()
     if err then
         core.log.error("get keys from discovery dict failed: ", err)
         return
     end
 
-    if not keys then
+    if not keys or #keys == 0 then
         return
     end
 
@@ -657,10 +657,7 @@ local function dump_endpoints_from_dict(endpoint_dict, id)
         end
     end
 
-    return {
-        id = id,
-        endpoints = k8s
-    }
+    return k8s
 end
 
 function _M.dump_data()
@@ -670,17 +667,23 @@ function _M.dump_data()
     if #discovery_conf == 0 then
         -- Single mode: discovery_conf is a single configuration object
         local endpoint_dict = get_endpoint_dict()
-        local result = dump_endpoints_from_dict(endpoint_dict, nil)
-        if result then
-            core.table.insert(eps, result)
+        local endpoints = dump_endpoints_from_dict(endpoint_dict)
+        if endpoints then
+            core.table.insert(eps, {
+                id = nil,
+                endpoints = endpoints
+            })
         end
     else
         -- Multiple mode: discovery_conf is an array of configuration objects
         for _, conf in ipairs(discovery_conf) do
             local endpoint_dict = get_endpoint_dict(conf.id)
-            local result = dump_endpoints_from_dict(endpoint_dict, conf.id)
-            if result then
-                core.table.insert(eps, result)
+            local endpoints = dump_endpoints_from_dict(endpoint_dict)
+            if endpoints then
+                core.table.insert(eps, {
+                    id = conf.id,
+                    endpoints = endpoints
+                })
             end
         end
     end
