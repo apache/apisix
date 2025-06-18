@@ -40,7 +40,6 @@ local re_gsub        = ngx.re.gsub
 local re_match       = ngx.re.match
 local re_gmatch      = ngx.re.gmatch
 local type           = type
-local io_popen       = io.popen
 local C              = ffi.C
 local ffi_string     = ffi.string
 local ffi_new        = ffi.new
