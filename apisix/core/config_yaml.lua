@@ -148,7 +148,7 @@ local function read_apisix_config(premature, pre_mtime)
     apisix_config_path = file_path
 
     if err then
-        log.error("failed to get config file info: ", err)
+        log.error(err)
         return
     end
 
