@@ -60,6 +60,7 @@ local _M = {
                     "cannot be restored from other workers and shared dict"
 }
 
+
 local mt = {
     __index = _M,
     __tostring = function(self)
@@ -93,7 +94,7 @@ local function get_config_file_info()
         end
     end
 
-    log.error("Faild to find any configuration file with path ", paths_str)
+    log.error("Failed to find any configuration file with path ", paths_str)
 end
 
 

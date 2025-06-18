@@ -62,6 +62,9 @@ __DATA__
 }
 --- response_body
 hello
+
+
+
 === TEST 2: plugin_config not found
 --- apisix_json
 {
@@ -82,6 +85,9 @@ hello
 --- error_code: 503
 --- error_log
 failed to fetch plugin config by id: 1
+
+
+
 === TEST 3: mix plugins & plugin_config_id
 --- apisix_json
 {
@@ -130,6 +136,9 @@ world
 in: out
 --- error_log eval
 qr/conf_version: \d+#\d+,/
+
+
+
 === TEST 4: invalid plugin
 --- apisix_json
 {

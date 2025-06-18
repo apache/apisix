@@ -66,6 +66,9 @@ GET /hello
 "remote_addr":"127.0.0.1"
 --- no_error_log
 failed to get schema for plugin:
+
+
+
 === TEST 2: sanity
 --- apisix_json
 {

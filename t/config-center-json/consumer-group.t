@@ -37,6 +37,7 @@ add_block_preprocessor(sub {
 run_tests();
 
 __DATA__
+
 === TEST 1: sanity
 --- apisix_json
 {

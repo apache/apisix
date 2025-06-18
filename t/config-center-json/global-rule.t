@@ -65,6 +65,9 @@ __DATA__
 }
 --- response_body
 hello
+
+
+
 === TEST 2: global rule with bad plugin
 --- apisix_json
 {
@@ -95,6 +98,9 @@ hello
 hello world
 --- error_log
 property "body" validation failed
+
+
+
 === TEST 3: fix global rule with default value
 --- apisix_json
 {
@@ -124,6 +130,9 @@ property "body" validation failed
   ]
 }
 --- error_code: 403
+
+
+
 === TEST 4: common phase without matched route
 --- apisix_json
 {
