@@ -406,6 +406,23 @@ res:7
             local hostname2 = core.utils.gethostname()
             ngx.say("hostname cached: ", hostname == hostname2)
             ngx.say("hostname valid: ", hostname ~= "" and (hostname ~= "unknown" or true))
+
+            local handle = io.popen("/bin/hostname")
+            if handle then
+                local system_hostname = handle:read("*a")
+                handle:close()
+                if system_hostname then
+                    system_hostname = string.gsub(system_hostname, "\n$", "")
+                    ngx.say("system hostname: ", system_hostname)
+                    ngx.say("hostname match: ", hostname == system_hostname)
+                else
+                    ngx.say("system hostname: failed to read")
+                    ngx.say("hostname match: unable to verify")
+                end
+            else
+                ngx.say("system hostname: failed to execute /bin/hostname")
+                ngx.say("hostname match: unable to verify")
+            end
         }
     }
 --- request
@@ -414,3 +431,5 @@ GET /t
 hostname: .+
 hostname cached: true
 hostname valid: true
+system hostname: .+
+hostname match: true
