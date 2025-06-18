@@ -132,7 +132,7 @@ function extractPRsFromGitLog(oldRef: string, newRef: string): PR[] {
 
     for (const line of log.split('\n')) {
         if (!line.trim()) continue;
-        
+
         // Check if this commit should be ignored
         if (shouldIgnoreCommitMessage(line)) continue;
 
@@ -162,20 +162,20 @@ function versionGreaterThan(v1: string, v2: string): boolean {
     // Remove 'v' prefix if present
     const cleanV1 = v1.replace(/^v/, '');
     const cleanV2 = v2.replace(/^v/, '');
-    
+
     // Split version strings into arrays of numbers
     const v1Parts = cleanV1.split('.').map(Number);
     const v2Parts = cleanV2.split('.').map(Number);
-    
+
     // Compare each part
     for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
         const v1Part = v1Parts[i] || 0;
         const v2Part = v2Parts[i] || 0;
-        
+
         if (v1Part > v2Part) return true;
         if (v1Part < v2Part) return false;
     }
-    
+
     // If all parts are equal, return false
     return false;
 }
