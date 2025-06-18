@@ -26,6 +26,7 @@ local concat = table.concat
 local tostring = tostring
 local ipairs = ipairs
 local floor = math.floor
+local unpack = unpack
 
 local plugin_name = "datadog"
 local defaults = {
@@ -111,36 +112,26 @@ local function generate_tag(entry, const_tags)
         end
     end
 
-    if entry.route_id and entry.route_id ~= "" then
-        core.table.insert(tags, "route_name:" .. entry.route_id)
-    end
+    local variable_tags = {
+        {"route_name", entry.route_id},
+        {"path", entry.path},
+        {"method", entry.method},
+        {"service_name", entry.service_id},
+        {"consumer", entry.consumer and entry.consumer.username},
+        {"balancer_ip", entry.balancer_ip},
+        {"response_status", entry.response.status},
+        {
+            "response_status_class",
+            entry.response.status and floor(entry.response.status / 100) .. "xx"
+        },
+        {"scheme", entry.scheme}
+    }
 
-    if entry.path and entry.path ~= "" then
-        core.table.insert(tags, "path:" .. entry.path)
-    end
-
-    if entry.method and entry.method ~= "" then
-        core.table.insert(tags, "method:" .. entry.method)
-    end
-
-    if entry.service_id and entry.service_id ~= "" then
-        core.table.insert(tags, "service_name:" .. entry.service_id)
-    end
-
-    if entry.consumer and entry.consumer.username then
-        core.table.insert(tags, "consumer:" .. entry.consumer.username)
-    end
-    if entry.balancer_ip ~= "" then
-        core.table.insert(tags, "balancer_ip:" .. entry.balancer_ip)
-    end
-    if entry.response.status then
-        core.table.insert(tags, "response_status:" .. entry.response.status)
-
-        local status_class = floor(entry.response.status / 100) .. "xx"
-        core.table.insert(tags, "response_status_class:" .. status_class)
-    end
-    if entry.scheme ~= "" then
-        core.table.insert(tags, "scheme:" .. entry.scheme)
+    for _, tag in ipairs(variable_tags) do
+        local key, value = unpack(tag)
+        if value and value ~= "" then
+            core.table.insert(tags, key .. ":" .. value)
+        end
     end
 
     if #tags > 0 then
