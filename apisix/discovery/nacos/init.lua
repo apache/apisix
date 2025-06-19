@@ -277,7 +277,6 @@ local function fetch_full_registry(premature)
         return
     end
 
-    local up_apps = {}
     local base_uri, username, password = get_base_uri()
     local token_param, err = get_token_param(base_uri, username, password)
     if err then
