@@ -101,11 +101,11 @@ function execute_func(premature, self, batch)
             schedule_func_exec(self, self.retry_delay,
                                batch)
         else
+            self.processed_entries = self.processed_entries + #batch.entries
             core.log.error("Batch Processor[", self.name,"] exceeded ",
                            "the max_retry_count[", batch.retry_count,
                            "] dropping the entries")
         end
-        self.processed_entries = self.processed_entries + #batch.entries
         return
     end
     self.processed_entries = self.processed_entries + #batch.entries

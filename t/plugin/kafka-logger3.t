@@ -50,12 +50,12 @@ location /t {
                                 ["127.0.0.1"] = 1234
                             },
                             kafka_topic = "test2",
-                            producer_type = "async",
+                            producer_type = "sync",
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = 1,
                             meta_format = "origin",
-                            max_retry_count = 1000,
+                            max_retry_count = 10,
                         }
                     },
                     upstream = {
@@ -78,10 +78,9 @@ location /t {
                 ["@timestamp"] = "$time_iso8601",
                 client_ip = "$remote_addr"
             },
-            max_pending_entries = -1, -- only for testing to trigger discard
+            max_pending_entries = 0
         }
-        local plugin_metadata = require("apisix.plugins.kafka-logger")
-        plugin_metadata.metadata_schema.properties.max_pending_entries.minimum = -1
+
         local code, body = t('/apisix/admin/plugin_metadata/kafka-logger', ngx.HTTP_PUT, metadata)
         if code >= 300 then
             ngx.status = code
@@ -98,19 +97,19 @@ location /t {
         end
 
         local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-        local res, err = httpc:request_uri(uri, {
+        httpc:request_uri(uri, {
             method = "GET",
-            headers = {
-                ["Host"] = "example.com",
-                ["User-Agent"] = "test-agent"
-            },
             keepalive_timeout = 1,
-            keepalive_pool = 10
+            keepalive_pool = 1,
         })
-        if not res then
-            ngx.log(ngx.ERR, "failed to request: ", err)
-        end
+        httpc:request_uri(uri, {
+            method = "GET",
+            keepalive_timeout = 1,
+            keepalive_pool = 1,
+        })
+        ngx.sleep(2)
     }
 }
 --- error_log
 max pending entries limit exceeded. discarding entry
+--- timeout: 5
