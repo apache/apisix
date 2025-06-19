@@ -70,7 +70,7 @@ location /t {
         }
 
         local t = require("lib.test_admin").test
-        
+
         -- Set plugin metadata
         local metadata = {
             log_format = {
@@ -96,7 +96,7 @@ location /t {
             ngx.say(body)
             return
         end
-        
+
         local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
         local res, err = httpc:request_uri(uri, {
             method = "GET",
