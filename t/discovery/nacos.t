@@ -889,7 +889,6 @@ PASS
 
 
 
-
 === TEST 25: same namespace_id and service_name, different group_name
 --- extra_yaml_config
 discovery:
