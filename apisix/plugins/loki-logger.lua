@@ -211,8 +211,8 @@ function _M.log(conf, ctx)
     -- and then add 6 zeros by string concatenation
     entry.loki_log_time = tostring(ngx.req.start_time() * 1000) .. "000000"
     local metadata = plugin.plugin_metadata(plugin_name)
-        local max_pending_entries = metadata and metadata.value and
-          metadata.value.max_pending_entries or nil
+    local max_pending_entries = metadata and metadata.value and
+                                metadata.value.max_pending_entries or nil
     if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
