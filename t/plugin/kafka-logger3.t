@@ -80,9 +80,53 @@ plugins:
 plugin_attr:
   kafka-logger:
     max_pending_entries: -1
---- request
-GET /hello
---- response_body
-hello world
+--- config
+location /t {
+    content_by_lua_block {
+        local http = require "resty.http"
+        local httpc = http.new()
+        local data = {
+            {
+                input = {
+                    plugins = {
+                        ["kafka-logger"] = {
+                            broker_list = {
+                                ["127.0.0.1"] = 1234
+                            },
+                            kafka_topic = "test2",
+                            producer_type = "sync",
+                            timeout = 1,
+                            batch_max_size = 1,
+                            required_acks = 1,
+                            meta_format = "origin",
+                            max_retry_count = 1000,
+                        }
+                    },
+                    upstream = {
+                        nodes = {
+                            ["127.0.0.1:1980"] = 1
+                        },
+                        type = "roundrobin"
+                    },
+                    uri = "/hello",
+                },
+            },
+        }
+
+        local t = require("lib.test_admin").test
+        
+        -- Create route
+        local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[1].input)
+        
+        -- Send parallel requests
+        local requests = {}
+        for i = 1, 5 do  -- Send 5 parallel requests
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            httpc:request_uri(uri, {
+                    method = "GET",
+                })
+        end
+    }
+}
 --- error_log
 max pending entries limit exceeded. discarding entry
