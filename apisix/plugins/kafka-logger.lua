@@ -317,7 +317,6 @@ function _M.log(conf, ctx)
         end
 
         core.log.info("send data to kafka: ", data)
-        ngx.sleep(1000)
         return send_kafka_data(conf, data, prod)
     end
 
