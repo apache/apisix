@@ -256,6 +256,7 @@ function _M.log(conf, ctx)
     local metadata = plugin.plugin_metadata(plugin_name)
         local max_pending_entries = metadata and metadata.value and
           metadata.value.max_pending_entries or nil
+    core.log.warn("log entry here ASHISH")
     local entry
     if conf.meta_format == "origin" then
         entry = log_util.get_req_original(ctx, conf)

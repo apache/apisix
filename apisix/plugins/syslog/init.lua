@@ -110,7 +110,8 @@ function _M.push_entry(conf, ctx, entry)
         return send_syslog_data(conf, table_concat(items), cp_ctx)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, rfc5424_data, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, rfc5424_data,
+                                                       ctx, func, max_pending_entries)
 end
 
 

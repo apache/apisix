@@ -351,7 +351,8 @@ function _M.log(conf, ctx)
         return
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, log_data, ctx, handle_log, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, log_data,
+                                                      ctx, handle_log, max_pending_entries)
 end
 
 

@@ -186,7 +186,8 @@ function _M.log(conf, ctx)
         return send_to_splunk(conf, entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry,
+                                                       ctx, process, max_pending_entries)
 end
 
 
