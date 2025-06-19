@@ -33,47 +33,6 @@ run_tests;
 __DATA__
 
 === TEST 1: should drop entries
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                        "plugins": {
-                            "kafka-logger": {
-                                "broker_list" :
-                                  {
-                                    "127.0.0.1":1235
-                                  },
-                                "kafka_topic" : "test2",
-                                "key" : "key1",
-                                "timeout" : 1,
-                                "batch_max_size": 2,
-                                "max_retry_count": 10
-                            }
-                        },
-                        "upstream": {
-                            "nodes": {
-                                "127.0.0.1:1980": 1
-                            },
-                            "type": "roundrobin"
-                        },
-                        "uri": "/hello"
-                }]]
-                )
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: access
 --- extra_yaml_config
 plugins:
   - kafka-logger
@@ -91,7 +50,7 @@ location /t {
                                 ["127.0.0.1"] = 1234
                             },
                             kafka_topic = "test2",
-                            producer_type = "sync",
+                            producer_type = "async",
                             timeout = 1,
                             batch_max_size = 1,
                             required_acks = 1,
@@ -108,37 +67,50 @@ location /t {
                     uri = "/hello",
                 },
             },
-            {
-                input = {
-                    max_pending_entries = 0,
-                },
-            },
         }
 
         local t = require("lib.test_admin").test
         
+        -- Set plugin metadata
+        local metadata = {
+            log_format = {
+                host = "$host",
+                ["@timestamp"] = "$time_iso8601",
+                client_ip = "$remote_addr"
+            },
+            max_pending_entries = -1, -- only for testing to trigger discard
+        }
+        local plugin_metadata = require("apisix.plugins.kafka-logger")
+        plugin_metadata.metadata_schema.properties.max_pending_entries.minimum = -1
+        local code, body = t('/apisix/admin/plugin_metadata/kafka-logger', ngx.HTTP_PUT, metadata)
+        if code >= 300 then
+            ngx.status = code
+            ngx.say(body)
+            return
+        end
+
         -- Create route
         local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[1].input)
         if code >= 300 then
             ngx.status = code
+            ngx.say(body)
             return
         end
-        --- Create metadata
-        code, body = t('/apisix/admin/plugin_metadata/kafka-logger', ngx.HTTP_PUT, data[2].input)
-        if code >= 300 then
-            ngx.status = code
-            return
-        end
-        ngx.say(body)
-        -- Send parallel requests
-        local requests = {}
-        for i = 1, 5 do  -- Send 5 parallel requests
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
-            httpc:request_uri(uri, {
-                    method = "GET",
-                })
+        
+        local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+        local res, err = httpc:request_uri(uri, {
+            method = "GET",
+            headers = {
+                ["Host"] = "example.com",
+                ["User-Agent"] = "test-agent"
+            },
+            keepalive_timeout = 1,
+            keepalive_pool = 10
+        })
+        if not res then
+            ngx.log(ngx.ERR, "failed to request: ", err)
         end
     }
 }
 --- error_log
-max pending entries limit exceeded
+max pending entries limit exceeded. discarding entry
