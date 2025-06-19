@@ -31,9 +31,7 @@ local ngx          = ngx
 local str_format   = core.string.format
 
 local plugin_name = "loki-logger"
-local attr = plugin.plugin_attr(plugin_name)
-local max_pending_entries = attr and attr.max_pending_entries or nil
-local batch_processor_manager = bp_manager_mod.new("loki logger", max_pending_entries)
+local batch_processor_manager = bp_manager_mod.new("loki logger")
 
 local schema = {
     type = "object",
@@ -118,7 +116,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 0,
+        },
     },
 }
 
@@ -207,8 +210,9 @@ function _M.log(conf, ctx)
     -- that is, first process the decimal part of the millisecond value
     -- and then add 6 zeros by string concatenation
     entry.loki_log_time = tostring(ngx.req.start_time() * 1000) .. "000000"
-
-    if batch_processor_manager:add_entry(conf, entry) then
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -247,7 +251,7 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
 end
 
 

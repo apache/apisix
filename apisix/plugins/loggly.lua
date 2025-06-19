@@ -27,9 +27,7 @@ local tab_concat = table.concat
 local udp = ngx.socket.udp
 
 local plugin_name = "loggly"
-local attr = plugin.plugin_attr(plugin_name)
-local max_pending_entries = attr and attr.max_pending_entries or nil
-local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
 
 local severity = {
@@ -144,7 +142,12 @@ local metadata_schema = {
         },
         log_format = {
             type = "object",
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 0,
+        },
     }
 }
 
@@ -341,12 +344,13 @@ function _M.log(conf, ctx)
         local message = tab_concat(entries, "\n")
         return send_bulk_over_http(message, metadata, conf)
     end
-
-    if batch_processor_manager:add_entry(conf, log_data) then
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+    if batch_processor_manager:add_entry(conf, log_data, max_pending_entries) then
         return
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, log_data, ctx, handle_log)
+    batch_processor_manager:add_entry_to_new_processor(conf, log_data, ctx, handle_log, max_pending_entries)
 end
 
 

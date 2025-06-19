@@ -28,9 +28,7 @@ local lrucache = core.lrucache.new({
 })
 
 local plugin_name = "google-cloud-logging"
-local attr = plugin.plugin_attr(plugin_name)
-local max_pending_entries = attr and attr.max_pending_entries or nil
-local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
@@ -112,7 +110,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 0,
+        },
     },
 }
 
@@ -251,8 +254,9 @@ function _M.log(conf, ctx)
     end
 
     local entry = get_logger_entry(conf, ctx, oauth)
-
-    if batch_processor_manager:add_entry(conf, entry) then
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 

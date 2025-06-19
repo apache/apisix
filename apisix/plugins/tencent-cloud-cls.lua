@@ -25,9 +25,7 @@ local pairs = pairs
 
 
 local plugin_name = "tencent-cloud-cls"
-local attr = plugin.plugin_attr(plugin_name)
-local max_pending_entries = attr and attr.max_pending_entries or nil
-local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
+local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
@@ -70,7 +68,12 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        }
+        },
+        max_pending_entries = {
+            type = "integer",
+            description = "maximum number of pending entries in the batch processor",
+            minimum = 0,
+        },
     },
 }
 
@@ -128,8 +131,9 @@ function _M.log(conf, ctx)
             entry[k] = v
         end
     end
-
-    if batch_processor_manager:add_entry(conf, entry) then
+    local metadata = plugin.plugin_metadata(plugin_name)
+    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
 
@@ -142,7 +146,7 @@ function _M.log(conf, ctx)
         return sdk:send_to_cls(entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process, max_pending_entries)
 end
 
 

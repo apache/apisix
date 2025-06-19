@@ -77,9 +77,6 @@ passed
 --- extra_yaml_config
 plugins:
   - kafka-logger
-plugin_attr:
-  kafka-logger:
-    max_pending_entries: -1
 --- config
 location /t {
     content_by_lua_block {
@@ -111,13 +108,28 @@ location /t {
                     uri = "/hello",
                 },
             },
+            {
+                input = {
+                    max_pending_entries = 0,
+                },
+            },
         }
 
         local t = require("lib.test_admin").test
         
         -- Create route
         local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, data[1].input)
-        
+        if code >= 300 then
+            ngx.status = code
+            return
+        end
+        --- Create metadata
+        code, body = t('/apisix/admin/plugin_metadata/kafka-logger', ngx.HTTP_PUT, data[2].input)
+        if code >= 300 then
+            ngx.status = code
+            return
+        end
+        ngx.say(body)
         -- Send parallel requests
         local requests = {}
         for i = 1, 5 do  -- Send 5 parallel requests
@@ -129,4 +141,4 @@ location /t {
     }
 }
 --- error_log
-max pending entries limit exceeded. discarding entry
+max pending entries limit exceeded
