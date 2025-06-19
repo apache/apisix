@@ -30,6 +30,7 @@ local batch_processor_manager = bp_manager_mod.new("lago logger")
 local schema = {
     type = "object",
     properties = {
+        max_pending_entries = {type = "integer", minimum = 0},
         -- core configurations
         endpoint_addrs = {
             type = "array",

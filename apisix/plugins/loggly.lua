@@ -54,6 +54,7 @@ end
 local schema = {
     type = "object",
     properties = {
+        max_pending_entries = {type = "integer", minimum = 0},
         customer_token = {type = "string"},
         severity = {
             type = "string",

@@ -31,6 +31,7 @@ local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
     type = "object",
     properties = {
+        max_pending_entries = {type = "integer", minimum = 0},
         -- deprecated, use "endpoint_addrs" instead
         endpoint_addr = {
             type = "string",

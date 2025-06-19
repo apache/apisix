@@ -33,6 +33,7 @@ local batch_processor_manager = bp_manager_mod.new("skywalking logger")
 local schema = {
     type = "object",
     properties = {
+        max_pending_entries = {type = "integer", minimum = 0},
         endpoint_addr = core.schema.uri_def,
         service_name = {type = "string", default = "APISIX"},
         service_instance_name = {type = "string", default = "APISIX Instance Name"},

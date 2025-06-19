@@ -53,6 +53,7 @@ local schema = {
         concat_method = {type = "string", default = "json",
                          enum = {"json", "new_line"}},
         ssl_verify = {type = "boolean", default = false},
+        max_pending_entries = {type = "integer", minimum = 0}
     },
     required = {"uri"}
 }

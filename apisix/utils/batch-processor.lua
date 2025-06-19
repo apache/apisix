@@ -105,6 +105,7 @@ function execute_func(premature, self, batch)
                            "the max_retry_count[", batch.retry_count,
                            "] dropping the entries")
         end
+        self.processed_entries = self.processed_entries + #batch.entries
         return
     end
     self.processed_entries = self.processed_entries + #batch.entries

@@ -31,6 +31,7 @@ local lrucache = core.lrucache.new({
 local schema = {
     type = "object",
     properties = {
+        max_pending_entries = {type = "integer", minimum = 0},
         meta_format = {
             type = "string",
             default = "default",
