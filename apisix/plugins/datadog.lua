@@ -38,7 +38,6 @@ local schema = {
     type = "object",
     properties = {
         prefer_name = {type = "boolean", default = true},
-        max_pending_entries = {type = "integer", minimum = 0}
     }
 }
 

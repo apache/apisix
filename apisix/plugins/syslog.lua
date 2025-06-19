@@ -25,7 +25,6 @@ local batch_processor_manager = bp_manager_mod.new("sys logger")
 local schema = {
     type = "object",
     properties = {
-        max_pending_entries = {type = "integer", minimum = 0},
         host = {type = "string"},
         port = {type = "integer"},
         flush_limit = {type = "integer", minimum = 1, default = 4096},

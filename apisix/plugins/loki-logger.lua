@@ -36,7 +36,6 @@ local schema = {
     type = "object",
     properties = {
         -- core configurations
-        max_pending_entries = {type = "integer", minimum = 0},
         endpoint_addrs = {
             type = "array",
             minItems = 1,

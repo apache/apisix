@@ -27,7 +27,6 @@ local batch_processor_manager = bp_manager_mod.new("udp logger")
 local schema = {
     type = "object",
     properties = {
-        max_pending_entries = {type = "integer", minimum = 0},
         host = {type = "string"},
         port = {type = "integer", minimum = 0},
         timeout = {type = "integer", minimum = 1, default = 3},

@@ -153,7 +153,7 @@ local metadata_schema = {
 local schema = {
     type = "object",
     properties = {
-        max_pending_entries = {type = "integer", minimum = 0}
+
     }
 }
 

@@ -27,7 +27,6 @@ local batch_processor_manager = bp_manager_mod.new("tcp logger")
 local schema = {
     type = "object",
     properties = {
-        max_pending_entries = {type = "integer", minimum = 0},
         host = {type = "string"},
         port = {type = "integer", minimum = 0},
         tls = {type = "boolean", default = false},
