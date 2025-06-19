@@ -34,7 +34,7 @@ local str_find           = core.string.find
 local log                = core.log
 
 local default_weight
-local applications
+local nacos_dict = ngx.shared.nacos --key: namespace_id.group_name.service_name
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
@@ -42,19 +42,12 @@ local default_group_name = "DEFAULT_GROUP"
 local access_key
 local secret_key
 
-local events
-local events_list
-
 
 local _M = {}
 
-local function discovery_nacos_callback(data, event, source, pid)
-    applications = data
-    log.notice("update local variable application, event is: ", event,
-               "source: ", source, "server pid:", pid,
-               ", application: ", core.json.encode(applications, true))
+local function get_key(namespace_id, group_name, service_name)
+    return namespace_id .. '.' .. group_name .. '.' .. service_name
 end
-
 
 local function request(request_uri, path, body, method, basic_auth)
     local url = request_uri .. path
@@ -289,15 +282,11 @@ local function fetch_full_registry(premature)
     local token_param, err = get_token_param(base_uri, username, password)
     if err then
         log.error('get_token_param error:', err)
-        if not applications then
-            applications = up_apps
-        end
         return
     end
 
     local infos = get_nacos_services()
     if #infos == 0 then
-        applications = up_apps
         return
     end
 
@@ -318,29 +307,14 @@ local function fetch_full_registry(premature)
             goto CONTINUE
         end
 
-        if not up_apps[namespace_id] then
-            up_apps[namespace_id] = {}
-        end
-
-        if not up_apps[namespace_id][group_name] then
-            up_apps[namespace_id][group_name] = {}
-        end
-
+        local nodes = {}
+        local key = get_key(namespace_id, group_name, service_info.service_name)
         for _, host in ipairs(data.hosts) do
-            local nodes = up_apps[namespace_id]
-                [group_name][service_info.service_name]
-            if not nodes then
-                nodes = {}
-                up_apps[namespace_id]
-                    [group_name][service_info.service_name] = nodes
-            end
-
             local node = {
                 host = host.ip,
                 port = host.port,
                 weight = host.weight or default_weight,
             }
-
             -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
             if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
                 node.port = host.metadata.gRPC_port
@@ -348,20 +322,11 @@ local function fetch_full_registry(premature)
 
             core.table.insert(nodes, node)
         end
-
+        if #nodes > 0 then
+            local content = core.json.encode(nodes)
+            nacos_dict:set(key, content)
+        end
         ::CONTINUE::
-    end
-    local new_apps_md5sum = ngx.md5(core.json.encode(up_apps))
-    local old_apps_md5sum = ngx.md5(core.json.encode(applications))
-    if new_apps_md5sum == old_apps_md5sum then
-        return
-    end
-    applications = up_apps
-    local ok, err = events:post(events_list._source, events_list.updating,
-                                applications)
-    if not ok then
-        log.error("post_event failure with ", events_list._source,
-                  ", update application error: ", err)
     end
 end
 
@@ -371,40 +336,18 @@ function _M.nodes(service_name, discovery_args)
             discovery_args.namespace_id or default_namespace_id
     local group_name = discovery_args
             and discovery_args.group_name or default_group_name
-
-    local logged = false
-    -- maximum waiting time: 5 seconds
-    local waiting_time = 5
-    local step = 0.1
-    while not applications and waiting_time > 0 do
-        if not logged then
-            log.warn('wait init')
-            logged = true
-        end
-        ngx.sleep(step)
-        waiting_time = waiting_time - step
-    end
-
-    if not applications or not applications[namespace_id]
-        or not applications[namespace_id][group_name]
-    then
+    local key = get_key(namespace_id, group_name, service_name)
+    local value = nacos_dict:get(key)
+    if not value then
+        core.log.error("nacos service not found: ", service_name)
         return nil
     end
-    return applications[namespace_id][group_name][service_name]
+    local nodes = core.json.decode(value)
+    return nodes
 end
 
 
 function _M.init_worker()
-    events = require("apisix.events")
-    events_list = events:event_list("discovery_nacos_update_application",
-                                    "updating")
-
-    if 0 ~= ngx.worker.id() then
-        events:register(discovery_nacos_callback, events_list._source,
-                        events_list.updating)
-        return
-    end
-
     default_weight = local_conf.discovery.nacos.weight
     log.info('default_weight:', default_weight)
     local fetch_interval = local_conf.discovery.nacos.fetch_interval
@@ -417,7 +360,20 @@ end
 
 
 function _M.dump_data()
-    return {config = local_conf.discovery.nacos, services = applications or {}}
+    local keys = nacos_dict:get_keys(0)
+    local applications = {}
+    for _, key in ipairs(keys) do
+        local value = nacos_dict:get(key)
+        if value then
+            local nodes = core.json.decode(value)
+            if nodes and #nodes > 0 then
+                applications[key] = {
+                    nodes = nodes,
+                }
+            end
+        end
+    end
+    return {services = applications or {}}
 end
 
 

@@ -42,9 +42,9 @@ return {
         timeout = {
             type = 'object',
             properties = {
-                connect = {type = 'integer', minimum = 1, default = 2000},
-                send = {type = 'integer', minimum = 1, default = 2000},
-                read = {type = 'integer', minimum = 1, default = 5000},
+                connect = {type = 'integer', minimum = 1, default = 10000},
+                send = {type = 'integer', minimum = 1, default = 10000},
+                read = {type = 'integer', minimum = 1, default = 10000},
             },
             default = {
                 connect = 2000,
