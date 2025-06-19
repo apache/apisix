@@ -25,11 +25,12 @@ local _M = {}
 local mt = { __index = _M }
 
 
-function _M.new(name)
+function _M.new(name, max_entries)
     return setmetatable({
         stale_timer_running = false,
         buffers = {},
         total_pushed_entries = 0,
+        max_entries = max_entries, -- nil means no limit
         name = name,
     }, mt)
 end
@@ -95,8 +96,8 @@ local function total_processed_entries(self)
 end
 
 function _M:add_entry(conf, entry)
-    if conf.max_pending_entries and
-       self.total_pushed_entries - total_processed_entries(self) > conf.max_pending_entries then
+    if self.max_pending_entries and
+       self.total_pushed_entries - total_processed_entries(self) > self.max_pending_entries then
         core.log.error("max pending entries limit exceeded. discarding entry")
         return
     end
@@ -114,8 +115,8 @@ end
 
 
 function _M:add_entry_to_new_processor(conf, entry, ctx, func)
-    if conf.max_pending_entries and
-       self.total_pushed_entries - total_processed_entries(self) > conf.max_pending_entries then
+    if self.max_pending_entries and
+       self.total_pushed_entries - total_processed_entries(self) > self.max_pending_entries then
         core.log.error("max pending entries limit exceeded. discarding entry")
         return
     end

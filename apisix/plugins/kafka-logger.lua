@@ -19,13 +19,16 @@ local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.kafka.producer")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+local plugin = require("apisix.plugin")
 
 local math     = math
 local pairs    = pairs
 local type     = type
 local req_read_body = ngx.req.read_body
 local plugin_name = "kafka-logger"
-local batch_processor_manager = bp_manager_mod.new("kafka logger")
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new("kafka logger", max_pending_entries)
 
 local lrucache = core.lrucache.new({
     type = "plugin",
