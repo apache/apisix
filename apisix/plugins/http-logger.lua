@@ -20,12 +20,15 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
+local plugin          = require("apisix.plugin")
 
 local tostring = tostring
 local ipairs   = ipairs
 
 local plugin_name = "http-logger"
-local batch_processor_manager = bp_manager_mod.new("http logger")
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new("http logger", max_pending_entries)
 
 local schema = {
     type = "object",

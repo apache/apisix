@@ -20,6 +20,7 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
+local plugin          = require("apisix.plugin")
 
 local base64          = require("ngx.base64")
 local ngx_re          = require("ngx.re")
@@ -29,7 +30,9 @@ local tostring = tostring
 local tonumber = tonumber
 
 local plugin_name = "skywalking-logger"
-local batch_processor_manager = bp_manager_mod.new("skywalking logger")
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new("skywalking logger", max_pending_entries)
 local schema = {
     type = "object",
     properties = {

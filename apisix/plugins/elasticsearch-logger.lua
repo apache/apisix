@@ -19,13 +19,15 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local log_util        = require("apisix.utils.log-util")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
-
+local plugin          = require("apisix.plugin")
 local ngx             = ngx
 local str_format      = core.string.format
 local math_random     = math.random
 
 local plugin_name = "elasticsearch-logger"
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
 
 
 local schema = {

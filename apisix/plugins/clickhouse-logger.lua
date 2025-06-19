@@ -21,11 +21,14 @@ local core            = require("apisix.core")
 local http            = require("resty.http")
 local url             = require("net.url")
 local math_random     = math.random
+local plugin = require("apisix.plugin")
 
 local tostring = tostring
 
 local plugin_name = "clickhouse-logger"
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
 
 local schema = {
     type = "object",

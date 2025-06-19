@@ -19,10 +19,13 @@ local log_util = require("apisix.utils.log-util")
 local producer = require ("resty.rocketmq.producer")
 local acl_rpchook = require("resty.rocketmq.acl_rpchook")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+local plugin    = require("apisix.plugin")
 
 local type     = type
 local plugin_name = "rocketmq-logger"
-local batch_processor_manager = bp_manager_mod.new("rocketmq logger")
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new("rocketmq logger",max_pending_entries)
 
 local lrucache = core.lrucache.new({
     type = "plugin",

@@ -25,12 +25,12 @@ local _M = {}
 local mt = { __index = _M }
 
 
-function _M.new(name, max_entries)
+function _M.new(name, max_pending_entries)
     return setmetatable({
         stale_timer_running = false,
         buffers = {},
         total_pushed_entries = 0,
-        max_entries = max_entries, -- nil means no limit
+        max_pending_entries = max_pending_entries, -- nil means no limit
         name = name,
     }, mt)
 end

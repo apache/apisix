@@ -17,7 +17,7 @@
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-
+local plugin = require("apisix.plugin")
 
 local plugin_name = "sls-logger"
 local ngx = ngx
@@ -27,8 +27,9 @@ local tostring = tostring
 local ipairs = ipairs
 local table = table
 
-
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
 local schema = {
     type = "object",
     properties = {

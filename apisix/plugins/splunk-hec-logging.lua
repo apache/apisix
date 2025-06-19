@@ -24,14 +24,16 @@ local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local table_insert    = core.table.insert
 local table_concat    = core.table.concat
 local ipairs          = ipairs
-
+local plugin          = require("apisix.plugin")
 
 local DEFAULT_SPLUNK_HEC_ENTRY_SOURCE = "apache-apisix-splunk-hec-logging"
 local DEFAULT_SPLUNK_HEC_ENTRY_TYPE = "_json"
 
 
 local plugin_name = "splunk-hec-logging"
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
 
 
 local schema = {

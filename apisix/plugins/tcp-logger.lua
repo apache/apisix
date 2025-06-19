@@ -17,13 +17,15 @@
 local core     = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
+local plugin   = require("apisix.plugin")
 local plugin_name = "tcp-logger"
 local tostring = tostring
 local ngx = ngx
 local tcp = ngx.socket.tcp
 
-
-local batch_processor_manager = bp_manager_mod.new("tcp logger")
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new("tcp logger", max_pending_entries)
 local schema = {
     type = "object",
     properties = {

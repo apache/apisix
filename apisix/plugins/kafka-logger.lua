@@ -311,7 +311,6 @@ function _M.log(conf, ctx)
         end
 
         core.log.info("send data to kafka: ", data)
-
         return send_kafka_data(conf, data, prod)
     end
 

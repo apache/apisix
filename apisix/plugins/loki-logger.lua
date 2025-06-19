@@ -20,6 +20,7 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local new_tab         = require("table.new")
+local plugin          = require("apisix.plugin")
 
 local pairs        = pairs
 local ipairs       = ipairs
@@ -30,7 +31,9 @@ local ngx          = ngx
 local str_format   = core.string.format
 
 local plugin_name = "loki-logger"
-local batch_processor_manager = bp_manager_mod.new("loki logger")
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new("loki logger", max_pending_entries)
 
 local schema = {
     type = "object",

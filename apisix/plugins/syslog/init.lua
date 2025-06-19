@@ -18,12 +18,16 @@
 local core = require("apisix.core")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local logger_socket = require("resty.logger.socket")
+local plugin = require("apisix.plugin")
 local rfc5424 = require("apisix.utils.rfc5424")
 local ipairs = ipairs
 local table_insert = core.table.insert
 local table_concat = core.table.concat
 
-local batch_processor_manager = bp_manager_mod.new("sys logger")
+local plugin_name = "sys logger"
+local attr = plugin.plugin_attr(plugin_name)
+local max_pending_entries = attr and attr.max_pending_entries or nil
+local batch_processor_manager = bp_manager_mod.new(plugin_name, max_pending_entries)
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512, serial_creating = true,
