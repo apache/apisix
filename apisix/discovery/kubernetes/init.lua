@@ -644,20 +644,20 @@ local function dump_endpoints_from_dict(endpoint_dict)
         return
     end
 
-    local k8s = {}
+    local endpoints = {}
     for i = 1, #keys do
         local key = keys[i]
         -- skip key with suffix #version
         if key:sub(-#"#version") ~= "#version" then
             local value = endpoint_dict:get(key)
-            core.table.insert(k8s, {
+            core.table.insert(endpoints, {
                 name = key,
                 value = value
             })
         end
     end
 
-    return k8s
+    return endpoints
 end
 
 function _M.dump_data()
@@ -670,7 +670,6 @@ function _M.dump_data()
         local endpoints = dump_endpoints_from_dict(endpoint_dict)
         if endpoints then
             core.table.insert(eps, {
-                id = nil,
                 endpoints = endpoints
             })
         end
