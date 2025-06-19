@@ -92,7 +92,8 @@ function _M.push_entry(conf, ctx, entry)
                                 "apisix", ctx.var.pid, json_str)
     core.log.info("collect_data:" .. rfc5424_data)
     local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+        local max_pending_entries = metadata and metadata.value and
+          metadata.value.max_pending_entries or nil
     if batch_processor_manager:add_entry(conf, rfc5424_data, max_pending_entries) then
         return
     end

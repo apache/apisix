@@ -231,7 +231,8 @@ function _M.log(conf, ctx)
     entry.balancer_ip = ctx.balancer_ip or ""
     entry.scheme = ctx.upstream_scheme or ""
     local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+        local max_pending_entries = metadata and metadata.value and
+          metadata.value.max_pending_entries or nil
     -- if prefer_name is set, fetch the service/route name. If the name is nil, fall back to id.
     if conf.prefer_name then
         if entry.service_id and entry.service_id ~= "" then

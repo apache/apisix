@@ -180,7 +180,8 @@ function _M.log(conf, ctx)
         entry.route_id = "no-matched"
     end
     local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and metadata.value.max_pending_entries or nil
+        local max_pending_entries = metadata and metadata.value and
+          metadata.value.max_pending_entries or nil
     if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
         return
     end
