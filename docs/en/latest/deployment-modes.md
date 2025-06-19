@@ -295,7 +295,7 @@ routes:
 #END
 ```
 
-*WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end. But using `conf/apisix.json` eliminates the need for `#END`, as APISIX will directly parse to validate the legitimacy of the JSON.
+*WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end. However, when using `conf/apisix.json`, the `#END` marker is not required, as APISIX can directly parse and validate the JSON structure.
 
 Environment variables can also be used like so:
 
