@@ -18,6 +18,96 @@
 version: "3.8"
 
 services:
+  ## Eureka
+  eureka:
+    image: bitinit/eureka
+    env_file:
+      - ci/pod/eureka/env/common.env
+    restart: unless-stopped
+    ports:
+      - "8761:8761"
+
+  ## Consul
+  consul_1:
+    image: consul:1.7
+    restart: unless-stopped
+    ports:
+      - "8500:8500"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    networks:
+      consul_net:
+
+  consul_2:
+    image: consul:1.7
+    restart: unless-stopped
+    ports:
+      - "8600:8500"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    networks:
+      consul_net:
+
+  consul_3:
+    image: hashicorp/consul:1.16.2
+    restart: unless-stopped
+    ports:
+      - "8502:8500"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-client", "0.0.0.0", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks", "-ui", "-hcl", "acl = {\nenabled = true\ndefault_policy = \"deny\"\nenable_token_persistence = true\ntokens = {\nagent = \"2b778dd9-f5f1-6f29-b4b4-9a5fa948757a\"\n}}" ]
+    networks:
+      consul_net:
+
+  ## Consul cluster
+  consul_node_1:
+    image: consul:1.7
+    restart: unless-stopped
+    ports:
+      - "9500:8500"
+      - "8300:8300"
+      - "8301:8301"
+      - "8302:8302"
+      - "9600:8600"
+    command: [ "consul", "agent", "-server", "-bootstrap-expect=1", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-node", "node-1", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    healthcheck:
+        test: ["CMD", "curl", "-f", "http://localhost:8500/"]
+        interval: 10s
+        timeout: 10s
+        retries: 5
+    networks:
+      consul_cluster_net:
+        aliases:
+          - consul.cluster
+
+  consul_node_2:
+    image: consul:1.7
+    restart: unless-stopped
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    ports:
+      - "9501:8500"
+    command: [ "consul", "agent", "-server", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-retry-join", "consul.cluster", "-node", "node-2", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    depends_on:
+      consul_node_1:
+        condition: service_healthy
+    networks:
+      consul_cluster_net:
+        aliases:
+          - consul.cluster
+
+  consul_node_3:
+    image: consul:1.7
+    restart: unless-stopped
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    ports:
+      - "9502:8500"
+    command: [ "consul", "agent", "-server", "-bind", "0.0.0.0", "-client", "0.0.0.0", "-retry-join", "consul.cluster", "-node", "node-3", "-log-level", "info", "-data-dir=/consul/data", "-enable-script-checks" ]
+    depends_on:
+      consul_node_1:
+        condition: service_healthy
+    networks:
+      consul_cluster_net:
+        aliases:
+          - consul.cluster
+
   ## Nacos cluster
   nacos_auth:
     hostname: nacos1
