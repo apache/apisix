@@ -45,6 +45,7 @@ local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
 local next = next
+local concurrent_counter = require("apisix.plugins.prometheus.concurrent-counter")
 
 
 local ngx_capture
@@ -502,6 +503,30 @@ local function collect(ctx, stream_only)
 end
 _M.collect = collect
 
+local function concurrent_collect(ctx, stream_only)
+    local concurrent_count = concurrent_counter.reg(ctx)
+
+    if concurrent_count > 1 then
+        local start_time = ngx.now()
+        while ngx.now() - start_time < 10 do
+            local code, body = concurrent_counter.get_data()
+            if code then
+                concurrent_counter.unreg(ctx)
+                return code, body
+            end
+        end
+        return 500, {message = "Request metric data timeout. Please try again later."}
+    end
+
+    concurrent_counter.reset_data()
+
+    local code, body = collect(ctx, stream_only)
+    concurrent_counter.set_data(code, body)
+    concurrent_counter.unreg(ctx)
+
+    return code, body
+end
+_M.concurrent_collect = concurrent_collect
 
 local function get_api(called_by_api_router)
     local export_uri = default_export_uri
@@ -513,7 +538,7 @@ local function get_api(called_by_api_router)
     local api = {
         methods = {"GET"},
         uri = export_uri,
-        handler = collect
+        handler = concurrent_collect
     }
 
     if not called_by_api_router then
