@@ -152,9 +152,6 @@ local metadata_schema = {
 
 local schema = {
     type = "object",
-    properties = {
-
-    }
 }
 
 
