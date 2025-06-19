@@ -308,8 +308,8 @@ discovery:
 
             local body = json_decode(res.body)
             local services = body.services
-            local service = services["public"]["DEFAULT_GROUP"]["APISIX-NACOS"]
-            local number = table.getn(service)
+            local service = services["public.DEFAULT_GROUP.APISIX-NACOS"]
+            local number = table.getn(service.nodes)
             ngx.say(number)
         }
     }

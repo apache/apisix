@@ -251,16 +251,43 @@ discovery:
       host:
         - "http://127.0.0.1:8858"
       fetch_interval: 1
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local valid_responses = 0
+
+            for i = 1, 2 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" or clean_body == "server 2" then
+                        valid_responses = valid_responses + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+            -- Final check
+            if valid_responses == 2 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL: only ", valid_responses, " valid responses")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
 
 
 
@@ -399,16 +426,43 @@ discovery:
       host:
         - "http://127.0.0.1:8858"
       fetch_interval: 1
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local valid_responses = 0
+
+            for i = 1, 2 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" or clean_body == "server 2" then
+                        valid_responses = valid_responses + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+            -- Final check
+            if valid_responses == 2 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL: only ", valid_responses, " valid responses")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
 
 
 
@@ -547,16 +601,43 @@ discovery:
       host:
         - "http://127.0.0.1:8858"
       fetch_interval: 1
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server [1-2]/,
-    qr/server [1-2]/,
-]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local valid_responses = 0
+
+            for i = 1, 2 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" or clean_body == "server 2" then
+                        valid_responses = valid_responses + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+            -- Final check
+            if valid_responses == 2 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL: only ", valid_responses, " valid responses")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
 
 
 
@@ -744,40 +825,38 @@ discovery:
         - "http://127.0.0.1:8858"
       fetch_interval: 1
 --- config
-    location /t {
-        content_by_lua_block {
-            local http = require("resty.http")
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-            
-            -- Wait for 2 seconds for APISIX initialization
-            ngx.sleep(2)
-            
-            local httpc = http.new()
-            local valid_responses = 0
-            
-            for i = 1, 2 do
-                local res, err = httpc:request_uri(uri .. "/hello")
-                if not res then
-                    ngx.log(ngx.ERR, "Request failed: ", err)
-                else
-                    -- Clean and validate response
-                    local clean_body = res.body:gsub("%s+$", "")
-                    if clean_body == "server 1" or clean_body == "server 2" then
-                        valid_responses = valid_responses + 1
-                    else
-                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
-                    end
-                end
-            end
-            
-            -- Final check
-            if valid_responses == 2 then
-                ngx.say("PASS")
-            else
-                ngx.say("FAIL: only ", valid_responses, " valid responses")
-            end
-        }
-    }
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local valid_responses = 0
+
+            for i = 1, 2 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" or clean_body == "server 2" then
+                        valid_responses = valid_responses + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+            -- Final check
+            if valid_responses == 2 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL: only ", valid_responses, " valid responses")
+            end
+        }
+    }
 --- request
 GET /t
 --- response_body
