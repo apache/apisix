@@ -378,15 +378,11 @@ function _M.dump_data()
         local value = nacos_dict:get(key)
         if value then
             local nodes = core.json.decode(value)
-            if nodes and #nodes > 0 then
+            if nodes then
                 applications[key] = {
                     nodes = nodes,
                 }
             end
-        else
-            applications[key] = {
-                nodes = {},
-            }
         end
     end
     return {services = applications or {}}
