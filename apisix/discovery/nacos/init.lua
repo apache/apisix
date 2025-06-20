@@ -20,6 +20,7 @@ local local_conf         = require('apisix.core.config_local').local_conf()
 local http               = require('resty.http')
 local core               = require('apisix.core')
 local ipairs             = ipairs
+local pairs              = pairs
 local type               = type
 local math               = math
 local math_random        = math.random
