@@ -25,6 +25,13 @@ local config_provider = local_conf.deployment and local_conf.deployment.config_p
                       or "etcd"
 log.info("use config_provider: ", config_provider)
 local config = require("apisix.core.config_" .. config_provider)
+
+-- Currently, we handle JSON parsing in config_yaml, so special processing is needed here.
+if config_provider == "json" then
+    config = require("apisix.core.config_yaml")
+    config.file_type = "json"
+end
+
 config.type = config_provider
 
 

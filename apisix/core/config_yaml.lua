@@ -55,6 +55,9 @@ local _M = {
     local_conf = config_local.local_conf,
     clear_local_cache = config_local.clear_cache,
 
+    -- yaml or json
+    file_type = "yaml",
+
     ERR_NO_SHARED_DICT = "failed prepare standalone config shared dict, this will degrade "..
                     "to event broadcasting, and if a worker crashes, the configuration "..
                     "cannot be restored from other workers and shared dict"
@@ -68,35 +71,65 @@ local mt = {
     end
 }
 
-local apisix_config
-local apisix_config_mtime
-local apisix_config_path
+local apisix_yaml
+local apisix_yaml_mtime
 
-local apisix_yaml_path = profile:yaml_path("apisix")
-local apisix_json_path = ngx.re.sub(apisix_yaml_path, [[\.yaml$]], ".json", "jo")
-local file_configs = {
-    {path = apisix_yaml_path, type = "yaml"},
-    {path = apisix_json_path, type = "json"}
+local apisix_yaml = {
+    path = profile:yaml_path("apisix"),
+    type = "yaml",
+    parse = function(self)
+        local f, err = io.open(self.path, "r")
+        if not f then
+            return nil, "failed to open file " .. self.path .. " : " .. err
+        end
+
+        f:seek('end', -10)
+        local end_flag = f:read("*a")
+        local found_end_flag = re_find(end_flag, [[#END\s*$]], "jo")
+
+        if not found_end_flag then
+            f:close()
+            return nil, "missing valid end flag in file " .. self.path
+        end
+
+        f:seek('set')
+        local raw_config = f:read("*a")
+        f:close()
+
+        return yaml.load(raw_config), nil
+    end
 }
 
-local function get_config_file_info()
-    local paths_str = ""
-    for i, config in ipairs(file_configs) do
-        local attributes, err = lfs.attributes(config.path)
-        if attributes then
-            local last_modification_time = attributes.modification
-            return config.path, config.type, last_modification_time
-        else
-            paths_str = paths_str .. config.path
-            if i < #file_configs then
-                paths_str = paths_str .. ", "
-            end
-            log.warn("failed to fetch ", config.path, " attributes: ", err)
+local apisix_json = {
+    path = ngx.re.sub(apisix_yaml.path, [[\.yaml$]], ".json", "jo"),
+    type = "json",
+    parse = function(self)
+        local f, err = io.open(self.path, "r")
+        if not f then
+            return nil, "failed to open file " .. self.path .. " : " .. err
         end
-    end
+        local raw_config = f:read("*a")
+        f:close()
 
-    return nil, nil, nil, "Failed to find any configuration file with path " .. paths_str
+        local apisix_config_new, err = json.decode(raw_config)
+        if err then
+            return nil, "failed to decode json: " .. err .. " raw_config: " .. raw_config
+        end
+        return apisix_config_new, nil
+    end
+}
+
+local config_file_info_table = {
+    apisix_yaml,
+    apisix_json
+}
+
+
+local function get_config_file_info()
+    local type = _M.file_type or "yaml"
+    return config_file_info_table["apisix_" .. type]
 end
+_M.get_config_file_info = get_config_file_info
 
 
 local function sync_status_to_shdict(status)
@@ -125,9 +158,9 @@ local function update_config(table, conf_version)
         return
     end
 
-    apisix_config = table
+    apisix_yaml = table
     sync_status_to_shdict(true)
-    apisix_config_mtime = conf_version
+    apisix_yaml_mtime = conf_version
 end
 _M._update_config = update_config
 
@@ -143,61 +176,27 @@ local function read_apisix_config(premature, pre_mtime)
         return
     end
 
-    local file_path, file_type, last_modification_time, err = get_config_file_info()
+    local config_file = get_config_file_info()
+    local attributes, err = lfs.attributes(config_file.path)
+    if not attributes then
+        log.error("failed to fetch ", config_file.path, " attributes: ", err)
+        return
+    end
 
-    apisix_config_path = file_path
+    local last_modification_time = attributes.modification
+    if apisix_yaml_mtime == last_modification_time then
+        return
+    end
 
+    local apisix_yaml_new, err = config_file.parse()
     if err then
-        log.error(err)
+        log.error("failed to parse the content of file " .. config_file.path .. ": " .. err)
         return
     end
 
-    if apisix_config_mtime == last_modification_time then
-        return
-    end
+    update_config(apisix_yaml_new, last_modification_time)
 
-    local f, err = io.open(file_path, "r")
-    if not f then
-        log.error("failed to open file ", file_path, " : ", err)
-        return
-    end
-
-    local apisix_config_new
-    if file_type == "yaml" then
-        f:seek('end', -10)
-        local end_flag = f:read("*a")
-        local found_end_flag = re_find(end_flag, [[#END\s*$]], "jo")
-
-        if not found_end_flag then
-            f:close()
-            log.warn("missing valid end flag in file ", file_path)
-            return
-        end
-
-        f:seek('set')
-        local raw_config = f:read("*a")
-        f:close()
-
-        apisix_config_new = yaml.load(raw_config)
-    elseif file_type == "json" then
-        local raw_config = f:read("*a")
-        f:close()
-
-        apisix_config_new, err = json.decode(raw_config)
-        if err then
-            log.error("failed to decode json: ", err, " raw_config: ", raw_config)
-            return
-        end
-    end
-
-    if not apisix_config_new then
-        log.error("failed to parse the content of file " .. file_path)
-        return
-    end
-
-    update_config(apisix_config_new, last_modification_time)
-
-    log.warn("config file ", file_path, " reloaded.")
+    log.warn("config file ", config_file.path, " reloaded.")
 end
 
 
@@ -208,20 +207,21 @@ local function sync_data(self)
 
     local conf_version
     if is_use_admin_api() then
-        conf_version = apisix_config[self.conf_version_key] or 0
+        conf_version = apisix_yaml[self.conf_version_key] or 0
     else
-        if not apisix_config_mtime then
+        if not apisix_yaml_mtime then
             log.warn("wait for more time")
-            return nil, "failed to read local file " .. apisix_config_path
+            local config_file = get_config_file_info()
+            return nil, "failed to read local file " .. config_file.path
         end
-        conf_version = apisix_config_mtime
+        conf_version = apisix_yaml_mtime
     end
 
     if not conf_version or conf_version == self.conf_version then
         return true
     end
 
-    local items = apisix_config[self.key]
+    local items = apisix_yaml[self.key]
     if not items then
         self.values = new_tab(8, 0)
         self.values_hash = new_tab(0, 8)
@@ -430,13 +430,14 @@ local function _automatic_fetch(premature, self)
         end
     end
 
+    local config_file = get_config_file_info()
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
         local ok, ok2, err = pcall(sync_data, self)
         if not ok then
             err = ok2
-            log.error("failed to fetch data from local file " .. apisix_config_path .. ": ",
+            log.error("failed to fetch data from local file " .. config_file.path .. ": ",
                       err, ", ", tostring(self))
             ngx_sleep(3)
             break
@@ -444,7 +445,7 @@ local function _automatic_fetch(premature, self)
         elseif not ok2 and err then
             if err ~= "timeout" and err ~= "Key not found"
                and self.last_err ~= err then
-                log.error("failed to fetch data from local file " .. apisix_config_path .. ": ",
+                log.error("failed to fetch data from local file " .. config_file.path .. ": ",
                           err, ", ", tostring(self))
             end
 
@@ -518,7 +519,8 @@ function _M.new(key, opts)
         end
 
         if err then
-            log.error("failed to fetch data from local file ", apisix_config_path, ": ",
+            local config_file = get_config_file_info()
+            log.error("failed to fetch data from local file ", config_file.path, ": ",
                       err, ", ", key)
         end
 
@@ -566,8 +568,8 @@ end
 function _M.init_worker()
     sync_status_to_shdict(false)
     if is_use_admin_api() then
-        apisix_config = {}
-        apisix_config_mtime = 0
+        apisix_yaml = {}
+        apisix_yaml_mtime = 0
         return true
     end
 
