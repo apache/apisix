@@ -74,7 +74,7 @@ local mt = {
 local apisix_yaml
 local apisix_yaml_mtime
 
-local apisix_yaml = {
+local config_yaml = {
     path = profile:yaml_path("apisix"),
     type = "yaml",
     parse = function(self)
@@ -100,8 +100,8 @@ local apisix_yaml = {
     end
 }
 
-local apisix_json = {
-    path = ngx.re.sub(apisix_yaml.path, [[\.yaml$]], ".json", "jo"),
+local config_json = {
+    path = ngx.re.sub(config_yaml.path, [[\.yaml$]], ".json", "jo"),
     type = "json",
     parse = function(self)
         local f, err = io.open(self.path, "r")
@@ -120,14 +120,13 @@ local apisix_json = {
 }
 
 local config_file_info_table = {
-    apisix_yaml,
-    apisix_json
+    yaml = config_yaml,
+    json = config_json
 }
 
 
 local function get_config_file_info()
-    local type = _M.file_type or "yaml"
-    return config_file_info_table["apisix_" .. type]
+    return config_file_info_table[_M.file_type or "yaml"]
 end
 _M.get_config_file_info = get_config_file_info
 
@@ -187,13 +186,13 @@ local function read_apisix_config(premature, pre_mtime)
         return
     end
 
-    local apisix_yaml_new, err = config_file.parse()
+    local config_new, err = config_file.parse()
     if err then
         log.error("failed to parse the content of file " .. config_file.path .. ": " .. err)
         return
     end
 
-    update_config(apisix_yaml_new, last_modification_time)
+    update_config(config_new, last_modification_time)
 
     log.warn("config file ", config_file.path, " reloaded.")
 end
