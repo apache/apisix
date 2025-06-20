@@ -126,12 +126,11 @@ local config_file_table = {
 }
 
 
-local config_file = config_file_table[_M.file_type]
-
-local function update_config_file()
-    config_file = config_file_table[_M.file_type]
-end
-_M.update_config_file = update_config_file
+local config_file = setmetatable({}, {
+    __index = function(_, key)
+        return config_file_table[_M.file_type][key]
+    end
+})
 
 
 local function sync_status_to_shdict(status)
@@ -177,7 +176,6 @@ local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
     end
-    update_config_file()
     local attributes, err = lfs.attributes(config_file.path)
     if not attributes then
         log.error("failed to fetch ", config_file.path, " attributes: ", err)
