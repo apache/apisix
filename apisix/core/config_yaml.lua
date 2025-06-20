@@ -113,7 +113,7 @@ local apisix_json = {
 
         local apisix_config_new, err = json.decode(raw_config)
         if err then
-            return nil, "failed to decode json: " .. err .. " raw_config: " .. raw_config
+            return nil, "failed to decode json: " .. err
         end
         return apisix_config_new, nil
     end
