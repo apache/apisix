@@ -5,6 +5,10 @@ on:
     paths:
       - 'CHANGELOG.md'
       - 'ci/check_changelog_prs.ts'
+  pull_request:
+    paths:
+      - 'CHANGELOG.md'
+      - 'ci/check_changelog_prs.ts'
 
 jobs:
   check-changelog:
