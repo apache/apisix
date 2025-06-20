@@ -111,11 +111,11 @@ local apisix_json = {
         local raw_config = f:read("*a")
         f:close()
 
-        local apisix_config_new, err = json.decode(raw_config)
+        local config, err = json.decode(raw_config)
         if err then
             return nil, "failed to decode json: " .. err
         end
-        return apisix_config_new, nil
+        return config, nil
     end
 }
 
@@ -175,7 +175,6 @@ local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
     end
-
     local config_file = get_config_file_info()
     local attributes, err = lfs.attributes(config_file.path)
     if not attributes then
