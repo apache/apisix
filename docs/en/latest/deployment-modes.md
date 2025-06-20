@@ -138,7 +138,7 @@ deployment:
     config_provider: yaml
 ```
 
-You can also provide the configuration in JSON format by placing it in `conf/apisix.json`. At this point, you need to change the `deployment.role_data_plane.config_provider` to `json`.
+You can also provide the configuration in JSON format by placing it in `conf/apisix.json`. Before proceeding, you should change the `deployment.role_data_plane.config_provider` to `json`.
 
 Refer to the example below:
 
