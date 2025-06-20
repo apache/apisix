@@ -136,7 +136,7 @@ deployment:
 
 This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
 
-*Note*: When using `config_provider: yaml`, we can also use JSON, just provide the configuration in `conf/apisix.json`.
+*Note*: When using `config_provider: yaml`, you can also provide the configuration in JSON format by placing it in `conf/apisix.json`.
 
 #### API-driven (Experimental)
 
@@ -295,7 +295,7 @@ routes:
 #END
 ```
 
-*WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end. But using `conf/apisix.json` eliminates the need for `#END`, as APISIX will directly parse to validate the legitimacy of the JSON.
+*WARNING*: APISIX will not load the rules into memory from file `conf/apisix.yaml` if there is no `#END` at the end. However, when using `conf/apisix.json`, the `#END` marker is not required, as APISIX can directly parse and validate the JSON structure.
 
 Environment variables can also be used like so:
 
