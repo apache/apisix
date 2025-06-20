@@ -35,6 +35,10 @@ local log                = core.log
 
 local default_weight
 local nacos_dict = ngx.shared.nacos --key: namespace_id.group_name.service_name
+if not nacos_dict then
+    error("lua_shared_dict \"nacos\" not configured")
+end
+
 local auth_path = 'auth/login'
 local instance_list_path = 'ns/instance/list?healthyOnly=true&serviceName='
 local default_namespace_id = "public"
