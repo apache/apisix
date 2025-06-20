@@ -19,6 +19,7 @@ local ipmatcher = require("resty.ipmatcher")
 local ngx_now = ngx.now
 local ipairs = ipairs
 local type = type
+local tostring = tostring
 
 
 local _M = {}
