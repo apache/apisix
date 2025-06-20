@@ -97,7 +97,7 @@ my $test2_crt = read_file("t/certs/test2.crt");
 my $test2_key = read_file("t/certs/test2.key");
 my $etcd_pem = read_file("t/certs/etcd.pem");
 my $etcd_key = read_file("t/certs/etcd.key");
-$user_yaml_config = <<_EOC_;
+$user_yaml_config .= <<_EOC_;
 apisix:
   node_listen: 1984
   proxy_mode: http&stream
