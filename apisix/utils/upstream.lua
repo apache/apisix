@@ -47,6 +47,10 @@ local function compare_upstream_node(up_conf, new_t)
         return false
     end
 
+    core.log.debug("compare upstream nodes by value, ",
+                    "old: ", tostring(old_t) , " ", core.json.delay_encode(old_t, true),
+                    ", new: ", tostring(new_t) , " ", core.json.delay_encode(new_t, true))
+
     core.table.sort(old_t, sort_by_key_host)
     core.table.sort(new_t, sort_by_key_host)
 
