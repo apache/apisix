@@ -18,11 +18,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
-        with:
-          bun-version: latest
 
       - name: Run check_changelog_prs script
         working-directory: ci
-        run: bun run check_changelog_prs.ts
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          export PATH="$HOME/.bun/bin:$PATH"
+          bun run check_changelog_prs.ts
