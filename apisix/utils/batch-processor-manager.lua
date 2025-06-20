@@ -103,7 +103,7 @@ function _M:add_entry(conf, entry, max_pending_entries)
                            " total_processed_entries: ", total_processed_entries
                            " max_pending_entries: ", max_pending_entries)
             return
-       end
+        end
     end
     check_stale(self)
 
@@ -127,7 +127,7 @@ function _M:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entri
                            " total_processed_entries: ", total_processed_entries
                            " max_pending_entries: ", max_pending_entries)
             return
-       end
+        end
     end
     check_stale(self)
 
