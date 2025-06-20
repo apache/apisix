@@ -101,8 +101,8 @@ local config_yaml = {
 }
 
 local config_json = {
-    -- `-5` to remove the ".yaml" suffix
-    path = config_yaml.path:sub(1, -5) .. ".json",
+    -- `-5` to remove the "yaml" suffix
+    path = config_yaml.path:sub(1, -5) .. "json",
     type = "json",
     parse = function(self)
         local f, err = io.open(self.path, "r")
@@ -127,6 +127,11 @@ local config_file_table = {
 
 
 local config_file = config_file_table[_M.file_type]
+
+local function update_config_file()
+    config_file = config_file_table[_M.file_type]
+end
+_M.update_config_file = update_config_file
 
 
 local function sync_status_to_shdict(status)
@@ -172,6 +177,7 @@ local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
     end
+    update_config_file()
     local attributes, err = lfs.attributes(config_file.path)
     if not attributes then
         log.error("failed to fetch ", config_file.path, " attributes: ", err)
@@ -183,7 +189,7 @@ local function read_apisix_config(premature, pre_mtime)
         return
     end
 
-    local config_new, err = config_file.parse()
+    local config_new, err = config_file:parse()
     if err then
         log.error("failed to parse the content of file " .. config_file.path .. ": " .. err)
         return

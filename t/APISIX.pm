@@ -245,7 +245,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
     my $wait_etcd_sync = $block->wait_etcd_sync // 0.1;
 
-    if (($block->apisix_yaml || $block->apisix_json) && (!defined $block->yaml_config)) {
+    if ($block->apisix_yaml && (!defined $block->yaml_config)) {
         $user_yaml_config = <<_EOC_;
 apisix:
     node_listen: 1984
@@ -254,6 +254,18 @@ deployment:
     role: data_plane
     role_data_plane:
         config_provider: yaml
+_EOC_
+    }
+
+    if ($block->apisix_json && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: json
 _EOC_
     }
 
