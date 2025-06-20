@@ -189,7 +189,7 @@ local function read_apisix_config(premature, pre_mtime)
 
     local config_new, err = config_file:parse()
     if err then
-        log.error("failed to parse the content of file " .. config_file.path .. ": " .. err)
+        log.error("failed to parse the content of file ", config_file.path, ": ", err)
         return
     end
 
