@@ -129,7 +129,6 @@ local schema = {
         producer_max_buffering = {type = "integer", minimum = 1, default = 50000},
         producer_time_linger = {type = "integer", minimum = 1, default = 1},
         meta_refresh_interval = {type = "integer", minimum = 1, default = 30},
-
     },
     oneOf = {
         { required = {"broker_list", "kafka_topic"},},
@@ -146,7 +145,7 @@ local metadata_schema = {
         max_pending_entries = {
             type = "integer",
             description = "maximum number of pending entries in the batch processor",
-            minimum = 0,
+            minimum = 1,
         },
     },
 }
@@ -317,6 +316,7 @@ function _M.log(conf, ctx)
         end
 
         core.log.info("send data to kafka: ", data)
+
         return send_kafka_data(conf, data, prod)
     end
 

@@ -78,7 +78,7 @@ location /t {
                 ["@timestamp"] = "$time_iso8601",
                 client_ip = "$remote_addr"
             },
-            max_pending_entries = 0
+            max_pending_entries = 1
         }
 
         local code, body = t('/apisix/admin/plugin_metadata/kafka-logger', ngx.HTTP_PUT, metadata)
@@ -97,6 +97,11 @@ location /t {
         end
 
         local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+        httpc:request_uri(uri, {
+            method = "GET",
+            keepalive_timeout = 1,
+            keepalive_pool = 1,
+        })
         httpc:request_uri(uri, {
             method = "GET",
             keepalive_timeout = 1,
