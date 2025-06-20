@@ -91,6 +91,7 @@ function execute_func(premature, self, batch)
             core.log.error("Batch Processor[", self.name, "] failed to process entries [",
                             #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ", err)
             batch.entries = slice_batch(batch.entries, first_fail)
+            self.processed_entries = self.processed_entries + first_fail - 1
         else
             core.log.error("Batch Processor[", self.name,
                            "] failed to process entries: ", err)
