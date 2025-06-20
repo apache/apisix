@@ -62,12 +62,7 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 0,
-        },
+        }
     },
 }
 

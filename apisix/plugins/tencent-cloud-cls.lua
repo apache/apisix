@@ -19,7 +19,6 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local cls_sdk = require("apisix.plugins.tencent-cloud-cls.cls-sdk")
-local plugin = require("apisix.plugin")
 local math = math
 local pairs = pairs
 
@@ -68,12 +67,7 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 0,
-        },
+        }
     },
 }
 
@@ -131,10 +125,8 @@ function _M.log(conf, ctx)
             entry[k] = v
         end
     end
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -147,8 +139,7 @@ function _M.log(conf, ctx)
         return sdk:send_to_cls(entries)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry,
-                                                       ctx, process, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, process)
 end
 
 

@@ -23,7 +23,6 @@ local http            = require("resty.http")
 local bp_manager_mod  = require("apisix.utils.batch-processor-manager")
 local core            = require("apisix.core")
 local str_format      = core.string.format
-local plugin          = require("apisix.plugin")
 
 local plugin_name = "lago"
 local batch_processor_manager = bp_manager_mod.new("lago logger")
@@ -120,23 +119,12 @@ schema = batch_processor_manager:wrap_schema(schema)
 -- This does not affect other plugins, schema is appended after deep copy
 schema.properties.batch_max_size.default = 100
 
-local metadata_schema = {
-    type = "object",
-    properties = {
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 0,
-        },
-    },
-}
 
 local _M = {
     version = 0.1,
     priority = 415,
     name = plugin_name,
     schema = schema,
-    metadata_schema = metadata_schema,
 }
 
 
@@ -222,10 +210,8 @@ function _M.log(conf, ctx)
             end
         end
     end
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -236,7 +222,7 @@ function _M.log(conf, ctx)
         })
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 

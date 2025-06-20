@@ -18,14 +18,12 @@
 local core = require("apisix.core")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local logger_socket = require("resty.logger.socket")
-local plugin = require("apisix.plugin")
 local rfc5424 = require("apisix.utils.rfc5424")
 local ipairs = ipairs
 local table_insert = core.table.insert
 local table_concat = core.table.concat
 
-local plugin_name = "sys logger"
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+local batch_processor_manager = bp_manager_mod.new("sys logger")
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512, serial_creating = true,
@@ -91,10 +89,7 @@ function _M.push_entry(conf, ctx, entry)
     local rfc5424_data = rfc5424.encode("SYSLOG", "INFO", ctx.var.host,
                                 "apisix", ctx.var.pid, json_str)
     core.log.info("collect_data:" .. rfc5424_data)
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
-    if batch_processor_manager:add_entry(conf, rfc5424_data, max_pending_entries) then
+    if batch_processor_manager:add_entry(conf, rfc5424_data) then
         return
     end
 
@@ -110,8 +105,7 @@ function _M.push_entry(conf, ctx, entry)
         return send_syslog_data(conf, table_concat(items), cp_ctx)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, rfc5424_data,
-                                                       ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, rfc5424_data, ctx, func)
 end
 
 

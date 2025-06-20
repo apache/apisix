@@ -19,9 +19,9 @@ local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
 local syslog = require("apisix.plugins.syslog.init")
-
 local plugin_name = "syslog"
-local batch_processor_manager = bp_manager_mod.new(plugin_name)
+
+local batch_processor_manager = bp_manager_mod.new("stream sys logger")
 local schema = {
     type = "object",
     properties = {

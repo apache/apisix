@@ -17,7 +17,7 @@
 local core = require("apisix.core")
 local log_util = require("apisix.utils.log-util")
 local bp_manager_mod = require("apisix.utils.batch-processor-manager")
-local plugin = require("apisix.plugin")
+
 
 local plugin_name = "sls-logger"
 local ngx = ngx
@@ -26,6 +26,7 @@ local tcp = ngx.socket.tcp
 local tostring = tostring
 local ipairs = ipairs
 local table = table
+
 
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 local schema = {
@@ -65,12 +66,7 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 0,
-        },
+        }
     },
 }
 
@@ -189,15 +185,12 @@ function _M.log(conf, ctx)
         data = rf5424_data,
         route_conf = conf
     }
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
-    if batch_processor_manager:add_entry(conf, process_context, max_pending_entries) then
+
+    if batch_processor_manager:add_entry(conf, process_context) then
         return
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, process_context,
-                                                       ctx, handle_log, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, process_context, ctx, handle_log)
 end
 
 

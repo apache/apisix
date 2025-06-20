@@ -20,7 +20,6 @@ local log_util        = require("apisix.utils.log-util")
 local core            = require("apisix.core")
 local http            = require("resty.http")
 local new_tab         = require("table.new")
-local plugin          = require("apisix.plugin")
 
 local pairs        = pairs
 local ipairs       = ipairs
@@ -116,12 +115,7 @@ local metadata_schema = {
     properties = {
         log_format = {
             type = "object"
-        },
-        max_pending_entries = {
-            type = "integer",
-            description = "maximum number of pending entries in the batch processor",
-            minimum = 0,
-        },
+        }
     },
 }
 
@@ -210,10 +204,8 @@ function _M.log(conf, ctx)
     -- that is, first process the decimal part of the millisecond value
     -- and then add 6 zeros by string concatenation
     entry.loki_log_time = tostring(ngx.req.start_time() * 1000) .. "000000"
-    local metadata = plugin.plugin_metadata(plugin_name)
-    local max_pending_entries = metadata and metadata.value and
-                                metadata.value.max_pending_entries or nil
-    if batch_processor_manager:add_entry(conf, entry, max_pending_entries) then
+
+    if batch_processor_manager:add_entry(conf, entry) then
         return
     end
 
@@ -252,7 +244,7 @@ function _M.log(conf, ctx)
         return send_http_data(conf, data)
     end
 
-    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    batch_processor_manager:add_entry_to_new_processor(conf, entry, ctx, func)
 end
 
 
