@@ -332,14 +332,13 @@ local function fetch_full_registry(premature)
         end
         ::CONTINUE::
     end
-    local old_curr_service_in_use = curr_service_in_use
-    curr_service_in_use = service_names
     -- remove services that are not in use anymore
-    for key, _ in pairs(old_curr_service_in_use) do
+    for key, _ in pairs(curr_service_in_use) do
         if not service_names[key] then
             nacos_dict:delete(key)
         end
     end
+    curr_service_in_use = service_names
 end
 
 
