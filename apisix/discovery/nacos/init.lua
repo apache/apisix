@@ -275,7 +275,7 @@ local function is_grpc(scheme)
     return false
 end
 
-
+local curr_service_in_use = {}
 local function fetch_full_registry(premature)
     if premature then
         return
@@ -292,7 +292,7 @@ local function fetch_full_registry(premature)
     if #infos == 0 then
         return
     end
-
+    local service_names = {}
     for _, service_info in ipairs(infos) do
         local data, err
         local namespace_id = service_info.namespace_id
@@ -312,6 +312,7 @@ local function fetch_full_registry(premature)
 
         local nodes = {}
         local key = get_key(namespace_id, group_name, service_info.service_name)
+        service_names[key] = true
         for _, host in ipairs(data.hosts) do
             local node = {
                 host = host.ip,
@@ -330,6 +331,14 @@ local function fetch_full_registry(premature)
             nacos_dict:set(key, content)
         end
         ::CONTINUE::
+    end
+    local old_curr_service_in_use = curr_service_in_use
+    curr_service_in_use = service_names
+    -- remove services that are not in use anymore
+    for key, _ in pairs(old_curr_service_in_use) do
+        if not service_names[key] then
+            nacos_dict:delete(key)
+        end
     end
 end
 
@@ -374,6 +383,10 @@ function _M.dump_data()
                     nodes = nodes,
                 }
             end
+        else
+            applications[key] = {
+                nodes = {},
+            }
         end
     end
     return {services = applications or {}}
