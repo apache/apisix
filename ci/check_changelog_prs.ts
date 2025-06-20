@@ -104,7 +104,6 @@ function extractPRsFromChangelog(startTag: string, endTag: string): number[] {
     return prs.sort((a, b) => a - b);
 }
 
-
 function shouldIgnoreCommitMessage(message: string): boolean {
     // Extract the commit message part (remove the commit hash)
     const messagePart = message.split(' ').slice(1).join(' ');
