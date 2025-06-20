@@ -101,7 +101,8 @@ local config_yaml = {
 }
 
 local config_json = {
-    path = ngx.re.sub(config_yaml.path, [[\.yaml$]], ".json", "jo"),
+    -- `-5` to remove the ".yaml" suffix
+    path = config_yaml.path:sub(1, -5) .. ".json",
     type = "json",
     parse = function(self)
         local f, err = io.open(self.path, "r")
@@ -119,16 +120,13 @@ local config_json = {
     end
 }
 
-local config_file_info_table = {
+local config_file_table = {
     yaml = config_yaml,
     json = config_json
 }
 
 
-local function get_config_file_info()
-    return config_file_info_table[_M.file_type or "yaml"]
-end
-_M.get_config_file_info = get_config_file_info
+local config_file = config_file_table[_M.file_type]
 
 
 local function sync_status_to_shdict(status)
@@ -174,7 +172,6 @@ local function read_apisix_config(premature, pre_mtime)
     if premature then
         return
     end
-    local config_file = get_config_file_info()
     local attributes, err = lfs.attributes(config_file.path)
     if not attributes then
         log.error("failed to fetch ", config_file.path, " attributes: ", err)
@@ -209,7 +206,6 @@ local function sync_data(self)
     else
         if not apisix_yaml_mtime then
             log.warn("wait for more time")
-            local config_file = get_config_file_info()
             return nil, "failed to read local file " .. config_file.path
         end
         conf_version = apisix_yaml_mtime
@@ -428,7 +424,6 @@ local function _automatic_fetch(premature, self)
         end
     end
 
-    local config_file = get_config_file_info()
     local i = 0
     while not exiting() and self.running and i <= 32 do
         i = i + 1
@@ -517,7 +512,6 @@ function _M.new(key, opts)
         end
 
         if err then
-            local config_file = get_config_file_info()
             log.error("failed to fetch data from local file ", config_file.path, ": ",
                       err, ", ", key)
         end
