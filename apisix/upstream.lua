@@ -314,12 +314,16 @@ function _M.set_by_route(route, api_ctx)
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
             end
 
-            up_conf.nodes = new_nodes
-
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
                           core.json.delay_encode(up_conf, true))
         end
+
+        -- in case the value of new_nodes is the same as the old one,
+        -- but discovery lib return a new table for it.
+        -- for example, when watch loop of kubernetes discovery is broken or done,
+        -- it will fetch full data again and return a new table for every services.
+        up_conf.nodes = new_nodes
     end
 
     local id = up_conf.parent.value.id
