@@ -32,6 +32,19 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
+      - name: Build APISIX Dashboard UI
+        run: |
+          curl -L https://bit.ly/n-install | bash -s -- -y
+          corepack prepare pnpm@latest --activate
+          source .requirements
+          git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
+          cd apisix-dashboard
+          pnpm install --frozen-lockfile
+          pnpm run build
+          mkdir -p ../ui
+          cp -r dist/* ../ui
+          rm -r apisix-dashboard
+
       - name: Build and run
         run: |
           make build-on-debian-dev
