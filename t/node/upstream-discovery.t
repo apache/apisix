@@ -476,10 +476,12 @@ routes:
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
-            local res = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            if res.status ~= 200 then
-                ngx.say("request failed: ", res.status)
-                return
+            for i = 1, 10 do
+                local res = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if res.status ~= 200 then
+                    ngx.say("request failed: ", res.status)
+                    return
+                end
             end
 
             local new_nodes = {{host = "127.0.0.2", port = 1980, weight = 1}, {host = "127.0.0.1", port = 1980, weight = 1}}
@@ -501,6 +503,8 @@ routes:
 --- response_body
 pass
 --- grep_error_log eval
-qr/compare upstream nodes by value/
+qr/compare upstream nodes by value|fill node info for upstream/
 --- grep_error_log_out
+fill node info for upstream
 compare upstream nodes by value
+fill node info for upstream

@@ -35,7 +35,8 @@ local function compare_upstream_node(up_conf, new_t)
         return false
     end
 
-    local old_t = up_conf.original_nodes or up_conf.nodes
+    -- fast path
+    local old_t = up_conf.nodes
     if old_t == new_t then
         return true
     end
@@ -44,13 +45,21 @@ local function compare_upstream_node(up_conf, new_t)
         return false
     end
 
-    if #new_t ~= #old_t then
-        return false
-    end
-
+    -- slow path
     core.log.debug("compare upstream nodes by value, ",
                     "old: ", tostring(old_t) , " ", core.json.delay_encode(old_t, true),
                     ", new: ", tostring(new_t) , " ", core.json.delay_encode(new_t, true))
+
+    if up_conf.original_nodes then
+        -- if original_nodes is set, it means that the upstream nodes
+        -- are changed by `fill_node_info`, so we can compare the new nodes with the
+        -- original nodes.
+        old_t = up_conf.original_nodes
+    end
+
+    if #new_t ~= #old_t then
+        return false
+    end
 
     core.table.sort(old_t, sort_by_key_host)
     core.table.sort(new_t, sort_by_key_host)
