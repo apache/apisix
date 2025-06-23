@@ -91,7 +91,7 @@ hello world
 mmm
 --- stream_sni: xx.com
 --- error_log
-failed to find any SSL certificate by SNI: xx.com
+failed to match any SSL certificate by SNI: xx.com
 
 
 

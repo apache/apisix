@@ -493,8 +493,16 @@ _EOC_
     ssl_certificate_key         cert/apisix.key;
     lua_ssl_trusted_certificate cert/apisix.crt;
 
+    ssl_session_cache    shared:STREAM_SSL:20m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+
+    ssl_client_hello_by_lua_block {
+        apisix.ssl_client_hello_phase()
+    }
+
     ssl_certificate_by_lua_block {
-        apisix.stream_ssl_phase()
+        apisix.ssl_phase()
     }
 
     preread_by_lua_block {
@@ -779,12 +787,16 @@ _EOC_
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
+        ssl_session_cache    shared:SSL:20m;
+        ssl_session_timeout 10m;
+        ssl_session_tickets off;
+
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
 
         access_log logs/access.log main;
