@@ -42,10 +42,15 @@ routes:
 #END
 _EOC_
         fi
-        /usr/bin/apisix init
-    else
-        /usr/bin/apisix init
-        /usr/bin/apisix init_etcd
+
+    /usr/bin/apisix init
+
+    # if deployment role is data_plane, then dont init etcd
+    if [ -f "${PREFIX}/conf/config.yaml" ]; then
+        deployment_role=$(grep -oP 'deployment:\s+role:\s+\K[^ ]+' "${PREFIX}/conf/config.yaml")
+        if [ "$deployment_role" != "data_plane" ]; then
+            /usr/bin/apisix init_etcd
+        fi
     fi
 
     # For versions below 3.5.0 whose conf_server has not been removed.
