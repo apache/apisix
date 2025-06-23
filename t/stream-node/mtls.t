@@ -319,7 +319,7 @@ GET /t
 --- stream_enable
 --- max_size: 1048576
 --- exec
-echo "" | openssl s_client -connect 127.0.0.1:2005 \
+echo "" | timeout 1 openssl s_client -ign_eof  -connect 127.0.0.1:2005 \
     -servername localhost -cert t/certs/mtls_client.crt -key t/certs/mtls_client.key \
     -sess_out session.dat
 
@@ -329,7 +329,7 @@ echo "" | openssl s_client -connect 127.0.0.1:2005 \
 --- stream_enable
 --- max_size: 1048576
 --- exec
-echo "" | openssl s_client -connect 127.0.0.1:2005 -servername test.com \
+echo "" | timeout 1 openssl s_client -ign_eof -connect 127.0.0.1:2005 -servername test.com \
     -sess_in session.dat
 --- error_log
 sni in client hello mismatch hostname of ssl session, sni: test.com, hostname: localhost
