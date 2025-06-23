@@ -165,6 +165,18 @@ passed
     end)
 
     http.request_uri = function(self, uri, params)
+        if params.method == "GET" then
+            return {
+                status = 200,
+                body = [[
+                {
+                    "version": {
+                        "number": "8.10.2"
+                    }
+                }
+                ]]
+            }
+        end
         if not params.body or type(params.body) ~= "string" then
             return nil, "invalid params body"
         end
@@ -293,9 +305,7 @@ GET /hello
 --- response_body
 hello world
 --- error_log
-Batch Processor[elasticsearch-logger] failed to process entries: elasticsearch server returned status: 401
-"reason":"missing authentication credentials for REST request [/_bulk]"
-Batch Processor[elasticsearch-logger] exceeded the max_retry_count
+failed to get Elasticsearch version: server returned status: 401
 
 
 
@@ -416,6 +426,18 @@ passed
     end)
 
     http.request_uri = function(self, uri, params)
+        if params.method == "GET" then
+            return {
+                status = 200,
+                body = [[
+                {
+                    "version": {
+                        "number": "8.10.2"
+                    }
+                }
+                ]]
+            }
+        end
         if not params.body or type(params.body) ~= "string" then
             return nil, "invalid params body"
         end
@@ -637,6 +659,18 @@ passed
     end)
 
     http.request_uri = function(self, uri, params)
+        if params.method == "GET" then
+            return {
+                status = 200,
+                body = [[
+                {
+                    "version": {
+                        "number": "8.10.2"
+                    }
+                }
+                ]]
+            }
+        end
         if not params.body or type(params.body) ~= "string" then
             return nil, "invalid params body"
         end
@@ -744,6 +778,10 @@ Action/metadata line [1] contains an unknown parameter [_type]
                         field = {
                             index = "services"
                         },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
                         batch_max_size = 1,
                         inactive_timeout = 1,
                         include_req_body = true
@@ -784,6 +822,10 @@ Action/metadata line [1] contains an unknown parameter [_type]
                         field = {
                             index = "services"
                         },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
                         batch_max_size = 1,
                         inactive_timeout = 1,
                         include_req_body = true,
@@ -804,50 +846,7 @@ Action/metadata line [1] contains an unknown parameter [_type]
 
 
 
-=== TEST 25: set route (auth) - check compat with version 9 - type field not supported
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
-                uri = "/hello",
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {
-                        ["127.0.0.1:1980"] = 1
-                    }
-                },
-                plugins = {
-                    ["elasticsearch-logger"] = {
-                        endpoint_addr = "http://127.0.0.1:9301",
-                        field = {
-                            index = "services",
-                            type = "collector"
-                        },
-                        server_version = "9",
-                        auth = {
-                            username = "elastic",
-                            password = "123456"
-                        },
-                        batch_max_size = 1,
-                        inactive_timeout = 1
-                    }
-                }
-            })
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- error_code: 400
---- response_body eval
-qr/.*type is not supported in Elasticsearch 9*/
-
-
-
-=== TEST 26: set route (auth) - check compat with version 9
+=== TEST 21: set route (auth) - check compat with version 9
 --- config
     location /t {
         content_by_lua_block {
@@ -866,7 +865,6 @@ qr/.*type is not supported in Elasticsearch 9*/
                         field = {
                             index = "services"
                         },
-                        server_version = "9",
                         auth = {
                             username = "elastic",
                             password = "123456"
@@ -876,7 +874,54 @@ qr/.*type is not supported in Elasticsearch 9*/
                     }
                 }
             })
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+=== TEST 26: test route (auth success)
+--- request
+GET /hello
+--- wait: 2
+--- response_body
+hello world
+--- error_log
+Batch Processor[elasticsearch-logger] successfully processed the entries
 
+
+
+=== TEST 22: set route (auth) - warning should be given with version 9 when deprecated field is passed
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
+                uri = "/hello",
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1980"] = 1
+                    }
+                },
+                plugins = {
+                    ["elasticsearch-logger"] = {
+                        endpoint_addr = "http://127.0.0.1:9301",
+                        field = {
+                            index = "services",
+                            type = "xyz"
+                        },
+                        auth = {
+                            username = "elastic",
+                            password = "123456"
+                        },
+                        batch_max_size = 1,
+                        inactive_timeout = 1
+                    }
+                }
+            })
             if code >= 300 then
                 ngx.status = code
             end
@@ -888,11 +933,11 @@ passed
 
 
 
-=== TEST 27: test route (auth success)
+=== TEST 23: test route (auth success)
 --- request
 GET /hello
 --- wait: 2
 --- response_body
 hello world
 --- error_log
-Batch Processor[elasticsearch-logger] successfully processed the entries
+type is not supported in Elasticsearch 9, removing `type`

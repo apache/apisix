@@ -45,21 +45,19 @@ local schema = {
                 pattern = "[^/]$",
             },
         },
-        server_version = {
-            type = "string",
-            default = "8",
-            enum = {"7", "8", "9"},
-            description = "The version of the Elasticsearch server.\
-            supported values 7, 8 and 9"
-        },
         field = {
             type = "object",
             properties = {
-                index = { type = "string"},
+                index = {
+                    type = "string",
+                    description = "Supports APISIX variables and a lua time format inside braces.\
+                    lua time format: https://www.lua.org/pil/22.1.html",
+                    -- example: service-$host-{"%Y-%m-%d"}
+                },
                 type = {
                     type = "string",
-                    description = "Type is partially supported with compat headers in version 8 and unsupported on version 9. \
-                    see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/removal-of-types.html"
+                    description = "Type is partially supported with compat headers in version 8 \
+                    and unsupported on version 9"
                 }
             },
             required = {"index"}
@@ -136,10 +134,7 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
-    if conf.server_version == "9" and conf.field.type then
-        return false, "type is not supported in Elasticsearch 9, " ..
-            "see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/removal-of-types.html"
-    end
+
     local check = {"endpoint_addrs"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
@@ -160,6 +155,48 @@ local function get_logger_entry(conf, ctx)
 end
 
 
+local function get_es_major_version(uri, conf)
+    local httpc = http.new()
+    if not httpc then
+        return nil, "failed to create http client"
+    end
+    local headers = {}
+    if conf.auth then
+        local authorization = "Basic " .. ngx.encode_base64(
+            conf.auth.username .. ":" .. conf.auth.password
+        )
+        headers["Authorization"] = authorization
+    end
+    httpc:set_timeout(conf.timeout * 1000)
+    local res, err = httpc:request_uri(uri, {
+        ssl_verify = conf.ssl_verify,
+        method = "GET",
+        headers = headers,
+    })
+    if not res then
+        return false, err
+    end
+    if res.status ~= 200 then
+        return nil, str_format("server returned status: %d, body: %s",
+            res.status, res.body or "")
+    end
+    local json_body, err = core.json.decode(res.body)
+    if not json_body then
+        return nil, "failed to decode response body: " .. err
+    end
+    if not json_body.version or not json_body.version.number then
+        return nil, "failed to get version from response body"
+    end
+
+    local major_version = json_body.version.number:match("^(%d+)%.")
+    if not major_version then
+        return nil, "invalid version format: " .. json_body.version.number
+    end
+
+    return major_version
+end
+
+
 local function send_to_elasticsearch(conf, entries)
     local httpc, err = http.new()
     if not httpc then
@@ -172,18 +209,29 @@ local function send_to_elasticsearch(conf, entries)
     else
         selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
     end
+    if not conf._version then
+        local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
+        if err then
+            return false, str_format("failed to get Elasticsearch version: %s", err)
+        end
+        conf._version = major_version
+    end
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {
         ["Content-Type"] = "application/x-ndjson",
         ["Accept"] = "application/vnd.elasticsearch+json"
     }
-    if conf.server_version == "8" then
+    if conf._version == "8" then
         headers["Content-Type"] = headers["Content-Type"] .. compat_header_7
         headers["Accept"] = headers["Accept"] .. compat_header_7
-    elseif conf.server_version == "9" then
+    elseif conf._version == "9" then
         headers["Content-Type"] = headers["Content-Type"] .. compat_header_8
         headers["Accept"] = headers["Accept"] .. compat_header_8
+        if conf.field.type then
+            core.log.warn("type is not supported in Elasticsearch 9, removing `type`")
+            conf.field.type = nil
+        end
     end
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
