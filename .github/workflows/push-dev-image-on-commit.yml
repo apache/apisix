@@ -34,7 +34,7 @@ jobs:
 
       - name: Build APISIX Dashboard UI
         run: |
-          n lts
+          sudo n lts
           corepack prepare pnpm@latest --activate
           source .requirements
           git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
