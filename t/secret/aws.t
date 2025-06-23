@@ -314,3 +314,5 @@ GET /t
     }
 --- response_body
 all done
+--- error_log
+failed to fetch secret value: no secret conf, secret_uri: $secret://aws/mysecret/jack/key
