@@ -32,7 +32,7 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
 
-      - name: Build APISIX Dashboard UI
+      - name: Build APISIX Dashboard
         run: |
           # install node.js and pnpm
           sudo n lts
