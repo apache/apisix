@@ -224,7 +224,7 @@ local function send_to_elasticsearch(conf, entries)
         headers["Content-Type"] = headers["Content-Type"] .. compat_header_8
         headers["Accept"] = headers["Accept"] .. compat_header_8
         if conf.field.type then
-            core.log.warn("type is not supported in Elasticsearch 9, removing `type`")
+            core.log.error("type is not supported in Elasticsearch 9, removing `type`")
             conf.field.type = nil
         end
     end
