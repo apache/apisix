@@ -26,7 +26,8 @@ local math_random     = math.random
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
-
+local compat_header_7 = ";compatible-with=7"
+local compat_header_8 = ";compatible-with=8"
 
 local schema = {
     type = "object",
@@ -44,11 +45,22 @@ local schema = {
                 pattern = "[^/]$",
             },
         },
+        server_version = {
+            type = "string",
+            default = "8",
+            enum = {"7", "8", "9"},
+            description = "The version of the Elasticsearch server.\
+            supported values 7, 8 and 9"
+        },
         field = {
             type = "object",
             properties = {
                 index = { type = "string"},
-                type = { type = "string"}
+                type = {
+                    type = "string",
+                    description = "Type is partially supported with compat headers in version 8 and unsupported on version 9. \
+                    see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/removal-of-types.html"
+                }
             },
             required = {"index"}
         },
@@ -124,6 +136,10 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+    if conf.server_version == "9" and conf.field.type then
+        return false, "type is not supported in Elasticsearch 9, " ..
+            "see https://www.elastic.co/guide/en/elasticsearch/reference/7.17/removal-of-types.html"
+    end
     local check = {"endpoint_addrs"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
@@ -159,9 +175,16 @@ local function send_to_elasticsearch(conf, entries)
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {
-        ["Content-Type"] = "application/x-ndjson;compatible-with=7",
-        ["Accept"] = "application/vnd.elasticsearch+json;compatible-with=7"
+        ["Content-Type"] = "application/x-ndjson",
+        ["Accept"] = "application/vnd.elasticsearch+json"
     }
+    if conf.server_version == "8" then
+        headers["Content-Type"] = headers["Content-Type"] .. compat_header_7
+        headers["Accept"] = headers["Accept"] .. compat_header_7
+    elseif conf.server_version == "9" then
+        headers["Content-Type"] = headers["Content-Type"] .. compat_header_8
+        headers["Accept"] = headers["Accept"] .. compat_header_8
+    end
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
