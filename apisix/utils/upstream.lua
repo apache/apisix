@@ -52,7 +52,7 @@ local function compare_upstream_node(up_conf, new_t)
 
     if up_conf.original_nodes then
         -- if original_nodes is set, it means that the upstream nodes
-        -- are changed by `fill_node_info`, so we can compare the new nodes with the
+        -- are changed by `fill_node_info`, so we need to compare the new nodes with the
         -- original nodes.
         old_t = up_conf.original_nodes
     end
