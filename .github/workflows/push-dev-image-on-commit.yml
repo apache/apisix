@@ -34,13 +34,20 @@ jobs:
 
       - name: Build APISIX Dashboard UI
         run: |
+          # install node.js and pnpm
           sudo n lts
-          corepack prepare pnpm@latest --activate
+          corepack enable pnpm
+          
+          # prepare apisix-dashboard source code
           source .requirements
           git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
           cd apisix-dashboard
+
+          # compile
           pnpm install --frozen-lockfile
           pnpm run build
+
+          # copy the dist files to the ui directory
           mkdir -p ../ui
           cp -r dist/* ../ui
           rm -r apisix-dashboard
