@@ -41,15 +41,16 @@ jobs:
           # prepare apisix-dashboard source code
           source .requirements
           git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
-          cd apisix-dashboard
+          pushd apisix-dashboard
 
           # compile
           pnpm install --frozen-lockfile
           pnpm run build
+          popd
 
           # copy the dist files to the ui directory
-          mkdir -p ../ui
-          cp -r dist/* ../ui
+          mkdir ui
+          cp -r apisix-dashboard/dist/* ui/
           rm -r apisix-dashboard
 
       - name: Build and run
