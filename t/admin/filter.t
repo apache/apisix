@@ -1035,8 +1035,8 @@ passed
             end
 
             -- check both service_id and upstream_id
-            local code, body, res = t('/apisix/admin/routes?filter='
-                                        .. ngx.encode_args({ service_id = "1", upstream_id = "1" }),
+            local code, body, res = t('/apisix/admin/routes?'
+                                        .. ngx.encode_args({filter = ngx.encode_args({ service_id = "1", upstream_id = "1" })}),
                 ngx.HTTP_GET
             )
             res = json.decode(res)
@@ -1053,3 +1053,4 @@ passed
         }
     }
 --- error_code: 200
+--- ONLY
