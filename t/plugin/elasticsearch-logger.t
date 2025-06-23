@@ -882,7 +882,10 @@ Action/metadata line [1] contains an unknown parameter [_type]
     }
 --- response_body
 passed
-=== TEST 26: test route (auth success)
+
+
+
+=== TEST 22: test route (auth success)
 --- request
 GET /hello
 --- wait: 2
@@ -893,7 +896,7 @@ Batch Processor[elasticsearch-logger] successfully processed the entries
 
 
 
-=== TEST 22: set route (auth) - warning should be given with version 9 when deprecated field is passed
+=== TEST 23: set route (auth) - warning should be given with version 9 when deprecated field is passed
 --- config
     location /t {
         content_by_lua_block {
@@ -933,7 +936,7 @@ passed
 
 
 
-=== TEST 23: test route (auth success)
+=== TEST 24: test route (auth success)
 --- request
 GET /hello
 --- wait: 2
