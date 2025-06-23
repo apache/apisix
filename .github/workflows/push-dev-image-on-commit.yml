@@ -37,7 +37,7 @@ jobs:
           # install node.js and pnpm
           sudo n lts
           corepack enable pnpm
-          
+
           # prepare apisix-dashboard source code
           source .requirements
           git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
