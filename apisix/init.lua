@@ -166,7 +166,7 @@ function _M.http_exit_worker()
 end
 
 
-function _M.http_ssl_phase()
+function _M.ssl_phase()
     local ok, err = router.router_ssl.set(ngx.ctx.matched_ssl)
     if not ok then
         if err then
@@ -177,7 +177,7 @@ function _M.http_ssl_phase()
 end
 
 
-function _M.http_ssl_client_hello_phase()
+function _M.ssl_client_hello_phase()
     local sni, err = apisix_ssl.server_name(true)
     if not sni or type(sni) ~= "string" then
         local advise = "please check if the client requests via IP or uses an outdated " ..
@@ -212,6 +212,10 @@ function _M.http_ssl_client_hello_phase()
         core.log.error("failed to set ssl protocols: ", err)
         ngx_exit(-1)
     end
+
+    -- in stream subsystem, ngx.ssl.server_name() return hostname of ssl session in preread phase,
+    -- so that we can't get real SNI without recording it in ngx.ctx during client_hello phase
+    ngx.ctx.client_hello_sni = sni
 end
 
 
@@ -296,13 +300,25 @@ local function set_upstream_headers(api_ctx, picked_server)
 end
 
 
-local function verify_tls_client(ctx)
-    if apisix_base_flags.client_cert_verified_in_handshake then
-        -- For apisix-runtime, there is no need to rematch SSL rules as the invalid
-        -- connections are already rejected in the handshake
-        return true
+-- verify the TLS session resumption by checking if the SNI in the client hello
+-- matches the hostname of the SSL session, this is to prevent the mTLS bypass security issue.
+local function verify_tls_session_resumption()
+    local session_hostname, err = apisix_ssl.session_hostname()
+    if err then
+        core.log.error("failed to get session hostname: ", err)
+        return false
+    end
+    if session_hostname and session_hostname ~= ngx.ctx.client_hello_sni then
+        core.log.error("sni in client hello mismatch hostname of ssl session, ",
+                         "sni: ", ngx.ctx.client_hello_sni, ", hostname: ", session_hostname)
+        return false
     end
 
+    return true
+end
+
+
+local function verify_tls_client(ctx)
     local matched = router.router_ssl.match_and_set(ctx, true)
     if not matched then
         return true
@@ -318,6 +334,10 @@ local function verify_tls_client(ctx)
                 core.log.error("client certificate verification is not passed: ", res)
             end
 
+            return false
+        end
+
+        if not verify_tls_session_resumption() then
             return false
         end
     end
@@ -389,6 +409,10 @@ local function verify_https_client(ctx)
             -- is a stronge demand in real world.
             core.log.error("client certificate verified with SNI ", sni,
                            ", but the host is ", host)
+            return false
+        end
+
+        if not verify_tls_session_resumption() then
             return false
         end
     end
@@ -1018,25 +1042,6 @@ function _M.http_control()
     local ok = control_api_router.match(get_var("uri"))
     if not ok then
         ngx_exit(404)
-    end
-end
-
-
-function _M.stream_ssl_phase()
-    local ngx_ctx = ngx.ctx
-    local api_ctx = core.tablepool.fetch("api_ctx", 0, 32)
-    ngx_ctx.api_ctx = api_ctx
-
-    local ok, err = router.router_ssl.match_and_set(api_ctx)
-
-    core.tablepool.release("api_ctx", api_ctx)
-    ngx_ctx.api_ctx = nil
-
-    if not ok then
-        if err then
-            core.log.error("failed to fetch ssl config: ", err)
-        end
-        ngx_exit(-1)
     end
 end
 
