@@ -379,6 +379,10 @@ function _M.init(env, args)
         util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
+    if yaml_conf.deployment.role == "data_plane" then
+        return true
+    end
+
     local etcd_ok = false
     for index, host in ipairs(etcd_healthy_hosts) do
         if prepare_dirs(yaml_conf, args, index, host, host_count) then
