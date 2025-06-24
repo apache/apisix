@@ -61,7 +61,7 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+                enum = { "openai", "deepseek", "aimlapi", "openai-compatible" }, -- add more providers later
 
             },
             priority = {
@@ -96,7 +96,7 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+            enum = { "openai", "deepseek", "aimlapi", "openai-compatible" }, -- add more providers later
 
         },
         auth = auth_schema,

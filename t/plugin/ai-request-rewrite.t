@@ -211,7 +211,7 @@ property "provider" is required
 
 
 
-=== TEST 5: provider must be one of: deepseek, openai, openai-compatible
+=== TEST 5: provider must be one of: deepseek, openai, aimlapi, openai-compatible
 --- config
     location /t {
         content_by_lua_block {

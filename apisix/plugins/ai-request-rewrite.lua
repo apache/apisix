@@ -65,7 +65,7 @@ local schema = {
         provider = {
             type = "string",
             description = "Name of the AI service provider.",
-            enum = {"openai", "openai-compatible", "deepseek"} -- add more providers later
+            enum = {"openai", "openai-compatible", "deepseek", "aimlapi"} -- add more providers later
         },
         auth = auth_schema,
         options = model_options_schema,
