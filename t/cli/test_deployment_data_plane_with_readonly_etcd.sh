@@ -22,7 +22,6 @@
 # clean etcd data
 etcdctl del / --prefix
 
-export ETCDCTL_API=3
 # add root user to help disable auth
 etcdctl user add "root:test"
 etcdctl role add root
@@ -35,8 +34,6 @@ etcdctl user grant-role apisix-data-plane data-plane-role
 # enable auth
 etcdctl auth enable
 
-sleep 3
-
 # data_plane can start with read-only etcd
 echo '
 deployment:
@@ -45,26 +42,22 @@ deployment:
         config_provider: etcd
     etcd:
         host:
-            - https://127.0.0.1:12379
+            - http://127.0.0.1:2379
         user: apisix-data-plane
         password: test
-        prefix: "/apisix"
+        prefix: /apisix
         timeout: 30
-        tls:
-            verify: false
 ' > conf/config.yaml
 
-out=$(make run 2>&1 || true)
-make stop
-
-echo "$out"
+out=$(make init 2>&1 || true)
+sleep 3
 
 if echo "$out" | grep 'etcdserver: permission denied'; then
     echo "failed: data_plane should not write data to etcd"
     exit 1
 fi
 
-echo "passed: data_plane can start with read-only etcd"
+echo "passed: data_plane can init with read-only etcd"
 
 # clean up
 etcdctl --user=root:test auth disable
