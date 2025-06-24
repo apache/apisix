@@ -56,6 +56,9 @@ deployment:
 
 out=$(make run 2>&1 || true)
 make stop
+
+echo "$out"
+
 if echo "$out" | grep 'etcdserver: permission denied'; then
     echo "failed: data_plane should not write data to etcd"
     exit 1
