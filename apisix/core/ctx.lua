@@ -224,7 +224,7 @@ do
         __index = function(t, key)
             local cached = t._cache[key]
             if cached ~= nil then
-                log.info("serving ctx value from cache for key: ", key)
+                log.debug("serving ctx value from cache for key: ", key)
                 return cached
             end
 
