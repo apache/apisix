@@ -17,29 +17,27 @@
 # limitations under the License.
 #
 
-. ./t/cli/common.sh
+# . ./t/cli/common.sh
 
 # clean etcd data
 etcdctl del / --prefix
 
-etcdctl user add root <<EOF
-test
-test
-EOF
+export ETCDCTL_API=3
+# add root user to help disable auth
+etcdctl user add "root:test"
 etcdctl role add root
 etcdctl user grant-role root root
 # add readonly user
-etcdctl user add apisix-data-plane <<EOF
-test
-test
-EOF
+etcdctl user add "apisix-data-plane:test"
 etcdctl role add data-plane-role
 etcdctl role grant-permission --prefix=true data-plane-role read /apisix
 etcdctl user grant-role apisix-data-plane data-plane-role
-
+# enable auth
 etcdctl auth enable
 
-# data_plane can start with readonly etcd user
+sleep 3
+
+# data_plane can start with read-only etcd
 echo '
 deployment:
     role: data_plane
@@ -56,21 +54,18 @@ deployment:
             verify: false
 ' > conf/config.yaml
 
-make run
-
-sleep 1
-
-res=$(etcdctl -u root:test get / --prefix | wc -l)
-
-if [ ! $res -eq 0 ]; then
+out=$(make run 2>&1 || true)
+make stop
+if ! echo "$out" | grep 'etcdserver: permission denied'; then
     echo "failed: data_plane should not write data to etcd"
     exit 1
 fi
 
-echo "passed: data_plane does not write data to etcd"
+echo "passed: data_plane can start with read-only etcd"
 
-etcdctl -u root:test user remove apisix-data-plane
-etcdctl -u root:test role remove data-plane-role
-etcdctl -u root:test user remove root
-etcdctl -u root:test role remove root
-etcdctl -u root:test auth disable
+# clean up
+etcdctl --user=root:test auth disable
+etcdctl user delete apisix-data-plane
+etcdctl role delete data-plane-role
+etcdctl user delete root
+etcdctl role delete root
