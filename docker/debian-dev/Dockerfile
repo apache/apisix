@@ -54,7 +54,7 @@ RUN apt-get -y update --fix-missing \
 COPY --from=build /usr/local/apisix /usr/local/apisix
 COPY --from=build /usr/local/openresty /usr/local/openresty
 COPY --from=build /usr/bin/apisix /usr/bin/apisix
-COPY ./ui/* /usr/local/apisix/ui/
+COPY --chown=nobody:root ui/ /usr/local/apisix/ui/
 
 COPY ${INSTALL_BROTLI} /install-brotli.sh
 RUN chmod +x /install-brotli.sh \
