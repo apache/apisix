@@ -29,8 +29,12 @@ deployment:
         key: edd1c9f034335f136f87ad84b625c8f1
         role: admin # admin: manage all configuration data
 
+  role: data_plane
+  role_data_plane:
+    config_provider: etcd
   etcd:
-    host: # it's possible to define multiple etcd hosts addresses of the same etcd cluster.
-      - "http://etcd:2379" # multiple etcd address
-    prefix: "/apisix" # apisix configurations prefix
-    timeout: 30 # 30 seconds
+    host:
+      - http://etcd:2379
+    user: apisix-data-plane
+    password: test
+

@@ -42,13 +42,13 @@ routes:
 #END
 _EOC_
         fi
+    fi
 
     /usr/bin/apisix init
 
-    # if deployment role is data_plane, then dont init etcd
+    # if deployment role is data_plane, then do not init etcd
     if [ -f "${PREFIX}/conf/config.yaml" ]; then
-        deployment_role=$(grep -oP 'deployment:\s+role:\s+\K[^ ]+' "${PREFIX}/conf/config.yaml")
-        if [ "$deployment_role" != "data_plane" ]; then
+        if ! grep -q "role: data_plane" "${PREFIX}/conf/config.yaml"; then
             /usr/bin/apisix init_etcd
         fi
     fi
