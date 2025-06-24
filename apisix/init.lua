@@ -300,6 +300,24 @@ local function set_upstream_headers(api_ctx, picked_server)
 end
 
 
+-- verify the TLS session resumption by checking if the SNI in the client hello
+-- matches the hostname of the SSL session, this is to prevent the mTLS bypass security issue.
+local function verify_tls_session_resumption()
+    local session_hostname, err = apisix_ssl.session_hostname()
+    if err then
+        core.log.error("failed to get session hostname: ", err)
+        return false
+    end
+    if session_hostname and session_hostname ~= ngx.ctx.client_hello_sni then
+        core.log.error("sni in client hello mismatch hostname of ssl session, ",
+                         "sni: ", ngx.ctx.client_hello_sni, ", hostname: ", session_hostname)
+        return false
+    end
+
+    return true
+end
+
+
 local function verify_tls_client(ctx)
     local matched = router.router_ssl.match_and_set(ctx, true)
     if not matched then
@@ -319,14 +337,7 @@ local function verify_tls_client(ctx)
             return false
         end
 
-        local session_hostname, err = apisix_ssl.session_hostname()
-        if err then
-            core.log.error("failed to get session hostname: ", err)
-            return false
-        end
-        if session_hostname and session_hostname ~= ngx.ctx.client_hello_sni then
-            core.log.error("sni in client hello mismatch hostname of ssl session, ",
-                             "sni: ", ngx.ctx.client_hello_sni, ", hostname: ", session_hostname)
+        if not verify_tls_session_resumption() then
             return false
         end
     end
@@ -401,14 +412,7 @@ local function verify_https_client(ctx)
             return false
         end
 
-        local session_hostname, err = apisix_ssl.session_hostname()
-        if err then
-            core.log.error("failed to get session hostname: ", err)
-            return false
-        end
-        if session_hostname and session_hostname ~= ngx.ctx.client_hello_sni then
-            core.log.error("sni in client hello mismatch hostname of ssl session, ",
-                             "sni: ", ngx.ctx.client_hello_sni, ", hostname: ", session_hostname)
+        if not verify_tls_session_resumption() then
             return false
         end
     end
