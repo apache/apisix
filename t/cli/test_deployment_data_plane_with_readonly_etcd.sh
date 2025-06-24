@@ -17,7 +17,7 @@
 # limitations under the License.
 #
 
-# . ./t/cli/common.sh
+. ./t/cli/common.sh
 
 # clean etcd data
 etcdctl del / --prefix
