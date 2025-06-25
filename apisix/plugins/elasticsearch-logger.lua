@@ -128,19 +128,7 @@ function _M.check_schema(conf, schema_type)
     local check = {"endpoint_addrs"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
-
     return core.schema.check(schema, conf)
-end
-
-
-local function get_logger_entry(conf, ctx)
-    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
-    return core.json.encode({
-            create = {
-                _index = conf.field.index
-            }
-        }) .. "\n" ..
-        core.json.encode(entry) .. "\n"
 end
 
 
@@ -186,24 +174,50 @@ local function get_es_major_version(uri, conf)
 end
 
 
-local function send_to_elasticsearch(conf, entries)
-    local httpc, err = http.new()
-    if not httpc then
-        return false, str_format("create http error: %s", err)
+local function get_logger_entry(conf, ctx)
+    local entry = log_util.get_log_entry(plugin_name, conf, ctx)
+    local body = {
+        index = {
+            _index = conf.field.index
+        }
+    }
+    -- for older version type is required
+    core.log.info("elasticsearch version:", conf._version,"]", " and type is")
+    if conf._version == "6" or conf._version == "5" then
+        body.index._type = "_doc"
     end
+    return core.json.encode(body) .. "\n" ..
+        core.json.encode(entry) .. "\n"
+end
 
-    local selected_endpoint_addr
-    if conf.endpoint_addr then
-        selected_endpoint_addr = conf.endpoint_addr
-    else
-        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
-    end
+local function set_version(conf)
     if not conf._version then
+        local selected_endpoint_addr
+        if conf.endpoint_addr then
+            selected_endpoint_addr = conf.endpoint_addr
+        else
+            selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+        end
         local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
         if err then
             return false, str_format("failed to get Elasticsearch version: %s", err)
         end
         conf._version = major_version
+    end
+end
+
+
+local function send_to_elasticsearch(conf, entries)
+    local httpc, err = http.new()
+    if not httpc then
+        return false, str_format("create http error: %s", err)
+    end
+    set_version(conf)
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
     end
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
@@ -251,6 +265,11 @@ function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
 
+function _M.access(conf)
+    -- set_version will call ES server only the first time
+    -- so this should not amount to considerable overhead
+    set_version(conf)
+end
 
 function _M.log(conf, ctx)
     local entry = get_logger_entry(conf, ctx)
