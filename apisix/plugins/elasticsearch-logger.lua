@@ -182,7 +182,6 @@ local function get_logger_entry(conf, ctx)
         }
     }
     -- for older version type is required
-    core.log.info("elasticsearch version:", conf._version,"]", " and type is")
     if conf._version == "6" or conf._version == "5" then
         body.index._type = "_doc"
     end
