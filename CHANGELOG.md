@@ -114,7 +114,7 @@ title: Changelog
 - feat: support health checker for stream subsystem [#12180](https://github.com/apache/apisix/pull/12180)
 - feat(standalone): support revision in API-driven standalone mode like etcd [#12214](https://github.com/apache/apisix/pull/12214)
 - feat: add healthcheck for sync configuration [#12200](https://github.com/apache/apisix/pull/12200)
-- perf: compare service discovery nodes by addresss [#12258](https://github.com/apache/apisix/pull/12258)
+- perf: compare service discovery nodes by address [#12258](https://github.com/apache/apisix/pull/12258)
 - feat: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224)
 - feat: add embedded apisix dashboard ui [#12276](https://github.com/apache/apisix/pull/12276)
 - feat: add apisix dashboard to dev image [#12369](https://github.com/apache/apisix/pull/12369)
