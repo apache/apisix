@@ -48,12 +48,7 @@ local schema = {
         field = {
             type = "object",
             properties = {
-                index = {
-                    type = "string",
-                    description = "Supports APISIX variables and a lua time format inside braces.\
-                    lua time format: https://www.lua.org/pil/22.1.html",
-                    -- example: service-$host-{"%Y-%m-%d"}
-                },
+                index = { type = "string"},
             },
             required = {"index"}
         },
