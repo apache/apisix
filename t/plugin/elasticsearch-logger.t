@@ -46,8 +46,7 @@ __DATA__
                 {
                     endpoint_addr = "http://127.0.0.1:9200",
                     field = {
-                        index = "services",
-                        type = "collector"
+                        index = "services"
                     },
                     auth = {
                         username = "elastic",
@@ -894,53 +893,3 @@ hello world
 --- error_log
 Batch Processor[elasticsearch-logger] successfully processed the entries
 
-
-
-=== TEST 23: set route (auth) - warning should be given with version 9 when deprecated field is passed
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1', ngx.HTTP_PUT, {
-                uri = "/hello",
-                upstream = {
-                    type = "roundrobin",
-                    nodes = {
-                        ["127.0.0.1:1980"] = 1
-                    }
-                },
-                plugins = {
-                    ["elasticsearch-logger"] = {
-                        endpoint_addr = "http://127.0.0.1:9301",
-                        field = {
-                            index = "services",
-                            type = "xyz"
-                        },
-                        auth = {
-                            username = "elastic",
-                            password = "123456"
-                        },
-                        batch_max_size = 1,
-                        inactive_timeout = 1
-                    }
-                }
-            })
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 24: test route (auth success)
---- request
-GET /hello
---- wait: 2
---- response_body
-hello world
---- error_log
-type is not supported in Elasticsearch 9, removing `type`

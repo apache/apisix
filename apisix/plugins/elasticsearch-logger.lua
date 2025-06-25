@@ -54,11 +54,6 @@ local schema = {
                     lua time format: https://www.lua.org/pil/22.1.html",
                     -- example: service-$host-{"%Y-%m-%d"}
                 },
-                type = {
-                    type = "string",
-                    description = "Type is partially supported with compat headers in version 8 \
-                    and unsupported on version 9"
-                }
             },
             required = {"index"}
         },
@@ -147,8 +142,7 @@ local function get_logger_entry(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
     return core.json.encode({
             create = {
-                _index = conf.field.index,
-                _type = conf.field.type
+                _index = conf.field.index
             }
         }) .. "\n" ..
         core.json.encode(entry) .. "\n"
@@ -228,10 +222,6 @@ local function send_to_elasticsearch(conf, entries)
     elseif conf._version == "9" then
         headers["Content-Type"] = headers["Content-Type"] .. compat_header_8
         headers["Accept"] = headers["Accept"] .. compat_header_8
-        if conf.field.type then
-            core.log.warn("type is not supported in Elasticsearch 9, removing `type`")
-            conf.field.type = nil
-        end
     end
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
