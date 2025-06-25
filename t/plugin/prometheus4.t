@@ -312,3 +312,12 @@ GET /apisix/prometheus/metrics
 --- error_code: 200
 --- response_body_like eval
 qr/apisix_batch_process_entries\{name="sys-logger",route_id="9",server_addr="127.0.0.1"\} \d+/
+
+
+
+=== TEST 14: node_info metric contains the current apisix version
+--- request
+GET /apisix/prometheus/metrics
+--- error_code: 200
+--- response_body_like eval
+qr/apisix_node_info\{hostname="[^"]+",version="\d+\.\d+\.\d+"\} \d+/
