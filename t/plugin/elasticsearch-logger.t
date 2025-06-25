@@ -892,4 +892,3 @@ GET /hello
 hello world
 --- error_log
 Batch Processor[elasticsearch-logger] successfully processed the entries
-
