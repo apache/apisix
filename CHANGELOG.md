@@ -23,6 +23,7 @@ title: Changelog
 
 ## Table of Contents
 
+- [3.13.0](#3130)
 - [3.12.0](#3120)
 - [3.11.0](#3110)
 - [3.10.0](#3100)
@@ -78,6 +79,84 @@ title: Changelog
 - [0.8.0](#080)
 - [0.7.0](#070)
 - [0.6.0](#060)
+
+## 3.13.0
+
+### Change
+
+- refactor(ai-proxy): move read_response into ai_driver.request function [#12101](https://github.com/apache/apisix/pull/12101)
+- refactor: mcp server framework implementation #[12168](https://github.com/apache/apisix/pull/12168)
+- change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+- feat(consumer): consumer username allows - in it [#12296](https://github.com/apache/apisix/pull/12296)
+- refactor: change log level to debug to avoid unnecessary logs [#12361](https://github.com/apache/apisix/pull/12361)
+- chore: change log level from warn to info for stale batch processor removal [#12297](https://github.com/apache/apisix/pull/12297)
+- feat(standalone): allow more characters in credential_id for API-driven mode [#12295](https://github.com/apache/apisix/pull/12295)
+
+### Bugfixes
+
+- fix: running stale healthchecker when new node count <= 1 [#12118](https://github.com/apache/apisix/pull/12118)
+- fix: release healthchecker on 0 nodes [#12126](https://github.com/apache/apisix/pull/12126)
+- fix: only parse and validate apisix.yaml in cli when startup [#12216](https://github.com/apache/apisix/pull/12216)
+- fix(standalone): API-driven mode does not properly handle consumer schema [#12256](https://github.com/apache/apisix/pull/12256)
+- fix: added restriction for TLSv1.3 cross-SNI session resumption [#12366](https://github.com/apache/apisix/pull/12366)
+- fix: flaky t/admin/filter.t due to url encoding for query params [#12370](https://github.com/apache/apisix/pull/12370)
+- fix(workflow/push-dev-image-on-commit): remove already defined uses [#12365](https://github.com/apache/apisix/pull/12365)
+- fix(workflow): use runners with different architectures instead of QEMU [#12322](https://github.com/apache/apisix/pull/12322)
+- fix: kubernetes service discovery single mode data dump [#12284](https://github.com/apache/apisix/pull/12284)
+- fix: handle consul nil port cases by defaulting to port 80 [#12304](https://github.com/apache/apisix/pull/12304)
+- fix: check if config contains duplicate resources in API-driven standalone mode [#12317](https://github.com/apache/apisix/pull/12317)
+- fix: original key being modified causing cache inconsistency [#12299](https://github.com/apache/apisix/pull/12299)
+- fix: access to the apisix dashboard in dev returns 404 [#12376](https://github.com/apache/apisix/pull/12376)
+
+### Core
+
+- feat: add standalone admin api [#12179](https://github.com/apache/apisix/pull/12179)
+- feat: support health checker for stream subsystem [#12180](https://github.com/apache/apisix/pull/12180)
+- feat(standalone): support revision in API-driven standalone mode like etcd [#12214](https://github.com/apache/apisix/pull/12214)
+- feat: add healthcheck for sync configuration [#12200](https://github.com/apache/apisix/pull/12200)
+- perf: compare service discovery nodes by addresss [#12258](https://github.com/apache/apisix/pull/12258)
+- feat: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224)
+- feat: add embedded apisix dashboard ui [#12276](https://github.com/apache/apisix/pull/12276)
+- feat: add apisix dashboard to dev image [#12369](https://github.com/apache/apisix/pull/12369)
+- feat: add max pending entries option to batch-processor [#12338](https://github.com/apache/apisix/pull/12338)
+- feat(standalone): support JSON format [#12333](https://github.com/apache/apisix/pull/12333)
+- feat: enhance admin api filter [#12291](https://github.com/apache/apisix/pull/12291)
+- feat: add warning for data plane writing to etcd [#12241](https://github.com/apache/apisix/pull/12241)
+- chore: upgrade openresty version to v1.27.1.2 [#12307](https://github.com/apache/apisix/pull/12307)
+- chore: upgrade luarocks version to 3.12.0 [#12305](https://github.com/apache/apisix/pull/12305)
+
+### Plugins
+
+- feat: add mcp-bridge plugin [#12151](https://github.com/apache/apisix/pull/12151)
+- feat: add lago plugin [#12196](https://github.com/apache/apisix/pull/12196)
+- feat: add headers attribute for loki-logger [#12243](https://github.com/apache/apisix/pull/12243)
+- feat: expose apisix version in prometheus node info metric [#12367](https://github.com/apache/apisix/pull/12367)
+
+## Doc improvements
+
+- docs: update stream proxy doc for proxy_mode and some formatting [#12108](https://github.com/apache/apisix/pull/12108)
+- docs: improve loki-logger plugin docs [#11921](https://github.com/apache/apisix/pull/11921)
+- docs: improve ua-restriction plugin docs [#11956](https://github.com/apache/apisix/pull/11956)
+- docs: improve elasticsearch-logger plugin docs [#11922](https://github.com/apache/apisix/pull/11922)
+- fix file logger example wrong data structure [#12125](https://github.com/apache/apisix/pull/12125)
+- docs: improve limit-req plugin docs [#11873](https://github.com/apache/apisix/pull/11873)
+- docs: improve body-transformer plugin docs [#11856](https://github.com/apache/apisix/pull/11856)
+- docs: update ai-rate-limiting and ai-rag docs [#12107](https://github.com/apache/apisix/pull/12107)
+- docs: improve basic-auth docs and update docs for anonymous consumer [#11859](https://github.com/apache/apisix/pull/11859)
+- docs: improve key-auth docs and update docs for anonymous consumer [#11860](https://github.com/apache/apisix/pull/11860)
+- docs: improve hmac-auth plugin docs and update docs for anonymous consumer [#11867](https://github.com/apache/apisix/pull/11867)
+- docs: improve jwt-auth plugin docs and update docs for anonymous consumer [#11865](https://github.com/apache/apisix/pull/11865)
+- docs: improve request-validation plugin docs [#11853](https://github.com/apache/apisix/pull/11853)
+- docs: update variable in building apisix from source [#11640](https://github.com/apache/apisix/pull/11640)
+- docs: update readme with APISIX AI Gateway product link and MCP feature [#12166](https://github.com/apache/apisix/pull/12166)
+- docs: improve plugin-develop docs [#12242](https://github.com/apache/apisix/pull/12242)
+- docs: fix typo in real-ip.md [#12236](https://github.com/apache/apisix/pull/12236)
+- docs: the configuration type of the WASM plugin can be an object. [#12251](https://github.com/apache/apisix/pull/12251)
+
+## Developer productivity
+
+- feat: support devcontainer [11765](https://github.com/apache/apisix/pull/11765)
+An Isolated environment from the host, the runtime and toolset required for APISIX development are built in the container build, they will be available out of the box and developers no longer need to build and install them on the host. Just start dev container, wait a few moments, and it's ready to go.
 
 ## 3.12.0
 
