@@ -32,11 +32,22 @@ deployment:
     config_provider: yaml
 discovery:
   nacos:
-      host:
-        - "http://127.0.0.1:8858"
+    - id: "svc1"
+      hosts:
+      - "http://127.0.0.1:8858"
       prefix: "/nacos/v1/"
       fetch_interval: 1
-      weight: 1
+      default_weight: 1
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
+    - id: "svc2"
+      hosts:
+      - "http://127.0.0.1:8858"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      default_weight: 1
       timeout:
         connect: 2000
         send: 2000
@@ -44,15 +55,43 @@ discovery:
 
 _EOC_
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
+our $yaml_auth_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  nacos:
+    - id: "svc1"
+      hosts:
+      - "http://127.0.0.1:8858"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      default_weight: 1
+      auth:
+        username: nacos
+        password: nacos
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
+    - id: "svc2"
+      hosts:
+      - "http://127.0.0.1:8858"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      default_weight: 1
+      auth:
+        username: nacos
+        password: nacos
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
 
-    if (!$block->stream_request) {
-        $block->set_value("stream_request", "GET /hello HTTP/1.1\r\nHost: 127.0.0.1:1985\r\nConnection: close\r\n\r\n");
-    }
-    $block->set_value("timeout", "10");
-
-});
+_EOC_
 
 run_tests();
 
@@ -61,33 +100,34 @@ __DATA__
 === TEST 1: get APISIX-NACOS info from NACOS - no auth
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
-stream_routes:
-  - server_addr: 127.0.0.1
-    server_port: 1985
-    id: 1
+routes:
+  -
+    uri: /hello
     upstream:
-      service_name: APISIX-NACOS
+      service_name: svc1/public/DEFAULT_GROUP/APISIX-NACOS
       discovery_type: nacos
       type: roundrobin
+      discovery_args:
+        id: svc1
+  -
+    uri: /hello2
+    upstream:
+      service_name: svc2/public/DEFAULT_GROUP/APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        id: svc2
 #END
---- stream_response eval
-qr/server [1-2]/
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server [1-2]/,
+    qr/server [1-2]/,
+]
 --- no_error_log
-[error]
-
-
-
-=== TEST 2: error service_name name - no auth
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-stream_routes:
-  - server_addr: 127.0.0.1
-    server_port: 1985
-    id: 1
-    upstream:
-      service_name: APISIX-NACOS-DEMO
-      discovery_type: nacos
-      type: roundrobin
-#END
---- error_log
-no valid upstream node
+[error, error]
+--- timeout: 10
