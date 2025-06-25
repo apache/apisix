@@ -52,6 +52,8 @@ run_tests();
 __DATA__
 
 === TEST 1: sanity
+--- http_config
+lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 stream_routes:
   - id: 1
@@ -97,6 +99,8 @@ proxy request to 127.0.0.1:1995
 
 
 === TEST 2: default priority is 0
+--- http_config
+lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 stream_routes:
   - id: 1
@@ -140,6 +144,8 @@ proxy request to 127.0.0.1:1995
 
 
 === TEST 3: fix priority for nonarray nodes
+--- http_config
+lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 stream_routes:
   - id: 1

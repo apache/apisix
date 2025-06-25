@@ -35,6 +35,8 @@ run_tests();
 __DATA__
 
 === TEST 1: upstream across multiple routes should not share the same version
+--- http_config
+lua_shared_dict balancer-least-conn 10m;
 --- config
     location /t {
         content_by_lua_block {
@@ -74,6 +76,8 @@ __DATA__
 
 
 === TEST 2: hit
+--- http_config
+lua_shared_dict balancer-least-conn 10m;
 --- config
     location /t {
         content_by_lua_block {
