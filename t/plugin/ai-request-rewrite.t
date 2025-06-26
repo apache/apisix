@@ -710,3 +710,28 @@ passed
 LLM service returned error status: 500
 --- response_body
 passed
+
+=== TEST 15: provider aimlapi
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.ai-request-rewrite")
+            local ok, err = plugin.check_schema({
+                prompt = "some prompt",
+                provider = "aimlapi",
+                auth = {
+                    header = {
+                        Authorization =  "Bearer token"
+                    }
+                }
+            })
+
+            if not ok then
+                ngx.say(err)
+            else
+                ngx.say("passed")
+            end
+        }
+    }
+--- response_body
+passed
