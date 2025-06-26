@@ -36,7 +36,7 @@ deployment:
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'APISIX is initializing the data of etcd'; then
+if ! echo "$out" | grep 'trying to initialize the data of etcd'; then
     echo "failed: non data_plane should init the data of etcd"
     exit 1
 fi
@@ -96,11 +96,11 @@ deployment:
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if echo "$out" | grep 'APISIX is initializing the data of etcd'; then
+if echo "$out" | grep 'trying to initialize the data of etcd'; then
     echo "failed: data_plane should not init the data of etcd"
     exit 1
 fi
-if ! echo "$out" | grep 'access from the data plane to etcd must be read-only, skip initializing the data of etcd'; then
+if ! echo "$out" | grep 'access from the data plane to etcd should be read-only, skip initializing the data of etcd'; then
     echo "failed: data_plane should skip initializing the data of etcd"
     exit 1
 fi
@@ -149,11 +149,11 @@ deployment:
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if echo "$out" | grep 'APISIX is initializing the data of etcd'; then
+if echo "$out" | grep 'trying to initialize the data of etcd'; then
     echo "failed: data_plane should not init the data of etcd (read-only)"
     exit 1
 fi
-if ! echo "$out" | grep 'access from the data plane to etcd must be read-only, skip initializing the data of etcd'; then
+if ! echo "$out" | grep 'access from the data plane to etcd should be read-only, skip initializing the data of etcd'; then
     echo "failed: data_plane should skip initializing the data of etcd (read-only)"
     exit 1
 fi
