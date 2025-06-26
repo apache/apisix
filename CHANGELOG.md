@@ -82,16 +82,6 @@ title: Changelog
 
 ## 3.13.0
 
-### Change
-
-- refactor(ai-proxy): move read_response into ai_driver.request function [#12101](https://github.com/apache/apisix/pull/12101)
-- refactor: mcp server framework implementation #[12168](https://github.com/apache/apisix/pull/12168)
-- change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
-- feat(consumer): consumer username allows - in it [#12296](https://github.com/apache/apisix/pull/12296)
-- refactor: change log level to debug to avoid unnecessary logs [#12361](https://github.com/apache/apisix/pull/12361)
-- chore: change log level from warn to info for stale batch processor removal [#12297](https://github.com/apache/apisix/pull/12297)
-- feat(standalone): allow more characters in credential_id for API-driven mode [#12295](https://github.com/apache/apisix/pull/12295)
-
 ### Bugfixes
 
 - fix: running stale healthchecker when new node count <= 1 [#12118](https://github.com/apache/apisix/pull/12118)
@@ -110,6 +100,10 @@ title: Changelog
 
 ### Core
 
+- feat(consumer): consumer username allows - in it [#12296](https://github.com/apache/apisix/pull/12296)
+- refactor: change log level to debug to avoid unnecessary logs [#12361](https://github.com/apache/apisix/pull/12361)
+- chore: change log level from warn to info for stale batch processor removal [#12297](https://github.com/apache/apisix/pull/12297)
+- feat(standalone): allow more characters in credential_id for API-driven mode [#12295](https://github.com/apache/apisix/pull/12295)
 - feat: add standalone admin api [#12179](https://github.com/apache/apisix/pull/12179)
 - feat: support health checker for stream subsystem [#12180](https://github.com/apache/apisix/pull/12180)
 - feat(standalone): support revision in API-driven standalone mode like etcd [#12214](https://github.com/apache/apisix/pull/12214)
@@ -127,6 +121,9 @@ title: Changelog
 
 ### Plugins
 
+- refactor(ai-proxy): move read_response into ai_driver.request function [#12101](https://github.com/apache/apisix/pull/12101)
+- change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+- refactor: mcp server framework implementation #[12168](https://github.com/apache/apisix/pull/12168)
 - feat: add mcp-bridge plugin [#12151](https://github.com/apache/apisix/pull/12151)
 - feat: add lago plugin [#12196](https://github.com/apache/apisix/pull/12196)
 - feat: add headers attribute for loki-logger [#12243](https://github.com/apache/apisix/pull/12243)
