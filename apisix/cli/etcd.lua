@@ -379,6 +379,15 @@ function _M.init(env, args)
         util.die("the etcd cluster needs at least 50% and above healthy nodes\n")
     end
 
+    -- access from the data plane to etcd should be read-only.
+    -- data plane writes to etcd may cause security issues.
+    if yaml_conf.deployment.role == "data_plane" then
+        print("access from the data plane to etcd should be read-only, "
+              .."skip initializing the data of etcd")
+        return true
+    end
+
+    print("trying to initialize the data of etcd")
     local etcd_ok = false
     for index, host in ipairs(etcd_healthy_hosts) do
         if prepare_dirs(yaml_conf, args, index, host, host_count) then
