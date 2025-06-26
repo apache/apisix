@@ -27,7 +27,6 @@ local math_random     = math.random
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
 
-
 local schema = {
     type = "object",
     properties = {
@@ -48,7 +47,6 @@ local schema = {
             type = "object",
             properties = {
                 index = { type = "string"},
-                type = { type = "string"}
             },
             required = {"index"}
         },
@@ -124,23 +122,87 @@ function _M.check_schema(conf, schema_type)
     if schema_type == core.schema.TYPE_METADATA then
         return core.schema.check(metadata_schema, conf)
     end
+
     local check = {"endpoint_addrs"}
     core.utils.check_https(check, conf, plugin_name)
     core.utils.check_tls_bool({"ssl_verify"}, conf, plugin_name)
-
     return core.schema.check(schema, conf)
+end
+
+
+local function get_es_major_version(uri, conf)
+    local httpc = http.new()
+    if not httpc then
+        return nil, "failed to create http client"
+    end
+    local headers = {}
+    if conf.auth then
+        local authorization = "Basic " .. ngx.encode_base64(
+            conf.auth.username .. ":" .. conf.auth.password
+        )
+        headers["Authorization"] = authorization
+    end
+    httpc:set_timeout(conf.timeout * 1000)
+    local res, err = httpc:request_uri(uri, {
+        ssl_verify = conf.ssl_verify,
+        method = "GET",
+        headers = headers,
+    })
+    if not res then
+        return false, err
+    end
+    if res.status ~= 200 then
+        return nil, str_format("server returned status: %d, body: %s",
+            res.status, res.body or "")
+    end
+    local json_body, err = core.json.decode(res.body)
+    if not json_body then
+        return nil, "failed to decode response body: " .. err
+    end
+    if not json_body.version or not json_body.version.number then
+        return nil, "failed to get version from response body"
+    end
+
+    local major_version = json_body.version.number:match("^(%d+)%.")
+    if not major_version then
+        return nil, "invalid version format: " .. json_body.version.number
+    end
+
+    return major_version
 end
 
 
 local function get_logger_entry(conf, ctx)
     local entry = log_util.get_log_entry(plugin_name, conf, ctx)
-    return core.json.encode({
-            create = {
-                _index = conf.field.index,
-                _type = conf.field.type
-            }
-        }) .. "\n" ..
+    local body = {
+        index = {
+            _index = conf.field.index
+        }
+    }
+    -- for older version type is required
+    if conf._version == "6" or conf._version == "5" then
+        body.index._type = "_doc"
+    end
+    return core.json.encode(body) .. "\n" ..
         core.json.encode(entry) .. "\n"
+end
+
+local function fetch_and_update_es_version(conf)
+    if conf._version then
+        return
+    end
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    end
+    local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
+    if err then
+        core.log.error("failed to get Elasticsearch version: ", err)
+        return
+    end
+    conf._version = major_version
 end
 
 
@@ -149,7 +211,7 @@ local function send_to_elasticsearch(conf, entries)
     if not httpc then
         return false, str_format("create http error: %s", err)
     end
-
+    fetch_and_update_es_version(conf)
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -159,8 +221,8 @@ local function send_to_elasticsearch(conf, entries)
     local uri = selected_endpoint_addr .. "/_bulk"
     local body = core.table.concat(entries, "")
     local headers = {
-        ["Content-Type"] = "application/x-ndjson;compatible-with=7",
-        ["Accept"] = "application/vnd.elasticsearch+json;compatible-with=7"
+        ["Content-Type"] = "application/x-ndjson",
+        ["Accept"] = "application/vnd.elasticsearch+json"
     }
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
@@ -195,6 +257,11 @@ function _M.body_filter(conf, ctx)
     log_util.collect_body(conf, ctx)
 end
 
+function _M.access(conf)
+    -- fetch_and_update_es_version will call ES server only the first time
+    -- so this should not amount to considerable overhead
+    fetch_and_update_es_version(conf)
+end
 
 function _M.log(conf, ctx)
     local entry = get_logger_entry(conf, ctx)
