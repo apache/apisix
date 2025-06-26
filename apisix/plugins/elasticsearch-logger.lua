@@ -187,20 +187,22 @@ local function get_logger_entry(conf, ctx)
         core.json.encode(entry) .. "\n"
 end
 
-local function set_version(conf)
-    if not conf._version then
-        local selected_endpoint_addr
-        if conf.endpoint_addr then
-            selected_endpoint_addr = conf.endpoint_addr
-        else
-            selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
-        end
-        local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
-        if err then
-            return false, str_format("failed to get Elasticsearch version: %s", err)
-        end
-        conf._version = major_version
+local function fetch_and_update_es_version(conf)
+    if conf._version then
+        return
     end
+    local selected_endpoint_addr
+    if conf.endpoint_addr then
+        selected_endpoint_addr = conf.endpoint_addr
+    else
+        selected_endpoint_addr = conf.endpoint_addrs[math_random(#conf.endpoint_addrs)]
+    end
+    local major_version, err = get_es_major_version(selected_endpoint_addr, conf)
+    if err then
+        core.log.error("failed to get Elasticsearch version: ", err)
+        return
+    end
+    conf._version = major_version
 end
 
 
@@ -209,7 +211,7 @@ local function send_to_elasticsearch(conf, entries)
     if not httpc then
         return false, str_format("create http error: %s", err)
     end
-    set_version(conf)
+    fetch_and_update_es_version(conf)
     local selected_endpoint_addr
     if conf.endpoint_addr then
         selected_endpoint_addr = conf.endpoint_addr
@@ -256,9 +258,9 @@ function _M.body_filter(conf, ctx)
 end
 
 function _M.access(conf)
-    -- set_version will call ES server only the first time
+    -- fetch_and_update_es_version will call ES server only the first time
     -- so this should not amount to considerable overhead
-    set_version(conf)
+    fetch_and_update_es_version(conf)
 end
 
 function _M.log(conf, ctx)
