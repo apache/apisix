@@ -36,11 +36,11 @@ deployment:
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'prepare dirs'; then
-    echo "failed: non data_plane should prepare dirs"
+if ! echo "$out" | grep 'APISIX is initializing the data of etcd'; then
+    echo "failed: non data_plane should init the data of etcd"
     exit 1
 fi
-echo "passed: non data_plane can prepare dirs when init etcd"
+echo "passed: non data_plane can init the data of etcd"
 
 # start apisix to test non data_plane can work with etcd
 make run
@@ -75,7 +75,6 @@ if [ ! "$code" -eq 200 ]; then
     echo "failed: non data_plane should be able to access the route"
     exit 1
 fi
-
 echo "passed: non data_plane can work with etcd"
 
 # prepare for data_plane with etcd
@@ -83,7 +82,7 @@ echo "passed: non data_plane can work with etcd"
 make stop
 sleep 3
 
-# data_plane can skip prepare dirs when init with etcd
+# data_plane can skip initializing the data of etcd
 echo '
 deployment:
     role: data_plane
@@ -97,15 +96,15 @@ deployment:
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if echo "$out" | grep 'prepare dirs'; then
-    echo "failed: data_plane should not prepare dirs"
+if echo "$out" | grep 'APISIX is initializing the data of etcd'; then
+    echo "failed: data_plane should not init the data of etcd"
     exit 1
 fi
-if ! echo "$out" | grep 'data plane does not have write permissions, skip preparing dirs'; then
-    echo "failed: data_plane should skip preparing dirs"
+if ! echo "$out" | grep 'access from the data plane to etcd must be read-only, skip initializing the data of etcd'; then
+    echo "failed: data_plane should skip initializing the data of etcd"
     exit 1
 fi
-echo "passed: data_plane can skip prepare dirs when init with etcd"
+echo "passed: data_plane can skip initializing the data of etcd"
 
 # start apisix to test data_plane can work with etcd
 make run
@@ -113,7 +112,7 @@ sleep 3
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/hello)
 if [ ! "$code" -eq 200 ]; then
-    echo "failed: data_plane should be able to access the route"
+    echo "failed: data_plane should be able to access the route when using etcd"
     exit 1
 fi
 echo "passed: data_plane can work with etcd"
@@ -134,7 +133,7 @@ etcdctl user grant-role apisix-data-plane data-plane-role
 # enable auth
 etcdctl auth enable
 
-# data_plane can skip prepare dirs when init with read-only etcd
+# data_plane can skip initializing the data when using read-only etcd
 echo '
 deployment:
     role: data_plane
@@ -150,15 +149,15 @@ deployment:
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if echo "$out" | grep 'prepare dirs'; then
-    echo "failed: data_plane should not prepare dirs"
+if echo "$out" | grep 'APISIX is initializing the data of etcd'; then
+    echo "failed: data_plane should not init the data of etcd (read-only)"
     exit 1
 fi
-if ! echo "$out" | grep 'data plane does not have write permissions, skip preparing dirs'; then
-    echo "failed: data_plane should skip preparing dirs"
+if ! echo "$out" | grep 'access from the data plane to etcd must be read-only, skip initializing the data of etcd'; then
+    echo "failed: data_plane should skip initializing the data of etcd (read-only)"
     exit 1
 fi
-echo "passed: data_plane can init with read-only etcd"
+echo "passed: data_plane can skip initializing the data of etcd (read-only)"
 
 # start apisix to test data_plane can work with read-only etcd
 make run
@@ -166,7 +165,7 @@ sleep 3
 
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/hello)
 if [ ! "$code" -eq 200 ]; then
-    echo "failed: data_plane should be able to access the route with read-only etcd"
+    echo "failed: data_plane should be able to access the route when using read-only etcd"
     exit 1
 fi
 echo "passed: data_plane can work with read-only etcd"
