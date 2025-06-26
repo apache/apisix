@@ -110,7 +110,7 @@ jobs:
       - name: Remove source code
         if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
         run: |
-          sudo rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
+          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
           tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Cache images
