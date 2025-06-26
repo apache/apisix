@@ -26,8 +26,6 @@ local math_random     = math.random
 
 local plugin_name = "elasticsearch-logger"
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
-local compat_header_7 = ";compatible-with=7"
-local compat_header_8 = ";compatible-with=8"
 
 local schema = {
     type = "object",
@@ -224,13 +222,6 @@ local function send_to_elasticsearch(conf, entries)
         ["Content-Type"] = "application/x-ndjson",
         ["Accept"] = "application/vnd.elasticsearch+json"
     }
-    if conf._version == "8" then
-        headers["Content-Type"] = headers["Content-Type"] .. compat_header_7
-        headers["Accept"] = headers["Accept"] .. compat_header_7
-    elseif conf._version == "9" then
-        headers["Content-Type"] = headers["Content-Type"] .. compat_header_8
-        headers["Accept"] = headers["Accept"] .. compat_header_8
-    end
     if conf.auth then
         local authorization = "Basic " .. ngx.encode_base64(
             conf.auth.username .. ":" .. conf.auth.password
