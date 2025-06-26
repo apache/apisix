@@ -381,7 +381,8 @@ function _M.init(env, args)
 
     -- access from the data plane to etcd must be read-only
     if yaml_conf.deployment.role == "data_plane" then
-        print("access from the data plane to etcd must be read-only, skip initializing the data of etcd")
+        print("access from the data plane to etcd must be read-only, "
+              .."skip initializing the data of etcd")
         return true
     end
 
