@@ -339,3 +339,56 @@ plugin body_filter phase, eof: false
 plugin delayed_body_filter phase, eof: false
 plugin body_filter phase, eof: true
 plugin delayed_body_filter phase, eof: true
+
+
+
+=== TEST 14: lua body filter
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "example-plugin": {
+                            "i": 0,
+                            "lua_proxy_upstream": true,
+                            "request_uri": "http://httpbin.org/get",
+                            "method": "GET"
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "httpbin.org:80": 1
+                        }
+                    }
+                }]]
+            )
+
+            local code, body, actual_body = t("/anything",
+                ngx.HTTP_POST,
+                "some body",
+                nil,
+                {
+                    ["Content-Type"] = "text/plain",
+                }
+            )
+            local json = require("cjson.safe")
+            local response_data = json.decode(actual_body)
+
+            -- check the request uri is http://httpbin.org/get, not upstream uri http://httpbin.org/anything
+            -- which means the response body is changed
+            if response_data.url == 'http://httpbin.org/get' then
+                ngx.say("passed")
+            else
+                ngx.say(actual_body)
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
