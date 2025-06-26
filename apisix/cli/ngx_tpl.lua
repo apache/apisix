@@ -110,7 +110,7 @@ http {
         location / {
             content_by_lua_block {
                 local prometheus = require("apisix.plugins.prometheus.exporter")
-                prometheus.export_metrics(true)
+                prometheus.export_metrics()
             }
         }
 

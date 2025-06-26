@@ -22,6 +22,7 @@ local ipairs    = ipairs
 local pairs     = pairs
 local ngx       = ngx
 local re_gmatch = ngx.re.gmatch
+local process   = ngx.process
 local ffi       = require("ffi")
 local C         = ffi.C
 local pcall = pcall
@@ -57,6 +58,10 @@ local plugin_name = "prometheus"
 local default_export_uri = "/apisix/prometheus/metrics"
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+-- Default refresh interval
+local DEFAULT_REFRESH_INTERVAL = "15s"
+
+local CACHED_METRICS_KEY = "cached_metrics_text"
 
 local metrics = {}
 
@@ -108,6 +113,7 @@ local function init_stream_metrics()
     xrpc.init_metrics(prometheus)
 end
 
+local init_exporter_timer
 
 function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
@@ -207,6 +213,8 @@ function _M.http_init(prometheus_enabled_in_stream)
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
+
+    init_exporter_timer()
 end
 
 
@@ -438,13 +446,7 @@ local function shared_dict_status()
 end
 
 
-local function collect(ctx, stream_only)
-    if not prometheus or not metrics then
-        core.log.error("prometheus: plugin is not initialized, please make sure ",
-                     " 'prometheus_metrics' shared dict is present in nginx template")
-        return 500, {message = "An unexpected error occurred"}
-    end
-
+local function collect()
     -- collect ngx.shared.DICT status
     shared_dict_status()
 
@@ -458,6 +460,8 @@ local function collect(ctx, stream_only)
     local hostname = vars.hostname or ""
     local version = core.version.VERSION or ""
 
+    local local_conf = core.config.local_conf()
+    local stream_only = local_conf.apisix.proxy_mode == "stream"
     -- we can't get etcd index in metric server if only stream subsystem is enabled
     if config.type == "etcd" and not stream_only then
         -- etcd modify index
@@ -498,10 +502,65 @@ local function collect(ctx, stream_only)
         end
     end
 
-    core.response.set_header("content_type", "text/plain")
-    return 200, core.table.concat(prometheus:metric_data())
+    return prometheus:metric_data()
 end
-_M.collect = collect
+
+local timer_is_running = false
+
+local function exporter_timer(premature)
+    if premature then
+        return
+    end
+
+    local refresh_interval = DEFAULT_REFRESH_INTERVAL
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.refresh_interval then
+        refresh_interval = attr.refresh_interval
+    end
+
+    ngx.timer.at(refresh_interval, exporter_timer)
+
+    if timer_is_running then
+        core.log.warn("The last round of calculation took too long and did not exit, skip this turn")
+        return
+    end
+
+    timer_is_running = true
+
+    local ok, res = pcall(collect)
+    if not ok then
+        core.log.error("Failed to collect metrics: ", res)
+    end
+
+    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
+
+    timer_is_running = false
+end
+
+function init_exporter_timer()
+    if process.type() ~= "privileged agent" then
+        return
+    end
+
+    ngx.timer.at(0, exporter_timer)
+end
+
+local function get_cached_metrics()
+    if not prometheus or not metrics then
+        core.log.error("prometheus: plugin is not initialized, please make sure ",
+                     " 'prometheus_metrics' shared dict is present in nginx template")
+        return 500, {message = "An unexpected error occurred"}
+    end
+
+    local cached_metrics_text = ngx.shared["prometheus-metrics"]:get(CACHED_METRICS_KEY)
+    if not cached_metrics_text then
+        core.log.error("prometheus: cached metrics text is not found")
+        return 500, {message = "An unexpected error occurred"}
+    end
+    
+    core.response.set_header("content_type", "text/plain")
+    return 200, cached_metrics_text
+end
 
 
 local function get_api(called_by_api_router)
@@ -514,7 +573,7 @@ local function get_api(called_by_api_router)
     local api = {
         methods = {"GET"},
         uri = export_uri,
-        handler = collect
+        handler = get_cached_metrics
     }
 
     if not called_by_api_router then
@@ -530,7 +589,7 @@ end
 _M.get_api = get_api
 
 
-function _M.export_metrics(stream_only)
+function _M.export_metrics()
     if not prometheus then
         core.response.exit(200, "{}")
     end
@@ -539,7 +598,7 @@ function _M.export_metrics(stream_only)
     local method = ngx.req.get_method()
 
     if uri == api.uri and method == api.methods[1] then
-        local code, body = api.handler(nil, stream_only)
+        local code, body = api.handler()
         if code or body then
             core.response.exit(code, body)
         end
