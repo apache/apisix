@@ -380,8 +380,7 @@ function _M.init(env, args)
     end
 
     -- access from the data plane to etcd should be read-only.
-    -- data plane writes to etcd may cause security issues,
-    -- or multiple instance writes may cause performance degradation.
+    -- data plane writes to etcd may cause security issues.
     if yaml_conf.deployment.role == "data_plane" then
         print("access from the data plane to etcd should be read-only, "
               .."skip initializing the data of etcd")
