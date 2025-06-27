@@ -113,9 +113,8 @@ local function init_stream_metrics()
     xrpc.init_metrics(prometheus)
 end
 
-local init_exporter_timer
 
-function _M.http_init(prometheus_enabled_in_stream)
+local function http_init_process(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
@@ -213,8 +212,6 @@ function _M.http_init(prometheus_enabled_in_stream)
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
-
-    init_exporter_timer()
 end
 
 
@@ -456,8 +453,7 @@ local function collect()
     local config = core.config.new()
 
     -- config server status
-    local vars = ngx.var or {}
-    local hostname = vars.hostname or ""
+    local hostname = core.utils.gethostname() or ""
     local version = core.version.VERSION or ""
 
     local local_conf = core.config.local_conf()
@@ -502,11 +498,11 @@ local function collect()
         end
     end
 
-    return prometheus:metric_data()
+    return core.table.concat(prometheus:metric_data())
 end
 
-local timer_is_running = false
 
+local timer_running = false
 local function exporter_timer(premature)
     if premature then
         return
@@ -520,12 +516,12 @@ local function exporter_timer(premature)
 
     ngx.timer.at(refresh_interval, exporter_timer)
 
-    if timer_is_running then
+    if timer_running then
         core.log.warn("The last round of calculation took too long and did not exit, skip this turn")
         return
     end
 
-    timer_is_running = true
+    timer_running = true
 
     local ok, res = pcall(collect)
     if not ok then
@@ -534,15 +530,21 @@ local function exporter_timer(premature)
 
     ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
 
-    timer_is_running = false
+    timer_running = false
 end
 
-function init_exporter_timer()
+local function init_exporter_timer()
+    core.log.error("init_exporter_timer", process.type())
     if process.type() ~= "privileged agent" then
         return
     end
 
     ngx.timer.at(0, exporter_timer)
+end
+
+function _M.http_init(prometheus_enabled_in_stream)
+    http_init_process(prometheus_enabled_in_stream)
+    init_exporter_timer()
 end
 
 local function get_cached_metrics()
