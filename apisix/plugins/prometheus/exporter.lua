@@ -21,7 +21,6 @@ local control   = require("apisix.control.v1")
 local ipairs    = ipairs
 local pairs     = pairs
 local ngx       = ngx
-local re_gmatch = ngx.re.gmatch
 local ffi       = require("ffi")
 local C         = ffi.C
 local pcall = pcall
@@ -45,18 +44,18 @@ local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
 local next = next
-
-
-local ngx_capture
-if ngx.config.subsystem == "http" then
-    ngx_capture = ngx.location.capture
-end
+local process = require("ngx.process")
+local tonumber = tonumber
 
 
 local plugin_name = "prometheus"
 local default_export_uri = "/apisix/prometheus/metrics"
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
+-- Default refresh interval
+local DEFAULT_REFRESH_INTERVAL = 15
+
+local CACHED_METRICS_KEY = "cached_metrics_text"
 
 local metrics = {}
 
@@ -109,7 +108,7 @@ local function init_stream_metrics()
 end
 
 
-function _M.http_init(prometheus_enabled_in_stream)
+local function http_init_process(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
@@ -310,39 +309,50 @@ function _M.stream_log(conf, ctx)
 end
 
 
-local ngx_status_items = {"active", "accepted", "handled", "total",
-                         "reading", "writing", "waiting"}
+-- FFI definitions for nginx connection status
+-- Based on https://github.com/nginx/nginx/blob/master/src/event/ngx_event.c#L61-L78
+ffi.cdef[[
+    typedef uint64_t ngx_atomic_uint_t;
+    extern ngx_atomic_uint_t  *ngx_stat_accepted;
+    extern ngx_atomic_uint_t  *ngx_stat_handled;
+    extern ngx_atomic_uint_t  *ngx_stat_requests;
+    extern ngx_atomic_uint_t  *ngx_stat_active;
+    extern ngx_atomic_uint_t  *ngx_stat_reading;
+    extern ngx_atomic_uint_t  *ngx_stat_writing;
+    extern ngx_atomic_uint_t  *ngx_stat_waiting;
+]]
+
 local label_values = {}
 
+-- Mapping of status names to FFI global variables and metrics
+local status_mapping = {
+    {name = "active", var = "ngx_stat_active"},
+    {name = "accepted", var = "ngx_stat_accepted"},
+    {name = "handled", var = "ngx_stat_handled"},
+    {name = "total", var = "ngx_stat_requests"},
+    {name = "reading", var = "ngx_stat_reading"},
+    {name = "writing", var = "ngx_stat_writing"},
+    {name = "waiting", var = "ngx_stat_waiting"},
+}
+
+-- Use FFI to get nginx status directly from global variables
 local function nginx_status()
-    local res = ngx_capture("/apisix/nginx_status")
-    if not res or res.status ~= 200 then
-        core.log.error("failed to fetch Nginx status")
-        return
-    end
+    for _, item in ipairs(status_mapping) do
+        local ok, value = pcall(function()
+            local stat_ptr = C[item.var]
+            return stat_ptr and tonumber(stat_ptr[0]) or 0
+        end)
 
-    -- Active connections: 2
-    -- server accepts handled requests
-    --   26 26 84
-    -- Reading: 0 Writing: 1 Waiting: 1
-
-    local iterator, err = re_gmatch(res.body, [[(\d+)]], "jmo")
-    if not iterator then
-        core.log.error("failed to re.gmatch Nginx status: ", err)
-        return
-    end
-
-    for _, name in ipairs(ngx_status_items) do
-        local val = iterator()
-        if not val then
-            break
+        if not ok then
+            core.log.error("failed to read ", item.name, " via FFI")
+            return
         end
 
-        if name == "total" then
-            metrics.requests:set(val[0])
+        if item.name == "total" then
+            metrics.requests:set(value)
         else
-            label_values[1] = name
-            metrics.connections:set(val[0], label_values)
+            label_values[1] = item.name
+            metrics.connections:set(value, label_values)
         end
     end
 end
@@ -438,13 +448,7 @@ local function shared_dict_status()
 end
 
 
-local function collect(ctx, stream_only)
-    if not prometheus or not metrics then
-        core.log.error("prometheus: plugin is not initialized, please make sure ",
-                     " 'prometheus_metrics' shared dict is present in nginx template")
-        return 500, {message = "An unexpected error occurred"}
-    end
-
+local function collect()
     -- collect ngx.shared.DICT status
     shared_dict_status()
 
@@ -454,10 +458,11 @@ local function collect(ctx, stream_only)
     local config = core.config.new()
 
     -- config server status
-    local vars = ngx.var or {}
-    local hostname = vars.hostname or ""
+    local hostname = core.utils.gethostname() or ""
     local version = core.version.VERSION or ""
 
+    local local_conf = core.config.local_conf()
+    local stream_only = local_conf.apisix.proxy_mode == "stream"
     -- we can't get etcd index in metric server if only stream subsystem is enabled
     if config.type == "etcd" and not stream_only then
         -- etcd modify index
@@ -498,10 +503,69 @@ local function collect(ctx, stream_only)
         end
     end
 
-    core.response.set_header("content_type", "text/plain")
-    return 200, core.table.concat(prometheus:metric_data())
+    return core.table.concat(prometheus:metric_data())
 end
-_M.collect = collect
+
+
+local timer_running = false
+local function exporter_timer(premature)
+    if premature then
+        return
+    end
+
+    local refresh_interval = DEFAULT_REFRESH_INTERVAL
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.refresh_interval then
+        refresh_interval = attr.refresh_interval
+    end
+
+    ngx.timer.at(refresh_interval, exporter_timer)
+
+    if timer_running then
+        core.log.warn("Previous calculation still running, skipping")
+        return
+    end
+
+    timer_running = true
+
+    local ok, res = pcall(collect)
+    if not ok then
+        core.log.error("Failed to collect metrics: ", res)
+    end
+
+    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
+
+    timer_running = false
+end
+
+
+function _M.http_init(prometheus_enabled_in_stream)
+    http_init_process(prometheus_enabled_in_stream)
+
+    if process.type() ~= "privileged agent" then
+        return
+    end
+
+    ngx.timer.at(0, exporter_timer)
+end
+
+
+local function get_cached_metrics()
+    if not prometheus or not metrics then
+        core.log.error("prometheus: plugin is not initialized, please make sure ",
+                     " 'prometheus_metrics' shared dict is present in nginx template")
+        return 500, {message = "An unexpected error occurred"}
+    end
+
+    local cached_metrics_text = ngx.shared["prometheus-metrics"]:get(CACHED_METRICS_KEY)
+    if not cached_metrics_text then
+        core.log.error("prometheus: cached metrics text is not found")
+        return 500, {message = "An unexpected error occurred"}
+    end
+
+    core.response.set_header("content_type", "text/plain")
+    return 200, cached_metrics_text
+end
 
 
 local function get_api(called_by_api_router)
@@ -514,7 +578,7 @@ local function get_api(called_by_api_router)
     local api = {
         methods = {"GET"},
         uri = export_uri,
-        handler = collect
+        handler = get_cached_metrics
     }
 
     if not called_by_api_router then
@@ -530,7 +594,7 @@ end
 _M.get_api = get_api
 
 
-function _M.export_metrics(stream_only)
+function _M.export_metrics()
     if not prometheus then
         core.response.exit(200, "{}")
     end
@@ -539,7 +603,7 @@ function _M.export_metrics(stream_only)
     local method = ngx.req.get_method()
 
     if uri == api.uri and method == api.methods[1] then
-        local code, body = api.handler(nil, stream_only)
+        local code, body = api.handler()
         if code or body then
             core.response.exit(code, body)
         end
