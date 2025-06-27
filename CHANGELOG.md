@@ -82,7 +82,7 @@ title: Changelog
 
 ## 3.13.0
 
-### Change
+### Deprecation
 
 - change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
 
