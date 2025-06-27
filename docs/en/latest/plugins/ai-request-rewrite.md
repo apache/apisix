@@ -36,12 +36,12 @@ The `ai-request-rewrite` plugin intercepts client requests before they are forwa
 | **Field**                 | **Required** | **Type** | **Description**                                                                      |
 | ------------------------- | ------------ | -------- | ------------------------------------------------------------------------------------ |
 | prompt                    | Yes          | String   | The prompt send to LLM service.                                                      |
-| provider                  | Yes          | String   | Name of the LLM service. Available options: openai, deekseek and openai-compatible   |
+| provider                  | Yes          | String   | Name of the LLM service. Available options: openai, deekseek, aimlapi and openai-compatible. When `aimlapi` is selected, the plugin uses the OpenAI-compatible driver with a default endpoint of `https://api.aimlapi.com/v1/chat/completions`.   |
 | auth                      | Yes          | Object   | Authentication configuration                                                         |
 | auth.header               | No           | Object   | Authentication headers. Key must match pattern `^[a-zA-Z0-9._-]+$`.                  |
 | auth.query                | No           | Object   | Authentication query parameters. Key must match pattern `^[a-zA-Z0-9._-]+$`.         |
 | options                   | No           | Object   | Key/value settings for the model                                                     |
-| options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible services |
+| options.model             | No           | String   | Model to execute. Examples: "gpt-3.5-turbo" for openai, "deepseek-chat" for deekseek, or "qwen-turbo" for openai-compatible or aimlapi services |
 | override.endpoint         | No           | String   | Override the default endpoint when using OpenAI-compatible services (e.g., self-hosted models or third-party LLM services). When the provider is 'openai-compatible', the endpoint field is required. |
 | timeout                   | No           | Integer  | Total timeout in milliseconds for requests to LLM service, including connect, send, and read timeouts. Range: 1 - 60000. Default: 30000|
 | keepalive                 | No           | Boolean  | Enable keepalive for requests to LLM service. Default: true                                  |
