@@ -123,7 +123,7 @@ title: Changelog
 
 - refactor(ai-proxy): move read_response into ai_driver.request function [#12101](https://github.com/apache/apisix/pull/12101)
 - change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
-- refactor: mcp server framework implementation #[12168](https://github.com/apache/apisix/pull/12168)
+- refactor: mcp server framework implementation [#12168](https://github.com/apache/apisix/pull/12168)
 - feat: add mcp-bridge plugin [#12151](https://github.com/apache/apisix/pull/12151)
 - feat: add lago plugin [#12196](https://github.com/apache/apisix/pull/12196)
 - feat: add headers attribute for loki-logger [#12243](https://github.com/apache/apisix/pull/12243)
@@ -152,7 +152,7 @@ title: Changelog
 
 ## Developer productivity
 
-- feat: support devcontainer [11765](https://github.com/apache/apisix/pull/11765)
+- feat: support devcontainer [#11765](https://github.com/apache/apisix/pull/11765)
 An Isolated environment from the host, the runtime and toolset required for APISIX development are built in the container build, they will be available out of the box and developers no longer need to build and install them on the host. Just start dev container, wait a few moments, and it's ready to go.
 
 ## 3.12.0
