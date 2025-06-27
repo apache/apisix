@@ -49,7 +49,6 @@ First of all, we need to specify the branch to be built:
 
 ```shell
 APISIX_BRANCH='release/3.13'
-APISIX_VERSION='release/3.13.0'
 ```
 
 Then, you can run the following command to clone the APISIX source code from Github:
