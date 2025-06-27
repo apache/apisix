@@ -320,9 +320,9 @@ end
 -- Based on https://github.com/nginx/nginx/blob/master/src/event/ngx_event.c#L61-L78
 ffi.cdef[[
     typedef uint64_t ngx_atomic_uint_t;
-    
+
     extern ngx_atomic_uint_t  *ngx_stat_accepted;
-    extern ngx_atomic_uint_t  *ngx_stat_handled; 
+    extern ngx_atomic_uint_t  *ngx_stat_handled;
     extern ngx_atomic_uint_t  *ngx_stat_requests;
     extern ngx_atomic_uint_t  *ngx_stat_active;
     extern ngx_atomic_uint_t  *ngx_stat_reading;
@@ -346,16 +346,16 @@ local status_mapping = {
 -- Use FFI to get nginx status directly from global variables
 local function nginx_status()
     for _, item in ipairs(status_mapping) do
-        local ok, value = pcall(function() 
+        local ok, value = pcall(function()
             local stat_ptr = C[item.var]
             return stat_ptr and tonumber(stat_ptr[0]) or 0
         end)
-        
+
         if not ok then
             core.log.error("failed to read ", item.name, " via FFI")
             return
         end
-        
+
         if item.name == "total" then
             metrics.requests:set(value)
         else
@@ -570,7 +570,7 @@ local function get_cached_metrics()
         core.log.error("prometheus: cached metrics text is not found")
         return 500, {message = "An unexpected error occurred"}
     end
-    
+
     core.response.set_header("content_type", "text/plain")
     return 200, cached_metrics_text
 end
