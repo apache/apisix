@@ -22,7 +22,6 @@ local ipairs    = ipairs
 local pairs     = pairs
 local ngx       = ngx
 local re_gmatch = ngx.re.gmatch
-local process   = ngx.process
 local ffi       = require("ffi")
 local C         = ffi.C
 local pcall = pcall
@@ -46,6 +45,7 @@ local latency_details = require("apisix.utils.log-util").latency_details_in_ms
 local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
 local next = next
+local process = require("ngx.process")
 
 
 local ngx_capture
@@ -59,7 +59,7 @@ local default_export_uri = "/apisix/prometheus/metrics"
 -- Default set of latency buckets, 1ms to 60s:
 local DEFAULT_BUCKETS = {1, 2, 5, 10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 30000, 60000}
 -- Default refresh interval
-local DEFAULT_REFRESH_INTERVAL = "15s"
+local DEFAULT_REFRESH_INTERVAL = 15
 
 local CACHED_METRICS_KEY = "cached_metrics_text"
 
@@ -451,7 +451,7 @@ local function collect()
     shared_dict_status()
 
     -- across all services
-    nginx_status()
+    -- nginx_status()
 
     local config = core.config.new()
 
