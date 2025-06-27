@@ -82,6 +82,10 @@ title: Changelog
 
 ## 3.13.0
 
+### Change
+
+- change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+
 ### Bugfixes
 
 - fix: running stale healthchecker when new node count <= 1 [#12118](https://github.com/apache/apisix/pull/12118)
@@ -122,7 +126,6 @@ title: Changelog
 ### Plugins
 
 - refactor(ai-proxy): move read_response into ai_driver.request function [#12101](https://github.com/apache/apisix/pull/12101)
-- change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
 - refactor: mcp server framework implementation [#12168](https://github.com/apache/apisix/pull/12168)
 - feat: add mcp-bridge plugin [#12151](https://github.com/apache/apisix/pull/12151)
 - feat: add lago plugin [#12196](https://github.com/apache/apisix/pull/12196)
