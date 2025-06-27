@@ -46,7 +46,7 @@ local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
 local next = next
 local process = require("ngx.process")
-local tonumber        = tonumber
+local tonumber = tonumber
 
 
 local ngx_capture
