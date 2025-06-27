@@ -21,7 +21,6 @@ local control   = require("apisix.control.v1")
 local ipairs    = ipairs
 local pairs     = pairs
 local ngx       = ngx
-local re_gmatch = ngx.re.gmatch
 local ffi       = require("ffi")
 local C         = ffi.C
 local pcall = pcall
@@ -47,12 +46,6 @@ local unpack = unpack
 local next = next
 local process = require("ngx.process")
 local tonumber = tonumber
-
-
-local ngx_capture
-if ngx.config.subsystem == "http" then
-    ngx_capture = ngx.location.capture
-end
 
 
 local plugin_name = "prometheus"
@@ -320,7 +313,6 @@ end
 -- Based on https://github.com/nginx/nginx/blob/master/src/event/ngx_event.c#L61-L78
 ffi.cdef[[
     typedef uint64_t ngx_atomic_uint_t;
-
     extern ngx_atomic_uint_t  *ngx_stat_accepted;
     extern ngx_atomic_uint_t  *ngx_stat_handled;
     extern ngx_atomic_uint_t  *ngx_stat_requests;
@@ -530,7 +522,7 @@ local function exporter_timer(premature)
     ngx.timer.at(refresh_interval, exporter_timer)
 
     if timer_running then
-        core.log.warn("The last round of calculation took too long and did not exit, skip this turn")
+        core.log.warn("Previous calculation still running, skipping")
         return
     end
 
