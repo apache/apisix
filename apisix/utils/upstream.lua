@@ -47,8 +47,8 @@ local function compare_upstream_node(up_conf, new_t)
 
     -- slow path
     core.log.debug("compare upstream nodes by value, ",
-                    "old: ", tostring(old_t) , " ", core.json.delay_encode(old_t, true),
-                    ", new: ", tostring(new_t) , " ", core.json.delay_encode(new_t, true))
+                    "old: ", tostring(old_t) , " ", core.json.delay_encode(old_t, true))
+    core.log.debug("new: ", tostring(new_t) , " ", core.json.delay_encode(new_t, true))
 
     if up_conf.original_nodes then
         -- if original_nodes is set, it means that the upstream nodes
