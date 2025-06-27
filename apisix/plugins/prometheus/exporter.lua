@@ -345,17 +345,6 @@ local status_mapping = {
 
 -- Use FFI to get nginx status directly from global variables
 local function nginx_status()
-    -- Check if FFI is available by testing the first pointer
-    local ok, first_stat = pcall(function() 
-        return C.ngx_stat_active
-    end)
-    
-    if not ok or not first_stat then
-        core.log.error("nginx statistics not available via FFI")
-        return
-    end
-    
-    -- Iterate through status mapping to set metrics
     for _, item in ipairs(status_mapping) do
         local ok, value = pcall(function() 
             local stat_ptr = C[item.var]
