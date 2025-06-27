@@ -334,16 +334,16 @@ local label_values = {}
 
 -- Mapping of status names to FFI global variables and metrics
 local status_mapping = {
-    {name = "active", global = "ngx_stat_active", metric = "connections"},
-    {name = "accepted", global = "ngx_stat_accepted", metric = "connections"},
-    {name = "handled", global = "ngx_stat_handled", metric = "connections"},
-    {name = "total", global = "ngx_stat_requests", metric = "requests"},
-    {name = "reading", global = "ngx_stat_reading", metric = "connections"},
-    {name = "writing", global = "ngx_stat_writing", metric = "connections"},
-    {name = "waiting", global = "ngx_stat_waiting", metric = "connections"},
+    {name = "active", var = "ngx_stat_active"},
+    {name = "accepted", var = "ngx_stat_accepted"},
+    {name = "handled", var = "ngx_stat_handled"},
+    {name = "total", var = "ngx_stat_requests"},
+    {name = "reading", var = "ngx_stat_reading"},
+    {name = "writing", var = "ngx_stat_writing"},
+    {name = "waiting", var = "ngx_stat_waiting"},
 }
 
--- Use FFI to get nginx status directly from global variables    
+-- Use FFI to get nginx status directly from global variables
 local function nginx_status()
     -- Check if FFI is available by testing the first pointer
     local ok, first_stat = pcall(function() 
@@ -358,7 +358,7 @@ local function nginx_status()
     -- Iterate through status mapping to set metrics
     for _, item in ipairs(status_mapping) do
         local ok, value = pcall(function() 
-            local stat_ptr = C[item.global]
+            local stat_ptr = C[item.var]
             return stat_ptr and tonumber(stat_ptr[0]) or 0
         end)
         
@@ -367,7 +367,7 @@ local function nginx_status()
             return
         end
         
-        if item.metric == "requests" then
+        if item.name == "total" then
             metrics.requests:set(value)
         else
             label_values[1] = item.name
