@@ -152,8 +152,7 @@ title: Changelog
 
 ## Developer productivity
 
-- feat: support devcontainer [#11765](https://github.com/apache/apisix/pull/11765)
-An Isolated environment from the host, the runtime and toolset required for APISIX development are built in the container build, they will be available out of the box and developers no longer need to build and install them on the host. Just start dev container, wait a few moments, and it's ready to go.
+- feat: support devcontainer for containerized development of APISIX [#11765](https://github.com/apache/apisix/pull/11765)
 
 ## 3.12.0
 
