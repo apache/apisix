@@ -46,6 +46,7 @@ local xrpc = require("apisix.stream.xrpc")
 local unpack = unpack
 local next = next
 local process = require("ngx.process")
+local tonumber        = tonumber
 
 
 local ngx_capture
@@ -315,39 +316,62 @@ function _M.stream_log(conf, ctx)
 end
 
 
-local ngx_status_items = {"active", "accepted", "handled", "total",
-                         "reading", "writing", "waiting"}
+-- FFI definitions for nginx connection status
+-- Based on https://github.com/nginx/nginx/blob/master/src/event/ngx_event.c#L61-L78
+ffi.cdef[[
+    typedef uint64_t ngx_atomic_uint_t;
+    
+    extern ngx_atomic_uint_t  *ngx_stat_accepted;
+    extern ngx_atomic_uint_t  *ngx_stat_handled; 
+    extern ngx_atomic_uint_t  *ngx_stat_requests;
+    extern ngx_atomic_uint_t  *ngx_stat_active;
+    extern ngx_atomic_uint_t  *ngx_stat_reading;
+    extern ngx_atomic_uint_t  *ngx_stat_writing;
+    extern ngx_atomic_uint_t  *ngx_stat_waiting;
+]]
+
 local label_values = {}
 
+-- Mapping of status names to FFI global variables and metrics
+local status_mapping = {
+    {name = "active", global = "ngx_stat_active", metric = "connections"},
+    {name = "accepted", global = "ngx_stat_accepted", metric = "connections"},
+    {name = "handled", global = "ngx_stat_handled", metric = "connections"},
+    {name = "total", global = "ngx_stat_requests", metric = "requests"},
+    {name = "reading", global = "ngx_stat_reading", metric = "connections"},
+    {name = "writing", global = "ngx_stat_writing", metric = "connections"},
+    {name = "waiting", global = "ngx_stat_waiting", metric = "connections"},
+}
+
+-- Use FFI to get nginx status directly from global variables    
 local function nginx_status()
-    local res = ngx_capture("/apisix/nginx_status")
-    if not res or res.status ~= 200 then
-        core.log.error("failed to fetch Nginx status")
+    -- Check if FFI is available by testing the first pointer
+    local ok, first_stat = pcall(function() 
+        return C.ngx_stat_active
+    end)
+    
+    if not ok or not first_stat then
+        core.log.error("nginx statistics not available via FFI")
         return
     end
-
-    -- Active connections: 2
-    -- server accepts handled requests
-    --   26 26 84
-    -- Reading: 0 Writing: 1 Waiting: 1
-
-    local iterator, err = re_gmatch(res.body, [[(\d+)]], "jmo")
-    if not iterator then
-        core.log.error("failed to re.gmatch Nginx status: ", err)
-        return
-    end
-
-    for _, name in ipairs(ngx_status_items) do
-        local val = iterator()
-        if not val then
-            break
+    
+    -- Iterate through status mapping to set metrics
+    for _, item in ipairs(status_mapping) do
+        local ok, value = pcall(function() 
+            local stat_ptr = C[item.global]
+            return stat_ptr and tonumber(stat_ptr[0]) or 0
+        end)
+        
+        if not ok then
+            core.log.error("failed to read ", item.name, " via FFI")
+            return
         end
-
-        if name == "total" then
-            metrics.requests:set(val[0])
+        
+        if item.metric == "requests" then
+            metrics.requests:set(value)
         else
-            label_values[1] = name
-            metrics.connections:set(val[0], label_values)
+            label_values[1] = item.name
+            metrics.connections:set(value, label_values)
         end
     end
 end
@@ -448,7 +472,7 @@ local function collect()
     shared_dict_status()
 
     -- across all services
-    -- nginx_status()
+    nginx_status()
 
     local config = core.config.new()
 
@@ -533,8 +557,10 @@ local function exporter_timer(premature)
     timer_running = false
 end
 
-local function init_exporter_timer()
-    core.log.error("init_exporter_timer", process.type())
+
+function _M.http_init(prometheus_enabled_in_stream)
+    http_init_process(prometheus_enabled_in_stream)
+
     if process.type() ~= "privileged agent" then
         return
     end
@@ -542,10 +568,6 @@ local function init_exporter_timer()
     ngx.timer.at(0, exporter_timer)
 end
 
-function _M.http_init(prometheus_enabled_in_stream)
-    http_init_process(prometheus_enabled_in_stream)
-    init_exporter_timer()
-end
 
 local function get_cached_metrics()
     if not prometheus or not metrics then
