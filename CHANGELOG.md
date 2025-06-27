@@ -105,7 +105,7 @@ title: Changelog
 ### Core
 
 - feat(consumer): consumer username allows - in it [#12296](https://github.com/apache/apisix/pull/12296)
-- refactor: change log level to debug to avoid unnecessary logs [#12361](https://github.com/apache/apisix/pull/12361)
+- chore: change log level to debug to avoid unnecessary logs [#12361](https://github.com/apache/apisix/pull/12361)
 - chore: change log level from warn to info for stale batch processor removal [#12297](https://github.com/apache/apisix/pull/12297)
 - feat(standalone): allow more characters in credential_id for API-driven mode [#12295](https://github.com/apache/apisix/pull/12295)
 - feat: add standalone admin api [#12179](https://github.com/apache/apisix/pull/12179)
