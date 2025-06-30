@@ -2,11 +2,11 @@
 title: opa
 keywords:
   - Apache APISIX
-  - API 网关
-  - Plugin
+  - API Gateway
+  - 插件
   - Open Policy Agent
   - opa
-description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Policy Agent 对接的相关信息。
+description: 本文档包含有关 Apache APISIX opa 插件的信息。
 ---
 
 <!--
@@ -30,28 +30,29 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
 
 ## 描述
 
-`opa` 插件可用于与 [Open Policy Agent](https://www.openpolicyagent.org) 进行集成，实现后端服务的认证授权与访问服务等功能解耦，减少系统复杂性。
+`opa` 插件可用于与 [Open Policy Agent (OPA)](https://www.openpolicyagent.org) 集成。OPA 是一个策略引擎，帮助定义和执行授权策略，用以判断用户或应用程序是否拥有执行特定操作或访问特定资源的必要权限。将 OPA 与 APISIX 配合使用可以将授权逻辑从 APISIX 中解耦。
 
 ## 属性
 
-| 名称              | 类型    | 必选项 | 默认值 | 有效值  | 描述                                                                                                                                                                                |
-|-------------------|---------|----------|---------|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| host              | string  | 是     |         |               | OPA 服务的主机地址，例如 `https://localhost:8181`。                                                                                                                   |
-| ssl_verify        | boolean | 否    | true    |               | 当设置为 `true` 时，将验证 SSL 证书。                                                                                                                                          |
-| policy            | string  | 是     |         |               | OPA 策略路径，是 `package` 和 `decision` 配置的组合。当使用高级功能（如自定义响应）时，你可以省略 `decision` 配置。                                                  |
-| timeout           | integer | 否    | 3000ms  | [1, 60000]ms  | 设置 HTTP 调用超时时间。                                                                                                                                                                |
-| keepalive         | boolean | 否    | true    |               | 当设置为 `true` 时，将为多个请求保持连接并处于活动状态。                                                                                                                               |
-| keepalive_timeout | integer | 否    | 60000ms | [1000, ...]ms | 连接断开后的闲置时间。                                                                                                                                                                        |
-| keepalive_pool    | integer | 否    | 5       | [1, ...]ms    | 连接池限制。                                                                                                                                                                    |
-| with_route        | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Route 的信息。                                                                                                                              |
-| with_service      | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Service 的信息。                                                                                                                            |
-| with_consumer     | boolean | 否    | false   |               | 当设置为 `true` 时，发送关于当前 Consumer 的信息。注意，这可能会发送敏感信息，如 API key。请确保在安全的情况下才打开它。 |
+| 名称              | 类型    | 是否必需 | 默认值   | 有效值        | 描述                                                                                                                                                                                   |
+|-------------------|---------|----------|---------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| host              | string  | 是       |         |               | OPA 服务的主机地址。例如，`https://localhost:8181`。                                                                                                                                  |
+| ssl_verify        | boolean | 否       | true    |               | 设置为 `true` 时验证 SSL 证书。                                                                                                                                                        |
+| policy            | string  | 是       |         |               | OPA 策略路径。由 `package` 和 `decision` 组成。在使用自定义响应等高级功能时，可以省略 `decision`。                                                                                    |
+| timeout           | integer | 否       | 3000ms  | [1, 60000]ms  | HTTP 调用的超时时间。                                                                                                                                                                   |
+| keepalive         | boolean | 否       | true    |               | 设置为 `true` 时，为多个请求保持连接存活。                                                                                                                                                |
+| keepalive_timeout | integer | 否       | 60000ms | [1000, ...]ms | 连接空闲后关闭的时间。                                                                                                                                                                  |
+| keepalive_pool    | integer | 否       | 5       | [1, ...]ms    | 连接池限制。                                                                                                                                                                            |
+| with_route        | boolean | 否       | false   |               | 设置为 `true` 时，发送当前路由的信息。                                                                                                                                                   |
+| with_service      | boolean | 否       | false   |               | 设置为 `true` 时，发送当前服务的信息。                                                                                                                                                   |
+| with_consumer     | boolean | 否       | false   |               | 设置为 `true` 时，发送当前消费者的信息。注意这可能会发送敏感信息，如 API 密钥。确保仅在确认安全时开启此项。                                                                              |
+| with_body         | boolean | 否       | false   |               | 设置为 `true` 时，发送请求体。注意这可能会发送密码或 API 密钥等敏感信息。确保仅在理解安全隐患的情况下启用此功能。                                                                        |
 
 ## 数据定义
 
-### APISIX 向 OPA 发送信息
+### APISIX 到 OPA 服务
 
-下述示例代码展示了如何通过 APISIX 向 OPA 服务发送数据：
+以下 JSON 显示了 APISIX 发送给 OPA 服务的数据：
 
 ```json
 {
@@ -78,20 +79,22 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
     },
     "route": {},
     "service": {},
-    "consumer": {}
+    "consumer": {},
+    "body": {}
 }
 ```
 
-上述代码具体释义如下：
+以下是各个键的说明:
 
-- `type` 代表请求类型（如 `http` 或 `stream`）；
-- `request` 则需要在 `type` 为 `http` 时使用，包含基本的请求信息（如 URL、头信息等）；
-- `var` 包含关于请求连接的基本信息（如 IP、端口、请求时间戳等）；
-- `route`、`service` 和 `consumer` 包含的数据与 APISIX 中存储的数据相同，只有当这些对象上配置了 `opa` 插件时才会发送。
+- `type` 表示请求类型（`http` 或 `stream`）.
+- `request` 在 `type` 为 `http` 时使用，包含基本请求信息（URL、头信息等）.
+- `var` 包含请求连接的基本信息（IP、端口、请求时间戳等）。
+- `body` 包含请求的 HTTP 主体。
+- `route`、`service` 和 `consumer` 包含 APISIX 中存储的相同数据，且仅在 `opa` 插件配置在这些对象上时发送。
 
-### OPA 向 APISIX 返回数据
+### OPA 服务到 APISIX
 
-下述示例代码展示了 OPA 服务对 APISIX 发送请求后的响应数据：
+以下 JSON 显示了 OPA 服务返回给 APISIX 的响应：
 
 ```json
 {
@@ -106,14 +109,14 @@ description: 本篇文档介绍了 Apache APISIX 通过 opa 插件与 Open Polic
 }
 ```
 
-上述响应中的代码释义如下：
+响应中的键说明：
 
-- `allow` 配置是必不可少的，它表示请求是否允许通过 APISIX 进行转发；
-- `reason`、`headers` 和 `status_code` 是可选的，只有当你配置一个自定义响应时才会返回这些选项信息，具体使用方法可查看后续测试用例。
+- `allow` 是必需的，表示请求是否被允许通过 APISIX。
+- `reason`、`headers` 和 `status_code` 是可选的，仅在配置自定义响应时返回。请参见下一节用例。
 
-## 测试插件
+## 使用示例
 
-首先启动 OPA 环境：
+首先，您需要启动 Open Policy Agent 环境：
 
 ```shell
 docker run -d --name opa -p 8181:8181 openpolicyagent/opa:0.35.0 run -s
@@ -121,7 +124,7 @@ docker run -d --name opa -p 8181:8181 openpolicyagent/opa:0.35.0 run -s
 
 ### 基本用法
 
-一旦你运行了 OPA 服务，就可以进行基本策略的创建：
+当 OPA 服务运行后，您可以创建一个基本策略：
 
 ```shell
 curl -X PUT '127.0.0.1:8181/v1/policies/example1' \
@@ -138,7 +141,7 @@ allow {
 }'
 ```
 
-然后在指定路由上配置 `opa` 插件：
+然后，您可以在特定路由上配置 `opa` 插件：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
@@ -161,7 +164,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
 }'
 ```
 
-使用如下命令进行测试：
+现在，测试一下：
 
 ```shell
 curl -i -X GET 127.0.0.1:9080/get
@@ -171,7 +174,7 @@ curl -i -X GET 127.0.0.1:9080/get
 HTTP/1.1 200 OK
 ```
 
-如果尝试向不同的端点发出请求，会出现请求失败的状态：
+如果请求不同的接口， 请求会失败：
 
 ```shell
 curl -i -X POST 127.0.0.1:9080/post
@@ -183,7 +186,7 @@ HTTP/1.1 403 FORBIDDEN
 
 ### 使用自定义响应
 
-除了基础用法外，你还可以为更复杂的使用场景配置自定义响应，参考示例如下：
+您也可以配置自定义响应来处理更复杂的场景：
 
 ```shell
 curl -X PUT '127.0.0.1:8181/v1/policies/example2' \
@@ -216,7 +219,7 @@ status_code = 302 {
 }'
 ```
 
-同时，你可以将 `opa` 插件的策略参数调整为 `example2`，然后发出请求进行测试：
+将 `opa` 插件的策略参数更改为 `example2` 并测试：
 
 ```shell
 curl -i -X GET 127.0.0.1:9080/get
@@ -226,7 +229,7 @@ curl -i -X GET 127.0.0.1:9080/get
 HTTP/1.1 200 OK
 ```
 
-此时如果你发出一个失败请求，将会收到来自 OPA 服务的自定义响应反馈，如下所示：
+如果请求失败，可以看到来自 OPA 服务的自定义响应：
 
 ```shell
 curl -i -X POST 127.0.0.1:9080/post
@@ -241,9 +244,11 @@ test
 
 ### 发送 APISIX 数据
 
-如果你的 OPA 服务需要根据 APISIX 的某些数据（如 Route 和 Consumer 的详细信息）来进行后续操作时，则可以通过配置插件来实现。
+再看一个场景，当决策需要使用一些 APISIX 数据，比如 `route`、`consumer` 等时，如何操作？
 
-下述示例展示了一个简单的 `echo` 策略，它将原样返回 APISIX 发送的数据：
+如果您的 OPA 服务需要基于 APISIX 的路由和消费者等数据做决策，可以配置插件以发送这些数据。
+
+下面示例是一个简单的 `echo` 策略，直接返回 APISIX 发送的数据：
 
 ```shell
 curl -X PUT '127.0.0.1:8181/v1/policies/echo' \
@@ -254,7 +259,7 @@ allow = false
 reason = input'
 ```
 
-现在就可以在路由上配置插件来发送 APISIX 数据：
+配置插件在路由上发送 APISIX 数据：
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
@@ -278,13 +283,10 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/r1' \
 }'
 ```
 
-此时如果你提出一个请求，则可以通过自定义响应看到来自路由的数据：
+请求时，可以通过自定义响应看到路由数据：
 
 ```shell
 curl -X GET 127.0.0.1:9080/get
-```
-
-```shell
 {
     "type": "http",
     "request": {
@@ -301,11 +303,9 @@ curl -X GET 127.0.0.1:9080/get
 
 ## 删除插件
 
-当你需要禁用 `opa` 插件时，可以通过以下命令删除相应的 JSON 配置，APISIX 将会自动重新加载相关配置，无需重启服务：
+若需删除 `opa` 插件，可从插件配置中删除对应的 JSON 配置。APISIX 会自动重新加载，无需重启。
 
-:::note
-
-您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
+您可以通过以下命令从 `config.yaml` 获取 `admin_key` 并保存到环境变量：
 
 ```bash
 admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
@@ -314,7 +314,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 :::
 
 ```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
+curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
     "methods": ["GET"],
     "uri": "/hello",
