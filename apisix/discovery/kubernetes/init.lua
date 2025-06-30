@@ -25,6 +25,7 @@ local os = os
 local error = error
 local pcall = pcall
 local setmetatable = setmetatable
+local type = type 
 local is_http = ngx.config.subsystem == "http"
 local process = require("ngx.process")
 local core = require("apisix.core")
