@@ -84,7 +84,7 @@ description: 本文档包含有关 Apache APISIX opa 插件的信息。
 }
 ```
 
-以下是各个键的说明:
+以下是各个键的说明：
 
 - `type` 表示请求类型（`http` 或 `stream`）.
 - `request` 在 `type` 为 `http` 时使用，包含基本请求信息（URL、头信息等）.
@@ -174,7 +174,7 @@ curl -i -X GET 127.0.0.1:9080/get
 HTTP/1.1 200 OK
 ```
 
-如果请求不同的接口， 请求会失败：
+如果请求不同的接口，请求会失败：
 
 ```shell
 curl -i -X POST 127.0.0.1:9080/post
