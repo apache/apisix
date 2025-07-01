@@ -81,6 +81,7 @@ dependencies = {
     "lua-resty-t1k = 1.1.5",
     "brotli-ffi = 0.3-1",
     "lua-ffi-zlib = 0.6-0",
+    "jsonpath = 1.0-1",
     "api7-lua-resty-aws == 2.0.2-1",
     "multipart = 0.5.9-1",
 }
