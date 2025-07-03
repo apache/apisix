@@ -461,5 +461,4 @@ function _M.check_tls_bool(fields, conf, plugin_name)
     end
 end
 
-
 return _M
