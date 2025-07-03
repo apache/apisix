@@ -98,7 +98,7 @@ for i = 1, max_delay_encode_items do
                 ngx.log(ngx.WARN, "failed to encode: ", err,
                         " force: ", self.force)
             end
-    
+
             return res
         end
     })
