@@ -385,6 +385,7 @@ Content-type: application/json
 attempt to get length of local 'endpointslices' (a userdata value)
 
 
+
 === TEST 2: use default parameters
 --- yaml_config eval: $::yaml_config
 --- request
@@ -438,6 +439,7 @@ Content-type: application/json
 qr{ 2 2 2 2 2 2 2 2 2 2 2 2 }
 
 
+
 === TEST 4: use namespace selector equal
 --- yaml_config
 apisix:
@@ -476,6 +478,8 @@ Content-type: application/json
 --- response_body eval
 qr{ 2 2 0 0 0 0 2 2 2 2 2 2 }
 
+
+
 === TEST 5: test dump
 --- yaml_config eval: $::yaml_config
 --- request
@@ -485,7 +489,7 @@ GET /dump
 
 
 
-=== TEST 5: test single mode dump
+=== TEST 6: test single mode dump
 --- yaml_config eval: $::single_yaml_config
 --- request
 GET /dump
