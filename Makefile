@@ -49,6 +49,9 @@ ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
+IMAGE_NAME = apache/apisix
+ENV_APISIX_IMAGE_TAG_NAME  ?= $(IMAGE_NAME):$(VERSION)
+
 -include .requirements
 export
 
@@ -382,6 +385,11 @@ install: runtime
 	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
 	$(ENV_INSTALL) apisix/plugins/ai-rag/vector-search/*.lua $(ENV_INST_LUADIR)/apisix/plugins/ai-rag/vector-search
 
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
+	$(ENV_INSTALL) -d $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
+	$(ENV_INSTALL) apisix/plugins/mcp/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp
+	$(ENV_INSTALL) apisix/plugins/mcp/broker/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/broker
+	$(ENV_INSTALL) apisix/plugins/mcp/transport/*.lua $(ENV_INST_LUADIR)/apisix/plugins/mcp/transport
 
 	$(ENV_INSTALL) bin/apisix $(ENV_INST_BINDIR)/apisix
 
@@ -482,4 +490,34 @@ ci-env-down:
 ci-env-stop:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_DOCKER_COMPOSE) stop
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### build-on-debian-dev : Build apache/apisix:xx-debian-dev image
+.PHONY: build-on-debian-dev
+build-on-debian-dev:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev \
+		--build-arg TARGETARCH=$(ENV_OS_ARCH) \
+		--build-arg CODE_PATH=. \
+		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
+		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
+		--build-arg CHECK_STANDALONE_CONFIG=./docker/utils/check_standalone_config.sh \
+		-f ./docker/debian-dev/Dockerfile .
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+.PHONY: push-on-debian-dev
+push-on-debian-dev:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) tag $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev $(IMAGE_NAME):dev-$(ENV_OS_ARCH)
+	$(ENV_DOCKER) push $(IMAGE_NAME):dev-$(ENV_OS_ARCH)
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### merge-dev-tags : Merge architecture-specific dev tags into a single dev tag
+.PHONY: merge-dev-tags
+merge-dev-tags:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) manifest create $(IMAGE_NAME):dev \
+		$(IMAGE_NAME):dev-amd64 \
+		$(IMAGE_NAME):dev-arm64
+	$(ENV_DOCKER) manifest push $(IMAGE_NAME):dev
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

@@ -283,13 +283,21 @@ local function read_env(key)
     return key
 end
 
+local function read_token(token_file)
+    local token, err = util.read_file(token_file)
+    if err then
+        return nil, err
+    end
+
+    -- remove possible extra whitespace
+    return util.trim(token)
+end
 
 local function get_apiserver(conf)
     local apiserver = {
         schema = "",
         host = "",
         port = "",
-        token = ""
     }
 
     apiserver.schema = conf.service.schema
@@ -319,27 +327,36 @@ local function get_apiserver(conf)
     end
 
     if conf.client.token then
-        apiserver.token, err = read_env(conf.client.token)
+        local token, err = read_env(conf.client.token)
         if err then
             return nil, err
         end
+        apiserver.token = util.trim(token)
     elseif conf.client.token_file and conf.client.token_file ~= "" then
-        local file
-        file, err = read_env(conf.client.token_file)
-        if err then
-            return nil, err
-        end
+        setmetatable(apiserver, {
+            __index = function(_, key)
+                if key ~= "token" then
+                    return
+                end
 
-        apiserver.token, err = util.read_file(file)
-        if err then
-            return nil, err
-        end
+                local token_file, err = read_env(conf.client.token_file)
+                if err then
+                    core.log.error("failed to read token file path: ", err)
+                    return
+                end
+
+                local token, err = read_token(token_file)
+                if err then
+                    core.log.error("failed to read token from file: ", err)
+                    return
+                end
+                core.log.debug("re-read the token value")
+                return token
+            end
+        })
     else
         return nil, "one of [client.token,client.token_file] should be set but none"
     end
-
-    -- remove possible extra whitespace
-    apiserver.token = apiserver.token:gsub("%s+", "")
 
     if apiserver.schema == "https" and apiserver.token == "" then
         return nil, "apiserver.token should set to non-empty string when service.schema is https"
@@ -616,44 +633,61 @@ function _M.init_worker()
 end
 
 
-function _M.dump_data()
+local function dump_endpoints_from_dict(endpoint_dict)
+    local keys, err = endpoint_dict:get_keys(0)
+    if err then
+        core.log.error("get keys from discovery dict failed: ", err)
+        return
+    end
 
-    local eps = {}
-    for _, conf in ipairs(local_conf.discovery.kubernetes) do
+    if not keys or #keys == 0 then
+        return
+    end
 
-        local id = conf.id
-        local endpoint_dict = get_endpoint_dict(id)
-        local keys, err = endpoint_dict:get_keys()
-        if err then
-            error(err)
-            break
-        end
-
-        if keys then
-            local k8s = {}
-            for i = 1, #keys do
-
-                local key = keys[i]
-                --skip key with suffix #version
-                if key:sub(-#"#version") ~= "#version" then
-                    local value = endpoint_dict:get(key)
-
-                    core.table.insert(k8s, {
-                        name = key,
-                        value = value
-                    })
-                end
-            end
-
-            core.table.insert(eps, {
-                id = conf.id,
-                endpoints = k8s
+    local endpoints = {}
+    for i = 1, #keys do
+        local key = keys[i]
+        -- skip key with suffix #version
+        if key:sub(-#"#version") ~= "#version" then
+            local value = endpoint_dict:get(key)
+            core.table.insert(endpoints, {
+                name = key,
+                value = value
             })
-
         end
     end
 
-    return {config = local_conf.discovery.kubernetes, endpoints = eps}
+    return endpoints
+end
+
+function _M.dump_data()
+    local discovery_conf = local_conf.discovery.kubernetes
+    local eps = {}
+
+    if #discovery_conf == 0 then
+        -- Single mode: discovery_conf is a single configuration object
+        local endpoint_dict = get_endpoint_dict()
+        local endpoints = dump_endpoints_from_dict(endpoint_dict)
+        if endpoints then
+            core.table.insert(eps, {
+                endpoints = endpoints
+            })
+        end
+    else
+        -- Multiple mode: discovery_conf is an array of configuration objects
+        for _, conf in ipairs(discovery_conf) do
+            local endpoint_dict = get_endpoint_dict(conf.id)
+            local endpoints = dump_endpoints_from_dict(endpoint_dict)
+            if endpoints then
+                core.table.insert(eps, {
+                    id = conf.id,
+                    endpoints = endpoints
+                })
+            end
+        end
+    end
+
+    return {config = discovery_conf, endpoints = eps}
 end
 
 

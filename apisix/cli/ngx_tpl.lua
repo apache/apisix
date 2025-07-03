@@ -67,6 +67,13 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
+    {% if standalone_with_admin_api then %}
+    lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
+    {% end %}
+    {% if status then %}
+    lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
+    {% end %}
+    lua_shared_dict nacos 10m;
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -139,6 +146,10 @@ stream {
     lua_shared_dict lrucache-lock-stream {* stream.lua_shared_dict["lrucache-lock-stream"] *};
     lua_shared_dict etcd-cluster-health-check-stream {* stream.lua_shared_dict["etcd-cluster-health-check-stream"] *};
     lua_shared_dict worker-events-stream {* stream.lua_shared_dict["worker-events-stream"] *};
+
+    {% if stream.lua_shared_dict["upstream-healthcheck-stream"] then %}
+    lua_shared_dict upstream-healthcheck-stream {* stream.lua_shared_dict["upstream-healthcheck-stream"] *};
+    {% end %}
 
     {% if enabled_discoveries["tars"] then %}
     lua_shared_dict tars-stream {* stream.lua_shared_dict["tars-stream"] *};
@@ -222,8 +233,12 @@ stream {
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
 
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
-            apisix.stream_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 
@@ -354,6 +369,10 @@ http {
 
     {% if enabled_plugins["ext-plugin-pre-req"] or enabled_plugins["ext-plugin-post-req"] then %}
     lua_shared_dict ext-plugin {* http.lua_shared_dict["ext-plugin"] *}; # cache for ext-plugin
+    {% end %}
+
+    {% if enabled_plugins["mcp-bridge"] then %}
+    lua_shared_dict mcp-session {* http.lua_shared_dict["mcp-session"] *}; # cache for mcp-session
     {% end %}
 
     {% if config_center == "xds" then %}
@@ -539,6 +558,23 @@ http {
     }
     {% end %}
 
+    {% if status then %}
+    server {
+        listen {* status_server_addr *} enable_process=privileged_agent;
+        access_log off;
+        location /status {
+            content_by_lua_block {
+                apisix.status()
+            }
+        }
+        location /status/ready {
+            content_by_lua_block {
+                apisix.status_ready()
+            }
+        }
+    }
+    {% end %}
+
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
         {% if use_apisix_base then %}
@@ -601,20 +637,35 @@ http {
         set $upstream_host               $http_host;
         set $upstream_uri                '';
 
-        location /apisix/admin {
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
+        {%if allow_admin then%}
+        {% for _, allow_ip in ipairs(allow_admin) do %}
+        allow {*allow_ip*};
+        {% end %}
+        deny all;
+        {%else%}
+        allow all;
+        {%end%}
 
+        location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
             }
         }
+
+        {% if enable_admin_ui then %}
+        location = /ui {
+            return 301 /ui/;
+        }
+        location ^~ /ui/ {
+            rewrite ^/ui/(.*)$ /$1 break;
+            root {* apisix_lua_home *}/ui;
+            try_files $uri /index.html =404;
+            gzip on;
+            gzip_types text/css application/javascript application/json;
+            expires 7200s;
+            add_header Cache-Control "private,max-age=7200";
+        }
+        {% end %}
     }
     {% end %}
 
@@ -719,11 +770,11 @@ http {
 
         {% if ssl.enable then %}
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 

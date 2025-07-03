@@ -61,8 +61,12 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
-
+                enum = {
+                    "openai",
+                    "deepseek",
+                    "aimlapi",
+                    "openai-compatible",
+                }, -- add more providers later
             },
             priority = {
                 type = "integer",
@@ -96,7 +100,12 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+            enum = {
+                "openai",
+                "deepseek",
+                "aimlapi",
+                "openai-compatible",
+            }, -- add more providers later
 
         },
         auth = auth_schema,
@@ -108,6 +117,12 @@ _M.ai_proxy_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
         override = {
@@ -164,6 +179,12 @@ _M.ai_proxy_multi_schema = {
             description = "timeout in milliseconds",
         },
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {
+            type = "integer",
+            minimum = 1000,
+            default = 60000,
+            description = "keepalive timeout in milliseconds",
+        },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         ssl_verify = {type = "boolean", default = true },
     },

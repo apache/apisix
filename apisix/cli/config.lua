@@ -94,7 +94,9 @@ local _M = {
     },
     meta = {
       lua_shared_dict = {
-        ["prometheus-metrics"] = "15m"
+        ["prometheus-metrics"] = "15m",
+        ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {
@@ -109,7 +111,8 @@ local _M = {
         ["lrucache-lock-stream"] = "10m",
         ["plugin-limit-conn-stream"] = "10m",
         ["worker-events-stream"] = "10m",
-        ["tars-stream"] = "1m"
+        ["tars-stream"] = "1m",
+        ["upstream-healthcheck-stream"] = "10m",
       }
     },
     main_configuration_snippet = "",
@@ -172,7 +175,8 @@ local _M = {
         ["ext-plugin"] = "1m",
         tars = "1m",
         ["cas-auth"] = "10m",
-        ["ocsp-stapling"] = "10m"
+        ["ocsp-stapling"] = "10m",
+        ["mcp-session"] = "10m",
       }
     }
   },
@@ -233,10 +237,12 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
-    "server-info",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
+    "mcp-bridge",
     "degraphql",
     "kafka-proxy",
     "grpc-transcode",
@@ -245,6 +251,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "lago",
     "loki-logger",
     "elasticsearch-logger",
     "echo",
@@ -354,6 +361,7 @@ local _M = {
         }
       },
       enable_admin_cors = true,
+      enable_admin_ui = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
         ip = "0.0.0.0",

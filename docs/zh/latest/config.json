@@ -1,5 +1,5 @@
 {
-  "version": "3.11.0",
+  "version": "3.13.0",
   "sidebar": [
     {
       "type": "category",
@@ -28,7 +28,8 @@
         "tutorials/protect-api",
         "tutorials/observe-your-api",
         "tutorials/health-check",
-        "tutorials/client-to-apisix-mtls"
+        "tutorials/client-to-apisix-mtls",
+        "tutorials/keycloak-oidc"
       ]
     },
     {
@@ -82,6 +83,7 @@
             "plugins/grpc-web",
             "plugins/fault-injection",
             "plugins/mocking",
+            "plugins/body-transformer",
             "plugins/attach-consumer-label"
           ]
         },
@@ -220,6 +222,10 @@
         {
           "type": "doc",
           "id": "control-api"
+        },
+        {
+          "type": "doc",
+          "id": "status-api"
         }
       ]
     },

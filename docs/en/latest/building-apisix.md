@@ -45,24 +45,26 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 
 ## Building APISIX from source
 
-First of all, we need to specify the version `APISIX_VERSION` to be installed:
+First of all, we need to specify the branch to be built:
 
 ```shell
-APISIX_VERSION='3.11.0'
+APISIX_BRANCH='release/3.13'
 ```
 
 Then, you can run the following command to clone the APISIX source code from Github:
 
 ```shell
-git clone --depth 1 --branch ${APISIX_VERSION} https://github.com/apache/apisix.git apisix-${APISIX_VERSION}
+git clone --depth 1 --branch ${APISIX_BRANCH} https://github.com/apache/apisix.git apisix-${APISIX_BRANCH}
 ```
 
 Alternatively, you can also download the source package from the [Downloads](https://apisix.apache.org/downloads/) page. Note that source packages here are not distributed with test cases.
 
+Before installation, install [OpenResty](https://openresty.org/en/installation.html).
+
 Next, navigate to the directory, install dependencies, and build APISIX.
 
 ```shell
-cd apisix-${APISIX_VERSION}
+cd apisix-${APISIX_BRANCH}
 make deps
 make install
 ```

@@ -29,7 +29,10 @@ local tablepool    = require("tablepool")
 local get_var      = require("resty.ngxvar").fetch
 local get_request  = require("resty.ngxvar").request
 local ck           = require "resty.cookie"
+local multipart    = require("multipart")
+local util         = require("apisix.cli.util")
 local gq_parse     = require("graphql").parse
+local jp           = require("jsonpath")
 local setmetatable = setmetatable
 local sub_str      = string.sub
 local ngx          = ngx
@@ -167,6 +170,47 @@ local function get_parsed_graphql()
 end
 
 
+local CONTENT_TYPE_JSON = "application/json"
+local CONTENT_TYPE_FORM_URLENCODED = "application/x-www-form-urlencoded"
+local CONTENT_TYPE_MULTIPART_FORM = "multipart/form-data"
+
+local function get_parsed_request_body(ctx)
+    local ct_header = request.header(ctx, "Content-Type") or ""
+
+    if core_str.find(ct_header, CONTENT_TYPE_JSON) then
+        local request_table, err = request.get_json_request_body_table()
+        if not request_table then
+            return nil, "failed to parse JSON body: " .. err
+        end
+        return request_table
+    end
+
+    if core_str.find(ct_header, CONTENT_TYPE_FORM_URLENCODED) then
+        local args, err = request.get_post_args()
+        if not args then
+            return nil, "failed to parse form data: " .. (err or "unknown error")
+        end
+        return args
+    end
+
+    if core_str.find(ct_header, CONTENT_TYPE_MULTIPART_FORM) then
+        local body = request.get_body()
+        local res = multipart(body, ct_header)
+        if not res then
+            return nil, "failed to parse multipart form data"
+        end
+        return res:get_all()
+    end
+
+    local err = "unsupported content-type in header: " .. ct_header ..
+                ", supported types are: " ..
+                CONTENT_TYPE_JSON .. ", " ..
+                CONTENT_TYPE_FORM_URLENCODED .. ", " ..
+                CONTENT_TYPE_MULTIPART_FORM
+    return nil, err
+end
+
+
 do
     local var_methods = {
         method = ngx.req.get_method,
@@ -224,6 +268,7 @@ do
         __index = function(t, key)
             local cached = t._cache[key]
             if cached ~= nil then
+                log.debug("serving ctx value from cache for key: ", key)
                 return cached
             end
 
@@ -283,14 +328,42 @@ do
                 end
 
             elseif core_str.has_prefix(key, "http_") then
-                key = key:lower()
-                key = re_gsub(key, "-", "_", "jo")
-                val = get_var(key, t._request)
+                local arg_key = key:lower()
+                arg_key = re_gsub(arg_key, "-", "_", "jo")
+                val = get_var(arg_key, t._request)
 
             elseif core_str.has_prefix(key, "graphql_") then
                 -- trim the "graphql_" prefix
-                key = sub_str(key, 9)
-                val = get_parsed_graphql()[key]
+                local arg_key = sub_str(key, 9)
+                val = get_parsed_graphql()[arg_key]
+            elseif core_str.has_prefix(key, "post_arg.") then
+                -- trim the "post_arg." prefix (10 characters)
+                local arg_key = sub_str(key, 10)
+                local parsed_body, err = get_parsed_request_body(t._ctx)
+                if not parsed_body then
+                    log.warn("failed to fetch post args value by key: ", arg_key, " error: ", err)
+                    return nil
+                end
+                if arg_key:find("[%[%*]") or arg_key:find("..", 1, true) then
+                    arg_key = "$." .. arg_key
+                    local results = jp.query(parsed_body, arg_key)
+                    if #results == 0 then
+                        val = nil
+                    else
+                        val = results
+                    end
+                else
+                    local parts = util.split(arg_key, "(.)")
+                    local current = parsed_body
+                    for _, part in ipairs(parts) do
+                        if type(current) ~= "table" then
+                            current = nil
+                            break
+                        end
+                        current = current[part]
+                    end
+                    val = current
+                end
 
             else
                 local getter = apisix_var_names[key]
