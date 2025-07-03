@@ -187,6 +187,9 @@ end
 
 
 local function init_default_logs(logs_info, log_type)
+    local_conf = core.config.local_conf()
+    enable_access_log = core.table.try_read_attr(
+        local_conf, "nginx_config", "http", "enable_access_log")
     local filepath, filename = get_log_path_info(log_type)
     logs_info[log_type] = { type = log_type }
     if filename ~= "off" then
@@ -319,11 +322,6 @@ end
 
 
 function _M.init()
-    if not local_conf then
-        local_conf = core.config.local_conf()
-    end
-    enable_access_log = core.table.try_read_attr(
-        local_conf, "nginx_config", "http", "enable_access_log")
     timers.register_timer("plugin#log-rotate", rotate, true)
 end
 
