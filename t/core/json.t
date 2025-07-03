@@ -56,21 +56,11 @@ data: test
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-            local data1 = core.json.delay_encode({test="test1"})
-            local data2 = core.json.delay_encode({test="test2"})
-
-            ngx.say("delay encode: ", data1 == data2)
-            ngx.say("data1 type: ", type(data1))
-            ngx.log(ngx.ERR, "data1 val: ", data1)
-            ngx.log(ngx.ERR, "data2 val: ", data2)
+            ngx.log(ngx.ERR, "val: ", core.json.delay_encode({test="test1"}),core.json.delay_encode({test="test2"}))
         }
     }
---- response_body
-delay encode: true
-data1 type: table
 --- error_log
-data1 val: {"test":"test2"}
-data2 val: {"test":"test2"}
+val: {"test":"test1"}{"test":"test2"}
 
 
 

@@ -87,18 +87,23 @@ local function encode(data, force)
 end
 _M.encode = encode
 
-
-local delay_tab = setmetatable({data = "", force = false}, {
-    __tostring = function(self)
-        local res, err = encode(self.data, self.force)
-        if not res then
-            ngx.log(ngx.WARN, "failed to encode: ", err,
-                    " force: ", self.force)
+local max_delay_encode_items = 16
+local delay_tab_idx = 0
+local delay_tab_arr = {}
+for i = 1, max_delay_encode_items do
+    delay_tab_arr[i] = setmetatable({data = "", force = false}, {
+        __tostring = function(self)
+            local res, err = encode(self.data, self.force)
+            if not res then
+                ngx.log(ngx.WARN, "failed to encode: ", err,
+                        " force: ", self.force)
+            end
+    
+            return res
         end
+    })
+end
 
-        return res
-    end
-})
 
 
 ---
@@ -114,9 +119,13 @@ local delay_tab = setmetatable({data = "", force = false}, {
 -- @usage
 -- core.log.info("conf  : ", core.json.delay_encode(conf))
 function _M.delay_encode(data, force)
-    delay_tab.data = data
-    delay_tab.force = force
-    return delay_tab
+    delay_tab_idx = delay_tab_idx+1
+    if delay_tab_idx > max_delay_encode_items then
+        delay_tab_idx = 1
+    end
+    delay_tab_arr[delay_tab_idx].data = data
+    delay_tab_arr[delay_tab_idx].force = force
+    return delay_tab_arr[delay_tab_idx]
 end
 
 
