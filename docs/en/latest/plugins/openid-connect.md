@@ -102,6 +102,14 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | claim_validator.issuer.valid_issuers | string[] | False |  |  | Whitelist the vetted issuers of the jwt. When not passed by the user, the issuer returned by discovery endpoint will be used. In case both are missing, the issuer will not be validated. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).
+
+For example, use below command to set environment variable
+`export keycloak_secret=abc`
+
+and use it in plugin conf like below
+
+`"client_secret": "$ENV://keycloak_secret"`
 
 ## Examples
 

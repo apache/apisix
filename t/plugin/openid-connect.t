@@ -33,7 +33,6 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 });
-
 run_tests();
 
 __DATA__
