@@ -82,9 +82,13 @@ title: Changelog
 
 ## 3.13.0
 
-### Deprecation
+**The changes marked with :warning: are not backward compatible.**
 
-- change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+### Change
+
+- :warning: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+- :warning: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224).
+This PR sets additionalProperties to false for consumer credentials.
 
 ### Bugfixes
 
@@ -159,14 +163,21 @@ title: Changelog
 
 ## 3.12.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
-- replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
-- refactor: ai-content-moderation to ai-aws-content-moderation [#11596](https://github.com/apache/apisix/pull/11596])
+- :warning: replace plugin attribute with plugin metadata in `opentelemetry` plugin [#11940](https://github.com/apache/apisix/pull/11940)
+- :warning: refactor: ai-content-moderation to ai-aws-content-moderation [#12010](https://github.com/apache/apisix/pull/12010)
 - add expiration time for all Prometheus metrics [#11838](https://github.com/apache/apisix/pull/11838)
 - allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
-- refactor: ai-content-moderation to ai-aws-content-moderation (#12010)
-- rectify business logic/code in ai-proxy [#12055](https://github.com/apache/apisix/pull/12055)
+- unify google-cloud-oauth.lua file [#11596](https://github.com/apache/apisix/pull/11596)
+- :warning: ai-proxy remove passthrough [#12014](https://github.com/apache/apisix/pull/12014)
+- :warning: remove model options' `stream` default value [#12013](https://github.com/apache/apisix/pull/12013)
+- :warning: grpc-web response contains two trailer chunks [#11988](https://github.com/apache/apisix/pull/11988).
+This PR returns `405 Method not allowed` instead of `400 Bad Request` when request HTTP method errors.
+- :warning: disallow empty key configuration attributes [#11852](https://github.com/apache/apisix/pull/11852)
+- :warning: set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
 
 ### Bugfixes
 
@@ -230,10 +241,12 @@ title: Changelog
 
 ## 3.11.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
-- remove JWT signing endpoint and no longer require a private key to be uploaded in the jwt-auth plugin. [#11597](https://github.com/apache/apisix/pull/11597)
-- rewrite hmac-auth plugin for usability [#11581](https://github.com/apache/apisix/pull/11581)
+- :warning: remove JWT signing endpoint and no longer require a private key to be uploaded in the jwt-auth plugin. [#11597](https://github.com/apache/apisix/pull/11597)
+- :warning: rewrite hmac-auth plugin for usability [#11581](https://github.com/apache/apisix/pull/11581)
 
 ### Plugins
 
@@ -257,13 +270,20 @@ title: Changelog
 
 ## 3.10.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
-- remove `core.grpc` module [#11427](https://github.com/apache/apisix/pull/11427)
+- :warning: remove `core.grpc` module [#11427](https://github.com/apache/apisix/pull/11427)
 - add max req/resp body size attributes [#11133](https://github.com/apache/apisix/pull/11133)
-- autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
-- enable sensitive fields encryption by default [#11076](https://github.com/apache/apisix/pull/11076)
+- :warning: autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
+- :warning: enable sensitive fields encryption by default [#11076](https://github.com/apache/apisix/pull/11076)
 - support more sensitive fields for encryption [#11095](https://github.com/apache/apisix/pull/11095)
+- :warning: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
+This change removes the default `*` value for `expose_headers` and only sets the header when explicitly configured.
+- :warning: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
+- :warning: core.request.header return strings instead of table [#11127](https://github.com/apache/apisix/pull/11127)
+This function now always returns strings, previously it returned tables when duplicate headers existed.
 
 ### Plugins
 
@@ -310,10 +330,12 @@ title: Changelog
 
 ## 3.9.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
-- change: use apisix.enable_http2 to enable HTTP/2 in APISIX (#11032)
-- change: unify the keyring and key_encrypt_salt fields (#10771)
+- :warning: use apisix.enable_http2 to enable HTTP/2 in APISIX [#11032](https://github.com/apache/apisix/pull/11032)
+- :warning: unify the keyring and key_encrypt_salt fields [#10771](https://github.com/apache/apisix/pull/10771)
 
 ### Core
 
@@ -404,6 +426,8 @@ title: Changelog
 
 ## 3.7.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
 - :warning: Creating core resources does not allow passing in `create_time` and `update_time`: [#10232](https://github.com/apache/apisix/pull/10232)
@@ -442,6 +466,8 @@ title: Changelog
 
 ## 3.6.0
 
+**The changes marked with :warning: are not backward compatible.**
+
 ### Change
 
 - :warning: Remove gRPC support between APISIX and etcd and remove `etcd.use_grpc` configuration option: [#10015](https://github.com/apache/apisix/pull/10015)
@@ -469,6 +495,8 @@ title: Changelog
 - Add error handlers for invalid `cache_zone` configuration in the `proxy-cache` plugin: [#10138](https://github.com/apache/apisix/pull/10138)
 
 ## 3.5.0
+
+**The changes marked with :warning: are not backward compatible.**
 
 ### Change
 
