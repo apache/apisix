@@ -334,8 +334,8 @@ This function now always returns strings, previously it returned tables when dup
 
 ### Change
 
-- :warning: change: use apisix.enable_http2 to enable HTTP/2 in APISIX (#11032)
-- :warning: change: unify the keyring and key_encrypt_salt fields (#10771)
+- :warning: use apisix.enable_http2 to enable HTTP/2 in APISIX [#11032](https://github.com/apache/apisix/pull/11032)
+- :warning: unify the keyring and key_encrypt_salt fields [#10771](https://github.com/apache/apisix/pull/10771)
 
 ### Core
 
@@ -383,8 +383,6 @@ This function now always returns strings, previously it returned tables when dup
 - Fix: authz_keycloak plugin giving 500 error [#10763](https://github.com/apache/apisix/pull/10763)
 
 ## 3.8.0
-
-**The changes marked with :warning: are not backward compatible.**
 
 ### Core
 
