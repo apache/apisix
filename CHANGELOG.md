@@ -537,8 +537,6 @@ This function now always returns strings, previously it returned tables when dup
 
 ## 3.4.0
 
-**The changes marked with :warning: are not backward compatible.**
-
 ### Core
 
 - :sunrise: Support route-level MTLS [#9322](https://github.com/apache/apisix/pull/9322)
