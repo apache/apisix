@@ -84,9 +84,11 @@ title: Changelog
 
 **The changes marked with :warning: are not backward compatible.**
 
-### Deprecation
+### Change
 
-- :warning: change: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+- :warning: mark server-info plugin as deprecated [#12244](https://github.com/apache/apisix/pull/12244)
+- :warning: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224).
+This PR sets additionalProperties to false for consumer credentials.
 
 ### Bugfixes
 
@@ -115,7 +117,7 @@ title: Changelog
 - feat(standalone): support revision in API-driven standalone mode like etcd [#12214](https://github.com/apache/apisix/pull/12214)
 - feat: add healthcheck for sync configuration [#12200](https://github.com/apache/apisix/pull/12200)
 - perf: compare service discovery nodes by address [#12258](https://github.com/apache/apisix/pull/12258)
-- :warning: feat: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224)
+- feat: fill in the metadata of resource schema [#12224](https://github.com/apache/apisix/pull/12224)
 - feat: add embedded apisix dashboard ui [#12276](https://github.com/apache/apisix/pull/12276)
 - feat: add apisix dashboard to dev image [#12369](https://github.com/apache/apisix/pull/12369)
 - feat: add max pending entries option to batch-processor [#12338](https://github.com/apache/apisix/pull/12338)
@@ -170,19 +172,24 @@ title: Changelog
 - add expiration time for all Prometheus metrics [#11838](https://github.com/apache/apisix/pull/11838)
 - allow workflow config without case [#11787](https://github.com/apache/apisix/pull/11787)
 - unify google-cloud-oauth.lua file [#11596](https://github.com/apache/apisix/pull/11596)
-- rectify business logic/code in ai-proxy [#12055](https://github.com/apache/apisix/pull/12055)
+- :warning: ai-proxy remove passthrough [#12014](https://github.com/apache/apisix/pull/12014)
+- :warning: remove model options' `stream` default value [#12013](https://github.com/apache/apisix/pull/12013)
+- :warning: grpc-web response contains two trailer chunks [#11988](https://github.com/apache/apisix/pull/11988).
+This PR returns `405 Method not allowed` instead of `400 Bad Request` when request HTTP method errors.
+- :warning: disallow empty key configuration attributes [#11852](https://github.com/apache/apisix/pull/11852)
+- :warning: set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
 
 ### Bugfixes
 
 - Fix: timeout risk in usages of lua-resty-aws [#12070](https://github.com/apache/apisix/pull/12070)
 - Fix: ai-rate-limiting not allowed to limit to a single instance [#12061](https://github.com/apache/apisix/pull/12061)
 - Fix: update watch_ctx.revision to avoid multiple resyncs [#12021](https://github.com/apache/apisix/pull/12021)
-- :warning: Fix: ai-proxy remove passthrough [#12014](https://github.com/apache/apisix/pull/12014)
+- Fix: ai-proxy remove passthrough [#12014](https://github.com/apache/apisix/pull/12014)
 - Fix: ai-proxy dead loop when retrying [#12012](https://github.com/apache/apisix/pull/12012)
 - Fix: error while trying to log table in ai-content-moderation plugin [#11994](https://github.com/apache/apisix/pull/11994)
 - Fix: resync etcd when a lower revision is found [#12015](https://github.com/apache/apisix/pull/12015)
-- :warning: Fix: remove model options' `stream` default value [#12013](https://github.com/apache/apisix/pull/12013)
-- :warning: Fix: grpc-web response contains two trailer chunks [#11988](https://github.com/apache/apisix/pull/11988)
+- Fix: remove model options' `stream` default value [#12013](https://github.com/apache/apisix/pull/12013)
+- Fix: grpc-web response contains two trailer chunks [#11988](https://github.com/apache/apisix/pull/11988)
 - Fix: event_id is nil in chaitin-waf [#11651](https://github.com/apache/apisix/pull/11651)
 - Fix: race condition problem while update upstream.nodes [#11916](https://github.com/apache/apisix/pull/11916)
 - Fix: `upstream_obj.upstream` should not be a string [#11932](https://github.com/apache/apisix/pull/11932)
@@ -190,7 +197,7 @@ title: Changelog
 - Fix: add support for ignoring "load" global variable [#11862](https://github.com/apache/apisix/pull/11862)
 - Fix: corrupt data in routes() response due to healthchecker data [#11844](https://github.com/apache/apisix/pull/11844)
 - Fix: deepcopy should copy same table exactly only once [#11861](https://github.com/apache/apisix/pull/11861)
-- :warning: Fix: disallow empty key configuration attributes [#11852](https://github.com/apache/apisix/pull/11852)
+- Fix: disallow empty key configuration attributes [#11852](https://github.com/apache/apisix/pull/11852)
 - Fix: etcd watch restart when receive invalid revision [#11833](https://github.com/apache/apisix/pull/11833)
 - Fix: missing parsed_url nil check [#11637](https://github.com/apache/apisix/pull/11637)
 - Fix: use `plugin.get` to fetch plugin configured in multi-auth plugin [#11794](https://github.com/apache/apisix/pull/11794)
@@ -202,7 +209,7 @@ title: Changelog
 
 ### Core
 
-- :warning: set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
+- set default value of ssl_trusted_certificate to system [#11993](https://github.com/apache/apisix/pull/11993)
 - upgrade openresty version to v1.27.11 [#11936](https://github.com/apache/apisix/pull/11936)
 - Support the use of system-provided CA certs in `ssl_trusted_certificate` [#11809](https://github.com/apache/apisix/pull/11809)
 - support _meta.pre_function to execute custom logic before execution of each phase [#11793](https://github.com/apache/apisix/pull/11793)
@@ -271,7 +278,11 @@ title: Changelog
 - add max req/resp body size attributes [#11133](https://github.com/apache/apisix/pull/11133)
 - :warning: autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
 - :warning: enable sensitive fields encryption by default [#11076](https://github.com/apache/apisix/pull/11076)
-- support more sensitive fields for encryption [#11095](https://github.com/apache/apisix/pull/11095)
+- :warning: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
+This change removes the default `*` value for `expose_headers` and only sets the header when explicitly configured.
+- :warning: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
+- :warning: core.request.header return strings instead of table [#11127](https://github.com/apache/apisix/pull/11127)
+This function now always returns strings, previously it returned tables when duplicate headers existed.
 
 ### Plugins
 
@@ -292,13 +303,13 @@ title: Changelog
 - Fix: stream route matcher is nil after first match [#11269](https://github.com/apache/apisix/pull/11269)
 - Fix: rectify the way to fetch secret resource by id [#11164](https://github.com/apache/apisix/pull/11164)
 - Fix: multi-auth raise 500 error when use default conf [#11145](https://github.com/apache/apisix/pull/11145)
-- :warning: Fix: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
+- Fix: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
 - Fix: close session in case of error to avoid blocked session [#11089](https://github.com/apache/apisix/pull/11089)
 - Fix: restore `pb.state` appropriately [#11135](https://github.com/apache/apisix/pull/11135)
-- :warning: Fix: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
+- Fix: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
 - Fix: disable features when prometheus plugin is turned off [#11117](https://github.com/apache/apisix/pull/11117)
 - Fix: add post request headers only if auth request method is POST [#11021](https://github.com/apache/apisix/pull/11021)
-- :warning: Fix: core.request.header return strings instead of table [#11127](https://github.com/apache/apisix/pull/11127)
+- Fix: core.request.header return strings instead of table [#11127](https://github.com/apache/apisix/pull/11127)
 - Fix: brotli partial response [#11087](https://github.com/apache/apisix/pull/11087)
 - Fix: the port value greater than 65535 should not be allowed [#11043](https://github.com/apache/apisix/pull/11043)
 
