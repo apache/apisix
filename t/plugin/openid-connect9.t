@@ -86,11 +86,15 @@ __DATA__
 --- response_body
 passed
 
+
+
 === TEST 2: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo client_secret=60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa
 --- response_body
 Success! Data written to: kv/apisix/foo
+
+
 
 === TEST 3: configure oidc plugin with small public key using vault
 --- config
