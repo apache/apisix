@@ -278,6 +278,7 @@ This PR returns `405 Method not allowed` instead of `400 Bad Request` when reque
 - add max req/resp body size attributes [#11133](https://github.com/apache/apisix/pull/11133)
 - :warning: autogenerate admin api key if not passed [#11080](https://github.com/apache/apisix/pull/11080)
 - :warning: enable sensitive fields encryption by default [#11076](https://github.com/apache/apisix/pull/11076)
+- support more sensitive fields for encryption [#11095](https://github.com/apache/apisix/pull/11095)
 - :warning: avoid overwriting `Access-Control-Expose-Headers` response header [#11136](https://github.com/apache/apisix/pull/11136)
 This change removes the default `*` value for `expose_headers` and only sets the header when explicitly configured.
 - :warning: add a default limit of 100 for `get_headers()` [#11140](https://github.com/apache/apisix/pull/11140)
