@@ -353,6 +353,10 @@
         },
         {
           "type": "doc",
+          "id": "proxy-chain"
+        },
+        {
+          "type": "doc",
           "id": "grpc-proxy"
         },
         {
