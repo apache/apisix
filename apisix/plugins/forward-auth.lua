@@ -52,6 +52,9 @@ local schema = {
                     }
                 }
             },
+            description = "extra headers that will be sent to the authorization service"
+                           .. "when authorizing, the value can be a string or a number, "
+                           .. "and it can also contain variables like $remote_addr, $request_uri, etc."
         },
         upstream_headers = {
             type = "array",
@@ -120,7 +123,9 @@ function _M.access(conf, ctx)
                 value = tostring(value)
             end
             local resolve_value, err, n_resolved = core.utils.resolve_var(value, ctx.var)
-            auth_headers[header] = resolve_value
+            if not err and n_resolved > 0 then
+                auth_headers[header] = resolve_value 
+            end
         end
     end
 
