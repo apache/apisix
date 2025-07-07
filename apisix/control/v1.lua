@@ -188,10 +188,6 @@ end
 
 
 function _M.get_health_checkers()
-    local conf = core.config.local_conf()
-    if conf and conf.apisix and conf.apisix.disable_upstream_healthcheck then
-        return 200, {}
-    end
     local infos = _get_health_checkers()
     local out, err = try_render_html({stats=infos})
     if out then
