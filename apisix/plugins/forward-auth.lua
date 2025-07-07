@@ -124,7 +124,7 @@ function _M.access(conf, ctx)
             end
             local resolve_value, err, n_resolved = core.utils.resolve_var(value, ctx.var)
             if not err and n_resolved > 0 then
-                auth_headers[header] = resolve_value 
+                auth_headers[header] = resolve_value
             end
         end
     end

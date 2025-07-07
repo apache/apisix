@@ -282,6 +282,7 @@ Server: APISIX/3.13.0
 
 tenant_id is required
 ```
+
 ## Delete Plugin
 
 To remove the `forward-auth` Plugin, you can delete the corresponding JSON configuration from the Plugin configuration. APISIX will automatically reload and you do not have to restart for this to take effect.
