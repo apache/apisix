@@ -108,9 +108,6 @@ local function create_checker(upstream)
         core.log.info("healthchecker won't be created: disabled upstream healthcheck")
         return nil
     end
-    local inspect = require("inspect")
-    core.log.info("local configuration: ",
-                  inspect(local_conf and local_conf.apisix))
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
     end
