@@ -1783,3 +1783,14 @@ Content-Type: application/x-www-form-urlencoded
 " . "a=b&" x 101 . "required_payload=101-hello"
 --- response_body eval
 qr/101-hello/
+
+
+
+=== TEST 53: test urlencoded post data with charset header
+--- more_headers
+Content-Type: application/x-www-form-urlencoded; charset=utf-8
+--- request eval
+"POST /echo
+" . "a=b&" x 101 . "required_payload=101-hello"
+--- response_body eval
+qr/101-hello/

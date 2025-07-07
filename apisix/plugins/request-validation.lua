@@ -88,7 +88,8 @@ function _M.rewrite(conf, ctx)
         end
 
         local body_is_json = true
-        if headers["content-type"] == "application/x-www-form-urlencoded" then
+        if headers["content-type"] and
+            core.string.has_prefix(headers["content-type"]:lower(), "application/x-www-form-urlencoded") then
             -- use 0 to avoid truncated result and keep the behavior as the
             -- same as other platforms
             req_body, err = ngx.decode_args(body, 0)
