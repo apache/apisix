@@ -61,6 +61,10 @@ local metrics = {}
 
 local inner_tab_arr = {}
 
+local timer_running = false
+-- init_exporter_timer will be defined below
+local init_exporter_timer
+
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
     for i = 1, select('#', ...) do
@@ -108,7 +112,7 @@ local function init_stream_metrics()
 end
 
 
-local function http_init_process(prometheus_enabled_in_stream)
+function _M.http_init(prometheus_enabled_in_stream)
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
@@ -234,6 +238,13 @@ end
 
 
 function _M.http_log(conf, ctx)
+    if not init_exporter_timer then
+        core.log.error("prometheus: init_exporter_timer is not defined")
+        return
+    end
+    
+    init_exporter_timer()
+
     local vars = ctx.var
 
     local route_id = ""
@@ -507,16 +518,6 @@ local function collect()
 end
 
 
-local function update_cached_metrics()
-    local ok, res = pcall(collect)
-    if not ok then
-        core.log.error("Failed to collect metrics: ", res)
-    end
-    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
-end
-
-local timer_running = false
-
 local function exporter_timer(premature)
     if premature then
         return
@@ -537,18 +538,18 @@ local function exporter_timer(premature)
 
     timer_running = true
 
-    update_cached_metrics()
+    local ok, res = pcall(collect)
+    if not ok then
+        core.log.error("Failed to collect metrics: ", res)
+        return
+    end
+    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
 
     timer_running = false
 end
 
 
-function _M.http_init(prometheus_enabled_in_stream)
-    -- collect metrics immediately to init cached metrics
-    update_cached_metrics()
-
-    http_init_process(prometheus_enabled_in_stream)
-
+function init_exporter_timer()
     if process.type() ~= "privileged agent" then
         return
     end
