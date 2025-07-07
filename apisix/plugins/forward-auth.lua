@@ -54,7 +54,7 @@ local schema = {
             },
             description = "extra headers that will be sent to the authorization service"
                            .. "when authorizing, the value can be a string or a number, "
-                           .. "and it can also contain variables like $remote_addr, $request_uri, etc."
+                           .. "and it can also contain variables like $remote_addr, $request_uri."
         },
         upstream_headers = {
             type = "array",
