@@ -110,6 +110,17 @@ property "request_method" validation failed: matches none of the enum values
                                         end
                                     end]],
                                     [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "777" then
+                                            if core.request.header(ctx, "tenant_id") then
+                                                core.response.set_header("X-User-ID", "i-am-an-user");
+                                                core.response.exit(200);
+                                            else
+                                                core.response.exit(400, "tenant_id is required");
+                                            end
+                                        end
+                                    end]],
+                                    [[return function(conf, ctx)
                                         local core = require("apisix.core")
                                         if core.request.get_method() == "POST" then
                                            local req_body, err = core.request.get_body()
@@ -274,6 +285,26 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/onerror"
                     }]],
+                },
+                {
+                    url = "/apisix/admin/routes/9",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_method": "GET",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "extra_headers": {"tenant_id": "$post_arg.tenant_id"}
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/ping2"
+                    }]]
                 }
             }
 
@@ -286,7 +317,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 10
+"passed\n" x 11
 
 
 
@@ -403,3 +434,14 @@ GET /onerror
 --- more_headers
 Authorization: 333
 --- error_code: 503
+
+
+
+=== TEST 10: hit route (test extra_headers when use post method)
+--- request
+POST /ping2
+{"tenant_id": 123}
+--- more_headers
+Authorization: 777
+--- response_body_like eval
+qr/\"x-user-id\":\"i-am-an-user\"/

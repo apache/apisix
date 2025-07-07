@@ -41,6 +41,18 @@ local schema = {
             items = {type = "string"},
             description = "client request header that will be sent to the authorization service"
         },
+        extra_headers = {
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    oneOf = {
+                        { type = "string" },
+                        { type = "number" },
+                    }
+                }
+            },
+        },
         upstream_headers = {
             type = "array",
             default = {},
@@ -100,6 +112,16 @@ function _M.access(conf, ctx)
         auth_headers["Expect"] = core.request.header(ctx, "expect")
         auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
         auth_headers["Content-Encoding"] = core.request.header(ctx, "content-encoding")
+    end
+
+    if conf.extra_headers then
+        for header, value in pairs(conf.extra_headers) do
+            if type(value) == "number" then
+                value = tostring(value)
+            end
+            local resolve_value, err, n_resolved = core.utils.resolve_var(value, ctx.var)
+            auth_headers[header] = resolve_value
+        end
     end
 
     -- append headers that need to be get from the client request header
