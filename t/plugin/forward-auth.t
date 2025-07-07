@@ -437,7 +437,7 @@ Authorization: 333
 
 
 
-=== TEST 10: hit route (test extra_headers when use post method)
+=== TEST 14: hit route (test extra_headers when use post method)
 --- request
 POST /ping2
 {"tenant_id": 123}
