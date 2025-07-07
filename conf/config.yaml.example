@@ -137,7 +137,7 @@ apisix:
   #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
                                   # or (standalone mode) the config isn't loaded yet either via file or Admin API.
   # disable_upstream_healthcheck: false # A global switch for healthcheck. Defaults to false.
-                                        # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.           
+                                        # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
