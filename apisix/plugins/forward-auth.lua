@@ -15,9 +15,12 @@
 -- limitations under the License.
 --
 
-local ipairs = ipairs
-local core   = require("apisix.core")
-local http   = require("resty.http")
+local ipairs   = ipairs
+local core     = require("apisix.core")
+local http     = require("resty.http")
+local pairs    = pairs
+local type     = type
+local tostring = tostring
 
 local schema = {
     type = "object",
