@@ -243,7 +243,9 @@ Date: Mon, 07 Jul 2025 06:50:39 GMT
 Access-Control-Allow-Origin: *
 Access-Control-Allow-Credentials: true
 Server: APISIX/3.13.0
+```
 
+```json
 {
   "args": {},
   "data": "",
@@ -264,7 +266,6 @@ Server: APISIX/3.13.0
   "origin": "127.0.0.1, 106.215.83.33",
   "url": "http://127.0.0.1/post"
 }
-
 ```
 
 Send a POST request without the `tenant_id` header:
@@ -273,8 +274,11 @@ Send a POST request without the `tenant_id` header:
  curl -i http://127.0.0.1:9080/post -X POST -d '{
    "abc": 123
 }'
+```
 
+You should receive an HTTP/1.1 400 Bad Request response with the following message:
 
+```shell
 HTTP/1.1 400 Bad Request
 Date: Mon, 07 Jul 2025 06:54:04 GMT
 Content-Type: text/plain; charset=utf-8
