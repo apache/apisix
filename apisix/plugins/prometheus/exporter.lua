@@ -507,7 +507,16 @@ local function collect()
 end
 
 
+local function update_cached_metrics()
+    local ok, res = pcall(collect)
+    if not ok then
+        core.log.error("Failed to collect metrics: ", res)
+    end
+    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
+end
+
 local timer_running = false
+
 local function exporter_timer(premature)
     if premature then
         return
@@ -528,18 +537,16 @@ local function exporter_timer(premature)
 
     timer_running = true
 
-    local ok, res = pcall(collect)
-    if not ok then
-        core.log.error("Failed to collect metrics: ", res)
-    end
-
-    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
+    update_cached_metrics()
 
     timer_running = false
 end
 
 
 function _M.http_init(prometheus_enabled_in_stream)
+    -- collect metrics immediately to init cached metrics
+    update_cached_metrics()
+
     http_init_process(prometheus_enabled_in_stream)
 
     if process.type() ~= "privileged agent" then
