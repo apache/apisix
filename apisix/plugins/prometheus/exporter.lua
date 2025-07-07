@@ -61,7 +61,8 @@ local metrics = {}
 
 local inner_tab_arr = {}
 
-local timer_running = false
+local exporter_timer_running = false
+local exporter_timer_inited = false
 -- init_exporter_timer will be defined below
 local init_exporter_timer
 
@@ -243,7 +244,10 @@ function _M.http_log(conf, ctx)
         return
     end
     
-    init_exporter_timer()
+    if not exporter_timer_inited then
+        init_exporter_timer()
+        exporter_timer_inited = true
+    end
 
     local vars = ctx.var
 
@@ -531,12 +535,12 @@ local function exporter_timer(premature)
 
     ngx.timer.at(refresh_interval, exporter_timer)
 
-    if timer_running then
+    if exporter_timer_running then
         core.log.warn("Previous calculation still running, skipping")
         return
     end
 
-    timer_running = true
+    exporter_timer_running = true
 
     local ok, res = pcall(collect)
     if not ok then
@@ -545,7 +549,7 @@ local function exporter_timer(premature)
     end
     ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
 
-    timer_running = false
+    exporter_timer_running = false
 end
 
 
