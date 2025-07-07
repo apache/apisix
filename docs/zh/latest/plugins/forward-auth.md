@@ -39,8 +39,9 @@ description: 本文介绍了关于 Apache APISIX `forward-auth` 插件的基本�
 | ----------------- | ------------- | ------| ------- | -------------- | -------------------------------------------------------------------------------------------------------------------- |
 | uri               | string        | 是    |         |                | 设置 `authorization` 服务的地址 (例如：https://localhost:9188)。                                                      |
 | ssl_verify        | boolean       | 否    | true    | [true, false]  | 当设置为 `true` 时，验证 SSL 证书。                                                                                  |
-| request_method    | string        | 否    | GET     | ["GET","POST"] | 客户端向 `authorization` 服务发送请求的方法。当设置为 POST 时，会将 `request body` 转发至 `authorization` 服务。         |
+| request_method    | string        | 否    | GET     | ["GET","POST"] | 客户端向 authorization 服务发送请求的方法。当设置为 POST 时，会将 request body 转发至 authorization 服务。         |
 | request_headers   | array[string] | 否    |         |                | 设置需要由客户端转发到 `authorization` 服务的请求头。如果没有设置，则只发送 APISIX 提供的 headers (例如：X-Forwarded-XXX)。 |
+| extra_headers   |object | False    |         |                | 以键值格式传递给授权服务的额外标头。值可以是变量，例如“$request_uri”或“$post_arg.xyz”。 |
 | upstream_headers  | array[string] | 否    |         |                | 认证通过时，设置 `authorization` 服务转发至 `upstream` 的请求头。如果不设置则不转发任何请求头。                             |
 | client_headers    | array[string] | 否    |         |                | 认证失败时，由 `authorization` 服务向 `client` 发送的响应头。如果不设置则不转发任何响应头。                                |
 | timeout           | integer       | 否    | 3000ms  | [1, 60000]ms   | `authorization` 服务请求超时时间。                                                                                     |
@@ -166,6 +167,128 @@ curl -i http://127.0.0.1:9080/headers
 ```shell
 HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
+```
+
+### Using data from POST body to make decision on Authorization service
+
+::: note
+When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.xyz` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
+:::
+
+Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header. If present, the route responds with HTTP 200 and sets the `X-User-ID` header to a fixed value `i-am-an-user`. If `tenant_id` is missing, it returns HTTP 400 with an error message.
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
+    -H "X-API-KEY: $admin_key" \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "uri": "/auth",
+    "plugins": {
+        "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions": [
+                "return function(conf, ctx)
+                 local core = require(\"apisix.core\")
+                 if core.request.header(ctx, \"tenant_id\") then
+                     core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
+                     core.response.exit(200);
+                else
+                    core.response.exit(400, \"tenant_id is required\")
+                end
+            end"
+            ]
+        }
+    }
+}'
+```
+
+创建一个接受 POST 请求的路由，并使用 `forward-auth` 插件通过请求中的 `tenant_id` 调用身份验证端点。只有当身份验证检查返回 200 时，请求才会转发到上游服务。
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
+    -H "X-API-KEY: $admin_key" \
+    -d '{
+    "uri": "/post",
+    "methods": ["POST"],
+    "plugins": {
+        "forward-auth": {
+            "uri": "http://127.0.0.1:9080/auth",
+            "request_method": "GET",
+            "extra_headers": {"tenant_id": "$post_arg.tenant_id"}
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "httpbin.org:80": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+发送带有 `tenant_id` 标头的 POST 请求：
+
+```shell
+curl -i http://127.0.0.1:9080/post -X POST -d '{
+   "tenant_id": 123
+}'
+```
+
+您应该收到类似以下内容的“HTTP/1.1 200 OK”响应：
+
+```shell
+HTTP/1.1 200 OK
+Content-Type: application/json
+Content-Length: 491
+Connection: keep-alive
+Date: Mon, 07 Jul 2025 06:50:39 GMT
+Access-Control-Allow-Origin: *
+Access-Control-Allow-Credentials: true
+Server: APISIX/3.13.0
+```
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "{\n   \"tenant_id\": 123\n}": ""
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "23",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.13.0",
+    "X-Amzn-Trace-Id": "Root=1-686b6e3f-2fdeff70183e71551f5c5729",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "origin": "127.0.0.1, 106.215.83.33",
+  "url": "http://127.0.0.1/post"
+}
+```
+
+发送不带“tenant_id”标头的 POST 请求：
+
+```shell
+ curl -i http://127.0.0.1:9080/post -X POST -d '{
+   "abc": 123
+}'
+```
+
+您应该收到包含以下消息的 HTTP/1.1 400 Bad Request 响应：
+
+```shell
+HTTP/1.1 400 Bad Request
+Date: Mon, 07 Jul 2025 06:54:04 GMT
+Content-Type: text/plain; charset=utf-8
+Transfer-Encoding: chunked
+Connection: keep-alive
+Server: APISIX/3.13.0
+
+tenant_id is required
 ```
 
 ## 删除插件
