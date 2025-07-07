@@ -98,3 +98,4 @@ cd t/plugin/mcp && pnpm test 2>&1
 failed to execute the script with status
 --- response_body eval
 qr/PASS .\/bridge.spec.ts/
+--- timeout: 10
