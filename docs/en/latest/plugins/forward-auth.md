@@ -173,7 +173,7 @@ Location: http://example.com/auth
 When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.xyz` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
 :::
 
-Setup Auth service to extract `tenant_id` from header.
+Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header. If present, the route responds with HTTP 200 and sets the `X-User-ID` header to a fixed value `i-am-an-user`. If `tenant_id` is missing, it returns HTTP 400 with an error message.
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
@@ -200,7 +200,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
 }'
 ```
 
-Setup route to extract `tenant_id` from body and pass in the header.
+Create a route that accepts POST requests and uses the `forward-auth` plugin to call the auth endpoint with the `tenant_id` from the request. The request is forwarded to the upstream service only if the auth check returns 200.
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
@@ -224,13 +224,15 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
 }'
 ```
 
-Now if we send the request:
+Send a POST request with the `tenant_id` header:
 
 ```shell
 curl -i http://127.0.0.1:9080/post -X POST -d '{
    "tenant_id": 123
 }'
 ```
+
+You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ```shell
 HTTP/1.1 200 OK
@@ -265,7 +267,7 @@ Server: APISIX/3.13.0
 
 ```
 
-When tenant_id not passed
+Send a POST request without the `tenant_id` header:
 
 ```shell
  curl -i http://127.0.0.1:9080/post -X POST -d '{
