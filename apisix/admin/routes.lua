@@ -21,6 +21,33 @@ local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 local type = type
 local loadstring = loadstring
+local ipairs = ipairs
+local jp = require("jsonpath")
+
+local function validate_post_arg(node)
+    if type(node) ~= "table" then
+        return true
+    end
+
+    -- Handle post_arg conditions
+    if #node >= 3 and type(node[1]) == "string" and node[1]:find("^post_arg%.") then
+        local key = node[1]
+        local json_path = "$." .. key:sub(11)  -- Remove "post_arg." prefix
+        local _, err = jp.parse(json_path)
+        if err then
+            return false, err
+        end
+        return true
+    end
+
+    for _, child in ipairs(node) do
+        local ok, err = validate_post_arg(child)
+        if not ok then
+            return false, err
+        end
+    end
+    return true
+end
 
 
 local function check_conf(id, conf, need_id, schema)
@@ -111,6 +138,12 @@ local function check_conf(id, conf, need_id, schema)
         end
     end
 
+        ok, err = validate_post_arg(conf.vars)
+        if not ok  then
+            return nil, {error_msg = "failed to validate the 'vars' expression: " ..
+                                     err}
+        end
+
     if conf.filter_func then
         local func, err = loadstring("return " .. conf.filter_func)
         if not func then
@@ -143,5 +176,9 @@ return resource.new({
     name = "routes",
     kind = "route",
     schema = core.schema.route,
-    checker = check_conf
+    checker = check_conf,
+    list_filter_fields = {
+        service_id = true,
+        upstream_id = true,
+    },
 })

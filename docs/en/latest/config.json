@@ -1,5 +1,5 @@
 {
-  "version": "3.12.0",
+  "version": "3.13.0",
   "sidebar": [
     {
       "type": "category",
@@ -39,7 +39,8 @@
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
         "tutorials/client-to-apisix-mtls",
-        "tutorials/websocket-authentication"
+        "tutorials/websocket-authentication",
+        "tutorials/keycloak-oidc"
       ]
     },
     {

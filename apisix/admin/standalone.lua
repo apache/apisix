@@ -34,6 +34,22 @@ local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
+local function check_duplicate(item, key, id_set)
+    local identifier, identifier_type
+    if key == "consumers" then
+        identifier = item.id or item.username
+        identifier_type = item.id and "credential id" or "username"
+    else
+        identifier = item.id
+        identifier_type = "id"
+    end
+
+    if id_set[identifier] then
+        return true, "found duplicate " .. identifier_type .. " " .. identifier .. " in " .. key
+    end
+    id_set[identifier] = true
+    return false
+end
 
 local function get_config()
     local config = shared_dict:get("config")
@@ -142,6 +158,7 @@ local function update(ctx)
             apisix_yaml[key] = table_new(#items, 0)
             local item_schema = obj.item_schema
             local item_checker = obj.checker
+            local id_set = {}
 
             for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
@@ -167,6 +184,14 @@ local function update(ctx)
                         core.response.exit(400, {error_msg = err_prefix .. err})
                     end
                 end
+                -- prevent updating resource with the same ID
+                -- (e.g., service ID or other resource IDs) in a single request
+                local duplicated, err = check_duplicate(item, key, id_set)
+                if duplicated then
+                    core.log.error(err)
+                    core.response.exit(400, { error_msg = err })
+                end
+
                 table_insert(apisix_yaml[key], item)
             end
         end
@@ -274,7 +299,7 @@ do
                 type = "string",
                 minLength = 15,
                 maxLength = 128,
-                pattern = [[^[a-zA-Z0-9]+/credentials/[a-zA-Z0-9]+$]],
+                pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
             }
         end
     end

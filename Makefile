@@ -49,6 +49,9 @@ ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
+IMAGE_NAME = apache/apisix
+ENV_APISIX_IMAGE_TAG_NAME  ?= $(IMAGE_NAME):$(VERSION)
+
 -include .requirements
 export
 
@@ -133,10 +136,7 @@ deps: install-runtime
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_LIBDIR $(addprefix $(ENV_OPENSSL_PREFIX), /lib); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.OPENSSL_INCDIR $(addprefix $(ENV_OPENSSL_PREFIX), /include); \
 		$(ENV_LUAROCKS) config $(ENV_LUAROCKS_FLAG_LOCAL) variables.YAML_DIR $(ENV_LIBYAML_INSTALL_PREFIX); \
-		# --only-server is a temporary fix until https://github.com/luarocks/luarocks/issues/1797 is resolved. \
-		# NOTE: This fix is taken from https://github.com/luarocks/luarocks/issues/1797#issuecomment-2927856212 \
-		# and no packages after 29th May 2025 can be installed. This is to be removed as soon as the luarocks issue is fixed \
-		$(ENV_LUAROCKS) install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
+		$(ENV_LUAROCKS) install apisix-master-0.rockspec --tree deps --only-deps $(ENV_LUAROCKS_SERVER_OPT); \
 	else \
 		$(call func_echo_warn_status, "WARNING: You're not using LuaRocks 3.x; please remove the luarocks and reinstall it via https://raw.githubusercontent.com/apache/apisix/master/utils/linux-install-luarocks.sh"); \
 		exit 1; \
@@ -490,4 +490,34 @@ ci-env-down:
 ci-env-stop:
 	@$(call func_echo_status, "$@ -> [ Start ]")
 	$(ENV_DOCKER_COMPOSE) stop
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### build-on-debian-dev : Build apache/apisix:xx-debian-dev image
+.PHONY: build-on-debian-dev
+build-on-debian-dev:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) build -t $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev \
+		--build-arg TARGETARCH=$(ENV_OS_ARCH) \
+		--build-arg CODE_PATH=. \
+		--build-arg ENTRYPOINT_PATH=./docker/debian-dev/docker-entrypoint.sh \
+		--build-arg INSTALL_BROTLI=./docker/debian-dev/install-brotli.sh \
+		--build-arg CHECK_STANDALONE_CONFIG=./docker/utils/check_standalone_config.sh \
+		-f ./docker/debian-dev/Dockerfile .
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+.PHONY: push-on-debian-dev
+push-on-debian-dev:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) tag $(ENV_APISIX_IMAGE_TAG_NAME)-debian-dev $(IMAGE_NAME):dev-$(ENV_OS_ARCH)
+	$(ENV_DOCKER) push $(IMAGE_NAME):dev-$(ENV_OS_ARCH)
+	@$(call func_echo_success_status, "$@ -> [ Done ]")
+
+### merge-dev-tags : Merge architecture-specific dev tags into a single dev tag
+.PHONY: merge-dev-tags
+merge-dev-tags:
+	@$(call func_echo_status, "$@ -> [ Start ]")
+	$(ENV_DOCKER) manifest create $(IMAGE_NAME):dev \
+		$(IMAGE_NAME):dev-amd64 \
+		$(IMAGE_NAME):dev-arm64
+	$(ENV_DOCKER) manifest push $(IMAGE_NAME):dev
 	@$(call func_echo_success_status, "$@ -> [ Done ]")

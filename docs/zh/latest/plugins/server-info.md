@@ -32,6 +32,12 @@ description: 本文介绍了关于 Apache APISIX `server-info` 插件的基本�
 
 `server-info` 插件可以定期将服务基本信息上报至 etcd。
 
+:::warning
+
+`server-info` 插件已弃用，将在未来的版本中被移除。更多关于弃用和移除计划的信息，请参考[这个讨论](https://github.com/apache/apisix/discussions/12298)。
+
+:::
+
 服务信息中每一项的含义如下：
 
 | 名称             | 类型    | 描述                                                                                                                   |

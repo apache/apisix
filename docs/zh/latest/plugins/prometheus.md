@@ -111,7 +111,7 @@ Prometheus 中有不同类型的指标。要了解它们之间的区别，请参
 | apisix_nginx_http_current_connections | gauge     | 当前与客户端的连接数量。                                                                                                                                             |
 | apisix_nginx_metric_errors_total | counter   | `nginx-lua-prometheus` 错误的总数。                                                                                                                                 |
 | apisix_http_latency     | histogram | HTTP 请求延迟（毫秒）。                                                                                                                                               |
-| apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名。                                                                                                                                       |
+| apisix_node_info        | gauge     | APISIX 节点的信息，例如主机名和当前的 APISIX 版本号。                                                                                                                                       |
 | apisix_shared_dict_capacity_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 的总容量。                                                                                     |
 | apisix_shared_dict_free_space_bytes | gauge     | [NGINX 共享字典](https://github.com/openresty/lua-nginx-module#ngxshareddict) 中剩余的空间。                                                                                   |
 | apisix_upstream_status   | gauge     | 上游节点的健康检查状态，如果在上游配置了健康检查，则可用。值为 `1` 表示健康，`0` 表示不健康。                                                                                   |
