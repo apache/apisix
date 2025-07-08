@@ -129,6 +129,9 @@ function _M.access(conf, ctx)
             if not err and n_resolved > 0 then
                 auth_headers[header] = resolve_value
             end
+            if err then
+                core.log.error("failed to resolve variable in extra header '", header, "': ", err)
+            end
         end
     end
 
