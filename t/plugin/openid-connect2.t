@@ -673,4 +673,4 @@ property "user1" is required
     }
 --- error_code: 400
 --- response_body_like
-{"error_msg":"failed to check the configuration of plugin openid-connect err: generate claim_schema validator failed: .*: invalid JSON type: invalid_type"}
+{"error_msg":"failed to check the configuration of plugin openid-connect err: check claim_schema failed: .*: invalid JSON type: invalid_type"}

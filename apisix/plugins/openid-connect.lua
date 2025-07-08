@@ -30,7 +30,7 @@ local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
-local plugin_name = "openid-connect"
+local plugin_name       = "openid-connect"
 
 
 local schema = {
@@ -339,8 +339,6 @@ local _M = {
     schema = schema,
 }
 
-local generic_claim_validator = nil
-
 function _M.check_schema(conf)
     if conf.ssl_verify == "no" then
         -- we used to set 'ssl_verify' to "no"
@@ -369,14 +367,12 @@ function _M.check_schema(conf)
     if conf.claim_schema then
         local ok, res = pcall(jsonschema.generate_validator, conf.claim_schema)
         if not ok then
-            return false, "generate claim_schema validator failed: " .. tostring(res)
+            return false, "check claim_schema failed: " .. tostring(res)
         end
-        generic_claim_validator = res
     end
 
     return true
 end
-
 
 local function get_bearer_access_token(ctx)
     -- Get Authorization header, maybe.
@@ -545,16 +541,16 @@ local function required_scopes_present(required_scopes, http_scopes)
     return true
 end
 
-local function validate_claims_in_oidcauth_response(resp)
-    if not generic_claim_validator then
+local function validate_claims_in_oidcauth_response(resp, conf)
+    if not conf.claim_schema then
         return true, nil
     end
     local data = {
-        user  = resp.user,
-        access_token =  resp.access_token,
-        id_token = resp.id_token,
+        user         = resp.user,
+        access_token = resp.access_token,
+        id_token     = resp.id_token,
     }
-    return generic_claim_validator(data)
+    return core.schema.check(conf.claim_schema, data)
 end
 
 function _M.rewrite(plugin_conf, ctx)
@@ -711,7 +707,7 @@ function _M.rewrite(plugin_conf, ctx)
         end
 
         if response then
-            local ok, err = validate_claims_in_oidcauth_response( response)
+            local ok, err = validate_claims_in_oidcauth_response(response, conf)
             if not ok then
                 core.log.error("OIDC claim validation failed: ", err)
                 ngx.header["WWW-Authenticate"] = 'Bearer realm="' .. conf.realm ..
