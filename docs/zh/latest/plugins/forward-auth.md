@@ -236,17 +236,6 @@ curl -i http://127.0.0.1:9080/post -X POST -d '{
 
 您应该收到类似以下内容的“HTTP/1.1 200 OK”响应：
 
-```shell
-HTTP/1.1 200 OK
-Content-Type: application/json
-Content-Length: 491
-Connection: keep-alive
-Date: Mon, 07 Jul 2025 06:50:39 GMT
-Access-Control-Allow-Origin: *
-Access-Control-Allow-Credentials: true
-Server: APISIX/3.13.0
-```
-
 ```json
 {
   "args": {},
@@ -281,13 +270,6 @@ Server: APISIX/3.13.0
 您应该收到包含以下消息的 HTTP/1.1 400 Bad Request 响应：
 
 ```shell
-HTTP/1.1 400 Bad Request
-Date: Mon, 07 Jul 2025 06:54:04 GMT
-Content-Type: text/plain; charset=utf-8
-Transfer-Encoding: chunked
-Connection: keep-alive
-Server: APISIX/3.13.0
-
 tenant_id is required
 ```
 
