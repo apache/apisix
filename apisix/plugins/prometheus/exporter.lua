@@ -63,8 +63,8 @@ local inner_tab_arr = {}
 
 local exporter_timer_running = false
 local exporter_timer_inited = false
--- init_exporter_timer will be defined below
-local init_exporter_timer
+-- exporter_timer will be defined below
+local exporter_timer
 
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
@@ -239,13 +239,17 @@ end
 
 
 function _M.http_log(conf, ctx)
-    if not init_exporter_timer then
-        core.log.error("prometheus: init_exporter_timer is not defined")
-        return
-    end
-    
     if not exporter_timer_inited then
-        init_exporter_timer()
+        if not exporter_timer then
+            core.log.error("prometheus: init_exporter_timer is not defined")
+            return
+        end
+
+        if process.type() ~= "privileged agent" then
+            return
+        end
+
+        ngx.timer.at(0, exporter_timer)
         exporter_timer_inited = true
     end
 
@@ -522,11 +526,7 @@ local function collect()
 end
 
 
-local function exporter_timer(premature)
-    if premature then
-        return
-    end
-
+function exporter_timer()
     local refresh_interval = DEFAULT_REFRESH_INTERVAL
     local attr = plugin.plugin_attr("prometheus")
     if attr and attr.refresh_interval then
@@ -550,15 +550,6 @@ local function exporter_timer(premature)
     ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
 
     exporter_timer_running = false
-end
-
-
-function init_exporter_timer()
-    if process.type() ~= "privileged agent" then
-        return
-    end
-
-    ngx.timer.at(0, exporter_timer)
 end
 
 
