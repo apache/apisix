@@ -234,7 +234,7 @@ curl -i http://127.0.0.1:9080/post -X POST -d '{
 }'
 ```
 
-您应该收到类似以下内容的“HTTP/1.1 200 OK”响应：
+您应该收到类似以下内容的 `HTTP/1.1 200 OK` 响应：
 
 ```json
 {
@@ -259,7 +259,7 @@ curl -i http://127.0.0.1:9080/post -X POST -d '{
 }
 ```
 
-发送不带“tenant_id”标头的 POST 请求：
+发送不带 `tenant_id` 标头的 POST 请求：
 
 ```shell
  curl -i http://127.0.0.1:9080/post -X POST -d '{
@@ -267,7 +267,7 @@ curl -i http://127.0.0.1:9080/post -X POST -d '{
 }'
 ```
 
-您应该收到包含以下消息的 HTTP/1.1 400 Bad Request 响应：
+您应该收到包含以下消息的 `HTTP/1.1 400 Bad Request` 响应：
 
 ```shell
 tenant_id is required
