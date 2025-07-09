@@ -159,9 +159,18 @@ function plugin_consumer()
                         conf_version = consumers.conf_version
                     }
                 end
-
-                local consumer = consumers_id_lrucache(val.value.id .. name,
-                        val.modifiedIndex, construct_consumer_data, val, config)
+                local consumer
+                if is_credential_etcd_key(val.key) then
+                    local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
+                    local the_consumer = consumers:get(consumer_name)
+                    if the_consumer then
+                        consumer = consumers_id_lrucache(val.value.id .. name,
+                                        val.modifiedIndex+the_consumer.modifiedIndex, construct_consumer_data, val, config)
+                    end
+                else
+                    consumer = consumers_id_lrucache(val.value.id .. name,
+                                    val.modifiedIndex, construct_consumer_data, val, config)
+                end
                 if consumer == nil then
                     goto CONTINUE
                 end
