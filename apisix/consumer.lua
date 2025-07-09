@@ -146,7 +146,7 @@ function plugin_consumer()
                     end
                 else
                     consumer = consumers_id_lrucache(val.key, val.modifiedIndex,
-                        function ()
+                        function (val)
                             consumer = core.table.clone(val.value)
                             consumer.modifiedIndex = val.modifiedIndex
                             return consumer
