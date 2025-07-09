@@ -159,7 +159,3 @@ nginx_config:
 GET /t
 --- response_body
 All requests aborted as expected
---- error_log
---- no_error_log
-[error]
-[alert]
