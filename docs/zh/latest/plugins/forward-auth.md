@@ -172,10 +172,10 @@ Location: http://example.com/auth
 ### Using data from POST body to make decision on Authorization service
 
 ::: note
-当要根据 POST 正文做出决定时，建议使用带有 extra_headers 字段的 $post_arg.xyz 并根据标头对授权服务做出决定，而不是使用 POST `request_method` 将整个请求正文传递给授权服务。
+当要根据 POST 正文做出决定时，建议使用带有 `extra_headers` 字段的 `$post_arg.*` 并根据标头对授权服务做出决定，而不是使用 POST `request_method` 将整个请求正文传递给授权服务。
 :::
 
-在“/auth”路由上创建一个无服务器函数，用于检查“tenant_id”标头是否存在。如果存在，路由会使用 HTTP 200 进行响应，并将“X-User-ID”标头设置为固定值“i-am-an-user”。如果缺少“tenant_id”，则会返回 HTTP 400 和错误消息。
+在 `/auth` 路由上创建一个无服务器函数，用于检查 `tenant_id` 标头是否存在。如果存在，路由会使用 HTTP 200 进行响应，并将 `X-User-ID` 标头设置为固定值 `i-am-an-user`。如果缺少 `tenant_id`，则会返回 HTTP 400 和错误消息。
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \

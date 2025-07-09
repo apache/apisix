@@ -170,7 +170,7 @@ Location: http://example.com/auth
 ### Using data from POST body to make decision on Authorization service
 
 ::: note
-When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.xyz` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
+When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.*` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
 :::
 
 Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header. If present, the route responds with HTTP 200 and sets the `X-User-ID` header to a fixed value `i-am-an-user`. If `tenant_id` is missing, it returns HTTP 400 with an error message.
