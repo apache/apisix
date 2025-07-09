@@ -50,11 +50,13 @@ local schema = {
             patternProperties = {
                 ["^[^:]+$"] = {
                     type = "string",
-                    description = "header value as a string; may contain variables like $remote_addr, $request_uri"
+                    description = "header value as a string; may contain variables"
+                                  .. "like $remote_addr, $request_uri"
                 }
             },
             description = "extra headers sent to the authorization service; "
-                        .. "values must be strings and can include variables like $remote_addr, $request_uri."
+                        .. "values must be strings and can include variables"
+                        .. "like $remote_addr, $request_uri."
         },
         upstream_headers = {
             type = "array",
