@@ -128,7 +128,8 @@ function plugin_consumer()
                     local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
                     local the_consumer = consumers:get(consumer_name)
                     if the_consumer and the_consumer.value then
-                        consumer = consumers_id_lrucache(val.key, val.modifiedIndex..the_consumer.modifiedIndex,
+                        consumer = consumers_id_lrucache(val.key, val.modifiedIndex..
+                                                         the_consumer.modifiedIndex,
                             function (val, the_consumer)
                                 consumer = core.table.clone(the_consumer.value)
                                 consumer.modifiedIndex = the_consumer.modifiedIndex
