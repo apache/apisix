@@ -94,45 +94,45 @@ do
             count = consumers_count_for_lrucache
         })
 
-local function construct_consumer_data(val, plugin_config)
+
+local function get_cache_version_and_consumer(val)
     -- if the val is a Consumer, clone it to the local consumer;
     -- if the val is a Credential, to get the Consumer by consumer_name and then clone
     -- it to the local consumer.
-    local consumer
     if is_credential_etcd_key(val.key) then
         local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
         local the_consumer = consumers:get(consumer_name)
-        if the_consumer and the_consumer.value then
-            consumer = core.table.clone(the_consumer.value)
-            consumer.modifiedIndex = the_consumer.modifiedIndex
-            consumer.credential_id = get_credential_id_from_etcd_key(val.key)
-        else
-            -- Normally wouldn't get here:
-            -- it should belong to a consumer for any credential.
+        if not the_consumer or not the_consumer.value then
             core.log.error("failed to get the consumer for the credential,",
                 " a wild credential has appeared!",
                 " credential key: ", val.key, ", consumer name: ", consumer_name)
-            return nil, "failed to get the consumer for the credential"
+            return nil, nil, "failed to get the consumer for the credential"
         end
+        return val.modifiedIndex + the_consumer.modifiedIndex, the_consumer, true
+    end
+    return val.modifiedIndex, val, false
+end
+
+local function construct_consumer_data(val, plugin_config, is_credential, the_consumer)
+    local consumer
+    if is_credential then
+        consumer = core.table.clone(the_consumer.value)
+        consumer.modifiedIndex = the_consumer.modifiedIndex
+        consumer.credential_id = get_credential_id_from_etcd_key(val.key)
     else
         consumer = core.table.clone(val.value)
         consumer.modifiedIndex = val.modifiedIndex
     end
 
-    -- if the consumer has labels, set the field custom_id to it.
-    -- the custom_id is used to set in the request headers to the upstream.
     if consumer.labels then
         consumer.custom_id = consumer.labels["custom_id"]
     end
 
-    -- Note: the id here is the key of consumer data, which
-    -- is 'username' field in admin
     consumer.consumer_name = consumer.id
     consumer.auth_conf = plugin_config
 
     return consumer
 end
-
 
 function plugin_consumer()
     local plugins = {}
@@ -159,22 +159,13 @@ function plugin_consumer()
                         conf_version = consumers.conf_version
                     }
                 end
-                local consumer
-                if is_credential_etcd_key(val.key) then
-                    local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
-                    local the_consumer = consumers:get(consumer_name)
-                    if the_consumer then
-                        consumer = consumers_id_lrucache(val.value.id .. name,
-                                        val.modifiedIndex+the_consumer.modifiedIndex, construct_consumer_data, val, config)
-                    end
-                else
-                    consumer = consumers_id_lrucache(val.value.id .. name,
-                                    val.modifiedIndex, construct_consumer_data, val, config)
-                end
-                if consumer == nil then
-                    goto CONTINUE
-                end
+                local cache_version, consumer_source, is_credential = get_cache_version_and_consumer(val)
+                if not cache_version then goto CONTINUE end
 
+                local cache_key = val.value.id .. name
+                local consumer = consumers_id_lrucache(cache_key, cache_version, construct_consumer_data,
+                                                        val, config, is_credential, consumer_source)
+                if not consumer then goto CONTINUE end
                 plugins[name].len = plugins[name].len + 1
                 core.table.insert(plugins[name].nodes, plugins[name].len,
                                     consumer)
