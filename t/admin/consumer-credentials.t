@@ -102,7 +102,7 @@ nginx_config:
                 ngx.say("Request failed: ", err)
                 return
             end
-            
+
             if res.status ~= 200 then
                 ngx.say("Unexpected status: ", res.status)
                 ngx.say(res.body)
@@ -140,12 +140,12 @@ nginx_config:
                     ngx.say(i, ": Request failed: ", err)
                     return
                 end
-                
+
                 if res.status ~= 400 then
                     ngx.say(i, ": Expected 400 but got ", res.status)
                     return
                 end
-                
+
                 if res.body ~= "abort" then
                     ngx.say(i, ": Unexpected response body: ", res.body)
                     return
