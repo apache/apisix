@@ -5,7 +5,7 @@ keywords:
   - API 网关
   - OpenID Connect
   - OIDC
-description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议，APISIX 可以与支持该协议的身份认证服务对接，如 Okta、Keycloak、Ory Hydra、Authing 等，实现对客户端请求的身份认证。
+description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供商集成，例如 Keycloak、Auth0、Microsoft Entra ID、Google、Okta 等。它允许 APISIX 对客户端进行身份验证并从身份提供商处获取其信息，然后允许或拒绝其访问上游受保护资源。
 ---
 
 <!--
@@ -27,9 +27,13 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 #
 -->
 
+<head>
+  <link rel="canonical" href="https://docs.api7.ai/hub/openid-connect" />
+</head>
+
 ## 描述
 
-[OpenID Connect](https://openid.net/connect/)（OIDC）是基于 OAuth 2.0 的身份认证协议，APISIX 可以与支持该协议的身份认证服务对接，如 Okta、Keycloak、Ory Hydra、Authing 等，实现对客户端请求的身份认证。
+`openid-connect` 插件支持与 [OpenID Connect (OIDC)](https://openid.net/connect/) 身份提供商集成，例如 Keycloak、Auth0、Microsoft Entra ID、Google、Okta 等。它允许 APISIX 对客户端进行身份验证，并从身份提供商处获取其信息，然后允许或拒绝其访问上游受保护资源。
 
 ## 属性
 
@@ -37,91 +41,71 @@ description: OpenID Connect（OIDC）是基于 OAuth 2.0 的身份认证协议�
 | ------------------------------------ | ------- | ------ | --------------------- | ------------- | ------------------------------------------------------------------------------------------------ |
 | client_id                            | string  | 是     |                       |               | OAuth 客户端 ID。                                                                                 |
 | client_secret                        | string  | 是     |                       |               | OAuth 客户端 secret。                                                                            |
-| discovery                            | string  | 是     |                       |               | 身份认证服务暴露的服务发现端点。                                                                            |
-| scope                                | string  | 否     | "openid"              |               | OIDC 范围对应于应返回的有关经过身份验证的用户的信息，也称为 [claims](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)。默认值是`openid`，这是 OIDC 返回唯一标识经过身份验证的用户的 `sub` 声明所需的范围。可以附加其他范围并用空格分隔，例如 `openid email profile`。                                                                                  |
-| realm                                | string  | 否     | "apisix"              |               | bearer token 无效时 [`WWW-Authenticate` 响应头](https://www.rfc-editor.org/rfc/rfc6750#section-3)中会伴随着的 `realm` 讯息。                                                                                |
-| claim_validator                      | object  | 否     |                       |              | 设置 JWT claim 验证器。 |
-| claim_validator.audience             | object  | 否     |                       |              | OpenID Connect Audience (["aud"](https://openid.net/specs/openid-connect-core-1_0.html)) 验证器。 |
-| claim_validator.audience.claim       | string  | 否     | "aud"                 |              | 自定义存储 audience 的声明（字段名）。|
-| claim_validator.audience.required    | boolean | 否     | false                 |              | 要求 JWT 中的 audience 声明必须存在，它将遵循自定义声明设置。 |
-| claim_validator.audience.match_with_client_id | boolean | 否 | false            |              | 要求 JWT 中的 audience 声明与 client_id 相等（其值为字符串时）或包含 client_id（其值为字符串数组时），这符合 OpenID Connect 规范中的定义。 |
-| bearer_only                          | boolean | 否     | false                 |               | 当设置为 `true` 时，将仅检查请求头中的令牌（Token）。                                               |
-| logout_path                          | string  | 否     | "/logout"             |               | 登出路径。                                                                                        |
-| post_logout_redirect_uri             | string  | 否     |                       |               | 调用登出接口后想要跳转的 URL。如果 OIDC 的服务发现端点没有提供 [`end_session_endpoint`](https://openid.net/specs/openid-connect-rpinitiated-1_0.html) ，插件内部会使用 [`redirect_after_logout_uri`](https://github.com/zmartzone/lua-resty-openidc) 进行重定向，否则使用 [`post_logout_redirect_uri`](https://openid.net/specs/openid-connect-rpinitiated-1_0.html) 进行重定向。 |
-| redirect_uri                         | string  | 否     |                       |               | 身份提供者重定向返回的 URI。如果缺失，则 APISIX 将在当前 URI 之后追加 `.apisix/redirect` 作为默认的 `redirect_uri`。注意，OP 也需要适当配置以允许这种形式的 `redirect_uri`。 |
-| timeout                              | integer | 否     | 3                     | [1,...]       | 请求超时时间，单位为秒                                                                             |
-| ssl_verify                           | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，验证身份提供者的 SSL 证书。                                                     |
-| introspection_endpoint               | string  | 否     |                       |               | 用于内省访问令牌的身份提供者的令牌内省端点的 URL。如果未设置，则使用发现文档中提供的内省端点[作为后备](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c)。                                                                    |
-| introspection_endpoint_auth_method   | string  | 否     | "client_secret_basic" |               |  令牌内省端点的身份验证方法。该值应是 `introspection_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)中指定的身份验证方法之一，如发现文档中所示，例如 `client_secret_basic`， `client_secret_post`， `private_key_jwt`，或 `client_secret_jwt`。                                                                        |
-| token_endpoint_auth_method           | string  | 否     |                       |               | 令牌端点的身份验证方法。该值应是 `token_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html)中指定的身份验证方法之一，如发现文档中所示，例如 `client_secret_basic`， `client_secret_post`， `private_key_jwt`，或 `client_secret_jwt`。如果不支持配置的方法，则回退到`token_endpoint_auth_methods_supported` 数组中的第一个方法。                                  |
-| public_key                           | string  | 否     |                       |               | 验证令牌的公钥。                                                                                   |
-| use_jwks                             | boolean | 否     | false                 |               | 当设置为 `true` 时，则会使用身份认证服务器的 JWKS 端点来验证令牌。                                    |
-| use_pkce                             | boolean | 否     | false                 | [true, false] | 当设置为 `true` 时，则使用 PKCE（Proof Key for Code Exchange）。                                      |
-| token_signing_alg_values_expected    | string  | 否     |                       |               | 用于对令牌进行签名的算法。                                                                          |
-| set_access_token_header              | boolean | 否     | true                  | [true, false] | 在请求头设置访问令牌。默认使用请求头参数 `X-Access-Token`。                                                                              |
-| access_token_in_authorization_header | boolean | 否     | false                 | [true, false] | 当设置为 `true` 以及 `set_access_token_header` 也设置为 `true`时，将访问令牌设置在请求头参数 `Authorization`。  |
-| set_id_token_header                  | boolean | 否     | true                  | [true, false] | 是否将 ID 令牌设置到请求头参数 `X-ID-Token`。                                                       |
-| set_userinfo_header                  | boolean | 否     | true                  | [true, false] | 是否将用户信息对象设置到请求头参数 `X-Userinfo`。                                                    |
-| set_refresh_token_header             | boolean | 否     | false                 |               | 当设置为 `true` 并且刷新令牌可用时，则会将该属性设置在`X-Refresh-Token`请求头中。                      |
-| session                              | object  | 否     |                       |               | 当设置 bearer_only 为 false 时，openid-connect 插件将使用 Authorization Code 在 IDP 上进行认证，因此你必须设置 session 相关设置。 |
-| session.secret                       | string  | 是     | 自动生成               | 16 个以上字符  | 用于 session 加密和 HMAC 计算的密钥。 |
-| session.cookie                       | object   | False    |                       |             |                                                                                                                                                                                                                                                                                                                                 |
-| session.cookie.lifetime              | integer   | False    | 3600                  |             | 用于设置 cookie 的生命周期，以秒为单位。  |
-| unauth_action                        | string   | False    | "auth"                |  ["auth","deny","pass"]            | 指定未经身份验证的请求的响应类型。 `auth` 重定向到身份提供者，`deny` 导致 401 响应，`pass` 将允许请求而无需身份验证。                                                |
-| proxy_opts                           | object  | 否    |                     |               | OpenID 服务器前面的 HTTP 代理服务器。 |
-| proxy_opts                           | object  | 否    |                       |                                  | 用来访问身份认证服务器的代理服务器。                                                                                             |
-| proxy_opts.http_proxy     | string  | 否    |                       | http://proxy-server:port         | HTTP 代理服务器地址。                                                                                                   |
-| proxy_opts.https_proxy    | string  | 否    |                       | http://proxy-server:port         | HTTPS 代理服务器地址。                                                                                                  |
-| proxy_opts.http_proxy_authorization  | string  | 否    |                       | Basic [base64 username:password] | 与 `http_proxy` 一起使用的默认 `Proxy-Authorization` 标头值。可以使用自定义 `Proxy-Authorization` 请求标头覆盖。                                                                 |
-| proxy_opts.https_proxy_authorization | string  | 否    |                       | Basic [base64 username:password] | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 标头值。无法使用自定义 `Proxy-Authorization` 请求标头覆盖，因为使用 HTTPS 时，授权在连接时完成。 |
-| proxy_opts.no_proxy                  | string  | 否    |                       |                                  | 不应被代理的主机的逗号分隔列表。                                                                                               |
-| authorization_params                 | object  | 否    |                       |                                  | 在请求中发送到授权端点的附加参数                   |
-| client_rsa_private_key          | string  | 否    |               |             | 用于签署 JWT 的客户端 RSA 私钥。  |
-| client_rsa_private_key_id       | string  | 否    |               |             | 用于计算签名 JWT 的客户端 RSA 私钥 ID。  |
-| client_jwt_assertion_expires_in | integer | 否    | 60            |             | 签名 JWT 的生存期，以秒为单位。 |
-| renew_access_token_on_expiry    | boolean | 否    | true          |             | 如果为 true，在访问令牌过期或存在刷新令牌时，尝试静默更新访问令牌。如果令牌无法更新，则重定向用户进行重新认证。  |
-| access_token_expires_in         | integer | 否    |               |             | 访问令牌的生命周期，以秒为单位，如果令牌终端响应中不存在 `expires_in` 属性。  |
-| refresh_session_interval        | integer | 否    | 900           |             | 刷新用户 ID 令牌而无需重新进行身份验证的时间间隔，以秒为单位。若未设置，则不会检查网关向客户端签发的 ID 令牌（如浏览器中的 session）过期时间。如果设置为 900，意味着在 900 秒后刷新用户的 ID 令牌（如浏览器中的 session），而无需重新进行身份验证。  |
-| iat_slack                       | integer | 否    | 120           |             | 与 ID 令牌中的 `iat` 声明的时钟偏差容忍度，以秒为单位。  |
-| accept_none_alg                 | boolean | 否    | false         |             | 如果 OpenID 提供程序不对其 ID 令牌进行签名将其设置为 true。  |
-| accept_unsupported_alg          | boolean | 否    | true          |             | 如果为 true，忽略 ID 令牌签名以接受不支持的签名算法。 |
-| access_token_expires_leeway     | integer | 否    | 0             |             | 访问令牌续订的过期宽限期，以秒为单位。当设置为大于 0 的值时，令牌续订将在令牌到期之前的一段时间内进行。这样可以避免在到达资源服务器时令牌刚好过期时出现错误。 |
-| force_reauthorize               | boolean | 否    | false         |             | 如果为 true，即使已缓存令牌，也执行授权流程。 |
-| use_nonce                       | boolean | 否    | false         |             | 如果为 true，启用授权请求中的 nonce 参数。|
-| revoke_tokens_on_logout         | boolean | 否    | false         |             | 如果为 true，通知授权服务器不再需要先前获取的刷新令牌或访问令牌，发送到吊销端点。|
-| jwk_expires_in                  | integer | 否    | 86400         |             | JWK 缓存的过期时间，以秒为单位。|
-| jwt_verification_cache_ignore   | boolean | 否    | false         |             | 如果为 true，请强制对持有者令牌进行重新验证，并忽略任何现有的缓存验证结果。 |
-| cache_segment                   | string  | 否    |               |             | 可选的缓存段的名称，用于区分和区分用于令牌内省或 JWT 验证的缓存。 |
-| introspection_interval          | integer | 否    | 0             |             | 以秒为单位的缓存和内省访问令牌的 TTL。   |
-| introspection_expiry_claim      | string  | 否    |               |             | 过期声明的名称，用于控制缓存和内省访问令牌的 TTL。 |
-| introspection_addon_headers     | string[] | 否    |               |             | `introspection_addon_headers` 是字符串列表，用于配置额外添加到内省 HTTP 请求中的请求头，如果配置的请求头不存在于源请求中，它将被忽略。|
+| discovery | string | 是 | | | OpenID 提供商的知名发现文档的 URL，其中包含 OP API 端点列表。插件可以直接利用发现文档中的端点。您也可以单独配置这些端点，这优先于发现文档中提供的端点。 |
+| scope | string | 否 | openid | | 与应返回的有关经过身份验证的用户的信息相对应的 OIDC 范围，也称为 [claim](https://openid.net/specs/openid-connect-core-1_0.html#StandardClaims)。这用于向用户授权适当的权限。默认值为 `openid`，这是 OIDC 返回唯一标识经过身份验证的用户的 `sub` 声明所需的范围。可以附加其他范围并用空格分隔，例如 `openid email profile`。 |
+| required_scopes | array[string] | 否 | | | 访问令牌中必须存在的范围。当 `bearer_only` 为 `true` 时与自省端点结合使用。如果缺少任何必需的范围，插件将以 403 禁止错误拒绝请求。|
+| realm | string | 否 | apisix | | 由于持有者令牌无效，[`WWW-Authenticate`](https://www.rfc-editor.org/rfc/rfc6750#section-3) 响应标头中的领域伴随 401 未经授权的请求。 |
+| bearer_only | boolean | 否 | false | | 如果为 true，则严格要求在身份验证请求中使用持有者访问令牌。 |
+| logout_path | string | 否 | /logout | | 激活注销的路径。 |
+| post_logout_redirect_uri | string | 否 | | | `logout_path` 收到注销请求后将用户重定向到的 URL。|
+| redirect_uri | string | 否 | | | 通过 OpenID 提供商进行身份验证后重定向到的 URI。请注意，重定向 URI 不应与请求 URI 相同，而应为请求 URI 的子路径。例如，如果路由的 `uri` 是 `/api/v1/*`，则 `redirect_uri` 可以配置为 `/api/v1/redirect`。如果未配置 `redirect_uri`，APISIX 将在请求 URI 后附加 `/.apisix/redirect` 以确定 `redirect_uri` 的值。|
+| timeout | integer | 否 | 3 | [1,...] | 请求超时时间（秒）。|
+| ssl_verify | boolean | 否 | false | | 如果为 true，则验证 OpenID 提供商的 SSL 证书。|
+| introspection_endpoint | string | 否 | | |用于自检访问令牌的 OpenID 提供程序的 [令牌自检](https://datatracker.ietf.org/doc/html/rfc7662) 端点的 URL。如果未设置，则将使用众所周知的发现文档中提供的自检端点[作为后备](https://github.com/zmartzone/lua-resty-openidc/commit/cdaf824996d2b499de4c72852c91733872137c9c)。|
+| introspection_endpoint_auth_method | string | 否 | client_secret_basic | | 令牌自检端点的身份验证方法。该值应为 `introspection_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html) 中指定的身份验证方法之一，如众所周知的发现文档中所示，例如 `client_secret_basic`、`client_secret_post`、`private_key_jwt` 和 `client_secret_jwt`。|
+| token_endpoint_auth_method | string | 否 | client_secret_basic | | 令牌端点的身份验证方法。该值应为 `token_endpoint_auth_methods_supported` [授权服务器元数据](https://www.rfc-editor.org/rfc/rfc8414.html) 中指定的身份验证方法之一，如众所周知的发现文档中所示，例如 `client_secret_basic`、`client_secret_post`、`private_key_jwt` 和 `client_secret_jwt`。如果配置的方法不受支持，则回退到 `token_endpoint_auth_methods_supported` 数组中的第一个方法。|
+| public_key | string | 否 | | | 用于验证 JWT 签名 id 的公钥使用非对称算法。提供此值来执行令牌验证将跳过客户端凭据流中的令牌自检。您可以以 `-----BEGIN PUBLIC KEY-----\\n……\\n-----END PUBLIC KEY-----` 格式传递公钥。|
+| use_jwks | boolean | 否 | false | | 如果为 true 并且未设置 `public_key`，则使用 JWKS 验证 JWT 签名并跳过客户端凭据流中的令牌自检。JWKS 端点是从发现文档中解析出来的。|
+| use_pkce | boolean | 否 | false | | 如果为 true，则使用 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义的授权码流的代码交换证明密钥 (PKCE)。|
+| token_signing_alg_values_expected | string | 否 | | | 用于签署 JWT 的算法，例如 `RS256`。 |
+| set_access_token_header | boolean | 否 | true | | 如果为 true，则在请求标头中设置访问令牌。默认情况下，使用 `X-Access-Token` 标头。|
+| access_token_in_authorization_header | boolean | 否 | false | | 如果为 true 并且 `set_access_token_header` 也为 true，则在 `Authorization` 标头中设置访问令牌。 |
+| set_id_token_header | boolean | 否 | true | | 如果为 true 并且 ID 令牌可用，则在 `X-ID-Token` 请求标头中设置值。 |
+| set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
+| set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
+| session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
+| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥，若未配置则自动生成并保存到 etcd。当在独立模式下使用 APISIX 时，etcd 不再是配置中心，需要配置 `secret`。 |
+| session.cookie | object | 否 | | | Cookie 配置。 |
+| session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生存时间（秒）。|
+| unauth_action | string | 否 | auth | ["auth","deny","pass"] | 未经身份验证的请求的操作。设置为 `auth` 时，重定向到 OpenID 提供程序的身份验证端点。设置为 `pass` 时，允许请求而无需身份验证。设置为 `deny` 时，返回 401 未经身份验证的响应，而不是启动授权代码授予流程。|
+| session_contents   | object   | 否    |       |        | 会话内容配置。如果未配置，将把所有数据存储在会话中。 |
+| session_contents.access_token   | boolean   | 否    |          |        | 若为 true，则将访问令牌存储在会话中。 |
+| session_contents.id_token   | boolean   | 否    |          |       | 若为 true，则将 ID 令牌存储在会话中。 |
+| session_contents.enc_id_token   | boolean   | 否    |          |        | 若为 true，则将加密的 ID 令牌存储在会话中。 |
+| session_contents.user   | boolean   | 否    |          |        | 若为 true，则将用户信息存储在会话中。 |
+| proxy_opts | object | 否 | | | OpenID 提供程序背后的代理服务器的配置。|
+| proxy_opts.http_proxy | string | 否 | |  | HTTP 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。|
+| proxy_opts.https_proxy | string | 否 | | | HTTPS 请求的代理服务器地址，例如 `http://<proxy_host>:<proxy_port>`。 |
+| proxy_opts.http_proxy_authorization | string | 否 | | Basic [base64 用户名：密码] | 与 `http_proxy` 一起使用的默认 `Proxy-Authorization` 标头值。可以用自定义的 `Proxy-Authorization` 请求标头覆盖。 |
+| proxy_opts.https_proxy_authorization | string | 否 | | Basic [base64 用户名：密码] | 与 `https_proxy` 一起使用的默认 `Proxy-Authorization` 标头值。不能用自定义的 `Proxy-Authorization` 请求标头覆盖，因为使用 HTTPS 时，授权在连接时完成。 |
+| proxy_opts.no_proxy | string | 否 | | | 不应代理的主机的逗号分隔列表。|
+| authorization_params | object | 否 | | | 在请求中发送到授权端点的附加参数。 |
+| client_rsa_private_key | string | 否 | | | 用于签署 JWT 以向 OP 进行身份验证的客户端 RSA 私钥。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时必需。 |
+| client_rsa_private_key_id | string | 否 | | | 用于计算签名的 JWT 的客户端 RSA 私钥 ID。当 `token_endpoint_auth_method` 为 `private_key_jwt` 时可选。 |
+| client_jwt_assertion_expires_in | integer | 否 | 60 | | 用于向 OP 进行身份验证的签名 JWT 的生命周期，以秒为单位。当 `token_endpoint_auth_method` 为 `private_key_jwt` 或 `client_secret_jwt` 时使用。 |
+| renew_access_token_on_expiry | boolean | 否 | true | | 如果为 true，则在访问令牌过期或刷新令牌可用时尝试静默更新访问令牌。如果令牌无法更新，则重定向用户进行重新身份验证。|
+| access_token_expires_in | integer | 否 | | | 如果令牌端点响应中不存在 `expires_in` 属性，则访问令牌的有效期（以秒为单位）。 |
+| refresh_session_interval | integer | 否 | | | 刷新用户 ID 令牌而无需重新认证的时间间隔。如果未设置，则不会检查网关向客户端发出的会话的到期时间。如果设置为 900，则表示在 900 秒后刷新用户的 `id_token`（或浏览器中的会话），而无需重新认证。 |
+| iat_slack | integer | 否 | 120 | | ID 令牌中 `iat` 声明的时钟偏差容忍度（以秒为单位）。 |
+| accept_none_alg | boolean | 否 | false | | 如果 OpenID 提供程序未签署其 ID 令牌（例如当签名算法设置为`none` 时），则设置为 true。 |
+| accept_unsupported_alg | boolean | 否 | true | | 如果为 true，则忽略 ID 令牌签名以接受不支持的签名算法。 |
+| access_token_expires_leeway | integer | 否 | 0 | | 访问令牌续订的过期余地（以秒为单位）。当设置为大于 0 的值时，令牌续订将在令牌过期前设定的时间内进行。这样可以避免访问令牌在到达资源服务器时刚好过期而导致的错误。|
+| force_reauthorize | boolean | 否 | false | | 如果为 true，即使令牌已被缓存，也执行授权流程。 |
+| use_nonce | boolean | 否 | false | | 如果为 true，在授权请求中启用 nonce 参数。 |
+| revoke_tokens_on_logout | boolean | 否 | false | | 如果为 true，则通知授权服务器，撤销端点不再需要先前获得的刷新或访问令牌。 |
+| jwk_expires_in | integer | 否 | 86400 | | JWK 缓存的过期时间（秒）。 |
+| jwt_verification_cache_ignore | boolean | 否 | false | | 如果为 true，则强制重新验证承载令牌并忽略任何现有的缓存验证结果。 |
+| cache_segment | string | 否 | | | 缓存段的可选名称，用于分隔和区分令牌自检或 JWT 验证使用的缓存。|
+| introspection_interval | integer | 否 | 0 | | 缓存和自省访问令牌的 TTL（以秒为单位）。默认值为 0，这意味着不使用此选项，插件默认使用 `introspection_expiry_claim` 中定义的到期声明传递的 TTL。如果`introspection_interval` 大于 0 且小于 `introspection_expiry_claim` 中定义的到期声明传递的 TTL，则使用`introspection_interval`。|
+| introspection_expiry_claim | string | 否 | exp | | 到期声明的名称，它控制缓存和自省访问令牌的 TTL。|
+| introspection_addon_headers | array[string] | 否 | | | 用于将其他标头值附加到自省 HTTP 请求。如果原始请求中不存在指定的标头，则不会附加值。|
 | claim_validator.issuer.valid_issuers     | string[] | 否    |               |             | 将经过审查的 jwt 发行者列入白名单。当用户未传递时，将使用发现端点返回的颁发者。如果两者均缺失，发行人将无法得到验证|
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
-## 使用场景
+## 示例
 
-:::tip
-
-教程：[使用 Keycloak 与 API 网关保护你的 API](https://apisix.apache.org/zh/blog/2022/07/06/use-keycloak-with-api-gateway-to-secure-apis/)
-
-:::
-
-该插件提供两种使用场景：
-
-1. 应用之间认证授权：将 `bearer_only` 设置为 `true`，并配置 `introspection_endpoint` 或 `public_key` 属性。该场景下，请求头（Header）中没有令牌或无效令牌的请求将被拒绝。
-
-2. 浏览器中认证授权：将 `bearer_only` 设置为 `false`。认证成功后，该插件可获得并管理 Cookie 中的令牌，后续请求将使用该令牌。在这种模式中，用户 session 将作为 Cookie 存储在浏览器中，这些数据是加密的，因此你必须通过 `session.secret` 设置一个密钥用于加密。
-
-### 令牌内省
-
-令牌内省是通过针对 OAuth 2.0 授权的服务器来验证令牌及相关请求，详情请阅读 [Token Introspection](https://www.oauth.com/oauth2-servers/token-introspection-endpoint/)。
-
-首先，需要在身份认证服务器中创建受信任的客户端，并生成用于内省的有效令牌（JWT）。下图是通过网关进行令牌内省的成功示例流程：
-
-![token introspection](https://raw.githubusercontent.com/apache/apisix/master/docs/assets/images/plugin/oauth-1.png)
-
-以下示例是在路由上启用插件。该路由将通过内省请求头中提供的令牌来保护上游：
+以下示例演示了如何针对不同场景配置 `openid-connect` 插件。
 
 :::note
 
@@ -133,109 +117,86 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-  "uri": "/get",
-  "plugins":{
-    "openid-connect":{
-      "client_id": "${CLIENT_ID}",
-      "client_secret": "${CLIENT_SECRET}",
-      "discovery": "${DISCOVERY_ENDPOINT}",
-      "introspection_endpoint": "${INTROSPECTION_ENDPOINT}",
-      "bearer_only": true,
-      "realm": "master",
-      "introspection_endpoint_auth_method": "client_secret_basic"
-    }
-  },
-  "upstream":{
-    "type": "roundrobin",
-    "nodes":{
-      "httpbin.org:443":1
-    }
-  }
-}'
-```
+### Authorization Code Flow
 
-以下命令可用于访问新路由：
+Authorization Code Flow 在 [RFC 6749，第 4.1 节](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1) 中定义。它涉及用临时授权码交换访问令牌，通常由机密和公共客户端使用。
 
-```shell
-curl -i -X GET http://127.0.0.1:9080/get -H "Authorization: Bearer {JWT_TOKEN}"
-```
+下图说明了实施 Authorization Code Flow 时不同实体之间的交互：
 
-在此示例中，插件强制在请求头中设置访问令牌和 Userinfo 对象。
+![授权码流程图](https://static.api7.ai/uploads/2023/11/27/Ga2402sb_oidc-code-auth-flow-revised.png)
 
-当 OAuth 2.0 授权服务器返回结果里除了令牌之外还有过期时间，其中令牌将在 APISIX 中缓存直至过期。更多信息请参考：
+当传入请求的标头中或适当的会话 cookie 中不包含访问令牌时，插件将充当依赖方并重定向到授权服务器以继续授权码流程。
 
-1. [lua-resty-openidc](https://github.com/zmartzone/lua-resty-openidc) 的文档和源代码。
-2. `exp` 字段的定义：[Introspection Response](https://tools.ietf.org/html/rfc7662#section-2.2)。
+成功验证后，插件将令牌保留在会话 cookie 中，后续请求将使用存储在 cookie 中的令牌。
 
-### 公钥内省
+请参阅 [实现 Authorization Code Flow](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)以获取使用`openid-connect`插件通过授权码流与 Keycloak 集成的示例。
 
-除了令牌内省外，还可以使用 JWT 令牌的公钥进行验证。如果使用了公共密钥和令牌内省端点，就会执行公共密钥工作流，而不是通过身份服务器进行验证。该方式适可用于减少额外的网络调用并加快认证过程。
+### Proof Key for Code Exchange (PKCE)
 
-以下示例展示了如何将公钥添加到路由中：
+Proof Key for Code Exchange (PKCE) 在 [RFC 7636](https://datatracker.ietf.org/doc/html/rfc7636) 中定义。PKCE 通过添加代码质询和验证器来增强授权码流程，以防止授权码拦截攻击。
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-  "uri": "/get",
-  "plugins":{
-    "openid-connect":{
-      "client_id": "${CLIENT_ID}",
-      "client_secret": "${CLIENT_SECRET}",
-      "discovery": "${DISCOVERY_ENDPOINT}",
-      "bearer_only": true,
-      "realm": "master",
-      "token_signing_alg_values_expected": "RS256",
-      "public_key": "-----BEGIN PUBLIC KEY-----
-      {public_key}
-      -----END PUBLIC KEY-----"
-    }
-  },
-  "upstream":{
-    "type": "roundrobin",
-    "nodes":{
-      "httpbin.org:443":1
-    }
-  }
-}'
-```
+下图说明了使用 PKCE 实现授权码流程时不同实体之间的交互：
 
-#### 通过 OIDC 依赖方认证流程进行身份验证
+![使用 PKCE 的授权码流程图](https://static.api7.ai/uploads/2024/11/04/aJ2ZVuTC_auth-code-with-pkce.png)
 
-当一个请求在请求头或 session cookie 中不包含访问令牌时，该插件可以充当 OIDC 依赖方并重定向到身份提供者的授权端点以通过 [OIDC authorization code flow](https://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth)。
+请参阅 [实现 Authorization Code Grant](../tutorials/keycloak-oidc.md#实现-authorization-code-grant)，了解使用 `openid-connect` 插件通过 PKCE 授权码流程与 Keycloak 集成的示例。
 
-一旦用户通过身份提供者进行身份验证，插件将代表用户从身份提供者获取和管理访问令牌和更多信息。该信息当前存储在 session cookie 中，该插件将会识别 Cookie 并使用其中的信息，以避免再次执行认证流程。
+### Client Credential Flow
 
-以下示例是将此操作模式添加到 Route：
+Client Credential Flow 在 [RFC 6749，第 4.4 节](https://datatracker.ietf.org/doc/html/rfc6749#section-4.4) 中定义。它涉及客户端使用自己的凭证请求访问令牌以访问受保护的资源，通常用于机器对机器身份验证，并不代表特定用户。
 
-```shell
-curl http://127.0.0.1:9180/apisix/admin/routes/1 \
--H "X-API-KEY: $admin_key" -X PUT -d '
-{
-  "uri": "/get",
-  "plugins": {
-    "openid-connect": {
-      "client_id": "${CLIENT_ID}",
-      "client_secret": "${CLIENT_SECRET}",
-      "discovery": "${DISCOVERY_ENDPOINT}",
-      "bearer_only": false,
-      "realm": "master"
-    }
-  },
-  "upstream": {
-    "type": "roundrobin",
-    "nodes": {
-      "httpbin.org:443": 1
-    }
-  }
-}'
-```
+下图说明了实施 Client Credential Flow 时不同实体之间的交互：
 
-在以上示例中，该插件可以强制在配置的请求头中设置访问令牌、ID 令牌和 UserInfo 对象。
+<div style={{textAlign: 'center'}}>
+<img src="https://static.api7.ai/uploads/2024/10/28/sbHxqnOz_client-credential-no-introspect.png" alt="Client credential flow diagram" style={{width: '70%'}} />
+</div>
+<br />
+
+请参阅[实现 Client Credentials Grant](../tutorials/keycloak-oidc.md#实现-client-credentials-grant) 获取使用 `openid-connect` 插件通过客户端凭证流与 Keycloak 集成的示例。
+
+### Introspection Flow
+
+Introspection Flow 在 [RFC 7662](https://datatracker.ietf.org/doc/html/rfc7662) 中定义。它涉及通过查询授权服务器的自省端点来验证访问令牌的有效性和详细信息。
+
+在此流程中，当客户端向资源服务器出示访问令牌时，资源服务器会向授权服务器的自省端点发送请求，如果令牌处于活动状态，则该端点会响应令牌详细信息，包括令牌到期时间、相关范围以及它所属的用户或客户端等信息。
+
+下图说明了使用令牌自省实现 Introspection Flow 时不同实体之间的交互：
+
+<br />
+<div style={{textAlign: 'center'}}>
+<img src="https://static.api7.ai/uploads/2024/10/29/Y2RWIUV9_client-cred-flow-introspection.png" alt="Client credential with introspection diagram" style={{width: '55%'}} />
+</div>
+<br />
+
+请参阅 [实现 Client Credentials Grant](../tutorials/keycloak-oidc.md#实现-client-credentials-grant) 以获取使用 `openid-connect` 插件通过带有令牌自省的客户端凭据流与 Keycloak 集成的示例。
+
+### Password Flow
+
+Password Flow 在 [RFC 6749，第 4.3 节](https://datatracker.ietf.org/doc/html/rfc6749#section-4.3) 中定义。它专为受信任的应用程序而设计，允许它们使用用户的用户名和密码直接获取访问令牌。在此授权类型中，客户端应用程序将用户的凭据连同其自己的客户端 ID 和密钥一起发送到授权服务器，然后授权服务器对用户进行身份验证，如果有效，则颁发访问令牌。
+
+虽然高效，但此流程仅适用于高度受信任的第一方应用程序，因为它要求应用程序直接处理敏感的用户凭据，如果在第三方环境中使用，则会带来重大安全风险。
+
+下图说明了实施 Password Flow 时不同实体之间的交互：
+
+<div style={{textAlign: 'center'}}>
+<img src="https://static.api7.ai/uploads/2024/10/30/njkWZVgX_pass-grant.png" alt="Password flow diagram" style={{width: '70%'}} />
+</div>
+<br />
+
+请参阅 [实现 Password Grant](../tutorials/keycloak-oidc.md#实现-password-grant) 获取使用 `openid-connect` 插件通过密码流与 Keycloak 集成的示例。
+
+### Refresh Token Grant
+
+Refresh Token Grant 在 [RFC 6749，第 6 节](https://datatracker.ietf.org/doc/html/rfc6749#section-6) 中定义。它允许客户端使用之前颁发的刷新令牌请求新的访问令牌，而无需用户重新进行身份验证。此流程通常在访问令牌过期时使用，允许客户端无需用户干预即可持续访问资源。刷新令牌与某些 OAuth 流程中的访问令牌一起颁发，其使用寿命和安全要求取决于授权服务器的配置。
+
+下图说明了在实施 Password Grant 和 Refresh Token Grant 时不同实体之间的交互：
+
+<div style={{textAlign: 'center'}}>
+<img src="https://static.api7.ai/uploads/2024/10/30/YBF7rI6M_password-with-refresh-token.png" alt="Password grant with refresh token flow diagram" style={{width: '100%'}} />
+</div>
+<br />
+
+请参阅 [Refresh Token](../tutorials/keycloak-oidc.md#refresh-token) 获取使用 `openid-connect` 插件通过带令牌刷新的密码流与 Keycloak 集成的示例。
 
 ## 故障排除
 
@@ -281,6 +242,16 @@ upstream sent too big header while reading response header from upstream
 
 如果是这样，请尝试将 `proxy_buffers` 、 `proxy_buffer_size` 和 `proxy_busy_buffers_size` 调整为更大的值。
 
+另一个选项是配置 `session_content` 属性来调整在会话中存储哪些数据。例如，你可以将 `session_content.access_token` 设置为 `true`。
+
 #### 5. 无效的客户端密钥
 
 验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在 session 中。
+
+#### 6. PKCE IdP 配置
+
+如果您使用授权码流程启用 PKCE，请确保您已将 IdP 客户端配置为使用 PKCE。例如，在 Keycloak 中，您应该在客户端的高级设置中配置 PKCE 质询方法：
+
+<div style={{textAlign: 'center'}}>
+<img src="https://static.api7.ai/uploads/2024/11/04/xvnCNb20_pkce-keycloak-revised.jpeg" alt="PKCE keycloak configuration" style={{width: '70%'}} />
+</div>

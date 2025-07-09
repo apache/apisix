@@ -118,23 +118,17 @@ function _M.access(conf, ctx)
         method = conf.request_method
     }
 
-    local httpc = http.new()
-    httpc:set_timeout(conf.timeout)
     if params.method == "POST" then
-        local client_body_reader, err = httpc:get_client_body_reader()
-        if client_body_reader then
-            params.body = client_body_reader
-        else
-            core.log.warn("failed to get client_body_reader. err: ", err,
-            " using core.request.get_body() instead")
-            params.body = core.request.get_body()
-        end
+        params.body = core.request.get_body()
     end
 
     if conf.keepalive then
         params.keepalive_timeout = conf.keepalive_timeout
         params.keepalive_pool = conf.keepalive_pool
     end
+
+    local httpc = http.new()
+    httpc:set_timeout(conf.timeout)
 
     local res, err = httpc:request_uri(conf.uri, params)
     if not res and conf.allow_degradation then
