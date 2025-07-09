@@ -236,6 +236,10 @@ passed
 
 
 === TEST 10: 404 Route Not Found
+--- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
 --- request
 GET /not_found
 --- error_code: 404

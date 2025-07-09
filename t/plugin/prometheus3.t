@@ -168,6 +168,9 @@ passed
 
 === TEST 4: check metrics
 --- yaml_config
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
 plugins:
   - public-api
   - error-log-logger
