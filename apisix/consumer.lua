@@ -95,24 +95,6 @@ do
         })
 
 
-local function get_cache_version_and_consumer(val)
-    -- if the val is a Consumer, clone it to the local consumer;
-    -- if the val is a Credential, to get the Consumer by consumer_name and then clone
-    -- it to the local consumer.
-    if is_credential_etcd_key(val.key) then
-        local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
-        local the_consumer = consumers:get(consumer_name)
-        if not the_consumer or not the_consumer.value then
-            core.log.error("failed to get the consumer for the credential,",
-                " a wild credential has appeared!",
-                " credential key: ", val.key, ", consumer name: ", consumer_name)
-            return nil, nil, "failed to get the consumer for the credential"
-        end
-        return val.modifiedIndex + the_consumer.modifiedIndex, the_consumer, true
-    end
-    return val.modifiedIndex, val, false
-end
-
 local function construct_consumer_data(val, is_credential, the_consumer)
     local consumer
     if is_credential then
