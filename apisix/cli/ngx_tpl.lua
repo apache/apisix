@@ -740,11 +740,9 @@ http {
         {% end %}
 
         # opentelemetry_set_ngx_var starts
-        {% if opentelemetry_set_ngx_var then %}
         set $opentelemetry_context_traceparent          '';
         set $opentelemetry_trace_id                     '';
         set $opentelemetry_span_id                      '';
-        {% end %}
         # opentelemetry_set_ngx_var ends
 
         # zipkin_set_ngx_var starts
