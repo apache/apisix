@@ -95,20 +95,6 @@ do
         })
 
 
-local function construct_consumer_data(val, is_credential, the_consumer)
-    local consumer
-    if is_credential then
-        consumer = core.table.clone(the_consumer.value)
-        consumer.modifiedIndex = the_consumer.modifiedIndex
-        consumer.credential_id = get_credential_id_from_etcd_key(val.key)
-    else
-        consumer = core.table.clone(val.value)
-        consumer.modifiedIndex = val.modifiedIndex
-    end
-
-    return consumer
-end
-
 function plugin_consumer()
     local plugins = {}
 
@@ -143,7 +129,12 @@ function plugin_consumer()
                     local the_consumer = consumers:get(consumer_name)
                     if the_consumer and the_consumer.value then
                         consumer = consumers_id_lrucache(the_consumer.value, val.modifiedIndex+the_consumer.modifiedIndex,
-                            construct_consumer_data, val, true, the_consumer)
+                            function (val, the_consumer)
+                                consumer = core.table.clone(the_consumer.value)
+                                consumer.modifiedIndex = the_consumer.modifiedIndex
+                                consumer.credential_id = get_credential_id_from_etcd_key(val.key)
+                                return consumer
+                            end, val, the_consumer)
                     else
                         -- Normally wouldn't get here:
                         -- it should belong to a consumer for any credential.
@@ -154,7 +145,11 @@ function plugin_consumer()
                     end
                 else
                     consumer = consumers_id_lrucache(val.value, val.modifiedIndex,
-                        construct_consumer_data, val, false)
+                        function ()
+                            consumer = core.table.clone(val.value)
+                            consumer.modifiedIndex = val.modifiedIndex
+                            return consumer
+                        end, val)
                 end
 
                 -- if the consumer has labels, set the field custom_id to it.
