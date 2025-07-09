@@ -155,6 +155,10 @@ function _M.http_init_worker()
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
     end
+
+    -- To ensure that all workers related to Prometheus metrics are initialized,
+    -- we need to put the initialization of the Prometheus plugin here.
+    plugin.init_prometheus()
 end
 
 

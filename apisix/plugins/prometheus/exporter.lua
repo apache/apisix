@@ -123,9 +123,6 @@ function _M.http_init(prometheus_enabled_in_stream)
         return
     end
 
-    -- init the prometheus-metrics shared dict
-    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, "")
-
     clear_tab(metrics)
 
     -- Newly added metrics should follow the naming best practices described in
@@ -244,8 +241,6 @@ end
 
 
 function _M.http_log(conf, ctx)
-    init_exporter_timer()
-
     local vars = ctx.var
 
     local route_id = ""
@@ -546,15 +541,10 @@ local function exporter_timer()
 end
 
 function init_exporter_timer()
-    if exporter_timer_inited then
-        return
-    end
-
     if process.type() ~= "privileged agent" then
         return
     end
 
-    exporter_timer_inited = true
     ngx.timer.at(0, exporter_timer)
 end
 
