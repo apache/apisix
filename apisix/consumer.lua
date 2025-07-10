@@ -94,7 +94,7 @@ do
             count = consumers_count_for_lrucache
         })
 
-local function construct_consumer_data(val, name)
+local function construct_consumer_data(val, name, config)
     -- if the val is a Consumer, clone it to the local consumer;
     -- if the val is a Credential, to get the Consumer by consumer_name and then clone
     -- it to the local consumer.
@@ -126,6 +126,15 @@ local function construct_consumer_data(val, name)
                 return consumer
             end, val)
     end
+    -- if the consumer has labels, set the field custom_id to it.
+    -- the custom_id is used to set in the request headers to the upstream.
+    if consumer.labels then
+        consumer.custom_id = consumer.labels["custom_id"]
+    end
+    -- Note: the id here is the key of consumer data, which
+    -- is 'username' field in admin
+    consumer.consumer_name = consumer.id
+    consumer.auth_conf = config
     return consumer
 end
 
@@ -155,21 +164,12 @@ function plugin_consumer()
                     }
                 end
 
-                local consumer, err = construct_consumer_data(val, name)
+                local consumer, err = construct_consumer_data(val, name, config)
                 if not consumer then
                     core.log.error("failed to construct consumer data for plugin ",
                                    name, ": ", err)
                     goto CONTINUE
                 end
-                -- if the consumer has labels, set the field custom_id to it.
-                -- the custom_id is used to set in the request headers to the upstream.
-                if consumer.labels then
-                    consumer.custom_id = consumer.labels["custom_id"]
-                end
-                -- Note: the id here is the key of consumer data, which
-                -- is 'username' field in admin
-                consumer.consumer_name = consumer.id
-                consumer.auth_conf = config
                 core.log.info("consumer:", core.json.delay_encode(consumer))
                 core.table.insert(plugins[name].nodes, consumer)
             end
