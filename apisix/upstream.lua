@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local config_local   = require("apisix.core.config_local")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
@@ -103,7 +104,7 @@ _M.get_healthchecker_name = get_healthchecker_name
 
 
 local function create_checker(upstream)
-    local local_conf = require("apisix.core.config_local").local_conf()
+    local local_conf = config_local.local_conf()
     if local_conf and local_conf.apisix and local_conf.apisix.disable_upstream_healthcheck then
         core.log.info("healthchecker won't be created: disabled upstream healthcheck")
         return nil
