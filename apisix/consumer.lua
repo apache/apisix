@@ -94,6 +94,40 @@ do
             count = consumers_count_for_lrucache
         })
 
+local function construct_consumer_data(val, name)
+    -- if the val is a Consumer, clone it to the local consumer;
+    -- if the val is a Credential, to get the Consumer by consumer_name and then clone
+    -- it to the local consumer.
+    local consumer
+    if is_credential_etcd_key(val.key) then
+        local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
+        local the_consumer = consumers:get(consumer_name)
+        if the_consumer and the_consumer.value then
+            consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex..
+                                                the_consumer.modifiedIndex,
+                function (val, the_consumer)
+                    consumer = core.table.clone(the_consumer.value)
+                    consumer.modifiedIndex = the_consumer.modifiedIndex
+                    consumer.credential_id = get_credential_id_from_etcd_key(val.key)
+                    return consumer
+                end, val, the_consumer)
+        else
+            -- Normally wouldn't get here:
+            -- it should belong to a consumer for any credential.
+            return nil, "failed to get the consumer for the credential,",
+                " a wild credential has appeared!",
+                " credential key: ", val.key, ", consumer name: ", consumer_name
+        end
+    else
+        consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex,
+            function (val)
+                consumer = core.table.clone(val.value)
+                consumer.modifiedIndex = val.modifiedIndex
+                return consumer
+            end, val)
+    end
+    return consumer
+end
 
 function plugin_consumer()
     local plugins = {}
@@ -120,39 +154,13 @@ function plugin_consumer()
                         conf_version = consumers.conf_version
                     }
                 end
-                -- if the val is a Consumer, clone it to the local consumer;
-                -- if the val is a Credential, to get the Consumer by consumer_name and then clone
-                -- it to the local consumer.
-                local consumer
-                if is_credential_etcd_key(val.key) then
-                    local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
-                    local the_consumer = consumers:get(consumer_name)
-                    if the_consumer and the_consumer.value then
-                        consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex..
-                                                         the_consumer.modifiedIndex,
-                            function (val, the_consumer)
-                                consumer = core.table.clone(the_consumer.value)
-                                consumer.modifiedIndex = the_consumer.modifiedIndex
-                                consumer.credential_id = get_credential_id_from_etcd_key(val.key)
-                                return consumer
-                            end, val, the_consumer)
-                    else
-                        -- Normally wouldn't get here:
-                        -- it should belong to a consumer for any credential.
-                        core.log.error("failed to get the consumer for the credential,",
-                            " a wild credential has appeared!",
-                            " credential key: ", val.key, ", consumer name: ", consumer_name)
-                        goto CONTINUE
-                    end
-                else
-                    consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex,
-                        function (val)
-                            consumer = core.table.clone(val.value)
-                            consumer.modifiedIndex = val.modifiedIndex
-                            return consumer
-                        end, val)
-                end
 
+                local consumer, err = construct_consumer_data(val, name)
+                if not consumer then
+                    core.log.error("failed to construct consumer data for plugin ",
+                                   name, ": ", err)
+                    goto CONTINUE
+                end
                 -- if the consumer has labels, set the field custom_id to it.
                 -- the custom_id is used to set in the request headers to the upstream.
                 if consumer.labels then
