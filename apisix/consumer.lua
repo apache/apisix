@@ -141,6 +141,7 @@ local function construct_consumer_data(val, name, plugin_config)
     return consumer
 end
 
+
 function plugin_consumer()
     local plugins = {}
 
