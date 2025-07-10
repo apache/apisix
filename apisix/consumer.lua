@@ -170,10 +170,10 @@ function plugin_consumer()
                                    name, ": ", err)
                     goto CONTINUE
                 end
-                core.log.info("consumer:", core.json.delay_encode(consumer))
                 plugins[name].len = plugins[name].len + 1
                 core.table.insert(plugins[name].nodes, plugins[name].len,
                                     consumer)
+                core.log.info("consumer:", core.json.delay_encode(consumer))
             end
         end
 
