@@ -94,7 +94,7 @@ do
             count = consumers_count_for_lrucache
         })
 
-local function construct_consumer_data(val, name, config)
+local function construct_consumer_data(val, name, plugin_config)
     -- if the val is a Consumer, clone it to the local consumer;
     -- if the val is a Credential, to get the Consumer by consumer_name and then clone
     -- it to the local consumer.
@@ -126,15 +126,18 @@ local function construct_consumer_data(val, name, config)
                 return consumer
             end, val)
     end
+
     -- if the consumer has labels, set the field custom_id to it.
     -- the custom_id is used to set in the request headers to the upstream.
     if consumer.labels then
         consumer.custom_id = consumer.labels["custom_id"]
     end
+
     -- Note: the id here is the key of consumer data, which
     -- is 'username' field in admin
     consumer.consumer_name = consumer.id
-    consumer.auth_conf = config
+    consumer.auth_conf = plugin_config
+
     return consumer
 end
 
