@@ -15,7 +15,7 @@
 # limitations under the License.
 #
 use t::APISIX 'no_plan';
-# ensure that the JSON module of Perl is installed in your test environment. 
+# ensure that the JSON module of Perl is installed in your test environment.
 # If it is not installed, sudo cpanm JSON.
 use JSON;
 
@@ -57,7 +57,7 @@ __DATA__
                     }
                     message Job {
                         string items = 1;
-                    }                                        
+                    }
                     message UserRequest {
                         string name = 1;
                         int32 age = 2;
