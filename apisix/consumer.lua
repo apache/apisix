@@ -170,6 +170,7 @@ function plugin_consumer()
                                    name, ": ", err)
                     goto CONTINUE
                 end
+
                 plugins[name].len = plugins[name].len + 1
                 core.table.insert(plugins[name].nodes, plugins[name].len,
                                     consumer)
