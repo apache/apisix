@@ -31,7 +31,7 @@ description: This document contains information about the Apache openwhisk Plugi
 
 The `openwhisk` Plugin is used to integrate APISIX with [Apache OpenWhisk](https://openwhisk.apache.org) serverless platform.
 
-This Plugin can be configured on a Route and requests will be send to the configured OpenWhish API endpoint as the upstream.
+This Plugin can be configured on a Route and requests will be send to the configured OpenWhisk API endpoint as the upstream.
 
 ## Attributes
 
