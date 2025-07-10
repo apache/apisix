@@ -543,7 +543,7 @@ end
 
 local function validate_claims_in_oidcauth_response(resp, conf)
     if not conf.claim_schema then
-        return true, nil
+        return true
     end
     local data = {
         user         = resp.user,
