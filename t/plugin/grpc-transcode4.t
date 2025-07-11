@@ -109,6 +109,8 @@ __DATA__
 --- response_body
 passed
 
+
+
 === TEST 2: hit route
 --- request
 POST /grpctest
@@ -117,6 +119,7 @@ POST /grpctest
 Content-Type: application/json
 --- response_body_json
 {"gender":"GENDER_MALE","message":"You are an experienced user!","items":["Senior member","Exclusive service"],"job":{"items":"Intern engineer"}}
+
 
 
 === TEST 3: hit route
@@ -129,6 +132,7 @@ Content-Type: application/json
 {"gender":"GENDER_FEMALE","message":"Welcome new users!","job":{"items":"junior engineer"},"items":[]}
 
 
+
 === TEST 4: hit route
 --- request
 POST /grpctest
@@ -137,6 +141,7 @@ POST /grpctest
 Content-Type: application/json
 --- response_body_json
 {"items":[],"message":"You are an experienced user!","job":{"items":"senior engineer"},"gender":"GENDER_UNSPECIFIED"}
+
 
 
 === TEST 5: hit route
