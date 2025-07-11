@@ -23,7 +23,9 @@ local string      = string
 local ngx_decode_base64 = ngx.decode_base64
 local ipairs      = ipairs
 local pcall       = pcall
-
+local type          = type
+local pairs         = pairs
+local setmetatable  = setmetatable
 
 pb.option "decode_default_array"
 local repeated_label = 3
