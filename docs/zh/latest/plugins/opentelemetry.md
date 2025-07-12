@@ -197,6 +197,15 @@ Attributes:
 - `opentelemetry_trace_id`: 当前 span 的 trace_id
 - `opentelemetry_span_id`: 当前 span 的 span_id
 
+配置插件元数据以将 `set_ngx_var` 设置为 true：
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "set_ngx_var": true
+}'
+```
+
 如下更新配置文件。你应该自定义访问日志格式以使用 `opentelemetry` 插件变量，并在 `set_ngx_var` 字段中设置 `opentelemetry` 变量。
 
 ```yaml title="conf/config.yaml"
@@ -205,9 +214,6 @@ nginx_config:
     enable_access_log: true
     access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr"}'
     access_log_format_escape: json
-plugin_attr:
-  opentelemetry:
-    set_ngx_var: true
 ```
 
 重新加载 APISIX 以使配置更改生效。

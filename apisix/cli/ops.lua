@@ -550,11 +550,6 @@ Please modify "admin_key" in conf/config.yaml .
         end
     end
 
-    local opentelemetry_set_ngx_var
-    if enabled_plugins["opentelemetry"] and yaml_conf.plugin_attr["opentelemetry"] then
-        opentelemetry_set_ngx_var = yaml_conf.plugin_attr["opentelemetry"].set_ngx_var
-    end
-
     local zipkin_set_ngx_var
     if enabled_plugins["zipkin"] and yaml_conf.plugin_attr["zipkin"] then
         zipkin_set_ngx_var = yaml_conf.plugin_attr["zipkin"].set_ngx_var
@@ -581,7 +576,6 @@ Please modify "admin_key" in conf/config.yaml .
         control_server_addr = control_server_addr,
         prometheus_server_addr = prometheus_server_addr,
         proxy_mirror_timeouts = proxy_mirror_timeouts,
-        opentelemetry_set_ngx_var = opentelemetry_set_ngx_var,
         zipkin_set_ngx_var = zipkin_set_ngx_var
     }
 
