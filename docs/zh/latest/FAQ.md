@@ -67,7 +67,7 @@ APISIX 可以动态处理以下行为：
 
 ## APISIX 是否有控制台界面？
 
-APISIX 具有功能强大的 Dashboard，并且 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 是一个独立的项目。你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 用户操作界面来部署 APISIX Dashboard。
+APISIX 内置功能强大的 Dashboard [APISIX Dashboard](https://github.com/apache/apisix-dashboard)。你可以通过 [APISIX Dashboard](https://github.com/apache/apisix-dashboard) 用户操作界面来管理 APISIX 配置。
 
 ## 我可以为 Apache APISIX 开发适合自身业务的插件吗？
 
