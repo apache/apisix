@@ -18,6 +18,11 @@ local ngx = ngx
 local core = require("apisix.core")
 local plugin = require("apisix.plugin")
 local upstream = require("apisix.upstream")
+local http = require("resty.http")
+local lua_proxy_request = require("apisix.lua_proxy").request
+local plugin_lua_body_filter = require("apisix.lua_proxy").lua_body_filter
+
+local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 
 local schema = {
     type = "object",
@@ -85,6 +90,10 @@ function _M.access(conf, ctx)
     core.log.warn("plugin access phase, conf: ", core.json.encode(conf))
     -- return 200, {message = "hit example plugin"}
 
+    if conf.lua_proxy_upstream then
+        ctx.lua_proxy_upstream = true
+    end
+
     if not conf.ip then
         return
     end
@@ -98,7 +107,7 @@ function _M.access(conf, ctx)
 
     local ok, err = upstream.check_schema(up_conf)
     if not ok then
-        return 500, err
+        return HTTP_INTERNAL_SERVER_ERROR, err
     end
 
     local matched_route = ctx.matched_route
@@ -106,6 +115,49 @@ function _M.access(conf, ctx)
                  ctx.conf_version, up_conf)
     return
 end
+
+
+function _M.before_proxy(conf, ctx)
+    core.log.warn("plugin before_proxy phase, conf: ", core.json.encode(conf))
+
+    if ctx.lua_proxy_upstream then
+        local status, body = lua_proxy_request(conf, ctx)
+        if status ~= 200 then
+            return status, body
+        end
+        core.log.warn("lua proxy upstream response: ", core.json.encode(body))
+        plugin_lua_body_filter(conf, ctx, body)
+    end
+end
+
+
+function _M.lua_body_filter(conf, ctx, body)
+    core.log.warn("plugin lua_body_filter phase, conf: ", core.json.encode(conf))
+    core.log.warn("plugin lua_body_filter phase, body: ", core.json.encode(body))
+
+    local httpc, err = http.new()
+    if err then
+        core.log.error("failed to create http client: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    local res, err = httpc:request_uri(conf.request_uri, {
+        method = conf.method,
+    })
+    if err then
+        core.log.error("failed to request in lua_body_filter: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    local res_body, err = core.json.decode(res.body)
+    if err then
+        core.log.error("failed to decode response body: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    return res.status, res_body
+end
+
 
 function _M.header_filter(conf, ctx)
     core.log.warn("plugin header_filter phase, conf: ", core.json.encode(conf))
