@@ -120,6 +120,7 @@ qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 1
         metrics:
             http_status:
                 extra_labels:
@@ -141,6 +142,7 @@ qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host=
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 1
         default_buckets:
             - 15
             - 55
