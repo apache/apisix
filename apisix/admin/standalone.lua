@@ -34,6 +34,24 @@ local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
+local resources = {
+    routes          = require("apisix.admin.routes"),
+    services        = require("apisix.admin.services"),
+    upstreams       = require("apisix.admin.upstreams"),
+    consumers       = require("apisix.admin.consumers"),
+    credentials     = require("apisix.admin.credentials"),
+    schema          = require("apisix.admin.schema"),
+    ssls            = require("apisix.admin.ssl"),
+    plugins         = require("apisix.admin.plugins"),
+    protos          = require("apisix.admin.proto"),
+    global_rules    = require("apisix.admin.global_rules"),
+    stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
+    plugin_configs  = require("apisix.admin.plugin_config"),
+    consumer_groups = require("apisix.admin.consumer_group"),
+    secrets         = require("apisix.admin.secrets"),
+}
+
 local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
     if key == "consumers" then
@@ -135,6 +153,7 @@ local function update(ctx)
         local conf_version = config and config[conf_version_key] or obj.conf_version
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
+        local resource = resources[key]
         if not new_conf_version then
             new_conf_version = conf_version + 1
         else
@@ -151,37 +170,33 @@ local function update(ctx)
             end
         end
 
+
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
-        elseif items and #items > 0 then
+        elseif resource and items and #items > 0 then
             apisix_yaml[key] = table_new(#items, 0)
-            local item_schema = obj.item_schema
-            local item_checker = obj.checker
+            local item_schema = resource.schema
+            local item_checker = resource.standalone_checker or resource.checker
             local id_set = {}
 
-            for index, item in ipairs(items) do
+            for _, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
                 local valid, err
-                -- need to recover to 0-based subscript
-                local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                if item_schema then
-                    valid, err = check_schema(obj.item_schema, item_temp)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
-                end
                 if item_checker then
-                    local item_checker_key
-                    if item.id then
-                        -- credential need to check key
-                        item_checker_key = "/" .. key .. "/" .. item_temp.id
-                    end
-                    valid, err = item_checker(item_temp, item_checker_key)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
+                    if core.string.find(tostring(item.id), "/credentials/") then
+                        local credential_item_checker = resources.credentials.standalone_checker or resources.credentials.checker
+                        local item_schema2 = resources.credentials.schema
+                        valid, err = credential_item_checker(item.id, item_temp, false, item_schema2)
+                        if not valid then
+                            --core.log.error(err_prefix, err)
+                            core.response.exit(400, err)
+                        end
+                    else
+                        valid, err = item_checker(item.id, item_temp, false, item_schema)
+                        if not valid then
+                            core.response.exit(400, err)
+                        end
                     end
                 end
                 -- prevent updating resource with the same ID

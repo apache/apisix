@@ -126,6 +126,59 @@ const credential1 = {
   ]
 }
 
+const unknownPlugins = {
+  "invalid-plugin": {}
+}
+
+const routeWithUnknownPlugins = {
+  routes: [
+    {
+      id: "r1",
+      uri: "/r1",
+      plugins: unknownPlugins,
+    }
+  ]
+}
+
+const servicesWithUnknownPlugins = {
+  services: [
+    {
+      id: "s1",
+      name: "s1",
+      plugins: unknownPlugins,
+    }
+  ]
+}
+
+const invalidUpstream = {
+  nodes: { "127.0.0.1:1980": 1 },
+  type: "chash",
+  hash_on: "vars",
+  key: "args_invalid",
+}
+
+const routeWithInvalidUpstream = {
+  routes: [
+    {
+      id: "r1",
+      uri: "/r1",
+      upstream: invalidUpstream,
+    },
+  ],
+}
+
+const serviceWithInvalidUpstream = {
+  services: [
+    {
+      id: "s1",
+      name: "s1",
+      upstream: invalidUpstream,
+    }
+  ]
+}
+
+
+
 describe("Admin - Standalone", () => {
   const client = axios.create(clientConfig);
   client.interceptors.response.use((response) => {
@@ -427,7 +480,7 @@ describe("Admin - Standalone", () => {
       expect(resp.status).toEqual(400);
       expect(resp.data).toMatchObject({
         error_msg:
-          'invalid routes at index 0, err: property "uri" validation failed: wrong type: expected string, got number',
+          'invalid configuration: property \"uri\" validation failed: wrong type: expected string, got number',
       });
     });
 
@@ -437,6 +490,32 @@ describe("Admin - Standalone", () => {
       expect(resp.data).toEqual({
         error_msg: "invalid request body: empty request body",
       });
+    });
+
+    it("update config (invalid plugin)", async () => {
+      const errorMsg = "unknown plugin [invalid-plugin]";
+
+      const resp = await clientException.put(ENDPOINT, routeWithUnknownPlugins);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({
+        error_msg: errorMsg,
+      });
+      const resp2 = await clientException.put(ENDPOINT, servicesWithUnknownPlugins);
+      expect(resp2.status).toEqual(400);
+      expect(resp2.data).toEqual({
+        error_msg: errorMsg,
+      });
+    });
+
+    it("update config (invalid upstream)", async () => {
+      const errorMsg = "invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"args_invalid\""
+      const resp = await clientException.put(ENDPOINT, routeWithInvalidUpstream);
+      expect(resp.status).toEqual(400);
+      expect(resp.data).toEqual({ error_msg: errorMsg });
+
+      const resp2 = await clientException.put(ENDPOINT, routeWithInvalidUpstream);
+      expect(resp2.status).toEqual(400);
+      expect(resp2.data).toEqual({ error_msg: errorMsg });
     });
   });
 });

@@ -26,7 +26,7 @@ local type = type
 local loadstring = loadstring
 
 
-local function check_conf(id, conf, need_id, schema)
+local function check_conf(id, conf, need_id, schema, skip_etcd_check)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -45,7 +45,7 @@ local function check_conf(id, conf, need_id, schema)
     end
 
     local upstream_id = conf.upstream_id
-    if upstream_id then
+    if upstream_id and not skip_etcd_check then
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -123,6 +123,11 @@ return resource.new({
     name = "services",
     kind = "service",
     schema = core.schema.service,
-    checker = check_conf,
+    checker = function (id, conf, need_id, schema)
+        return check_conf(id, conf, need_id, schema, false)
+    end,
+    standalone_checker = function (id, conf, need_id, schema)
+        return check_conf(id, conf, need_id, schema, true)
+    end,
     delete_checker = delete_checker
 })
