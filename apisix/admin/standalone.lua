@@ -18,6 +18,7 @@ local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
 local str_lower    = string.lower
+local tostring     = tostring
 local ngx          = ngx
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
