@@ -40,8 +40,9 @@ This Plugin moves the authentication and authorization logic to a dedicated exte
 | ----------------- | ------------- | -------- | ------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | uri               | string        | True     |         |                | URI of the authorization service.                                                                                                                          |
 | ssl_verify        | boolean       | False    | true    |                | When set to `true`, verifies the SSL certificate.                                                                                                          |
-| request_method    | string        | False    | GET     | ["GET","POST"] | HTTP method for a client to send requests to the authorization service. When set to `POST` the request body is send to the authorization service.          |
+| request_method    | string        | False    | GET     | ["GET","POST"] | HTTP method for a client to send requests to the authorization service. When set to `POST` the request body is sent to the authorization service. (not recommended - see section on [Using data from POST body](#using-data-from-post-body-to-make-decision-on-authorization-service)) |
 | request_headers   | array[string] | False    |         |                | Client request headers to be sent to the authorization service. If not set, only the headers provided by APISIX are sent (for example, `X-Forwarded-XXX`). |
+| extra_headers   |object | False    |         |                | Extra headers to be sent to the authorization service passed in key-value format. The value can be a variable like `$request_uri`, `$post_arg.xyz` |
 | upstream_headers  | array[string] | False    |         |                | Authorization service response headers to be forwarded to the Upstream. If not set, no headers are forwarded to the Upstream service.                      |
 | client_headers    | array[string] | False    |         |                | Authorization service response headers to be sent to the client when authorization fails. If not set, no headers will be sent to the client.               |
 | timeout           | integer       | False    | 3000ms  | [1, 60000]ms   | Timeout for the authorization service HTTP call.                                                                                                           |
@@ -164,6 +165,110 @@ curl -i http://127.0.0.1:9080/headers
 ```
 HTTP/1.1 403 Forbidden
 Location: http://example.com/auth
+```
+
+### Using data from POST body to make decision on Authorization service
+
+::: note
+When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.*` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
+:::
+
+Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header. If present, the route responds with HTTP 200 and sets the `X-User-ID` header to a fixed value `i-am-an-user`. If `tenant_id` is missing, it returns HTTP 400 with an error message.
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
+    -H "X-API-KEY: $admin_key" \
+    -H 'Content-Type: application/json' \
+    -d '{
+    "uri": "/auth",
+    "plugins": {
+        "serverless-pre-function": {
+            "phase": "rewrite",
+            "functions": [
+                "return function(conf, ctx)
+                 local core = require(\"apisix.core\")
+                 if core.request.header(ctx, \"tenant_id\") then
+                     core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
+                     core.response.exit(200);
+                else
+                    core.response.exit(400, \"tenant_id is required\")
+                end
+            end"
+            ]
+        }
+    }
+}'
+```
+
+Create a route that accepts POST requests and uses the `forward-auth` plugin to call the auth endpoint with the `tenant_id` from the request. The request is forwarded to the upstream service only if the auth check returns 200.
+
+```shell
+curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
+    -H "X-API-KEY: $admin_key" \
+    -d '{
+    "uri": "/post",
+    "methods": ["POST"],
+    "plugins": {
+        "forward-auth": {
+            "uri": "http://127.0.0.1:9080/auth",
+            "request_method": "GET",
+            "extra_headers": {"tenant_id": "$post_arg.tenant_id"}
+        }
+    },
+    "upstream": {
+        "nodes": {
+            "httpbin.org:80": 1
+        },
+        "type": "roundrobin"
+    }
+}'
+```
+
+Send a POST request with the `tenant_id` header:
+
+```shell
+curl -i http://127.0.0.1:9080/post -X POST -d '{
+   "tenant_id": 123
+}'
+```
+
+You should receive an `HTTP/1.1 200 OK` response similar to the following:
+
+```json
+{
+  "args": {},
+  "data": "",
+  "files": {},
+  "form": {
+    "{\n   \"tenant_id\": 123\n}": ""
+  },
+  "headers": {
+    "Accept": "*/*",
+    "Content-Length": "23",
+    "Content-Type": "application/x-www-form-urlencoded",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.13.0",
+    "X-Amzn-Trace-Id": "Root=1-686b6e3f-2fdeff70183e71551f5c5729",
+    "X-Forwarded-Host": "127.0.0.1"
+  },
+  "json": null,
+  "origin": "127.0.0.1, 106.215.83.33",
+  "url": "http://127.0.0.1/post"
+}
+```
+
+Send a POST request without the `tenant_id` header:
+
+```shell
+ curl -i http://127.0.0.1:9080/post -X POST -d '{
+   "abc": 123
+}'
+```
+
+You should receive an `HTTP/1.1 400 Bad Request` response with the following message:
+
+```shell
+tenant_id is required
 ```
 
 ## Delete Plugin
