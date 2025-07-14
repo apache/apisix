@@ -153,7 +153,7 @@ local function update(ctx)
         local conf_version = config and config[conf_version_key] or obj.conf_version
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
-        local resource = resources[key]
+        local resource = resources[key] or {}
         if not new_conf_version then
             new_conf_version = conf_version + 1
         else
@@ -174,7 +174,7 @@ local function update(ctx)
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
-        elseif resource and items and #items > 0 then
+        elseif items and #items > 0 then
             apisix_yaml[key] = table_new(#items, 0)
             local item_schema = resource.schema
             local item_checker = resource.standalone_checker or resource.checker
