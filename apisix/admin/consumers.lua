@@ -19,7 +19,7 @@ local plugins = require("apisix.admin.plugins")
 local resource = require("apisix.admin.resource")
 
 
-local function check_conf(username, conf, need_username, schema, skip_etcd_check)
+local function check_conf(username, conf, need_username, schema, secret_type, skip_references_check)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -36,7 +36,7 @@ local function check_conf(username, conf, need_username, schema, skip_etcd_check
         end
     end
 
-    if conf.group_id and not skip_etcd_check then
+    if conf.group_id and not skip_references_check then
         local key = "/consumer_groups/" .. conf.group_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -60,11 +60,6 @@ return resource.new({
     name = "consumers",
     kind = "consumer",
     schema = core.schema.consumer,
-    checker = function (username, conf, need_username, schema)
-        return check_conf(username, conf, need_username, schema, false)
-    end,
-    standalone_checker = function (username, conf, need_username, schema)
-        return check_conf(username, conf, need_username, schema, true)
-    end,
+    checker = check_conf,
     unsupported_methods = {"post", "patch"}
 })

@@ -19,7 +19,7 @@ local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
 
 
-local function check_conf(id, conf, need_id, schema)
+local function check_conf(id, conf, need_id, schema, secret_type, skip_references_check)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}

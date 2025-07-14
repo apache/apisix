@@ -18,6 +18,8 @@ local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
 local str_lower    = string.lower
+local str_find     = string.find
+local str_sub      = string.sub
 local tostring     = tostring
 local ngx          = ngx
 local get_method   = ngx.req.get_method
@@ -177,26 +179,34 @@ local function update(ctx)
         elseif items and #items > 0 then
             apisix_yaml[key] = table_new(#items, 0)
             local item_schema = resource.schema
-            local item_checker = resource.standalone_checker or resource.checker
+            local item_checker = resource.checker
             local id_set = {}
 
             for _, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
+                local id = tostring(item.id)
                 local valid, err
                 if item_checker then
-                    if core.string.find(tostring(item.id), "/credentials/") then
-                        local credential_item_checker =
-                            resources.credentials.standalone_checker or
-                            resources.credentials.checker
+                    if core.string.find(id, "/credentials/") then
+                        local credential_checker = resources.credentials.checker
                         local schema = resources.credentials.schema
-                        valid, err = credential_item_checker(item.id, item_temp, false, schema)
+                        valid, err = credential_checker(item.id, item_temp, false, schema, nil, true)
                         if not valid then
-                            --core.log.error(err_prefix, err)
                             core.response.exit(400, err)
                         end
                     else
+                        local secret_type
+                        if key == "secrets" then
+                            local idx = str_find(id or "", "/")
+                            if not idx then
+                                core.response.exit(400, {
+                                    error_msg = "invalid secret id: " .. (id or "")
+                                })
+                            end
+                            secret_type = str_sub(id, 1, idx - 1)
+                        end
                         valid, err =
-                            item_checker(item.id, item_temp, false, item_schema)
+                            item_checker(item.id, item_temp, false, item_schema, secret_type, true)
                         if not valid then
                             core.response.exit(400, err)
                         end
