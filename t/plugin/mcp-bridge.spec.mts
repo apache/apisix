@@ -25,7 +25,7 @@ import { resolve } from 'node:path';
 const tools = JSON.parse(
   readFileSync(resolve(`./plugin/mcp/assets/bridge-list-tools.json`), 'utf-8'),
 );
-const sseEndpoint = new URL('http://localhost:9081/mcp/sse');
+const sseEndpoint = new URL('http://localhost:1984/mcp/sse');
 
 describe('mcp-bridge', () => {
   let client: Client;
