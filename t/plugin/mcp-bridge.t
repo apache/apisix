@@ -97,4 +97,4 @@ cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/PASS plugin/mcp-bridge.spec.mts/
+qr/PASS plugin\/mcp-bridge.spec.mts/
