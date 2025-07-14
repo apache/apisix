@@ -73,7 +73,7 @@ return resource.new({
     kind = "stream route",
     schema = core.schema.stream_route,
     checker = function (id, conf, need_id, schema)
-        return check_conf(id, conf, need_id, schema)
+        return check_conf(id, conf, need_id, schema, false)
     end,
     standalone_checker = function (id, conf, need_id, schema)
         return check_conf(id, conf, need_id, schema, true)

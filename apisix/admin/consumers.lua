@@ -61,7 +61,7 @@ return resource.new({
     kind = "consumer",
     schema = core.schema.consumer,
     checker = function (username, conf, need_username, schema)
-        return check_conf(username, conf, need_username, schema)
+        return check_conf(username, conf, need_username, schema, false)
     end,
     standalone_checker = function (username, conf, need_username, schema)
         return check_conf(username, conf, need_username, schema, true)
