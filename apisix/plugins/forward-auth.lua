@@ -124,12 +124,13 @@ function _M.access(conf, ctx)
             if type(value) == "number" then
                 value = tostring(value)
             end
-            local resolve_value, err, n_resolved = core.utils.resolve_var(value, ctx.var)
-            if not err and n_resolved > 0 then
+            local resolve_value, err = core.utils.resolve_var(value, ctx.var)
+            if not err then
                 auth_headers[header] = resolve_value
             end
             if err then
-                core.log.error("failed to resolve variable in extra header '", header, "': ", err)
+                core.log.error("failed to resolve variable in extra header '",
+                                header, "': ",value,": ",err)
             end
         end
     end
