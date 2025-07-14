@@ -305,6 +305,26 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/ping2"
                     }]]
+                },
+                {
+                    url = "/apisix/admin/routes/10",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_method": "GET",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "extra_headers": {"tenant_id": "abcd"}
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/ping3"
+                    }]]
                 }
             }
 
@@ -317,7 +337,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 10
+"passed\n" x 12
 
 
 
@@ -441,6 +461,16 @@ Authorization: 333
 --- request
 POST /ping2
 {"tenant_id": 123}
+--- more_headers
+Authorization: 777
+--- response_body_like eval
+qr/\"x-user-id\":\"i-am-an-user\"/
+
+
+
+=== TEST 15: hit route (test extra_headers when extra headers has fixed value)
+--- request
+GET /ping3
 --- more_headers
 Authorization: 777
 --- response_body_like eval
