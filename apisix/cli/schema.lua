@@ -254,6 +254,11 @@ local config_schema = {
                         },
                     }
                 },
+                disable_upstream_healthcheck = {
+                    type = "boolean",
+                    default = false,
+                    description = "a global switch to disable upstream health checks",
+                },
             }
         },
         nginx_config = {
