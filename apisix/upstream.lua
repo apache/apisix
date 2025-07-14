@@ -114,7 +114,7 @@ local function fetch_healthchecker(upstream)
     local resource_path = parent.key
     local resource_ver = parent.modifiedIndex .. "#" .. tostring(upstream) .. "#" ..
                          tostring(upstream._nodes_ver or '')
-
+ 
     return healthcheck_manager.fetch_checker(resource_path, resource_ver, upstream)
 end
 

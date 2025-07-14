@@ -25,7 +25,7 @@ local _M = {
 }
 
 local function fetch_latest_conf(resource_path)
-    return core.config.fetch_conf(resource_path)
+    --- to be implemented
 end
 
 local function create_checker(up_conf)
