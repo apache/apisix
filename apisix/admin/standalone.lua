@@ -27,7 +27,6 @@ local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
-local check_schema = require("apisix.core.schema").check
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
@@ -185,15 +184,18 @@ local function update(ctx)
                 local valid, err
                 if item_checker then
                     if core.string.find(tostring(item.id), "/credentials/") then
-                        local credential_item_checker = resources.credentials.standalone_checker or resources.credentials.checker
-                        local item_schema2 = resources.credentials.schema
-                        valid, err = credential_item_checker(item.id, item_temp, false, item_schema2)
+                        local credential_item_checker =
+                            resources.credentials.standalone_checker or
+                            resources.credentials.checker
+                        local schema = resources.credentials.schema
+                        valid, err = credential_item_checker(item.id, item_temp, false, schema)
                         if not valid then
                             --core.log.error(err_prefix, err)
                             core.response.exit(400, err)
                         end
                     else
-                        valid, err = item_checker(item.id, item_temp, false, item_schema)
+                        valid, err =
+                            item_checker(item.id, item_temp, false, item_schema)
                         if not valid then
                             core.response.exit(400, err)
                         end
