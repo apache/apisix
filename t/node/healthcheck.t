@@ -93,7 +93,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
                 ngx.say(err)
                 return
             end
-
+            ngx.sleep(3) 
             local ports_count = {}
             for i = 1, 12 do
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
