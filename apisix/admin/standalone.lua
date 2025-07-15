@@ -190,7 +190,8 @@ local function update(ctx)
                     if core.string.find(id, "/credentials/") then
                         local credential_checker = resources.credentials.checker
                         local schema = resources.credentials.schema
-                        valid, err = credential_checker(id, item_temp, false, schema, nil, true)
+                        valid, err =
+                            credential_checker(item.id, item_temp, false, schema, nil, true)
                         if not valid then
                             core.response.exit(400, err)
                         end
@@ -206,7 +207,7 @@ local function update(ctx)
                             secret_type = str_sub(id, 1, idx - 1)
                         end
                         valid, err =
-                            item_checker(id, item_temp, false, item_schema, secret_type, true)
+                            item_checker(item.id, item_temp, false, item_schema, secret_type, true)
                         if not valid then
                             core.response.exit(400, err)
                         end
