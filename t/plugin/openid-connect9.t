@@ -138,3 +138,55 @@ Success! Data written to: kv/apisix/foo
 }
 --- response_body
 passed
+
+=== TEST 4: configure oidc plugin with small public key using vault and request with token should success
+--- config
+    location /hello {
+        content_by_lua_block {
+            ngx.say("success")
+        }
+    }
+
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "openid-connect": {
+                            "client_id": "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
+                            "client_secret": "$secret://vault/test1/foo/client_secret",
+                            "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
+                            "redirect_uri": "https://iresty.com",
+                            "ssl_verify": false,
+                            "timeout": 10,
+                            "bearer_only": true,
+                            "scope": "apisix",
+                            "public_key": "-----BEGIN PUBLIC KEY-----\n]] ..
+                            [[MFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBANW16kX5SMrMa2t7F2R1w6Bk/qpjS4QQ\n]] ..
+                            [[hnrbED3Dpsl9JXAx90MYsIWp51hBxJSE/EPVK8WF/sjHK1xQbEuDfEECAwEAAQ==\n]] ..
+                            [[-----END PUBLIC KEY-----",
+                            "token_signing_alg_values_expected": "RS256"
+                        }
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+            )
+            ngx.status = code
+            ngx.say(body)
+        }
+    }
+--- request
+GET /hello HTTP/1.1
+Authorization: Bearer eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJodHRwczovL3NhbXBsZXMuYXV0aDAuY29tLyIsInN1YiI6InRlc3Qtc3ViamVjdCIsImF1ZCI6ImtieXVG RGlkTExtMjgwTEl3VkZpYXpPcWpPM3R5OEtIIiwic2NvcGUiOiJhcGlzaXgiLCJpYXQiOjEwMDAwMDAwLCJleHAiOjI1MDAwMDAwMDB9.bfcZsd4ABgo0GoLT8EwfnKgf AWbnJZbZ3kOtqyeSkXYqGlSmgMNW3q5Kx1SGjMNhEKVG_KrFfsPrQmcTljSPZA
+--- response_body
+success
+
+
