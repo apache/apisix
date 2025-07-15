@@ -106,6 +106,31 @@ local function update_and_broadcast_config(apisix_yaml)
     return events:post(EVENT_UPDATE, EVENT_UPDATE)
 end
 
+local function check_conf(checker, schema, item, typ)
+    if not checker then
+        return true
+    end
+    local str_id = tostring(item.id)
+    if typ == "consumers" and
+        core.string.find(str_id, "/credentials/") then
+        local credential_checker = resources.credentials.checker
+        local credential_schema = resources.credentials.schema
+        return credential_checker(item.id, item, false, credential_schema, nil, true)
+    end
+
+    local secret_type
+    if typ == "secrets" then
+        local idx = str_find(str_id or "", "/")
+        if not idx then
+            return false, {
+                error_msg = "invalid secret id: " .. (str_id or "")
+            }
+        end
+        secret_type = str_sub(str_id, 1, idx - 1)
+    end
+    return checker(item.id, item, false, schema, secret_type, true)
+end
+
 
 local function update(ctx)
     local content_type = core.request.header(nil, "content-type") or "application/json"
@@ -184,34 +209,9 @@ local function update(ctx)
 
             for _, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
-                local id = tostring(item.id)
-                local valid, err
-                if item_checker then
-                    if core.string.find(id, "/credentials/") then
-                        local credential_checker = resources.credentials.checker
-                        local schema = resources.credentials.schema
-                        valid, err =
-                            credential_checker(item.id, item_temp, false, schema, nil, true)
-                        if not valid then
-                            core.response.exit(400, err)
-                        end
-                    else
-                        local secret_type
-                        if key == "secrets" then
-                            local idx = str_find(id or "", "/")
-                            if not idx then
-                                core.response.exit(400, {
-                                    error_msg = "invalid secret id: " .. (id or "")
-                                })
-                            end
-                            secret_type = str_sub(id, 1, idx - 1)
-                        end
-                        valid, err =
-                            item_checker(item.id, item_temp, false, item_schema, secret_type, true)
-                        if not valid then
-                            core.response.exit(400, err)
-                        end
-                    end
+                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                if not valid then
+                    core.response.exit(400, err)
                 end
                 -- prevent updating resource with the same ID
                 -- (e.g., service ID or other resource IDs) in a single request
