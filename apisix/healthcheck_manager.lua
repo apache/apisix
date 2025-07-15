@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local config_local   = require("apisix.core.config_local")
 local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
@@ -48,7 +49,6 @@ local function fetch_latest_conf(resource_path)
         core.log.error("failed to fetch configuration for type: ", key)
         return nil
     end
-    -- Get specific resource by ID
     local resource = data:get(id)
     if not resource then
         core.log.error("resource not found: ", id, " in ", key)
@@ -63,6 +63,11 @@ local function get_healthcheck_name(value)
 end
 
 local function create_checker(up_conf)
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.apisix and local_conf.apisix.disable_upstream_healthcheck then
+        core.log.info("healthchecker won't be created: disabled upstream healthcheck")
+        return nil
+    end
     core.log.warn("creating healthchecker for upstream: ", up_conf.key)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
@@ -118,6 +123,14 @@ function _M.fetch_checker(resource_path, resource_ver)
     return nil
 end
 
+function _M.fetch_node_status(checker, ip, port, hostname)
+    -- check if the checker is valid
+    if not checker or checker.dead then
+        return true
+    end
+
+    return checker:get_target_status(ip, port, hostname)
+end
 function _M.timer_create_checker()
     if core.table.nkeys(_M.waiting_pool) == 0 then
         return
@@ -165,8 +178,7 @@ function _M.timer_working_pool_check()
             goto continue
         end
 
-        local current_ver = res_conf.modifiedIndex .. "#" .. tostring(res_conf.value) .. "#" ..
-                            tostring(res_conf.value._nodes_ver or '')
+        local current_ver = res_conf.modifiedIndex
         if item.version ~= current_ver then
             item.checker:delayed_clear(10)
             item.checker:stop()
