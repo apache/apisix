@@ -88,17 +88,6 @@ end
 _M.set = set_directly
 
 
-local function release_checker(healthcheck_parent)
-    if not healthcheck_parent or not healthcheck_parent.checker then
-        return
-    end
-    local checker = healthcheck_parent.checker
-    core.log.info("try to release checker: ", tostring(checker))
-    checker:delayed_clear(3)
-    checker:stop()
-end
-
-
 local function get_healthchecker_name(value)
     return "upstream#" .. value.key
 end
@@ -112,8 +101,10 @@ local function fetch_healthchecker(upstream)
 
     local parent = upstream.parent
     local resource_path = upstream.key or parent.key
-    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex)
+    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
     core.log.warn("RESOURCE PATH", resource_path)
+    core.log.warn("RESOURCE VER", resource_ver)
+    core.log.warn("UPSTREAM: ", inspect(upstream))
     return healthcheck_manager.fetch_checker(resource_path, resource_ver, upstream)
 end
 
@@ -261,7 +252,6 @@ function _M.set_by_route(route, api_ctx)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then
-        release_checker(up_conf.parent)
         return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node"
     end
 
