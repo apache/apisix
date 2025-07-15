@@ -72,7 +72,7 @@ property "args" validation failed: wrong type: expected array, got string
                             "mcp-bridge": {
                                 "base_uri": "/mcp",
                                 "command": "npx",
-                                "args": ["-y", "@modelcontextprotocol/server-filesystem", "/"]
+                                "args": ["-y", "@modelcontextprotocol/server-filesystem@2025.7.1", "/"]
                             }
                         },
                         "uri": "/mcp/*"
@@ -93,8 +93,8 @@ passed
 === TEST 3: test mcp client
 --- timeout: 20
 --- exec
-cd t/plugin/mcp && pnpm test 2>&1
+cd t && pnpm test plugin/mcp-bridge.spec.mts 2>&1
 --- no_error_log
 failed to execute the script with status
 --- response_body eval
-qr/PASS .\/bridge.spec.ts/
+qr/PASS plugin\/mcp-bridge.spec.mts/
