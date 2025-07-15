@@ -27,8 +27,15 @@ local _M = {
 }
 
 local function fetch_latest_conf(resource_path)
-    -- Extract resource type and ID from path
-    local resource_type, id = resource_path:match("^/apisix/([^/]+)/([^/]+)$")
+    local resource_type, id
+    -- Handle both formats:
+    -- 1. /apisix/<resource_type>/<id>
+    -- 2. /<resource_type>/<id>
+    if resource_path:find("^/apisix/") then
+        resource_type, id = resource_path:match("^/apisix/([^/]+)/([^/]+)$")
+    else
+        resource_type, id = resource_path:match("^/([^/]+)/([^/]+)$")
+    end
     if not resource_type or not id then
         core.log.error("invalid resource path: ", resource_path)
         return nil
