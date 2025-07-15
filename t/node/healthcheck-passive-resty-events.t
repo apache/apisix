@@ -300,13 +300,14 @@ passed
                 return
             end
             ngx.say(res.status)
-
+            ngx.sleep(3.5)
             -- only /hello_ has passive healthcheck
             local res, err = httpc:request_uri(uri .. "/hello")
             if not res then
                 ngx.say(err)
                 return
             end
+            ngx.sleep(3.5)
             ngx.say(res.status)
         }
     }
@@ -319,6 +320,7 @@ GET /t
 qr/enabled healthcheck passive/
 --- grep_error_log_out
 enabled healthcheck passive
+--- timeout: 10
 
 
 

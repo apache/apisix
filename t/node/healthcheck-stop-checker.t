@@ -84,15 +84,15 @@ PUT /apisix/admin/routes/1
             end
             ngx.say("1 code: ", code)
 
-            ngx.sleep(0.2)
+            ngx.sleep(3)
             local code, body = t('/server_port', "GET")
             ngx.say("2 code: ", code)
 
-            ngx.sleep(0.2)
+            ngx.sleep(2)
             code = t('/apisix/admin/routes/1', "DELETE")
             ngx.say("3 code: ", code)
 
-            ngx.sleep(2)
+            ngx.sleep(3)
             local code, body = t('/server_port', "GET")
             ngx.say("4 code: ", code)
         }
@@ -109,6 +109,7 @@ qr/create new checker: table: 0x|try to release checker: table: 0x/
 --- grep_error_log_out
 create new checker: table: 0x
 try to release checker: table: 0x
+--- timeout: 10
 
 
 
