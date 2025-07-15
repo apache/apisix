@@ -223,8 +223,8 @@ function _M.rewrite(plugin_conf, ctx)
                                              to_hex(span_context.trace_id),
                                              to_hex(span_context.span_id),
                                              span_context:get_baggage_item("x-b3-sampled"))
-        ngx_var.zipkin_trace_id = span_context.trace_id
-        ngx_var.zipkin_span_id = span_context.span_id
+        ngx_var.zipkin_trace_id = to_hex(span_context.trace_id)
+        ngx_var.zipkin_span_id = to_hex(span_context.span_id)
     end
 
     if not ctx.opentracing_sample then

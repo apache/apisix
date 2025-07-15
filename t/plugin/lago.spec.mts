@@ -87,7 +87,7 @@ const launchLago = async () => {
 const provisionLago = async () => {
   // sign up
   const { registerUser } = await request<{
-    registerUser: { token: string; user: { organizations: { id: string } } };
+    registerUser: { token: string; user: { organizations: { id: string }[] } };
   }>(
     LAGO_API_GRAPHQL_ENDPOINT,
     gql`
