@@ -101,8 +101,9 @@ location /t {
         local t = require("lib.test_admin").test
         assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg) < 300)
         t('/hello', ngx.HTTP_GET)
+        ngx.sleep(2)
         assert(t('/apisix/admin/routes/1', ngx.HTTP_PUT, cfg) < 300)
-        ngx.sleep(1)
+        ngx.sleep(2)
     }
 }
 
@@ -110,3 +111,4 @@ location /t {
 GET /t
 --- error_log
 clear checker
+--- timeout: 7

@@ -100,7 +100,7 @@ local function fetch_healthchecker(upstream)
     end
 
     local parent = upstream.parent
-    local resource_path = upstream.key or parent.key
+    local resource_path = parent.key or upstream.key
     local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
     core.log.warn("RESOURCE PATH", resource_path)
     core.log.warn("RESOURCE VER", resource_ver)

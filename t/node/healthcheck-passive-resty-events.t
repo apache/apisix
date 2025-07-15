@@ -115,7 +115,7 @@ passed
                 ngx.say(err)
                 return
             end
-            ngx.sleep(1) -- Wait for health check unhealthy events sync
+            ngx.sleep(2) -- Wait for health check unhealthy events sync
 
             local ports_count = {}
             for i = 1, 6 do
@@ -359,7 +359,7 @@ enabled healthcheck passive
             end
             ngx.say(res.status)
 
-            ngx.sleep(1) -- Wait for health check unhealthy events sync
+            ngx.sleep(2) -- Wait for health check unhealthy events sync
 
             -- The second time request to /hello_
             local res, err = httpc:request_uri(uri .. "/hello_")

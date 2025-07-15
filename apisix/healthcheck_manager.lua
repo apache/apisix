@@ -46,6 +46,8 @@ local function fetch_latest_conf(resource_path)
         key = "/upstreams"
     elseif resource_type == "routes" or resource_type == "route" then
         key = "/routes"
+    elseif resource_type == "services" or resource_type == "service" then
+        key = "/services"
     else
         core.log.error("unsupported resource type: ", resource_type)
         return nil
@@ -58,7 +60,9 @@ local function fetch_latest_conf(resource_path)
     end
     local resource = data:get(id)
     if not resource then
-        core.log.error("resource not found: ", id, " in ", key)
+        -- this can happen if the resource was deleted
+        -- after the function was called so we don't throw error
+        core.log.warn("resource not found: ", id, " in ", key)
         return nil
     end
 
@@ -105,7 +109,7 @@ local function create_checker(up_conf)
         local ok, err = checker:add_target(node.host, port or node.port, host,
                                         true, host_hdr)
         if not ok then
-            core.log.error("failed to add healthcheck target: ", node.host, ":", 
+            core.log.error("failed to add healthcheck target: ", node.host, ":",
                           port or node.port, " err: ", err)
         end
     end

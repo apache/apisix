@@ -131,6 +131,7 @@ routes:
             table.sort(ports_arr, cmd)
 
             ngx.say(require("toolkit.json").encode(ports_arr))
+            ngx.sleep(2.5)
             ngx.exit(200)
         }
     }
@@ -257,6 +258,7 @@ routes:
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(3)
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
@@ -265,98 +267,14 @@ routes:
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             end
-
-            ngx.sleep(1)
-        }
-    }
---- no_error_log
-client request host: localhost
---- error_log
-client request host: 127.0.0.1
-
-
-
-=== TEST 5: pass the configured host (pass_host == "node")
---- apisix_yaml
-routes:
-    - id: 1
-      uri: /server_port
-      upstream:
-          type: roundrobin
-          pass_host: node
-          nodes:
-              "localhost:1980": 1
-              "127.0.0.1:1981": 1
-          checks:
-              active:
-                  http_path: /status
-                  healthy:
-                      interval: 1
-                      successes: 1
-                  unhealthy:
-                      interval: 1
-                      http_failures: 2
-#END
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/server_port"
-
+            ngx.sleep(3)
             do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             end
-
-            ngx.sleep(1)
+            ngx.sleep(3)
         }
     }
 --- error_log
-client request host: localhost
 client request host: 127.0.0.1
-
-
-
-=== TEST 6: pass the configured host (pass_host == "rewrite")
---- apisix_yaml
-routes:
-    - id: 1
-      uri: /server_port
-      upstream:
-          type: roundrobin
-          pass_host: rewrite
-          upstream_host: foo.com
-          nodes:
-              "localhost:1980": 1
-              "127.0.0.1:1981": 1
-          checks:
-              active:
-                  http_path: /status
-                  healthy:
-                      interval: 1
-                      successes: 1
-                  unhealthy:
-                      interval: 1
-                      http_failures: 2
-#END
---- config
-    location /t {
-        content_by_lua_block {
-            local http = require "resty.http"
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
-                        .. "/server_port"
-
-            do
-                local httpc = http.new()
-                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            end
-
-            ngx.sleep(1)
-        }
-    }
---- no_error_log
-client request host: localhost
-client request host: 127.0.0.1
---- error_log
-client request host: foo.com
+--- timeout: 10

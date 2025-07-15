@@ -96,7 +96,7 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(1) -- wait for sync
+            ngx.sleep(2) -- wait for sync
 
             local json_sort = require("toolkit.json")
             local http = require("resty.http")
