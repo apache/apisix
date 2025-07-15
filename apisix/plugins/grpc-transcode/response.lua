@@ -6,7 +6,7 @@
 -- (the "License"); you may not use this file except in compliance with
 -- the License.  You may obtain a copy of the License at
 --
---      http://www.apache.org/licenses/LICENSE-2.0
+--     http://www.apache.org/licenses/LICENSE-2.0
 --
 -- Unless required by applicable law or agreed to in writing, software
 -- distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,13 +16,13 @@
 --
 local util        = require("apisix.plugins.grpc-transcode.util")
 local grpc_proto  = require("apisix.plugins.grpc-transcode.proto")
-local core        = require("apisix.core")
-local pb          = require("pb")
-local ngx         = ngx
-local string      = string
+local core   = require("apisix.core")
+local pb     = require("pb")
+local ngx    = ngx
+local string = string
 local ngx_decode_base64 = ngx.decode_base64
-local ipairs      = ipairs
-local pcall       = pcall
+local ipairs = ipairs
+local pcall  = pcall
 local type          = type
 local pairs         = pairs
 local setmetatable  = setmetatable
@@ -48,11 +48,11 @@ local function fetch_proto_array_names(proto_obj)
     return names
 end
 
-local function set_default_array(tab,array_names )
+local function set_default_array(tab, array_names)
     if type(tab) ~= "table" then
         return false
     end
-    for k, v  in pairs(tab) do
+    for k, v in pairs(tab) do
         if type(v) == "table" then
             if array_names[k] == 1 then
                 setmetatable(v,core.json.array_mt)
@@ -101,7 +101,7 @@ local function handle_error_response(status_detail_type, proto)
                 pb.state(pb_old_state)
                 if not ok then
                     err_msg = "failed to call pb.decode to decode details in "
-                               .. "grpc-status-details-bin"
+                           .. "grpc-status-details-bin"
                     ngx.arg[1] = err_msg
                     return err_msg .. ", err: " .. err_or_value
                 end
@@ -151,7 +151,7 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
     local m = util.find_method(proto, service, method)
     if not m then
         return false, "2.Undefined service method: " .. service .. "/" .. method
-                     .. " end."
+                      .. " end."
     end
 
     if not ngx.req.get_headers()["X-Grpc-Web"] then
@@ -170,8 +170,8 @@ return function(ctx, proto, service, method, pb_option, show_status_in_body, sta
         return err_msg
     end
 
-    local array_names = fetch_proto_array_names ( proto )
-    set_default_array(decoded,array_names)
+    local array_names = fetch_proto_array_names( proto )
+    set_default_array(decoded, array_names)
 
     local response, err = core.json.encode(decoded)
     if not response then
