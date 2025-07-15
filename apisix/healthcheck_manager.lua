@@ -43,16 +43,13 @@ local function fetch_latest_conf(resource_path)
         return nil
     end
 
-    core.log.warn("key is ", key, " id is ", id)
     local data = core.config.fetch_created_obj(key)
     if not data then
         core.log.error("failed to fetch configuration for type: ", key)
         return nil
     end
-    core.log.warn("data is ", inspect(data))
     -- Get specific resource by ID
     local resource = data:get(id)
-    core.log.warn("resource is ", inspect(resource))
     if not resource then
         core.log.error("resource not found: ", id, " in ", key)
         return nil
@@ -61,7 +58,12 @@ local function fetch_latest_conf(resource_path)
     return resource
 end
 
+local function get_healthcheck_name(value)
+    return "upstream#" .. value.key
+end
+
 local function create_checker(up_conf)
+    core.log.warn("creating healthchecker for upstream: ", up_conf.key)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
@@ -69,7 +71,7 @@ local function create_checker(up_conf)
     core.log.warn("creating new healthchecker for ", up_conf.key)
 
     local checker, err = healthcheck.new({
-        name = "upstream#" .. up_conf.key,
+        name = get_healthcheck_name(up_conf.parent),
         shm_name = "upstream-healthcheck",
         checks = up_conf.checks,
         events_module = events:get_healthcheck_events_modele(),
@@ -127,26 +129,22 @@ function _M.timer_create_checker()
         if not res_conf then
             goto continue
         end
-
         do
-            local current_ver = res_conf.modifiedIndex .. "#" .. tostring(res_conf.value) .. "#" ..
-                                tostring(res_conf.value._nodes_ver or '')
-            if resource_ver ~= current_ver then
+            if resource_ver ~= res_conf.modifiedIndex then
                 goto continue
             end
-
-            local checker = create_checker(res_conf.value)
+            local checker = create_checker(res_conf.value.upstream or res_conf.value)
             if not checker then
                 goto continue
             end
+            _M.working_pool[resource_path] = {
+                version = resource_ver,
+                checker = checker
+            }
         end
-        _M.working_pool[resource_path] = {
-            version = resource_ver,
-            checker = checker
-        }
+
 
         core.log.warn("created healthchecker for ", resource_path, " version: ", resource_ver)
-
         ::continue::
         _M.waiting_pool[resource_path] = nil
     end
@@ -159,7 +157,6 @@ function _M.timer_working_pool_check()
 
     local working_snapshot = tab_clone(_M.working_pool)
     for resource_path, item in pairs(working_snapshot) do
-        -- Fetch latest configuration
         local res_conf = fetch_latest_conf(resource_path)
         if not res_conf then
             item.checker:delayed_clear(10)
