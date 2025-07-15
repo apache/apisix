@@ -189,7 +189,7 @@ local function parse_server_for_upstream_host(picked_server, upstream_scheme)
 end
 
 local function fetch_healthchecker(upstream)
-    if not upstream.checks then
+    if not upstream or not upstream.checks then
         return nil
     end
 

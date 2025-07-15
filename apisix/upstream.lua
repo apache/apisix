@@ -95,7 +95,7 @@ _M.get_healthchecker_name = get_healthchecker_name
 
 
 local function fetch_healthchecker(upstream)
-    if not upstream.checks then
+    if not upstream or not upstream.checks then
         return nil
     end
 

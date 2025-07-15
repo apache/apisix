@@ -832,7 +832,7 @@ function _M.http_body_filter_phase()
 end
 
 local function fetch_healthchecker(upstream)
-    if not upstream.checks then
+    if not upstream or not upstream.checks then
         return nil
     end
 
