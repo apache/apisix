@@ -831,9 +831,21 @@ function _M.http_body_filter_phase()
     common_phase("delayed_body_filter")
 end
 
+local function fetch_healthchecker(upstream)
+    if not upstream.checks then
+        return nil
+    end
+
+    local parent = upstream.parent
+    local resource_path = parent.key or upstream.key
+    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
+    core.log.warn("RESOURCE PATH", resource_path)
+    core.log.warn("RESOURCE VER", resource_ver)
+    return healthcheck_manager.fetch_checker(resource_path, resource_ver)
+end
 
 local function healthcheck_passive(api_ctx)
-    local checker = healthcheck_manager.fetch_checker(api_ctx.upstream_conf)
+    local checker = fetch_healthchecker(api_ctx.upstream_conf)
     if not checker then
         return
     end

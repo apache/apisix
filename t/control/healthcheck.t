@@ -84,6 +84,8 @@ upstreams:
             table.sort(res[1].nodes, function(a, b)
                 return a.ip < b.ip
             end)
+            ngx.log(ngx.WARN, "lolladke")
+            ngx.log(ngx.WARN, core.json.stably_encode(res[1].nodes))
             ngx.say(core.json.stably_encode(res[1].nodes))
 
             local _, _, res = t.test('/v1/healthcheck/upstreams/1',
@@ -96,6 +98,7 @@ upstreams:
 
             local _, _, res = t.test('/v1/healthcheck/upstreams/1',
                 ngx.HTTP_GET, nil, nil, {["Accept"] = "text/html"})
+            ngx.sleep(2.2)
             local xml2lua = require("xml2lua")
             local xmlhandler = require("xmlhandler.tree")
             local handler = xmlhandler:new()
@@ -105,7 +108,7 @@ upstreams:
             for _, td in ipairs(handler.root.html.body.table.tr) do
                 if td.td then
                     if td.td[4] == "127.0.0.2:1988" then
-                        assert(td.td[5] == "unhealthy", "127.0.0.2:1988 is not unhealthy")
+                        assert(td.td[5] == "mostly_healthy", "127.0.0.2:1988 is not mostly_healthy")
                         matches = matches + 1
                     end
                     if td.td[4] == "127.0.0.1:1980" then
@@ -114,6 +117,7 @@ upstreams:
                     end
                 end
             end
+            ngx.sleep(2.2)
             assert(matches == 2, "unexpected html")
         }
     }
@@ -123,8 +127,9 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.2(127.0.0.2:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.2(127.0.0.2:1988)'
 --- response_body
-[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
-[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"unhealthy"}]
+[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":1,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"mostly_healthy"}]
+[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":1,"timeout_failure":0},"hostname":"127.0.0.2","ip":"127.0.0.2","port":1988,"status":"mostly_healthy"}]
+--- timeout: 7
 
 
 
@@ -185,6 +190,7 @@ routes:
                 return a.port < b.port
             end)
             ngx.say(json.encode(res))
+            ngx.sleep(2)
         }
     }
 --- grep_error_log eval
@@ -193,8 +199,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"name":"/routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}]
-{"name":"/routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}
+[{"name":"/routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":1,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"mostly_healthy"}],"type":"http"}]
+{"name":"/routes/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":0,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1980,"status":"healthy"},{"counter":{"http_failure":0,"success":0,"tcp_failure":1,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"mostly_healthy"}],"type":"http"}
 
 
 
@@ -260,6 +266,7 @@ services:
                 return a.port < b.port
             end)
             ngx.say(json.encode(res))
+            ngx.sleep(2.2)
         }
     }
 --- grep_error_log eval
@@ -268,8 +275,8 @@ qr/unhealthy TCP increment \(.+\) for '[^']+'/
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
 --- response_body
-[{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}]
-{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":2,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"unhealthy"}],"type":"http"}
+[{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":1,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"mostly_healthy"}],"type":"http"}]
+{"name":"/services/1","nodes":[{"counter":{"http_failure":0,"success":0,"tcp_failure":1,"timeout_failure":0},"hostname":"127.0.0.1","ip":"127.0.0.1","port":1988,"status":"mostly_healthy"}],"type":"http"}
 
 
 
@@ -278,6 +285,7 @@ unhealthy TCP increment (2/2) for '127.0.0.1(127.0.0.1:1988)'
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin")
+            ngx.sleep(2.2)
             local code, body, res = t.test('/v1/healthcheck',
                 ngx.HTTP_GET)
             ngx.print(res)

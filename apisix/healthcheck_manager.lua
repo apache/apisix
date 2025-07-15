@@ -25,7 +25,11 @@ local _M = {
     working_pool = {},     -- resource_path -> {version = ver, checker = checker}
     waiting_pool = {}      -- resource_path -> resource_ver
 }
-
+local healthcheck_shdict_name = "upstream-healthcheck"
+local is_http = ngx.config.subsystem == "http"
+if not is_http then
+    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
+end
 local function fetch_latest_conf(resource_path)
     local resource_type, id
     -- Handle both formats:
@@ -48,6 +52,8 @@ local function fetch_latest_conf(resource_path)
         key = "/routes"
     elseif resource_type == "services" or resource_type == "service" then
         key = "/services"
+    elseif resource_type == "stream_routes" or resource_type == "stream_route" then
+        key = "/stream_routes"
     else
         core.log.error("unsupported resource type: ", resource_type)
         return nil
@@ -88,7 +94,7 @@ local function create_checker(up_conf)
 
     local checker, err = healthcheck.new({
         name = get_healthcheck_name(up_conf.parent),
-        shm_name = "upstream-healthcheck",
+        shm_name = healthcheck_shdict_name,
         checks = up_conf.checks,
         events_module = events:get_healthcheck_events_modele(),
     })
