@@ -239,7 +239,7 @@ create new checker: table: 0x
                 ngx.say(body)
                 return
             end
-            ngx.sleep(3)
+            ngx.sleep(5)
             ngx.say("ok")
         }
     }
@@ -254,4 +254,4 @@ create new checker: table: 0x
 try to release checker: table: 0x
 create new checker: table: 0x
 try to release checker: table: 0x
---- timeout: 15
+--- timeout: 17
