@@ -129,7 +129,8 @@ function _M.fetch_checker(upstream)
 
     local parent = upstream.parent
     local resource_path = parent.key or upstream.key
-    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
+    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex)
+                          .. tostring(upstream._nodes_ver or '')
     -- Check working pool first
     local working_item = _M.working_pool[resource_path]
     if working_item and working_item.version == resource_ver then

@@ -14,14 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local inspect = require("inspect")
 local require = require
 local core = require("apisix.core")
-local config_local   = require("apisix.core.config_local")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
-local events = require("apisix.events")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -30,13 +27,7 @@ local pcall = pcall
 local ngx_var = ngx.var
 local is_http = ngx.config.subsystem == "http"
 local upstreams
-local healthcheck
 local healthcheck_manager
-
-local healthcheck_shdict_name = "upstream-healthcheck"
-if not is_http then
-    healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
-end
 
 local set_upstream_tls_client_param
 local ok, apisix_ngx_upstream = pcall(require, "resty.apisix.upstream")
