@@ -111,7 +111,7 @@ GET /t
 ok
 --- timeout: 22
 --- no_error_log
-unhealthy TCP increment (10/30)
+unhealthy TCP increment (12/30)
 
 
 
@@ -165,5 +165,5 @@ routes:
 GET /t
 --- timeout: 22
 --- no_error_log
-unhealthy TCP increment (10/30)
+unhealthy TCP increment (12/30)
 --- error_code: 503

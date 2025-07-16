@@ -46,13 +46,13 @@ local function fetch_latest_conf(resource_path)
     end
 
     local key
-    if resource_type == "upstreams" or resource_type == "upstream" then
+    if resource_type == "upstreams" then
         key = "/upstreams"
-    elseif resource_type == "routes" or resource_type == "route" then
+    elseif resource_type == "routes" then
         key = "/routes"
-    elseif resource_type == "services" or resource_type == "service" then
+    elseif resource_type == "services" then
         key = "/services"
-    elseif resource_type == "stream_routes" or resource_type == "stream_route" then
+    elseif resource_type == "stream_routes" then
         key = "/stream_routes"
     else
         core.log.error("unsupported resource type: ", resource_type)
@@ -67,7 +67,7 @@ local function fetch_latest_conf(resource_path)
     local resource = data:get(id)
     if not resource then
         -- this can happen if the resource was deleted
-        -- after the function was called so we don't throw error
+        -- after the this function was called so we don't throw error
         core.log.warn("resource not found: ", id, " in ", key)
         return nil
     end
