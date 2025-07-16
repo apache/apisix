@@ -33,6 +33,8 @@ local is_http = ngx.config.subsystem == "http"
 if not is_http then
     healthcheck_shdict_name = healthcheck_shdict_name .. "-" .. ngx.config.subsystem
 end
+
+
 local function fetch_latest_conf(resource_path)
     local resource_type, id
     -- Handle both formats:
@@ -78,9 +80,13 @@ local function fetch_latest_conf(resource_path)
     return resource
 end
 
+
+
 local function get_healthcheck_name(value)
     return "upstream#" .. value.key
 end
+
+
 
 local function create_checker(up_conf)
     local local_conf = config_local.local_conf()
@@ -126,6 +132,7 @@ local function create_checker(up_conf)
     return checker
 end
 
+
 function _M.fetch_checker(upstream)
     if not upstream or not upstream.checks then
         return nil
@@ -151,6 +158,8 @@ function _M.fetch_checker(upstream)
     return nil
 end
 
+
+local inspect = require("inspect")
 function _M.fetch_node_status(checker, ip, port, hostname)
     -- check if the checker is valid
     if not checker or checker.dead then
@@ -159,6 +168,34 @@ function _M.fetch_node_status(checker, ip, port, hostname)
 
     return checker:get_target_status(ip, port, hostname)
 end
+
+
+local function add_working_pool(resource_path, resource_ver, checker)
+    local existing_checker = _M.working_pool[resource_path]
+    if existing_checker then
+        return false, "already exist"
+    end
+
+    _M.working_pool[resource_path] = {
+        version = resource_ver,
+        checker = checker
+    }
+    return true
+end
+
+local function find_in_working_pool(resource_path, resource_ver)
+    local checker = _M.working_pool[resource_path]
+    if not checker then
+        return nil  -- not found
+    end
+
+    if checker.version ~= resource_ver then
+        return nil  -- version not match
+    end
+    return checker
+end
+
+
 function _M.timer_create_checker()
     if core.table.nkeys(_M.waiting_pool) == 0 then
         return
@@ -166,11 +203,15 @@ function _M.timer_create_checker()
 
     local waiting_snapshot = tab_clone(_M.waiting_pool)
     for resource_path, resource_ver in pairs(waiting_snapshot) do
-        local res_conf = fetch_latest_conf(resource_path)
-        if not res_conf then
+        if find_in_working_pool(resource_path, resource_ver) then
+            core.log.info("resource: ", resource_path, " already in working pool with version: ", resource_ver)
             goto continue
         end
         do
+            local res_conf = fetch_latest_conf(resource_path)
+            if not res_conf then
+                goto continue
+            end
             local upstream = res_conf.value.upstream or res_conf.value
             local new_version = res_conf.modifiedIndex .. tostring(upstream._nodes_ver or '')
             core.log.warn("checking waiting pool for resource: ", resource_path,
@@ -182,17 +223,20 @@ function _M.timer_create_checker()
             if not checker then
                 goto continue
             end
-            _M.working_pool[resource_path] = {
-                version = resource_ver,
-                checker = checker
-            }
             core.log.info("create new checker: ", tostring(checker))
+            local ok, err = add_working_pool(resource_path, resource_ver, checker)
+            if not ok then
+                core.log.warn("failed to add checker to working pool: ", err)
+                checker:delayed_clear(10)
+                checker:stop()
+            end
         end
 
         ::continue::
         _M.waiting_pool[resource_path] = nil
     end
 end
+
 
 function _M.timer_working_pool_check()
     if core.table.nkeys(_M.working_pool) == 0 then
@@ -201,6 +245,7 @@ function _M.timer_working_pool_check()
 
     local working_snapshot = tab_clone(_M.working_pool)
     for resource_path, item in pairs(working_snapshot) do
+        --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
         if not res_conf then
             item.checker:delayed_clear(10)
@@ -215,6 +260,8 @@ function _M.timer_working_pool_check()
         if item.version ~= current_ver then
             item.checker:delayed_clear(10)
             item.checker:stop()
+            core.log.warn("REMOVING CHECKER for resource: ", resource_path,
+                        " current version: ", current_ver, " item version: ", item.version)
             core.log.info("try to release checker: ", tostring(item.checker))
             _M.working_pool[resource_path] = nil
         end
@@ -224,7 +271,7 @@ function _M.timer_working_pool_check()
 end
 
 function _M.init_worker()
-    timer_every(1, _M.timer_create_checker)
+    timer_every(2, _M.timer_create_checker)
     timer_every(1, _M.timer_working_pool_check)
 end
 
