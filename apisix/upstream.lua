@@ -94,20 +94,6 @@ end
 _M.get_healthchecker_name = get_healthchecker_name
 
 
-local function fetch_healthchecker(upstream)
-    if not upstream or not upstream.checks then
-        return nil
-    end
-
-    local parent = upstream.parent
-    local resource_path = parent.key or upstream.key
-    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
-    core.log.warn("RESOURCE PATH", resource_path)
-    core.log.warn("RESOURCE VER", resource_ver)
-    return healthcheck_manager.fetch_checker(resource_path, resource_ver)
-end
-
-
 local function set_upstream_scheme(ctx, upstream)
     -- plugins like proxy-rewrite may already set ctx.upstream_scheme
     if not ctx.upstream_scheme then
@@ -273,7 +259,7 @@ function _M.set_by_route(route, api_ctx)
             end
         end
 
-        fetch_healthchecker(up_conf)
+        healthcheck_manager.fetch_checker(up_conf)
         return
     end
 
@@ -284,7 +270,7 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
-    fetch_healthchecker(up_conf)
+    healthcheck_manager.fetch_checker(up_conf)
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then

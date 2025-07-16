@@ -123,7 +123,16 @@ local function create_checker(up_conf)
     return checker
 end
 
-function _M.fetch_checker(resource_path, resource_ver)
+function _M.fetch_checker(upstream)
+    if not upstream or not upstream.checks then
+        return nil
+    end
+
+    local parent = upstream.parent
+    local resource_path = parent.key or upstream.key
+    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
+    core.log.warn("RESOURCE PATH", resource_path)
+    core.log.warn("RESOURCE VER", resource_ver)
     -- Check working pool first
     local working_item = _M.working_pool[resource_path]
     if working_item and working_item.version == resource_ver then

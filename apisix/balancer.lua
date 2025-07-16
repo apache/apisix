@@ -188,18 +188,7 @@ local function parse_server_for_upstream_host(picked_server, upstream_scheme)
     return host
 end
 
-local function fetch_healthchecker(upstream)
-    if not upstream or not upstream.checks then
-        return nil
-    end
 
-    local parent = upstream.parent
-    local resource_path = parent.key or upstream.key
-    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
-    core.log.warn("RESOURCE PATH", resource_path)
-    core.log.warn("RESOURCE VER", resource_ver)
-    return healthcheck_manager.fetch_checker(resource_path, resource_ver)
-end
 -- pick_server will be called:
 -- 1. in the access phase so that we can set headers according to the picked server
 -- 2. each time we need to retry upstream
@@ -225,7 +214,7 @@ local function pick_server(route, ctx)
 
     local version = ctx.upstream_version
     local key = ctx.upstream_key
-    local checker = fetch_healthchecker(up_conf)
+    local checker = healthcheck_manager.fetch_checker(up_conf)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if ctx.balancer_try_count > 1 then
