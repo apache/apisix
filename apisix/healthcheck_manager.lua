@@ -14,6 +14,10 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local require = require
+local ipairs   = ipairs
+local pairs    = pairs
+local tostring = tostring
 local core = require("apisix.core")
 local config_local   = require("apisix.core.config_local")
 local healthcheck
