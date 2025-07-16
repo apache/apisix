@@ -480,7 +480,7 @@ describe("Admin - Standalone", () => {
       expect(resp.status).toEqual(400);
       expect(resp.data).toMatchObject({
         error_msg:
-          'invalid configuration: property \"uri\" validation failed: wrong type: expected string, got number',
+          'invalid routes at index 0, err: invalid configuration: property \"uri\" validation failed: wrong type: expected string, got number',
       });
     });
 
@@ -493,29 +493,30 @@ describe("Admin - Standalone", () => {
     });
 
     it("update config (invalid plugin)", async () => {
-      const errorMsg = "unknown plugin [invalid-plugin]";
-
-      const resp = await clientException.put(ENDPOINT, routeWithUnknownPlugins);
+      const resp = await clientException.put(ENDPOINT, servicesWithUnknownPlugins);
       expect(resp.status).toEqual(400);
       expect(resp.data).toEqual({
-        error_msg: errorMsg,
+        error_msg: "invalid services at index 0, err: unknown plugin [invalid-plugin]",
       });
-      const resp2 = await clientException.put(ENDPOINT, servicesWithUnknownPlugins);
+      const resp2 = await clientException.put(ENDPOINT, routeWithUnknownPlugins);
       expect(resp2.status).toEqual(400);
       expect(resp2.data).toEqual({
-        error_msg: errorMsg,
+        error_msg: "invalid routes at index 0, err: unknown plugin [invalid-plugin]",
       });
     });
 
     it("update config (invalid upstream)", async () => {
-      const errorMsg = "invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"args_invalid\""
-      const resp = await clientException.put(ENDPOINT, routeWithInvalidUpstream);
+      const resp = await clientException.put(ENDPOINT, serviceWithInvalidUpstream);
       expect(resp.status).toEqual(400);
-      expect(resp.data).toEqual({ error_msg: errorMsg });
+      expect(resp.data).toEqual({ 
+        error_msg: "invalid services at index 0, err: invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"args_invalid\"",
+      });
 
       const resp2 = await clientException.put(ENDPOINT, routeWithInvalidUpstream);
       expect(resp2.status).toEqual(400);
-      expect(resp2.data).toEqual({ error_msg: errorMsg });
+      expect(resp2.data).toEqual({ 
+        error_msg: "invalid routes at index 0, err: invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"args_invalid\"",
+      });
     });
   });
 });

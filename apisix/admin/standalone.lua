@@ -212,11 +212,13 @@ local function update(ctx)
             local item_checker = resource.checker
             local id_set = {}
 
-            for _, item in ipairs(items) do
+            for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
                 local valid, err = check_conf(item_checker, item_schema, item_temp, key)
                 if not valid then
-                    core.response.exit(400, err)
+                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
+                    local err_msg = type(err) == "table" and err.error_msg or err
+                    core.response.exit(400, { error_msg = err_prefix .. err_msg })
                 end
                 -- prevent updating resource with the same ID
                 -- (e.g., service ID or other resource IDs) in a single request
