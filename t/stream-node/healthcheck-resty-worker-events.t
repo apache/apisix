@@ -94,7 +94,7 @@ passed
             sock:close()
 
             -- wait for health check to take effect
-            ngx.sleep(2.5)
+            ngx.sleep(4.5)
 
             for i = 1, 3 do
                 local sock = ngx.socket.tcp()

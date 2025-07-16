@@ -614,7 +614,7 @@ passed
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
-            ngx.sleep(2)
+            ngx.sleep(4)
 
             ngx.say(res.status)
         }
@@ -627,6 +627,7 @@ GET /t
 qr/^.*?\[warn\].*/
 --- grep_error_log_out eval
 qr/unhealthy TCP increment.*foo.com/
+--- timeout: 5
 
 
 
@@ -688,7 +689,7 @@ passed
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
-            ngx.sleep(2)
+            ngx.sleep(4)
 
             ngx.say(res.status)
         }

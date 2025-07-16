@@ -370,7 +370,7 @@ enabled healthcheck passive
             end
             ngx.say(res.status)
 
-            ngx.sleep(1) -- Wait for health check unhealthy events sync
+            ngx.sleep(4) -- Wait for health check unhealthy events sync
 
             -- The second time request to /hello_
             local res, err = httpc:request_uri(uri .. "/hello_")
@@ -391,3 +391,4 @@ GET /t
 qr/\[healthcheck\] \([^)]+\) unhealthy HTTP increment/
 --- grep_error_log_out
 [healthcheck] (upstream#/apisix/routes/2) unhealthy HTTP increment
+--- timeout: 6

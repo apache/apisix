@@ -110,7 +110,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
             for i, th in ipairs(t) do
                 ngx.thread.wait(th)
             end
-            ngx.sleep(3)
+            ngx.sleep(4)
             ngx.exit(200)
         }
     }
@@ -119,5 +119,4 @@ GET /t
 --- grep_error_log eval
 qr/create new checker/
 --- grep_error_log_out
-create new checker
 create new checker

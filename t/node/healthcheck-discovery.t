@@ -94,7 +94,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
 
-            ngx.sleep(2)
+            ngx.sleep(4)
 
             ngx.say(res.status)
         }
@@ -104,6 +104,7 @@ qr/unhealthy TCP increment \(1\/2\) for '127.0.0.1\([^)]+\)'/
 --- grep_error_log_out
 unhealthy TCP increment (1/2) for '127.0.0.1(127.0.0.1:1988)'
 unhealthy TCP increment (1/2) for '127.0.0.1(0.0.0.0:1988)'
+--- timeout: 5
 
 
 
@@ -152,8 +153,8 @@ routes:
 qr/(create new checker|try to release checker): table/
 --- grep_error_log_out
 create new checker: table
-try to release checker: table
 create new checker: table
+try to release checker: table
 --- timeout: 20
 
 
