@@ -508,13 +508,13 @@ describe("Admin - Standalone", () => {
     it("update config (invalid upstream)", async () => {
       const resp = await clientException.put(ENDPOINT, serviceWithInvalidUpstream);
       expect(resp.status).toEqual(400);
-      expect(resp.data).toEqual({ 
+      expect(resp.data).toEqual({
         error_msg: "invalid services at index 0, err: invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"args_invalid\"",
       });
 
       const resp2 = await clientException.put(ENDPOINT, routeWithInvalidUpstream);
       expect(resp2.status).toEqual(400);
-      expect(resp2.data).toEqual({ 
+      expect(resp2.data).toEqual({
         error_msg: "invalid routes at index 0, err: invalid configuration: failed to match pattern \"^((uri|server_name|server_addr|request_uri|remote_port|remote_addr|query_string|host|hostname|mqtt_client_id)|arg_[0-9a-zA-z_-]+)$\" with \"args_invalid\"",
       });
     });
