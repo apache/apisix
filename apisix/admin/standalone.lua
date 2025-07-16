@@ -115,7 +115,9 @@ local function check_conf(checker, schema, item, typ)
         core.string.find(str_id, "/credentials/") then
         local credential_checker = resources.credentials.checker
         local credential_schema = resources.credentials.schema
-        return credential_checker(item.id, item, false, credential_schema, nil, true)
+        return credential_checker(item.id, item, false, credential_schema, {
+            skip_references_check = true,
+        })
     end
 
     local secret_type
@@ -128,7 +130,10 @@ local function check_conf(checker, schema, item, typ)
         end
         secret_type = str_sub(str_id, 1, idx - 1)
     end
-    return checker(item.id, item, false, schema, secret_type, true)
+    return checker(item.id, item, false, schema, {
+        secret_type = secret_type,
+        skip_references_check = true,
+    })
 end
 
 

@@ -19,7 +19,7 @@ local resource          = require("apisix.admin.resource")
 local apisix_ssl        = require("apisix.ssl")
 
 
-local function check_conf(id, conf, need_id, schema, secret_type, skip_references_check)
+local function check_conf(id, conf, need_id, schema, opts)
     local ok, err = apisix_ssl.check_ssl_conf(false, conf)
     if not ok then
         return nil, {error_msg = err}

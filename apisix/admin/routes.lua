@@ -50,7 +50,8 @@ local function validate_post_arg(node)
 end
 
 
-local function check_conf(id, conf, need_id, schema, secret_type, skip_references_check)
+local function check_conf(id, conf, need_id, schema, opts)
+    opts = opts or {}
     if conf.host and conf.hosts then
         return nil, {error_msg = "only one of host or hosts is allowed"}
     end
@@ -74,7 +75,7 @@ local function check_conf(id, conf, need_id, schema, secret_type, skip_reference
     end
 
     local upstream_id = conf.upstream_id
-    if upstream_id and not skip_references_check then
+    if upstream_id and not opts.skip_references_check then
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -91,7 +92,7 @@ local function check_conf(id, conf, need_id, schema, secret_type, skip_reference
     end
 
     local service_id = conf.service_id
-    if service_id and not skip_references_check then
+    if service_id and not opts.skip_references_check then
         local key = "/services/" .. service_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -108,7 +109,7 @@ local function check_conf(id, conf, need_id, schema, secret_type, skip_reference
     end
 
     local plugin_config_id = conf.plugin_config_id
-    if plugin_config_id and not skip_references_check then
+    if plugin_config_id and not opts.skip_references_check then
         local key = "/plugin_configs/" .. plugin_config_id
         local res, err = core.etcd.get(key)
         if not res then

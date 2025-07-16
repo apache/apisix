@@ -22,10 +22,14 @@ local resource = require("apisix.admin.resource")
 local pcall = pcall
 
 
-local function check_conf(id, conf, need_id, schema, secret_type, skip_references_check)
-    local ok, secret_manager = pcall(require, "apisix.secret." .. secret_type)
+local function check_conf(id, conf, need_id, schema, opts)
+    opts = opts or {}
+    if not opts.secret_type then
+        return nil, {error_msg = "missing secret type"}
+    end
+    local ok, secret_manager = pcall(require, "apisix.secret." .. opts.secret_type)
     if not ok then
-        return false, {error_msg = "invalid secret manager: " .. secret_type}
+        return false, {error_msg = "invalid secret manager: " .. opts.secret_type}
     end
 
     local ok, err = core.schema.check(secret_manager.schema, conf)

@@ -19,14 +19,15 @@ local resource = require("apisix.admin.resource")
 local stream_route_checker = require("apisix.stream.router.ip_port").stream_route_checker
 
 
-local function check_conf(id, conf, need_id, schema, secret_type, skip_references_check)
+local function check_conf(id, conf, need_id, schema, opts)
+    opts = opts or {}
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     local upstream_id = conf.upstream_id
-    if upstream_id and not skip_references_check then
+    if upstream_id and not opts.skip_references_check then
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -43,7 +44,7 @@ local function check_conf(id, conf, need_id, schema, secret_type, skip_reference
     end
 
     local service_id = conf.service_id
-    if service_id and not skip_references_check then
+    if service_id and not opts.skip_references_check then
         local key = "/services/" .. service_id
         local res, err = core.etcd.get(key)
         if not res then
@@ -72,12 +73,7 @@ return resource.new({
     name = "stream_routes",
     kind = "stream route",
     schema = core.schema.stream_route,
-    checker = function (id, conf, need_id, schema)
-        return check_conf(id, conf, need_id, schema, false)
-    end,
-    standalone_checker = function (id, conf, need_id, schema)
-        return check_conf(id, conf, need_id, schema, true)
-    end,
+    checker = check_conf,
     unsupported_methods = { "patch" },
     list_filter_fields = {
         service_id = true,
