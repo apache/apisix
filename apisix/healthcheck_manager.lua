@@ -19,7 +19,6 @@ local config_local   = require("apisix.core.config_local")
 local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
-local inspect = require("inspect")
 local timer_every = ngx.timer.every
 local _M = {
     working_pool = {},     -- resource_path -> {version = ver, checker = checker}
@@ -131,8 +130,6 @@ function _M.fetch_checker(upstream)
     local parent = upstream.parent
     local resource_path = parent.key or upstream.key
     local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex) .. tostring(upstream._nodes_ver or '')
-    core.log.warn("RESOURCE PATH", resource_path)
-    core.log.warn("RESOURCE VER", resource_ver)
     -- Check working pool first
     local working_item = _M.working_pool[resource_path]
     if working_item and working_item.version == resource_ver then
@@ -144,7 +141,7 @@ function _M.fetch_checker(upstream)
     end
 
     -- Add to waiting pool with version
-    core.log.warn("adding ", resource_path, " to waiting pool with version: ", resource_ver)
+    core.log.info("adding ", resource_path, " to waiting pool with version: ", resource_ver)
     _M.waiting_pool[resource_path] = resource_ver
     return nil
 end
@@ -193,11 +190,10 @@ function _M.timer_create_checker()
 end
 
 function _M.timer_working_pool_check()
-    core.log.warn("TIMER WORKING pool")
     if core.table.nkeys(_M.working_pool) == 0 then
         return
     end
-    core.log.warn("TIMER WORKING pool -2 ", inspect(_M.working_pool))
+
     local working_snapshot = tab_clone(_M.working_pool)
     for resource_path, item in pairs(working_snapshot) do
         local res_conf = fetch_latest_conf(resource_path)
@@ -209,7 +205,7 @@ function _M.timer_working_pool_check()
             goto continue
         end
         local current_ver = res_conf.modifiedIndex ..  tostring(res_conf.value._nodes_ver or '')
-        core.log.warn("checking working pool for resource: ", resource_path,
+        core.log.info("checking working pool for resource: ", resource_path,
                     " current version: ", current_ver, " item version: ", item.version)
         if item.version ~= current_ver then
             item.checker:delayed_clear(10)

@@ -152,3 +152,139 @@ proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
 proxy request to 127.0.0.1:1995 while connecting to upstream
 try to release checker
+
+
+
+=== TEST 3: create stream route with a upstream that enable active and passive healthcheck, \
+            configure active healthcheck with a high unhealthy threshold, \
+            two upstream nodes: one healthy + one unhealthy, unhealthy node with high priority
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "remote_addr": "127.0.0.1",
+                    "upstream": {
+                        "nodes": [
+                            { "host": "127.0.0.1", "port": 1995, "weight": 100, "priority": 0 },
+                            { "host": "127.0.0.1", "port": 9995, "weight": 100, "priority": 1 }
+                        ],
+                        "type": "roundrobin",
+                        "retries": 0,
+                        "checks": {
+                            "active": {
+                                "type": "tcp",
+                                "timeout": 1,
+                                "healthy": {
+                                    "interval": 60,
+                                    "successes": 2
+                                },
+                                "unhealthy": {
+                                    "interval": 1,
+                                    "tcp_failures": 254,
+                                    "timeouts": 1
+                                }
+                            },
+                            "passive": {
+                                "type": "tcp",
+                                "healthy": {
+                                    "successes": 1
+                                },
+                                "unhealthy": {
+                                    "tcp_failures": 1
+                                }
+                            }
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 4: hit stream routes
+--- stream_conf_enable
+--- config
+    location /t {
+        content_by_lua_block {
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local data, _ = sock:receive()
+            assert(data == nil, "first request should fail")
+            sock:close()
+            ngx.sleep(8)
+            -- Due to the implementation of lua-resty-events, it relies on the kernel and
+            -- the Nginx event loop to process socket connections.
+            -- When lua-resty-healthcheck handles passive healthchecks and uses lua-resty-events
+            -- as the events module, the synchronization of the first event usually occurs
+            -- before the start of the passive healthcheck. So when the execution finishes and
+            -- healthchecker tries to record the healthcheck status, it will not be able to find
+            -- an existing target (because the synchronization event has not finished yet), which
+            -- will lead to some anomalies that deviate from the original test case, so compatibility
+            -- operations are performed here.
+            local sock = ngx.socket.tcp()
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local data, _ = sock:receive()
+            assert(data == nil, "first request should fail")
+            sock:close()
+
+            for i = 1, 3 do
+                local sock = ngx.socket.tcp()
+                local ok, err = sock:connect("127.0.0.1", 1985)
+                if not ok then
+                    ngx.say("failed to connect: ", err)
+                    return
+                end
+
+                local _, err = sock:send("mmm")
+                if err then
+                    ngx.say("failed to send: ", err)
+                    return
+                end
+
+                local data, err = sock:receive()
+                if err then
+                    ngx.say("failed to receive: ", err)
+                    return
+                end
+
+                assert(data == "hello world", "response should be 'hello world'")
+
+                sock:close()
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+--- error_log
+proxy request to 127.0.0.1:9995 while connecting to upstream
+connect() failed (111: Connection refused) while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995"
+enabled healthcheck passive while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995",
+unhealthy TCP increment (1/1) for '(127.0.0.1:9995)' while connecting to upstream, client: 127.0.0.1, server: 0.0.0.0:1985, upstream: "127.0.0.1:9995",
+proxy request to 127.0.0.1:1995 while connecting to upstream
+proxy request to 127.0.0.1:1995 while connecting to upstream
+proxy request to 127.0.0.1:1995 while connecting to upstream
+--- timeout: 10

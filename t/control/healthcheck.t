@@ -84,7 +84,6 @@ upstreams:
             table.sort(res[1].nodes, function(a, b)
                 return a.ip < b.ip
             end)
-            ngx.log(ngx.WARN, "lolladke")
             ngx.log(ngx.WARN, core.json.stably_encode(res[1].nodes))
             ngx.say(core.json.stably_encode(res[1].nodes))
 

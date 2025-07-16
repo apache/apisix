@@ -268,6 +268,8 @@ routes:
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             end
             ngx.sleep(3)
+            --- active health check is created async after at least 1 second so it will take effect
+            --- from next request. And first request will just trigger it.
             do
                 local httpc = http.new()
                 local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
@@ -277,4 +279,104 @@ routes:
     }
 --- error_log
 client request host: 127.0.0.1
+--- timeout: 10
+
+
+
+=== TEST 5: pass the configured host (pass_host == "node")
+--- apisix_yaml
+routes:
+    - id: 1
+      uri: /server_port
+      upstream:
+          type: roundrobin
+          pass_host: node
+          nodes:
+              "localhost:1980": 1
+              "127.0.0.1:1981": 1
+          checks:
+              active:
+                  http_path: /status
+                  healthy:
+                      interval: 1
+                      successes: 1
+                  unhealthy:
+                      interval: 1
+                      http_failures: 2
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            end
+
+            --- active health check is created async after at least 1 second so it will take effect
+            --- from next request. And first request will just trigger it.
+            do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            end
+            ngx.sleep(3)
+        }
+    }
+--- error_log
+client request host: localhost
+client request host: 127.0.0.1
+--- timeout: 10
+
+
+
+=== TEST 6: pass the configured host (pass_host == "rewrite")
+--- apisix_yaml
+routes:
+    - id: 1
+      uri: /server_port
+      upstream:
+          type: roundrobin
+          pass_host: rewrite
+          upstream_host: foo.com
+          nodes:
+              "localhost:1980": 1
+              "127.0.0.1:1981": 1
+          checks:
+              active:
+                  http_path: /status
+                  healthy:
+                      interval: 1
+                      successes: 1
+                  unhealthy:
+                      interval: 1
+                      http_failures: 2
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/server_port"
+
+            do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            end
+            --- active health check is created async after at least 1 second so it will take effect
+            --- from next request. And first request will just trigger it.
+            do
+                local httpc = http.new()
+                local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            end
+            ngx.sleep(3)
+        }
+    }
+--- no_error_log
+client request host: localhost
+client request host: 127.0.0.1
+--- error_log
+client request host: foo.com
 --- timeout: 10
