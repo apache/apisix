@@ -21,6 +21,7 @@ local http     = require("resty.http")
 local pairs    = pairs
 local type     = type
 local tostring = tostring
+local sub_str  = string.sub
 
 local schema = {
     type = "object",
@@ -124,13 +125,19 @@ function _M.access(conf, ctx)
             if type(value) == "number" then
                 value = tostring(value)
             end
-            local resolve_value, err = core.utils.resolve_var(value, ctx.var)
-            if not err then
-                auth_headers[header] = resolve_value
-            end
-            if err then
-                core.log.error("failed to resolve variable in extra header '",
-                                header, "': ",value,": ",err)
+            if core.string.has_prefix(value, "$") then
+                -- If the value starts with a dollar sign, treat it as a variable
+                -- and resolve it from the context.
+                local sub_str_len = #value - 1  -- Exclude the dollar sign
+                if sub_str_len > 0 then
+                    local trimmed_value = sub_str(value, 2)  -- Remove the dollar sign
+                    local resolve_value = ctx.var[trimmed_value]
+                    if resolve_value then
+                        auth_headers[header] = resolve_value
+                    end
+                end
+            else
+                auth_headers[header] = value
             end
         end
     end
