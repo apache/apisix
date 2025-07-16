@@ -176,6 +176,12 @@ local schema = {
             type = "boolean",
             default = true
         },
+        set_id_token_encoded_header = {
+            description = "Whether the encoded ID token should be added in the X-ID-Token-Encoded header to " ..
+                "the request for downstream.",
+            type = "boolean",
+            default = true
+        },
         set_userinfo_header = {
             description = "Whether the user info token should be added in the X-Userinfo " ..
                 "header to the request for downstream.",
@@ -694,6 +700,11 @@ function _M.rewrite(plugin_conf, ctx)
             if response.id_token and conf.set_id_token_header then
                 local token = core.json.encode(response.id_token)
                 core.request.set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
+            end
+
+            -- Add X-ID-Token-Encoded header, maybe.
+            if session.data.id_token_enc and conf.set_id_token_encoded_header then
+                core.request.set_header(ctx, "X-ID-Token-Encoded", session.data.id_token_enc)
             end
 
             -- Add X-Userinfo header, maybe.
