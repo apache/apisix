@@ -159,7 +159,6 @@ function _M.fetch_checker(upstream)
 end
 
 
-local inspect = require("inspect")
 function _M.fetch_node_status(checker, ip, port, hostname)
     -- check if the checker is valid
     if not checker or checker.dead then
@@ -204,7 +203,8 @@ function _M.timer_create_checker()
     local waiting_snapshot = tab_clone(_M.waiting_pool)
     for resource_path, resource_ver in pairs(waiting_snapshot) do
         if find_in_working_pool(resource_path, resource_ver) then
-            core.log.info("resource: ", resource_path, " already in working pool with version: ", resource_ver)
+            core.log.info("resource: ", resource_path, " already in working pool with version: ",
+                           resource_ver)
             goto continue
         end
         do
