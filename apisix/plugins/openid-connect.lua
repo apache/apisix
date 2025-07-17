@@ -176,7 +176,7 @@ local schema = {
             type = "boolean",
             default = true
         },
-        set_original_id_token_header = {
+        set_id_token_original_header = {
             description = "Whether the ID token should be added in the X-ID-Token-Original header to " ..
                 "the request for downstream.",
             type = "boolean",
@@ -697,7 +697,13 @@ function _M.rewrite(plugin_conf, ctx)
             add_access_token_header(ctx, conf, response.access_token)
 
             -- Add X-ID-Token header, maybe.
-            if session and session.data and session.data.enc_id_token and conf.set_original_id_token_header then
+            if response.id_token and conf.set_id_token_header then
+                local token = core.json.encode(response.id_token)
+                core.request.set_header(ctx, "X-ID-Token", ngx.encode_base64(token))
+            end
+
+            -- Add X-ID-Token-Original header, maybe.
+            if session and session.data and session.data.enc_id_token and conf.set_id_token_original_header then
                 local token = session.data.enc_id_token
                 core.request.set_header(ctx, "X-ID-Token-Original", token)
             end
