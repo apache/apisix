@@ -191,7 +191,8 @@ function _M.timer_create_checker()
     for resource_path, resource_ver in pairs(waiting_snapshot) do
         do
             if find_in_working_pool(resource_path, resource_ver) then
-                core.log.info("resource: ", resource_path, " already in working pool with version: ",
+                core.log.info("resource: ", resource_path,
+                             " already in working pool with version: ",
                                resource_ver)
                 goto continue
             end
@@ -267,13 +268,13 @@ function _M.init_worker()
             end
             timer_create_checker_running = true
             pcall(_M.timer_create_checker)
-            timer_create_checker_running = false 
+            timer_create_checker_running = false
         end
     end)
     timer_every(1, function ()
         if not exiting() then
             if timer_working_pool_check_running then
-                core.log.warn("timer_working_pool_check is already running, skipping this iteration")
+                core.log.warn("timer_working_pool_check is already running skipping iteration")
                 return
             end
             timer_working_pool_check_running = true

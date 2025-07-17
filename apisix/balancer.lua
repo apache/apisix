@@ -214,7 +214,8 @@ local function pick_server(route, ctx)
 
     local version = ctx.upstream_version
     local key = ctx.upstream_key
-    local resource_version = up_conf.resource_version and (up_conf.resource_version .. tostring(up_conf._nodes_ver or ''))
+    local resource_version = up_conf.resource_version and (up_conf.resource_version ..
+                             tostring(up_conf._nodes_ver or ''))
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
 
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1

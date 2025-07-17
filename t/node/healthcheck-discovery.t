@@ -145,15 +145,15 @@ routes:
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(25)
+            ngx.sleep(20)
             ngx.say(res.status)
         }
     }
 --- grep_error_log eval
-qr/(create new checker|try to release checker): table/
+qr/(create new checker|releasing existing checker): table/
 --- grep_error_log_out
 create new checker: table
-try to release checker: table
+releasing existing checker: table
 create new checker: table
 --- timeout: 30
 
