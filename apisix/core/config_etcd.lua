@@ -1028,6 +1028,13 @@ function _M.new(key, opts)
 
             local dir_res, headers = res.body, res.headers
             load_full_data(obj, dir_res, headers)
+        else
+            local empty_data = {
+                body = {
+                    nodes = {},
+                },
+            }
+            load_full_data(obj, empty_data, nil)
         end
 
         ngx_timer_at(0, _automatic_fetch, obj)

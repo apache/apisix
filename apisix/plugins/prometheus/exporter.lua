@@ -62,8 +62,7 @@ local metrics = {}
 local inner_tab_arr = {}
 
 local exporter_timer_running = false
-local exporter_timer_inited = false
--- init_exporter_timer will be defined below
+-- will be defined below
 local init_exporter_timer
 
 local function gen_arr(...)
@@ -514,7 +513,11 @@ local function collect()
 end
 
 
-local function exporter_timer()
+local function exporter_timer(premature)
+    if premature then
+        return
+    end
+
     local refresh_interval = DEFAULT_REFRESH_INTERVAL
     local attr = plugin.plugin_attr("prometheus")
     if attr and attr.refresh_interval then
@@ -545,7 +548,7 @@ function init_exporter_timer()
         return
     end
 
-    ngx.timer.at(0, exporter_timer)
+    exporter_timer()
 end
 
 local function get_cached_metrics()
@@ -556,10 +559,6 @@ local function get_cached_metrics()
     end
 
     local cached_metrics_text = ngx.shared["prometheus-metrics"]:get(CACHED_METRICS_KEY)
-    if not cached_metrics_text then
-        core.log.error("prometheus: cached metrics text is not found")
-        return 500, {message = "An unexpected error occurred"}
-    end
 
     core.response.set_header("content_type", "text/plain")
     return 200, cached_metrics_text
