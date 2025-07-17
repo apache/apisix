@@ -1030,9 +1030,7 @@ function _M.new(key, opts)
             load_full_data(obj, dir_res, headers)
         else
             local empty_data = {
-                body = {
-                    nodes = {},
-                },
+                nodes = {},
             }
             load_full_data(obj, empty_data, nil)
         end

@@ -1101,6 +1101,8 @@ function _M.stream_init_worker()
     load_balancer = require("apisix.balancer")
 
     local_conf = core.config.local_conf()
+
+    plugin.init_prometheus()
 end
 
 

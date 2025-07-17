@@ -548,7 +548,7 @@ function init_exporter_timer()
         return
     end
 
-    exporter_timer()
+    ngx.timer.at(0, exporter_timer)
 end
 
 local function get_cached_metrics()
