@@ -203,6 +203,7 @@ true
                                 "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": false,
+                                "set_id_token_original_header": true,
                                 "set_id_token_header": true,
                                 "set_userinfo_header": true,
                                 "set_refresh_token_header": true
@@ -281,6 +282,7 @@ host: 127.0.0.1:1984
 user-agent: .*
 x-access-token: ey.*
 x-id-token: ey.*
+x-id-token-original: ey.*\..*\..*
 x-real-ip: 127.0.0.1
 x-refresh-token: ey.*
 x-userinfo: ey.*
