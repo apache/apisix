@@ -79,12 +79,6 @@ end
 _M.set = set_directly
 
 
-local function get_healthchecker_name(value)
-    return "upstream#" .. value.key
-end
-_M.get_healthchecker_name = get_healthchecker_name
-
-
 local function set_upstream_scheme(ctx, upstream)
     -- plugins like proxy-rewrite may already set ctx.upstream_scheme
     if not ctx.upstream_scheme then
@@ -220,8 +214,8 @@ function _M.set_by_route(route, api_ctx)
         up_conf.nodes = new_nodes
     end
 
-    local id = up_conf.parent.value.id
-    local conf_version = up_conf.parent.modifiedIndex
+    local id = up_conf.resource_id
+    local conf_version = up_conf.resource_version
     -- include the upstream object as part of the version, because the upstream will be changed
     -- by service discovery or dns resolver.
     set_directly(api_ctx, id, conf_version .. "#" .. tostring(up_conf) .. "#"
@@ -447,16 +441,14 @@ function _M.check_upstream_conf(conf)
     return check_upstream_conf(false, conf)
 end
 
-local inspect = require("inspect")
+
 local function filter_upstream(value, parent)
     if not value then
         return
     end
-
-    value.parent = parent
     value.resource_key = ((parent and parent.key) or value.key)
-    core.log.warn("VALUE IS ", inspect(value))
     value.resource_version = ((parent and parent.modifiedIndex) or value.modifiedIndex)
+    value.resource_id = ((parent and parent.value.id) or value.id)
     if not is_http and value.scheme == "http" then
         -- For L4 proxy, the default scheme is "tcp"
         value.scheme = "tcp"

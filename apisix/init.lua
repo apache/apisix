@@ -252,7 +252,7 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    route.dns_value = core.table.deepcopy(route.value, { shallows = { "self.upstream.parent"}})
+    route.dns_value = core.table.deepcopy(route.value)
     route.dns_value.upstream.nodes = new_nodes
     if not route.dns_value._nodes_ver then
         route.dns_value._nodes_ver = 0

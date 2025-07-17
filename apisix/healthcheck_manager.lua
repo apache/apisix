@@ -35,6 +35,12 @@ if not is_http then
 end
 
 
+local function get_healthchecker_name(value)
+    return "upstream#" .. (value.resource_key or value.upstream.resource_key)
+end
+_M.get_healthchecker_name = get_healthchecker_name
+
+
 local function fetch_latest_conf(resource_path)
     local resource_type, id
     -- Handle both formats:
@@ -81,20 +87,13 @@ local function fetch_latest_conf(resource_path)
 end
 
 
-
-local function get_healthcheck_name(value)
-    return "upstream#" .. value.key
-end
-
-
-
 local function create_checker(up_conf)
     local local_conf = config_local.local_conf()
     if local_conf and local_conf.apisix and local_conf.apisix.disable_upstream_healthcheck then
         core.log.info("healthchecker won't be created: disabled upstream healthcheck")
         return nil
     end
-    core.log.warn("creating healthchecker for upstream: ", up_conf.key)
+    core.log.warn("creating healthchecker for upstream: ", up_conf.resource_key)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
@@ -102,7 +101,7 @@ local function create_checker(up_conf)
     core.log.warn("creating new healthchecker for ", up_conf.key)
 
     local checker, err = healthcheck.new({
-        name = get_healthcheck_name(up_conf.parent),
+        name = get_healthchecker_name(up_conf),
         shm_name = healthcheck_shdict_name,
         checks = up_conf.checks,
         events_module = events:get_healthcheck_events_modele(),
