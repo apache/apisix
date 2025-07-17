@@ -794,9 +794,12 @@ routes:
       discovery_type: consul
       type: roundrobin
 #END
+--- http_config
+    map $http_host $backend {
+        default service_a;
+    }
 --- config
     location /t {
-        set $backend "service_a";
         content_by_lua_block {
             local http = require "resty.http"
             local httpc = http.new()
@@ -830,13 +833,13 @@ routes:
       discovery_type: consul
       type: roundrobin
 #END
+--- http_config
+    map $http_host $backend {
+        default "";
+    }
 --- config
     location /t {
-        set $backend "service_a";
         content_by_lua_block {
-            -- Set empty nginx map variable
-            ngx.var.backend = ""
-
             local http = require "resty.http"
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
