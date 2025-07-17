@@ -170,16 +170,10 @@ end
 
 
 local function add_working_pool(resource_path, resource_ver, checker)
-    local existing_checker = _M.working_pool[resource_path]
-    if existing_checker then
-        return false, "already exist"
-    end
-
     _M.working_pool[resource_path] = {
         version = resource_ver,
         checker = checker
     }
-    return true
 end
 
 local function find_in_working_pool(resource_path, resource_ver)
@@ -219,17 +213,20 @@ function _M.timer_create_checker()
             if resource_ver ~= new_version then
                 goto continue
             end
+
+            -- if a checker exists then delete it before creating a new one
+            local existing_checker = _M.working_pool[resource_path]
+            if existing_checker then
+                existing_checker.checker:delayed_clear(10)
+                existing_checker.checker:stop()
+                core.log.info("releasing existing checker: ", tostring(existing_checker.checker))
+            end
             local checker = create_checker(upstream)
             if not checker then
                 goto continue
             end
             core.log.info("create new checker: ", tostring(checker))
-            local ok, err = add_working_pool(resource_path, resource_ver, checker)
-            if not ok then
-                core.log.warn("failed to add checker to working pool: ", err)
-                checker:delayed_clear(10)
-                checker:stop()
-            end
+            add_working_pool(resource_path, resource_ver, checker)
         end
 
         ::continue::

@@ -102,7 +102,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.say(res.body)
-            ngx.sleep(10)
+            ngx.sleep(20)
         }
     }
 --- request
@@ -111,7 +111,7 @@ GET /t
 ok
 --- timeout: 37
 --- no_error_log
-unhealthy TCP increment (12/30)
+unhealthy TCP increment (20/30)
 
 
 
@@ -158,12 +158,12 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.status = res.status
-            ngx.sleep(10)
+            ngx.sleep(20)
         }
     }
 --- request
 GET /t
 --- timeout: 37
 --- no_error_log
-unhealthy TCP increment (12/30)
+unhealthy TCP increment (20/30)
 --- error_code: 503
