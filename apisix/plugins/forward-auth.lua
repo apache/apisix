@@ -15,9 +15,12 @@
 -- limitations under the License.
 --
 
-local ipairs = ipairs
-local core   = require("apisix.core")
-local http   = require("resty.http")
+local ipairs   = ipairs
+local core     = require("apisix.core")
+local http     = require("resty.http")
+local pairs    = pairs
+local type     = type
+local tostring = tostring
 
 local schema = {
     type = "object",
@@ -40,6 +43,20 @@ local schema = {
             default = {},
             items = {type = "string"},
             description = "client request header that will be sent to the authorization service"
+        },
+        extra_headers = {
+            type = "object",
+            minProperties = 1,
+            patternProperties = {
+                ["^[^:]+$"] = {
+                    type = "string",
+                    description = "header value as a string; may contain variables"
+                                  .. "like $remote_addr, $request_uri"
+                }
+            },
+            description = "extra headers sent to the authorization service; "
+                        .. "values must be strings and can include variables"
+                        .. "like $remote_addr, $request_uri."
         },
         upstream_headers = {
             type = "array",
@@ -100,6 +117,22 @@ function _M.access(conf, ctx)
         auth_headers["Expect"] = core.request.header(ctx, "expect")
         auth_headers["Transfer-Encoding"] = core.request.header(ctx, "transfer-encoding")
         auth_headers["Content-Encoding"] = core.request.header(ctx, "content-encoding")
+    end
+
+    if conf.extra_headers then
+        for header, value in pairs(conf.extra_headers) do
+            if type(value) == "number" then
+                value = tostring(value)
+            end
+            local resolve_value, err = core.utils.resolve_var(value, ctx.var)
+            if not err then
+                auth_headers[header] = resolve_value
+            end
+            if err then
+                core.log.error("failed to resolve variable in extra header '",
+                                header, "': ",value,": ",err)
+            end
+        end
     end
 
     -- append headers that need to be get from the client request header
