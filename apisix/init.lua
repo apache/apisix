@@ -254,6 +254,10 @@ local function parse_domain_in_route(route)
 
     route.dns_value = core.table.deepcopy(route.value, { shallows = { "self.upstream.parent"}})
     route.dns_value.upstream.nodes = new_nodes
+    if not route.dns_value._nodes_ver then
+        route.dns_value._nodes_ver = 0
+    end
+    route.dns_value._nodes_ver = route.dns_value._nodes_ver + 1
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route
@@ -833,7 +837,12 @@ end
 
 
 local function healthcheck_passive(api_ctx)
-    local checker = healthcheck_manager.fetch_checker(api_ctx.upstream_conf)
+    if not api_ctx.upstream_conf then
+        return
+    end
+    local resource_version = api_ctx.upstream_conf.resource_version ..
+                             tostring(api_ctx.upstream_conf._nodes_ver or '')
+    local checker = healthcheck_manager.fetch_checker(api_ctx.upstream_conf.resource_key, resource_version)
     if not checker then
         return
     end

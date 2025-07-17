@@ -133,16 +133,7 @@ local function create_checker(up_conf)
 end
 
 
-function _M.fetch_checker(upstream)
-    if not upstream or not upstream.checks then
-        return nil
-    end
-
-    local parent = upstream.parent
-    local resource_path = parent.key or upstream.key
-    local resource_ver = (upstream.modifiedIndex or parent.modifiedIndex)
-                          .. tostring(upstream._nodes_ver or '')
-    -- Check working pool first
+function _M.fetch_checker(resource_path, resource_ver)
     local working_item = _M.working_pool[resource_path]
     if working_item and working_item.version == resource_ver then
         return working_item.checker
@@ -259,8 +250,6 @@ function _M.timer_working_pool_check()
         if item.version ~= current_ver then
             item.checker:delayed_clear(10)
             item.checker:stop()
-            core.log.warn("REMOVING CHECKER for resource: ", resource_path,
-                        " current version: ", current_ver, " item version: ", item.version)
             core.log.info("try to release checker: ", tostring(item.checker))
             _M.working_pool[resource_path] = nil
         end
@@ -279,7 +268,7 @@ function _M.init_worker()
         pcall(_M.timer_create_checker)
         timer_create_checker_running = false
     end)
-    timer_every(1,function ()
+    timer_every(1, function ()
         if timer_working_pool_check_running then
             core.log.warn("timer_working_pool_check is already running, skipping this iteration")
             return

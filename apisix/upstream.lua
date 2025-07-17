@@ -196,6 +196,7 @@ function _M.set_by_route(route, api_ctx)
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
+        core.log.warn("SETTING NODES_VER")
         if not same then
             if not up_conf._nodes_ver then
                 up_conf._nodes_ver = 0
@@ -250,7 +251,7 @@ function _M.set_by_route(route, api_ctx)
             end
         end
 
-        healthcheck_manager.fetch_checker(up_conf)
+        healthcheck_manager.fetch_checker(up_conf.resource_key, up_conf.resource_version)
         return
     end
 
@@ -261,7 +262,7 @@ function _M.set_by_route(route, api_ctx)
         return 503, err
     end
 
-    healthcheck_manager.fetch_checker(up_conf)
+    healthcheck_manager.fetch_checker(up_conf.resource_key, up_conf.resource_version)
 
     local scheme = up_conf.scheme
     if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
@@ -446,14 +447,16 @@ function _M.check_upstream_conf(conf)
     return check_upstream_conf(false, conf)
 end
 
-
+local inspect = require("inspect")
 local function filter_upstream(value, parent)
     if not value then
         return
     end
 
     value.parent = parent
-
+    value.resource_key = ((parent and parent.key) or value.key)
+    core.log.warn("VALUE IS ", inspect(value))
+    value.resource_version = ((parent and parent.modifiedIndex) or value.modifiedIndex)
     if not is_http and value.scheme == "http" then
         -- For L4 proxy, the default scheme is "tcp"
         value.scheme = "tcp"
