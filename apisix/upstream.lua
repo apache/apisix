@@ -190,7 +190,6 @@ function _M.set_by_route(route, api_ctx)
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
-        core.log.warn("SETTING NODES_VER")
         if not same then
             if not up_conf._nodes_ver then
                 up_conf._nodes_ver = 0
