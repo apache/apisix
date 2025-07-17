@@ -268,7 +268,7 @@ function _M.timer_working_pool_check()
 end
 
 function _M.init_worker()
-    timer_every(2, _M.timer_create_checker)
+    timer_every(1, _M.timer_create_checker)
     timer_every(1, _M.timer_working_pool_check)
 end
 
