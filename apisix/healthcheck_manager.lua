@@ -16,6 +16,7 @@
 --
 local require = require
 local ipairs   = ipairs
+local exiting      = ngx.worker.exiting
 local pairs    = pairs
 local tostring = tostring
 local core = require("apisix.core")
@@ -259,22 +260,26 @@ end
 
 function _M.init_worker()
     timer_every(1, function ()
-        if timer_create_checker_running then
-            core.log.warn("timer_create_checker is already running, skipping this iteration")
-            return
+        if not exiting() then
+            if timer_create_checker_running then
+                core.log.warn("timer_create_checker is already running, skipping this iteration")
+                return
+            end
+            timer_create_checker_running = true
+            pcall(_M.timer_create_checker)
+            timer_create_checker_running = false 
         end
-        timer_create_checker_running = true
-        pcall(_M.timer_create_checker)
-        timer_create_checker_running = false
     end)
     timer_every(1, function ()
-        if timer_working_pool_check_running then
-            core.log.warn("timer_working_pool_check is already running, skipping this iteration")
-            return
+        if not exiting() then
+            if timer_working_pool_check_running then
+                core.log.warn("timer_working_pool_check is already running, skipping this iteration")
+                return
+            end
+            timer_working_pool_check_running = true
+            pcall(_M.timer_working_pool_check)
+            timer_working_pool_check_running = false
         end
-        timer_working_pool_check_running = true
-        pcall(_M.timer_working_pool_check)
-        timer_working_pool_check_running = false
     end)
 end
 
