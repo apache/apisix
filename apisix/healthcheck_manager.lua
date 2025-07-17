@@ -183,12 +183,14 @@ local function find_in_working_pool(resource_path, resource_ver)
     end
 
     if checker.version ~= resource_ver then
+        core.log.warn("version mismatch for resource: ", resource_path,
+                    " current version: ", checker.version, " requested version: ", resource_ver)
         return nil  -- version not match
     end
     return checker
 end
 
-
+local timer_create_checker_running = false
 function _M.timer_create_checker()
     if core.table.nkeys(_M.waiting_pool) == 0 then
         return
@@ -196,12 +198,12 @@ function _M.timer_create_checker()
 
     local waiting_snapshot = tab_clone(_M.waiting_pool)
     for resource_path, resource_ver in pairs(waiting_snapshot) do
-        if find_in_working_pool(resource_path, resource_ver) then
-            core.log.info("resource: ", resource_path, " already in working pool with version: ",
-                           resource_ver)
-            goto continue
-        end
         do
+            if find_in_working_pool(resource_path, resource_ver) then
+                core.log.info("resource: ", resource_path, " already in working pool with version: ",
+                               resource_ver)
+                goto continue
+            end
             local res_conf = fetch_latest_conf(resource_path)
             if not res_conf then
                 goto continue
@@ -234,7 +236,7 @@ function _M.timer_create_checker()
     end
 end
 
-
+local timer_working_pool_check_running = false
 function _M.timer_working_pool_check()
     if core.table.nkeys(_M.working_pool) == 0 then
         return
@@ -268,8 +270,24 @@ function _M.timer_working_pool_check()
 end
 
 function _M.init_worker()
-    timer_every(1, _M.timer_create_checker)
-    timer_every(1, _M.timer_working_pool_check)
+    timer_every(1, function ()
+        if timer_create_checker_running then
+            core.log.warn("timer_create_checker is already running, skipping this iteration")
+            return
+        end
+        timer_create_checker_running = true
+        pcall(_M.timer_create_checker)
+        timer_create_checker_running = false
+    end)
+    timer_every(1,function ()
+        if timer_working_pool_check_running then
+            core.log.warn("timer_working_pool_check is already running, skipping this iteration")
+            return
+        end
+        timer_working_pool_check_running = true
+        pcall(_M.timer_working_pool_check)
+        timer_working_pool_check_running = false
+    end)
 end
 
 return _M
