@@ -100,11 +100,7 @@ http {
     }
 
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *};
 
         access_log off;
 
@@ -577,11 +573,7 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *};
 
         access_log off;
 
