@@ -100,6 +100,7 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | introspection_expiry_claim | string | 否 | exp | | 到期声明的名称，它控制缓存和自省访问令牌的 TTL。|
 | introspection_addon_headers | array[string] | 否 | | | 用于将其他标头值附加到自省 HTTP 请求。如果原始请求中不存在指定的标头，则不会附加值。|
 | claim_validator.issuer.valid_issuers     | string[] | 否    |               |             | 将经过审查的 jwt 发行者列入白名单。当用户未传递时，将使用发现端点返回的颁发者。如果两者均缺失，发行人将无法得到验证|
+| claim_schema | object | 否 |  |  | OIDC 响应 claim 的 JSON schema。示例：`{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - 验证响应中包含必需的字符串字段 `access_token`。 |
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
