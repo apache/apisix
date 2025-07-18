@@ -1027,15 +1027,7 @@ function _M.new(key, opts)
             log.notice("use loaded configuration ", key)
 
             local dir_res, headers = res.body, res.headers
-            -- ngx.log(ngx.ERR, require("apisix.core.json").encode(res.body, true), require("apisix.core.json").encode(res.headers, true))
             load_full_data(obj, dir_res, headers)
-        -- else
-        --     local empty_data = {
-        --         nodes = {},
-        --     }
-        --     load_full_data(obj, empty_data, {
-        --         ["X-Etcd-Index"] = "-1"
-        --     })
         end
 
         ngx_timer_at(0, _automatic_fetch, obj)

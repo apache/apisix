@@ -239,7 +239,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
-        refresh_interval: 1
+        refresh_interval: 0.1
 --- request
 GET /not_found
 --- error_code: 404
