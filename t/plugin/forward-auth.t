@@ -112,11 +112,24 @@ property "request_method" validation failed: matches none of the enum values
                                     [[return function(conf, ctx)
                                         local core = require("apisix.core");
                                         if core.request.header(ctx, "Authorization") == "777" then
-                                            if core.request.header(ctx, "tenant_id") then
+                                            local tenant_id = core.request.header(ctx, "tenant_id")
+                                            if tenant_id == "123" then
                                                 core.response.set_header("X-User-ID", "i-am-an-user");
                                                 core.response.exit(200);
                                             else
-                                                core.response.exit(400, "tenant_id is required");
+                                                core.response.exit(400, "tenant_id is "..tenant_id);
+                                            end
+                                        end
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "888" then
+                                            local tenant_id = core.request.header(ctx, "tenant_id")
+                                            if tenant_id == "abcd" then
+                                                core.response.set_header("X-User-ID", "i-am-an-user");
+                                                core.response.exit(200);
+                                            else
+                                                core.response.exit(400, "tenant_id is "..tenant_id);
                                             end
                                         end
                                     end]],
@@ -463,6 +476,7 @@ POST /ping2
 {"tenant_id": 123}
 --- more_headers
 Authorization: 777
+Content-Type: application/json
 --- response_body_like eval
 qr/\"x-user-id\":\"i-am-an-user\"/
 
@@ -472,6 +486,6 @@ qr/\"x-user-id\":\"i-am-an-user\"/
 --- request
 GET /ping3
 --- more_headers
-Authorization: 777
+Authorization: 888
 --- response_body_like eval
 qr/\"x-user-id\":\"i-am-an-user\"/

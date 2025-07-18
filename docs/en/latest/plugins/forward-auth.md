@@ -173,7 +173,7 @@ Location: http://example.com/auth
 When the decision is to be made on the basis of POST body, then it is recommended to use `$post_arg.*` with `extra_headers` field and make the decision on Authorization service on basis of headers rather than using POST `request_method` to pass the entire request body to Authorization service.
 :::
 
-Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header. If present, the route responds with HTTP 200 and sets the `X-User-ID` header to a fixed value `i-am-an-user`. If `tenant_id` is missing, it returns HTTP 400 with an error message.
+Create a serverless function on the `/auth` route that checks for the presence of the `tenant_id` header and confirms its value. If present, the route responds with HTTP 200 and sets the `X-User-ID` header to a fixed value `i-am-an-user`. If `tenant_id` is missing, it returns HTTP 400 with an error message.
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
@@ -187,11 +187,12 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
             "functions": [
                 "return function(conf, ctx)
                  local core = require(\"apisix.core\")
-                 if core.request.header(ctx, \"tenant_id\") then
+                 local tenant_id = core.request.header(ctx, \"tenant_id\")
+                 if tenant_id == \"123\" then
                      core.response.set_header(\"X-User-ID\", \"i-am-an-user\");
                      core.response.exit(200);
                 else
-                    core.response.exit(400, \"tenant_id is required\")
+                    core.response.exit(400, \"tenant_id is \"..tenant_id .. \" but expected 123\");
                 end
             end"
             ]
@@ -227,8 +228,8 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
 Send a POST request with the `tenant_id` header:
 
 ```shell
-curl -i http://127.0.0.1:9080/post -X POST -d '{
-   "tenant_id": 123
+curl -i http://127.0.0.1:9080/post -H "Content-Type: application/json" -X POST -d '{
+   "tenant_id": "123"
 }'
 ```
 
@@ -237,38 +238,38 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 ```json
 {
   "args": {},
-  "data": "",
+  "data": "{\n   \"tenant_id\": \"123\"\n}",
   "files": {},
-  "form": {
-    "{\n   \"tenant_id\": 123\n}": ""
-  },
+  "form": {},
   "headers": {
     "Accept": "*/*",
-    "Content-Length": "23",
-    "Content-Type": "application/x-www-form-urlencoded",
+    "Content-Length": "25",
+    "Content-Type": "application/json",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.13.0",
-    "X-Amzn-Trace-Id": "Root=1-686b6e3f-2fdeff70183e71551f5c5729",
+    "X-Amzn-Trace-Id": "Root=1-687775d8-6890073173b30c2834901e8b",
     "X-Forwarded-Host": "127.0.0.1"
   },
-  "json": null,
-  "origin": "127.0.0.1, 106.215.83.33",
+  "json": {
+    "tenant_id": "123"
+  },
+  "origin": "127.0.0.1, 106.215.82.114",
   "url": "http://127.0.0.1/post"
 }
 ```
 
-Send a POST request without the `tenant_id` header:
+Send a POST request with wrong the `tenant_id` header:
 
 ```shell
- curl -i http://127.0.0.1:9080/post -X POST -d '{
-   "abc": 123
+curl -i http://127.0.0.1:9080/post -H "Content-Type: application/json" -X POST -d '{
+   "tenant_id": "asdfasd"
 }'
 ```
 
 You should receive an `HTTP/1.1 400 Bad Request` response with the following message:
 
 ```shell
-tenant_id is required
+tenant_id is asdfasd but expected 123
 ```
 
 ## Delete Plugin
