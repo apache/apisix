@@ -808,7 +808,7 @@ do
 end
 
 
-function _M.init_worker()
+function _M.init_prometheus()
     local _, http_plugin_names, stream_plugin_names = get_plugin_names()
 
     -- some plugins need to be initialized in init* phases
@@ -819,7 +819,10 @@ function _M.init_worker()
     elseif not is_http and core.table.array_find(stream_plugin_names, "prometheus") then
         require("apisix.plugins.prometheus.exporter").stream_init()
     end
+end
 
+
+function _M.init_worker()
     -- someone's plugin needs to be initialized after prometheus
     -- see https://github.com/apache/apisix/issues/3286
     _M.load()

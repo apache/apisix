@@ -1001,7 +1001,7 @@ function _M.new(key, opts)
         sync_times = 0,
         running = true,
         conf_version = 0,
-        values = nil,
+        values = {},
         need_reload = true,
         watching_stream = nil,
         routes_hash = nil,

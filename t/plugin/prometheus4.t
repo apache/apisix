@@ -32,6 +32,14 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.01
+EOF
+    }
 });
 
 run_tests;
@@ -98,6 +106,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.01
         metrics:
             bandwidth:
                 extra_labels:
@@ -120,6 +129,7 @@ qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.01
         metrics:
             http_status:
                 extra_labels:
@@ -141,6 +151,7 @@ qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host=
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.01
         default_buckets:
             - 15
             - 55
@@ -171,6 +182,7 @@ plugin_attr:
                 ngx.status = code
             end
             ngx.say(body)
+            ngx.sleep(1)
         }
     }
 --- pipelined_requests eval
@@ -257,6 +269,8 @@ apisix:
 plugins:
   - example-plugin
 plugin_attr:
+  prometheus:
+    refresh_interval: 0.01
   example-plugin:
     val: 1
 --- config
