@@ -34,11 +34,11 @@ add_block_preprocessor(sub {
     }
 
     if (!defined $block->yaml_config) {
-        $block->set_value("yaml_config", <<_EOC_);
-        plugin_attr:
-            prometheus:
-                refresh_interval: 0.01
-_EOC_
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.01
+EOF
     }
 });
 
