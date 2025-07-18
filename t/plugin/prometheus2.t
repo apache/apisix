@@ -37,6 +37,14 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->extra_yaml_config) {
+        $block->set_value("extra_yaml_config", <<_EOC_);
+        plugin_attr:
+            prometheus:
+                refresh_interval: 0.1
+_EOC_
+    }
 });
 
 run_tests;
@@ -236,10 +244,6 @@ passed
 
 
 === TEST 10: 404 Route Not Found
---- yaml_config
-plugin_attr:
-    prometheus:
-        refresh_interval: 0.1
 --- request
 GET /not_found
 --- error_code: 404
@@ -257,10 +261,6 @@ qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",servic
 
 
 === TEST 12: hit routes(uri = "/foo*", host = "foo.com")
---- yaml_config
-plugin_attr:
-    prometheus:
-        refresh_interval: 0.1
 --- request
 GET /foo1
 --- more_headers
@@ -280,10 +280,6 @@ qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="
 
 
 === TEST 14: hit routes(uri = "/bar*", host = "bar.com")
---- yaml_config
-plugin_attr:
-    prometheus:
-        refresh_interval: 0.1
 --- request
 GET /bar1
 --- more_headers
