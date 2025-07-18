@@ -837,14 +837,7 @@ end
 
 
 local function healthcheck_passive(api_ctx)
-    if not api_ctx.upstream_conf then
-        return
-    end
-    local resource_version = (api_ctx.upstream_conf and api_ctx.upstream_conf.resource_version) and
-                             (api_ctx.upstream_conf.resource_version ..
-                             tostring(api_ctx.upstream_conf._nodes_ver or ''))
-    local checker = healthcheck_manager.fetch_checker(api_ctx.upstream_conf.resource_key,
-                                                      resource_version)
+    local checker = api_ctx.up_checker
     if not checker then
         return
     end
