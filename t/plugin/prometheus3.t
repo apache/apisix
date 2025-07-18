@@ -170,7 +170,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
-        refresh_interval: 1
+        refresh_interval: 0.1
 plugins:
   - public-api
   - error-log-logger
