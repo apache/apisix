@@ -26,7 +26,6 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
-
     server {
         listen 20999;
 
@@ -781,3 +780,89 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+
+
+=== TEST 16: test service_name as variable in route configuration
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: "${backend}"
+      discovery_type: consul
+      type: roundrobin
+#END
+--- http_config
+    map $http_host $backend {
+        default service_a;
+    }
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 6
+--- request eval
+[
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a2\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_a_version\":\"4.0\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=2",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr//,
+    qr//,
+    qr/ok\n/,
+    qr/server [1-2]\n/,
+]
+--- no_error_log
+[error]
+
+
+
+=== TEST 17: test empty variable in service_name
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: "${backend}"
+      discovery_type: consul
+      type: roundrobin
+#END
+--- http_config
+    map $http_host $backend {
+        default "";
+    }
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local res, err = httpc:request_uri(uri, { method = "GET"})
+            if err then
+                ngx.log(ngx.ERR, err)
+                ngx.status = res.status
+                return
+            end
+            ngx.say(res.status)
+        }
+    }
+--- request
+GET /t
+--- response_body
+503
+--- error_log
+resolve_var resolves to empty string
