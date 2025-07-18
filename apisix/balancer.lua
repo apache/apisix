@@ -215,6 +215,7 @@ local function pick_server(route, ctx)
     local version = ctx.upstream_version
     local key = ctx.upstream_key
     local checker = ctx.up_checker
+
     ctx.balancer_try_count = (ctx.balancer_try_count or 0) + 1
     if ctx.balancer_try_count > 1 then
         if ctx.server_picker and ctx.server_picker.after_balance then
