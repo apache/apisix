@@ -190,7 +190,7 @@ create new checker: table: 0x
                 return
             end
 
-            ngx.sleep(3)
+            ngx.sleep(1)
             code, _, body = t('/server_port', "GET")
 
             if code > 300 then
@@ -199,7 +199,7 @@ create new checker: table: 0x
                 return
             end
 
-            ngx.sleep(0.5)
+            ngx.sleep(3)
 
             -- update
             code, _, body = t('/apisix/admin/upstreams/stopchecker',
@@ -213,7 +213,7 @@ create new checker: table: 0x
                 return
             end
 
-            ngx.sleep(4)
+            ngx.sleep(3)
             code, _, body = t('/server_port', "GET")
 
             if code > 300 then
@@ -222,6 +222,7 @@ create new checker: table: 0x
                 return
             end
 
+            ngx.sleep(3)
             -- delete
             code, _, body = t('/apisix/admin/routes/1', "DELETE")
 
@@ -230,7 +231,7 @@ create new checker: table: 0x
                 ngx.say(body)
                 return
             end
-            ngx.sleep(4) -- wait for routes delete event synced
+            ngx.sleep(3) -- wait for routes delete event synced
 
             code, _, body = t('/apisix/admin/upstreams/stopchecker', "DELETE")
 
@@ -239,7 +240,7 @@ create new checker: table: 0x
                 ngx.say(body)
                 return
             end
-            ngx.sleep(17)
+            ngx.sleep(10)
             ngx.say("ok")
         }
     }
