@@ -16,6 +16,7 @@
 --
 local require = require
 local ipairs   = ipairs
+local pcall   = pcall
 local exiting      = ngx.worker.exiting
 local pairs    = pairs
 local tostring = tostring
