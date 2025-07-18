@@ -27,7 +27,6 @@ require("jit.opt").start("minstitch=2", "maxtrace=4000",
 
 require("apisix.patch").patch()
 local core            = require("apisix.core")
-local healthcheck_manager = require("apisix.healthcheck_manager")
 local plugin          = require("apisix.plugin")
 local plugin_config   = require("apisix.plugin_config")
 local consumer_group  = require("apisix.consumer_group")
