@@ -27,7 +27,7 @@ local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
 local str_byte         = string.byte
-
+local healthcheck_manager = require("apisix.healthcheck_manager")
 
 local module_name = "balancer"
 local pickers = {}
@@ -75,7 +75,8 @@ local function fetch_health_nodes(upstream, checker)
     local port = upstream.checks and upstream.checks.active and upstream.checks.active.port
     local up_nodes = core.table.new(0, #nodes)
     for _, node in ipairs(nodes) do
-        local ok, err = checker:get_target_status(node.host, port or node.port, host)
+        local ok, err = healthcheck_manager.fetch_node_status(checker,
+                                             node.host, port or node.port, host)
         if ok then
             up_nodes = transform_node(up_nodes, node)
         elseif err then
