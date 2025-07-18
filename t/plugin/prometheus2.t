@@ -38,11 +38,11 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->extra_yaml_config) {
-        $block->set_value("extra_yaml_config", <<_EOC_);
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<_EOC_);
         plugin_attr:
             prometheus:
-                refresh_interval: 0.1
+                refresh_interval: 0.01
 _EOC_
     }
 });
@@ -314,6 +314,7 @@ GET /apisix/prometheus/metrics
 plugin_attr:
     prometheus:
         export_uri: /a
+        refresh_interval: 0.01
 --- request
 GET /a
 --- error_code: 200

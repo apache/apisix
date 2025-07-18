@@ -33,11 +33,11 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
-    if (!defined $block->extra_yaml_config) {
-        $block->set_value("extra_yaml_config", <<_EOC_);
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<_EOC_);
         plugin_attr:
             prometheus:
-                refresh_interval: 0.1
+                refresh_interval: 0.01
 _EOC_
     }
 });
@@ -106,6 +106,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.01
         metrics:
             bandwidth:
                 extra_labels:
@@ -128,6 +129,7 @@ qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.01
         metrics:
             http_status:
                 extra_labels:
@@ -149,6 +151,7 @@ qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host=
 --- yaml_config
 plugin_attr:
     prometheus:
+        refresh_interval: 0.01
         default_buckets:
             - 15
             - 55
@@ -266,6 +269,8 @@ apisix:
 plugins:
   - example-plugin
 plugin_attr:
+  prometheus:
+    refresh_interval: 0.01
   example-plugin:
     val: 1
 --- config
