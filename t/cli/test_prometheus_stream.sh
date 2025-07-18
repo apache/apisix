@@ -77,6 +77,9 @@ apisix:
             - addr: 9100
 stream_plugins:
     - prometheus
+plugin_attr:
+    prometheus:
+        refresh_interval: 1
 " > conf/config.yaml
 
 make run
