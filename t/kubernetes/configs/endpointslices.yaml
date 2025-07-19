@@ -15,33 +15,47 @@
 # limitations under the License.
 #
 
-kind: ServiceAccount
+kind: Namespace
 apiVersion: v1
 metadata:
-  name: apisix-test
-  namespace: default
+  name: ns-a
 ---
-kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1
+
+kind: EndpointSlice
+apiVersion: discovery.k8s.io/v1
 metadata:
-  name: apisix-test
-rules:
-  - apiGroups: [ "" ]
-    resources: [ endpoints]
-    verbs: [ get,list,watch ]
-  - apiGroups: [ "discovery.k8s.io" ]
-    resources: [ endpointslices ]
-    verbs: [ get,list,watch ]
+  name: epslice
+  namespace: ns-a
+addressType: IPv4
+endpoints: [ ]
 ---
-apiVersion: rbac.authorization.k8s.io/v1
-kind: ClusterRoleBinding
+
+kind: Namespace
+apiVersion: v1
 metadata:
-  name: apisix-test
-roleRef:
-  apiGroup: rbac.authorization.k8s.io
-  kind: ClusterRole
-  name: apisix-test
-subjects:
-  - kind: ServiceAccount
-    name: apisix-test
-    namespace: default
+  name: ns-b
+---
+
+kind: EndpointSlice
+apiVersion: discovery.k8s.io/v1
+metadata:
+  name: epslice
+  namespace: ns-b
+addressType: IPv4
+endpoints: [ ]
+---
+
+kind: Namespace
+apiVersion: v1
+metadata:
+  name: ns-c
+---
+
+kind: EndpointSlice
+apiVersion: discovery.k8s.io/v1
+metadata:
+  name: epslice
+  namespace: ns-c
+addressType: IPv4
+endpoints: [ ]
+---
