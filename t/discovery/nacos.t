@@ -1066,3 +1066,124 @@ GET /t
 --- response_body
 server 1
 server 4
+
+
+
+=== TEST 27: get APISIX-NACOS info from NACOS - metadata filtering lane=a (only server1)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          lane: "a"
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+]
+
+
+
+=== TEST 28: get APISIX-NACOS info from NACOS - metadata filtering lane=b (only server2)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          lane: "b"
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server 2/,
+    qr/server 2/,
+    qr/server 2/,
+    qr/server 2/,
+    qr/server 2/,
+]
+
+
+
+=== TEST 29: get APISIX-NACOS info from NACOS - metadata filtering no match (lane=c)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          lane: "c"
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+
+
+
+=== TEST 30: get APISIX-NACOS info from NACOS - metadata filtering version=1.0 (only server1)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          version: "1.0"
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+]

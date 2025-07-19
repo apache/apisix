@@ -237,3 +237,102 @@ passed
     }
 --- response_body
 passed
+
+
+
+=== TEST 5: discovery_args metadata validation
+--- config
+    location /t {
+        content_by_lua_block {
+            local schema_def = require("apisix.schema_def")
+            local core = require("apisix.core")
+
+            -- Create a schema that includes discovery_args
+            local upstream_schema = schema_def.upstream
+
+            -- Test cases using table-driven approach
+            local test_cases = {
+                -- Valid cases
+                {
+                    name = "valid metadata with multiple string values",
+                    should_pass = true,
+                    upstream = {
+                        service_name = "test-service",
+                        discovery_type = "nacos",
+                        type = "roundrobin",
+                        discovery_args = {
+                            namespace_id = "test-ns",
+                            group_name = "test-group",
+                            metadata = {
+                                version = "v1",
+                                env = "prod",
+                                lane = "a"
+                            }
+                        }
+                    }
+                },
+                {
+                    name = "valid metadata with empty object",
+                    should_pass = true,
+                    upstream = {
+                        service_name = "test-service",
+                        discovery_type = "nacos",
+                        type = "roundrobin",
+                        discovery_args = {
+                            metadata = {}
+                        }
+                    }
+                },
+
+                -- Invalid cases
+                {
+                    name = "invalid metadata with non-string values",
+                    should_pass = false,
+                    upstream = {
+                        service_name = "test-service",
+                        discovery_type = "nacos",
+                        type = "roundrobin",
+                        discovery_args = {
+                            metadata = {
+                                version = 123,  -- should be string
+                                env = true,     -- should be string
+                                count = 456,    -- should be string
+                                config = {      -- should be string
+                                    port = 8080
+                                }
+                            }
+                        }
+                    },
+                    expected_error_pattern = "discovery_args.*validation failed.*metadata.*validation failed.*wrong type.*expected string"
+                },
+            }
+
+            -- Execute all test cases
+            for i, test_case in ipairs(test_cases) do
+                local ok, err = core.schema.check(upstream_schema, test_case.upstream)
+
+                if test_case.should_pass then
+                    assert(ok, string.format("Test case %d (%s) should pass validation: %s",
+                        i, test_case.name, err or ""))
+                else
+                    assert(not ok, string.format("Test case %d (%s) should fail validation",
+                        i, test_case.name))
+                    assert(err ~= nil, string.format("Test case %d (%s) should have error message",
+                        i, test_case.name))
+
+                    -- Execute test case specific error assertions
+                    if test_case.expected_error_pattern then
+                        assert(string.find(err, test_case.expected_error_pattern),
+                            string.format("Test case %d (%s) error should match pattern '%s', but got: %s",
+                                i, test_case.name, test_case.expected_error_pattern, err))
+                        -- Log the actual error for debugging
+                        ngx.log(ngx.INFO, string.format("Test case %d (%s) actual error: %s", i, test_case.name, err))
+                    end
+                end
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed

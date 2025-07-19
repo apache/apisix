@@ -132,6 +132,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
 | namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
 | group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
+| metadata     | object | optional    | {}      |       | Filter service instances by metadata using containment matching |
 
 #### Specify the namespace
 
@@ -278,3 +279,52 @@ The formatted response as below:
   }
 }
 ```
+
+#### Metadata filtering
+
+APISIX supports filtering service instances based on metadata. When a route is configured with metadata conditions, only service instances whose metadata contains all the key-value pairs specified in the route's `metadata` configuration will be selected.
+
+Example: If a service instance has metadata `{lane: "a", env: "prod", version: "1.0"}`, it will match routes configured with metadata `{lane: "a"}` or `{lane: "a", env: "prod"}`, but not routes configured with `{lane: "b"}` or `{lane: "a", region: "us"}`.
+
+Example of routing a request with metadata filtering:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/nacosWithMetadata/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "metadata": {
+            "version": "v1"
+          }
+        }
+    }
+}'
+```
+
+This route will only route traffic to service instances that have the metadata field `version` set to `v1`.
+
+For multiple metadata criteria:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/nacosWithMultipleMetadata/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "metadata": {
+            "lane": "a",
+            "env": "prod"
+          }
+        }
+    }
+}'
+```
+
+This route will only route traffic to service instances that have both `lane: "a"` and `env: "prod"` in their metadata.
