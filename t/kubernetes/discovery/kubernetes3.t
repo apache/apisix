@@ -381,8 +381,6 @@ POST /operators
 Content-type: application/json
 --- response_body_like
 .*"name":"default/kubernetes".*
---- error-log
-attempt to get length of local 'endpointslices' (a userdata value)
 
 
 
