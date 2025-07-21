@@ -45,7 +45,7 @@ Consumer/Credential 端：
 | key           | string  | 是    |         |                             | 消费者的唯一密钥。  |
 | secret        | string  | 否    |         |                             | 当使用对称算法时，用于对 JWT 进行签名和验证的共享密钥。使用 `HS256` 或 `HS512` 作为算法时必填。如果未指定，后台将会自动生成。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。   |
 | public_key    | string  | 否    |         |                             | RSA 或 ECDSA 公钥， `algorithm` 属性选择 `RS256` 或 `ES256` 算法时必选。该字段支持使用 [APISIX Secret](../terminology/secret.md) 资源，将值保存在 Secret Manager 中。       |
-| algorithm     | string  | 否    | "HS256" | ["HS256", "HS512", "RS256", "ES256"] | 加密算法。                                                                                                      |
+| algorithm     | string  | 否    | "HS256" | ["HS256","HS512","RS256","ES256"] | 加密算法。                                                                                                      |
 | exp           | integer | 否    | 86400   | [1,...]                     | token 的超时时间。                                                                                              |
 | base64_secret | boolean | 否    | false   |                             | 当设置为 `true` 时，密钥为 base64 编码。                                                                                         |
 | lifetime_grace_period | integer | 否    | 0  | [0,...]                  | 宽限期（以秒为单位）。用于解决生成 JWT 的服务器与验证 JWT 的服务器之间的时钟偏差。 |
@@ -163,11 +163,11 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```json
 {
   "headers": {
-    "Accept": "*/*", 
-    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjUvYzWLt4lFr546PNsr9TXuf0Az5opoM", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-66ea951a-4d740d724bd2a44f174d4daf", 
+    "Accept": "*/*",
+    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjUvYzWLt4lFr546PNsr9TXuf0Az5opoM",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66ea951a-4d740d724bd2a44f174d4daf",
     "X-Consumer-Username": "jack",
     "X-Credential-Identifier": "cred-jack-jwt-auth",
     "X-Forwarded-Host": "127.0.0.1"
@@ -274,13 +274,13 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",  
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU", 
     ...
-  }, 
+  },
   ...
 }
 ```
@@ -299,12 +299,12 @@ curl -i "http://127.0.0.1:9080/get?jwt-query=${jwt_token}"
 {
   "args": {
     "jwt-query": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU"
-  }, 
+  },
   "headers": {
-    "Accept": "*/*", 
+    "Accept": "*/*",
     ...
-  }, 
-  "origin": "127.0.0.1, 183.17.233.107", 
+  },
+  "origin": "127.0.0.1, 183.17.233.107",
   "url": "http://127.0.0.1/get?jwt-query=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ"
 }
 ```
@@ -321,12 +321,12 @@ curl -i "http://127.0.0.1:9080/get" --cookie jwt-cookie=${jwt_token}
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Cookie": "jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU", 
+    "Accept": "*/*",
+    "Cookie": "jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
-  }, 
+  },
   ...
 }
 ```
@@ -345,7 +345,7 @@ export JACK_JWT_SECRET=jack-hs256-secret-that-is-very-long
 
 :::tip
 
-如果您在 Docker 中运行 APISIX，则应在启动容器时使用 `-e` flag 设置环境变量。
+如果您在 Docker 中运行 APISIX，需要在启动容器时使用 `-e` flag 设置环境变量。
 
 :::
 
@@ -608,14 +608,14 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```json
 {
   "headers": {
-    "Accept": "*/*", 
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47", 
-    "X-Consumer-Custom-Id": "495aec6a", 
-    "X-Consumer-Username": "jack", 
-    "X-Credential-Identifier": "cred-jack-jwt-auth", 
+    "Accept": "*/*",
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47",
+    "X-Consumer-Custom-Id": "495aec6a",
+    "X-Consumer-Username": "jack",
+    "X-Credential-Identifier": "cred-jack-jwt-auth",
     "X-Forwarded-Host": "127.0.0.1"
   }
 }

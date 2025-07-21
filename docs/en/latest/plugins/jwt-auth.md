@@ -49,7 +49,7 @@ For Consumer/Credential:
 | key           | string  | True                                                  |         |     non-empty       | Unique key for a Consumer.                                                                                                                                                                  |
 | secret        | string  | False                                                 |         |        non-empty        | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. If unspecified, the secret will be auto-generated. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
-| algorithm     | string  | False                                                 | HS256 | ["HS256", "HS512", "RS256", "ES256"] | Encryption algorithm.                                                                                                                                                                       |
+| algorithm     | string  | False                                                 | HS256 | ["HS256","HS512","RS256","ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
 | base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Grace period in seconds. Used to account for clock skew between the server generating the JWT and the server validating the JWT.  |
@@ -167,11 +167,11 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 ```json
 {
   "headers": {
-    "Accept": "*/*", 
-    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjUvYzWLt4lFr546PNsr9TXuf0Az5opoM", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-66ea951a-4d740d724bd2a44f174d4daf", 
+    "Accept": "*/*",
+    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjUvYzWLt4lFr546PNsr9TXuf0Az5opoM",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-66ea951a-4d740d724bd2a44f174d4daf",
     "X-Consumer-Username": "jack",
     "X-Credential-Identifier": "cred-jack-jwt-auth",
     "X-Forwarded-Host": "127.0.0.1"
@@ -278,13 +278,13 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Host": "127.0.0.1", 
-    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",  
+    "Accept": "*/*",
+    "Host": "127.0.0.1",
+    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
-  }, 
+  },
   ...
 }
 ```
@@ -303,12 +303,12 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 {
   "args": {
     "jwt-query": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU"
-  }, 
+  },
   "headers": {
-    "Accept": "*/*", 
+    "Accept": "*/*",
     ...
-  }, 
-  "origin": "127.0.0.1, 183.17.233.107", 
+  },
+  "origin": "127.0.0.1, 183.17.233.107",
   "url": "http://127.0.0.1/get?jwt-query=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ"
 }
 ```
@@ -325,12 +325,12 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
-  "args": {}, 
+  "args": {},
   "headers": {
-    "Accept": "*/*", 
-    "Cookie": "jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU", 
+    "Accept": "*/*",
+    "Cookie": "jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
-  }, 
+  },
   ...
 }
 ```
@@ -612,14 +612,14 @@ You should see an `HTTP/1.1 200 OK` response similar to the following:
 ```json
 {
   "headers": {
-    "Accept": "*/*", 
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU", 
-    "Host": "127.0.0.1", 
-    "User-Agent": "curl/8.6.0", 
-    "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47", 
-    "X-Consumer-Custom-Id": "495aec6a", 
-    "X-Consumer-Username": "jack", 
-    "X-Credential-Identifier": "cred-jack-jwt-auth", 
+    "Accept": "*/*",
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
+    "Host": "127.0.0.1",
+    "User-Agent": "curl/8.6.0",
+    "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47",
+    "X-Consumer-Custom-Id": "495aec6a",
+    "X-Consumer-Username": "jack",
+    "X-Credential-Identifier": "cred-jack-jwt-auth",
     "X-Forwarded-Host": "127.0.0.1"
   }
 }
