@@ -278,7 +278,7 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
   "headers": {
     "Accept": "*/*",
     "Host": "127.0.0.1",
-    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU", 
+    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
   },
   ...
