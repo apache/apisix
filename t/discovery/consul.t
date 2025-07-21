@@ -798,6 +798,25 @@ routes:
     map $http_host $backend {
         default service_a;
     }
+
+    server {
+        listen 30511;
+
+        location /hello {
+            content_by_lua_block {
+                ngx.say("server 1")
+            }
+        }
+    }
+    server {
+        listen 30512;
+
+        location /hello {
+            content_by_lua_block {
+                ngx.say("server 2")
+            }
+        }
+    }
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
