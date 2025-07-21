@@ -210,8 +210,6 @@ function _M.http_init(prometheus_enabled_in_stream)
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
-
-    init_exporter_timer()
 end
 
 
@@ -518,6 +516,10 @@ local function exporter_timer(premature)
         return
     end
 
+    if not prometheus then
+        return
+    end
+
     local refresh_interval = DEFAULT_REFRESH_INTERVAL
     local attr = plugin.plugin_attr("prometheus")
     if attr and attr.refresh_interval then
@@ -548,7 +550,7 @@ function init_exporter_timer()
         return
     end
 
-    ngx.timer.at(0, exporter_timer)
+    exporter_timer()
 end
 
 local function get_cached_metrics()
@@ -562,7 +564,7 @@ local function get_cached_metrics()
 
     local cached_metrics_text = ngx.shared["prometheus-cache"]:get(CACHED_METRICS_KEY)
     if not cached_metrics_text then
-        core.log.error("Failed to retrieve cached metrics: data is nil or expired")
+        core.log.error("Failed to retrieve cached metrics: data is nil")
         return 500, "Failed to retrieve metrics: no data available"
     end
 
@@ -598,7 +600,7 @@ _M.get_api = get_api
 
 function _M.export_metrics()
     if not prometheus then
-        core.response.exit(200, "{}")
+       return core.response.exit(200, "{}")
     end
     local api = get_api(false)
     local uri = ngx.var.uri

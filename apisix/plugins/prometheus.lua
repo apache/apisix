@@ -55,4 +55,19 @@ function _M.api()
 end
 
 
+function _M.init()
+    local is_http = ngx.config.subsystem == "http"
+    if is_http then
+        exporter.http_init()
+    else
+        exporter.stream_init()
+    end
+end
+
+
+function _M.destroy()
+    exporter.destroy()
+end
+
+
 return _M

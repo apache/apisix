@@ -96,7 +96,9 @@ http {
     }
 
     init_worker_by_lua_block {
-        require("apisix.plugins.prometheus.exporter").http_init(true)
+        local prometheus = require("apisix.plugins.prometheus.exporter")
+        prometheus.http_init(true)
+        prometheus.init_exporter_timer()
     }
 
     server {
