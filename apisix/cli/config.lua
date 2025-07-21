@@ -153,6 +153,7 @@ local _M = {
         ["plugin-limit-req"] = "10m",
         ["plugin-limit-count"] = "10m",
         ["prometheus-metrics"] = "10m",
+        ["prometheus-cache"] = "10m",
         ["plugin-limit-conn"] = "10m",
         ["upstream-healthcheck"] = "10m",
         ["worker-events"] = "10m",

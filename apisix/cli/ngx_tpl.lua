@@ -331,6 +331,10 @@ http {
     lua_shared_dict prometheus-metrics {* http.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
 
+    {% if enabled_plugins["prometheus"] or enabled_stream_plugins["prometheus"] then %}
+    lua_shared_dict prometheus-cache {* http.lua_shared_dict["prometheus-cache"] *};
+    {% end %}
+
     {% if enabled_plugins["skywalking"] then %}
     lua_shared_dict tracing_buffer {* http.lua_shared_dict.tracing_buffer *}; # plugin: skywalking
     {% end %}

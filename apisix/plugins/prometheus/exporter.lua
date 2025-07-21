@@ -538,7 +538,7 @@ local function exporter_timer(premature)
         core.log.error("Failed to collect metrics: ", res)
         return
     end
-    ngx.shared["prometheus-metrics"]:set(CACHED_METRICS_KEY, res)
+    ngx.shared["prometheus-cache"]:set(CACHED_METRICS_KEY, res)
 
     exporter_timer_running = false
 end
@@ -558,7 +558,7 @@ local function get_cached_metrics()
         return 500, {message = "An unexpected error occurred"}
     end
 
-    local cached_metrics_text = ngx.shared["prometheus-metrics"]:get(CACHED_METRICS_KEY)
+    local cached_metrics_text = ngx.shared["prometheus-cache"]:get(CACHED_METRICS_KEY)
 
     core.response.set_header("content_type", "text/plain")
     return 200, cached_metrics_text
