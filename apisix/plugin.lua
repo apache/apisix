@@ -801,12 +801,11 @@ end
 
 function _M.init_prometheus()
     local _, http_plugin_names, stream_plugin_names = get_plugin_names()
-    local init_exporter_timer = require("apisix.plugins.prometheus.exporter").init_exporter_timer
     local enabled_in_http = core.table.array_find(http_plugin_names, "prometheus")
     local enabled_in_stream = core.table.array_find(stream_plugin_names, "prometheus")
 
     if is_http and (enabled_in_http or enabled_in_stream) then
-        init_exporter_timer()
+        require("apisix.plugins.prometheus.exporter").init_exporter_timer()
     end
 end
 

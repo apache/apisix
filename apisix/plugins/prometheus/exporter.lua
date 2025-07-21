@@ -62,8 +62,7 @@ local metrics = {}
 local inner_tab_arr = {}
 
 local exporter_timer_running = false
--- will be defined below
-local init_exporter_timer
+
 
 local function gen_arr(...)
     clear_tab(inner_tab_arr)
@@ -545,13 +544,14 @@ local function exporter_timer(premature)
     exporter_timer_running = false
 end
 
-function init_exporter_timer()
+local function init_exporter_timer()
     if process.type() ~= "privileged agent" then
         return
     end
 
-    exporter_timer()
+    ngx.timer.at(0, exporter_timer)
 end
+_M.init_exporter_timer = init_exporter_timer
 
 local function get_cached_metrics()
     if not prometheus or not metrics then
