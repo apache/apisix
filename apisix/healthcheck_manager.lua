@@ -235,7 +235,7 @@ function _M.timer_create_checker()
     end
 end
 
-local timer_working_pool_check_running = false
+
 function _M.timer_working_pool_check()
     if core.table.nkeys(_M.working_pool) == 0 then
         return
@@ -269,6 +269,7 @@ end
 
 function _M.init_worker()
     local timer_create_checker_running = false
+    local timer_working_pool_check_running = false
     timer_every(1, function ()
         if not exiting() then
             if timer_create_checker_running then
