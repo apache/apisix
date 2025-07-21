@@ -253,7 +253,7 @@ function _M.timer_working_pool_check()
             goto continue
         end
         local current_ver = _M.upstream_version(res_conf.modifiedIndex,
-                                                res_conf.value.upstream._nodes_ver)
+                                                res_conf.value._nodes_ver)
         core.log.info("checking working pool for resource: ", resource_path,
                     " current version: ", current_ver, " item version: ", item.version)
         if item.version ~= current_ver then
