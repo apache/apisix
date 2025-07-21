@@ -558,9 +558,14 @@ local function get_cached_metrics()
         return 500, {message = "An unexpected error occurred"}
     end
 
-    local cached_metrics_text = ngx.shared["prometheus-cache"]:get(CACHED_METRICS_KEY)
-
     core.response.set_header("content_type", "text/plain")
+
+    local cached_metrics_text = ngx.shared["prometheus-cache"]:get(CACHED_METRICS_KEY)
+    if not cached_metrics_text then
+        core.log.error("Failed to retrieve cached metrics: data is nil or expired")
+        return 500, "Failed to retrieve metrics: no data available"
+    end
+
     return 200, cached_metrics_text
 end
 
