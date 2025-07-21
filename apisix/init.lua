@@ -575,6 +575,12 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
     set_upstream_headers(api_ctx, server)
 
+    -- lua proxy the request to upstream
+    if api_ctx.lua_proxy_upstream then
+        common_phase("before_proxy")
+        return
+    end
+
     -- run the before_proxy method in access phase first to avoid always reinit request
     common_phase("before_proxy")
 
