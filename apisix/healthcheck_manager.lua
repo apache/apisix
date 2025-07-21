@@ -181,6 +181,14 @@ local function find_in_working_pool(resource_path, resource_ver)
 end
 
 
+function _M.upstream_version(index, nodes_ver)
+    if not index then
+        return
+    end
+    return index .. tostring(nodes_ver or '')
+end
+
+
 function _M.timer_create_checker()
     if core.table.nkeys(_M.waiting_pool) == 0 then
         return
@@ -200,8 +208,8 @@ function _M.timer_create_checker()
                 goto continue
             end
             local upstream = res_conf.value.upstream or res_conf.value
-            local new_version = res_conf.modifiedIndex .. tostring(upstream._nodes_ver or '')
-            core.log.warn("checking waiting pool for resource: ", resource_path,
+            local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
+            core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
             if resource_ver ~= new_version then
                 goto continue
@@ -244,7 +252,7 @@ function _M.timer_working_pool_check()
             _M.working_pool[resource_path] = nil
             goto continue
         end
-        local current_ver = res_conf.modifiedIndex ..  tostring(res_conf.value._nodes_ver or '')
+        local current_ver = _M.upstream_version(res_conf.modifiedIndex, res_conf.value.upstream._nodes_ver)
         core.log.info("checking working pool for resource: ", resource_path,
                     " current version: ", current_ver, " item version: ", item.version)
         if item.version ~= current_ver then

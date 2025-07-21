@@ -243,8 +243,7 @@ function _M.set_by_route(route, api_ctx)
                 ngx_var.upstream_sni = sni
             end
         end
-        local resource_version = up_conf.resource_version and (up_conf.resource_version ..
-                                 tostring(up_conf._nodes_ver or ''))
+        local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version, up_conf._nodes_ver)
         local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
         api_ctx.up_checker = checker
         return
@@ -256,8 +255,7 @@ function _M.set_by_route(route, api_ctx)
     if not ok then
         return 503, err
     end
-    local resource_version = up_conf.resource_version and (up_conf.resource_version ..
-                              tostring(up_conf._nodes_ver or ''))
+    local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version, up_conf._nodes_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
     local scheme = up_conf.scheme
@@ -448,7 +446,7 @@ local function filter_upstream(value, parent)
     if not value then
         return
     end
-    value.resource_key = ((parent and parent.key) or value.key)
+    value.resource_key = parent and parent.key
     value.resource_version = ((parent and parent.modifiedIndex) or value.modifiedIndex)
     value.resource_id = ((parent and parent.value.id) or value.id)
     if not is_http and value.scheme == "http" then
