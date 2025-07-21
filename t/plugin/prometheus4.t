@@ -182,7 +182,6 @@ plugin_attr:
                 ngx.status = code
             end
             ngx.say(body)
-            ngx.sleep(1)
         }
     }
 --- pipelined_requests eval
