@@ -28,7 +28,9 @@ local pairs         = pairs
 local setmetatable  = setmetatable
 
 pb.option "decode_default_array"
-local repeated_label = 3
+-- Protobuf repeated field label value
+local PROTOBUF_REPEATED_LABEL = 3
+local repeated_label = PROTOBUF_REPEATED_LABEL
 
 local function fetch_proto_array_names(proto_obj)
     local names = {}
@@ -50,7 +52,7 @@ end
 
 local function set_default_array(tab, array_names)
     if type(tab) ~= "table" then
-        return false
+        return
     end
     for k, v in pairs(tab) do
         if type(v) == "table" then
