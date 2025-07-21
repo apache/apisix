@@ -95,12 +95,10 @@ local function create_checker(up_conf)
         core.log.info("healthchecker won't be created: disabled upstream healthcheck")
         return nil
     end
-    core.log.warn("creating healthchecker for upstream: ", up_conf.resource_key)
+    core.log.info("creating healthchecker for upstream: ", up_conf.resource_key)
     if not healthcheck then
         healthcheck = require("resty.healthcheck")
     end
-
-    core.log.warn("creating new healthchecker for ", up_conf.key)
 
     local checker, err = healthcheck.new({
         name = get_healthchecker_name(up_conf),
@@ -175,14 +173,14 @@ local function find_in_working_pool(resource_path, resource_ver)
     end
 
     if checker.version ~= resource_ver then
-        core.log.warn("version mismatch for resource: ", resource_path,
+        core.log.info("version mismatch for resource: ", resource_path,
                     " current version: ", checker.version, " requested version: ", resource_ver)
         return nil  -- version not match
     end
     return checker
 end
 
-local timer_create_checker_running = false
+
 function _M.timer_create_checker()
     if core.table.nkeys(_M.waiting_pool) == 0 then
         return
@@ -261,6 +259,7 @@ function _M.timer_working_pool_check()
 end
 
 function _M.init_worker()
+    local timer_create_checker_running = false
     timer_every(1, function ()
         if not exiting() then
             if timer_create_checker_running then
