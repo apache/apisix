@@ -652,7 +652,6 @@ _EOC_
     }
 
     lua_shared_dict prometheus-metrics 10m;
-    lua_shared_dict prometheus-cache 10m;
 _EOC_
     }
 

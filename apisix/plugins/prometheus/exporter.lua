@@ -112,6 +112,10 @@ end
 
 
 function _M.http_init(prometheus_enabled_in_stream)
+    if ngx.config.subsystem ~= "http" then
+        return
+    end
+
     -- todo: support hot reload, we may need to update the lua-prometheus
     -- library
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
@@ -213,6 +217,14 @@ end
 
 
 function _M.stream_init()
+    -- FIXME:
+    -- Now the HTTP subsystem loads the stream plugin unintentionally, which shouldn't happen.
+    -- It breaks the initialization logic of the plugin,
+    -- here it is temporarily fixed using a workaround.
+    if ngx.config.subsystem ~= "stream" then
+        return
+    end
+
     if ngx.get_phase() ~= "init" and ngx.get_phase() ~= "init_worker"  then
         return
     end

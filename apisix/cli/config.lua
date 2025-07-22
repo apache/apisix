@@ -95,6 +95,7 @@ local _M = {
     meta = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
+        ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
       }
@@ -153,7 +154,6 @@ local _M = {
         ["plugin-limit-req"] = "10m",
         ["plugin-limit-count"] = "10m",
         ["prometheus-metrics"] = "10m",
-        ["prometheus-cache"] = "10m",
         ["plugin-limit-conn"] = "10m",
         ["upstream-healthcheck"] = "10m",
         ["worker-events"] = "10m",
