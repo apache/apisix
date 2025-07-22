@@ -16,7 +16,6 @@
 --
 local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
-local ngx = ngx
 
 local plugin_name = "prometheus"
 local schema = {
@@ -35,6 +34,7 @@ local _M = {
     priority = 500,
     name = plugin_name,
     log  = exporter.http_log,
+    destroy = exporter.destroy,
     schema = schema,
     run_policy = "prefer_route",
 }
@@ -56,20 +56,9 @@ end
 
 
 function _M.init()
-    local is_http = ngx.config.subsystem == "http"
-
-    if is_http then
-        local local_conf = core.config.local_conf()
-        local enabled_in_stream = core.table.array_find(local_conf.stream_plugins, "prometheus")
-        exporter.http_init(enabled_in_stream)
-    else
-        exporter.stream_init()
-    end
-end
-
-
-function _M.destroy()
-    exporter.destroy()
+    local local_conf = core.config.local_conf()
+    local enabled_in_stream = core.table.array_find(local_conf.stream_plugins, "prometheus")
+    exporter.http_init(enabled_in_stream)
 end
 
 
