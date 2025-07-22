@@ -42,6 +42,9 @@ add_block_preprocessor(sub {
 
     if (!$block->extra_yaml_config) {
         my $extra_yaml_config = <<_EOC_;
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
 stream_plugins:
     - prometheus
 xrpc:

@@ -16,7 +16,7 @@
 --
 local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
-
+local ngx = ngx
 
 local plugin_name = "prometheus"
 local schema = {

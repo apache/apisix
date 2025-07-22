@@ -56,6 +56,8 @@ plugin_attr:
 
 IP=127.0.0.1 PORT=9092 make run
 
+sleep 1
+
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/apisix/prometheus/metrics)
 if [ ! $code -eq 200 ]; then
     echo "failed: should listen at configured prometheus address"

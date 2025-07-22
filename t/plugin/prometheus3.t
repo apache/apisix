@@ -42,7 +42,7 @@ add_block_preprocessor(sub {
         $block->set_value("yaml_config", <<'EOF');
 plugin_attr:
     prometheus:
-        refresh_interval: 0.01
+        refresh_interval: 0.1
 EOF
     }
 });
@@ -178,7 +178,7 @@ passed
 --- yaml_config
 plugin_attr:
     prometheus:
-        refresh_interval: 0.01
+        refresh_interval: 0.1
 plugins:
   - public-api
   - error-log-logger
