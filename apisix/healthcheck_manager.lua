@@ -30,6 +30,7 @@ local _M = {
     working_pool = {},     -- resource_path -> {version = ver, checker = checker}
     waiting_pool = {}      -- resource_path -> resource_ver
 }
+local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
 local is_http = ngx.config.subsystem == "http"
 if not is_http then
@@ -245,8 +246,8 @@ function _M.timer_working_pool_check()
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
-        if not res_conf then
-            item.checker:delayed_clear(10)
+        if not res_conf or not res_conf.value then
+            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker))
             _M.working_pool[resource_path] = nil
@@ -257,7 +258,7 @@ function _M.timer_working_pool_check()
         core.log.info("checking working pool for resource: ", resource_path,
                     " current version: ", current_ver, " item version: ", item.version)
         if item.version ~= current_ver then
-            item.checker:delayed_clear(10)
+            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker))
             _M.working_pool[resource_path] = nil
