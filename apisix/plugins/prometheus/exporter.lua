@@ -596,7 +596,7 @@ local function get_cached_metrics()
     local cached_metrics_text = shdict_prometheus_cache:get(CACHED_METRICS_KEY)
     if not cached_metrics_text then
         core.log.error("Failed to retrieve cached metrics: data is nil")
-        return 500, "Failed to retrieve metrics: no data available"
+        return 500, {message = "Failed to retrieve metrics: no data available"}
     end
 
     return 200, cached_metrics_text
