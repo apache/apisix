@@ -429,6 +429,134 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response.
 
+### Manage Secrets in Secret Manager
+
+The following example demonstrates how to manage `jwt-auth` consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in plugin configuration.
+
+Start a Vault development server in Docker:
+
+```shell
+docker run -d \
+  --name vault \
+  -p 8200:8200 \
+  --cap-add IPC_LOCK \
+  -e VAULT_DEV_ROOT_TOKEN_ID=root \
+  -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
+  vault:1.9.0 \
+  vault server -dev
+```
+
+APISIX currently supports [Vault KV engine version 1](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-1). Enable it in Vault:
+
+```shell
+docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
+```
+
+You should see a response similar to the following:
+
+```text
+Success! Enabled the kv secrets engine at: kv/
+```
+
+Create a Secret and configure the Vault address and other connection information. Update the Vault address accordingly:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "https://127.0.0.1:8200",
+    "prefix": "kv/apisix",
+    "token": "root"
+  }'
+```
+
+Create a Consumer `jack`:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "username": "jack"
+  }'
+```
+
+Create `jwt-auth` Credential for the Consumer and reference the Secret:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "cred-jack-jwt-auth",
+    "plugins": {
+      "jwt-auth": {
+        "key": "jwt-vault-key",
+        "secret": "$secret://vault/jwt/jack/jwt-key"
+      }
+    }
+  }'
+```
+
+Create a Route with `jwt-auth` enabled:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "jwt-route",
+    "uri": "/get",
+    "plugins": {
+      "jwt-auth": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Set `jwt-auth` key value to be `vault-hs256-secret-that-is-very-long` in Vault:
+
+```shell
+docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
+```
+
+You should see a response similar to the following:
+
+```text
+Success! Data written to: kv/apisix/jack
+```
+
+To issue a JWT, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
+
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `vault-hs256-secret-that-is-very-long`.
+* Update payload with consumer key `jwt-vault-key`; and add `exp` or `nbf` in UNIX timestamp.
+
+  Your payload should look similar to the following:
+
+  ```json
+  {
+    "key": "jwt-vault-key",
+    "nbf": 1729132271
+  }
+  ```
+
+Copy the generated JWT and save to a variable:
+
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
+```
+
+Send a request with the token in the header:
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
+```
+
+You should receive an `HTTP/1.1 200 OK` response.
+
 ### Sign JWT with RS256 Algorithm
 
 The following example demonstrates how you can use asymmetric algorithms, such as RS256, to sign and validate JWT when implementing JWT for Consumer authentication. You will be generating RSA key pairs using [openssl](https://openssl-library.org/source/) and generating JWT using [JWT.io](https://jwt.io) to better understand the composition of JWT.

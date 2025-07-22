@@ -425,6 +425,134 @@ curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 
 您应该会收到 `HTTP/1.1 200 OK` 响应。
 
+### 在 Secret Manager 中管理 Secret
+
+以下示例演示了如何在 [HashiCorp Vault](https://www.vaultproject.io) 中管理 `jwt-auth` 消费者密钥，并在插件配置中引用它。
+
+在 Docker 中启动 Vault 开发服务器：
+
+```shell
+docker run -d \
+  --name vault \
+  -p 8200:8200 \
+  --cap-add IPC_LOCK \
+  -e VAULT_DEV_ROOT_TOKEN_ID=root \
+  -e VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200 \
+  vault:1.9.0 \
+  vault server -dev
+```
+
+APISIX 目前支持 [Vault KV 引擎版本 1](https://developer.hashicorp.com/vault/docs/secrets/kv#kv-version-1)。请在 Vault 中启用它：
+
+```shell
+docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault secrets enable -path=kv -version=1 kv"
+```
+
+您应该会看到类似以下内容的响应：
+
+```text
+Success! Enabled the kv secrets engine at: kv/
+```
+
+创建一个 Secret，并配置 Vault 地址和其他连接信息。根据情况相应地更新 Vault 地址：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "uri": "https://127.0.0.1:8200",
+    "prefix": "kv/apisix",
+    "token": "root"
+  }'
+```
+
+创建消费者 `jack`：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "username": "jack"
+  }'
+```
+
+为消费者创建 `jwt-auth` 凭证并引用 Secret：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "cred-jack-jwt-auth",
+    "plugins": {
+      "jwt-auth": {
+        "key": "jwt-vault-key",
+        "secret": "$secret://vault/jwt/jack/jwt-key"
+      }
+    }
+  }'
+```
+
+创建启用 `jwt-auth` 的路由：
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "jwt-route",
+    "uri": "/get",
+    "plugins": {
+      "jwt-auth": {}
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+在 Vault 中将 `jwt-auth` 键值设置为 `vault-hs256-secret-that-is-very-long`：
+
+```shell
+docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
+```
+
+您应该会看到类似以下内容的响应：
+
+```text
+Success! Data written to: kv/apisix/jack
+```
+
+要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
+
+* 填写 `HS256` 作为算法。
+* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 使用消费者密钥 `jwt-vault-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
+
+  您的 payload 应类似于以下内容：
+
+  ```json
+  {
+    "key": "jwt-vault-key",
+    "nbf": 1729132271
+  }
+  ```
+
+复制生成的 JWT 并保存到变量：
+
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
+```
+
+发送带有令牌作为标头的请求：
+
+```shell
+curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
+```
+
+您应该会收到 `HTTP/1.1 200 OK` 响应。
+
 ### 使用 RS256 算法签名 JWT
 
 以下示例演示了如何在实现 JWT 消费者身份验证时使用非对称算法（例如 RS256）对 JWT 进行签名和验证。您将使用 [openssl](https://openssl-library.org/source/) 生成 RSA 密钥对，并使用 [JWT.io](https://jwt.io) 生成 JWT，以便更好地理解 JWT 的组成。
