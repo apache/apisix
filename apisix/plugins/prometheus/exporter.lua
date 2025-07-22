@@ -619,7 +619,7 @@ _M.get_api = get_api
 
 function _M.export_metrics()
     if not prometheus then
-       return core.response.exit(200, "{}")
+        return core.response.exit(200, "{}")
     end
     local api = get_api(false)
     local uri = ngx.var.uri
