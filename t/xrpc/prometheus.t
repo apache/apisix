@@ -148,6 +148,8 @@ passed
                 ngx.say("failed to get animals: ", err)
                 return
             end
+
+            ngx.sleep(1)
         }
     }
 --- response_body
@@ -184,6 +186,8 @@ apisix_redis_commands_total\{route="1",command="hmset"\} 1/
                 ngx.say("failed to set animals: ", err)
                 return
             end
+
+            ngx.sleep(1)
         }
     }
 --- response_body
@@ -262,6 +266,8 @@ passed
                 ngx.say("failed to set animals: ", err)
                 return
             end
+
+            ngx.sleep(1)
         }
     }
 --- response_body

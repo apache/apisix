@@ -57,6 +57,7 @@ end
 
 function _M.init()
     local is_http = ngx.config.subsystem == "http"
+    ngx.log(ngx.WARN, "prometheus: init", is_http, debug.traceback())
     if is_http then
         exporter.http_init()
     else
