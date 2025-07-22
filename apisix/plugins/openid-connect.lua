@@ -180,7 +180,7 @@ local schema = {
             description = "Whether the ID token should be added in the X-ID-Token-Original header to " ..
                 "the request for downstream.",
             type = "boolean",
-            default = true
+            default = false
         },
         set_userinfo_header = {
             description = "Whether the user info token should be added in the X-Userinfo " ..
