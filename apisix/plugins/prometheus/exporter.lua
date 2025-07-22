@@ -46,7 +46,11 @@ local unpack = unpack
 local next = next
 local process = require("ngx.process")
 local tonumber = tonumber
+local shdict_prometheus_cache = ngx.shared["prometheus-cache"]
 
+if not shdict_prometheus_cache then
+    error("lua_shared_dict \"prometheus-cache\" not configured")
+end
 
 local plugin_name = "prometheus"
 local default_export_uri = "/apisix/prometheus/metrics"
@@ -553,7 +557,7 @@ local function exporter_timer(premature, yieldable)
         core.log.error("Failed to collect metrics: ", res)
         return
     end
-    ngx.shared["prometheus-cache"]:set(CACHED_METRICS_KEY, res)
+    shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
 
     exporter_timer_running = false
 end
@@ -577,8 +581,7 @@ local function get_cached_metrics()
     end
 
     core.response.set_header("content_type", "text/plain")
-
-    local cached_metrics_text = ngx.shared["prometheus-cache"]:get(CACHED_METRICS_KEY)
+    local cached_metrics_text = shdict_prometheus_cache:get(CACHED_METRICS_KEY)
     if not cached_metrics_text then
         core.log.error("Failed to retrieve cached metrics: data is nil")
         return 500, "Failed to retrieve metrics: no data available"
