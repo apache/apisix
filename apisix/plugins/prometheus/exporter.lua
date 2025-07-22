@@ -550,7 +550,6 @@ local function init_exporter_timer()
     end
 
     ngx.timer.at(0, exporter_timer)
-    ngx.sleep(0)
 end
 _M.init_exporter_timer = init_exporter_timer
 

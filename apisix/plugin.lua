@@ -341,8 +341,6 @@ function _M.load(config)
         return local_plugins
     end
 
-    local exporter = require("apisix.plugins.prometheus.exporter")
-
     if ngx.config.subsystem == "http" then
         if not http_plugin_names then
             core.log.error("failed to read plugin list from local file")
