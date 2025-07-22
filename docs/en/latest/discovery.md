@@ -243,7 +243,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X
 }'
 ```
 
-In this example, requests to `x.domain.local` will be routed to the service named "service_a", while requests to `y.domain.local` will be routed to "service_b".
+In this example, requests to `x.domain.local` will be routed to the service named "service_x", while requests to `y.domain.local` will be routed to "service_y".
 
 Because the upstream interface URL may have conflict, usually in the gateway by prefix to distinguish:
 

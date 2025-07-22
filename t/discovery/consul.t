@@ -26,6 +26,7 @@ add_block_preprocessor(sub {
     my ($block) = @_;
 
     my $http_config = $block->http_config // <<_EOC_;
+
     server {
         listen 20999;
 
