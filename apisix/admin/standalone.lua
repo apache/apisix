@@ -18,6 +18,9 @@ local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
 local str_lower    = string.lower
+local str_find     = string.find
+local str_sub      = string.sub
+local tostring     = tostring
 local ngx          = ngx
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
@@ -27,12 +30,29 @@ local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
-local check_schema = require("apisix.core.schema").check
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
+
+local resources = {
+    routes          = require("apisix.admin.routes"),
+    services        = require("apisix.admin.services"),
+    upstreams       = require("apisix.admin.upstreams"),
+    consumers       = require("apisix.admin.consumers"),
+    credentials     = require("apisix.admin.credentials"),
+    schema          = require("apisix.admin.schema"),
+    ssls            = require("apisix.admin.ssl"),
+    plugins         = require("apisix.admin.plugins"),
+    protos          = require("apisix.admin.proto"),
+    global_rules    = require("apisix.admin.global_rules"),
+    stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
+    plugin_configs  = require("apisix.admin.plugin_config"),
+    consumer_groups = require("apisix.admin.consumer_group"),
+    secrets         = require("apisix.admin.secrets"),
+}
 
 local function check_duplicate(item, key, id_set)
     local identifier, identifier_type
@@ -86,6 +106,36 @@ local function update_and_broadcast_config(apisix_yaml)
     return events:post(EVENT_UPDATE, EVENT_UPDATE)
 end
 
+local function check_conf(checker, schema, item, typ)
+    if not checker then
+        return true
+    end
+    local str_id = tostring(item.id)
+    if typ == "consumers" and
+        core.string.find(str_id, "/credentials/") then
+        local credential_checker = resources.credentials.checker
+        local credential_schema = resources.credentials.schema
+        return credential_checker(item.id, item, false, credential_schema, {
+            skip_references_check = true,
+        })
+    end
+
+    local secret_type
+    if typ == "secrets" then
+        local idx = str_find(str_id or "", "/")
+        if not idx then
+            return false, {
+                error_msg = "invalid secret id: " .. (str_id or "")
+            }
+        end
+        secret_type = str_sub(str_id, 1, idx - 1)
+    end
+    return checker(item.id, item, false, schema, {
+        secret_type = secret_type,
+        skip_references_check = true,
+    })
+end
+
 
 local function update(ctx)
     local content_type = core.request.header(nil, "content-type") or "application/json"
@@ -135,6 +185,7 @@ local function update(ctx)
         local conf_version = config and config[conf_version_key] or obj.conf_version
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
+        local resource = resources[key] or {}
         if not new_conf_version then
             new_conf_version = conf_version + 1
         else
@@ -151,38 +202,23 @@ local function update(ctx)
             end
         end
 
+
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
         elseif items and #items > 0 then
             apisix_yaml[key] = table_new(#items, 0)
-            local item_schema = obj.item_schema
-            local item_checker = obj.checker
+            local item_schema = resource.schema
+            local item_checker = resource.checker
             local id_set = {}
 
             for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
-                local valid, err
-                -- need to recover to 0-based subscript
-                local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                if item_schema then
-                    valid, err = check_schema(obj.item_schema, item_temp)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
-                end
-                if item_checker then
-                    local item_checker_key
-                    if item.id then
-                        -- credential need to check key
-                        item_checker_key = "/" .. key .. "/" .. item_temp.id
-                    end
-                    valid, err = item_checker(item_temp, item_checker_key)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
+                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                if not valid then
+                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
+                    local err_msg = type(err) == "table" and err.error_msg or err
+                    core.response.exit(400, { error_msg = err_prefix .. err_msg })
                 end
                 -- prevent updating resource with the same ID
                 -- (e.g., service ID or other resource IDs) in a single request
