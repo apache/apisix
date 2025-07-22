@@ -57,9 +57,11 @@ end
 
 function _M.init()
     local is_http = ngx.config.subsystem == "http"
-    ngx.log(ngx.WARN, "prometheus: init", is_http, debug.traceback())
+
     if is_http then
-        exporter.http_init()
+        local local_conf = core.config.local_conf()
+        local enabled_in_stream = core.table.array_find(local_conf.stream_plugins, "prometheus")
+        exporter.http_init(enabled_in_stream)
     else
         exporter.stream_init()
     end

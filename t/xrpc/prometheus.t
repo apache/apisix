@@ -42,9 +42,6 @@ add_block_preprocessor(sub {
 
     if (!$block->extra_yaml_config) {
         my $extra_yaml_config = <<_EOC_;
-plugin_attr:
-    prometheus:
-        refresh_interval: 0.1
 stream_plugins:
     - prometheus
 xrpc:
@@ -52,6 +49,14 @@ xrpc:
     - name: redis
 _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
+    }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+EOF
     }
 
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
@@ -148,8 +153,6 @@ passed
                 ngx.say("failed to get animals: ", err)
                 return
             end
-
-            ngx.sleep(1)
         }
     }
 --- response_body
@@ -186,8 +189,6 @@ apisix_redis_commands_total\{route="1",command="hmset"\} 1/
                 ngx.say("failed to set animals: ", err)
                 return
             end
-
-            ngx.sleep(1)
         }
     }
 --- response_body
@@ -266,8 +267,6 @@ passed
                 ngx.say("failed to set animals: ", err)
                 return
             end
-
-            ngx.sleep(1)
         }
     }
 --- response_body

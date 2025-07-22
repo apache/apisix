@@ -206,7 +206,6 @@ function _M.http_init(prometheus_enabled_in_stream)
             {"type", "route", "service", "consumer", "node", unpack(extra_labels("bandwidth"))},
             bandwidth_metrics_exptime)
 
-    ngx.log(ngx.WARN, "prometheus: init http", prometheus_enabled_in_stream, debug.traceback())
     if prometheus_enabled_in_stream then
         init_stream_metrics()
     end
@@ -232,7 +231,7 @@ function _M.stream_init()
     end
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
-    ngx.log(ngx.WARN, "prometheus: init stream metrics", debug.traceback())
+
     init_stream_metrics()
 end
 
