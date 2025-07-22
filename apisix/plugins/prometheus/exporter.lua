@@ -451,7 +451,7 @@ local function shared_dict_status()
 end
 
 
-local function collect()
+local function collect(yieldable)
     -- collect ngx.shared.DICT status
     shared_dict_status()
 
@@ -471,25 +471,27 @@ local function collect()
         -- etcd modify index
         etcd_modify_index()
 
-        local version, err = config:server_version()
-        if version then
-            metrics.etcd_reachable:set(1)
+        if yieldable then
+            local version, err = config:server_version()
+            if version then
+                metrics.etcd_reachable:set(1)
 
-        else
-            metrics.etcd_reachable:set(0)
-            core.log.error("prometheus: failed to reach config server while ",
-                           "processing metrics endpoint: ", err)
-        end
+            else
+                metrics.etcd_reachable:set(0)
+                core.log.error("prometheus: failed to reach config server while ",
+                            "processing metrics endpoint: ", err)
+            end
 
-        -- Because request any key from etcd will return the "X-Etcd-Index".
-        -- A non-existed key is preferred because it doesn't return too much data.
-        -- So use phantom key to get etcd index.
-        local res, _ = config:getkey("/phantomkey")
-        if res and res.headers then
-            clear_tab(key_values)
-            -- global max
-            key_values[1] = "x_etcd_index"
-            metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+            -- Because request any key from etcd will return the "X-Etcd-Index".
+            -- A non-existed key is preferred because it doesn't return too much data.
+            -- So use phantom key to get etcd index.
+            local res, _ = config:getkey("/phantomkey")
+            if res and res.headers then
+                clear_tab(key_values)
+                -- global max
+                key_values[1] = "x_etcd_index"
+                metrics.etcd_modify_indexes:set(res.headers["X-Etcd-Index"], key_values)
+            end
         end
     end
 
@@ -510,7 +512,7 @@ local function collect()
 end
 
 
-local function exporter_timer(premature)
+local function exporter_timer(premature, yieldable)
     if premature then
         return
     end
@@ -525,7 +527,7 @@ local function exporter_timer(premature)
         refresh_interval = attr.refresh_interval
     end
 
-    ngx.timer.at(refresh_interval, exporter_timer)
+    ngx.timer.at(refresh_interval, exporter_timer, true)
 
     if exporter_timer_running then
         core.log.warn("Previous calculation still running, skipping")
@@ -534,7 +536,7 @@ local function exporter_timer(premature)
 
     exporter_timer_running = true
 
-    local ok, res = pcall(collect)
+    local ok, res = pcall(collect, yieldable)
     if not ok then
         core.log.error("Failed to collect metrics: ", res)
         return
@@ -544,14 +546,16 @@ local function exporter_timer(premature)
     exporter_timer_running = false
 end
 
+
 local function init_exporter_timer()
     if process.type() ~= "privileged agent" then
         return
     end
 
-    ngx.timer.at(0, exporter_timer)
+    exporter_timer(false, false)
 end
 _M.init_exporter_timer = init_exporter_timer
+
 
 local function get_cached_metrics()
     if not prometheus or not metrics then

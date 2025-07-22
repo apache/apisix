@@ -314,7 +314,6 @@ GET /apisix/prometheus/metrics
 plugin_attr:
     prometheus:
         export_uri: /a
-        refresh_interval: 0.1
 --- request
 GET /a
 --- error_code: 200
