@@ -51,14 +51,6 @@ _EOC_
         $block->set_value("extra_yaml_config", $extra_yaml_config);
     }
 
-    if (!defined $block->yaml_config) {
-        $block->set_value("yaml_config", <<'EOF');
-plugin_attr:
-    prometheus:
-        refresh_interval: 0.1
-EOF
-    }
-
     if ((!defined $block->error_log) && (!defined $block->no_error_log)) {
         $block->set_value("no_error_log", "[error]\nRPC is not finished");
     }
