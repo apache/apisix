@@ -100,6 +100,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | introspection_expiry_claim | string | False | exp |  | Name of the expiry claim, which controls the TTL of the cached and introspected access token. |
 | introspection_addon_headers | array[string] | False |  |  | Used to append additional header values to the introspection HTTP request. If the specified header does not exist in origin request, value will not be appended. |
 | claim_validator.issuer.valid_issuers | string[] | False |  |  | Whitelist the vetted issuers of the jwt. When not passed by the user, the issuer returned by discovery endpoint will be used. In case both are missing, the issuer will not be validated. |
+| claim_schema | object | False |  |  | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
 In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).

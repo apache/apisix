@@ -41,7 +41,7 @@ The fields for defining a Credential are defined as below.
 
 | Field      | Required | Description                                                                                             |
 |---------|----------|---------------------------------------------------------------------------------------------------------|
-| desc    | False    | Decriptiion of the Credential.                                                                          |
+| desc    | False    | Description of the Credential.                                                                          |
 | labels  | False    | Labels of the Credential.                                                                               |
 | plugins | False    | The plugin configuration corresponding to Credential. For more information, see [Plugins](./plugin.md). |
 
@@ -66,7 +66,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 :::
 
-1. Create the Consumer without specifying the auth plug-n, but use Credential to configure the auth plugin later.
+1. Create the Consumer without specifying the auth plug-in, but use Credential to configure the auth plugin later.
 
     ```shell
     curl http://127.0.0.1:9180/apisix/admin/consumers \
