@@ -486,7 +486,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jwt-vault-key",
-        "secret": "$secret://vault/jwt/jack/jwt-key"
+        "secret": "$secret://vault/jwt/jack/jwt-secret"
       }
     }
   }'
