@@ -802,6 +802,9 @@ function _M.init_prometheus()
     local enabled_in_http = core.table.array_find(http_plugin_names, "prometheus")
     local enabled_in_stream = core.table.array_find(stream_plugin_names, "prometheus")
 
+    -- For stream-only mode, there are separate calls in ngx_tpl.lua.
+    -- And for other modes, whether in stream or http plugins,
+    -- the prometheus exporter needs to be initialized.
     if is_http and (enabled_in_http or enabled_in_stream) then
         require("apisix.plugins.prometheus.exporter").init_exporter_timer()
     end

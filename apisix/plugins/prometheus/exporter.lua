@@ -116,7 +116,12 @@ end
 
 
 function _M.http_init(prometheus_enabled_in_stream)
+    -- FIXME:
+    -- Now the HTTP subsystem loads the stream plugin unintentionally, which shouldn't happen.
+    -- But this part did not show any issues during testing,
+    -- it's just to prevent the same problem from happening again.
     if ngx.config.subsystem ~= "http" then
+        core.log.warn("prometheus plugin http_init should not be called in stream subsystem")
         return
     end
 
@@ -226,6 +231,7 @@ function _M.stream_init()
     -- It breaks the initialization logic of the plugin,
     -- here it is temporarily fixed using a workaround.
     if ngx.config.subsystem ~= "stream" then
+        core.log.warn("prometheus plugin stream_init should not be called in http subsystem")
         return
     end
 
@@ -555,9 +561,15 @@ local function exporter_timer(premature, yieldable)
     local ok, res = pcall(collect, yieldable)
     if not ok then
         core.log.error("Failed to collect metrics: ", res)
+        exporter_timer_running = false
         return
     end
-    shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
+
+    local ok, err = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
+    if not ok then
+        core.log.error("Failed to save metrics to shdict: ", err)
+        core.log.error("If shdict is full, adjust the size of `prometheus-cache` in config")
+    end
 
     exporter_timer_running = false
 end
