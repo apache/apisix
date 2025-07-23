@@ -527,7 +527,7 @@ Success! Data written to: kv/apisix/jack
 要为 `jack` 颁发 JWT，您可以使用 [JWT.io 的 JWT 编码器](https://jwt.io) 或其他实用程序。如果您使用 [JWT.io 的 JWT 编码器](https://jwt.io)，请执行以下操作：
 
 * 填写 `HS256` 作为算法。
-* 将 __Valid secret__ 部分中的密钥更新为 `jack-hs256-secret-that-is-very-long`。
+* 将 __Valid secret__ 部分中的密钥更新为 `vault-hs256-secret-that-is-very-long`。
 * 使用消费者密钥 `jwt-vault-key` 更新有效 payload；并添加 `exp` 或 `nbf` UNIX 时间戳。
 
   您的 payload 应类似于以下内容：
