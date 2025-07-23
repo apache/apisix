@@ -233,7 +233,9 @@ function _M.stream_init_worker(filter)
     user_routes, err = core.config.new("/stream_routes", {
             automatic = true,
             item_schema = core.schema.stream_route,
-            checker = stream_route_checker,
+            checker = function(item)
+                return stream_route_checker(item)
+            end,
             filter = filter,
         })
 

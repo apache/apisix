@@ -1,0 +1,109 @@
+name: Build and Push `apisix:dev` to DockerHub on Commit
+
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  push:
+    paths-ignore:
+      - "docs/**"
+      - "**/*.md"
+  workflow_dispatch:
+
+jobs:
+  build-test-push:
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+
+    runs-on: ${{ matrix.runner }}
+
+    env:
+      APISIX_DOCKER_TAG: master-debian-dev
+      ENV_OS_ARCH: ${{ matrix.arch }}
+      DOCKER_BUILDKIT: 1
+
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Build APISIX Dashboard
+        run: |
+          # install node.js and pnpm
+          sudo n lts
+          corepack enable pnpm
+
+          # prepare apisix-dashboard source code
+          source .requirements
+          git clone --revision=${APISIX_DASHBOARD_COMMIT} --depth 1 https://github.com/apache/apisix-dashboard.git
+          pushd apisix-dashboard
+
+          # compile
+          pnpm install --frozen-lockfile
+          pnpm run build
+          popd
+
+          # copy the dist files to the ui directory
+          mkdir ui
+          cp -r apisix-dashboard/dist/* ui/
+          rm -r apisix-dashboard
+
+      - name: Build and run
+        run: |
+          make build-on-debian-dev
+          docker compose -f ./docker/compose/docker-compose-master.yaml up -d
+          sleep 30
+          docker logs compose-apisix-1
+
+      - name: Test APISIX
+        run: |
+          curl http://127.0.0.1:9180/apisix/admin/routes/1 \
+          -H 'X-API-KEY: edd1c9f034335f136f87ad84b625c8f1' -X PUT -d '
+          {
+            "uri": "/get",
+            "upstream": {
+            "type": "roundrobin",
+            "nodes": { "httpbin.org:80": 1 }
+            }
+          }'
+
+          result_code=$(curl -I -m 10 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/get)
+          if [[ $result_code -ne 200 ]]; then
+            printf "result_code: %s\n" "$result_code"
+            exit 125
+          fi
+
+      - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/master'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Push apisix image to Docker Hub
+        if: github.ref == 'refs/heads/master'
+        run: |
+          make push-on-debian-dev
+
+  merge-tags:
+    needs: build-test-push
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USER }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Check out the repo
+        uses: actions/checkout@v4
+
+      - name: Merge architecture-specific tags
+        run: |
+          make merge-dev-tags

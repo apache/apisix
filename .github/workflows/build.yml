@@ -62,14 +62,6 @@ jobs:
           path: deps
           key: ${{ runner.os }}-${{ env.cache-name }}-${{ matrix.os_name }}-${{ hashFiles('apisix-master-0.rockspec') }}
 
-      - name: Extract branch name
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        id: branch_env
-        shell: bash
-        run: |
-          echo "version=${GITHUB_REF##*/}" >>$GITHUB_OUTPUT
-          echo "fullname=apache-apisix-${GITHUB_REF##*/}-src.tgz" >>$GITHUB_OUTPUT
-
       - name: Extract test type
         shell: bash
         id: test_env
@@ -101,17 +93,6 @@ jobs:
         run: |
           make ci-env-up project_compose_ci=ci/pod/docker-compose.common.yml
           sudo ./ci/init-common-test-service.sh
-
-      - name: Create tarball
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          make compress-tar VERSION=${{ steps.branch_env.outputs.version }}
-
-      - name: Remove source code
-        if: ${{ startsWith(github.ref, 'refs/heads/release/') }}
-        run: |
-          rm -rf $(ls -1 --ignore=*.tgz --ignore=ci --ignore=t --ignore=utils --ignore=.github)
-          tar zxvf ${{ steps.branch_env.outputs.fullname }}
 
       - name: Cache images
         id: cache-images

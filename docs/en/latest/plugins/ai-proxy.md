@@ -7,7 +7,7 @@ keywords:
   - ai-proxy
   - AI
   - LLM
-description: The ai-proxy Plugin simplifies access to LLM and embedding models providers by converting Plugin configurations into the required request format for OpenAI, DeepSeek, and other OpenAI-compatible APIs.
+description: The ai-proxy Plugin simplifies access to LLM and embedding models providers by converting Plugin configurations into the required request format for OpenAI, DeepSeek, AIMLAPI, and other OpenAI-compatible APIs.
 ---
 
 <!--
@@ -35,7 +35,7 @@ description: The ai-proxy Plugin simplifies access to LLM and embedding models p
 
 ## Description
 
-The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, and other OpenAI-compatible APIs.
+The `ai-proxy` Plugin simplifies access to LLM and embedding models by transforming Plugin configurations into the designated request format. It supports the integration with OpenAI, DeepSeek, AIMLAPI, and other OpenAI-compatible APIs.
 
 In addition, the Plugin also supports logging LLM request information in the access log, such as token usage, model, time to the first response, and more.
 
@@ -51,7 +51,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 | Name               | Type    | Required | Default | Valid values                              | Description |
 |--------------------|--------|----------|---------|------------------------------------------|-------------|
-| provider          | string  | True     |         | [openai, deepseek, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
+| provider          | string  | True     |         | [openai, deepseek, aimlapi, openai-compatible] | LLM service provider. When set to `openai`, the Plugin will proxy the request to `https://api.openai.com/chat/completions`. When set to `deepseek`, the Plugin will proxy the request to `https://api.deepseek.com/chat/completions`. When set to `aimlapi`, the Plugin uses the OpenAI-compatible driver and proxies the request to `https://api.aimlapi.com/v1/chat/completions` by default. When set to `openai-compatible`, the Plugin will proxy the request to the custom endpoint configured in `override`. |
 | auth             | object  | True     |         |                                          | Authentication configurations. |
 | auth.header      | object  | False    |         |                                          | Authentication headers. At least one of `header` or `query` must be configured. |
 | auth.query       | object  | False    |         |                                          | Authentication query parameters. At least one of `header` or `query` must be configured. |

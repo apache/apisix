@@ -29,6 +29,7 @@ function _M.new(name)
     return setmetatable({
         stale_timer_running = false,
         buffers = {},
+        total_pushed_entries = 0,
         name = name,
     }, mt)
 end
@@ -57,7 +58,7 @@ local function remove_stale_objects(premature, self)
 
     for key, batch in pairs(self.buffers) do
         if #batch.entry_buffer.entries == 0 and #batch.batch_to_process == 0 then
-            core.log.warn("removing batch processor stale object, conf: ",
+            core.log.info("removing batch processor stale object, conf: ",
                           core.json.delay_encode(key))
            self.buffers[key] = nil
         end
@@ -85,7 +86,25 @@ do
 end
 
 
-function _M:add_entry(conf, entry)
+local function total_processed_entries(self)
+    local processed_entries = 0
+    for _, log_buffer in pairs(self.buffers) do
+        processed_entries = processed_entries + log_buffer.processed_entries
+    end
+    return processed_entries
+end
+
+function _M:add_entry(conf, entry, max_pending_entries)
+    if max_pending_entries then
+        local total_processed_entries_count = total_processed_entries(self)
+        if self.total_pushed_entries - total_processed_entries_count > max_pending_entries then
+            core.log.error("max pending entries limit exceeded. discarding entry.",
+                           " total_pushed_entries: ", self.total_pushed_entries,
+                           " total_processed_entries: ", total_processed_entries_count,
+                           " max_pending_entries: ", max_pending_entries)
+            return
+        end
+    end
     check_stale(self)
 
     local log_buffer = self.buffers[conf]
@@ -94,11 +113,22 @@ function _M:add_entry(conf, entry)
     end
 
     log_buffer:push(entry)
+    self.total_pushed_entries = self.total_pushed_entries + 1
     return true
 end
 
 
-function _M:add_entry_to_new_processor(conf, entry, ctx, func)
+function _M:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entries)
+    if max_pending_entries then
+        local total_processed_entries_count = total_processed_entries(self)
+        if self.total_pushed_entries - total_processed_entries_count > max_pending_entries then
+            core.log.error("max pending entries limit exceeded. discarding entry.",
+                           " total_pushed_entries: ", self.total_pushed_entries,
+                           " total_processed_entries: ", total_processed_entries_count,
+                           " max_pending_entries: ", max_pending_entries)
+            return
+        end
+    end
     check_stale(self)
 
     local config = {
@@ -120,6 +150,7 @@ function _M:add_entry_to_new_processor(conf, entry, ctx, func)
 
     log_buffer:push(entry)
     self.buffers[conf] = log_buffer
+    self.total_pushed_entries = self.total_pushed_entries + 1
     return true
 end
 

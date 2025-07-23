@@ -452,3 +452,59 @@ routes:
 503
 --- error_log
 invalid nodes format: failed to validate item 1: property "weight" validation failed: wrong type: expected integer, got string
+
+
+
+=== TEST 10: compare nodes by value only once when nodes's address be changed but values are same
+--- log_level: debug
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /hello
+    upstream_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local old_nodes = {{host = "127.0.0.1", port = 1980, weight = 1}, {host = "127.0.0.2", port = 1980, weight = 1}}
+            local discovery = require("apisix.discovery.init").discovery
+            discovery.mock = {
+                nodes = function()
+                    return old_nodes
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
+            local httpc = http.new()
+            for i = 1, 10 do
+                local res = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if res.status ~= 200 then
+                    ngx.say("request failed: ", res.status)
+                    return
+                end
+            end
+
+            local new_nodes = {{host = "127.0.0.2", port = 1980, weight = 1}, {host = "127.0.0.1", port = 1980, weight = 1}}
+            discovery.mock = {
+                nodes = function()
+                    return new_nodes
+                end
+            }
+            for i = 1, 10 do
+                local res = httpc:request_uri(uri, {method = "GET", keepalive = false})
+                if res.status ~= 200 then
+                    ngx.say("request failed: ", res.status)
+                    return
+                end
+            end
+            ngx.say("pass")
+        }
+    }
+--- response_body
+pass
+--- grep_error_log eval
+qr/compare upstream nodes by value|fill node info for upstream/
+--- grep_error_log_out
+fill node info for upstream
+compare upstream nodes by value
+fill node info for upstream

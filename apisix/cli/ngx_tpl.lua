@@ -73,6 +73,7 @@ lua {
     {% if status then %}
     lua_shared_dict status-report {* meta.lua_shared_dict["status-report"] *};
     {% end %}
+    lua_shared_dict nacos 10m;
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -232,8 +233,12 @@ stream {
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
 
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
-            apisix.stream_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 
@@ -632,20 +637,35 @@ http {
         set $upstream_host               $http_host;
         set $upstream_uri                '';
 
-        location /apisix/admin {
-            {%if allow_admin then%}
-                {% for _, allow_ip in ipairs(allow_admin) do %}
-                allow {*allow_ip*};
-                {% end %}
-                deny all;
-            {%else%}
-                allow all;
-            {%end%}
+        {%if allow_admin then%}
+        {% for _, allow_ip in ipairs(allow_admin) do %}
+        allow {*allow_ip*};
+        {% end %}
+        deny all;
+        {%else%}
+        allow all;
+        {%end%}
 
+        location /apisix/admin {
             content_by_lua_block {
                 apisix.http_admin()
             }
         }
+
+        {% if enable_admin_ui then %}
+        location = /ui {
+            return 301 /ui/;
+        }
+        location ^~ /ui/ {
+            rewrite ^/ui/(.*)$ /$1 break;
+            root {* apisix_lua_home *}/ui;
+            try_files $uri /index.html =404;
+            gzip on;
+            gzip_types text/css application/javascript application/json;
+            expires 7200s;
+            add_header Cache-Control "private,max-age=7200";
+        }
+        {% end %}
     }
     {% end %}
 
@@ -720,11 +740,9 @@ http {
         {% end %}
 
         # opentelemetry_set_ngx_var starts
-        {% if opentelemetry_set_ngx_var then %}
         set $opentelemetry_context_traceparent          '';
         set $opentelemetry_trace_id                     '';
         set $opentelemetry_span_id                      '';
-        {% end %}
         # opentelemetry_set_ngx_var ends
 
         # zipkin_set_ngx_var starts
@@ -750,11 +768,11 @@ http {
 
         {% if ssl.enable then %}
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 

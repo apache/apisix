@@ -48,8 +48,7 @@ To build and package APISIX for a specific platform, see [apisix-build-tools](ht
 First of all, we need to specify the branch to be built:
 
 ```shell
-APISIX_BRANCH='release/3.11.0'
-APISIX_VERSION='release/3.12.0'
+APISIX_BRANCH='release/3.13'
 ```
 
 Then, you can run the following command to clone the APISIX source code from Github:

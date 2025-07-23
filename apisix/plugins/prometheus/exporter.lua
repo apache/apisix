@@ -159,7 +159,7 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     metrics.node_info = prometheus:gauge("node_info",
             "Info of APISIX node",
-            {"hostname"})
+            {"hostname", "version"})
 
     metrics.etcd_modify_indexes = prometheus:gauge("etcd_modify_indexes",
             "Etcd modify index for APISIX keys",
@@ -456,6 +456,7 @@ local function collect(ctx, stream_only)
     -- config server status
     local vars = ngx.var or {}
     local hostname = vars.hostname or ""
+    local version = core.version.VERSION or ""
 
     -- we can't get etcd index in metric server if only stream subsystem is enabled
     if config.type == "etcd" and not stream_only then
@@ -484,7 +485,7 @@ local function collect(ctx, stream_only)
         end
     end
 
-    metrics.node_info:set(1, gen_arr(hostname))
+    metrics.node_info:set(1, gen_arr(hostname, version))
 
     -- update upstream_status metrics
     local stats = control.get_health_checkers()

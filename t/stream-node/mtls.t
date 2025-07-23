@@ -14,6 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISIX;
 
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
@@ -236,3 +246,90 @@ Host: localhost
 proxy request to 127.0.0.1:2005
 --- no_error_log
 proxy request to 127.0.0.1:1995
+
+
+
+=== TEST 7: 2 ssl objects, both have mTLS and with different CA
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_ca_cert = t.read_file("t/certs/mtls_ca.crt")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local ssl_ca_cert2 = t.read_file("t/certs/apisix.crt")
+
+            local data = {
+                upstream = {
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1995"] = 1,
+                    },
+                }
+            }
+            assert(t.test('/apisix/admin/stream_routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            ))
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "localhost",
+                client = {
+                    ca = ssl_ca_cert,
+                    depth = 2,
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+                return
+            end
+
+            local data = {
+                cert = ssl_cert,
+                key = ssl_key,
+                sni = "test.com",
+                client = {
+                    ca = ssl_ca_cert2,
+                    depth = 2,
+                }
+            }
+            local code, body = t.test('/apisix/admin/ssls/2',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+
+
+
+=== TEST 8: request localhost and save tls session to reuse
+--- stream_enable
+--- max_size: 1048576
+--- exec
+echo "" | timeout 1 openssl s_client -ign_eof -connect 127.0.0.1:2005 \
+    -servername localhost -cert t/certs/mtls_client.crt -key t/certs/mtls_client.key \
+    -sess_out session.dat
+
+
+
+=== TEST 9: request test.com with saved tls session
+--- stream_enable
+--- max_size: 1048576
+--- exec
+echo "" | openssl s_client -connect 127.0.0.1:2005 -servername test.com \
+    -sess_in session.dat
+--- error_log
+sni in client hello mismatch hostname of ssl session, sni: test.com, hostname: localhost

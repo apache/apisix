@@ -136,6 +136,8 @@ apisix:
   #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
   #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
                                   # or (standalone mode) the config isn't loaded yet either via file or Admin API.
+  # disable_upstream_healthcheck: false # A global switch for healthcheck. Defaults to false.
+                                        # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -500,7 +502,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
-  - server-info                    # priority: 990
+  #- server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
@@ -674,6 +676,7 @@ deployment:                    # Deployment configurations
       #   role: viewer
 
     enable_admin_cors: true       # Enable Admin API CORS response header `Access-Control-Allow-Origin`.
+    enable_admin_ui: true         # Enable embedded APISIX Dashboard UI.
     allow_admin:                  # Limit Admin API access by IP addresses.
       - 127.0.0.0/24              # If not set, any IP address is allowed.
       # - "::/64"

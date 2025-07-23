@@ -278,6 +278,42 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 }
 ```
 
+### Support reference filtering query
+
+:::note
+
+This feature was introduced in APISIX 3.13.0.
+
+APISIX supports querying routes and stream routes by `service_id` and `upstream_id`. Other resources or fields are not currently supported.
+
+:::
+
+When getting a list of resources, it supports a `filter` for filtering resources by filters.
+
+It is encoded in the following manner.
+
+```text
+filter=escape_uri(key1=value1&key2=value2)
+```
+
+The following example filters routes using `service_id`. Applying multiple filters simultaneously will return results that match all filter conditions.
+
+```shell
+curl 'http://127.0.0.1:9180/apisix/admin/routes?filter=service_id%3D1' \
+-H "X-API-KEY: $admin_key" -X GET
+```
+
+```json
+{
+  "total": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 [Routes](./terminology/route.md) match the client's request based on defined rules, loads and executes the corresponding [plugins](#plugin), and forwards the request to the specified [Upstream](#upstream).

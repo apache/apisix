@@ -125,14 +125,17 @@ my $profile = $ENV{"APISIX_PROFILE"};
 
 
 my $apisix_file;
+my $apisix_file_json;
 my $debug_file;
 my $config_file;
 if ($profile) {
     $apisix_file = "apisix-$profile.yaml";
+    $apisix_file_json = "apisix-$profile.json";
     $debug_file = "debug-$profile.yaml";
     $config_file = "config-$profile.yaml";
 } else {
     $apisix_file = "apisix.yaml";
+    $apisix_file_json = "apisix.json";
     $debug_file = "debug.yaml";
     $config_file = "config.yaml";
 }
@@ -254,6 +257,18 @@ deployment:
 _EOC_
     }
 
+    if ($block->apisix_json && (!defined $block->yaml_config)) {
+        $user_yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+    enable_admin: false
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: json
+_EOC_
+    }
+
     my $lua_deps_path = $block->lua_deps_path // <<_EOC_;
     lua_package_path "$apisix_home/?.lua;$apisix_home/?/init.lua;$apisix_home/deps/share/lua/5.1/?/init.lua;$apisix_home/deps/share/lua/5.1/?.lua;$apisix_home/apisix/?.lua;$apisix_home/t/?.lua;$apisix_home/t/xrpc/?.lua;$apisix_home/t/xrpc/?/init.lua;;";
     lua_package_cpath "$apisix_home/?.so;$apisix_home/deps/lib/lua/5.1/?.so;$apisix_home/deps/lib64/lua/5.1/?.so;;";
@@ -277,6 +292,7 @@ lua {
     lua_shared_dict prometheus-metrics 15m;
     lua_shared_dict standalone-config 10m;
     lua_shared_dict status-report 1m;
+    lua_shared_dict nacos 10m;
 }
 _EOC_
     }
@@ -478,8 +494,16 @@ _EOC_
     ssl_certificate_key         cert/apisix.key;
     lua_ssl_trusted_certificate cert/apisix.crt;
 
+    ssl_session_cache    shared:STREAM_SSL:20m;
+    ssl_session_timeout 10m;
+    ssl_session_tickets off;
+
+    ssl_client_hello_by_lua_block {
+        apisix.ssl_client_hello_phase()
+    }
+
     ssl_certificate_by_lua_block {
-        apisix.stream_ssl_phase()
+        apisix.ssl_phase()
     }
 
     preread_by_lua_block {
@@ -764,12 +788,16 @@ _EOC_
 
         ssl_protocols TLSv1.1 TLSv1.2 TLSv1.3;
 
+        ssl_session_cache    shared:SSL:20m;
+        ssl_session_timeout 10m;
+        ssl_session_tickets off;
+
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
 
         access_log logs/access.log main;
@@ -915,6 +943,14 @@ $user_apisix_yaml
 _EOC_
     }
 
+    my $user_apisix_json = $block->apisix_json // "";
+    if ($user_apisix_json){
+        $user_apisix_json = <<_EOC_;
+>>> ../conf/$apisix_file_json
+$user_apisix_json
+_EOC_
+    }
+
     my $yaml_config = $block->yaml_config // $user_yaml_config;
 
     my $default_deployment = <<_EOC_;
@@ -959,6 +995,7 @@ $etcd_pem
 >>> ../conf/cert/etcd.key
 $etcd_key
 $user_apisix_yaml
+$user_apisix_json
 _EOC_
 
     $block->set_value("user_files", $user_files);
