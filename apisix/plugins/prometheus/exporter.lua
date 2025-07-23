@@ -599,7 +599,11 @@ local function get_cached_metrics()
     end
 
     core.response.set_header("content_type", "text/plain")
-    local cached_metrics_text = shdict_prometheus_cache:get(CACHED_METRICS_KEY)
+    local cached_metrics_text, err = shdict_prometheus_cache:get(CACHED_METRICS_KEY)
+    if err then
+        core.log.error("Failed to retrieve cached metrics: err: ", err)
+        return 500, {message = "Failed to retrieve metrics. err: " .. err}
+    end
     if not cached_metrics_text then
         core.log.error("Failed to retrieve cached metrics: data is nil")
         return 500, {message = "Failed to retrieve metrics: no data available"}
