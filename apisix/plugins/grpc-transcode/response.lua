@@ -44,7 +44,9 @@ local function fetch_proto_array_names(proto_obj)
             end
         end
         if proto_obj["label"] == repeated_label then
-            names[proto_obj["name"]] = 1
+            if proto_obj["name"] then
+                names[proto_obj["name"]] = 1
+            end
         end
     end
     return names
