@@ -103,6 +103,9 @@ end
 
 
 local function create_checker(up_conf)
+    if not up_conf.checks then
+        return nil
+    end
     local local_conf = config_local.local_conf()
     if local_conf and local_conf.apisix and local_conf.apisix.disable_upstream_healthcheck then
         core.log.info("healthchecker won't be created: disabled upstream healthcheck")
