@@ -562,7 +562,6 @@ local function exporter_timer(premature, yieldable, cache_exptime)
 
     -- Clear the cached data after cache_exptime to prevent stale data in case of an error.
     local _, err, forcible = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res, cache_exptime)
-
     if err then
         core.log.error("Failed to save metrics to the `prometheus-cache` shared dict: ", err,
                     ". The size of the value being attempted to be saved is: ", #res)
