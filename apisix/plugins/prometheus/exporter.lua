@@ -537,7 +537,7 @@ local function collect(yieldable)
 end
 
 
-local function exporter_timer(premature, yieldable)
+local function exporter_timer(premature, yieldable, cache_exptime)
     if premature then
         return
     end
@@ -560,7 +560,8 @@ local function exporter_timer(premature, yieldable)
         return
     end
 
-    local _, err, forcible = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
+    -- Clear the cached data after cache_exptime to prevent stale data in case of an error.
+    local _, err, forcible = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res, cache_exptime)
 
     if err then
         core.log.error("Failed to save metrics to the `prometheus-cache` shared dict: ", err,
@@ -582,23 +583,25 @@ local function init_exporter_timer()
         return
     end
 
-    exporter_timer(false, false)
-
-    if exporter_timer_created then
-        core.log.info("Exporter timer already created, skipping")
-        return
-    end
-
     local refresh_interval = DEFAULT_REFRESH_INTERVAL
     local attr = plugin.plugin_attr("prometheus")
     if attr and attr.refresh_interval then
         refresh_interval = attr.refresh_interval
     end
 
+    local cache_exptime = refresh_interval * 2
+
+    exporter_timer(false, false, cache_exptime)
+
+    if exporter_timer_created then
+        core.log.info("Exporter timer already created, skipping")
+        return
+    end
+
     -- When the APISIX configuration `refresh_interval` is updated,
     -- the timer will not restart, and the new `refresh_interval` will not be applied.
     -- APISIX needs to be restarted to apply the changes.
-    local ok, err = ngx_timer_every(refresh_interval, exporter_timer, true)
+    local ok, err = ngx_timer_every(refresh_interval, exporter_timer, true, cache_exptime)
 
     if ok then
         exporter_timer_created = true
