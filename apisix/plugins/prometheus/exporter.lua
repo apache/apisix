@@ -565,10 +565,16 @@ local function exporter_timer(premature, yieldable)
         return
     end
 
-    local ok, err = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
-    if not ok then
+    local _, err, forcible = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
+
+    if err then
         core.log.error("Failed to save metrics to shdict: ", err)
-        core.log.error("If shdict is full, adjust the size of `prometheus-cache` in config")
+    end
+
+    if forcible then
+        core.log.error("Shared dictionary used for prometheus cache " ..
+  "is full. REPORTED METRIC DATA MIGHT BE INCOMPLETE. Please increase the " ..
+  "size of the `prometheus-cache` shared dict or decrease metric cardinality.")
     end
 
     exporter_timer_running = false
