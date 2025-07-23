@@ -19,6 +19,7 @@ local balancer          = require("ngx.balancer")
 local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local apisix_upstream   = require("apisix.upstream")
+local healthcheck_manager = require("apisix.healthcheck_manager")
 local ipairs            = ipairs
 local is_http           = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
@@ -27,7 +28,6 @@ local get_last_failure = balancer.get_last_failure
 local set_timeouts     = balancer.set_timeouts
 local ngx_now          = ngx.now
 local str_byte         = string.byte
-local healthcheck_manager = require("apisix.healthcheck_manager")
 
 local module_name = "balancer"
 local pickers = {}

@@ -26,10 +26,12 @@ local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
-local _M = {
-    working_pool = {},     -- resource_path -> {version = ver, checker = checker}
-    waiting_pool = {}      -- resource_path -> resource_ver
-}
+local string_sub     = string.sub
+
+local _M = {}
+local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
+local waiting_pool = {}      -- resource_path -> resource_ver
+
 local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
 local is_http = ngx.config.subsystem == "http"
@@ -44,16 +46,26 @@ end
 _M.get_healthchecker_name = get_healthchecker_name
 
 
+local function remove_etcd_prefix(key)
+    local prefix = ""
+    local local_conf = config_local.local_conf()
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
+    role, "config_provider")
+    if provider == "etcd" and local_conf.etcd and local_conf.etcd.prefix then
+        prefix = local_conf.etcd.prefix
+    end
+    return string_sub(key, #prefix + 1)
+end
+
+
 local function fetch_latest_conf(resource_path)
     local resource_type, id
     -- Handle both formats:
-    -- 1. /apisix/<resource_type>/<id>
+    -- 1. /<etcd-prefix>/<resource_type>/<id>
     -- 2. /<resource_type>/<id>
-    if resource_path:find("^/apisix/") then
-        resource_type, id = resource_path:match("^/apisix/([^/]+)/([^/]+)$")
-    else
-        resource_type, id = resource_path:match("^/([^/]+)/([^/]+)$")
-    end
+    resource_path = remove_etcd_prefix(resource_path)
+    resource_type, id = resource_path:match("^/([^/]+)/([^/]+)$")
     if not resource_type or not id then
         core.log.error("invalid resource path: ", resource_path)
         return nil
@@ -134,18 +146,18 @@ end
 
 
 function _M.fetch_checker(resource_path, resource_ver)
-    local working_item = _M.working_pool[resource_path]
+    local working_item = working_pool[resource_path]
     if working_item and working_item.version == resource_ver then
         return working_item.checker
     end
 
-    if _M.waiting_pool[resource_path] == resource_ver then
+    if waiting_pool[resource_path] == resource_ver then
         return nil
     end
 
     -- Add to waiting pool with version
     core.log.info("adding ", resource_path, " to waiting pool with version: ", resource_ver)
-    _M.waiting_pool[resource_path] = resource_ver
+    waiting_pool[resource_path] = resource_ver
     return nil
 end
 
@@ -161,14 +173,14 @@ end
 
 
 local function add_working_pool(resource_path, resource_ver, checker)
-    _M.working_pool[resource_path] = {
+    working_pool[resource_path] = {
         version = resource_ver,
         checker = checker
     }
 end
 
 local function find_in_working_pool(resource_path, resource_ver)
-    local checker = _M.working_pool[resource_path]
+    local checker = working_pool[resource_path]
     if not checker then
         return nil  -- not found
     end
@@ -191,11 +203,11 @@ end
 
 
 function _M.timer_create_checker()
-    if core.table.nkeys(_M.waiting_pool) == 0 then
+    if core.table.nkeys(waiting_pool) == 0 then
         return
     end
 
-    local waiting_snapshot = tab_clone(_M.waiting_pool)
+    local waiting_snapshot = tab_clone(waiting_pool)
     for resource_path, resource_ver in pairs(waiting_snapshot) do
         do
             if find_in_working_pool(resource_path, resource_ver) then
@@ -217,7 +229,7 @@ function _M.timer_create_checker()
             end
 
             -- if a checker exists then delete it before creating a new one
-            local existing_checker = _M.working_pool[resource_path]
+            local existing_checker = working_pool[resource_path]
             if existing_checker then
                 existing_checker.checker:delayed_clear(10)
                 existing_checker.checker:stop()
@@ -232,17 +244,17 @@ function _M.timer_create_checker()
         end
 
         ::continue::
-        _M.waiting_pool[resource_path] = nil
+        waiting_pool[resource_path] = nil
     end
 end
 
 
 function _M.timer_working_pool_check()
-    if core.table.nkeys(_M.working_pool) == 0 then
+    if core.table.nkeys(working_pool) == 0 then
         return
     end
 
-    local working_snapshot = tab_clone(_M.working_pool)
+    local working_snapshot = tab_clone(working_pool)
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
@@ -250,7 +262,7 @@ function _M.timer_working_pool_check()
             item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker))
-            _M.working_pool[resource_path] = nil
+            working_pool[resource_path] = nil
             goto continue
         end
         local current_ver = _M.upstream_version(res_conf.modifiedIndex,
@@ -261,7 +273,7 @@ function _M.timer_working_pool_check()
             item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
             item.checker:stop()
             core.log.info("try to release checker: ", tostring(item.checker))
-            _M.working_pool[resource_path] = nil
+            working_pool[resource_path] = nil
         end
 
         ::continue::
