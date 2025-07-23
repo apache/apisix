@@ -568,7 +568,8 @@ local function exporter_timer(premature, yieldable)
     local _, err, forcible = shdict_prometheus_cache:set(CACHED_METRICS_KEY, res)
 
     if err then
-        core.log.error("Failed to save metrics to shdict: ", err)
+        core.log.error("Failed to save metrics to the `prometheus-cache` shared dict: ", err,
+                    ". The size of the value being attempted to be saved is: ", #res)
     end
 
     if forcible then
