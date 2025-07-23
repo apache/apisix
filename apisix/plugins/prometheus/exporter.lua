@@ -47,6 +47,7 @@ local next = next
 local process = require("ngx.process")
 local tonumber = tonumber
 local shdict_prometheus_cache = ngx.shared["prometheus-cache"]
+local ngx_timer_every = ngx.timer.every
 
 if not shdict_prometheus_cache then
     error("lua_shared_dict \"prometheus-cache\" not configured")
@@ -66,6 +67,8 @@ local metrics = {}
 local inner_tab_arr = {}
 
 local exporter_timer_running = false
+
+local exporter_timer_created = false
 
 
 local function gen_arr(...)
@@ -543,14 +546,6 @@ local function exporter_timer(premature, yieldable)
         return
     end
 
-    local refresh_interval = DEFAULT_REFRESH_INTERVAL
-    local attr = plugin.plugin_attr("prometheus")
-    if attr and attr.refresh_interval then
-        refresh_interval = attr.refresh_interval
-    end
-
-    ngx.timer.at(refresh_interval, exporter_timer, true)
-
     if exporter_timer_running then
         core.log.warn("Previous calculation still running, skipping")
         return
@@ -588,6 +583,28 @@ local function init_exporter_timer()
     end
 
     exporter_timer(false, false)
+
+    if exporter_timer_created then
+        core.log.info("Exporter timer already created, skipping")
+        return
+    end
+
+    local refresh_interval = DEFAULT_REFRESH_INTERVAL
+    local attr = plugin.plugin_attr("prometheus")
+    if attr and attr.refresh_interval then
+        refresh_interval = attr.refresh_interval
+    end
+
+    -- When the APISIX configuration `refresh_interval` is updated,
+    -- the timer will not restart, and the new `refresh_interval` will not be applied.
+    -- APISIX needs to be restarted to apply the changes.
+    local ok, err = ngx_timer_every(refresh_interval, exporter_timer, true)
+
+    if ok then
+        exporter_timer_created = true
+    else
+        core.log.error("Failed to start the exporter timer: ", err)
+    end
 end
 _M.init_exporter_timer = init_exporter_timer
 

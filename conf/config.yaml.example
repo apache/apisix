@@ -170,7 +170,9 @@ nginx_config:                     # Config for render the template to generate n
   meta:
     lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
       prometheus-metrics: 15m
-      prometheus-cache: 10m       # Cache the calculated metrics data text. Please resize when the `error.log` prompts that the data is full.
+      prometheus-cache: 10m       # Cache the calculated metrics data text.
+                                  # Please resize when the `error.log` prompts that the data is full.
+                                  # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
 
   stream:
