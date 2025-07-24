@@ -300,7 +300,7 @@ A: Kubernetes 服务发现只使用特权进程监听 Kubernetes Endpoints，然
 
 **Q: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要的权限有哪些？**
 
-A: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要集群级 [ get,list,watch ] endpoints and endpointslices 资源的的权限，其声明式定义如下：
+A: [_ServiceAccount_](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/) 需要集群级 [ get,list,watch ] endpoints 和 endpointslices 资源的的权限，其声明式定义如下：
 
 ```yaml
 kind: ServiceAccount
