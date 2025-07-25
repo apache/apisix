@@ -54,8 +54,7 @@ local plugin_schema = {
     properties = {
         mode = {
             type = "string",
-            enum = { "off", "monitor", "block", nil },
-            default = nil,
+            enum = { "off", "monitor", "block" }
         },
         match = match_schema,
         append_waf_resp_header = {
@@ -100,8 +99,7 @@ local metadata_schema = {
     properties = {
         mode = {
             type = "string",
-            enum = { "off", "monitor", "block", nil },
-            default = nil,
+            enum = { "off", "monitor", "block" }
         },
         nodes = {
             type = "array",

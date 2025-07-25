@@ -25,6 +25,10 @@ sleep 1
 
 make run
 
+# The privileged agent may be ready later than the normal workers,
+# so we need to wait for a while.
+sleep 1
+
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/prometheus/metrics)
 if [ ! $code -eq 404 ]; then
     echo "failed: should listen at default prometheus address"
@@ -55,6 +59,8 @@ plugin_attr:
 ' > conf/config.yaml
 
 IP=127.0.0.1 PORT=9092 make run
+
+sleep 1
 
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9092/apisix/prometheus/metrics)
 if [ ! $code -eq 200 ]; then
