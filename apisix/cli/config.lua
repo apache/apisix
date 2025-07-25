@@ -95,6 +95,7 @@ local _M = {
     meta = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
+        ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
       }
@@ -323,7 +324,8 @@ local _M = {
       export_addr = {
         ip = "127.0.0.1",
         port = 9091
-      }
+      },
+      refresh_interval = 15
     },
     ["server-info"] = {
       report_ttl = 60
