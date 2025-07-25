@@ -255,8 +255,12 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    route.dns_value = core.table.deepcopy(route.value, { shallows = { "self.upstream.parent"}})
+    route.dns_value = core.table.deepcopy(route.value)
     route.dns_value.upstream.nodes = new_nodes
+    if not route.dns_value._nodes_ver then
+        route.dns_value._nodes_ver = 0
+    end
+    route.dns_value._nodes_ver = route.dns_value._nodes_ver + 1
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route
@@ -842,7 +846,7 @@ local function healthcheck_passive(api_ctx)
     end
 
     local up_conf = api_ctx.upstream_conf
-    local passive = up_conf.checks.passive
+    local passive = up_conf.checks and up_conf.checks.passive
     if not passive then
         return
     end

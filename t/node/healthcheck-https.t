@@ -153,7 +153,7 @@ __DATA__
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(0.5)
+            ngx.sleep(2)
 
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
             local httpc = http.new()
@@ -232,7 +232,7 @@ GET /t
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(1.5)
+            ngx.sleep(4)
 
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
             local httpc = http.new()
@@ -260,6 +260,7 @@ GET /t
 qr/\([^)]+\) unhealthy .* for '.*'/
 --- grep_error_log_out
 (upstream#/apisix/routes/1) unhealthy HTTP increment (1/1) for '127.0.0.1(127.0.0.1:8766)'
+--- timeout: 8
 
 
 
@@ -314,7 +315,7 @@ qr/\([^)]+\) unhealthy .* for '.*'/
             local httpc = http.new()
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/ping"
             local _, _ = httpc:request_uri(uri, {method = "GET", keepalive = false})
-            ngx.sleep(1.5)
+            ngx.sleep(4)
 
             local healthcheck_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/healthcheck/routes/1"
             local httpc = http.new()
@@ -339,3 +340,4 @@ qr/\([^)]+\) unhealthy .* for '.*'/
 --- request
 GET /t
 --- error_code: 200
+--- timeout: 8

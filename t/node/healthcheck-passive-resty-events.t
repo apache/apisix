@@ -115,7 +115,7 @@ passed
                 ngx.say(err)
                 return
             end
-            ngx.sleep(1) -- Wait for health check unhealthy events sync
+            ngx.sleep(2) -- Wait for health check unhealthy events sync
 
             local ports_count = {}
             for i = 1, 6 do
@@ -291,7 +291,7 @@ passed
             local json_sort = require("toolkit.json")
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
-
+            ngx.sleep(3.5)
             local ports_count = {}
             local httpc = http.new()
             local res, err = httpc:request_uri(uri .. "/hello_")
@@ -300,13 +300,23 @@ passed
                 return
             end
             ngx.say(res.status)
-
+            ngx.sleep(3.5)
+            --- The first request above triggers the passive healthcheck
+            --- The healthchecker is asynchronously created after a minimum of 1 second
+            --- So we need to wait for it to be created and sent another request to verify
             -- only /hello_ has passive healthcheck
+            local res, err = httpc:request_uri(uri .. "/hello_")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.sleep(2)
             local res, err = httpc:request_uri(uri .. "/hello")
             if not res then
                 ngx.say(err)
                 return
             end
+
             ngx.say(res.status)
         }
     }
@@ -319,6 +329,7 @@ GET /t
 qr/enabled healthcheck passive/
 --- grep_error_log_out
 enabled healthcheck passive
+--- timeout: 15
 
 
 
@@ -359,7 +370,7 @@ enabled healthcheck passive
             end
             ngx.say(res.status)
 
-            ngx.sleep(1) -- Wait for health check unhealthy events sync
+            ngx.sleep(4) -- Wait for health check unhealthy events sync
 
             -- The second time request to /hello_
             local res, err = httpc:request_uri(uri .. "/hello_")
@@ -380,3 +391,4 @@ GET /t
 qr/\[healthcheck\] \([^)]+\) unhealthy HTTP increment/
 --- grep_error_log_out
 [healthcheck] (upstream#/apisix/routes/2) unhealthy HTTP increment
+--- timeout: 6
