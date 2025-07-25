@@ -68,7 +68,7 @@ rerun_flaky_tests() {
 
 fail_on_bailout() {
     local test_output_file="$1"
-    
+
     # Check for bailout message in test output
     if grep -q "Bailout called.  Further testing stopped:" "$test_output_file"; then
         echo "Error: Bailout detected in test output"
