@@ -17,7 +17,6 @@
 local core = require("apisix.core")
 local exporter = require("apisix.plugins.prometheus.exporter")
 
-
 local plugin_name = "prometheus"
 local schema = {
     type = "object",
@@ -35,6 +34,7 @@ local _M = {
     priority = 500,
     name = plugin_name,
     log  = exporter.http_log,
+    destroy = exporter.destroy,
     schema = schema,
     run_policy = "prefer_route",
 }
@@ -52,6 +52,13 @@ end
 
 function _M.api()
     return exporter.get_api(true)
+end
+
+
+function _M.init()
+    local local_conf = core.config.local_conf()
+    local enabled_in_stream = core.table.array_find(local_conf.stream_plugins, "prometheus")
+    exporter.http_init(enabled_in_stream)
 end
 
 
