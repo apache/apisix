@@ -24,6 +24,9 @@ local udp = ngx.socket.udp
 local format = string.format
 local concat = table.concat
 local tostring = tostring
+local ipairs = ipairs
+local floor = math.floor
+local unpack = unpack
 
 local plugin_name = "datadog"
 local defaults = {
@@ -34,10 +37,33 @@ local defaults = {
 }
 
 local batch_processor_manager = bp_manager_mod.new(plugin_name)
+
+-- Shared schema for individual tag strings.
+local tag_schema = {
+    type = "string",
+    -- Tags must be between 1 and 200 characters.
+    minLength = 1,
+    maxLength = 200,
+    -- Tags must follow the Datadog tag format:
+    --   - `^[\p{L}]`: Must start with any kind of Unicode letter.
+    --   - `[\p{L}\p{N}_.:/-]*`: Followed by Unicode letters (\p{L}), numbers (\p{N}),
+    --     or the allowed special characters (underscore, hyphen, colon,
+    --     period, and slash).
+    --   - `(?<!:)$`: Must not end with a colon.
+    pattern = [[^[\p{L}][\p{L}\p{N}_.:/-]*(?<!:)$]]
+}
+
 local schema = {
     type = "object",
     properties = {
-        prefer_name = {type = "boolean", default = true}
+        prefer_name = {type = "boolean", default = true},
+        include_path = {type = "boolean", default = false},
+        include_method = {type = "boolean", default = false},
+        constant_tags = {
+            type = "array",
+            items = tag_schema,
+            default = {}
+        }
     }
 }
 
@@ -49,7 +75,7 @@ local metadata_schema = {
         namespace = {type = "string", default = defaults.namespace},
         constant_tags = {
             type = "array",
-            items = {type = "string"},
+            items = tag_schema,
             default = defaults.constant_tags
         }
     },
@@ -80,25 +106,32 @@ local function generate_tag(entry, const_tags)
         tags = {}
     end
 
-    if entry.route_id and entry.route_id ~= "" then
-        core.table.insert(tags, "route_name:" .. entry.route_id)
+    if entry.constant_tags and #entry.constant_tags > 0 then
+        for _, tag in ipairs(entry.constant_tags) do
+            core.table.insert(tags, tag)
+        end
     end
 
-    if entry.service_id and entry.service_id ~= "" then
-        core.table.insert(tags, "service_name:" .. entry.service_id)
-    end
+    local variable_tags = {
+        {"route_name", entry.route_id},
+        {"path", entry.path},
+        {"method", entry.method},
+        {"service_name", entry.service_id},
+        {"consumer", entry.consumer and entry.consumer.username},
+        {"balancer_ip", entry.balancer_ip},
+        {"response_status", entry.response.status},
+        {
+            "response_status_class",
+            entry.response.status and floor(entry.response.status / 100) .. "xx"
+        },
+        {"scheme", entry.scheme}
+    }
 
-    if entry.consumer and entry.consumer.username then
-        core.table.insert(tags, "consumer:" .. entry.consumer.username)
-    end
-    if entry.balancer_ip ~= "" then
-        core.table.insert(tags, "balancer_ip:" .. entry.balancer_ip)
-    end
-    if entry.response.status then
-        core.table.insert(tags, "response_status:" .. entry.response.status)
-    end
-    if entry.scheme ~= "" then
-        core.table.insert(tags, "scheme:" .. entry.scheme)
+    for _, tag in ipairs(variable_tags) do
+        local key, value = unpack(tag)
+        if value and value ~= "" then
+            core.table.insert(tags, key .. ":" .. value)
+        end
     end
 
     if #tags > 0 then
@@ -239,6 +272,20 @@ function _M.log(conf, ctx)
         if ctx.route_name and ctx.route_name ~= "" then
             entry.route_id = ctx.route_name
         end
+    end
+
+    if conf.include_path then
+        if ctx.curr_req_matched and ctx.curr_req_matched._path then
+            entry.path = ctx.curr_req_matched._path
+        end
+    end
+
+    if conf.include_method then
+        entry.method = ctx.var.method
+    end
+
+    if conf.constant_tags and #conf.constant_tags > 0 then
+        entry.constant_tags = core.table.clone(conf.constant_tags)
     end
 
     if batch_processor_manager:add_entry(conf, entry) then
