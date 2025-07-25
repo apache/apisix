@@ -78,14 +78,47 @@ function _M.all_nodes()
     return all_services
 end
 
+local function match_metadata_filters(inst, filters)
+    local metadata = inst.metadata or {}
+    for _, f in ipairs(filters) do
+        local key = f.key
+        local allowed_vals = f.value
+        local val = metadata[key]
+        local matched = false
+        for _, allowed in ipairs(allowed_vals) do
+            if val == allowed then
+                matched = true
+                break
+            end
+        end
+        if not matched then
+            return false
+        end
+    end
+    return true
+end
 
-function _M.nodes(service_name)
+local function match_nodes_by_metadata(nodes, filters)
+    local result = {}
+    for _, node in ipairs(nodes) do
+        if match_metadata_filters(node, filters) then
+            core.table.insert(result, node)
+        end
+    end
+    return result
+end
+
+function _M.nodes(service_name, discovery_args)
     if not all_services then
         log.error("all_services is nil, failed to fetch nodes for : ", service_name)
         return
     end
 
     local resp_list = all_services[service_name]
+
+    if discovery_args.metadata_match then
+        resp_list = match_nodes_by_metadata(resp_list, discovery_args.metadata_match)
+    end
 
     if not resp_list then
         log.error("fetch nodes failed by ", service_name, ", return default service")
@@ -97,7 +130,6 @@ function _M.nodes(service_name)
 
     return resp_list
 end
-
 
 local function update_all_services(consul_server_url, up_services)
     -- clean old unused data
@@ -511,11 +543,15 @@ function _M.connect(premature, consul_server, retry_delay)
                 local nodes = up_services[service_name]
                 local nodes_uniq = {}
                 for _, node in ipairs(result.body) do
-                    if not node.Service then
+                    local service = node.Service
+                    if not service then
                         goto CONTINUE
                     end
 
-                    local svc_address, svc_port = node.Service.Address, node.Service.Port
+                    local svc_address, svc_port, metadata = service.Address, service.Port, service.Meta
+                    if type(metadata) ~= "table" then
+                       metadata = nil
+                    end
                     -- Handle nil or 0 port case - default to 80 for HTTP services
                     if not svc_port or svc_port == 0 then
                         svc_port = 80
@@ -532,7 +568,8 @@ function _M.connect(premature, consul_server, retry_delay)
                         core.table.insert(nodes, {
                             host = svc_address,
                             port = tonumber(svc_port),
-                            weight = default_weight,
+                            weight = metadata and metadata.weight or default_weight,
+                            metadata = metadata
                         })
                         nodes_uniq[service_id] = true
                     end

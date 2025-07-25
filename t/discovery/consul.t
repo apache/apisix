@@ -781,3 +781,62 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+=== TEST 16: test metadata_match with consul discovery
+--- yaml_config
+apisix:
+    node_listen: 1984
+    config_center: yaml
+    discovery:
+        consul:
+            servers:
+              - http://127.0.0.1:8500
+routes:
+  -
+    uri: /test_metadata_match
+    upstream:
+      service_name: mock-service
+      type: roundrobin
+      discovery_type: consul
+      discovery_args:
+        metadata_match:
+          version:
+            - "v2"
+
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /test_metadata_match {
+    content_by_lua_block {
+        local server = ngx.var.server_addr or "unknown"
+        ngx.say("Upstream server handling request: ", server)
+    }
+}
+--- timeout: 5
+--- pipelined_requests eval
+[
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"mock-node-v1\",\"Name\":\"mock-service\",\"Address\":\"127.0.0.1\",\"Port\":1984,\"Meta\":{\"version\":\"v1\",\"weight\":\"1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"mock-node-v2\",\"Name\":\"mock-service\",\"Address\":\"127.0.0.2\",\"Port\":1984,\"Meta\":{\"version\":\"v2\",\"weight\":\"2\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+
+    "GET /test_metadata_match?run1",
+    "GET /test_metadata_match?run2",
+    "GET /test_metadata_match?run3",
+
+    "PUT /v1/agent/service/deregister/mock-node-v1",
+    "PUT /v1/agent/service/deregister/mock-node-v2"
+]
+--- response_body_like eval
+[
+    qr//,
+    qr//,
+
+    qr/127.0.0.2/,
+    qr/127.0.0.2/,
+    qr/127.0.0.2/,
+
+    qr//,
+    qr//
+]
+--- no_error_log
+[error]
