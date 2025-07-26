@@ -49,7 +49,7 @@ For Consumer/Credential:
 | key           | string  | True                                                  |         |     non-empty       | Unique key for a Consumer.                                                                                                                                                                  |
 | secret        | string  | False                                                 |         |        non-empty        | Shared key used to sign and verify the JWT when the algorithm is symmetric. Required when using `HS256` or `HS512` as the algorithm. If unspecified, the secret will be auto-generated. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.       |
 | public_key    | string  | True if `RS256` or `ES256` is set for the `algorithm` attribute. |         |                             | RSA or ECDSA public key. This field supports saving the value in Secret Manager using the [APISIX Secret](../terminology/secret.md) resource.                      |
-| algorithm     | string  | False                                                 | HS256 | ["HS256", "HS512", "RS256", "ES256"] | Encryption algorithm.                                                                                                                                                                       |
+| algorithm     | string  | False                                                 | HS256 | ["HS256","HS512","RS256","ES256"] | Encryption algorithm.                                                                                                                                                                       |
 | exp           | integer | False                                                 | 86400   | [1,...]                     | Expiry time of the token in seconds.                                                                                                                                                        |
 | base64_secret | boolean | False                                                 | false   |                             | Set to true if the secret is base64 encoded.                                                                                                                                                |
 | lifetime_grace_period | integer | False                                         | 0       | [0,...]                     | Grace period in seconds. Used to account for clock skew between the server generating the JWT and the server validating the JWT.  |
@@ -99,7 +99,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `jwt-auth` Credential for the Consumer:
+Create `jwt-auth` Credential for the consumer:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -109,13 +109,13 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
 ```
 
-Create a Route with `jwt-auth` plugin:
+Create a Route with `jwt-auth` Plugin:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -135,10 +135,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) or other utilities. If you are using [JWT.io's debugger](https://jwt.io/#debugger-io), do the following:
+To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
-* Select __HS256__ in the __Algorithm__ dropdown.
-* Update the secret in the __Verify Signature__ section to be `jack-hs256-secret`.
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
   Your payload should look similar to the following:
@@ -150,10 +150,10 @@ To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#deb
   }
   ```
 
-Copy the generated JWT under the __Encoded__ section and save to a variable:
+Copy the generated JWT and save to a variable:
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 Send a request to the Route with the JWT in the `Authorization` header:
@@ -164,7 +164,7 @@ curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
-```text
+```json
 {
   "headers": {
     "Accept": "*/*",
@@ -179,10 +179,10 @@ You should receive an `HTTP/1.1 200 OK` response similar to the following:
 }
 ```
 
-In 30 seconds, the token should expire. Send a request with the same token to verify:
+Send a request with an invalid token:
 
 ```shell
-curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
+curl -i "http://127.0.0.1:9080/headers" -H "Authorization: eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjU_random_random"
 ```
 
 You should receive an `HTTP/1.1 401 Unauthorized` response similar to the following:
@@ -215,13 +215,13 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
 ```
 
-Create a Route with `jwt-auth` Plugin, and specify that the request can either carry the token in the header, query, or the cookie:
+Create a Route with `jwt-auth` plugin, and specify the request parameters carrying the token:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -245,10 +245,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) or other utilities. If you are using [JWT.io's debugger](https://jwt.io/#debugger-io), do the following:
+To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
-* Select __HS256__ in the __Algorithm__ dropdown.
-* Update the secret in the __Verify Signature__ section to be `jack-hs256-secret`.
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
   Your payload should look similar to the following:
@@ -260,10 +260,10 @@ To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#deb
   }
   ```
 
-Copy the generated JWT under the __Encoded__ section and save to a variable:
+Copy the generated JWT and save to a variable:
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 #### Verify With JWT in Header
@@ -276,13 +276,13 @@ curl -i "http://127.0.0.1:9080/get" -H "jwt-auth-header: ${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
-```text
+```json
 {
   "args": {},
   "headers": {
     "Accept": "*/*",
     "Host": "127.0.0.1",
-    "Jwt-Auth-Header": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ",
+    "Jwt-Auth-Header": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
   },
   ...
@@ -299,10 +299,10 @@ curl -i "http://127.0.0.1:9080/get?jwt-query=${jwt_token}"
 
 You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
-```text
+```json
 {
   "args": {
-    "jwt-query": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ"
+    "jwt-query": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU"
   },
   "headers": {
     "Accept": "*/*",
@@ -323,12 +323,12 @@ curl -i "http://127.0.0.1:9080/get" --cookie jwt-cookie=${jwt_token}
 
 You should receive an `HTTP/1.1 200 OK` response similar to the following:
 
-```text
+```json
 {
   "args": {},
   "headers": {
     "Accept": "*/*",
-    "Cookie": "jwt-cookie=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJrZXkiOiJ1c2VyLWtleSIsImV4cCI6MTY5NTEyOTA0NH0.EiktFX7di_tBbspbjmqDKoWAD9JG39Wo_CAQ1LZ9voQ",
+    "Cookie": "jwt-cookie=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     ...
   },
   ...
@@ -344,8 +344,14 @@ APISIX supports referencing system and user environment variables configured thr
 Save the key to an environment variable:
 
 ```shell
-JACK_JWT_AUTH_KEY=jack-key
+export JACK_JWT_SECRET=jack-hs256-secret-that-is-very-long
 ```
+
+:::tip
+
+If you are running APISIX in Docker, you should set the environment variable using the `-e` flag when starting the container.
+
+:::
 
 Create a Consumer `jack`:
 
@@ -357,7 +363,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   }'
 ```
 
-Create `jwt-auth` Credential for the Consumer and reference the environment variable in the key:
+Create `jwt-auth` Credential for the Consumer and reference the environment variable:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
@@ -366,8 +372,9 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "id": "cred-jack-jwt-auth",
     "plugins": {
       "jwt-auth": {
-        "key": "$env://JACK_JWT_AUTH_KEY",
-        "secret": "jack-hs256-secret"
+        # highlight-next-line
+        "key": "jack-key",
+        "secret": "$env://JACK_JWT_SECRET"
       }
     }
   }'
@@ -393,10 +400,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) or other utilities. If you are using [JWT.io's debugger](https://jwt.io/#debugger-io), do the following:
+To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
-* Select __HS256__ in the __Algorithm__ dropdown.
-* Update the secret in the __Verify Signature__ section to be `jack-hs256-secret`.
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
   Your payload should look similar to the following:
@@ -408,10 +415,10 @@ To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#deb
   }
   ```
 
-Copy the generated JWT under the __Encoded__ section and save to a variable:
+Copy the generated JWT and save to a variable:
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 Sending request with JWT in the header:
@@ -420,23 +427,11 @@ Sending request with JWT in the header:
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response similar to the following:
-
-```text
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE2OTUxMzMxNTUsImtleSI6Imp3dC1rZXkifQ.jiKuaAJqHNSSQCjXRomwnQXmdkC5Wp5VDPRsJlh1WAQ",
-    ...
-  },
-  ...
-}
-```
+You should receive an `HTTP/1.1 200 OK` response.
 
 ### Manage Secrets in Secret Manager
 
-The following example demonstrates how to manage `jwt-auth` Consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in Plugin configuration.
+The following example demonstrates how to manage `jwt-auth` consumer key in [HashiCorp Vault](https://www.vaultproject.io) and reference it in plugin configuration.
 
 Start a Vault development server in Docker:
 
@@ -463,13 +458,13 @@ You should see a response similar to the following:
 Success! Enabled the kv secrets engine at: kv/
 ```
 
-Create a secret and configure the Vault address and other connection information:
+Create a Secret and configure the Vault address and other connection information. Update the Vault address accordingly:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/secrets/vault/jwt" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
-    "uri": "https://127.0.0.1:8200"，
+    "uri": "https://127.0.0.1:8200",
     "prefix": "kv/apisix",
     "token": "root"
   }'
@@ -479,23 +474,23 @@ Create a Consumer `jack`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "username": "jack"
   }'
 ```
 
-Create `jwt-auth` Credential for the Consumer and reference the secret in the key:
+Create `jwt-auth` Credential for the Consumer and reference the Secret:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "id": "cred-jack-jwt-auth",
     "plugins": {
       "jwt-auth": {
-        "key": "$secret://vault/jwt/jack/jwt-key",
-        "secret": "vault-hs256-secret"
+        "key": "jwt-vault-key",
+        "secret": "$secret://vault/jwt/jack/jwt-secret"
       }
     }
   }'
@@ -505,7 +500,7 @@ Create a Route with `jwt-auth` enabled:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
-  -H "X-API-KEY: ${admin_key}" \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "id": "jwt-route",
     "uri": "/get",
@@ -521,10 +516,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-Set `jwt-auth` key value to be `jwt-vault-key` in Vault:
+Set `jwt-auth` key value to be `vault-hs256-secret-that-is-very-long` in Vault:
 
 ```shell
-docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-key=jwt-vault-key"
+docker exec -i vault sh -c "VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/jack jwt-secret=vault-hs256-secret-that-is-very-long"
 ```
 
 You should see a response similar to the following:
@@ -533,11 +528,11 @@ You should see a response similar to the following:
 Success! Data written to: kv/apisix/jack
 ```
 
-To issue a JWT, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) or other utilities. If you are using [JWT.io's debugger](https://jwt.io/#debugger-io), do the following:
+To issue a JWT, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
-* Select __HS256__ in the __Algorithm__ dropdown.
-* Update the secret in the __Verify Signature__ section to be `vault-hs256-secret`.
-* Update payload with Consumer key `jwt-vault-key`; and add `exp` or `nbf` in UNIX timestamp.
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `vault-hs256-secret-that-is-very-long`.
+* Update payload with consumer key `jwt-vault-key`; and add `exp` or `nbf` in UNIX timestamp.
 
   Your payload should look similar to the following:
 
@@ -548,35 +543,23 @@ To issue a JWT, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) o
   }
   ```
 
-Copy the generated JWT under the __Encoded__ section and save to a variable:
+Copy the generated JWT and save to a variable:
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.faiN93LNP1lGSXqAb4empNJKMRWop8-KgnU58VQn1EE
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwibmJmIjoxNzI5MTMyMjcxfQ.i2pLj7QcQvnlSjB7iV5V522tIV43boQRtee7L0rwlkQ
 ```
 
-Sending request with the token as header:
+Send a request with the token in the header:
 
 ```shell
 curl -i "http://127.0.0.1:9080/get" -H "Authorization: ${jwt_token}"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response similar to the following:
-
-```text
-{
-  "args": {},
-  "headers": {
-    "Accept": "*/*",
-    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqd3QtdmF1bHQta2V5IiwiZXhwIjoxNjk1MTM4NjM1fQ.Au2liSZ8eQXUJR3SJESwNlIfqZdNyRyxIJK03L4dk_g",
-    ...
-  },
-  ...
-}
-```
+You should receive an `HTTP/1.1 200 OK` response.
 
 ### Sign JWT with RS256 Algorithm
 
-The following example demonstrates how you can use asymmetric algorithms, such as RS256, to sign and validate JWT when implementing JWT for Consumer authentication. You will be generating RSA key pairs using [openssl](https://openssl-library.org/source/) and generating JWT using [JWT.io](https://jwt.io/#debugger-io) to better understand the composition of JWT.
+The following example demonstrates how you can use asymmetric algorithms, such as RS256, to sign and validate JWT when implementing JWT for Consumer authentication. You will be generating RSA key pairs using [openssl](https://openssl-library.org/source/) and generating JWT using [JWT.io](https://jwt.io) to better understand the composition of JWT.
 
 Generate a 2048-bit RSA private key and extract the corresponding public key in PEM format:
 
@@ -587,28 +570,25 @@ openssl rsa -in jwt-rsa256-private.pem -pubout -out jwt-rsa256-public.pem
 
 You should see `jwt-rsa256-private.pem` and `jwt-rsa256-public.pem` generated in your current working directory.
 
-Visit [JWT.io's debugger](https://jwt.io/#debugger-io) and do the following:
+Visit [JWT.io's JWT encoder](https://jwt.io) and do the following:
 
-* Select __RS256__ in the __Algorithm__ dropdown.
-* Copy and paste the key content into the __Verify Signature__ section.
-* Update the payload with `key` matching the Consumer key you would like to use; and `exp` or `nbf` in UNIX timestamp.
+* Fill in `RS256` as the algorithm.
+* Copy and paste the private key content into the __SIGN JWT: PRIVATE KEY__ section.
+* Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
-The configuration should look similar to the following:
+  Your payload should look similar to the following:
 
-<br />
-<div style={{textAlign: 'center'}}>
-<img
-  src="https://static.apiseven.com/uploads/2024/12/12/SRe7AXMw_jwt_token.png"
-  alt="complete configuration of JWT generation on jwt.io"
-  width="70%"
-/>
-</div>
-<br />
+  ```json
+  {
+    "key": "jack-key",
+    "nbf": 1729132271
+  }
+  ```
 
-Copy the JWT on the left and save to an environment variable:
+Copy the generated JWT and save to a variable:
 
 ```shell
-jwt_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsImV4cCI6MTczNDIzMDQwMH0.XjqM0oszmCggwZs-8PUIlJv8wPJON1la2ET5v70E6TCE32Yq5ibrl-1azaK7IreAer3HtnVHeEfII2rR02v8xfR1TPIjU_oHov4qC-A4tLTbgqGVXI7fCy2WFm3PFh6MEKuRe6M3dCQtCAdkRRQrBr1gWFQZhV3TNeMmmtyIfuJpB7cp4DW5pYFsCcoE1Nw6Tz7dt8k0tPBTPI2Mv9AYfMJ30LHDscOaPNtz8YIk_TOkV9b9mhQudUJ7J_suCZMRxD3iL655jTp2gKsstGKdZa0_W9Reu4-HY3LSc5DS1XtfjuftpuUqgg9FvPU0mK_b0wT_Rq3lbYhcHb9GZ72qiQ
+export jwt_token=eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.K-I13em84kAcyH1jfIJl7ls_4jlwg1GzEzo5_xrDu-3wt3Xa3irS6naUsWpxX-a-hmcZZxRa9zqunqQjUP4kvn5e3xg2f_KyCR-_ZbwqYEPk3bXeFV1l4iypv6z5L7W1Niharun-dpMU03b1Tz64vhFx6UwxNL5UIZ7bunDAo_BXZ7Xe8rFhNHvIHyBFsDEXIBgx8lNYMq8QJk3iKxZhZZ5Om7lgYjOOKRgew4WkhBAY0v1AkO77nTlvSK0OEeeiwhkROyntggyx-S-U222ykMQ6mBLxkP4Cq5qHwXD8AUcLk5mhEij-3QhboYnt7yhKeZ3wDSpcjDvvL2aasC25ng
 ```
 
 Create a Consumer `jack`:
@@ -632,8 +612,8 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
       "jwt-auth": {
         "key": "jack-key",
         "algorithm": "RS256",
-        "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnE0h4k/GWfEbYO/yE2MPjHtNKDLNz4mv1KNIPLxY2ccjPYOtjuug+iZ4MujLV59YfrHriTs0H8jweQfff3pRSMjyEK+4qWTY3TeKBXIEa3pVDeoedSJrgjLBVio6xH7et8ir+QScScfLaJHGB4/l3DDGyEhO782a9teY8brn5hsWX5uLmDJvxtTGAHYi847XOcx2UneW4tZ8wQ6JGBSiSg5qAHan4dFZ7CpixCNNqEcSK6EQ7lKOLeFGG8ys/dHBIEasU4oMlCuJH77+XQQ/shchy+vm9oZfP+grLZkV+nKAd8MQZsid7ZJ/fiB/BmnhGrjtIfh98jwxSx4DgdLhdwIDAQAB\n-----END PUBLIC KEY-----",
-        "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCcTSHiT8ZZ8Rtg7/ITYw+Me00oMs3Pia/Uo0g8vFjZxyM9g62O66D6Jngy6MtXn1h+seuJOzQfyPB5B99/elFIyPIQr7ipZNjdN4oFcgRrelUN6h51ImuCMsFWKjrEft63yKv5BJxJx8tokcYHj+XcMMbISE7vzZr215jxuufmGxZfm4uYMm/G1MYAdiLzjtc5zHZSd5bi1nzBDokYFKJKDmoAdqfh0VnsKmLEI02oRxIroRDuUo4t4UYbzKz90cEgRqxTigyUK4kfvv5dBD+yFyHL6+b2hl8/6CstmRX6coB3wxBmyJ3tkn9+IH8GaeEauO0h+H3yPDFLHgOB0uF3AgMBAAECggEARpY68Daw0Funzq5uN70r/3iLztSqx8hZpQEclXlF8wwQ6S33iqz1JSOMcwlZE7g9wfHd+jrHfndDypT4pVx7KxC86TZCghWuLrFvXqgwQM2dbcxGdwXVYZZEZAJsSeM19+/jYnFnl5ZoUVBMC4w79aX9j+O/6mKDUmjphHmxUuRCFjN0w7BRoYwmS796rSf1eoOcSXh2G9Ycc34DUFDfGpOzabndbmMfOz7W0DyUBG23fgLhNChTUGq8vMaqKXkQ8JKeKdEugSmRGz42HxjWoNlIGBDyB8tPNPT6SXsu/JBskdf9Gb71OWiub381oXC259sz+1K1REb1KSkgyC+bkQKBgQDKCnwXaf8aOIoJPCG53EqQfKScCIYQrvp1Uk3bs5tfYN4HcI3yAUnOqQ3Ux3eY9PfS37urlJXCfCbCnZ6P6xALZnN+aL2zWvZArlHvD6vnXiyevwK5IY+o2EW02h3A548wrGznQSsfX0tum22bEVlRuFfBbpZpizXwrV4ODSNhTwKBgQDGC27QQxah3yq6EbOhJJlJegjawVXEaEp/j4fD3qe/unLbUIFvCz6j9BAbgocDKzqXxlpTtIbnsesdLo7KM3MtYL0XO/87HIsBj9XCVgMkFCcM6YZ6fHnkJl0bs3haU4N9uI/wpokvfvXJp7iC9LUCseBdBj+N6T230HWiSbPjWQKBgQC8zzGKO/8vRNkSqkQmSczQ2/qE6p5G5w6eJy0lfOJdLswvDatJFpUf8PJA/6svoPYb9gOO5AtUNeuPAfeVLSnQTYzu+/kTrJTme0GMdAvE60gtjfmAgvGa64mw6gjWJk+1P92B+2/OIKMAmXXDbWIYMXqpBKzBs1vUMF/uJ68BlwKBgQDEivQem3YKj3/HyWmLstatpP7EmrqTgSzuC3OhX4b7L/5sySirG22/KKgTpSZ4bp5noeJiz/ZSWrAK9fmfkg/sKOV/+XsDHwCVPDnX86SKWbWnitp7FK2jTq94nlQC0H7edhvjqGLdUBJ9XoYu8MvzMLSJnXnVTHSDx832kU6FgQKBgQCbw4Eiu2IcOduIAokmsZl8Smh9ZeyhP2B/UBa1hsiPKQ6bw86QJr2OMbRXLBxtx+HYIfwDo4vXEE862PfoQyu6SjJBNmHiid7XcV06Z104UQNjP7IDLMMF+SASMqYoQWg/5chPfxBgIXnfWqw6TMmND3THY4Oj4Nhf4xeUg3HsaA==\n-----END PRIVATE KEY-----"
+        "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoTxe7ZPycrEP0SK4OBA2\n0OUQsDN9gSFSHVvx/t++nZNrFxzZnV6q6/TRsihNXUIgwaOu5icFlIcxPL9Mf9UJ\na5/XCQExp1TxpuSmjkhIFAJ/x5zXrC8SGTztP3SjkhYnQO9PKVXI6ljwgakVCfpl\numuTYqI+ev7e45NdK8gJoJxPp8bPMdf8/nHfLXZuqhO/btrDg1x+j7frDNrEw+6B\nCK2SsuypmYN+LwHfaH4Of7MQFk3LNIxyBz0mdbsKJBzp360rbWnQeauWtDymZxLT\nATRNBVyl3nCNsURRTkc7eyknLaDt2N5xTIoUGHTUFYSdE68QWmukYMVGcEHEEPkp\naQIDAQAB\n-----END PUBLIC KEY-----"
+        # highlight-end
       }
     }
   }'
@@ -641,7 +621,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
 
 :::tip
 
-You should add a newline character after the opening line and before the closing line, for example `-----BEGIN PRIVATE KEY-----\n......\n-----END PRIVATE KEY-----`.
+You should add a newline character after the opening line and before the closing line, for example `-----BEGIN PUBLIC KEY-----\n......\n-----END PUBLIC KEY-----`.
 
 The key content can be directly concatenated.
 
@@ -673,17 +653,7 @@ To verify, send a request to the Route with the JWT in the `Authorization` heade
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-You should receive an `HTTP/1.1 200 OK` response similar to the following:
-
-```json
-{
-  "headers": {
-    "Accept": "*/*",
-    "Authorization": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsImV4cCI6MTczNDIzMDQwMH0.XjqM0oszmCggwZs-8PUIlJv8wPJON1la2ET5v70E6TCE32Yq5ibrl-1azaK7IreAer3HtnVHeEfII2rR02v8xfR1TPIjU_oHov4qC-A4tLTbgqGVXI7fCy2WFm3PFh6MEKuRe6M3dCQtCAdkRRQrBr1gWFQZhV3TNeMmmtyIfuJpB7cp4DW5pYFsCcoE1Nw6Tz7dt8k0tPBTPI2Mv9AYfMJ30LHDscOaPNtz8YIk_TOkV9b9mhQudUJ7J_suCZMRxD3iL655jTp2gKsstGKdZa0_W9Reu4-HY3LSc5DS1XtfjuftpuUqgg9FvPU0mK_b0wT_Rq3lbYhcHb9GZ72qiQ",
-    ...
-  }
-}
-```
+You should receive an `HTTP/1.1 200 OK` response.
 
 ### Add Consumer Custom ID to Header
 
@@ -712,7 +682,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
@@ -738,10 +708,10 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) or other utilities. If you are using [JWT.io's debugger](https://jwt.io/#debugger-io), do the following:
+To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
-* Select __HS256__ in the __Algorithm__ dropdown.
-* Update the secret in the __Verify Signature__ section to be `jack-hs256-secret`.
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
 * Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
   Your payload should look similar to the following:
@@ -753,10 +723,10 @@ To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#deb
   }
   ```
 
-Copy the generated JWT under the __Encoded__ section and save to a variable:
+Copy the generated JWT and save to a variable:
 
-```text
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.0VDKUzNkSaa_H5g_rGNbNtDcKJ9fBGgcGC56AsVsV-I
+```shell
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 To verify, send a request to the Route with the JWT in the `Authorization` header:
@@ -765,19 +735,19 @@ To verify, send a request to the Route with the JWT in the `Authorization` heade
 curl -i "http://127.0.0.1:9080/headers" -H "Authorization: ${jwt_token}"
 ```
 
-You should see an `HTTP/1.1 200 OK` response similar to the following, where `X-Consumer-Custom-Id` is attached:
+You should see an `HTTP/1.1 200 OK` response similar to the following:
 
 ```json
 {
   "headers": {
     "Accept": "*/*",
-    "Authorization": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJleHAiOjE3MjY2NDk2NDAsImtleSI6ImphY2sta2V5In0.kdhumNWrZFxjUvYzWLt4lFr546PNsr9TXuf0Az5opoM",
+    "Authorization": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU",
     "Host": "127.0.0.1",
     "User-Agent": "curl/8.6.0",
-    "X-Amzn-Trace-Id": "Root=1-66ea951a-4d740d724bd2a44f174d4daf",
+    "X-Amzn-Trace-Id": "Root=1-6873b19d-329331db76e5e7194c942b47",
+    "X-Consumer-Custom-Id": "495aec6a",
     "X-Consumer-Username": "jack",
     "X-Credential-Identifier": "cred-jack-jwt-auth",
-    "X-Consumer-Custom-Id": "495aec6a",
     "X-Forwarded-Host": "127.0.0.1"
   }
 }
@@ -814,7 +784,7 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers/jack/credentials" -X PUT \
     "plugins": {
       "jwt-auth": {
         "key": "jack-key",
-        "secret": "jack-hs256-secret"
+        "secret": "jack-hs256-secret-that-is-very-long"
       }
     }
   }'
@@ -859,11 +829,11 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
   }'
 ```
 
-To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#debugger-io) or other utilities. If you are using [JWT.io's debugger](https://jwt.io/#debugger-io), do the following:
+To issue a JWT for `jack`, you could use [JWT.io's JWT encoder](https://jwt.io) or other utilities. If you are using [JWT.io's JWT encoder](https://jwt.io), do the following:
 
-* Select __HS256__ in the __Algorithm__ dropdown.
-* Update the secret in the __Verify Signature__ section to be `jack-hs256-secret`.
-* Update payload with role `user`, permission `read`, and Consumer key `jack-key`; as well as `exp` or `nbf` in UNIX timestamp.
+* Fill in `HS256` as the algorithm.
+* Update the secret in the __Valid secret__ section to be `jack-hs256-secret-that-is-very-long`.
+* Update payload with Consumer key `jack-key`; and add `exp` or `nbf` in UNIX timestamp.
 
   Your payload should look similar to the following:
 
@@ -874,10 +844,10 @@ To issue a JWT for `jack`, you could use [JWT.io's debugger](https://jwt.io/#deb
   }
   ```
 
-Copy the generated JWT under the __Encoded__ section and save to a variable:
+Copy the generated JWT and save to a variable:
 
 ```shell
-jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.hjtSsEILpko14zb8-ibyxrB2tA5biYY9JrFm3do69vs
+export jwt_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJrZXkiOiJqYWNrLWtleSIsIm5iZiI6MTcyOTEzMjI3MX0.UEPXy5jpid624T1XpfjM0PLY73LZPjV3Qt8yZ92kVuU
 ```
 
 To verify the rate limiting, send five consecutive requests with `jack`'s JWT:
