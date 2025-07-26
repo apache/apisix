@@ -35,6 +35,8 @@ local _M = {
     priority = 500,
     name = plugin_name,
     log  = exporter.stream_log,
+    destroy = exporter.destroy,
+    init = exporter.stream_init,
     schema = schema,
     run_policy = "prefer_route",
 }
