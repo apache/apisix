@@ -129,18 +129,8 @@ local function request_to_llm(conf, request_table, ctx)
         model_options = conf.options
     }
 
-    local res, err, httpc = ai_driver:request(conf, request_table, extra_opts)
-    if err then
-        return nil, nil, err
-    end
-
-    local resp_body, err = res:read_body()
-    httpc:close()
-    if err then
-        return nil, nil, err
-    end
-
-    return res, resp_body
+    local code, body = ai_driver:request(ctx, conf, request_table, extra_opts)
+    return code, body
 end
 
 
@@ -206,20 +196,15 @@ function _M.access(conf, ctx)
     }
 
     -- Send request to LLM service
-    local res, resp_body, err = request_to_llm(conf, ai_request_table, ctx)
-    if err then
-        core.log.error("failed to request to LLM service: ", err)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
+    local code, body = request_to_llm(conf, ai_request_table, ctx)
     -- Handle LLM response
-    if res.status > 299 then
-        core.log.error("LLM service returned error status: ", res.status)
+    if code > 299 then
+        core.log.error("LLM service returned error status: ", code)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 
     -- Parse LLM response
-    local llm_response, err = parse_llm_response(resp_body)
+    local llm_response, err = parse_llm_response(body)
     if err then
         core.log.error("failed to parse LLM response: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
