@@ -74,6 +74,7 @@ __DATA__
             local code, body = t('/apisix/admin/plugin_metadata/chaitin-waf',
                  ngx.HTTP_PUT,
                  [[{
+                    "mode": "block",
                     "nodes": [
                         {
                             "host": "127.0.0.1",

@@ -170,7 +170,7 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
     end
     httpc:set_timeout(conf.timeout)
 
-    local endpoint = extra_opts.endpoint
+    local endpoint = extra_opts and extra_opts.endpoint
     local parsed_url
     if endpoint then
         parsed_url = url.parse(endpoint)

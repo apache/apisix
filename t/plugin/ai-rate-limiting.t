@@ -891,19 +891,7 @@ passed
                             ],
                             "ssl_verify": false
                         },
-                        "ai-rate-limiting": {
-                            "instances": [
-                                {
-                                    "name": "openai-gpt3",
-                                    "limit": 50,
-                                    "time_window": 60
-                                },
-                                {
-                                    "name": "openai-gpt4",
-                                    "limit": 20,
-                                    "time_window": 60
-                                }
-                            ]
+                        "ai-rate-limiting": {"instances": [{"name": "openai-gpt3","limit": 50,"time_window": 60},{"name": "openai-gpt4","limit": 20,"time_window": 60}]
                         }
                     },
                     "upstream": {
@@ -996,16 +984,7 @@ Authorization: Bearer token
                             ],
                             "ssl_verify": false
                         },
-                        "ai-rate-limiting": {
-                            "limit": 20,
-                            "time_window": 60,
-                            "instances": [
-                                {
-                                    "name": "openai-gpt3",
-                                    "limit": 50,
-                                    "time_window": 60
-                                }
-                            ]
+                        "ai-rate-limiting": {"limit": 20, "time_window": 60, "instances": [{"name": "openai-gpt3","limit": 50,"time_window": 60}]
                         }
                     },
                     "upstream": {
