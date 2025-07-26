@@ -129,8 +129,7 @@ local function request_to_llm(conf, request_table, ctx)
         model_options = conf.options
     }
 
-    local code, body = ai_driver:request(ctx, conf, request_table, extra_opts)
-    return code, body
+    return ai_driver:request(ctx, conf, request_table, extra_opts)
 end
 
 
