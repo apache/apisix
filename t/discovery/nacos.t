@@ -1102,7 +1102,7 @@ routes:
 
 
 
-=== TEST 28: get APISIX-NACOS info from NACOS - metadata filtering lane=b (only server2)
+=== TEST 28: get APISIX-NACOS info from NACOS - metadata filtering empty (load balance between server1 and server2)
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -1114,24 +1114,49 @@ routes:
       type: roundrobin
       discovery_args:
         metadata:
-          lane: "b"
 #END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-    "GET /hello",
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server 2/,
-    qr/server 2/,
-    qr/server 2/,
-    qr/server 2/,
-    qr/server 2/,
-]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local server1_count = 0
+            local server2_count = 0
+
+            -- Send multiple requests to test load balancing
+            for i = 1, 10 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" then
+                        server1_count = server1_count + 1
+                    elseif clean_body == "server 2" then
+                        server2_count = server2_count + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+
+            -- Verify that both servers were used
+            if server1_count > 0 and server2_count > 0 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
 
 
 
