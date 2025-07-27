@@ -488,6 +488,18 @@ local upstream_schema = {
                     description = "group name",
                     type = "string",
                 },
+                metadata_match = {
+                    description = "metadata for filtering service instances",
+                    type = "object",
+                    additionalProperties = {
+                        type = "array",
+                        items = {
+                            description = "candidate metadata value",
+                            type = "string",
+                        },
+                        uniqueItems = true,
+                    }
+                },
             }
         },
         pass_host = {

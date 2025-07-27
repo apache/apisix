@@ -21,6 +21,7 @@ local core_sleep         = require("apisix.core.utils").sleep
 local resty_consul       = require('resty.consul')
 local http               = require('resty.http')
 local util               = require("apisix.cli.util")
+local discovery_utils    = require("apisix.utils.discovery")
 local ipairs             = ipairs
 local error              = error
 local ngx                = ngx
@@ -78,36 +79,6 @@ function _M.all_nodes()
     return all_services
 end
 
-local function match_metadata_filters(inst, filters)
-    local metadata = inst.metadata or {}
-    for _, f in ipairs(filters) do
-        local key = f.key
-        local allowed_vals = f.value
-        local val = metadata[key]
-        local matched = false
-        for _, allowed in ipairs(allowed_vals) do
-            if val == allowed then
-                matched = true
-                break
-            end
-        end
-        if not matched then
-            return false
-        end
-    end
-    return true
-end
-
-local function match_nodes_by_metadata(nodes, filters)
-    local result = {}
-    for _, node in ipairs(nodes) do
-        if match_metadata_filters(node, filters) then
-            core.table.insert(result, node)
-        end
-    end
-    return result
-end
-
 function _M.nodes(service_name, discovery_args)
     if not all_services then
         log.error("all_services is nil, failed to fetch nodes for : ", service_name)
@@ -117,7 +88,7 @@ function _M.nodes(service_name, discovery_args)
     local resp_list = all_services[service_name]
 
     if discovery_args and discovery_args.metadata_match then
-        resp_list = match_nodes_by_metadata(resp_list, discovery_args.metadata_match)
+        resp_list = discovery_utils.nodes_metadata_match(resp_list, discovery_args.metadata_match)
     end
 
     if not resp_list then
