@@ -37,6 +37,10 @@ local function do_metadata_match(inst, filters)
 end
 
 local function nodes_metadata_match(nodes, metadata_match)
+    if not nodes then
+        return nil
+    end
+
     local result = {}
     for _, node in ipairs(nodes) do
         if do_metadata_match(node, metadata_match) then
