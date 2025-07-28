@@ -203,7 +203,7 @@ curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/auth' \
 }'
 ```
 
-创建一个接受 POST 请求的路由，并使用“forward-auth”插件通过请求中的“tenant_id”调用身份验证端点。仅当身份验证检查返回 200 时，请求才会转发到上游服务。
+创建一个接受 POST 请求的路由，并使用 `forward-auth` 插件通过请求中的 `tenant_id` 调用身份验证端点。仅当身份验证检查返回 200 时，请求才会转发到上游服务。
 
 ```shell
 curl -X PUT 'http://127.0.0.1:9180/apisix/admin/routes/1' \
