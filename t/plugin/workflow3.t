@@ -91,11 +91,11 @@ __DATA__
                                     {
                                         "limit-conn",
                                         {
-																					conn = 2,
-																					burst = 1,
-																					default_conn_delay = 0.1,
-																					rejected_code = 503,
-																					key = "remote_addr"
+                                          conn = 2,
+                                          burst = 1,
+                                          default_conn_delay = 0.1,
+                                          rejected_code = 503,
+                                          key = "remote_addr"
                                         }
                                     }
                                 }
