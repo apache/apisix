@@ -785,58 +785,65 @@ location /sleep {
 
 
 === TEST 16: test metadata_match with consul discovery
---- yaml_config
-apisix:
-    node_listen: 1984
-    config_center: yaml
-    discovery:
-        consul:
-            servers:
-              - http://127.0.0.1:8500
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
 routes:
   -
-    uri: /test_metadata_match
+    uri: /*
     upstream:
-      service_name: mock-service
+      service_name: service-a
       type: roundrobin
       discovery_type: consul
       discovery_args:
         metadata_match:
           version:
-            - "v2"
-
+            - v2
+            - v3
+#END
 --- config
 location /v1/agent {
     proxy_pass http://127.0.0.1:8500;
 }
-location /test_metadata_match {
+location /sleep {
     content_by_lua_block {
-        local server = ngx.var.server_addr or "unknown"
-        ngx.say("Upstream server handling request: ", server)
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
     }
 }
 --- timeout: 5
 --- pipelined_requests eval
 [
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"mock-node-v1\",\"Name\":\"mock-service\",\"Address\":\"127.0.0.1\",\"Port\":1984,\"Meta\":{\"version\":\"v1\",\"weight\":\"1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"mock-node-v2\",\"Name\":\"mock-service\",\"Address\":\"127.0.0.2\",\"Port\":1984,\"Meta\":{\"version\":\"v2\",\"weight\":\"2\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a1\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a2\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v2\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a3\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v3\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a4\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v4\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep",
 
-    "GET /test_metadata_match?run1",
-    "GET /test_metadata_match?run2",
-    "GET /test_metadata_match?run3",
+    "GET /hello?run1",
+    "GET /hello?run2",
+    "GET /hello?run3",
 
-    "PUT /v1/agent/service/deregister/mock-node-v1",
-    "PUT /v1/agent/service/deregister/mock-node-v2"
+    "PUT /v1/agent/service/deregister/service-a1",
+    "PUT /v1/agent/service/deregister/service-a2",
+    "PUT /v1/agent/service/deregister/service-a3",
+    "PUT /v1/agent/service/deregister/service-a4",
 ]
 --- response_body_like eval
 [
     qr//,
     qr//,
+    qr//,
+    qr//,
+    qr/ok\n/,
 
-    qr/127.0.0.2/,
-    qr/127.0.0.2/,
-    qr/127.0.0.2/,
+    qr/[2-3]/,
+    qr/[2-3]/,
+    qr/[2-3]/,
 
+    qr//,
+    qr//,
     qr//,
     qr//
 ]
