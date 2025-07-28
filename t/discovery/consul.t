@@ -782,6 +782,8 @@ location /sleep {
 ]
 --- ignore_error_log
 
+
+
 === TEST 16: test metadata_match with consul discovery
 --- yaml_config
 apisix:
