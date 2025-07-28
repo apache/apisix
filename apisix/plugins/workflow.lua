@@ -101,10 +101,11 @@ local support_action = {
 }
 
 
-function _M.register(plugin_name, handler, check_schema)
+function _M.register(plugin_name, handler, check_schema, log_handler)
     support_action[plugin_name] = {
         handler        = handler,
-        check_schema   = check_schema
+        check_schema   = check_schema,
+        log_handler    = log_handler
     }
 end
 
@@ -157,5 +158,22 @@ function _M.access(conf, ctx)
     end
 end
 
+function _M.log(conf, ctx)
+    for _, rule in ipairs(conf.rules) do
+        local match_result = true
+        if rule.case then
+            local expr, _ = expr.new(rule.case)
+            match_result = expr:eval(ctx.var)
+        end
+        if match_result then
+            -- only one action is currently supported
+            local action = rule.actions[1]
+            local log_handler = support_action[action[1]].log_handler
+            if log_handler then
+                return log_handler(action[2], ctx)
+            end
+        end
+    end
+end
 
 return _M
