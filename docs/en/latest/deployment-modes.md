@@ -6,6 +6,10 @@ keywords:
   - APISIX deployment modes
 description: Documentation about the three deployment modes of Apache APISIX.
 ---
+
+import Tabs from '@theme/Tabs';
+import TabItem from '@theme/TabItem';
+
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
@@ -31,7 +35,7 @@ APISIX has three different deployment modes for different production use cases. 
 |-----------------|----------------------------|---------------------------------------------------------------------------------------------------------------------|
 | traditional     | traditional                | Data plane and control plane are deployed together. `enable_admin` attribute should be disabled manually.           |
 | decoupled       | data_plane / control_plane | Data plane and control plane are deployed independently.                                                            |
-| standalone      | data_plane / traditional   | The `data_plane` mode loads configuration from a local YAML file, while the traditional mode expects configuration through Admin API.   |
+| standalone      | data_plane / traditional   | The `data_plane` mode loads configuration from a local YAML / JSON file, while the traditional mode expects configuration through Admin API.   |
 
 Each of these deployment modes are explained in detail below.
 
@@ -132,6 +136,17 @@ deployment:
   role: data_plane
   role_data_plane:
     config_provider: yaml
+```
+
+You can also provide the configuration in JSON format by placing it in `conf/apisix.json`. Before proceeding, you should change the `deployment.role_data_plane.config_provider` to `json`.
+
+Refer to the example below:
+
+```yaml
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: json
 ```
 
 This makes it possible to disable the Admin API and discover configuration changes and reloads based on the local file system.
@@ -275,6 +290,8 @@ The API accepts input in the same format as the file-based mode, supporting both
 
 ### How to configure rules
 
+#### To `config_provider: yaml`
+
 All of the rules are stored in one file which named `conf/apisix.yaml`,
 APISIX checks if this file has any change **every second**.
 If the file is changed & it ends with `#END`,
@@ -312,9 +329,39 @@ routes:
 
 More information about using environment variables can be found [here](./admin-api.md#using-environment-variables).
 
+#### To `config_provider: json`
+
+All of the rules are stored in one file which named `conf/apisix.json`,
+APISIX checks if this file has any change **every second**.
+If the file is changed,
+APISIX loads the rules from this file and updates its memory.
+
+Here is a mini example:
+
+```json
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+```
+
+*WARNING*: when using `conf/apisix.json`, the `#END` marker is not required, as APISIX can directly parse and validate the JSON structure.
+
 ### How to configure Route
 
 Single Route：
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 routes:
@@ -327,7 +374,33 @@ routes:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 Multiple Routes：
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 routes:
@@ -346,9 +419,44 @@ routes:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    },
+    {
+      "uri": "/hello2",
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1981": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure Route + Service
 
-```yml
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
+
+```yaml
 routes:
     -
         uri: /hello
@@ -363,9 +471,41 @@ services:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "service_id": 1
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure Route + Upstream
 
-```yml
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
+
+```yaml
 routes:
     -
         uri: /hello
@@ -379,9 +519,39 @@ upstreams:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "upstream_id": 1
+    }
+  ],
+  "upstreams": [
+    {
+      "id": 1,
+      "nodes": {
+        "127.0.0.1:1980": 1
+      },
+      "type": "roundrobin"
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure Route + Service + Upstream
 
-```yml
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
+
+```yaml
 routes:
     -
         uri: /hello
@@ -399,9 +569,45 @@ upstreams:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "routes": [
+    {
+      "uri": "/hello",
+      "service_id": 1
+    }
+  ],
+  "services": [
+    {
+      "id": 1,
+      "upstream_id": 2
+    }
+  ],
+  "upstreams": [
+    {
+      "id": 2,
+      "nodes": {
+        "127.0.0.1:1980": 1
+      },
+      "type": "roundrobin"
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure Plugins
 
-```yml
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
+
+```yaml
 # plugins listed here will be hot reloaded and override the boot configuration
 plugins:
   - name: ip-restriction
@@ -411,9 +617,36 @@ plugins:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "plugins": [
+    {
+      "name": "ip-restriction"
+    },
+    {
+      "name": "jwt-auth"
+    },
+    {
+      "name": "mqtt-proxy",
+      "stream": true
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure Plugin Configs
 
-```yml
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
+
+```yaml
 plugin_configs:
     -
         id: 1
@@ -431,9 +664,47 @@ routes:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "plugin_configs": [
+    {
+      "id": 1,
+      "plugins": {
+        "response-rewrite": {
+          "body": "hello\n"
+        }
+      }
+    }
+  ],
+  "routes": [
+    {
+      "id": 1,
+      "uri": "/hello",
+      "plugin_config_id": 1,
+      "upstream": {
+        "nodes": {
+          "127.0.0.1:1980": 1
+        },
+        "type": "roundrobin"
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to enable SSL
 
-```yml
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
+
+```yaml
 ssls:
     -
         cert: |
@@ -442,7 +713,7 @@ ssls:
             BAYTAkNOMREwDwYDVQQIDAhaaGVqaWFuZzERMA8GA1UEBwwISGFuZ3pob3UxDTAL
             BgNVBAoMBHRlc3QxDTALBgNVBAsMBHRlc3QxGzAZBgNVBAMMEmV0Y2QuY2x1c3Rl
             ci5sb2NhbDAeFw0yMDEwMjgwMzMzMDJaFw0yMTEwMjgwMzMzMDJaMG4xCzAJBgNV
-            BAYTAkNOMREwDwYDVQQIDAhaaGVqaWFuZzERMA8GA1UEBwwISGFuZ3pob3UxDTAL
+            BAYTAkNOMREwDwYDVQQIDAhaaGVqaWFuZzERMA0GA1UEBwwISGFuZ3pob3UxDTAL
             BgNVBAoMBHRlc3QxDTALBgNVBAsMBHRlc3QxGzAZBgNVBAMMEmV0Y2QuY2x1c3Rl
             ci5sb2NhbDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJ/qwxCR7g5S
             s9+VleopkLi5pAszEkHYOBpwF/hDeRdxU0I0e1zZTdTlwwPy2vf8m3kwoq6fmNCt
@@ -493,7 +764,31 @@ ssls:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "ssls": [
+    {
+      "cert": "-----BEGIN CERTIFICATE-----\nMIIDrzCCApegAwIBAgIJAI3Meu/gJVTLMA0GCSqGSIb3DQEBCwUAMG4xCzAJBgNV\nBAYTAkNOMREwDwYDVQQIDAhaaGVqaWFuZzERMA8GA1UEBwwISGFuZ3pob3UxDTAL\nBgNVBAoMBHRlc3QxDTALBgNVBAsMBHRlc3QxGzAZBgNVBAMMEmV0Y2QuY2x1c3Rl\nci5sb2NhbDAeFw0yMDEwMjgwMzMzMDJaFw0yMTEwMjgwMzMzMDJaMG4xCzAJBgNV\nBAYTAkNOMREwDwYDVQQIDAhaaGVqaWFuZzERMA8GA1UEBwwISGFuZ3pob3UxDTAL\nBgNVBAoMBHRlc3QxDTALBgNVBAsMBHRlc3QxGzAZBgNVBAMMEmV0Y2QuY2x1c3Rl\nci5sb2NhbDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJ/qwxCR7g5S\ns9+VleopkLi5pAszEkHYOBpwF/hDeRdxU0I0e1zZTdTlwwPy2vf8m3kwoq6fmNCt\ntdUUXh5Wvgi/2OA8HBBzaQFQL1Av9qWwyES5cx6p0ZBwIrcXQIsl1XfNSUpQNTSS\nD44TGduXUIdeshukPvMvLWLezynf2/WlgVh/haWtDG99r/Gj3uBdjl0m/xGvKvIv\nNFy6EdgG9fkwcIalutjrUnGl9moGjwKYu4eXW2Zt5el0d1AHXUsqK4voe0p+U2Nz\nquDmvxteXWdlsz8o5kQT6a4DUtWhpPIfNj9oZfPRs3LhBFQ74N70kVxMOCdec1lU\nbnFzLIMGlz0CAwEAAaNQME4wHQYDVR0OBBYEFFHeljijrr+SPxlH5fjHRPcC7bv2\nMB8GA1UdIwQYMBaAFFHeljijrr+SPxlH5fjHRPcC7bv2MAwGA1UdEwQFMAMBAf8w\nDQYJKoZIhvcNAQELBQADggEBAG6NNTK7sl9nJxeewVuogCdMtkcdnx9onGtCOeiQ\nqvh5Xwn9akZtoLMVEdceU0ihO4wILlcom3OqHs9WOd6VbgW5a19Thh2toxKidHz5\nrAaBMyZsQbFb6+vFshZwoCtOLZI/eIZfUUMFqMXlEPrKru1nSddNdai2+zi5rEnM\nHCot43+3XYuqkvWlOjoi9cP+C4epFYrxpykVbcrtbd7TK+wZNiK3xtDPnVzjdNWL\ngeAEl9xrrk0ss4nO/EreTQgS46gVU+tLC+b23m2dU7dcKZ7RDoiA9bdVc4a2IsaS\n2MvLL4NZ2nUh8hAEHiLtGMAV3C6xNbEyM07hEpDW6vk6tqk=\n-----END CERTIFICATE-----",
+      "key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCf6sMQke4OUrPf\nlZXqKZC4uaQLMxJB2DgacBf4Q3kXcVNCNHtc2U3U5cMD8tr3/Jt5MKKun5jQrbXV\nFF4eVr4Iv9jgPBwQc2kBUC9QL/alsMhEuXMeqdGQcCK3F0CLJdV3zUlKUDU0kg+O\nExnbl1CHXrIbpD7zLy1i3s8p39v1pYFYf4WlrQxvfa/xo97gXY5dJv8RryryLzRc\nuhHYBvX5MHCGpbrY61JxpfZqBo8CmLuHl1tmbeXpdHdQB11LKiuL6HtKflNjc6rg\n5r8bXl1nZbM/KOZEE+muA1LVoaTyHzY/aGXz0bNy4QRUO+De9JFcTDgnXnNZVG5x\ncyyDBpc9AgMBAAECggEAatcEtehZPJaCeClPPF/Cwbe9YoIfe4BCk186lHI3z7K1\n5nB7zt+bwVY0AUpagv3wvXoB5lrYVOsJpa9y5iAb3GqYMc/XDCKfD/KLea5hwfcn\nBctEn0LjsPVKLDrLs2t2gBDWG2EU+udunwQh7XTdp2Nb6V3FdOGbGAg2LgrSwP1g\n0r4z14F70oWGYyTQ5N8UGuyryVrzQH525OYl38Yt7R6zJ/44FVi/2TvdfHM5ss39\nSXWi00Q30fzaBEf4AdHVwVCRKctwSbrIOyM53kiScFDmBGRblCWOxXbiFV+d3bjX\ngf2zxs7QYZrFOzOO7kLtHGua4itEB02497v+1oKDwQKBgQDOBvCVGRe2WpItOLnj\nSF8iz7Sm+jJGQz0D9FhWyGPvrN7IXGrsXavA1kKRz22dsU8xdKk0yciOB13Wb5y6\nyLsr/fPBjAhPb4h543VHFjpAQcxpsH51DE0b2oYOWMmz+rXGB5Jy8EkP7Q4njIsc\n2wLod1dps8OT8zFx1jX3Us6iUQKBgQDGtKkfsvWi3HkwjFTR+/Y0oMz7bSruE5Z8\ng0VOHPkSr4XiYgLpQxjbNjq8fwsa/jTt1B57+By4xLpZYD0BTFuf5po+igSZhH8s\nQS5XnUnbM7d6Xr/da7ZkhSmUbEaMeHONSIVpYNgtRo4bB9Mh0l1HWdoevw/w5Ryt\nL/OQiPhfLQKBgQCh1iG1fPh7bbnVe/HI71iL58xoPbCwMLEFIjMiOFcINirqCG6V\nLR91Ytj34JCihl1G4/TmWnsH1hGIGDRtJLCiZeHL70u32kzCMkI1jOhFAWqoutMa\n7obDkmwraONIVW/kFp6bWtSJhhTQTD4adI9cPCKWDXdcCHSWj0Xk+U8HgQKBgBng\nt1HYhaLzIZlP/U/nh3XtJyTrX7bnuCZ5FhKJNWrYjxAfgY+NXHRYCKg5x2F5j70V\nbe7pLhxmCnrPTMKZhik56AaTBOxVVBaYWoewhUjV4GRAaK5Wc8d9jB+3RizPFwVk\nV3OU2DJ1SNZ+W2HBOsKrEfwFF/dgby6i2w6MuAP1AoGBAIxvxUygeT/6P0fHN22P\nzAHFI4v2925wYdb7H//D8DIADyBwv18N6YH8uH7L+USZN7e4p2k8MGGyvTXeC6aX\nIeVtU6fH57Ddn59VPbF20m8RCSkmBvSdcbyBmqlZSBE+fKwCliKl6u/GH0BNAWKz\nr8yiEiskqRmy7P7MY9hDmEbG\n-----END PRIVATE KEY-----",
+      "snis": [
+        "yourdomain.com"
+      ]
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure global rule
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 global_rules:
@@ -505,7 +800,32 @@ global_rules:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "global_rules": [
+    {
+      "id": 1,
+      "plugins": {
+        "response-rewrite": {
+          "body": "hello\n"
+        }
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure consumer
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 consumers:
@@ -517,7 +837,33 @@ consumers:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "consumers": [
+    {
+      "username": "jwt",
+      "plugins": {
+        "jwt-auth": {
+          "key": "user-key",
+          "secret": "my-secret-key"
+        }
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure plugin metadata
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 upstreams:
@@ -541,7 +887,52 @@ plugin_metadata:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "upstreams": [
+    {
+      "id": 1,
+      "nodes": {
+        "127.0.0.1:1980": 1
+      },
+      "type": "roundrobin"
+    }
+  ],
+  "routes": [
+    {
+      "uri": "/hello",
+      "upstream_id": 1,
+      "plugins": {
+        "http-logger": {
+          "batch_max_size": 1,
+          "uri": "http://127.0.0.1:1980/log"
+        }
+      }
+    }
+  ],
+  "plugin_metadata": [
+    {
+      "id": "http-logger",
+      "log_format": {
+        "host": "$host",
+        "remote_addr": "$remote_addr"
+      }
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure stream route
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 stream_routes:
@@ -561,7 +952,45 @@ upstreams:
 #END
 ```
 
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "stream_routes": [
+    {
+      "server_addr": "127.0.0.1",
+      "server_port": 1985,
+      "id": 1,
+      "upstream_id": 1,
+      "plugins": {
+        "mqtt-proxy": {
+          "protocol_name": "MQTT",
+          "protocol_level": 4
+        }
+      }
+    }
+  ],
+  "upstreams": [
+    {
+      "nodes": {
+        "127.0.0.1:1995": 1
+      },
+      "type": "roundrobin",
+      "id": 1
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>
+
 ### How to configure protos
+
+<Tabs>
+<TabItem value="yaml" label="YAML" default>
 
 ```yaml
 protos:
@@ -582,3 +1011,22 @@ protos:
       }
 #END
 ```
+
+</TabItem>
+
+<TabItem value="json" label="JSON">
+
+```json
+{
+  "protos": [
+    {
+      "id": "helloworld",
+      "desc": "hello world",
+      "content": "syntax = \"proto3\";\npackage helloworld;\n\nservice Greeter {\n  rpc SayHello (HelloRequest) returns (HelloReply) {}\n}\nmessage HelloRequest {\n  string name = 1;\n}\nmessage HelloReply {\n  string message = 1;\n}\n"
+    }
+  ]
+}
+```
+
+</TabItem>
+</Tabs>

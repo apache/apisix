@@ -65,7 +65,7 @@ It does the following dynamically:
 
 ## Does Apache APISIX have a user interface?
 
-Yes. Apache APISIX has an experimental feature called [Apache APISIX Dashboard](https://github.com/apache/apisix-dashboard), which is independent from Apache APISIX. To work with Apache APISIX through a user interface, you can deploy the Apache APISIX Dashboard.
+APISIX has a powerful built-in Dashboard [APISIX Dashboard](https://github.com/apache/apisix-dashboard). You can manage APISIX configurations through the [APISIX Dashboard](https://github.com/apache/apisix-dashboard) user interface.
 
 ## Can I write my own Plugins for Apache APISIX?
 
