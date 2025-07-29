@@ -54,6 +54,10 @@ github:
         dismiss_stale_reviews: true
         require_code_owner_reviews: true
         required_approving_review_count: 3
+    release/3.13:
+      required_pull_request_reviews:
+        require_code_owner_reviews: true
+        required_approving_review_count: 3
     release/3.12:
       required_pull_request_reviews:
         require_code_owner_reviews: true
