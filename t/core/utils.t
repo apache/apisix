@@ -405,7 +405,7 @@ res:7
             ngx.say("hostname: ", hostname)
             local hostname2 = core.utils.gethostname()
             ngx.say("hostname cached: ", hostname == hostname2)
-            ngx.say("hostname valid: ", hostname ~= "" and (hostname ~= "unknown" or true))
+            ngx.say("hostname valid: ", hostname ~= "")
 
             local handle = io.popen("/bin/hostname")
             if handle then
