@@ -170,6 +170,9 @@ nginx_config:                     # Config for render the template to generate n
   meta:
     lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
       prometheus-metrics: 15m
+      prometheus-cache: 10m       # Cache the calculated metrics data text.
+                                  # Please resize when the `error.log` prompts that the data is full.
+                                  # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
 
   stream:
@@ -605,6 +608,7 @@ plugin_attr:          # Plugin attributes
     export_addr:                            # Set the address for the Prometheus export server.
       ip: 127.0.0.1                         # Set the IP.
       port: 9091                            # Set the port.
+    refresh_interval: 15                    # Set the interval for refreshing cached metric data. unit: second.
     # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
     #  http_status:
     #    expire: 0 # The expiration time after which metrics are removed. unit: second.

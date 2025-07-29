@@ -189,6 +189,7 @@ override.endpoint is required for openai-compatible provider
                     "uri": "/anything",
                     "plugins": {
                         "ai-proxy": {
+                           "provider": "openai",
                             "auth": {
                                 "query": {
                                     "api_key": "apikey"
