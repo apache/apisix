@@ -44,7 +44,10 @@ local consumers_count_for_lrucache = 4096
 local function remove_etcd_prefix(key)
     local prefix = ""
     local local_conf = config_local.local_conf()
-    if local_conf.etcd and local_conf.etcd.prefix then
+    local role = core.table.try_read_attr(local_conf, "deployment", "role")
+    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
+    role, "config_provider")
+    if provider == "etcd" and local_conf.etcd and local_conf.etcd.prefix then
         prefix = local_conf.etcd.prefix
     end
     return string_sub(key, #prefix + 1)
@@ -91,7 +94,7 @@ do
             count = consumers_count_for_lrucache
         })
 
-local function construct_consumer_data(val, plugin_config)
+local function construct_consumer_data(val, name, plugin_config)
     -- if the val is a Consumer, clone it to the local consumer;
     -- if the val is a Credential, to get the Consumer by consumer_name and then clone
     -- it to the local consumer.
@@ -100,20 +103,28 @@ local function construct_consumer_data(val, plugin_config)
         local consumer_name = get_consumer_name_from_credential_etcd_key(val.key)
         local the_consumer = consumers:get(consumer_name)
         if the_consumer and the_consumer.value then
-            consumer = core.table.clone(the_consumer.value)
-            consumer.modifiedIndex = the_consumer.modifiedIndex
-            consumer.credential_id = get_credential_id_from_etcd_key(val.key)
+            consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex..
+                                                the_consumer.modifiedIndex,
+                function (val, the_consumer)
+                    consumer = core.table.clone(the_consumer.value)
+                    consumer.modifiedIndex = the_consumer.modifiedIndex
+                    consumer.credential_id = get_credential_id_from_etcd_key(val.key)
+                    return consumer
+                end, val, the_consumer)
         else
             -- Normally wouldn't get here:
             -- it should belong to a consumer for any credential.
-            core.log.error("failed to get the consumer for the credential,",
+            return nil, "failed to get the consumer for the credential,",
                 " a wild credential has appeared!",
-                " credential key: ", val.key, ", consumer name: ", consumer_name)
-            return nil, "failed to get the consumer for the credential"
+                " credential key: ", val.key, ", consumer name: ", consumer_name
         end
     else
-        consumer = core.table.clone(val.value)
-        consumer.modifiedIndex = val.modifiedIndex
+        consumer = consumers_id_lrucache(val.value.id .. name, val.modifiedIndex,
+            function (val)
+                consumer = core.table.clone(val.value)
+                consumer.modifiedIndex = val.modifiedIndex
+                return consumer
+            end, val)
     end
 
     -- if the consumer has labels, set the field custom_id to it.
@@ -157,9 +168,10 @@ function plugin_consumer()
                     }
                 end
 
-                local consumer = consumers_id_lrucache(val.value.id .. name,
-                        val.modifiedIndex, construct_consumer_data, val, config)
-                if consumer == nil then
+                local consumer, err = construct_consumer_data(val, name, config)
+                if not consumer then
+                    core.log.error("failed to construct consumer data for plugin ",
+                                   name, ": ", err)
                     goto CONTINUE
                 end
 
@@ -285,25 +297,12 @@ local function check_consumer(consumer, key)
 end
 
 
-local function filter(consumer)
-    if not consumer.value then
-        return
-    end
-
-    -- We expect the id is the same as username. Fix up it here if it isn't.
-    consumer.value.id = consumer.value.username
-end
-
-
 function _M.init_worker()
     local err
     local cfg = {
         automatic = true,
         checker = check_consumer,
     }
-    if core.config.type ~= "etcd" then
-        cfg.filter = filter
-    end
 
     consumers, err = core.config.new("/consumers", cfg)
     if not consumers then

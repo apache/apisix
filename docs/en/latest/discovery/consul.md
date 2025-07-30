@@ -155,6 +155,13 @@ curl -X PUT 'http://127.0.0.1:8500/v1/agent/service/register' \
 In some cases, same service name might exist in different consul servers.
 To avoid confusion, use the full consul key url path as service name in practice.
 
+### Port Handling
+
+When APISIX retrieves service information from Consul, it handles port values as follows:
+
+- If the service registration includes a valid port number, that port will be used.
+- If the port is `nil` (not specified) or `0`, APISIX will default to port `80` for HTTP services.
+
 ### Upstream setting
 
 #### L7

@@ -166,7 +166,7 @@ function _M.access(conf, ctx)
         return
     end
 
-    local failure_times = math.ceil(unhealthy_count / conf.unhealthy.failures)
+    local failure_times = math.floor(unhealthy_count / conf.unhealthy.failures)
     if failure_times < 1 then
         failure_times = 1
     end

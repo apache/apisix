@@ -37,6 +37,14 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+EOF
+    }
 });
 
 run_tests;

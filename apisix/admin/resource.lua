@@ -25,10 +25,8 @@ local type = type
 
 
 local _M = {
-    need_v3_filter = true,
+    list_filter_fields = {},
 }
-
-
 local mt = {
     __index = _M
 }
@@ -125,7 +123,7 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
         core.log.info("schema: ", core.json.delay_encode(self.schema))
     end
 
-    local ok, err = self.checker(id, conf, need_id, self.schema, typ)
+    local ok, err = self.checker(id, conf, need_id, self.schema, {secret_type = typ})
 
     if not ok then
         return ok, err

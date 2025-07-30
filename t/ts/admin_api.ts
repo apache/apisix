@@ -14,15 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import axios, {
+  type AxiosRequestConfig,
+  type Method,
+  type RawAxiosRequestHeaders,
+} from 'axios';
 
-import type {Config} from 'jest';
-
-const config: Config = {
-  coverageProvider: "v8",
-  testEnvironment: "node",
-  transform: {
-    "^.+\.tsx?$": ["ts-jest",{}],
-  },
+export const request = async (
+  url: string,
+  method: Method = 'GET',
+  body?: object,
+  headers?: RawAxiosRequestHeaders,
+  config?: AxiosRequestConfig,
+) => {
+  return axios.request({
+    method,
+    // TODO: use 9180 for admin api
+    baseURL: 'http://127.0.0.1:1984',
+    url,
+    data: body,
+    headers: {
+      'X-API-KEY': 'edd1c9f034335f136f87ad84b625c8f1',
+      ...headers,
+    },
+    ...config,
+  });
 };
-
-export default config;

@@ -123,6 +123,7 @@ http-dubbo
 public-api
 prometheus
 datadog
+lago
 loki-logger
 elasticsearch-logger
 echo
@@ -395,6 +396,7 @@ qr/\{"encrypt_fields":\["password"\],"properties":\{"password":\{"type":"string"
 plugins:
   - batch-requests
   - error-log-logger
+  - server-info
   - example-plugin
   - node-status
 --- config
@@ -424,7 +426,7 @@ plugins:
         }
     }
 --- response_body
-{"batch-requests":"global","error-log-logger":"global","node-status":"global"}
+{"batch-requests":"global","error-log-logger":"global","node-status":"global","server-info":"global"}
 
 
 

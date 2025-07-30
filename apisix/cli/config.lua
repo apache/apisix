@@ -95,7 +95,9 @@ local _M = {
     meta = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
+        ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
+        ["status-report"] = "1m",
       }
     },
     stream = {
@@ -236,6 +238,8 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
@@ -248,6 +252,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "lago",
     "loki-logger",
     "elasticsearch-logger",
     "echo",
@@ -319,7 +324,11 @@ local _M = {
       export_addr = {
         ip = "127.0.0.1",
         port = 9091
-      }
+      },
+      refresh_interval = 15
+    },
+    ["server-info"] = {
+      report_ttl = 60
     },
     ["dubbo-proxy"] = {
       upstream_multiplex_count = 32
@@ -354,6 +363,7 @@ local _M = {
         }
       },
       enable_admin_cors = true,
+      enable_admin_ui = true,
       allow_admin = { "127.0.0.0/24" },
       admin_listen = {
         ip = "0.0.0.0",

@@ -214,7 +214,29 @@ GET /t
 
 
 
-=== TEST 7: add consumer with labels
+=== TEST 7: consumer username allows '-' in it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/consumers',
+                 ngx.HTTP_PUT,
+                 [[{
+                     "username":"Jack-and-Rose_123"
+                }]]
+                )
+
+            ngx.status = code
+            ngx.print(body)
+        }
+    }
+--- request
+GET /t
+--- error_code: 201
+
+
+
+=== TEST 8: add consumer with labels
 --- config
     location /t {
         content_by_lua_block {
@@ -255,7 +277,7 @@ passed
 
 
 
-=== TEST 8: invalid format of label value: set consumer
+=== TEST 9: invalid format of label value: set consumer
 --- config
     location /t {
         content_by_lua_block {
@@ -283,7 +305,7 @@ GET /t
 
 
 
-=== TEST 9: post consumers
+=== TEST 10: post consumers
 --- config
     location /t {
         content_by_lua_block {
@@ -305,7 +327,7 @@ GET /t
 
 
 
-=== TEST 10: add consumer with create_time and update_time(pony)
+=== TEST 11: add consumer with create_time and update_time(pony)
 --- config
     location /t {
         content_by_lua_block {

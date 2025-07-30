@@ -17,9 +17,10 @@
 local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
-local tonumber     = tonumber
-local tostring     = tostring
 local str_lower    = string.lower
+local str_find     = string.find
+local str_sub      = string.sub
+local tostring     = tostring
 local ngx          = ngx
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
@@ -29,55 +30,115 @@ local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
-local check_schema = require("apisix.core.schema").check
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
 
 local _M = {}
 
+local resources = {
+    routes          = require("apisix.admin.routes"),
+    services        = require("apisix.admin.services"),
+    upstreams       = require("apisix.admin.upstreams"),
+    consumers       = require("apisix.admin.consumers"),
+    credentials     = require("apisix.admin.credentials"),
+    schema          = require("apisix.admin.schema"),
+    ssls            = require("apisix.admin.ssl"),
+    plugins         = require("apisix.admin.plugins"),
+    protos          = require("apisix.admin.proto"),
+    global_rules    = require("apisix.admin.global_rules"),
+    stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
+    plugin_configs  = require("apisix.admin.plugin_config"),
+    consumer_groups = require("apisix.admin.consumer_group"),
+    secrets         = require("apisix.admin.secrets"),
+}
 
-local function update_and_broadcast_config(apisix_yaml, conf_version)
-    local config = core.json.encode({
-        conf = apisix_yaml,
-        conf_version = conf_version,
-    })
+local function check_duplicate(item, key, id_set)
+    local identifier, identifier_type
+    if key == "consumers" then
+        identifier = item.id or item.username
+        identifier_type = item.id and "credential id" or "username"
+    else
+        identifier = item.id
+        identifier_type = "id"
+    end
+
+    if id_set[identifier] then
+        return true, "found duplicate " .. identifier_type .. " " .. identifier .. " in " .. key
+    end
+    id_set[identifier] = true
+    return false
+end
+
+local function get_config()
+    local config = shared_dict:get("config")
+    if not config then
+        return nil, "not found"
+    end
+
+    local err
+    config, err = core.json.decode(config)
+    if not config then
+        return nil, "failed to decode json: " .. err
+    end
+    return config
+end
+
+
+local function update_and_broadcast_config(apisix_yaml)
+    local raw, err = core.json.encode(apisix_yaml)
+    if not raw then
+        core.log.error("failed to encode json: ", err)
+        return nil, "failed to encode json: " .. err
+    end
 
     if shared_dict then
         -- the worker that handles Admin API calls is responsible for writing the shared dict
-        local ok, err = shared_dict:set("config", config)
+        local ok, err = shared_dict:set("config", raw)
         if not ok then
             return nil, "failed to save config to shared dict: " .. err
         end
-        core.log.info("standalone config updated: ", config)
+        core.log.info("standalone config updated: ", raw)
     else
         core.log.crit(config_yaml.ERR_NO_SHARED_DICT)
     end
     return events:post(EVENT_UPDATE, EVENT_UPDATE)
 end
 
+local function check_conf(checker, schema, item, typ)
+    if not checker then
+        return true
+    end
+    local str_id = tostring(item.id)
+    if typ == "consumers" and
+        core.string.find(str_id, "/credentials/") then
+        local credential_checker = resources.credentials.checker
+        local credential_schema = resources.credentials.schema
+        return credential_checker(item.id, item, false, credential_schema, {
+            skip_references_check = true,
+        })
+    end
+
+    local secret_type
+    if typ == "secrets" then
+        local idx = str_find(str_id or "", "/")
+        if not idx then
+            return false, {
+                error_msg = "invalid secret id: " .. (str_id or "")
+            }
+        end
+        secret_type = str_sub(str_id, 1, idx - 1)
+    end
+    return checker(item.id, item, false, schema, {
+        secret_type = secret_type,
+        skip_references_check = true,
+    })
+end
+
 
 local function update(ctx)
     local content_type = core.request.header(nil, "content-type") or "application/json"
-
-    local conf_version
-    if ctx.var.arg_conf_version then
-        conf_version = tonumber(ctx.var.arg_conf_version)
-        if not conf_version then
-            return core.response.exit(400, {error_msg = "invalid conf_version: "
-                                            .. ctx.var.arg_conf_version
-                                            .. ", should be a integer" })
-        end
-    else
-        conf_version = ngx.time()
-    end
-    -- check if conf_version greater than the current version
-    local _, ver = config_yaml._get_config()
-    if conf_version <= ver then
-        return core.response.exit(400, {error_msg = "invalid conf_version: conf_version ("
-                                        .. conf_version
-                                        .. ") should be greater than the current version ("
-                                        .. ver .. ")"})
-    end
 
     -- read the request body
     local req_body, err = core.request.get_body()
@@ -105,44 +166,78 @@ local function update(ctx)
     end
     req_body = data
 
+    local config, err = get_config()
+    if not config then
+        if err ~= "not found" then
+            core.log.error("failed to get config from shared dict: ", err)
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
+        end
+    end
+
     -- check input by jsonschema
     local apisix_yaml = {}
     local created_objs = config_yaml.fetch_all_created_obj()
-    for key, obj in pairs(created_objs) do
-        if req_body[key] and #req_body[key] > 0 then
-            apisix_yaml[key] = table_new(1, 0)
-            local item_schema = obj.item_schema
-            local item_checker = obj.checker
 
-            for index, item in ipairs(req_body[key]) do
-                local valid, err
-                -- need to recover to 0-based subscript
-                local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                if item_schema then
-                    valid, err = check_schema(obj.item_schema, item)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
+    for key, obj in pairs(created_objs) do
+        local conf_version_key = obj.conf_version_key
+        local conf_version = config and config[conf_version_key] or obj.conf_version
+        local items = req_body[key]
+        local new_conf_version = req_body[conf_version_key]
+        local resource = resources[key] or {}
+        if not new_conf_version then
+            new_conf_version = conf_version + 1
+        else
+            if type(new_conf_version) ~= "number" then
+                return core.response.exit(400, {
+                    error_msg = conf_version_key .. " must be a number",
+                })
+            end
+            if new_conf_version < conf_version then
+                return core.response.exit(400, {
+                    error_msg = conf_version_key ..
+                        " must be greater than or equal to (" .. conf_version .. ")",
+                })
+            end
+        end
+
+
+        apisix_yaml[conf_version_key] = new_conf_version
+        if new_conf_version == conf_version then
+            apisix_yaml[key] = config and config[key]
+        elseif items and #items > 0 then
+            apisix_yaml[key] = table_new(#items, 0)
+            local item_schema = resource.schema
+            local item_checker = resource.checker
+            local id_set = {}
+
+            for index, item in ipairs(items) do
+                local item_temp = tbl_deepcopy(item)
+                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                if not valid then
+                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
+                    local err_msg = type(err) == "table" and err.error_msg or err
+                    core.response.exit(400, { error_msg = err_prefix .. err_msg })
                 end
-                if item_checker then
-                    valid, err = item_checker(item)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
+                -- prevent updating resource with the same ID
+                -- (e.g., service ID or other resource IDs) in a single request
+                local duplicated, err = check_duplicate(item, key, id_set)
+                if duplicated then
+                    core.log.error(err)
+                    core.response.exit(400, { error_msg = err })
                 end
+
                 table_insert(apisix_yaml[key], item)
             end
         end
     end
 
-    local ok, err = update_and_broadcast_config(apisix_yaml, conf_version)
+    local ok, err = update_and_broadcast_config(apisix_yaml)
     if not ok then
         core.response.exit(500, err)
     end
 
-    core.response.set_header("X-APISIX-Conf-Version", tostring(conf_version))
     return core.response.exit(202)
 end
 
@@ -151,9 +246,21 @@ local function get(ctx)
     local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
 
-    local _, ver, config = config_yaml._get_config()
+    local config, err = get_config()
+    if not config then
+        if err ~= "not found" then
+            core.log.error("failed to get config from shared dict: ", err)
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
+        end
+        config = {}
+        local created_objs = config_yaml.fetch_all_created_obj()
+        for _, obj in pairs(created_objs) do
+            config[obj.conf_version_key] = obj.conf_version
+        end
+    end
 
-    core.response.set_header("X-APISIX-Conf-Version", tostring(ver))
     local resp, err
     if want_yaml_resp then
         core.response.set_header("Content-Type", "application/yaml")
@@ -194,6 +301,56 @@ function _M.run()
 end
 
 
+local patch_schema
+do
+    local resource_schema = {
+        "proto",
+        "global_rule",
+        "route",
+        "service",
+        "upstream",
+        "consumer",
+        "consumer_group",
+        "credential",
+        "ssl",
+        "plugin_config",
+    }
+    local function attach_modifiedIndex_schema(name)
+        local schema = core.schema[name]
+        if not schema then
+            core.log.error("schema for ", name, " not found")
+            return
+        end
+        if schema.properties and not schema.properties.modifiedIndex then
+            schema.properties.modifiedIndex = {
+                type = "integer",
+            }
+        end
+    end
+
+    local function patch_credential_schema()
+        local credential_schema = core.schema["credential"]
+        if credential_schema and credential_schema.properties then
+            credential_schema.properties.id = {
+                type = "string",
+                minLength = 15,
+                maxLength = 128,
+                pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
+            }
+        end
+    end
+
+    function patch_schema()
+        -- attach modifiedIndex schema to all resource schemas
+        for _, name in ipairs(resource_schema) do
+            attach_modifiedIndex_schema(name)
+        end
+        -- patch credential schema
+        patch_credential_schema()
+    end
+end
+
+
 function _M.init_worker()
     local function update_config()
         local config, err = shared_dict:get("config")
@@ -207,9 +364,11 @@ function _M.init_worker()
             core.log.error("failed to decode json: ", err)
             return
         end
-        config_yaml._update_config(config.conf, config.conf_version)
+        config_yaml._update_config(config)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
+
+    patch_schema()
 end
 
 

@@ -16,6 +16,7 @@
 --
 local require = require
 local core = require("apisix.core")
+local config_local   = require("apisix.core.config_local")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
@@ -103,12 +104,18 @@ _M.get_healthchecker_name = get_healthchecker_name
 
 
 local function create_checker(upstream)
+    local local_conf = config_local.local_conf()
+    if local_conf and local_conf.apisix and local_conf.apisix.disable_upstream_healthcheck then
+        core.log.info("healthchecker won't be created: disabled upstream healthcheck")
+        return nil
+    end
     if healthcheck == nil then
         healthcheck = require("resty.healthcheck")
     end
 
     local healthcheck_parent = upstream.parent
-    if healthcheck_parent.checker and healthcheck_parent.checker_upstream == upstream then
+    if healthcheck_parent.checker and healthcheck_parent.checker_upstream == upstream
+        and healthcheck_parent.checker_nodes_ver == upstream._nodes_ver then
         return healthcheck_parent.checker
     end
 
@@ -175,6 +182,7 @@ local function create_checker(upstream)
 
     healthcheck_parent.checker = checker
     healthcheck_parent.checker_upstream = upstream
+    healthcheck_parent.checker_nodes_ver = upstream._nodes_ver
     healthcheck_parent.checker_idx = check_idx
 
     upstream.is_creating_checker = nil
@@ -238,33 +246,35 @@ local function fill_node_info(up_conf, scheme, is_stream)
         end
     end
 
-    up_conf.original_nodes = nodes
-
     if not need_filled then
         up_conf.nodes_ref = nodes
         return true
     end
 
-    local filled_nodes = core.table.new(#nodes, 0)
+    core.log.debug("fill node info for upstream: ",
+                core.json.delay_encode(up_conf, true))
+
+    -- keep the original nodes for slow path in `compare_upstream_node()`,
+    -- can't use `core.table.deepcopy()` for whole `nodes` array here,
+    -- because `compare_upstream_node()` compare `metadata` of node by address.
+    up_conf.original_nodes = core.table.new(#nodes, 0)
     for i, n in ipairs(nodes) do
+        up_conf.original_nodes[i] = core.table.clone(n)
         if not n.port or not n.priority then
-            filled_nodes[i] = core.table.clone(n)
+            nodes[i] = core.table.clone(n)
 
             if not is_stream and not n.port then
-                filled_nodes[i].port = scheme_to_port[scheme]
+                nodes[i].port = scheme_to_port[scheme]
             end
 
             -- fix priority for non-array nodes and nodes from service discovery
             if not n.priority then
-                filled_nodes[i].priority = 0
+                nodes[i].priority = 0
             end
-        else
-            filled_nodes[i] = n
         end
     end
 
-    up_conf.nodes_ref = filled_nodes
-    up_conf.nodes = filled_nodes
+    up_conf.nodes_ref = nodes
     return true
 end
 
@@ -302,35 +312,34 @@ function _M.set_by_route(route, api_ctx)
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
+            if not up_conf._nodes_ver then
+                up_conf._nodes_ver = 0
+            end
+            up_conf._nodes_ver = up_conf._nodes_ver + 1
+
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
             end
 
-            local new_up_conf = core.table.clone(up_conf)
-            new_up_conf.nodes = new_nodes
-            new_up_conf.original_nodes = up_conf.nodes
-
             core.log.info("discover new upstream from ", up_conf.service_name, ", type ",
                           up_conf.discovery_type, ": ",
-                          core.json.delay_encode(new_up_conf, true))
-
-            local parent = up_conf.parent
-            if parent.value.upstream then
-                -- the up_conf comes from route or service
-                parent.value.upstream = new_up_conf
-            else
-                parent.value = new_up_conf
-            end
-            up_conf = new_up_conf
+                          core.json.delay_encode(up_conf, true))
         end
+
+        -- in case the value of new_nodes is the same as the old one,
+        -- but discovery lib return a new table for it.
+        -- for example, when watch loop of kubernetes discovery is broken or done,
+        -- it will fetch full data again and return a new table for every services.
+        up_conf.nodes = new_nodes
     end
 
     local id = up_conf.parent.value.id
     local conf_version = up_conf.parent.modifiedIndex
     -- include the upstream object as part of the version, because the upstream will be changed
     -- by service discovery or dns resolver.
-    set_directly(api_ctx, id, conf_version .. "#" .. tostring(up_conf), up_conf)
+    set_directly(api_ctx, id, conf_version .. "#" .. tostring(up_conf) .. "#"
+                                    .. tostring(up_conf._nodes_ver or ''), up_conf)
 
     local nodes_count = up_conf.nodes and #up_conf.nodes or 0
     if nodes_count == 0 then

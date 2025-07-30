@@ -1,9 +1,13 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
     "target": "esnext",
     "module": "esnext",
+    "moduleResolution": "node",
     "lib": ["esnext"],
-    "esModuleInterop": true
-  }
+    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true,
+    "types": ["node", "jest"]
+  },
+  "include": ["**/*.ts", "**/*.mts"],
 }

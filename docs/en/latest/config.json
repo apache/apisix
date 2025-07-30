@@ -1,5 +1,5 @@
 {
-  "version": "3.12.0",
+  "version": "3.13.0",
   "sidebar": [
     {
       "type": "category",
@@ -39,7 +39,8 @@
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
         "tutorials/client-to-apisix-mtls",
-        "tutorials/websocket-authentication"
+        "tutorials/websocket-authentication",
+        "tutorials/keycloak-oidc"
       ]
     },
     {
@@ -91,6 +92,7 @@
             "plugins/gzip",
             "plugins/brotli",
             "plugins/real-ip",
+            "plugins/server-info",
             "plugins/ext-plugin-pre-req",
             "plugins/ext-plugin-post-req",
             "plugins/ext-plugin-post-resp",
@@ -211,7 +213,8 @@
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
                 "plugins/tencent-cloud-cls",
-                "plugins/loki-logger"
+                "plugins/loki-logger",
+                "plugins/lago"
               ]
             }
           ]
@@ -250,6 +253,10 @@
         {
           "type": "doc",
           "id": "control-api"
+        },
+        {
+          "type": "doc",
+          "id": "status-api"
         }
       ]
     },
@@ -257,6 +264,10 @@
       "type": "category",
       "label": "Development",
       "items": [
+        {
+          "type": "doc",
+          "id": "build-apisix-dev-environment-devcontainers"
+        },
         {
           "type": "doc",
           "id": "building-apisix"
