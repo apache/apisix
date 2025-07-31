@@ -17,6 +17,9 @@
 local core        = require("apisix.core")
 local expr        = require("resty.expr.v1")
 local ipairs      = ipairs
+local rawset      = rawset
+local setmetatable = setmetatable
+local rawget      = rawget
 
 local schema = {
     type = "object",
@@ -109,6 +112,7 @@ function _M.register(plugin_name, handler, check_schema, log_handler)
     }
 end
 
+
 function _M.check_schema(conf)
     local ok, err = core.schema.check(schema, conf)
     if not ok then
@@ -117,10 +121,17 @@ function _M.check_schema(conf)
 
     for idx, rule in ipairs(conf.rules) do
          if rule.case then
-            local ok, err = expr.new(rule.case)
+            local expr, err = expr.new(rule.case)
             if not ok then
                 return false, "failed to validate the 'case' expression: " .. err
             end
+            setmetatable(rule, {
+                __index = function(_, key)
+                    if key == "__expr" then
+                        return expr
+                    end
+                end
+            })
         end
 
         local actions = rule.actions
@@ -144,13 +155,15 @@ end
 
 
 function _M.access(conf, ctx)
-    for _, rule in ipairs(conf.rules) do
+    ctx._workflow_cache = ctx._workflow_cache or {}
+    for idx, rule in ipairs(conf.rules) do
         local match_result = true
         if rule.case then
-            local expr, _ = expr.new(rule.case)
+            local expr = rule.__expr
             match_result = expr:eval(ctx.var)
         end
         if match_result then
+            ctx._workflow_cache[idx] = rule
             -- only one action is currently supported
             local action = rule.actions[1]
             return support_action[action[1]].handler(action[2], ctx)
@@ -159,12 +172,8 @@ function _M.access(conf, ctx)
 end
 
 function _M.log(conf, ctx)
-    for _, rule in ipairs(conf.rules) do
-        local match_result = true
-        if rule.case then
-            local expr, _ = expr.new(rule.case)
-            match_result = expr:eval(ctx.var)
-        end
+    for idx, rule in ipairs(conf.rules) do
+        local match_result = ctx._workflow_cache[idx]
         if match_result then
             -- only one action is currently supported
             local action = rule.actions[1]
