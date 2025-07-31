@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local core = require("apisix.core")
+local plugin = require("apisix.plugin")
 local batch_processor = require("apisix.utils.batch-processor")
 local timer_at = ngx.timer.at
 local pairs = pairs
@@ -107,7 +108,7 @@ function _M:add_entry(conf, entry, max_pending_entries)
     end
     check_stale(self)
 
-    local log_buffer = self.buffers[conf]
+    local log_buffer = self.buffers[plugin.conf_version(conf)]
     if not log_buffer then
         return false
     end
@@ -149,7 +150,7 @@ function _M:add_entry_to_new_processor(conf, entry, ctx, func, max_pending_entri
     end
 
     log_buffer:push(entry)
-    self.buffers[conf] = log_buffer
+    self.buffers[plugin.conf_version(conf)] = log_buffer
     self.total_pushed_entries = self.total_pushed_entries + 1
     return true
 end
