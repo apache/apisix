@@ -92,11 +92,11 @@ end
 
 function _M.workflow_handler()
     workflow.register(plugin_name,
-    function (conf, ctx) -- handler run in access phase
-        return limit_conn.increase(conf, ctx, plugin_name, 1)
-    end,
     function (conf) -- schema validation
         return core.schema.check(schema, conf)
+    end,
+    function (conf, ctx) -- handler run in access phase
+        return limit_conn.increase(conf, ctx, plugin_name, 1)
     end,
     function (conf, ctx) -- log_handler run in log phase
         return limit_conn.decrease(conf, ctx, plugin_name, 1)

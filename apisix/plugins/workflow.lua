@@ -104,10 +104,10 @@ local support_action = {
 }
 
 
-function _M.register(plugin_name, handler, check_schema, log_handler)
+function _M.register(plugin_name, check_schema, access_handler, log_handler)
     support_action[plugin_name] = {
-        handler        = handler,
         check_schema   = check_schema,
+        handler        = access_handler,
         log_handler    = log_handler
     }
 end
@@ -163,7 +163,7 @@ function _M.access(conf, ctx)
             match_result = expr:eval(ctx.var)
         end
         if match_result then
-            ctx._workflow_cache[idx] = rule
+            ctx._workflow_cache[idx] = match_result
             -- only one action is currently supported
             local action = rule.actions[1]
             return support_action[action[1]].handler(action[2], ctx)
