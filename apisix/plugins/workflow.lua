@@ -160,8 +160,8 @@ function _M.access(conf, ctx)
             local expr = rule.__expr
             match_result = expr:eval(ctx.var)
         end
+        ctx._workflow_cache[idx] = match_result
         if match_result then
-            ctx._workflow_cache[idx] = match_result
             -- only one action is currently supported
             local action = rule.actions[1]
             return support_action[action[1]].handler(action[2], ctx)
