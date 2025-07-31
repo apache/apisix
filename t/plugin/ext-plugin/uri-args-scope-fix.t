@@ -116,6 +116,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 2: test URI args processing with path rewrite - verify args are always set
 --- config
     location /t {
@@ -130,6 +132,8 @@ GET /hello?original=param&test=value
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 3: test URI args processing with args rewrite only - verify args are always set
 --- config
@@ -146,6 +150,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 4: test URI args processing with complex args modification - verify scope fix
 --- config
     location /t {
@@ -160,6 +166,8 @@ GET /hello?a=1&b=2&c=3
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 5: test URI args processing with path rewrite and args - verify upstream_uri is set
 --- config
@@ -176,6 +184,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 6: test URI args processing with empty args - verify no errors
 --- config
     location /t {
@@ -190,6 +200,8 @@ GET /hello
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 7: test URI args processing with multiple same name args - verify array handling
 --- config
@@ -206,6 +218,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 8: test URI args processing with args deletion - verify nil handling
 --- config
     location /t {
@@ -220,6 +234,8 @@ GET /hello?delete=me&keep=this&remove=too
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 9: test URI args processing with path rewrite only - verify upstream_uri construction
 --- config
@@ -236,6 +252,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 10: test URI args processing with args containing special characters - verify encoding
 --- config
     location /t {
@@ -250,6 +268,8 @@ GET /hello?param=value%20with%20spaces&encoded=%26%3D%3F
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 11: test URI args processing with no rewrite - verify default behavior
 --- config
@@ -266,6 +286,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 12: test URI args processing with bad path rewrite - verify error handling
 --- config
     location /t {
@@ -280,6 +302,8 @@ GET /hello?param=value
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 13: test URI args processing with conditional args - verify scope fix
 --- config
@@ -296,6 +320,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 14: test URI args processing with mixed operations - verify all args are processed
 --- config
     location /t {
@@ -310,6 +336,8 @@ GET /hello?add=new&modify=old&delete=remove&keep=preserve
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 15: test URI args processing with edge case - single arg
 --- config

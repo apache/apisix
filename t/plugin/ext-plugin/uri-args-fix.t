@@ -103,6 +103,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 2: test URI args processing with rewrite - path and args
 --- config
     location /t {
@@ -117,6 +119,8 @@ GET /hello?original=param&test=value
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 3: test URI args processing with rewrite - args only
 --- config
@@ -133,6 +137,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 4: test URI args processing with complex args modification
 --- config
     location /t {
@@ -147,6 +153,8 @@ GET /hello?a=1&b=2&c=3
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 5: test URI args processing with path rewrite and args
 --- config
@@ -163,6 +171,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 6: test URI args processing with empty args
 --- config
     location /t {
@@ -177,6 +187,8 @@ GET /hello
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 7: test URI args processing with multiple same name args
 --- config
@@ -193,6 +205,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 8: test URI args processing with args containing special characters
 --- config
     location /t {
@@ -208,6 +222,8 @@ passed
 --- no_error_log
 [error]
 
+
+
 === TEST 9: test URI args processing with path rewrite only
 --- config
     location /t {
@@ -222,6 +238,8 @@ GET /hello?keep=this&param=value
 passed
 --- no_error_log
 [error]
+
+
 
 === TEST 10: test URI args processing with args deletion
 --- config
