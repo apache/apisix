@@ -236,13 +236,15 @@ function _M.timer_create_checker()
             if existing_checker then
                 existing_checker.checker:delayed_clear(10)
                 existing_checker.checker:stop()
-                core.log.info("releasing existing checker: ", tostring(existing_checker.checker))
+                core.log.info("releasing existing checker: ", tostring(existing_checker.checker),
+                            " for resource: ", resource_path, " and version: ", existing_checker.version)
             end
             local checker = create_checker(upstream)
             if not checker then
                 goto continue
             end
-            core.log.info("create new checker: ", tostring(checker))
+            core.log.info("create new checker: ", tostring(checker), " for resource: ",
+                        resource_path, " and version: ", resource_ver)
             add_working_pool(resource_path, resource_ver, checker)
         end
 
@@ -261,11 +263,9 @@ function _M.timer_working_pool_check()
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
+        local need_free = true
         if not res_conf or not res_conf.value then
-            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
-            item.checker:stop()
-            core.log.info("try to release checker: ", tostring(item.checker))
-            working_pool[resource_path] = nil
+            need_free = true
             goto continue
         end
         local current_ver = _M.upstream_version(res_conf.modifiedIndex,
@@ -273,13 +273,19 @@ function _M.timer_working_pool_check()
         core.log.info("checking working pool for resource: ", resource_path,
                     " current version: ", current_ver, " item version: ", item.version)
         if item.version ~= current_ver then
-            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
-            item.checker:stop()
-            core.log.info("try to release checker: ", tostring(item.checker))
-            working_pool[resource_path] = nil
+            need_free = true
+            goto continue
         end
 
         ::continue::
+        if need_free then
+            working_pool[resource_path] = nil
+            item.checker.dead = true
+            item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
+            item.checker:stop()
+            core.log.info("try to release checker: ", tostring(item.checker), " for resource: ",
+                        resource_path, " and version : ", item.version)
+        end
     end
 end
 
@@ -293,7 +299,10 @@ function _M.init_worker()
                 return
             end
             timer_create_checker_running = true
-            pcall(_M.timer_create_checker)
+            local ok, err = pcall(_M.timer_create_checker)
+            if not ok then
+                core.log.error("failed to run timer_create_checker: ", err)
+            end
             timer_create_checker_running = false
         end
     end)
@@ -304,7 +313,10 @@ function _M.init_worker()
                 return
             end
             timer_working_pool_check_running = true
-            pcall(_M.timer_working_pool_check)
+            local ok, err = pcall(_M.timer_working_pool_check)
+            if not ok then
+                core.log.error("failed to run timer_working_pool_check: ", err)
+            end
             timer_working_pool_check_running = false
         end
     end)
