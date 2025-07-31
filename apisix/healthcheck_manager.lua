@@ -94,7 +94,8 @@ local function fetch_latest_conf(resource_path)
     if not resource then
         -- this can happen if the resource was deleted
         -- after the this function was called so we don't throw error
-        core.log.warn("resource not found: ", id, " in ", key)
+        core.log.warn("resource not found: ", id, " in ", key,
+                      "this can happen if the resource was deleted")
         return nil
     end
 
@@ -205,7 +206,7 @@ function _M.upstream_version(index, nodes_ver)
 end
 
 
-function _M.timer_create_checker()
+local function timer_create_checker()
     if core.table.nkeys(waiting_pool) == 0 then
         return
     end
@@ -234,7 +235,7 @@ function _M.timer_create_checker()
             -- if a checker exists then delete it before creating a new one
             local existing_checker = working_pool[resource_path]
             if existing_checker then
-                existing_checker.checker:delayed_clear(10)
+                existing_checker.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
                 existing_checker.checker:stop()
                 core.log.info("releasing existing checker: ", tostring(existing_checker.checker),
                               " for resource: ", resource_path, " and version: ",
@@ -255,7 +256,7 @@ function _M.timer_create_checker()
 end
 
 
-function _M.timer_working_pool_check()
+local function timer_working_pool_check()
     if core.table.nkeys(working_pool) == 0 then
         return
     end
@@ -264,18 +265,18 @@ function _M.timer_working_pool_check()
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
-        local need_free = true
+        local need_destroy = true
         if res_conf and res_conf.value then
             local current_ver = _M.upstream_version(res_conf.modifiedIndex,
                                                     res_conf.value._nodes_ver)
             core.log.info("checking working pool for resource: ", resource_path,
                         " current version: ", current_ver, " item version: ", item.version)
             if item.version == current_ver then
-                need_free = false
+                need_destroy = false
             end
         end
 
-        if need_free then
+        if need_destroy then
             working_pool[resource_path] = nil
             item.checker.dead = true
             item.checker:delayed_clear(DELAYED_CLEAR_TIMEOUT)
@@ -296,7 +297,7 @@ function _M.init_worker()
                 return
             end
             timer_create_checker_running = true
-            local ok, err = pcall(_M.timer_create_checker)
+            local ok, err = pcall(timer_create_checker)
             if not ok then
                 core.log.error("failed to run timer_create_checker: ", err)
             end
@@ -310,7 +311,7 @@ function _M.init_worker()
                 return
             end
             timer_working_pool_check_running = true
-            local ok, err = pcall(_M.timer_working_pool_check)
+            local ok, err = pcall(timer_working_pool_check)
             if not ok then
                 core.log.error("failed to run timer_working_pool_check: ", err)
             end
