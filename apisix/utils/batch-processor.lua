@@ -157,6 +157,9 @@ function batch_processor:new(func, config)
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
+    core.log.debug("creating new batch processor with config: ",
+        core.json.delay_encode(config, true))
+
     local processor = {
         func = func,
         buffer_duration = config.buffer_duration,
