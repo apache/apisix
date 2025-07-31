@@ -17,9 +17,7 @@
 local core        = require("apisix.core")
 local expr        = require("resty.expr.v1")
 local ipairs      = ipairs
-local rawset      = rawset
 local setmetatable = setmetatable
-local rawget      = rawget
 
 local schema = {
     type = "object",
