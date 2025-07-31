@@ -237,7 +237,8 @@ function _M.timer_create_checker()
                 existing_checker.checker:delayed_clear(10)
                 existing_checker.checker:stop()
                 core.log.info("releasing existing checker: ", tostring(existing_checker.checker),
-                            " for resource: ", resource_path, " and version: ", existing_checker.version)
+                              " for resource: ", resource_path, " and version: ",
+                              existing_checker.version)
             end
             local checker = create_checker(upstream)
             if not checker then
