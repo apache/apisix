@@ -14,10 +14,11 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local core        = require("apisix.core")
-local expr        = require("resty.expr.v1")
-local ipairs      = ipairs
+local core         = require("apisix.core")
+local expr         = require("resty.expr.v1")
+local ipairs       = ipairs
 local setmetatable = setmetatable
+local getmetatable = getmetatable
 
 local schema = {
     type = "object",
