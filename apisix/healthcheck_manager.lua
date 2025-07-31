@@ -265,20 +265,16 @@ function _M.timer_working_pool_check()
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
         local need_free = true
-        if not res_conf or not res_conf.value then
-            need_free = true
-            goto continue
-        end
-        local current_ver = _M.upstream_version(res_conf.modifiedIndex,
-                                                res_conf.value._nodes_ver)
-        core.log.info("checking working pool for resource: ", resource_path,
-                    " current version: ", current_ver, " item version: ", item.version)
-        if item.version ~= current_ver then
-            need_free = true
-            goto continue
+        if res_conf and res_conf.value then
+            local current_ver = _M.upstream_version(res_conf.modifiedIndex,
+                                                    res_conf.value._nodes_ver)
+            core.log.info("checking working pool for resource: ", resource_path,
+                        " current version: ", current_ver, " item version: ", item.version)
+            if item.version == current_ver then
+                need_free = false
+            end
         end
 
-        ::continue::
         if need_free then
             working_pool[resource_path] = nil
             item.checker.dead = true
