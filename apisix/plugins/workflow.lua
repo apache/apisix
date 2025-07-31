@@ -123,13 +123,13 @@ function _M.check_schema(conf)
             if not ok then
                 return false, "failed to validate the 'case' expression: " .. err
             end
-            setmetatable(rule, {
-                __index = function(_, key)
-                    if key == "__expr" then
-                        return expr
-                    end
+            local mt = getmetatable(rule) or {}
+            mt.__index = function (_, key)
+                if key == "__expr" then
+                    return expr
                 end
-            })
+            end
+            setmetatable(rule, mt)
         end
 
         local actions = rule.actions
