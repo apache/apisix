@@ -393,3 +393,43 @@ res:nil
 res:5
 res:12
 res:7
+
+
+
+=== TEST 13: gethostname
+--- config
+    location /t {
+        content_by_lua_block {
+            local core = require("apisix.core")
+            local hostname = core.utils.gethostname()
+            ngx.say("hostname: ", hostname)
+            local hostname2 = core.utils.gethostname()
+            ngx.say("hostname cached: ", hostname == hostname2)
+            ngx.say("hostname valid: ", hostname ~= "")
+
+            local handle = io.popen("/bin/hostname")
+            if handle then
+                local system_hostname = handle:read("*a")
+                handle:close()
+                if system_hostname then
+                    system_hostname = string.gsub(system_hostname, "\n$", "")
+                    ngx.say("system hostname: ", system_hostname)
+                    ngx.say("hostname match: ", hostname == system_hostname)
+                else
+                    ngx.say("system hostname: failed to read")
+                    ngx.say("hostname match: unable to verify")
+                end
+            else
+                ngx.say("system hostname: failed to execute /bin/hostname")
+                ngx.say("hostname match: unable to verify")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+hostname: .+
+hostname cached: true
+hostname valid: true
+system hostname: .+
+hostname match: true
