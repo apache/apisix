@@ -106,7 +106,7 @@ qr/^.*?\[error\](?!.*process exiting).*/
                 ngx.log(ngx.ERR, "It works")
             end
 
-            ngx.sleep(2.5)
+            ngx.sleep(3)
 
             local ports_count = {}
             for i = 1, 12 do

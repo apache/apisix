@@ -583,7 +583,7 @@ end
 
 
 local function merge_service_route(service_conf, route_conf)
-    local new_conf = core.table.deepcopy(service_conf, { shallows = {"self.value.upstream.parent"}})
+    local new_conf = core.table.deepcopy(service_conf)
     new_conf.value.service_id = new_conf.value.id
     new_conf.value.id = route_conf.value.id
     new_conf.modifiedIndex = route_conf.modifiedIndex
@@ -601,8 +601,6 @@ local function merge_service_route(service_conf, route_conf)
     local route_upstream = route_conf.value.upstream
     if route_upstream then
         new_conf.value.upstream = route_upstream
-        -- when route's upstream override service's upstream,
-        -- the upstream.parent still point to the route
         new_conf.value.upstream_id = nil
         new_conf.has_domain = route_conf.has_domain
     end
@@ -657,7 +655,7 @@ end
 local function merge_service_stream_route(service_conf, route_conf)
     -- because many fields in Service are not supported by stream route,
     -- so we copy the stream route as base object
-    local new_conf = core.table.deepcopy(route_conf, { shallows = {"self.value.upstream.parent"}})
+    local new_conf = core.table.deepcopy(route_conf)
     if service_conf.value.plugins then
         for name, conf in pairs(service_conf.value.plugins) do
             if not new_conf.value.plugins then
@@ -705,8 +703,7 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         return route_conf
     end
 
-    local new_route_conf = core.table.deepcopy(route_conf,
-                            { shallows = {"self.value.upstream.parent"}})
+    local new_route_conf = core.table.deepcopy(route_conf)
 
     if consumer_group_conf then
         for name, conf in pairs(consumer_group_conf.value.plugins) do

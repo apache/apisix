@@ -138,7 +138,10 @@ passed
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
-
+            --- to trigger the healthchecker
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.sleep(3)
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
@@ -211,7 +214,10 @@ passed
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
-
+            --- to trigger the healthchecker
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.sleep(3)
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
@@ -284,7 +290,10 @@ passed
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port
                         .. "/server_port"
-
+            --- to trigger the healthchecker
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET"})
+            ngx.sleep(3)
             local ports_count = {}
             for i = 1, 12 do
                 local httpc = http.new()
