@@ -269,7 +269,7 @@ function _M.gethostname()
 
     else
         hostname = "unknown"
-        log.error("gethostname error:", ffi_string(C.strerror(ffi.errno())))
+        log.error("failed to call gethostname(): ", ffi_string(C.strerror(ffi.errno())))
     end
 
     return hostname
