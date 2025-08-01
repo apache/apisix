@@ -312,7 +312,7 @@ function _M.set_by_route(route, api_ctx)
 
         local new_nodes, err = dis.nodes(service_name, up_conf.discovery_args)
         if not new_nodes then
-            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node: " .. (err or "nil")
+            return HTTP_CODE_UPSTREAM_UNAVAILABLE, "no valid upstream node for service '" .. service_name .. "': " .. (err or "nil")
         end
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
