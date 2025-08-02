@@ -49,7 +49,7 @@ ENV_INST_LUADIR        ?= $(ENV_INST_PREFIX)/share/lua/5.1
 ENV_INST_BINDIR        ?= $(ENV_INST_PREFIX)/bin
 ENV_RUNTIME_VER	     ?= $(shell $(ENV_NGINX_EXEC) -V 2>&1 | tr ' ' '\n'  | grep 'APISIX_RUNTIME_VER' | cut -d '=' -f2)
 
-IMAGE_NAME = apache/apisix
+IMAGE_NAME = tiborfek7/apisix
 ENV_APISIX_IMAGE_TAG_NAME  ?= $(IMAGE_NAME):$(VERSION)
 
 -include .requirements
