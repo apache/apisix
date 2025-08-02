@@ -55,6 +55,7 @@ return {
     id          = require("apisix.core.id"),
     ip          = require("apisix.core.ip"),
     io          = require("apisix.core.io"),
+    admin_key   = require("apisix.core.admin_key"),
     utils       = utils,
     dns_client  = require("apisix.core.dns.client"),
     etcd        = require("apisix.core.etcd"),
