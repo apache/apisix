@@ -28,7 +28,7 @@ local open             = io.open
 local prefix           = ngx.config.prefix()
 local apisix_uid
 
-local _M = {version = 0.2}
+local _M = {version = 0.1}
 
 
 local function rtrim(str)
