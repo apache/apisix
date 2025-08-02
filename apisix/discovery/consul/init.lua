@@ -21,6 +21,7 @@ local core_sleep         = require("apisix.core.utils").sleep
 local resty_consul       = require('resty.consul')
 local http               = require('resty.http')
 local util               = require("apisix.cli.util")
+local discovery_utils    = require("apisix.utils.discovery")
 local ipairs             = ipairs
 local error              = error
 local ngx                = ngx
@@ -78,14 +79,18 @@ function _M.all_nodes()
     return all_services
 end
 
-
-function _M.nodes(service_name)
+function _M.nodes(service_name, discovery_args)
     if not all_services then
         log.error("all_services is nil, failed to fetch nodes for : ", service_name)
         return
     end
 
     local resp_list = all_services[service_name]
+
+    metadata_match = discovery_args and discovery_args.metadata_match
+    if metadata_match then
+        resp_list = discovery_utils.nodes_metadata_match(resp_list, metadata_match)
+    end
 
     if not resp_list then
         log.error("fetch nodes failed by ", service_name, ", return default service")
@@ -97,7 +102,6 @@ function _M.nodes(service_name)
 
     return resp_list
 end
-
 
 local function update_all_services(consul_server_url, up_services)
     -- clean old unused data
@@ -511,11 +515,17 @@ function _M.connect(premature, consul_server, retry_delay)
                 local nodes = up_services[service_name]
                 local nodes_uniq = {}
                 for _, node in ipairs(result.body) do
-                    if not node.Service then
+                    local service = node.Service
+                    if not service then
                         goto CONTINUE
                     end
 
-                    local svc_address, svc_port = node.Service.Address, node.Service.Port
+                    local svc_address = service.Address
+                    local svc_port = service.Port
+                    local metadata = service.Meta
+                    if type(metadata) ~= "table" then
+                       metadata = nil
+                    end
                     -- Handle nil or 0 port case - default to 80 for HTTP services
                     if not svc_port or svc_port == 0 then
                         svc_port = 80
@@ -532,7 +542,7 @@ function _M.connect(premature, consul_server, retry_delay)
                         core.table.insert(nodes, {
                             host = svc_address,
                             port = tonumber(svc_port),
-                            weight = default_weight,
+                            metadata = metadata
                         })
                         nodes_uniq[service_id] = true
                     end

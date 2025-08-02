@@ -95,7 +95,7 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":8002,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","metadata":{"service_b_version":"4.1"},"port":8002,"weight":1}]}
 
 
 
@@ -450,7 +450,7 @@ discovery:
 --- request
 GET /bonjour
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","port":30517,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1}],"service_b":[{"host":"127.0.0.1","metadata":{"service_b_version":"4.1"},"port":30517,"weight":1}]}
 
 
 
@@ -508,4 +508,4 @@ discovery:
 --- request
 GET /t
 --- response_body
-{"service_a":[{"host":"127.0.0.1","port":30511,"weight":1}]}
+{"service_a":[{"host":"127.0.0.1","metadata":{"service_a_version":"4.0"},"port":30511,"weight":1}]}
