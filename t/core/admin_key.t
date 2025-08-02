@@ -121,7 +121,7 @@ deployment:
                 if keys[1] then
                     ngx.say("first key name: ", keys[1].name or "nil")
                     ngx.say("first key role: ", keys[1].role)
-                    ngx.say("key length: ", string.len(keys[1].key))
+                    ngx.say("key value: ", keys[1].key or "nil")
                 end
             else
                 ngx.say("keys: nil")
@@ -172,6 +172,6 @@ get_admin_keys type: table
 keys count: 1
 first key name: admin
 first key role: admin
-key length: 32
+key value: edd1c9f034335f136f87ad84b625c8f1
 collection endpoint status: 200
 individual resource status: 404
