@@ -47,15 +47,15 @@ deployment:
     location /t {
         content_by_lua_block {
             local admin_key = require("apisix.core.admin_key")
-            
+
             -- Test admin_key_required function
             local required = admin_key.admin_key_required()
             ngx.say("admin_key_required: ", tostring(required))
-            
+
             -- Test init function
             admin_key.init()
             ngx.say("init: ok")
-            
+
             -- Test get_admin_keys function
             local keys = admin_key.get_admin_keys()
             ngx.say("get_admin_keys type: ", type(keys))
@@ -104,15 +104,15 @@ deployment:
     location /t {
         content_by_lua_block {
             local admin_key = require("apisix.core.admin_key")
-            
+
             -- Test admin_key_required function
             local required = admin_key.admin_key_required()
             ngx.say("admin_key_required: ", tostring(required))
-            
+
             -- Test init function
             admin_key.init()
             ngx.say("init: ok")
-            
+
             -- Test get_admin_keys function
             local keys = admin_key.get_admin_keys()
             ngx.say("get_admin_keys type: ", type(keys))
@@ -126,11 +126,11 @@ deployment:
             else
                 ngx.say("keys: nil")
             end
-            
+
             -- Test API access with valid key (collection endpoint)
             local http = require "resty.http"
             local httpc = http.new()
-            
+
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/admin/routes"
             local res, err = httpc:request_uri(uri, {
                 method = "GET",
@@ -138,14 +138,14 @@ deployment:
                     ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
                 }
             })
-            
+
             if not res then
                 ngx.log(ngx.ERR, err)
                 return
             end
-            
+
             ngx.say("collection endpoint status: ", res.status)
-            
+
             -- Test API access with valid key (individual resource endpoint)
             local uri2 = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/admin/routes/1"
             local res2, err2 = httpc:request_uri(uri2, {
@@ -154,12 +154,12 @@ deployment:
                     ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
                 }
             })
-            
+
             if not res2 then
                 ngx.log(ngx.ERR, err2)
                 return
             end
-            
+
             ngx.say("individual resource status: ", res2.status)
         }
     }
