@@ -136,7 +136,7 @@ function _M.http_init_worker()
         end
     end
 
-    core.admin_key.init()
+    core.admin_key.init_worker()
     plugin.init_worker()
     router.http_init_worker()
     require("apisix.http.service").init_worker()

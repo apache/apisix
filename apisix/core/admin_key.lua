@@ -43,7 +43,7 @@ function _M.admin_key_required()
     return local_conf.deployment.admin.admin_key_required
 end
 
-function _M.init()
+function _M.init_worker()
     local local_conf = fetch_local_conf()
     local deployment_role = local_conf.deployment and local_conf.deployment.role
     
