@@ -46,7 +46,7 @@ end
 function _M.init_worker()
     local local_conf = fetch_local_conf()
     local deployment_role = local_conf.deployment and local_conf.deployment.role
-    
+
     if local_conf.deployment.admin.admin_key_required == false then
         return
     end
@@ -105,7 +105,7 @@ function _M.init_worker()
     end
 
     admin_keys_shm:set("total_keys", #config_admin_keys)
-    
+
     -- Mark as completed (atomic operation for all waiting workers)
     admin_keys_shm:set("completed", true)
 
