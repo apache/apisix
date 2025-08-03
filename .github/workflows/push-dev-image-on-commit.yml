@@ -85,7 +85,6 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Push apisix image to Docker Hub
-        if: github.ref == 'refs/heads/master'
         run: |
           make push-on-debian-dev
 
