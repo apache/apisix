@@ -213,22 +213,6 @@ Please modify "admin_key" in conf/config.yaml .
         then
             util.die(help:format("ERROR: missing valid Admin API token."))
         end
-
-        for _, admin in ipairs(admin_key) do
-            if type(admin.key) == "table" then
-                admin.key = ""
-            else
-                admin.key = tostring(admin.key)
-            end
-
-            if admin.key == "" then
-                stderr:write(
-                    help:format([[WARNING: using empty Admin API.
-                    This will trigger APISIX to automatically generate a random Admin API token.]]),
-                    "\n"
-                )
-            end
-        end
     end
 
     if yaml_conf.deployment.admin then
