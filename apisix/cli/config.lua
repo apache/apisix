@@ -169,6 +169,7 @@ local _M = {
         tracing_buffer = "10m",
         ["plugin-api-breaker"] = "10m",
         ["etcd-cluster-health-check"] = "10m",
+        ["admin_keys"] = "1m",
         discovery = "1m",
         jwks = "1m",
         introspection = "10m",
