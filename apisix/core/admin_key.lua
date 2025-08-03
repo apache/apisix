@@ -31,12 +31,16 @@ local _M = {version = 0.1}
 local admin_keys_cache = {}
 
 function _M.get_admin_keys()
+    -- Lazy loading: only load keys when actually needed
+    if #admin_keys_cache == 0 then
+        _M.load_keys_from_shared_memory()
+    end
     return admin_keys_cache
 end
 
 function _M.admin_key_required()
     local local_conf = fetch_local_conf()
-    return local_conf.deployment.admin.admin_key_required ~= false
+    return local_conf.deployment.admin.admin_key_required
 end
 
 function _M.init()
@@ -69,19 +73,10 @@ function _M.init()
     end
 
     -- Atomic check-and-set: only one worker can claim initialization
-    local claimed_init, err = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0, 30)
+    local claimed_init, err = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0, 5)
     if not claimed_init then
-        -- Another worker claimed initialization or it's completed
-        -- Wait for completion with timeout
-        for attempt = 1, 100 do  -- Wait up to 10 seconds
-            if admin_keys_shm:get("completed") then
-                _M.load_keys_from_shared_memory()
-                return
-            end
-            ngx.sleep(0.1)
-        end
-        -- Timeout fallback
-        _M.load_keys_from_shared_memory()
+        -- Another worker is handling initialization, no waiting needed
+        -- Keys will be loaded lazily when first accessed via get_admin_keys()
         return
     end
 
