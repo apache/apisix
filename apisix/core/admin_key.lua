@@ -52,39 +52,62 @@ function _M.init()
         return
     end
 
-    -- Check if keys are already initialized by another worker
-    local initialized = admin_keys_shm:get("initialized")
-
-    if initialized then
-        -- Load existing keys from shared memory
-        _M.load_keys_from_shared_memory()
-        return
-    end
-
-    -- First worker to reach here tries to acquire initialization lock
+    -- Retry loop for acquiring initialization lock
+    local max_retries = 50  -- 5 seconds total wait time
+    local retry_delay = 0.1  -- 100ms between retries
     local lock_key = "init_lock"
-    local lock_value = ngx.worker.id() .. ":" .. ngx.now()
-
-    -- Try to acquire lock (expires in 10 seconds)
-    local ok, err = admin_keys_shm:safe_set(lock_key, lock_value, 10)
-    if not ok then
-        if err == "exists" then
-            -- Another worker is initializing, wait and load
-            ngx.sleep(0.1)
+    local acquired_lock = false
+    
+    for attempt = 1, max_retries do
+        -- Check if keys are already initialized by another worker
+        local initialized = admin_keys_shm:get("initialized")
+        if initialized then
+            -- Load existing keys from shared memory
             _M.load_keys_from_shared_memory()
             return
+        end
+
+        -- Try to acquire initialization lock
+        local lock_value = ngx.worker.id() .. ":" .. ngx.now() .. ":" .. attempt
+        
+        -- Try to acquire lock (expires in 10 seconds)
+        local ok, err = admin_keys_shm:safe_set(lock_key, lock_value, 10)
+        if ok then
+            -- Successfully acquired lock
+            acquired_lock = true
+            
+            -- Double-check initialization status after acquiring lock
+            initialized = admin_keys_shm:get("initialized")
+            if initialized then
+                -- Another worker completed initialization while we were acquiring lock
+                admin_keys_shm:delete(lock_key)  -- Release lock
+                _M.load_keys_from_shared_memory()
+                return
+            end
+            
+            -- We have exclusive access, proceed with initialization
+            break
         else
-            log.error("failed to set lock: ", err)
-            return
+            if err == "exists" then
+                -- Another worker has the lock, wait and retry
+                if attempt < max_retries then
+                    ngx.sleep(retry_delay)
+                else
+                    -- Final attempt - just load from shared memory if available
+                    log.warn("timeout waiting for admin key initialization lock, loading existing keys")
+                    _M.load_keys_from_shared_memory()
+                    return
+                end
+            else
+                log.error("failed to set lock: ", err)
+                return
+            end
         end
     end
-
-    -- Double-check initialization status after acquiring lock
-    initialized = admin_keys_shm:get("initialized")
-    if initialized then
-        -- Another worker completed initialization while we were waiting
-        admin_keys_shm:delete(lock_key)  -- Release lock
-        _M.load_keys_from_shared_memory()
+    
+    -- Ensure we have the lock before proceeding
+    if not acquired_lock then
+        log.error("failed to acquire admin key initialization lock")
         return
     end
 
