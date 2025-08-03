@@ -36,9 +36,6 @@ end
 
 function _M.admin_key_required()
     local local_conf = fetch_local_conf()
-    if not local_conf.deployment then
-        return true
-    end
     return local_conf.deployment.admin.admin_key_required ~= false
 end
 
@@ -46,6 +43,10 @@ function _M.init()
     local local_conf = fetch_local_conf()
     local deployment_role = local_conf.deployment and local_conf.deployment.role
     
+    if local_conf.deployment.admin.admin_key_required == false then
+        return
+    end
+
     if not deployment_role or (deployment_role ~= "traditional" and deployment_role ~= "control_plane") then
         return
     end
