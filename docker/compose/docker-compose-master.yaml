@@ -19,7 +19,7 @@ version: "3"
 
 services:
   apisix:
-    image: "tiborfek7/apisix:${APISIX_DOCKER_TAG}"
+    image: "apache/apisix:${APISIX_DOCKER_TAG}"
     restart: always
     volumes:
       - ./apisix_conf/master/config.yaml:/usr/local/apisix/conf/config.yaml:ro
