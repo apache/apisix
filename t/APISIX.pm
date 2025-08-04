@@ -593,6 +593,7 @@ _EOC_
     lua_shared_dict internal-status 10m;
     lua_shared_dict upstream-healthcheck 32m;
     lua_shared_dict worker-events 10m;
+    lua_shared_dict admin_keys 1m;
     lua_shared_dict lrucache-lock 10m;
     lua_shared_dict balancer-ewma 1m;
     lua_shared_dict balancer-ewma-locks 1m;
