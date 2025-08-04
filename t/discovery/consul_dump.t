@@ -144,9 +144,10 @@ location /v1/agent {
 [
     "PUT /v1/agent/service/deregister/service_a1",
     "PUT /v1/agent/service/deregister/service_b1",
+    "PUT /v1/agent/service/deregister/service_c1",
 ]
 --- error_code eval
-[200, 200]
+[200, 200, 200]
 
 
 
