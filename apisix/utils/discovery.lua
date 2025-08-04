@@ -23,7 +23,7 @@ local _M = {}
 local function do_metadata_match(node, metadata_match)
     local metadata = node.metadata
     -- because metadata_match has already been checked in nodes_metadata_match,
-    -- there is at least one role, if there is no metadata in node, it's mast not matched
+    -- there is at least one role, if there is no metadata in node, it's must not matched
     if not metadata then
         return false
     end
