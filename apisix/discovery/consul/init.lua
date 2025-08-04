@@ -523,6 +523,8 @@ function _M.connect(premature, consul_server, retry_delay)
                     local svc_address = service.Address
                     local svc_port = service.Port
                     local metadata = service.Meta
+                    -- ensure that metadata is an accessible table,
+                    -- avoid userdata likes `null` returned by cjson
                     if type(metadata) ~= "table" then
                        metadata = nil
                     end
