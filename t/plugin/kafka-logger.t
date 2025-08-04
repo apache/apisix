@@ -760,3 +760,83 @@ GET /hello
 --- response_body
 hello world
 --- wait: 2
+
+
+
+=== TEST 26: create a service with kafka-logger and three routes bound to it
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/services/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                        "plugins": {
+                            "kafka-logger": {
+                                "broker_list" : {
+                                    "127.0.0.1":9092
+                                },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1,
+                                "include_req_body": true,
+                                "meta_format": "origin"
+                            }
+                        },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        }
+                }]]
+                )
+            if code >= 300 then
+                ngx.say("create service failed")
+                return
+            end
+            for i = 1, 3 do
+                local code, body = t('/apisix/admin/routes/' .. i,
+                     ngx.HTTP_PUT,
+                     string.format([[{
+                        "uri": "/hello%d",
+                        "service_id": "1"
+                     }]], i)
+                    )
+                if code >= 300 then
+                    ngx.say("create route failed")
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 27: hit three routes, should create batch processor only once
+--- log_level: debug
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local httpc = http.new()
+            for i = 1, 3 do
+                local resp = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/hello" .. i)
+                if not resp then
+                    ngx.say("failed to request test server")
+                    return
+                end
+            end
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- grep_error_log eval
+qr/creating new batch processor with config.*/
+--- grep_error_log_out eval
+qr/creating new batch processor with config.*/

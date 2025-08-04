@@ -11,7 +11,7 @@
     "@trivago/prettier-plugin-sort-imports": "^5.2.2",
     "@types/jest": "29.5.14",
     "@types/node": "22.14.1",
-    "axios": "^1.9.0",
+    "axios": "^1.11.0",
     "docker-compose": "^1.2.0",
     "graphql": "^16.11.0",
     "graphql-request": "^7.1.2",
