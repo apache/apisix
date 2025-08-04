@@ -544,6 +544,7 @@ function _M.connect(premature, consul_server, retry_delay)
                         core.table.insert(nodes, {
                             host = svc_address,
                             port = tonumber(svc_port),
+                            weight = default_weight,
                             metadata = metadata
                         })
                         nodes_uniq[service_id] = true
