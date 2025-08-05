@@ -213,7 +213,7 @@ function _M.header_filter(conf, ctx)
     --   but rather as a general HTTP header. So it will no longer be readable as
     --   an `upstream_trailer_grpc_status` variable, but only with `sent_http_grpc_status`.
     --
-    -- We must deal with the second expection carefully. As required by the gRPC Web message frame:
+    -- We must deal with the second exception carefully. As required by the gRPC Web message frame:
     --
     --   Trailers-only responses: no change to the gRPC protocol spec. Trailers may be
     --   sent together with response headers, with no message in the body.
