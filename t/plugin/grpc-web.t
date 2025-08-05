@@ -71,8 +71,8 @@ passed
 === TEST 2: Proxy unary request using APISIX with trailers gRPC-Web plugin
 Status should be printed at most once per request, otherwise this would be out of specification.
 --- exec
-node ./t/plugin/grpc-web/client.js BIN UNARY
-node ./t/plugin/grpc-web/client.js TEXT UNARY
+tsx ./t/plugin/grpc-web/client.js BIN UNARY
+tsx ./t/plugin/grpc-web/client.js TEXT UNARY
 --- response_body
 Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
@@ -83,8 +83,8 @@ Status: { code: 0, details: '', metadata: {} }
 
 === TEST 3: Proxy server-side streaming request using APISIX with trailers gRPC-Web plugin
 --- exec
-node ./t/plugin/grpc-web/client.js BIN STREAM
-node ./t/plugin/grpc-web/client.js TEXT STREAM
+tsx ./t/plugin/grpc-web/client.js BIN STREAM
+tsx ./t/plugin/grpc-web/client.js TEXT STREAM
 --- response_body
 {"name":"hello","path":"/hello"}
 {"name":"world","path":"/world"}

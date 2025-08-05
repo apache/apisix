@@ -21,15 +21,17 @@ import (
 	"context"
 	"encoding/json"
 	"flag"
+	"log"
+	"net"
+
+	pb "apisix.apache.org/plugin/grpc-web/a6"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log"
-	"net"
-	pb "apisix.apache.org/plugin/grpc-web/a6"
 )
 
 type routeServiceServer struct {
+	pb.UnimplementedRouteServiceServer
 	savedRoutes []*pb.Route
 }
 
@@ -64,6 +66,10 @@ func (rss *routeServiceServer) GetRoutes(req *pb.Query, srv pb.RouteService_GetR
 	}
 
 	return nil
+}
+
+func (rss *routeServiceServer) GetError(ctx context.Context, req *pb.Query) (*pb.Route, error) {
+	return nil, status.Errorf(codes.Internal, "internal server error")
 }
 
 func (rss *routeServiceServer) LoadRoutes() {

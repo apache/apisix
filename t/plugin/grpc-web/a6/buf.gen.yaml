@@ -1,0 +1,19 @@
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.6
+    out: .
+    opt:
+      - paths=source_relative
+  - remote: buf.build/grpc/go:v1.5.1
+    out: .
+    opt:
+      - paths=source_relative
+  - remote: buf.build/protocolbuffers/js:v3.21.4
+    out: .
+    opt:
+      - import_style=commonjs
+  - remote: buf.build/grpc/web:v1.5.0
+    out: .
+    opt:
+      - mode=grpcweb
+      - import_style=typescript
