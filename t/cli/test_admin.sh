@@ -186,9 +186,8 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-grep -E "WARNING: using empty Admin API." output.log > /dev/null
-if [ ! $? -eq 0 ]; then
-    echo "failed: need to show \`WARNING: using empty Admin API.\`"
+if grep -E "WARNING: using empty Admin API." output.log > /dev/null; then
+    echo "failed: should not show auto-generation warning during init (only at runtime)"
     exit 1
 fi
 
@@ -209,8 +208,9 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-if grep -E "WARNING: using empty Admin API." output.log > /dev/null; then
-    echo "failed: should not show auto-generation warning during init (only at runtime)"
+grep -E "WARNING: using empty Admin API." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show \`WARNING: using empty Admin API.\`"
     exit 1
 fi
 
