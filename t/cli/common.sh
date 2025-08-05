@@ -42,12 +42,11 @@ exit_if_not_customed_nginx() {
 get_admin_key() {
     # First try to get the key from config.yaml
     local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
-    
     # If the key is empty (auto-generated), extract it from logs
     if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
         admin_key=$(grep -A 10 "Generated admin keys for this session:" logs/error.log 2>/dev/null | grep -E "^  [A-Za-z0-9]{32}$" | head -1 | sed 's/^  //' || true)
     fi
-    echo "$admin_key
+    echo "$admin_key"
 }
 
 rm logs/error.log || true # clear previous error log
