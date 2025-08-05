@@ -126,7 +126,7 @@ fi
 # check if apisix can be started use correctly default config. (https://github.com/apache/apisix/issues/9700)
 ./bin/apisix start
 sleep 1
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(get_admin_key)
 echo "look here" $admin_key
 code=$(curl -k -i -m 20 -o /dev/null -s -w %{http_code} http://127.0.0.1:9180/apisix/admin/routes -H "X-API-KEY: $admin_key")
 if [ ! $code -eq 200 ]; then
