@@ -62,16 +62,14 @@ do_install() {
     # install nodejs
     install_nodejs
 
-    # grpc-web server && client
-    cd t/plugin/grpc-web
-    ./setup.sh
-    # back to home directory
-    cd ../../../
-
     # install common jest test suite
     pushd t
-    pnpm setup
     pnpm install
+    popd
+
+    # grpc-web server && client
+    pushd t/plugin/grpc-web
+    ./setup.sh
     popd
 
     # install vault cli capabilities
