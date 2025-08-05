@@ -60,7 +60,6 @@ get_admin_key() {
                 fi
                 # Method 2: Look for any 32-character alphanumeric string that looks like a key
                 admin_key=$(grep -o "[A-Z][A-Za-z0-9]\{31\}" "$log_file" 2>/dev/null | head -1 || true)
-                
                 if [ -n "$admin_key" ]; then
                     echo "DEBUG: Found admin key using method 2: $admin_key" >&2
                     break
