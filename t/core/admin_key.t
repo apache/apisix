@@ -26,8 +26,6 @@ run_tests;
 __DATA__
 
 === TEST 1: test admin_key with empty string - should autogenerate during worker init
---- http_config
-    lua_shared_dict admin_keys 1m;
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -109,8 +107,6 @@ Please modify "admin_key" in conf/config.yaml .
 
 
 === TEST 2: test admin_key with valid key - should use configured key
---- http_config
-    lua_shared_dict admin_keys 1m;
 --- yaml_config
 apisix:
   node_listen: 1984
@@ -190,8 +186,6 @@ WARNING: using empty Admin API.
 
 
 === TEST 3: test admin_key_required disabled
---- http_config
-    lua_shared_dict admin_keys 1m;
 --- yaml_config
 apisix:
   node_listen: 1984
