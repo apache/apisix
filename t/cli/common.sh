@@ -42,9 +42,48 @@ exit_if_not_customed_nginx() {
 get_admin_key() {
     # First try to get the key from config.yaml
     local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+    echo "DEBUG: config.yaml admin_key: '$admin_key'" >&2
     # If the key is empty (auto-generated), extract it from logs
     if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
-        admin_key=$(grep -A 10 "Generated admin keys for this session:" logs/error.log 2>/dev/null | grep -E "^  [A-Za-z0-9]{32}$" | head -1 | sed 's/^  //' || true)
+        echo "DEBUG: Admin key is empty, looking for auto-generated key in logs..." >&2
+        # Wait a bit for logs to be written
+        sleep 2
+        # Try multiple log locations and patterns
+        for log_file in "logs/error.log" "/usr/local/apisix/logs/error.log"; do
+            if [ -f "$log_file" ]; then
+                echo "DEBUG: Checking log file: $log_file" >&2
+                # Method 1: Look for the specific warning message pattern
+                admin_key=$(grep -A 10 "Generated admin keys for this session:" "$log_file" 2>/dev/null | grep -E "^  [A-Za-z0-9]{32}$" | head -1 | sed 's/^  //' || true)
+                if [ -n "$admin_key" ]; then
+                    echo "DEBUG: Found admin key using method 1: $admin_key" >&2
+                    break
+                fi
+                # Method 2: Look for any 32-character alphanumeric string that looks like a key
+                admin_key=$(grep -o "[A-Z][A-Za-z0-9]\{31\}" "$log_file" 2>/dev/null | head -1 || true)
+                
+                if [ -n "$admin_key" ]; then
+                    echo "DEBUG: Found admin key using method 2: $admin_key" >&2
+                    break
+                fi
+                # Method 3: Look for any pattern that might be an admin key
+                admin_key=$(grep -o "[A-Za-z0-9]\{32\}" "$log_file" 2>/dev/null | head -1 || true)
+                if [ -n "$admin_key" ]; then
+                    echo "DEBUG: Found admin key using method 3: $admin_key" >&2
+                    break
+                fi
+                echo "DEBUG: No admin key found in $log_file" >&2
+                echo "DEBUG: Last 20 lines of $log_file:" >&2
+                tail -20 "$log_file" 2>/dev/null | head -10 >&2 || true
+            else
+                echo "DEBUG: Log file $log_file does not exist" >&2
+            fi
+        done
+        if [ -z "$admin_key" ]; then
+            echo "DEBUG: Could not find auto-generated admin key in any log file" >&2
+            echo "DEBUG: Available log files:" >&2
+            ls -la logs/ 2>/dev/null >&2 || true
+            ls -la /usr/local/apisix/logs/ 2>/dev/null >&2 || true
+        fi
     fi
     echo "$admin_key"
 }
