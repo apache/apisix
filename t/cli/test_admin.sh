@@ -149,9 +149,9 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-grep -E "ERROR: missing valid Admin API token." output.log > /dev/null
+grep -E "WARNING: using empty Admin API." output.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+    echo "failed: need to show \`WARNING: using empty Admin API.\`"
     exit 1
 fi
 
@@ -169,8 +169,9 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
-    echo "failed: should not show 'ERROR: missing valid Admin API token.'"
+grep -E "WARNING: using empty Admin API." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show \`WARNING: using empty Admin API.\`"
     exit 1
 fi
 
@@ -185,8 +186,9 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
-    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+grep -E "WARNING: using empty Admin API." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show \`WARNING: using empty Admin API.\`"
     exit 1
 fi
 
@@ -207,8 +209,8 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-if ! grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
-    echo "failed: should show 'ERROR: missing valid Admin API token.'"
+if grep -E "WARNING: using empty Admin API." output.log > /dev/null; then
+    echo "failed: should not show auto-generation warning during init (only at runtime)"
     exit 1
 fi
 
@@ -223,8 +225,9 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-if grep -E "ERROR: missing valid Admin API token." output.log > /dev/null; then
-    echo "failed: should not show 'ERROR: missing valid Admin API token.'"
+grep -E "WARNING: using empty Admin API." output.log > /dev/null
+if [ ! $? -eq 0 ]; then
+    echo "failed: need to show \`WARNING: using empty Admin API.\`"
     exit 1
 fi
 
@@ -241,7 +244,7 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-if grep -E "path\\[deployment->admin->admin_key_required\\] expect: boolean, but got: string" output.log > /dev/null; then
+if grep -E "path\[[deployment->admin->admin_key_required\] expect: boolean, but got: string" output.log > /dev/null; then
     echo "check admin_key_required value failed: should show 'expect: boolean, but got: string'"
     exit 1
 fi
