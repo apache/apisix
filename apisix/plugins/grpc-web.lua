@@ -185,6 +185,8 @@ function _M.header_filter(conf, ctx)
         core.response.set_header("Content-Type", ctx.grpc_web_mime)
         core.response.set_header("Content-Length", nil)
     end
+
+    ctx.grpc_web_metadata_sent = ngx.var.sent_http_grpc_status ~= nil
 end
 
 function _M.body_filter(conf, ctx)
@@ -208,6 +210,10 @@ function _M.body_filter(conf, ctx)
     end
 
     if ngx_arg[2] then -- if eof
+        if ctx.grpc_web_metadata_sent then
+            return
+        end
+
         local status = ctx.var.upstream_trailer_grpc_status
         local message = ctx.var.upstream_trailer_grpc_message
 
