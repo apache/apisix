@@ -106,7 +106,8 @@ install_vault_cli () {
 install_nodejs () {
     curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s install --cleanup lts
     corepack enable pnpm
-    pnpm setup --force
+    pnpm setup
+    source /root/.bashrc
 }
 
 install_brotli () {
