@@ -94,15 +94,7 @@ jobs:
               
               # If the key is empty (auto-generated), extract it from logs
               if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
-                  # Extract auto-generated key from error.log
-                  # Look for the log line that contains the generated key
                   admin_key=$(grep -A 10 "Generated admin keys for this session:" logs/error.log | grep -E "^  [A-Za-z0-9]{32}$" | head -1 | sed 's/^  //')
-                  
-                  # If still empty, try alternative log parsing
-                  if [ -z "$admin_key" ]; then
-                      # Look for any 32-character alphanumeric string in the logs that looks like an admin key
-                      admin_key=$(grep -o "[A-Z][A-Za-z0-9]\{31\}" logs/error.log | head -1)
-                  fi
               fi
               
               echo "$admin_key"
