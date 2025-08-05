@@ -50,7 +50,7 @@ fi
 
 echo "passed: data_plane does not write data to etcd"
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(get_admin_key)
 code=$(curl -o /dev/null -s -w %{http_code} http://127.0.0.1:9080/apisix/admin/routes -H "X-API-KEY: $admin_key")
 make stop
 

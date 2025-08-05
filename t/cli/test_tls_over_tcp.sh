@@ -39,7 +39,7 @@ nginx_config:
 make run
 sleep 0.1
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(get_admin_key)
 curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
 -H "X-API-KEY: $admin_key" -X PUT -d '
 {
@@ -48,7 +48,7 @@ curl http://127.0.0.1:9180/apisix/admin/ssls/1 \
      "snis": ["test.com"]
 }'
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(get_admin_key)
 curl -k -i http://127.0.0.1:9180/apisix/admin/stream_routes/1  \
     -H "X-API-KEY: $admin_key" -X PUT -d \
     '{"upstream":{"nodes":{"127.0.0.1:9101":1},"type":"roundrobin"}}'
