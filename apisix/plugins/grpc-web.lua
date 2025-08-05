@@ -195,7 +195,7 @@ function _M.header_filter(conf, ctx)
     -- 1. Normal gRPC (HTTP/2):
     --
     --   => HEADER frame => DATA frame => HEADER (trailer) frame with end stream flag => [END]
-    -- 
+    --
     --   There will be a DATA frame between the HEADER frame (which contains the HTTP/2
     --   pseudo-header such as :status) and the trailer header frame, which is sent in two
     --   separate frames, and which was handled correctly by the previous implementation.
@@ -219,7 +219,7 @@ function _M.header_filter(conf, ctx)
     --   sent together with response headers, with no message in the body.
     --
     -- Therefore, when this situation exists, we confirm here that the `grpc-status` response header
-    -- has been sent and set a flag. 
+    -- has been sent and set a flag.
     -- In subsequent body_filter phases, if it finds that this flag has been set, it skips attempts
     -- to append additional trailer encoding to the end of the response body.
     -- This is compliant, i.e., this is a trailers-only response, send the gRPC metadata contained
