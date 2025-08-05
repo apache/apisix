@@ -126,9 +126,8 @@ function _M.check_schema(conf)
             end
             local mt = getmetatable(rule)
             if not mt then
-                mt = {
-                    __index = mt
-                }
+                mt = {}
+                mt.__index = mt
                 setmetatable(rule, mt)
             end
             mt.__expr = expr
