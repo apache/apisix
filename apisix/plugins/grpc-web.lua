@@ -217,6 +217,7 @@ function _M.header_filter(conf, ctx)
     --
     --   Trailers-only responses: no change to the gRPC protocol spec. Trailers may be
     --   sent together with response headers, with no message in the body.
+    --   ref: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md
     --
     -- Therefore, when this situation exists, we confirm here that the `grpc-status` response header
     -- has been sent and set a flag.
