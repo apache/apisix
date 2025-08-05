@@ -14,10 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+//@ts-expect-error no typing for xhr2
+import XMLHttpRequest from 'xhr2';
 
-//TODO global.XMLHttpRequest = require('xhr2')
 import { RouteServiceClient } from './a6/RouteServiceClientPb';
 import { Query as RouteServiceQuery } from './a6/route_pb';
+
+// inject xhr polyfill for grpc-web
+(global as any).XMLHttpRequest = XMLHttpRequest;
 
 const RPC_CALL_FORMAT = {
   TEXT: 'TEXT',
@@ -29,9 +33,14 @@ const formats = [RPC_CALL_FORMAT.TEXT, RPC_CALL_FORMAT.BIN];
 const RPC_CALL_TYPE = {
   UNARY: 'UNARY',
   STREAM: 'STREAM',
+  EXPECT_ERROR: 'EXPECT_ERROR',
 } as const;
 type RPC_CALL_TYPE = keyof typeof RPC_CALL_TYPE;
-const types = [RPC_CALL_TYPE.UNARY, RPC_CALL_TYPE.STREAM];
+const types = [
+  RPC_CALL_TYPE.UNARY,
+  RPC_CALL_TYPE.STREAM,
+  RPC_CALL_TYPE.EXPECT_ERROR,
+];
 
 class gRPCWebClient {
   private clients = {
@@ -47,7 +56,7 @@ class gRPCWebClient {
     ),
   };
 
-  async unary(format: RPC_CALL_FORMAT) {
+  [RPC_CALL_TYPE.UNARY](format: RPC_CALL_FORMAT) {
     let query = new RouteServiceQuery().setName('hello');
     this.clients[format]
       .getRoute(query, {}, (error, response) => {
@@ -60,7 +69,7 @@ class gRPCWebClient {
       .on('status', (status) => console.log('Status:', status));
   }
 
-  stream(format: RPC_CALL_FORMAT) {
+  [RPC_CALL_TYPE.STREAM](format: RPC_CALL_FORMAT) {
     let query = new RouteServiceQuery();
     let stream = this.clients[format].getRoutes(query, {});
 
@@ -72,6 +81,14 @@ class gRPCWebClient {
 
     stream.on('status', (status) => console.log('Status:', status));
   }
+
+  [RPC_CALL_TYPE.EXPECT_ERROR](format: RPC_CALL_FORMAT) {
+    this.clients[format]
+      .getError(new RouteServiceQuery(), null, () => {})
+      .on('status', (status) => {
+        console.log(`Status: ${status.code}, Details: ${status.details}`);
+      });
+  }
 }
 
 (async () => {
@@ -79,28 +96,24 @@ class gRPCWebClient {
 
   if (args.length !== 2) {
     console.log(
-      'please input dispatch function, e.g: node client.js [mode] [type]',
+      'please input dispatch function, e.g: node client.js [format] [type]',
     );
     return;
   }
 
   const format = args[0].toUpperCase() as RPC_CALL_FORMAT;
   if (!formats.includes(format)) {
-    console.log('dispatch mode not found');
+    console.log('dispatch format not found');
     return;
   }
 
   const type = args[1].toUpperCase() as RPC_CALL_TYPE;
   if (!types.includes(type)) {
-    console.log('dispatch types not found');
+    console.log('dispatch type not found');
     return;
   }
 
   let grpc = new gRPCWebClient();
 
-  if (type === RPC_CALL_TYPE.UNARY) {
-    grpc.unary(format);
-  } else {
-    grpc.stream(format);
-  }
+  grpc[type](format);
 })();

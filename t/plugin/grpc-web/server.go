@@ -69,7 +69,7 @@ func (rss *routeServiceServer) GetRoutes(req *pb.Query, srv pb.RouteService_GetR
 }
 
 func (rss *routeServiceServer) GetError(ctx context.Context, req *pb.Query) (*pb.Route, error) {
-	return nil, status.Errorf(codes.Internal, "internal server error")
+	return nil, status.Errorf(codes.Internal, "execpted error")
 }
 
 func (rss *routeServiceServer) LoadRoutes() {

@@ -71,8 +71,8 @@ passed
 === TEST 2: Proxy unary request using APISIX with trailers gRPC-Web plugin
 Status should be printed at most once per request, otherwise this would be out of specification.
 --- exec
-tsx ./t/plugin/grpc-web/client.js BIN UNARY
-tsx ./t/plugin/grpc-web/client.js TEXT UNARY
+tsx ./t/plugin/grpc-web/client.cts BIN UNARY
+tsx ./t/plugin/grpc-web/client.cts TEXT UNARY
 --- response_body
 Status: { code: 0, details: '', metadata: {} }
 {"name":"hello","path":"/hello"}
@@ -83,8 +83,8 @@ Status: { code: 0, details: '', metadata: {} }
 
 === TEST 3: Proxy server-side streaming request using APISIX with trailers gRPC-Web plugin
 --- exec
-tsx ./t/plugin/grpc-web/client.js BIN STREAM
-tsx ./t/plugin/grpc-web/client.js TEXT STREAM
+tsx ./t/plugin/grpc-web/client.cts BIN STREAM
+tsx ./t/plugin/grpc-web/client.cts TEXT STREAM
 --- response_body
 {"name":"hello","path":"/hello"}
 {"name":"world","path":"/world"}
@@ -353,3 +353,27 @@ Access-Control-Allow-Methods: POST
 Access-Control-Allow-Headers: grpc-accept-encoding
 Access-Control-Allow-Origin: *
 Access-Control-Expose-Headers: grpc-message,grpc-status
+
+
+
+=== TEST 17: check gRPC metadata when empty resp body
+--- exec
+tsx ./t/plugin/grpc-web/client.cts BIN EXPECT_ERROR
+tsx ./t/plugin/grpc-web/client.cts TEXT EXPECT_ERROR
+--- response_body
+Status: 13, Details: execpted error
+Status: 13, Details: execpted error
+
+
+
+=== TEST 18: check gRPC metadata when empty resp body (check empty resp body and metadatas in header)
+--- request
+POST /grpc/web/a6.RouteService/GetError HTTP/1.1
+AAAAAAcKBXdvcmxkCgo=
+--- more_headers
+Content-Type: application/grpc-web-text
+--- response_headers
+grpc-status: 13
+grpc-message: execpted error
+--- response_body eval
+qr/^$/

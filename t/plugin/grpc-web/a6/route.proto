@@ -24,7 +24,7 @@ option go_package = "./;a6";
 service RouteService {
   rpc GetRoute(Query) returns (Route) {}
   rpc GetRoutes(Query) returns (stream Route) {}
-  rpc GerError(Query) returns (Route) {}
+  rpc GetError(Query) returns (Route) {}
 }
 
 message Query {
