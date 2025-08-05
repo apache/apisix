@@ -126,8 +126,9 @@ function _M.check_schema(conf)
             end
             local mt = getmetatable(rule)
             if not mt then
-                mt = {}
-                mt.__index = mt
+                mt = {
+                    __index = mt
+                }
                 setmetatable(rule, mt)
             end
             mt.__expr = expr
@@ -159,7 +160,9 @@ function _M.access(conf, ctx)
         local match_result = true
         if rule.case then
             local expr = rule.__expr
-            match_result = expr:eval(ctx.var)
+            if expr then
+                match_result = expr:eval(ctx.var) 
+            end
         end
         ctx._workflow_cache[idx] = match_result
         if match_result then
