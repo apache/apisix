@@ -220,7 +220,7 @@ deployment:
 
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/admin/routes"
             local res, err = httpc:request_uri(uri, {
-                method = "GET"
+                method = "GET",
                 -- No X-API-KEY header when admin_key_required is false
             })
 
