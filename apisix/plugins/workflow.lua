@@ -161,7 +161,7 @@ function _M.access(conf, ctx)
         if rule.case then
             local expr = rule.__expr
             if expr then
-                match_result = expr:eval(ctx.var) 
+                match_result = expr:eval(ctx.var)
             end
         end
         ctx._workflow_cache[idx] = match_result
