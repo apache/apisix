@@ -226,7 +226,7 @@ function _M.header_filter(conf, ctx)
     -- This is compliant, i.e., this is a trailers-only response, send the gRPC metadata contained
     -- in the trailers in the HTTP response header and ensure that an empty response body is
     -- sent (no trailers block in the end of response body).
-    ctx.grpc_web_metadata_sent = ngx.var.sent_http_grpc_status ~= nil
+    ctx.grpc_web_metadata_sent = ctx.var.sent_http_grpc_status ~= nil
 end
 
 function _M.body_filter(conf, ctx)
