@@ -105,153 +105,171 @@ passed
 
 
 
-=== TEST 2: test URI args processing with rewrite - path and args
---- config
-    location /t {
+=== TEST 2: test URI args processing with path rewrite
+--- request
+GET /hello?original=param&test=value
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite = true})
         }
     }
+--- response_body
+uri: /uri
+host: 127.0.0.1
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 3: test URI args processing with args rewrite
 --- request
 GET /hello?original=param&test=value
---- response_body
-passed
---- no_error_log
-[error]
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
 
-
-
-=== TEST 3: test URI args processing with rewrite - args only
---- config
-    location /t {
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite_args_only = true})
         }
     }
---- request
-GET /hello?original=param&test=value
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /hello
+a: foo,bar
+c: bar
 
 
 
 === TEST 4: test URI args processing with complex args modification
---- config
-    location /t {
+--- request
+GET /hello?a=1&b=2&c=3
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite_args = true})
         }
     }
---- request
-GET /hello?a=1&b=2&c=3
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /plugin_proxy_rewrite_args
+a: foo,bar
+c: bar
 
 
 
 === TEST 5: test URI args processing with path rewrite and args
---- config
-    location /t {
+--- request
+GET /hello?x=1&y=2&z=3
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite = true})
         }
     }
---- request
-GET /hello?x=1&y=2&z=3
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /uri
+host: 127.0.0.1
+x-real-ip: 127.0.0.1
 
 
 
 === TEST 6: test URI args processing with empty args
---- config
-    location /t {
+--- request
+GET /hello
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite_args_only = true})
         }
     }
---- request
-GET /hello
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /hello
+a: foo,bar
+c: bar
 
 
 
 === TEST 7: test URI args processing with multiple same name args
---- config
-    location /t {
+--- request
+GET /hello?a=1&a=2&b=3
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite_args = true})
         }
     }
---- request
-GET /hello?a=1&a=2&b=3
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /plugin_proxy_rewrite_args
+a: foo,bar
+c: bar
 
 
 
-=== TEST 8: test URI args processing with args containing special characters
---- config
-    location /t {
+=== TEST 8: test URI args processing with args deletion
+--- request
+GET /hello?delete=me&keep=this&remove=too
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
-            ext.go({rewrite_args_only = true})
+            ext.go({rewrite_args = true})
         }
     }
---- request
-GET /hello?param=value%20with%20spaces&encoded=%26%3D%3F
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /plugin_proxy_rewrite_args
+a: foo,bar
+c: bar
 
 
 
 === TEST 9: test URI args processing with path rewrite only
---- config
-    location /t {
+--- request
+GET /hello?keep=this&param=value
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
             ext.go({rewrite = true})
         }
     }
---- request
-GET /hello?keep=this&param=value
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /uri
+host: 127.0.0.1
+x-real-ip: 127.0.0.1
 
 
 
-=== TEST 10: test URI args processing with args deletion
---- config
-    location /t {
+=== TEST 10: test URI args processing with args containing special characters
+--- request
+GET /hello?param=value%20with%20spaces&encoded=%26%3D%3F
+--- extra_stream_config
+    server {
+        listen unix:$TEST_NGINX_HTML_DIR/nginx.sock;
+
         content_by_lua_block {
             local ext = require("lib.ext-plugin")
-            ext.go({rewrite_args = true})
+            ext.go({rewrite_args_only = true})
         }
     }
---- request
-GET /hello?delete=me&keep=this&remove=too
 --- response_body
-passed
---- no_error_log
-[error]
+uri: /hello
+a: foo,bar
+c: bar
