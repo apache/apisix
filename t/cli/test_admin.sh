@@ -265,7 +265,7 @@ make run
 
 grep -E "WARNING: using empty Admin API." logs/error.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: need to show \`WARNING: using empty Admin API.\`"
+    echo "failed: need to show \`WARNING: using randomised Admin API token has security risk\`"
     exit 1
 fi
 

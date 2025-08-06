@@ -97,7 +97,7 @@ jobs:
               fi
               echo "$admin_key"
           }
-          export admin_key=$(get_admin_key); echo "Using admin key: $admin_key"
+          export admin_key=$(get_admin_key); echo $admin_key
           # Validate that we have a valid admin key
           if [ -z "$admin_key" ] || [ "$admin_key" = "null" ]; then
               echo "ERROR: Could not obtain valid admin key"
