@@ -221,6 +221,35 @@ Server: APISIX web server
 {"node":{"value":{"uri":"\/user\/*","upstream": {"service_name": "USER-SERVICE", "type": "roundrobin", "discovery_type": "eureka"}},"createdIndex":61925,"key":"\/apisix\/routes\/1","modifiedIndex":61925}}
 ```
 
+您也可以在服务名称中使用变量。例如，使用 nginx map 根据 host 头进行请求路由：
+
+首先，在您的 nginx 配置中配置 map：
+
+```nginx
+map $http_host $backend {
+    hostnames;
+    default service_a;
+    x.domain.local service_x;
+    y.domain.local service_y;
+}
+```
+
+然后在路由配置中使用映射的变量：
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/*",
+    "upstream": {
+        "service_name": "${backend}",
+        "type": "roundrobin",
+        "discovery_type": "eureka"
+    }
+}'
+```
+
+在这个例子中，对 `x.domain.local` 的请求将被路由到名为 "service_x" 的服务，而对 `y.domain.local` 的请求将被路由到 "service_y"。
+
 因为上游的接口 URL 可能会有冲突，通常会在网关通过前缀来进行区分：
 
 ```shell
