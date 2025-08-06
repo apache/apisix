@@ -261,13 +261,15 @@ deployment:
 ' > conf/config.yaml
 
 make init > output.log 2>&1 | true
+make run
 
-grep -E "WARNING: using empty Admin API." error.log > /dev/null
+grep -E "WARNING: using empty Admin API." logs/error.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+    echo "failed: need to show \`WARNING: using empty Admin API.\`"
     exit 1
 fi
 
+make stop
 echo "pass: show WARNING message if the user uses empty key"
 
 # admin_listen set
