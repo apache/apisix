@@ -45,34 +45,16 @@ get_admin_key() {
     echo "DEBUG: config.yaml admin_key: '$admin_key'" >&2
     # If the key is empty (auto-generated), extract it from logs
     if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
-        echo "DEBUG: Admin key is empty, looking for auto-generated key in logs..." >&2
         # Wait a bit for logs to be written
         sleep 3
-        # Try multiple log locations and patterns
         for log_file in "logs/error.log" "/usr/local/apisix/logs/error.log"; do
             if [ -f "$log_file" ]; then
                 echo "DEBUG: Checking log file: $log_file" >&2
-                # Method 1: Look for the specific warning message pattern (get the LAST key, not first)
                 admin_key=$(grep -A 10 "Generated admin keys for this session:" "$log_file" 2>/dev/null | grep -E "^  [A-Za-z0-9]{32}$" | tail -1 | sed 's/^  //' || true)
                 if [ -n "$admin_key" ]; then
-                    echo "DEBUG: Found admin key using method 1: $admin_key" >&2
+                    echo "DEBUG: Found admin key from error logs: $admin_key" >&2
                     break
                 fi
-                # Method 2: Look for any 32-character alphanumeric string that looks like a key (get the LAST one)
-                admin_key=$(grep -o "[A-Z][A-Za-z0-9]\{31\}" "$log_file" 2>/dev/null | tail -1 || true)
-                if [ -n "$admin_key" ]; then
-                    echo "DEBUG: Found admin key using method 2: $admin_key" >&2
-                    break
-                fi
-                # Method 3: Look for any pattern that might be an admin key (get the LAST one)
-                admin_key=$(grep -o "[A-Za-z0-9]\{32\}" "$log_file" 2>/dev/null | tail -1 || true)
-                if [ -n "$admin_key" ]; then
-                    echo "DEBUG: Found admin key using method 3: $admin_key" >&2
-                    break
-                fi
-                echo "DEBUG: No admin key found in $log_file" >&2
-                echo "DEBUG: Last 20 lines of $log_file:" >&2
-                tail -20 "$log_file" 2>/dev/null | head -10 >&2 || true
             else
                 echo "DEBUG: Log file $log_file does not exist" >&2
             fi
