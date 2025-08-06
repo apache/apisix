@@ -249,13 +249,13 @@ Example of routing a request with metadata filtering:
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
-    "uri": "/nacosWithMetadata/*",
+    "uri": "/consulWithMetadata/*",
     "upstream": {
-        "service_name": "APISIX-NACOS",
+        "service_name": "APISIX-CONSUL",
         "type": "roundrobin",
-        "discovery_type": "nacos",
+        "discovery_type": "consul",
         "discovery_args": {
-          "metadata": {
+          "metadata_match": {
             "version": ["v1", "v2"]
           }
         }
@@ -270,13 +270,13 @@ For multiple metadata criteria:
 ```shell
 $ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X PUT -i -d '
 {
-    "uri": "/nacosWithMultipleMetadata/*",
+    "uri": "/consulWithMultipleMetadata/*",
     "upstream": {
-        "service_name": "APISIX-NACOS",
+        "service_name": "APISIX-CONSUL",
         "type": "roundrobin",
-        "discovery_type": "nacos",
+        "discovery_type": "consul",
         "discovery_args": {
-          "metadata": {
+          "metadata_match": {
             "lane": ["a"],
             "env": ["prod"]
           }
