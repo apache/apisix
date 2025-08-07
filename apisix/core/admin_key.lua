@@ -51,7 +51,8 @@ function _M.init_worker()
         return
     end
 
-    if not deployment_role or (deployment_role ~= "traditional" and deployment_role ~= "control_plane") then
+    if not deployment_role or
+    (deployment_role ~= "traditional" and deployment_role ~= "control_plane") then
         return
     end
 
@@ -73,7 +74,7 @@ function _M.init_worker()
     end
 
     -- Atomic check-and-set: only one worker can claim initialization
-    local claimed_init, err = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0, 5)
+    local claimed_init = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0, 5)
     if not claimed_init then
         -- Another worker is handling initialization, no waiting needed
         -- Keys will be loaded lazily when first accessed via get_admin_keys()

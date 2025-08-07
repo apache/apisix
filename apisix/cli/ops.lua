@@ -34,7 +34,6 @@ local ipairs = ipairs
 local pairs = pairs
 local print = print
 local type = type
-local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
