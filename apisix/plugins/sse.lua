@@ -49,7 +49,7 @@ local schema = {
 
 local _M = {
     version = 0.1,
-    priority = 1005, -- Runs after authentication but before most other plugins.
+    priority = 1004, -- Runs after authentication but before most other plugins.
     name = plugin_name,
     schema = schema,
     stream_only = false,
