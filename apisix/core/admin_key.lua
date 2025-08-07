@@ -26,6 +26,7 @@ local string           = string
 local math             = math
 local ipairs           = ipairs
 local type             = type
+local ngx              = ngx
 
 local _M = {version = 0.1}
 local admin_keys_cache = {}
