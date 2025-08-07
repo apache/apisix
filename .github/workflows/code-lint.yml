@@ -2,10 +2,11 @@ name: Code Lint
 
 on:
   pull_request:
-    branches: [master, 'release/**', 'fix/config-rewrites']
+    branches: [master, 'release/**']
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
+  workflow_dispatch:
 
 permissions:
   contents: read
