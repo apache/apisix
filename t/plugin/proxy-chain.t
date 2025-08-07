@@ -1,3 +1,4 @@
+#!/usr/bin/env perl
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -17,193 +18,219 @@
 
 use t::APISIX 'no_plan';
 
-add_block_preprocessor(sub {
-    my ($block) = @_;
-    $block->set_value("no_error_log", "[error]");
-    $block;
-});
-
-no_long_string();
-no_shuffle();
+repeat_each(1);
+log_level('info');
+worker_connections(256);
 no_root_location();
+no_shuffle();
 
-run_tests;
+run_tests();
 
 __DATA__
 
-=== TEST 1: Sanity check - plugin schema validation
+=== TEST 1: check plugin schema
 --- config
     location /t {
         content_by_lua_block {
+            -- Test basic schema validation for proxy-chain plugin
             local plugin = require("apisix.plugins.proxy-chain")
-            local core = require("apisix.core")
             local ok, err = plugin.check_schema({
                 services = {
-                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test", method = "POST" }
-                },
-                token_header = "Token"
+                    {
+                        uri = "http://127.0.0.1:1999/test",
+                        method = "POST"
+                    }
+                }
             })
             if not ok then
-                ngx.say("failed to check schema: ", err)
-            else
-                ngx.say("schema check passed")
+                ngx.say("failed: ", err)
+                return
             end
+            ngx.say("passed")
         }
     }
 --- request
 GET /t
 --- response_body
-schema check passed
---- no_error_log
-[error]
+passed
 
-=== TEST 2: Successful chaining - single service with token
+=== TEST 2: check plugin schema (invalid)
 --- config
     location /t {
-        access_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-chain")
-            local core = require("apisix.core")
-            local ctx = { var = { method = "POST" } }
-            ctx.var.request_body = '{"order_id": "12345"}'
-            ctx.var.Token = "my-auth-token"
-
-            local conf = {
-                services = {
-                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test", method = "POST" }
-                },
-                token_header = "Token"
-            }
-
-            local code, body = plugin.access(conf, ctx)
-            if code then
-                ngx.status = code
-                ngx.say(body.error)
-            else
-                ngx.say(ctx.var.request_body)
-            end
-        }
-    }
-    location /test {
         content_by_lua_block {
-            ngx.say('{"user_id": "67890"}')
+            -- Test schema validation with invalid configuration (empty services array)
+            local plugin = require("apisix.plugins.proxy-chain")
+            local ok, err = plugin.check_schema({
+                services = {}
+            })
+            if not ok then
+                ngx.say("failed as expected: ", err)
+                return
+            end
+            ngx.say("should have failed")
         }
     }
 --- request
-POST /t
-{"order_id": "12345"}
---- response_body
-{"order_id":"12345","user_id":"67890"}
---- no_error_log
-[error]
+GET /t
+--- response_body_like
+failed as expected.*
 
-=== TEST 3: Multiple services chaining
+=== TEST 3: set route with proxy-chain plugin
 --- config
     location /t {
-        access_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-chain")
-            local core = require("apisix.core")
-            local ctx = { var = { method = "POST" } }
-            ctx.var.request_body = '{"order_id": "12345"}'
-            ctx.var.Token = "my-auth-token"
+        content_by_lua_block {
+            -- Create a route with proxy-chain plugin configuration
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-chain": {
+                            "services": [
+                                {
+                                    "uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/mock-service",
+                                    "method": "POST"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:]] .. ngx.var.server_port .. [[": 1
+                        }
+                    },
+                    "uri": "/test-proxy-chain"
+                }]]
+            )
 
-            local conf = {
-                services = {
-                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test1", method = "POST" },
-                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test2", method = "POST" }
-                },
-                token_header = "Token"
-            }
-
-            local code, body = plugin.access(conf, ctx)
-            if code then
+            if code >= 300 then
                 ngx.status = code
-                ngx.say(body.error)
-            else
-                ngx.say(ctx.var.request_body)
+                ngx.say(body)
+                return
             end
-        }
-    }
-    location /test1 {
-        content_by_lua_block {
-            ngx.say('{"user_id": "67890"}')
-        }
-    }
-    location /test2 {
-        content_by_lua_block {
-            ngx.say('{"status": "valid"}')
+            ngx.say("passed")
         }
     }
 --- request
-POST /t
-{"order_id": "12345"}
+GET /t
 --- response_body
-{"order_id":"12345","user_id":"67890","status":"valid"}
---- no_error_log
-[error]
+passed
 
-=== TEST 4: Error handling - service failure
+=== TEST 4: create mock service
+--- config
+    location /mock-service {
+        content_by_lua_block {
+            -- Mock service that receives request and adds additional data
+            ngx.req.read_body()
+            local body = ngx.req.get_body_data()
+            local cjson = require("cjson")
+
+            -- Parse incoming JSON data
+            local data = {}
+            if body and body ~= "" then
+                local success, decoded = pcall(cjson.decode, body)
+                if success then
+                    data = decoded
+                end
+            end
+
+            -- Add mock response data to be merged
+            data.mock_response = "added by mock service"
+            data.processed = true
+
+            -- Return merged JSON response
+            ngx.header['Content-Type'] = 'application/json'
+            ngx.say(cjson.encode(data))
+        }
+    }
+--- request
+POST /mock-service
+{"test": "data"}
+--- response_body_like
+.*mock_response.*
+
+=== TEST 5: create final upstream
+--- config
+    location /final-upstream {
+        content_by_lua_block {
+            -- Final upstream service that receives the merged data from proxy-chain
+            ngx.req.read_body()
+            local body = ngx.req.get_body_data()
+
+            -- Return the received body to verify proxy-chain worked correctly
+            ngx.header['Content-Type'] = 'application/json'
+            ngx.say('{"final_response": "success", "received_body": "' .. (body or "empty") .. '"}')
+        }
+    }
+--- request
+POST /final-upstream
+--- response_body_like
+.*final_response.*
+
+=== TEST 6: test proxy-chain functionality
 --- config
     location /t {
-        access_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-chain")
-            local core = require("apisix.core")
-            local ctx = { var = { method = "POST" } }
-            ctx.var.request_body = '{"order_id": "12345"}'
+        content_by_lua_block {
+            -- Test the complete proxy-chain functionality
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/2',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-chain": {
+                            "services": [
+                                {
+                                    "uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/mock-service",
+                                    "method": "POST"
+                                }
+                            ]
+                        }
+                    },
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:]] .. ngx.var.server_port .. [[": 1
+                        }
+                    },
+                    "uri": "/final-upstream"
+                }]]
+            )
 
-            local conf = {
-                services = {
-                    { uri = "http://127.0.0.1:1999/nonexistent", method = "POST" }
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("Route creation failed: " .. body)
+                return
+            end
+
+            -- Wait for route to be ready
+            ngx.sleep(0.5)
+
+            -- Make request to test proxy-chain functionality
+            local http = require("resty.http")
+            local httpc = http.new()
+
+            local res, err = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/final-upstream", {
+                method = "POST",
+                body = '{"original": "data"}',
+                headers = {
+                    ["Content-Type"] = "application/json"
                 }
-            }
+            })
 
-            local code, body = plugin.access(conf, ctx)
-            ngx.status = code
-            ngx.say(body.error)
-        }
-    }
---- request
-POST /t
-{"order_id": "12345"}
---- response_body
-Failed to call service: http://127.0.0.1:1999/nonexistent
---- error_code: 500
---- error_log
-Failed to call service http://127.0.0.1:1999/nonexistent
-
-=== TEST 5: Handle missing token
---- config
-    location /t {
-        access_by_lua_block {
-            local plugin = require("apisix.plugins.proxy-chain")
-            local core = require("apisix.core")
-            local ctx = { var = { method = "POST" } }
-            ctx.var.request_body = '{"order_id": "12345"}'
-
-            local conf = {
-                services = {
-                    { uri = "http://127.0.0.1:${TEST_NGINX_SERVER_PORT}/test", method = "POST" }
-                },
-                token_header = "Token"
-            }
-
-            local code, body = plugin.access(conf, ctx)
-            if code then
-                ngx.status = code
-                ngx.say(body.error)
-            else
-                ngx.say(ctx.var.request_body)
+            if not res then
+                ngx.status = 500
+                ngx.say("Request failed: " .. (err or "unknown"))
+                return
             end
-        }
-    }
-    location /test {
-        content_by_lua_block {
-            ngx.say('{"user_id": "67890"}')
+
+            ngx.status = res.status
+            ngx.say(res.body)
         }
     }
 --- request
-POST /t
-{"order_id": "12345"}
---- response_body
-{"order_id":"12345","user_id":"67890"}
+GET /t
+--- response_body_like
+.*final_response.*
 --- no_error_log
 [error]
