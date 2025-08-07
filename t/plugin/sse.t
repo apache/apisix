@@ -125,8 +125,8 @@ location /t {
             uri = "/sse_custom",
             plugins = {
                 sse = {
-                    connection_header = "close",
-                    cache_control = "public, max-age=3600"
+                    connection_header = "Upgrade",
+                    cache_control = "public, max-age=86400"
                 }
             },
             upstream = {
@@ -153,8 +153,8 @@ GET /sse_custom
 --- response_headers
 Content-Type: text/event-stream; charset=utf-8
 X-Accel-Buffering: no
-Cache-Control: public, max-age=3600
-Connection: close
+Cache-Control: public, max-age=86400
+Connection: Upgrade
 --- response_body
 data: hello from upstream
 --- error_code: 200

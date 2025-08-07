@@ -36,7 +36,6 @@ local schema = {
         },
         connection_header = {
             type = "string",
-            enum = { "keep-alive", "close" },
             description = "Value for the 'Connection' response header.",
             default = "keep-alive",
         },
