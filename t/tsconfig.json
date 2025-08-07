@@ -9,5 +9,5 @@
     "noEmit": true,
     "types": ["node", "jest"]
   },
-  "include": ["**/*.ts", "**/*.mts"],
+  "include": ["**/*.ts", "**/*.mts", "**/*.cts"],
 }

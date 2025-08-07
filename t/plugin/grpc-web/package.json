@@ -1,8 +1,0 @@
-{
-  "name": "apisix-grpc-web",
-  "dependencies": {
-    "google-protobuf": "^3.19.1",
-    "grpc-web": "^1.3.0",
-    "xhr2": "^0.2.1"
-  }
-}
