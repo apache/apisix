@@ -73,7 +73,7 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -X PUT -d '
 This example enables the plugin on the /sse route and sets a 2-hour timeout for SSE connections, ensuring the correct headers and proxy behavior are applied.
 
 
-# Notes
+## Notes
 
 This plugin is only relevant for routes that serve SSE (e.g., real-time feeds, logs, event notifications).
 
@@ -83,7 +83,7 @@ If your upstream already sets the correct Content-Type, you can disable the over
 
 Ensure your upstream service flushes events frequently to keep the SSE connection alive.
 
-# Disabling the Plugin
+## Disabling the Plugin
 
 To disable the sse plugin on a route:
 
@@ -101,4 +101,3 @@ curl http://127.0.0.1:9180/apisix/admin/routes/1 -X PATCH -d '
 | Version | Description                                     |
 | ------- | ----------------------------------------------- |
 | 0.1     | Initial version of the plugin with SSE support. |
-

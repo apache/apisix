@@ -16,7 +16,6 @@
 --
 
 local core = require("apisix.core")
-local plugin = require("apisix.plugin")
 
 local plugin_name = "sse"
 
@@ -25,7 +24,8 @@ local schema = {
     properties = {
         proxy_read_timeout = {
             type = "integer",
-            description = "Sets the timeout for reading a response from the proxied server, in seconds. A value of 0 turns off this timeout.",
+            description = "Sets the timeout for reading a response from the proxied server, " ..
+                          "in seconds. A value of 0 turns off this timeout.",
             default = 3600, -- 1 hour
             minimum = 0,
         },
