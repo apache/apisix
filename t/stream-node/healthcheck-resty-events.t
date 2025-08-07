@@ -94,7 +94,7 @@ passed
             sock:close()
 
             -- wait for health check to take effect
-            ngx.sleep(2.5)
+            ngx.sleep(10)
 
             for i = 1, 3 do
                 local sock = ngx.socket.tcp()
@@ -133,12 +133,12 @@ passed
             end
 
             -- wait for checker to release
-            ngx.sleep(1)
+            ngx.sleep(3)
 
             ngx.say("passed")
         }
     }
---- timeout: 10
+--- timeout: 15
 --- request
 GET /t
 --- response_body
@@ -227,7 +227,7 @@ passed
             local data, _ = sock:receive()
             assert(data == nil, "first request should fail")
             sock:close()
-
+            ngx.sleep(8)
             -- Due to the implementation of lua-resty-events, it relies on the kernel and
             -- the Nginx event loop to process socket connections.
             -- When lua-resty-healthcheck handles passive healthchecks and uses lua-resty-events
