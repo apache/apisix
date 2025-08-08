@@ -35,13 +35,7 @@ local admin_keys_cache = {}
 function _M.get_admin_keys()
     -- Lazy loading: only load keys when actually needed
     if #admin_keys_cache == 0 then
-        local admin_keys_shm = ngx.shared[admin_key_shm_name]
-        if not admin_keys_shm then
-            return admin_keys_cache
-        end
-        if admin_keys_shm:get("completed") then
             _M.load_keys_from_shared_memory()
-        end
     end
     return admin_keys_cache
 end
@@ -136,6 +130,10 @@ end
 function _M.load_keys_from_shared_memory()
     local admin_keys_shm = ngx.shared[admin_key_shm_name]
     if not admin_keys_shm then
+        return
+    end
+
+    if not admin_keys_shm:get("completed") then
         return
     end
 
