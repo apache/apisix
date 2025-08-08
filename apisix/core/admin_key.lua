@@ -32,7 +32,18 @@ local admin_key_shm_name = "admin-keys"
 local _M = {version = 0.1}
 local admin_keys_cache = {}
 
+function _M.admin_key_required()
+    local local_conf = fetch_local_conf()
+    return local_conf.deployment.admin.admin_key_required
+end
+
 function _M.get_admin_keys()
+    -- First check if admin key is required at all
+    if not _M.admin_key_required() then
+        -- When admin keys are not required, return empty table
+        return {}
+    end
+
     -- First, try to load from cache
     if #admin_keys_cache > 0 then
         return admin_keys_cache
@@ -60,35 +71,12 @@ function _M.get_admin_keys()
                 }
             end
         end
-        
         if #keys > 0 then
             admin_keys_cache = keys
-            return admin_keys_cache
         end
     end
 
-    -- Fallback to direct config loading (for CLI/init phases)
-    local local_conf = fetch_local_conf()
-    if not local_conf then
-        return {}
-    end
-
-    local config_admin_keys = try_read_attr(local_conf, "deployment", "admin", "admin_key")
-    if not config_admin_keys or type(config_admin_keys) ~= "table" then
-        return {}
-    end
-
-    -- Cache the config keys for consistency
-    admin_keys_cache = config_admin_keys
     return admin_keys_cache
-end
-
-function _M.admin_key_required()
-    local local_conf = fetch_local_conf()
-    if not local_conf or not local_conf.deployment or not local_conf.deployment.admin then
-        return true  -- Default to required if config unavailable
-    end
-    return local_conf.deployment.admin.admin_key_required
 end
 
 function _M.init_worker()
@@ -96,7 +84,6 @@ function _M.init_worker()
     if not local_conf or not local_conf.deployment then
         return
     end
-    
     local deployment_role = local_conf.deployment.role
 
     if local_conf.deployment.admin and local_conf.deployment.admin.admin_key_required == false then
