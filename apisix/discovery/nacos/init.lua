@@ -21,6 +21,7 @@ local http               = require('resty.http')
 local core               = require('apisix.core')
 local ipairs             = ipairs
 local pairs              = pairs
+local next               = next
 local type               = type
 local math               = math
 local math_random        = math.random
@@ -52,6 +53,23 @@ local _M = {}
 
 local function get_key(namespace_id, group_name, service_name)
     return namespace_id .. '.' .. group_name .. '.' .. service_name
+end
+
+
+local function metadata_contains(host_metadata, route_metadata)
+    if not route_metadata or not next(route_metadata) then
+        return true
+    end
+    if not host_metadata or not next(host_metadata) then
+        return false
+    end
+
+    for k, v in pairs(route_metadata) do
+        if host_metadata[k] ~= v then
+            return false
+        end
+    end
+    return true
 end
 
 local function request(request_uri, path, body, method, basic_auth)
@@ -319,6 +337,7 @@ local function fetch_full_registry(premature)
                 host = host.ip,
                 port = host.port,
                 weight = host.weight or default_weight,
+                metadata = host.metadata,
             }
             -- docs: https://github.com/yidongnan/grpc-spring-boot-starter/pull/496
             if is_grpc(scheme) and host.metadata and host.metadata.gRPC_port then
@@ -355,6 +374,19 @@ function _M.nodes(service_name, discovery_args)
         return nil
     end
     local nodes = core.json.decode(value)
+
+    -- Apply metadata filtering if specified
+    local route_metadata = discovery_args and discovery_args.metadata
+    if route_metadata and next(route_metadata) then
+        local filtered_nodes = {}
+        for _, node in ipairs(nodes) do
+            if metadata_contains(node.metadata, route_metadata) then
+                core.table.insert(filtered_nodes, node)
+            end
+        end
+        return filtered_nodes
+    end
+
     return nodes
 end
 
