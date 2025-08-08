@@ -89,10 +89,24 @@ jobs:
         run: |
           wget https://github.com/mikefarah/yq/releases/download/3.4.1/yq_linux_amd64 -O /usr/bin/yq && sudo chmod +x /usr/bin/yq
           get_admin_key() {
+              # First try to get the key from config.yaml
               local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
+              # If the key is empty (auto-generated), extract it from logs
+              if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
+                  admin_key=$(grep -A 10 "Generated admin keys for this session:" logs/error.log | grep -E "^  [A-Za-z0-9]{32}$" | head -1 | sed 's/^  //')
+              fi
               echo "$admin_key"
           }
           export admin_key=$(get_admin_key); echo $admin_key
+          # Validate that we have a valid admin key
+          if [ -z "$admin_key" ] || [ "$admin_key" = "null" ]; then
+              echo "ERROR: Could not obtain valid admin key"
+              echo "Config file content:"
+              cat conf/config.yaml
+              echo "Error log content:"
+              cat logs/error.log
+              exit 1
+          fi
           cat conf/config.yaml
           curl -v http://127.0.0.1:9180/apisix/admin/routes/1 \
           -H "X-API-KEY: $admin_key" -X PUT -d '
