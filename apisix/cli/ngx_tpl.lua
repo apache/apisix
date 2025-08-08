@@ -291,7 +291,7 @@ http {
     lua_shared_dict balancer-ewma-locks {* http.lua_shared_dict["balancer-ewma-locks"] *};
     lua_shared_dict balancer-ewma-last-touched-at {* http.lua_shared_dict["balancer-ewma-last-touched-at"] *};
     lua_shared_dict etcd-cluster-health-check {* http.lua_shared_dict["etcd-cluster-health-check"] *}; # etcd health check
-    lua_shared_dict admin_keys {* http.lua_shared_dict["admin_keys"] *};
+    lua_shared_dict admin-keys {* http.lua_shared_dict["admin-keys"] *};
 
     # for discovery shared dict
     {% if discovery_shared_dicts then %}

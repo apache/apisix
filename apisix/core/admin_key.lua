@@ -28,13 +28,20 @@ local ipairs           = ipairs
 local type             = type
 local ngx              = ngx
 
+local admin_key_shm_name = "admin-key"
 local _M = {version = 0.1}
 local admin_keys_cache = {}
 
 function _M.get_admin_keys()
     -- Lazy loading: only load keys when actually needed
     if #admin_keys_cache == 0 then
-        _M.load_keys_from_shared_memory()
+        local admin_keys_shm = ngx.shared[admin_key_shm_name]
+        if not admin_keys_shm then
+            return admin_keys_cache
+        end
+        if admin_keys_shm:get("completed") then
+            _M.load_keys_from_shared_memory()
+        end
     end
     return admin_keys_cache
 end
@@ -62,20 +69,14 @@ function _M.init_worker()
         return
     end
 
-    local admin_keys_shm = ngx.shared.admin_keys
+    local admin_keys_shm = ngx.shared[admin_key_shm_name]
     if not admin_keys_shm then
         log.error("admin_keys shared memory zone not configured")
         return
     end
 
-    -- Check if already initialized by another worker
-    if admin_keys_shm:get("completed") then
-        _M.load_keys_from_shared_memory()
-        return
-    end
-
-    -- Atomic check-and-set: only one worker can claim initialization
-    local claimed_init = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0, 5)
+    -- Only one worker can claim initialization, this falg will only be cleared on full restart
+    local claimed_init = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0)
     if not claimed_init then
         -- Another worker is handling initialization, no waiting needed
         -- Keys will be loaded lazily when first accessed via get_admin_keys()
@@ -130,12 +131,10 @@ Please modify "admin_key" in conf/config.yaml .]=]
 
         log.warn(warning_msg)
     end
-
-    _M.load_keys_from_shared_memory()
 end
 
 function _M.load_keys_from_shared_memory()
-    local admin_keys_shm = ngx.shared.admin_keys
+    local admin_keys_shm = ngx.shared[admin_key_shm_name]
     if not admin_keys_shm then
         return
     end
