@@ -28,7 +28,7 @@ local ipairs           = ipairs
 local type             = type
 local ngx              = ngx
 
-local admin_key_shm_name = "admin-key"
+local admin_key_shm_name = "admin-keys"
 local _M = {version = 0.1}
 local admin_keys_cache = {}
 
@@ -71,11 +71,11 @@ function _M.init_worker()
 
     local admin_keys_shm = ngx.shared[admin_key_shm_name]
     if not admin_keys_shm then
-        log.error("admin_keys shared memory zone not configured")
+        log.error("admin-keys shared memory zone not configured")
         return
     end
 
-    -- Only one worker can claim initialization, this falg will only be cleared on full restart
+    -- Only one worker can claim initialization, this flag will only be cleared on full restart
     local claimed_init = admin_keys_shm:safe_add("init_claimed", ngx.worker.id() or 0)
     if not claimed_init then
         -- Another worker is handling initialization, no waiting needed
