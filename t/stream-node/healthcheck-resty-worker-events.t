@@ -94,7 +94,7 @@ passed
             sock:close()
 
             -- wait for health check to take effect
-            ngx.sleep(2.5)
+            ngx.sleep(4.5)
 
             for i = 1, 3 do
                 local sock = ngx.socket.tcp()
@@ -227,6 +227,18 @@ passed
             local data, _ = sock:receive()
             assert(data == nil, "first request should fail")
             sock:close()
+            ngx.sleep(2)
+
+
+            local ok, err = sock:connect("127.0.0.1", 1985)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local data, _ = sock:receive()
+            assert(data == nil, "one more request fail")
+            sock:close()
+            ngx.sleep(2)
 
             for i = 1, 3 do
                 local sock = ngx.socket.tcp()
