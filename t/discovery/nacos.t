@@ -1205,7 +1205,7 @@ routes:
             -- Wait for 2 seconds for APISIX initialization
             ngx.sleep(2)
             local httpc = http.new()
-            
+
             local server1_count = 0
             local server2_count = 0
             for i = 1, 10 do
