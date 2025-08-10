@@ -240,17 +240,15 @@ passed
 
 
 
-=== TEST 5: discovery_args metadata validation (table-driven)
+=== TEST 5: discovery_args metadata validation
 --- config
     location /t {
         content_by_lua_block {
             local schema_def = require("apisix.schema_def")
             local core = require("apisix.core")
 
-            -- Create a schema that includes discovery_args
             local upstream_schema = schema_def.upstream
 
-            -- Test cases using table-driven approach (preserve original structure)
             local test_cases = {
                 -- Valid cases
                 {
