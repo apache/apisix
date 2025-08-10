@@ -57,9 +57,6 @@ end
 
 
 local function metadata_contains(host_metadata, route_metadata)
-    if not route_metadata or not next(route_metadata) then
-        return true
-    end
     if not host_metadata or not next(host_metadata) then
         return false
     end
