@@ -1081,7 +1081,7 @@ routes:
       type: roundrobin
       discovery_args:
         metadata:
-          lane: "a"
+          lane: ["a"]
 #END
 --- pipelined_requests eval
 [
@@ -1172,7 +1172,7 @@ routes:
       type: roundrobin
       discovery_args:
         metadata:
-          lane: "c"
+          lane: ["c"]
 #END
 --- request
 GET /hello
@@ -1182,7 +1182,7 @@ no valid upstream node
 
 
 
-=== TEST 30: get APISIX-NACOS info from NACOS - metadata filtering version=1.0 (only server1)
+=== TEST 30: metadata filtering with multiple values - should match both servers (lane=a,b)
 --- yaml_config eval: $::yaml_config
 --- apisix_yaml
 routes:
@@ -1194,21 +1194,41 @@ routes:
       type: roundrobin
       discovery_args:
         metadata:
-          version: "1.0"
+          lane: ["a", "b"]
 #END
---- pipelined_requests eval
-[
-    "GET /hello",
-    "GET /hello",
-    "GET /hello",
-    "GET /hello",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/server 1/,
-    qr/server 1/,
-    qr/server 1/,
-    qr/server 1/,
-    qr/server 1/,
-]
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            
+            local server1_count = 0
+            local server2_count = 0
+            for i = 1, 10 do
+                local res, err = httpc:request_uri(uri .. "/hello", {method = "GET"})
+                if res then
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" then
+                        server1_count = server1_count + 1
+                    elseif clean_body == "server 2" then
+                        server2_count = server2_count + 1
+                    end
+                end
+                ngx.sleep(0.1)
+            end
+
+            if server1_count > 0 and server2_count > 0 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
