@@ -65,7 +65,20 @@ local function metadata_contains(host_metadata, route_metadata)
     end
 
     for k, v in pairs(route_metadata) do
-        if host_metadata[k] ~= v then
+        local host_value = host_metadata[k]
+        if not host_value then
+            return false
+        end
+
+        -- Multi-value matching: check if host_value matches any value in the array
+        local found = false
+        for _, expected_value in ipairs(v) do
+            if host_value == expected_value then
+                found = true
+                break
+            end
+        end
+        if not found then
             return false
         end
     end
