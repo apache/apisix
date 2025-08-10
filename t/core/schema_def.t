@@ -240,7 +240,7 @@ passed
 
 
 
-=== TEST 5: discovery_args metadata validation
+=== TEST 5: discovery_args metadata validation (table-driven)
 --- config
     location /t {
         content_by_lua_block {
@@ -250,7 +250,7 @@ passed
             -- Create a schema that includes discovery_args
             local upstream_schema = schema_def.upstream
 
-            -- Test cases using table-driven approach
+            -- Test cases using table-driven approach (preserve original structure)
             local test_cases = {
                 -- Valid cases
                 {
@@ -264,9 +264,9 @@ passed
                             namespace_id = "test-ns",
                             group_name = "test-group",
                             metadata = {
-                                version = "v1",
-                                env = "prod",
-                                lane = "a"
+                                version = {"v1"},
+                                env = {"prod"},
+                                lane = {"a"},
                             }
                         }
                     }
@@ -286,7 +286,7 @@ passed
 
                 -- Invalid cases
                 {
-                    name = "invalid metadata with non-string values",
+                    name = "invalid metadata with non-array or non-string values",
                     should_pass = false,
                     upstream = {
                         service_name = "test-service",
@@ -294,16 +294,30 @@ passed
                         type = "roundrobin",
                         discovery_args = {
                             metadata = {
-                                version = 123,  -- should be string
-                                env = true,     -- should be string
-                                count = 456,    -- should be string
-                                config = {      -- should be string
-                                    port = 8080
-                                }
+                                version = 123,   -- should be array
+                                env = true,      -- should be array
+                                count = 456,     -- should be array
+                                config = { port = 8080 }, -- should be array of strings
+                                lane = {"a", 1} -- mixed types not allowed
                             }
                         }
                     },
-                    expected_error_pattern = "discovery_args.*validation failed.*metadata.*validation failed.*wrong type.*expected string"
+                    expected_error_pattern = "discovery_args.*metadata"
+                },
+                {
+                    name = "invalid metadata with string instead of array",
+                    should_pass = false,
+                    upstream = {
+                        service_name = "test-service",
+                        discovery_type = "nacos",
+                        type = "roundrobin",
+                        discovery_args = {
+                            metadata = {
+                                lane = "a"
+                            }
+                        }
+                    },
+                    expected_error_pattern = "metadata.*wrong type"
                 },
             }
 
@@ -320,12 +334,10 @@ passed
                     assert(err ~= nil, string.format("Test case %d (%s) should have error message",
                         i, test_case.name))
 
-                    -- Execute test case specific error assertions
                     if test_case.expected_error_pattern then
                         assert(string.find(err, test_case.expected_error_pattern),
                             string.format("Test case %d (%s) error should match pattern '%s', but got: %s",
                                 i, test_case.name, test_case.expected_error_pattern, err))
-                        -- Log the actual error for debugging
                         ngx.log(ngx.INFO, string.format("Test case %d (%s) actual error: %s", i, test_case.name, err))
                     end
                 end
@@ -336,3 +348,5 @@ passed
     }
 --- response_body
 passed
+--- no_error_log
+[alert]
