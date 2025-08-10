@@ -22,6 +22,7 @@ local resty_consul       = require('resty.consul')
 local http               = require('resty.http')
 local util               = require("apisix.cli.util")
 local discovery_utils    = require("apisix.utils.discovery")
+local cjson              = require('cjson')
 local ipairs             = ipairs
 local error              = error
 local ngx                = ngx
@@ -42,6 +43,7 @@ local pcall              = pcall
 local null               = ngx.null
 local type               = type
 local next               = next
+local cjson_null         = cjson.null
 
 local all_services = core.table.new(0, 5)
 local default_service
@@ -523,11 +525,6 @@ function _M.connect(premature, consul_server, retry_delay)
                     local svc_address = service.Address
                     local svc_port = service.Port
                     local metadata = service.Meta
-                    -- ensure that metadata is an accessible table,
-                    -- avoid userdata likes `null` returned by cjson
-                    if type(metadata) ~= "table" then
-                       metadata = nil
-                    end
                     -- Handle nil or 0 port case - default to 80 for HTTP services
                     if not svc_port or svc_port == 0 then
                         svc_port = 80
@@ -539,6 +536,14 @@ function _M.connect(premature, consul_server, retry_delay)
                     end
                     -- not store duplicate service IDs.
                     local service_id = svc_address .. ":" .. svc_port
+                    -- ensure that metadata is an accessible table,
+                    -- avoid `null` returned by cjson
+                    if metadata == cjson_null then
+                        metadata = nil
+                    elseif type(metadata) ~= "table" then
+                        log.error("service ", service_id, " has invalid metadata, use nil as default: ", json_delay_encode(metadata))
+                        metadata = nil
+                    end
                     if not nodes_uniq[service_id] then
                         -- add node to nodes table
                         core.table.insert(nodes, {
