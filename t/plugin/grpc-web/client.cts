@@ -17,7 +17,7 @@
 //@ts-expect-error no typing for xhr2
 import XMLHttpRequest from 'xhr2';
 
-import { RouteServiceClient } from './a6/route_grpc_web_pb';
+import route_grpc_web_pb from './a6/route_grpc_web_pb';
 import route_pb from './a6/route_pb';
 const { Query: RouteServiceQuery } = route_pb;
 
@@ -45,12 +45,12 @@ const types = [
 
 class gRPCWebClient {
   private clients = {
-    [RPC_CALL_FORMAT.BIN]: new RouteServiceClient(
+    [RPC_CALL_FORMAT.BIN]: new route_grpc_web_pb.RouteServiceClient(
       'http://127.0.0.1:1984/grpc/web',
       null,
       { format: 'binary' },
     ),
-    [RPC_CALL_FORMAT.TEXT]: new RouteServiceClient(
+    [RPC_CALL_FORMAT.TEXT]: new route_grpc_web_pb.RouteServiceClient(
       'http://127.0.0.1:1984/grpc/web',
       null,
       { format: 'text' },
