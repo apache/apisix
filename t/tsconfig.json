@@ -7,7 +7,8 @@
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
-    "types": ["node", "jest"]
+    "types": ["node", "jest"],
+    "allowJs": true
   },
-  "include": ["**/*.ts", "**/*.mts", "**/*.cts"],
+  "include": ["**/*.ts", "**/*.mts", "**/*.cts", "**/*.js"],
 }
