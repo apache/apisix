@@ -20,6 +20,7 @@ import XMLHttpRequest from 'xhr2';
 import { RouteServiceClient } from './a6/RouteServiceClientPb';
 import route_pb from './a6/route_pb';
 const { Query: RouteServiceQuery } = route_pb;
+console.log(route_pb);
 
 // inject xhr polyfill for grpc-web
 (global as any).XMLHttpRequest = XMLHttpRequest;
