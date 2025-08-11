@@ -227,26 +227,12 @@ __DATA__
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
-                        }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
                         }
                     }
                 }]]
@@ -407,12 +393,6 @@ passed
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -483,7 +463,7 @@ passed
             test_dict:set("/status/gpt4#total", 0)
             -- trigger the health check
             send_request()
-            ngx.sleep(1.2)
+            ngx.sleep(2)
 
             local instances_count = {
                 ["gpt-4"] = 0,
@@ -504,7 +484,7 @@ passed
 
             -- set the instance to healthy
             test_dict:set("/status/gpt4#total", 30)
-            ngx.sleep(1.2)
+            ngx.sleep(2)
 
             local instances_count = {
                 ["gpt-4"] = 0,
@@ -601,12 +581,6 @@ passed
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -655,7 +629,7 @@ passed
             test_dict:set("/status/gpt3#total", 50)
             -- trigger the health check
             send_request()
-            ngx.sleep(1.2)
+            ngx.sleep(2)
 
             local instances_count = {
                 ["gpt-4"] = 0,
@@ -678,7 +652,7 @@ passed
             -- set the gpt3 instance to unhealthy
             test_dict:set("/status/gpt4#total", 50)
             test_dict:set("/status/gpt3#total", 0)
-            ngx.sleep(1.2)
+            ngx.sleep(2)
 
             local instances_count = {
                 ["gpt-4"] = 0,
@@ -774,12 +748,6 @@ passed
                             ],
                             "ssl_verify": false
                         }
-                    },
-                    "upstream": {
-                        "type": "roundrobin",
-                        "nodes": {
-                            "canbeanything.com": 1
-                        }
                     }
                 }]]
             )
@@ -852,7 +820,7 @@ passed
             test_dict:set("/status/gpt3#total", 50)
             -- trigger the health check
             send_request()
-            ngx.sleep(1.2)
+            ngx.sleep(2)
 
             local instances_count = {
                 ["gpt-4"] = 0,
@@ -875,7 +843,7 @@ passed
             -- set the gpt3 instance to unhealthy
             test_dict:set("/status/gpt4#total", 50)
             test_dict:set("/status/gpt3#total", 0)
-            ngx.sleep(1.2)
+            ngx.sleep(2)
 
             local instances_count = {
                 ["gpt-4"] = 0,
@@ -899,3 +867,91 @@ passed
 --- timeout: 10
 --- response_body
 passed
+
+
+
+=== TEST 11: configure health check for well-known ai service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "checks": {
+                                        "active": {
+                                            "timeout": 5,
+                                            "http_path": "/",
+                                            "healthy": {
+                                                "interval": 1,
+                                                "successes": 1
+                                            },
+                                            "unhealthy": {
+                                                "interval": 1,
+                                                "http_failures": 1
+                                            },
+                                            "req_headers": ["User-Agent: curl/7.29.0"]
+                                        }
+                                    }
+                                },
+                                {
+                                    "name": "openai-gpt3",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: send request to /ai should failed with 401
+--- request
+POST /ai
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "write a haiku about ai"
+    }
+  ]
+}
+--- error_code: 401
