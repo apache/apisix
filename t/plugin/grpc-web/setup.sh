@@ -23,6 +23,7 @@ pnpm install -g tsx
 pushd a6
 
 pnpx @bufbuild/buf generate --debug
+mv route_pb.js route_pb.cjs
 
 popd
 
