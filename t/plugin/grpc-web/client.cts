@@ -18,7 +18,7 @@
 import XMLHttpRequest from 'xhr2';
 
 import { RouteServiceClient } from './a6/RouteServiceClientPb';
-import { Query as RouteServiceQuery } from './a6/route_pb';
+import message from './a6/route_pb';
 
 // inject xhr polyfill for grpc-web
 (global as any).XMLHttpRequest = XMLHttpRequest;
@@ -57,7 +57,7 @@ class gRPCWebClient {
   };
 
   [RPC_CALL_TYPE.UNARY](format: RPC_CALL_FORMAT) {
-    let query = new RouteServiceQuery().setName('hello');
+    let query = new message.Query().setName('hello');
     this.clients[format]
       .getRoute(query, {}, (error, response) => {
         if (error) {
@@ -70,7 +70,7 @@ class gRPCWebClient {
   }
 
   [RPC_CALL_TYPE.STREAM](format: RPC_CALL_FORMAT) {
-    let query = new RouteServiceQuery();
+    let query = new message.Query();
     let stream = this.clients[format].getRoutes(query, {});
 
     stream.on('data', (response) =>
@@ -84,7 +84,7 @@ class gRPCWebClient {
 
   [RPC_CALL_TYPE.EXPECT_ERROR](format: RPC_CALL_FORMAT) {
     this.clients[format]
-      .getError(new RouteServiceQuery(), null, () => {})
+      .getError(new message.Query(), null, () => {})
       .on('status', (status) => {
         console.log(`Status: ${status.code}, Details: ${status.details}`);
       });
