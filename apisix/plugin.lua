@@ -34,6 +34,8 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
+local getmetatable  = getmetatable
+local setmetatable  = setmetatable
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load

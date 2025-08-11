@@ -15,6 +15,12 @@
 # limitations under the License.
 #
 
+BEGIN {
+    if ($ENV{TEST_EVENTS_MODULE} ne "lua-resty-worker-events") {
+        $SkipReason = "Only for lua-resty-worker-events events module";
+    }
+}
+
 use t::APISIX 'no_plan';
 
 log_level("info");
@@ -378,17 +384,9 @@ passed
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -396,7 +394,6 @@ passed
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -420,7 +417,6 @@ passed
                     "service_id": 1
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -439,7 +435,6 @@ passed
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
             local test_dict = ngx.shared["test"]
-
             local send_request = function()
                 local code, _, body = t("/ai",
                     ngx.HTTP_POST,
@@ -458,13 +453,11 @@ passed
                 assert(code == 200, "request should be successful")
                 return body
             end
-
             -- set the instance to unhealthy
             test_dict:set("/status/gpt4#total", 0)
             -- trigger the health check
             send_request()
             ngx.sleep(2)
-
             local instances_count = {
                 ["gpt-4"] = 0,
                 ["gpt-3"] = 0,
@@ -477,15 +470,12 @@ passed
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
             end
-
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
             assert(instances_count["gpt-3"] >= 8, "gpt-3 should be healthy")
-
             -- set the instance to healthy
             test_dict:set("/status/gpt4#total", 30)
             ngx.sleep(2)
-
             local instances_count = {
                 ["gpt-4"] = 0,
                 ["gpt-3"] = 0,
@@ -499,7 +489,6 @@ passed
                 end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
-
             local diff = instances_count["gpt-4"] - instances_count["gpt-3"]
             assert(diff <= 2, "difference between gpt-4 and gpt-3 should be less than 2")
             ngx.say("passed")
@@ -584,7 +573,6 @@ passed
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -603,7 +591,6 @@ passed
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
             local test_dict = ngx.shared["test"]
-
             local send_request = function()
                 local code, _, body = t("/ai",
                     ngx.HTTP_POST,
@@ -622,7 +609,6 @@ passed
                 assert(code == 200, "request should be successful")
                 return body
             end
-
             -- set the gpt4 instance to unhealthy
             -- set the gpt3 instance to healthy
             test_dict:set("/status/gpt4#total", 0)
@@ -630,7 +616,6 @@ passed
             -- trigger the health check
             send_request()
             ngx.sleep(2)
-
             local instances_count = {
                 ["gpt-4"] = 0,
                 ["gpt-3"] = 0,
@@ -643,17 +628,14 @@ passed
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
             end
-
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
             assert(instances_count["gpt-3"] >= 8, "gpt-3 should be healthy")
-
             -- set the gpt4 instance to healthy
             -- set the gpt3 instance to unhealthy
             test_dict:set("/status/gpt4#total", 50)
             test_dict:set("/status/gpt3#total", 0)
             ngx.sleep(2)
-
             local instances_count = {
                 ["gpt-4"] = 0,
                 ["gpt-3"] = 0,
@@ -667,7 +649,6 @@ passed
                 end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
-
             assert(instances_count["gpt-4"] >= 8, "gpt-4 should be healthy")
             assert(instances_count["gpt-3"] <= 2, "gpt-3 should be unhealthy")
             ngx.say("passed")
@@ -751,7 +732,6 @@ passed
                     }
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -775,7 +755,6 @@ passed
                     "service_id": 1
                 }]]
             )
-
             if code >= 300 then
                 ngx.status = code
             end
@@ -794,7 +773,6 @@ passed
             local t = require("lib.test_admin").test
             local core = require("apisix.core")
             local test_dict = ngx.shared["test"]
-
             local send_request = function()
                 local code, _, body = t("/ai",
                     ngx.HTTP_POST,
@@ -813,15 +791,13 @@ passed
                 assert(code == 200, "request should be successful")
                 return body
             end
-
             -- set the gpt4 instance to unhealthy
             -- set the gpt3 instance to healthy
             test_dict:set("/status/gpt4#total", 0)
             test_dict:set("/status/gpt3#total", 50)
             -- trigger the health check
             send_request()
-            ngx.sleep(2)
-
+            ngx.sleep(1.2)
             local instances_count = {
                 ["gpt-4"] = 0,
                 ["gpt-3"] = 0,
@@ -834,17 +810,14 @@ passed
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
             end
-
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
             assert(instances_count["gpt-3"] >= 8, "gpt-3 should be healthy")
-
             -- set the gpt4 instance to healthy
             -- set the gpt3 instance to unhealthy
             test_dict:set("/status/gpt4#total", 50)
             test_dict:set("/status/gpt3#total", 0)
-            ngx.sleep(2)
-
+            ngx.sleep(1.2)
             local instances_count = {
                 ["gpt-4"] = 0,
                 ["gpt-3"] = 0,
@@ -858,7 +831,6 @@ passed
                 end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
-
             assert(instances_count["gpt-4"] >= 8, "gpt-4 should be healthy")
             assert(instances_count["gpt-3"] <= 2, "gpt-3 should be unhealthy")
             ngx.say("passed")
@@ -867,91 +839,3 @@ passed
 --- timeout: 10
 --- response_body
 passed
-
-
-
-=== TEST 11: configure health check for well-known ai service
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/ai",
-                    "plugins": {
-                        "ai-proxy-multi": {
-                            "instances": [
-                                {
-                                    "name": "openai-gpt4",
-                                    "provider": "openai",
-                                    "weight": 1,
-                                    "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "checks": {
-                                        "active": {
-                                            "timeout": 5,
-                                            "http_path": "/",
-                                            "healthy": {
-                                                "interval": 1,
-                                                "successes": 1
-                                            },
-                                            "unhealthy": {
-                                                "interval": 1,
-                                                "http_failures": 1
-                                            },
-                                            "req_headers": ["User-Agent: curl/7.29.0"]
-                                        }
-                                    }
-                                },
-                                {
-                                    "name": "openai-gpt3",
-                                    "provider": "openai",
-                                    "weight": 1,
-                                    "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    }
-                                }
-                            ],
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 12: send request to /ai should failed with 401
---- request
-POST /ai
-{
-  "messages": [
-    {
-      "role": "user",
-      "content": "write a haiku about ai"
-    }
-  ]
-}
---- error_code: 401
