@@ -17,10 +17,9 @@
 //@ts-expect-error no typing for xhr2
 import XMLHttpRequest from 'xhr2';
 
-import { RouteServiceClient } from './a6/RouteServiceClientPb';
+import { RouteServiceClient } from './a6/route_grpc_web_pb';
 import route_pb from './a6/route_pb';
 const { Query: RouteServiceQuery } = route_pb;
-console.log(route_pb);
 
 // inject xhr polyfill for grpc-web
 (global as any).XMLHttpRequest = XMLHttpRequest;
@@ -86,7 +85,7 @@ class gRPCWebClient {
 
   [RPC_CALL_TYPE.EXPECT_ERROR](format: RPC_CALL_FORMAT) {
     this.clients[format]
-      .getError(new RouteServiceQuery(), null, () => {})
+      .getError(new RouteServiceQuery(), undefined, () => {})
       .on('status', (status) => {
         console.log(`Status: ${status.code}, Details: ${status.details}`);
       });
