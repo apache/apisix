@@ -266,7 +266,6 @@ local function timer_create_checker()
             end
             local checker = create_checker(upstream)
             if not checker then
-                core.log.warn("failed to create checker for resource: ", resource_path)
                 goto continue
             end
             core.log.info("create new checker: ", tostring(checker), " for resource: ",
