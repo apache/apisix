@@ -249,8 +249,9 @@ local function timer_create_checker()
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = parse_path(resource_path)
                 local json_path = "$." .. sub_path
-                --- the users of the API pass the jsonpath(in resourcepath) to upstream_constructor_config
-                --- which is passed to the callback construct_upstream to create an upstream dynamically
+                --- the users of the API pass the jsonpath(in resourcepath) to
+                --- upstream_constructor_config which is passed to the
+                --- callback construct_upstream to create an upstream dynamically
                 local upstream_constructor_config = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
                 upstream = plugin.construct_upstream(upstream_constructor_config)
