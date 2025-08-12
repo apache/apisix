@@ -541,7 +541,8 @@ function _M.connect(premature, consul_server, retry_delay)
                     if metadata == cjson_null then
                         metadata = nil
                     elseif type(metadata) ~= "table" then
-                        log.error("service ", service_id, " has invalid metadata, use nil as default: ", json_delay_encode(metadata))
+                        log.error("service ", service_id, " has invalid metadata, use nil as default: ",
+                                json_delay_encode(metadata))
                         metadata = nil
                     end
                     if not nodes_uniq[service_id] then
