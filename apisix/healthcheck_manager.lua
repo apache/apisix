@@ -26,11 +26,13 @@ local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
+local jp = require("jsonpath")
 local string_sub     = string.sub
 
 local _M = {}
 local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
 local waiting_pool = {}      -- resource_path -> resource_ver
+local upstream_builder_tracker = {}
 
 local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
@@ -60,6 +62,7 @@ end
 
 
 local function fetch_latest_conf(resource_path)
+    resource_path = resource_path:match("^(.-)#") or resource_path
     local resource_type, id
     -- Handle both formats:
     -- 1. /<etcd-prefix>/<resource_type>/<id>
@@ -206,6 +209,15 @@ function _M.upstream_version(index, nodes_ver)
 end
 
 
+local function get_plugin_name(path)
+    -- Extract JSON path (after '#') or use full path
+    local json_path = path:match("#(.+)$") or path
+    -- Match plugin name in the JSON path segment
+    return json_path:match("^plugins%['([^']+)'%]") 
+        or json_path:match('^plugins%["([^"]+)"%]')
+        or json_path:match("^plugins%.([^%.]+)")
+end
+
 local function timer_create_checker()
     if core.table.nkeys(waiting_pool) == 0 then
         return
@@ -224,11 +236,24 @@ local function timer_create_checker()
             if not res_conf then
                 goto continue
             end
-            local upstream = res_conf.value.upstream or res_conf.value
+            local upstream
+            local json_path = "$." .. (resource_path:match("#(.+)$") or "")
+            local plugin_name = get_plugin_name(resource_path)
+            -- Handle nil/empty plugin_name safely
+            if plugin_name and plugin_name ~= "" then
+                local tab = jp.value(res_conf.value, json_path)
+                local plugin = require("apisix.plugins." .. plugin_name)
+                upstream = plugin.construct_upstream(tab)
+                upstream.resource_key = resource_path
+            else
+                upstream = res_conf.value.upstream or res_conf.value
+            end
             local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
             if resource_ver ~= new_version then
+                core.log.warn("version mismatch for resource: ", resource_path,
+                            " current version: ", new_version, " requested version: ", resource_ver)
                 goto continue
             end
 
@@ -243,6 +268,7 @@ local function timer_create_checker()
             end
             local checker = create_checker(upstream)
             if not checker then
+                core.log.warn("failed to create checker for resource: ", resource_path)
                 goto continue
             end
             core.log.info("create new checker: ", tostring(checker), " for resource: ",

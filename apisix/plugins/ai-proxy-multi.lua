@@ -20,6 +20,7 @@ local schema = require("apisix.plugins.ai-proxy.schema")
 local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
 local ipmatcher  = require("resty.ipmatcher")
+local healthcheck_manager = require("apisix.healthcheck_manager")
 local tonumber = tonumber
 local pairs = pairs
 local tostring = tostring
@@ -158,20 +159,6 @@ local function resolve_endpoint(instance_conf)
 end
 
 
-local function get_healthchecker_name(conf, instance_name)
-    return core.table.concat({plugin_name, tostring(conf), instance_name}, "#")
-end
-
-
-local function release_checkers(healthcheck_parent)
-    local ai_checkers = healthcheck_parent.ai_checkers
-    core.log.info("try to release ai_checkers: ", tostring(ai_checkers))
-    for _, checker in pairs(ai_checkers) do
-        checker:clear()
-        checker:stop()
-    end
-end
-
 local function get_checkers_status_ver(checkers)
     local status_ver_total = 0
     for _, checker in pairs(checkers) do
@@ -180,87 +167,6 @@ local function get_checkers_status_ver(checkers)
     return status_ver_total
 end
 
-
-local function create_checkers(conf)
-    if healthcheck == nil then
-        healthcheck = require("resty.healthcheck")
-    end
-
-    local healthcheck_parent = conf._meta.parent
-    if healthcheck_parent.ai_checkers and healthcheck_parent.ai_checker_conf == conf then
-        return healthcheck_parent.ai_checkers
-    end
-
-    if conf.is_creating_ai_checkers then
-        core.log.info("another request is creating new checker")
-        return nil
-    end
-    conf.is_creating_ai_checkers = true
-
-    local ai_checkers = core.table.new(0, #conf.instances)
-
-    for _, ins in ipairs(conf.instances) do
-        if ins.checks then
-            core.log.info("create new healthcheck instance for ai_instance: ", ins.name,
-            " checks: ", core.json.delay_encode(ins.checks, true))
-            local checker, err = healthcheck.new({
-                name = get_healthchecker_name(conf, ins.name),
-                shm_name = "upstream-healthcheck",
-                checks = ins.checks,
-            })
-            if not checker then
-                core.log.error("failed to create healthcheck instance: ", err)
-                conf.is_creating_ai_checkers = nil
-                return nil
-            end
-            ai_checkers[ins.name] = checker
-        end
-    end
-
-    if healthcheck_parent.ai_checkers then
-        local ok, err = pcall(core.config_util.cancel_clean_handler, healthcheck_parent,
-                                              healthcheck_parent.ai_checkers_idx, true)
-        if not ok then
-            core.log.error("cancel clean handler error: ", err)
-        end
-    end
-
-    for _, ins in ipairs(conf.instances) do
-        local node = resolve_endpoint(ins)
-        local host = ins.checks and ins.checks.active and ins.checks.active.host
-        local port = ins.checks and ins.checks.active and ins.checks.active.port
-        local checker = ai_checkers[ins.name]
-        if checker then
-            local ok, err = checker:add_target(node.host, port or node.port, host)
-            if not ok then
-                core.log.error("failed to add new health check target: ", node.host, ":",
-                        port or node.port, " err: ", err)
-            end
-        end
-    end
-
-    healthcheck_parent.clean_handlers = healthcheck_parent.clean_handlers or {}
-    local check_idx, err = core.config_util.add_clean_handler(healthcheck_parent, release_checkers)
-    if not check_idx then
-        conf.is_creating_ai_checkers = nil
-        for _, checker in pairs(ai_checkers) do
-            checker:clear()
-            checker:stop()
-        end
-        core.log.error("failed to add clean handler, err:",
-            err, " healthcheck parent:", core.json.delay_encode(healthcheck_parent, true))
-
-        return nil
-    end
-
-    healthcheck_parent.ai_checkers = ai_checkers
-    healthcheck_parent.ai_checkers_idx = check_idx
-    healthcheck_parent.ai_checker_conf = conf
-
-    conf.is_creating_ai_checkers = nil
-
-    return ai_checkers
-end
 
 
 local function fetch_health_instances(conf, checkers)
@@ -332,8 +238,45 @@ local function get_instance_conf(instances, name)
 end
 
 
+function _M.construct_upstream(instance)
+    local upstream = {}
+    local node = resolve_endpoint(instance)
+    if not node then
+        return nil, "failed to resolve endpoint for instance: " .. instance.name
+    end
+
+    if not node.host or not node.port then
+        return nil, "invalid upstream node: " .. core.json.encode(node)
+    end
+
+    parse_domain_for_node(node)
+
+    local node = {
+        host = node.host,
+        port = node.port,
+        scheme = node.scheme,
+        weight = instance.weight or 1,
+        priority = instance.priority or 0,
+        name = instance.name,
+    }
+    upstream.nodes = {node}
+    upstream.checks = instance.checks
+    return upstream
+end
+
+
 local function pick_target(ctx, conf, ups_tab)
-    local checkers = #conf.instances > 1 and create_checkers(conf)
+    local checkers
+    for i, instance in ipairs(conf.instances) do
+        if instance.checks then
+            -- json path is 0 indexed so we need to decrement i
+            local resource_path = conf._meta.parent.resource_key .. "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
+            local resource_version = conf._meta.parent.resource_version
+            local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
+            checkers = checkers or {}
+            checkers[instance.name] = checker  
+        end
+    end
 
     local version = plugin.conf_version(conf)
     if checkers then

@@ -1245,12 +1245,16 @@ function _M.set_plugins_meta_parent(plugins, parent)
             plugin_conf._meta = {}
         end
         if not plugin_conf._meta.parent then
+            local parent_info = {
+                resource_key = parent.key,
+                resource_version = tostring(parent.modifiedIndex)
+            }
             local mt_table = getmetatable(plugin_conf._meta)
             if mt_table then
-                mt_table.parent = parent
+                mt_table.parent = parent_info
             else
                 plugin_conf._meta = setmetatable(plugin_conf._meta,
-                                                    { __index = {parent = parent} })
+                                                    { __index = {parent = parent_info} })
             end
         end
     end

@@ -299,6 +299,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
 
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
@@ -320,6 +323,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
 
@@ -328,7 +334,7 @@ passed
             ngx.say("passed")
         }
     }
---- timeout: 10
+--- timeout: 20
 --- response_body
 passed
 
@@ -469,6 +475,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
@@ -487,6 +496,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             local diff = instances_count["gpt-4"] - instances_count["gpt-3"]
@@ -494,7 +506,7 @@ passed
             ngx.say("passed")
         }
     }
---- timeout: 10
+--- timeout: 20
 --- response_body
 passed
 
@@ -627,6 +639,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
@@ -647,6 +662,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] >= 8, "gpt-4 should be healthy")
@@ -654,9 +672,10 @@ passed
             ngx.say("passed")
         }
     }
---- timeout: 10
+--- timeout: 20
 --- response_body
 passed
+
 
 
 
@@ -809,6 +828,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] <= 2, "gpt-4 should be unhealthy")
@@ -829,6 +851,9 @@ passed
                 else
                     instances_count["gpt-3"] = instances_count["gpt-3"] + 1
                 end
+                if i == 1 then
+                    ngx.sleep(4) -- trigger healthcheck
+                end
             end
             ngx.log(ngx.INFO, "instances_count test:", core.json.delay_encode(instances_count))
             assert(instances_count["gpt-4"] >= 8, "gpt-4 should be healthy")
@@ -836,6 +861,6 @@ passed
             ngx.say("passed")
         }
     }
---- timeout: 10
+--- timeout: 20
 --- response_body
 passed
