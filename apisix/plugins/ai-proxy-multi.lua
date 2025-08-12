@@ -23,7 +23,6 @@ local ipmatcher  = require("resty.ipmatcher")
 local healthcheck_manager = require("apisix.healthcheck_manager")
 local tonumber = tonumber
 local pairs = pairs
-local tostring = tostring
 
 local require = require
 local pcall = pcall
@@ -31,7 +30,6 @@ local ipairs = ipairs
 local type = type
 
 local priority_balancer = require("apisix.balancer.priority")
-local healthcheck
 
 local pickers = {}
 local lrucache_server_picker = core.lrucache.new({
@@ -270,7 +268,8 @@ local function pick_target(ctx, conf, ups_tab)
     for i, instance in ipairs(conf.instances) do
         if instance.checks then
             -- json path is 0 indexed so we need to decrement i
-            local resource_path = conf._meta.parent.resource_key .. "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
+            local resource_path = conf._meta.parent.resource_key ..
+                                  "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
             local resource_version = conf._meta.parent.resource_version
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers = checkers or {}
