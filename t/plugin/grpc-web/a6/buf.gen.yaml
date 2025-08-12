@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -15,17 +14,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-set -ex
-
-pnpm install -g tsx
-
-pushd a6
-
-pnpx @bufbuild/buf generate --debug
-
-popd
-
-CGO_ENABLED=0 go build -o grpc-web-server server.go
-
-./grpc-web-server > grpc-web-server.log 2>&1 || (cat grpc-web-server.log && exit 1)&
+version: v2
+plugins:
+  - remote: buf.build/protocolbuffers/go:v1.36.6
+    out: .
+    opt:
+      - paths=source_relative
+  - remote: buf.build/grpc/go:v1.5.1
+    out: .
+    opt:
+      - paths=source_relative
+  - remote: buf.build/protocolbuffers/js:v3.21.4
+    out: .
+    opt:
+      - import_style=commonjs
+  - remote: buf.build/grpc/web:v1.5.0
+    out: .
+    opt:
+      - mode=grpcweb
+      - import_style=commonjs+dts
