@@ -190,6 +190,17 @@ local function do_run_watch(premature)
     opts.need_cancel = true
     opts.start_revision = watch_ctx.rev
 
+    -- get latest revision
+    local res, err = watch_ctx.cli:get(watch_ctx.prefix, {
+        keys_only = true
+    })
+    local latest_rev
+    if res and res.body and res.body.header and res.body.header.revision then
+        latest_rev = tonumber(res.body.header.revision)
+    else
+        log.error("failed to get latest revision: ", err)
+    end
+
     log.info("restart watchdir: start_revision=", opts.start_revision)
 
     local res_func, err, http_cli = watch_ctx.cli:watchdir(watch_ctx.prefix, opts)
@@ -212,6 +223,12 @@ local function do_run_watch(premature)
                 err ~= "broken pipe"
             then
                 log.error("wait watch event: ", err)
+            end
+            if err == "timeout" then
+                if latest_rev and watch_ctx.rev < latest_rev + 1 then
+                    watch_ctx.rev = latest_rev + 1
+                    log.info("etcd watch timeout, upgrade revision to ", watch_ctx.rev)
+                end
             end
             cancel_watch(http_cli)
             break
