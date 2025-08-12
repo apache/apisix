@@ -85,7 +85,8 @@ POST /hello
 }
 --- response_body
 hello world
-
+--- error_log_matches
+"\"request\":{\"body\":{\"hello\":\"world\"}"
 
 
 === TEST 4: hit route (with non-json request)
