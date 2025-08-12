@@ -93,6 +93,21 @@ local ai_instance_schema = {
     },
 }
 
+local logging_schema = {
+    type = "object",
+    properties = {
+        summaries = {
+            type = "boolean",
+            default = false,
+            description = "Record user request llm model, duration, req/res token"
+        },
+        payloads = {
+            type = "boolean",
+            default = false,
+            description = "Record user request and response payload"
+        }
+    }
+}
 
 _M.ai_proxy_schema = {
     type = "object",
@@ -108,6 +123,7 @@ _M.ai_proxy_schema = {
             }, -- add more providers later
 
         },
+        logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
         timeout = {
@@ -167,6 +183,7 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
+        logging_schema = logging_schema,
         fallback_strategy = {
             type = "string",
             enum = { "instance_health_and_rate_limiting" },

@@ -26,26 +26,43 @@ import (
 )
 
 func sseHandler(w http.ResponseWriter, r *http.Request) {
-	// Set the headers for SSE
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	f, ok := w.(http.Flusher);
+	f, ok := w.(http.Flusher)
 	if !ok {
-		fmt.Fprintf(w, "[ERROR]")
+		http.Error(w, "Streaming unsupported", http.StatusInternalServerError)
 		return
 	}
-	// A simple loop that sends a message every 500ms
-	for i := 0; i < 5; i++ {
-		// Create a message to send to the client
-		fmt.Fprintf(w, "data: %s\n\n", time.Now().Format(time.RFC3339))
+	// Initial chunk with assistant role
+	initialChunk := `{"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-4o-mini","system_fingerprint":"fp_44709d6fcb","choices":[{"index":0,"delta":{"role":"assistant","content":""},"logprobs":null,"finish_reason":null}]}`
+	fmt.Fprintf(w, "data: %s\n\n", initialChunk)
+	f.Flush()
 
-		// Flush the data immediately to the client
-		f.Flush()
-		time.Sleep(500 * time.Millisecond)
+	// Content chunks with parts of the generated text
+	contentParts := []string{
+		"Silent circuits hum,\\n",             // First line of haiku
+		"Machine mind learns and evolves—\\n", // Second line
+		"Dreams of silicon.",                  // Third line
 	}
+
+	for _, part := range contentParts {
+		contentChunk := fmt.Sprintf(
+			`{"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-4o-mini","system_fingerprint":"fp_44709d6fcb","choices":[{"index":0,"delta":{"content":"%s"},"logprobs":null,"finish_reason":null}]}`,
+			part,
+		)
+		fmt.Fprintf(w, "data: %s\n\n", contentChunk)
+
+		f.Flush()
+		time.Sleep(500 * time.Millisecond) // Simulate processing delay
+	}
+	// Final chunk indicating completion
+	finalChunk := `{"id":"chatcmpl-123","object":"chat.completion.chunk","created":1694268190,"model":"gpt-4o-mini","system_fingerprint":"fp_44709d6fcb","choices":[{"index":0,"delta":{},"logprobs":null,"finish_reason":"stop"}]}`
+	fmt.Fprintf(w, "data: %s\n\n", finalChunk)
+	f.Flush()
 	fmt.Fprintf(w, "data: %s\n\n", "[DONE]")
+	f.Flush()
 }
 
 func main() {
@@ -54,5 +71,5 @@ func main() {
 	port := os.Args[1]
 	// Start the server
 	log.Println("Starting server on :", port)
-	log.Fatal(http.ListenAndServe(":" + port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

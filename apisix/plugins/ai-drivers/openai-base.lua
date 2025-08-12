@@ -84,6 +84,7 @@ local function read_response(ctx, res)
     core.response.set_header("Content-Type", content_type)
 
     if content_type and core.string.find(content_type, "text/event-stream") then
+        local contents = {}
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
             if err then
@@ -97,7 +98,7 @@ local function read_response(ctx, res)
             ngx_print(chunk)
             ngx_flush(true)
 
-            local events, err = ngx_re.split(chunk, "\n")
+            local events, err = ngx_re.split(chunk, "\n\n")
             if err then
                 core.log.warn("failed to split response chunk [", chunk, "] to events: ", err)
                 goto CONTINUE
@@ -125,6 +126,14 @@ local function read_response(ctx, res)
                     goto CONTINUE
                 end
 
+                -- https://platform.openai.com/docs/api-reference/chat/create#chat-create-stream
+                if data and data.choices then
+                    for _, choice in ipairs(data.choices) do
+                        if choice and choice.delta and choice.delta.content then
+                            core.table.insert(contents, choice.delta.content)
+                        end
+                    end
+                end
                 -- usage field is null for non-last events, null is parsed as userdata type
                 if data and data.usage and type(data.usage) ~= "userdata" then
                     core.log.info("got token usage from ai service: ",
@@ -134,6 +143,7 @@ local function read_response(ctx, res)
                         completion_tokens = data.usage.completion_tokens or 0,
                         total_tokens = data.usage.total_tokens or 0,
                     }
+                    ctx.var.llm_response_text = table.concat(contents, "")
                 end
             end
 
@@ -157,6 +167,16 @@ local function read_response(ctx, res)
             completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
             total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
         }
+        if res_body.choices and #res_body.choices > 0 then
+            local contents = {}
+            for _, choice in ipairs(res_body.choices) do
+                if choice and choice.message and choice.message.content then
+                    core.table.insert(contents, choice.message.content)
+                end
+            end
+            local content_to_check = table.concat(contents, " ")
+            ctx.var.llm_response_text = content_to_check
+        end
     end
     return res.status, raw_res_body
 end
