@@ -318,7 +318,10 @@ metadata:
  name: apisix-test
 rules:
 - apiGroups: [ "" ]
-  resources: [ endpoints,endpointslices ]
+  resources: [ endpoints ]
+  verbs: [ get,list,watch ]
+- apiGroups: [ "discovery.k8s.io" ]
+  resources: [ endpointslices ]
   verbs: [ get,list,watch ]
 ---
 
