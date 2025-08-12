@@ -32,7 +32,6 @@ local string_sub     = string.sub
 local _M = {}
 local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
 local waiting_pool = {}      -- resource_path -> resource_ver
-local upstream_builder_tracker = {}
 
 local DELAYED_CLEAR_TIMEOUT = 10
 local healthcheck_shdict_name = "upstream-healthcheck"
