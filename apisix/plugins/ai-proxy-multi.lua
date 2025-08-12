@@ -274,7 +274,7 @@ local function pick_target(ctx, conf, ups_tab)
             local resource_version = conf._meta.parent.resource_version
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers = checkers or {}
-            checkers[instance.name] = checker  
+            checkers[instance.name] = checker
         end
     end
 

@@ -214,7 +214,7 @@ local function get_plugin_name(path)
     -- Extract JSON path (after '#') or use full path
     local json_path = path:match("#(.+)$") or path
     -- Match plugin name in the JSON path segment
-    return json_path:match("^plugins%['([^']+)'%]") 
+    return json_path:match("^plugins%['([^']+)'%]")
         or json_path:match('^plugins%["([^"]+)"%]')
         or json_path:match("^plugins%.([^%.]+)")
 end
