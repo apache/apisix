@@ -238,9 +238,9 @@ local function timer_create_checker()
                 goto continue
             end
             local upstream
-            local json_path = "$." .. (resource_path:match("#(.+)$") or "")
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
+                local json_path = "$." .. (resource_path:match("#(.+)$") or "")
                 local tab = jp.value(res_conf.value, json_path)
                 local plugin = require("apisix.plugins." .. plugin_name)
                 upstream = plugin.construct_upstream(tab)
