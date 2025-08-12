@@ -678,7 +678,6 @@ passed
 
 
 
-
 === TEST 8: set route, two instances have checker
 --- config
     location /t {
