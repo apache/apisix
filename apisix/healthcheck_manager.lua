@@ -252,8 +252,6 @@ local function timer_create_checker()
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
             if resource_ver ~= new_version then
-                core.log.warn("version mismatch for resource: ", resource_path,
-                            " current version: ", new_version, " requested version: ", resource_ver)
                 goto continue
             end
 
