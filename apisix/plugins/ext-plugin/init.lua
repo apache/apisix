@@ -640,7 +640,6 @@ local rpc_handlers = {
             local path = rewrite:Path()
             if path then
                 path = core.utils.uri_safe_encode(path)
-                var.upstream_uri = path
             end
 
             local len = rewrite:HeadersLength()
@@ -682,6 +681,7 @@ local rpc_handlers = {
 
             local len = rewrite:ArgsLength()
             if len > 0 then
+                local args = core.request.get_uri_args(ctx)
                 local changed = {}
                 for i = 1, len do
                     local entry = rewrite:Args(i)
@@ -689,7 +689,6 @@ local rpc_handlers = {
                     local value = entry:Value()
                     if value == nil then
                         args[name] = nil
-
                     else
                         if changed[name] then
                             if type(args[name]) == "table" then
@@ -700,16 +699,15 @@ local rpc_handlers = {
                         else
                             args[name] = entry:Value()
                         end
-
                         changed[name] = true
                     end
                 end
 
+                core.request.set_uri_args(ctx, args)
             end
-            core.request.set_uri_args(ctx, args)
 
             if path then
-                var.upstream_uri = path .. '?' .. var.args
+                var.upstream_uri = path .. (var.is_args or '') .. (var.args or '')
             end
         end
 
