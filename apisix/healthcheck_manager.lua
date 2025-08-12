@@ -61,6 +61,8 @@ end
 
 
 local function fetch_latest_conf(resource_path)
+    -- if resource path contains json path, extract out the prefix
+    -- for eg: extracts /routes/1 from /routes/1#plugins.abc
     resource_path = resource_path:match("^(.-)#") or resource_path
     local resource_type, id
     -- Handle both formats:
