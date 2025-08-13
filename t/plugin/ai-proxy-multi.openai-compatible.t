@@ -265,7 +265,8 @@ passed
                 body = [[{
                     "messages": [
                         { "role": "system", "content": "some content" }
-                    ]
+                    ],
+                    "stream": true
                 }]],
             }
 
