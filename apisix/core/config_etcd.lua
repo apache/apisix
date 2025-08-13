@@ -194,11 +194,14 @@ local function do_run_watch(premature)
     local res, err = watch_ctx.cli:get(watch_ctx.prefix, {
         keys_only = true
     })
+    if err then
+        log.error("failed to get latest revision, err: ", err)
+    end
     local latest_rev
     if res and res.body and res.body.header and res.body.header.revision then
         latest_rev = tonumber(res.body.header.revision)
     else
-        log.error("failed to get latest revision: ", err)
+        log.error("failed to get latest revision, res: ", inspect(res))
     end
 
     log.info("restart watchdir: start_revision=", opts.start_revision)
@@ -240,10 +243,21 @@ local function do_run_watch(premature)
             break
         end
 
-        if res.result.created then
-            goto watch_event
-        end
-
+        --[[
+        when etcd response permission denied, both result.canceled and result.created are true,
+        so we need to check result.canceled first, for example:
+        result = {
+          cancel_reason = "rpc error: code = PermissionDenied desc = etcdserver: permission denied",
+          canceled = true,
+          created = true,
+          header = {
+            cluster_id = "14841639068965178418",
+            member_id = "10276657743932975437",
+            raft_term = "4",
+            revision = "33"
+          }
+        }
+        --]]
         if res.result.canceled then
             log.warn("watch canceled by etcd, res: ", inspect(res))
             if res.result.compact_revision then
@@ -253,6 +267,10 @@ local function do_run_watch(premature)
             end
             cancel_watch(http_cli)
             break
+        end
+
+        if res.result.created then
+            goto watch_event
         end
 
         -- cleanup
