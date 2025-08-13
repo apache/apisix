@@ -285,19 +285,9 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                     "name": "deepseek",
                                     "provider": "deepseek",
                                     "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},
+                                    "override": {"endpoint": "http://localhost:6724/chat/completions"}
                                 }
                             ],
                             "ssl_verify": false
