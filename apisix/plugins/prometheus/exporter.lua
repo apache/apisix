@@ -15,6 +15,7 @@
 -- limitations under the License.
 --
 local base_prometheus = require("prometheus")
+local tonumber        = tonumber
 local core      = require("apisix.core")
 local plugin    = require("apisix.plugin")
 local control   = require("apisix.control.v1")
@@ -162,6 +163,13 @@ function _M.http_init(prometheus_enabled_in_stream)
                                    "bandwidth", "expire")
     local upstream_status_exptime = core.table.try_read_attr(attr, "metrics",
                                    "upstream_status", "expire")
+    local llm_latency_exptime = core.table.try_read_attr(attr, "metrics", "llm_latency", "expire")
+    local llm_prompt_tokens_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "llm_prompt_tokens", "expire")
+    local llm_completion_tokens_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "llm_completion_tokens", "expire")
+    local llm_active_connections_exptime = core.table.try_read_attr(attr, "metrics",
+                                                            "llm_active_connections", "expire")
 
     prometheus = base_prometheus.init("prometheus-metrics", metric_prefix)
 
@@ -204,6 +212,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.status = prometheus:counter("http_status",
             "HTTP status codes per service in APISIX",
             {"code", "route", "matched_uri", "matched_host", "service", "consumer", "node",
+            "request_type", "llm_model",
             unpack(extra_labels("http_status"))},
             status_metrics_exptime)
 
@@ -214,13 +223,46 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     metrics.latency = prometheus:histogram("http_latency",
         "HTTP request latency in milliseconds per service in APISIX",
-        {"type", "route", "service", "consumer", "node", unpack(extra_labels("http_latency"))},
+        {"type", "route", "service", "consumer", "node",
+        "request_type", "llm_model",
+        unpack(extra_labels("http_latency"))},
         buckets, latency_metrics_exptime)
 
     metrics.bandwidth = prometheus:counter("bandwidth",
             "Total bandwidth in bytes consumed per service in APISIX",
-            {"type", "route", "service", "consumer", "node", unpack(extra_labels("bandwidth"))},
+            {"type", "route", "service", "consumer", "node",
+            "request_type", "llm_model",
+            unpack(extra_labels("bandwidth"))},
             bandwidth_metrics_exptime)
+
+    local llm_latency_buckets = DEFAULT_BUCKETS
+    if attr and attr.llm_latency_buckets then
+        llm_latency_buckets = attr.llm_latency_buckets
+    end
+    metrics.llm_latency = prometheus:histogram("llm_latency",
+        "LLM request latency in milliseconds",
+        {"route", "service", "consumer", "node",
+        unpack(extra_labels("llm_latency"))},
+        llm_latency_buckets,
+        llm_latency_exptime)
+
+    metrics.llm_prompt_tokens = prometheus:counter("llm_prompt_tokens",
+            "LLM service consumed prompt tokens",
+            {"route", "service", "consumer", "node",
+            unpack(extra_labels("llm_prompt_tokens"))},
+            llm_prompt_tokens_exptime)
+
+    metrics.llm_completion_tokens = prometheus:counter("llm_completion_tokens",
+            "LLM service consumed completion tokens",
+            {"route", "service", "consumer", "node",
+            unpack(extra_labels("llm_completion_tokens"))},
+            llm_completion_tokens_exptime)
+
+    metrics.llm_active_connections = prometheus:gauge("llm_active_connections",
+            "Number of active connections to LLM service",
+            {"route", "service", "consumer", "node",
+            unpack(extra_labels("llm_active_connections"))},
+            llm_active_connections_exptime)
 
     if prometheus_enabled_in_stream then
         init_stream_metrics()
@@ -292,6 +334,7 @@ function _M.http_log(conf, ctx)
     metrics.status:inc(1,
         gen_arr(vars.status, route_id, matched_uri, matched_host,
                 service_id, consumer_name, balancer_ip,
+                vars.request_type, vars.llm_model,
                 unpack(extra_labels("http_status", ctx))))
 
     local latency, upstream_latency, apisix_latency = latency_details(ctx)
@@ -299,27 +342,53 @@ function _M.http_log(conf, ctx)
 
     metrics.latency:observe(latency,
         gen_arr("request", route_id, service_id, consumer_name, balancer_ip,
+        vars.request_type, vars.llm_model,
         unpack(latency_extra_label_values)))
 
     if upstream_latency then
         metrics.latency:observe(upstream_latency,
             gen_arr("upstream", route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.llm_model,
             unpack(latency_extra_label_values)))
     end
 
     metrics.latency:observe(apisix_latency,
         gen_arr("apisix", route_id, service_id, consumer_name, balancer_ip,
+        vars.request_type, vars.llm_model,
         unpack(latency_extra_label_values)))
 
     local bandwidth_extra_label_values = extra_labels("bandwidth", ctx)
 
     metrics.bandwidth:inc(vars.request_length,
         gen_arr("ingress", route_id, service_id, consumer_name, balancer_ip,
+        vars.request_type, vars.llm_model,
         unpack(bandwidth_extra_label_values)))
 
     metrics.bandwidth:inc(vars.bytes_sent,
         gen_arr("egress", route_id, service_id, consumer_name, balancer_ip,
+        vars.request_type, vars.llm_model,
         unpack(bandwidth_extra_label_values)))
+
+    local llm_time_to_first_token = vars.llm_time_to_first_token
+    if llm_time_to_first_token ~= "" then
+        metrics.llm_latency:observe(tonumber(llm_time_to_first_token),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.llm_model,
+            unpack(extra_labels("llm_latency", ctx))))
+    end
+
+    if vars.llm_prompt_tokens ~= "" then
+        metrics.llm_prompt_tokens:observe(tonumber(vars.llm_prompt_tokens),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.llm_model,
+            unpack(extra_labels("llm_prompt_tokens", ctx))))
+    end
+    if vars.llm_completion_tokens ~= "" then
+        metrics.llm_completion_tokens:observe(tonumber(vars.llm_completion_tokens),
+            gen_arr(route_id, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.llm_model,
+            unpack(extra_labels("llm_completion_tokens", ctx))))
+    end
 end
 
 
@@ -680,6 +749,55 @@ end
 
 function _M.metric_data()
     return prometheus:metric_data()
+end
+
+local function inc_llm_active_connections(ctx, value)
+
+    local vars = ctx.var
+
+    local route_id = ""
+    local route_name = ""
+    local balancer_ip = ctx.balancer_ip or ""
+    local service_id = ""
+    local service_name = ""
+    local consumer_name = ctx.consumer_name or ""
+    local api_product_id = ctx.api_product_id or ""
+
+    local matched_route = ctx.matched_route and ctx.matched_route.value
+    if matched_route then
+        route_id = matched_route.id
+        route_name = matched_route.name or ""
+        service_id = matched_route.service_id or ""
+        if service_id ~= "" then
+            local fetched_service = service_fetch(service_id)
+            service_name = fetched_service and fetched_service.value.name or ""
+        end
+    end
+
+    local matched_uri = ""
+    local matched_host = ""
+    if ctx.curr_req_matched then
+        matched_uri = ctx.curr_req_matched._path or ""
+        matched_host = ctx.curr_req_matched._host or ""
+    end
+
+    metrics.llm_active_connections:set(
+        vars.llm_active_connections + value,
+        gen_arr(route_id, service_id, consumer_name, balancer_ip,
+        route_name, service_name, matched_uri, matched_host,
+        vars.request_type, vars.llm_model,
+        unpack(extra_labels("llm_active_connections", ctx)))
+    )
+end
+
+
+function _M.inc_llm_active_connections(ctx)
+    inc_llm_active_connections(ctx, 1)
+end
+
+
+function _M.dec_llm_active_connections(ctx)
+    inc_llm_active_connections(ctx, -1)
 end
 
 function _M.get_prometheus()

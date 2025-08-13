@@ -673,7 +673,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri"';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
 
     # fake server, only for test
     server {
@@ -855,6 +855,15 @@ _EOC_
             proxy_cache_key                     \$upstream_cache_key;
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
+
+            set \$request_type               'traditional_http';
+
+            set \$llm_time_to_first_token        '';
+            set \$llm_model                      '';
+            set \$llm_prompt_tokens              '';
+            set \$llm_completion_tokens          '';
+
+            access_log $apisix_home/t/servroot/logs/access.log main;
 
             access_by_lua_block {
                 -- wait for etcd sync
