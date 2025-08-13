@@ -34,6 +34,7 @@ local pairs = pairs
 local type  = type
 local ipairs = ipairs
 local setmetatable = setmetatable
+local table  = table
 
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
 local HTTP_GATEWAY_TIMEOUT = ngx.HTTP_GATEWAY_TIMEOUT
