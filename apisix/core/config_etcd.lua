@@ -191,9 +191,7 @@ local function do_run_watch(premature)
     opts.start_revision = watch_ctx.rev
 
     -- get latest revision
-    local res, err = watch_ctx.cli:get(watch_ctx.prefix, {
-        keys_only = true
-    })
+    local res, err = watch_ctx.cli:readdir(watch_ctx.prefix .. "/phantomkey")
     if err then
         log.error("failed to get latest revision, err: ", err)
     end
