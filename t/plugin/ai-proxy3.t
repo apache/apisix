@@ -66,7 +66,7 @@ add_block_preprocessor(sub {
                         return
                     end
 
-		    local res = [[
+            local res = [[
 {
   "id": "chatcmpl-12345",
   "object": "chat.completion",
@@ -120,7 +120,7 @@ __DATA__
                                 }
                             },
                             "options": {
-														    "model": "gpt-3.5-turbo",
+                                "model": "gpt-3.5-turbo",
                                 "max_tokens": 512,
                                 "temperature": 1.0
                             },
