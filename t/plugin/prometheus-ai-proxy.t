@@ -37,7 +37,16 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
-
+    my $user_yaml_config = <<_EOC_;
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+plugins:
+  - ai-proxy-multi
+  - prometheus
+  - public-api
+_EOC_
+    $block->set_value("extra_yaml_config", $user_yaml_config);
     my $http_config = $block->http_config // <<_EOC_;
         server {
             listen 6724;
@@ -239,9 +248,7 @@ qr/apisix_llm_active_connections\{.*route_id="1",.*,node="openai-gpt4".*.*reques
                     }]],
                 },
             }
-
             local t = require("lib.test_admin").test
-
             for _, data in ipairs(data) do
                 local _, body = t(data.url, ngx.HTTP_PUT, data.data)
                 ngx.say(body)
@@ -258,7 +265,6 @@ qr/apisix_llm_active_connections\{.*route_id="1",.*,node="openai-gpt4".*.*reques
     location /t {
         content_by_lua_block {
             local core = require("apisix.core")
-
             local res_list = {}
             for i = 1, 3 do
                 local url = "http://127.0.0.1:" .. ngx.var.server_port .. "/chat"
@@ -275,36 +281,28 @@ qr/apisix_llm_active_connections\{.*route_id="1",.*,node="openai-gpt4".*.*reques
                 end
                 ngx.timer.at(0, send_chat_request, i)
             end
-
             ngx.sleep(1)
-
             local http = require "resty.http"
             local httpc = http.new()
             local metric_resp = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics")
-
             if not string.find(metric_resp.body, [[apisix_llm_active_connections{.*} 3]]) then
                 ngx.say(metric_resp.body)
                 ngx.say("llm_active_connections should be 3")
                 return
             end
-
             ngx.sleep(1)
-
             for _, res in ipairs(res_list) do
                 if res.status ~= 200 then
                     ngx.say("failed to send chat request")
                     return
                 end
             end
-
             metric_resp = httpc:request_uri("http://127.0.0.1:" .. ngx.var.server_port .. "/apisix/prometheus/metrics")
-
             if not string.find(metric_resp.body, [[apisix_llm_active_connections{.*} 0]]) then
                 ngx.say(metric_resp.body)
                 ngx.say("llm_active_connections should be 0 after all requests are done")
                 return
             end
-
             ngx.say("success")
         }
     }

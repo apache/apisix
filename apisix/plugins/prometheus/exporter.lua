@@ -240,7 +240,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
     metrics.llm_latency = prometheus:histogram("llm_latency",
         "LLM request latency in milliseconds",
-        {"route", "service", "consumer", "node",
+        {"route_id", "service_id", "consumer", "node",
         "request_type", "llm_model",
         unpack(extra_labels("llm_latency"))},
         llm_latency_buckets,
@@ -248,14 +248,14 @@ function _M.http_init(prometheus_enabled_in_stream)
 
     metrics.llm_prompt_tokens = prometheus:counter("llm_prompt_tokens",
             "LLM service consumed prompt tokens",
-            {"route", "service", "consumer", "node",
+            {"route_id", "service_id", "consumer", "node",
             "request_type", "llm_model",
             unpack(extra_labels("llm_prompt_tokens"))},
             llm_prompt_tokens_exptime)
 
     metrics.llm_completion_tokens = prometheus:counter("llm_completion_tokens",
             "LLM service consumed completion tokens",
-            {"route", "service", "consumer", "node",
+            {"route_id", "service_id", "consumer", "node",
             "request_type", "llm_model",
             unpack(extra_labels("llm_completion_tokens"))},
             llm_completion_tokens_exptime)
@@ -380,7 +380,6 @@ function _M.http_log(conf, ctx)
             vars.request_type, vars.llm_model,
             unpack(extra_labels("llm_latency", ctx))))
     end
-
     if vars.llm_prompt_tokens ~= "" then
         metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
