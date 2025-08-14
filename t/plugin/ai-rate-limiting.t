@@ -608,17 +608,9 @@ Authorization: Bearer token
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -736,34 +728,18 @@ passed
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-4"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 },
                                 {
                                     "name": "openai-gpt3",
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -876,17 +852,9 @@ passed
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -969,17 +937,9 @@ Authorization: Bearer token
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
