@@ -74,6 +74,7 @@ if not is_http then
 end
 local created_obj  = {}
 local loaded_configuration = {}
+local configuration_loaded_time
 local watch_ctx
 
 
@@ -1125,6 +1126,22 @@ local function create_formatter(prefix)
 end
 
 
+local function init_loaded_configuration()
+    loaded_configuration = {}
+    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
+    if not etcd_cli then
+        return "failed to start a etcd instance: " .. err
+    end
+
+    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
+    if not res then
+        return err
+    end
+
+    configuration_loaded_time = ngx_time()
+end
+
+
 function _M.init()
     local local_conf, err = config_local.local_conf()
     if not local_conf then
@@ -1135,14 +1152,8 @@ function _M.init()
         return true
     end
 
-    -- don't go through proxy during start because the proxy is not available
-    local etcd_cli, prefix, err = etcd_apisix.new_without_proxy()
-    if not etcd_cli then
-        return nil, "failed to start a etcd instance: " .. err
-    end
-
-    local res, err = readdir(etcd_cli, prefix, create_formatter(prefix))
-    if not res then
+    local err = init_loaded_configuration()
+    if err then
         return nil, err
     end
 
@@ -1157,8 +1168,14 @@ function _M.init_worker()
         return nil, err
     end
 
-    if table.try_read_attr(local_conf, "apisix", "disable_sync_configuration_during_start") then
-        return true
+    -- if the startup time of a worker differs significantly from that of the master process,
+    -- we consider it to have restarted, and at this point,
+    -- it is necessary to reload the full configuration from etcd.
+    if configuration_loaded_time and ngx_time() - configuration_loaded_time > 60 then
+        local err = init_loaded_configuration()
+        if err then
+            return nil, err
+        end
     end
 
     return true
