@@ -22,6 +22,7 @@ local str_find     = string.find
 local str_sub      = string.sub
 local tostring     = tostring
 local ngx          = ngx
+local ngx_time     = ngx.time
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
 local table_insert = table.insert
@@ -33,6 +34,10 @@ local config_yaml  = require("apisix.core.config_yaml")
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
+-- do not use the HTTP standard Last-Modified header to prevent affecting
+-- the caching implementation in the client
+local METADATA_LAST_MODIFIED = "X-Last-Modified"
+local METADATA_DIGEST = "X-Digest"
 
 local _M = {}
 
@@ -74,15 +79,20 @@ end
 local function get_config()
     local config = shared_dict:get("config")
     if not config then
-        return nil, "not found"
+        return nil, nil, "not found"
     end
 
     local err
     config, err = core.json.decode(config)
     if not config then
-        return nil, "failed to decode json: " .. err
+        return nil, nil, "failed to decode json: " .. err
     end
-    return config
+    return config, {
+        -- the metadata is also stored in a unique shdict key to prevent
+        -- possible inconsistencies when attempting multiple reads
+        METADATA_LAST_MODIFIED = config[METADATA_LAST_MODIFIED],
+        METADATA_DIGEST = config[METADATA_DIGEST],
+    }
 end
 
 
@@ -138,9 +148,16 @@ end
 
 
 local function update(ctx)
-    local content_type = core.request.header(nil, "content-type") or "application/json"
+    -- check digest header existance
+    local digest = core.request.header(nil, METADATA_DIGEST)
+    if not digest then
+        return core.response.exit(400, {
+            error_msg = "missing digest header"
+        })
+    end
 
     -- read the request body
+    local content_type = core.request.header(nil, "content-type") or "application/json"
     local req_body, err = core.request.get_body()
     if err then
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
@@ -166,7 +183,7 @@ local function update(ctx)
     end
     req_body = data
 
-    local config, err = get_config()
+    local config, metadata, err = get_config()
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
@@ -174,6 +191,13 @@ local function update(ctx)
                 error_msg = "failed to get config from shared dict: " .. err
             })
         end
+    end
+
+    -- if the client passes in the same digest, the configuration is not updated
+    if metadata[METADATA_DIGEST] == digest then
+        -- accepted but not modified because digest is the same
+        core.log.info("config not changed: same digest")
+        return core.response.exit(204)
     end
 
     -- check input by jsonschema
@@ -233,6 +257,10 @@ local function update(ctx)
         end
     end
 
+    -- write metadata
+    apisix_yaml[METADATA_LAST_MODIFIED] = ngx_time()
+    apisix_yaml[METADATA_DIGEST] = digest
+
     local ok, err = update_and_broadcast_config(apisix_yaml)
     if not ok then
         core.response.exit(500, err)
@@ -246,7 +274,7 @@ local function get(ctx)
     local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
 
-    local config, err = get_config()
+    local config, metadata, err = get_config()
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
@@ -286,7 +314,27 @@ local function get(ctx)
     if not resp then
         return core.response.exit(500, {error_msg = err})
     end
+
+    core.response.set_header(METADATA_LAST_MODIFIED, metadata[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, metadata[METADATA_DIGEST])
     return core.response.exit(200, resp)
+end
+
+
+local function head(ctx)
+    local config, metadata, err = get_config()
+    if not config then
+        if err ~= "not found" then
+            core.log.error("failed to get config from shared dict: ", err)
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
+        end
+    end
+
+    core.response.set_header(METADATA_LAST_MODIFIED, metadata[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, metadata[METADATA_DIGEST])
+    return core.response.exit(200)
 end
 
 
@@ -295,6 +343,8 @@ function _M.run()
     local method = str_lower(get_method())
     if method == "put" then
         return update(ctx)
+    elseif method == "head" then
+        return head(ctx)
     else
         return get(ctx)
     end
