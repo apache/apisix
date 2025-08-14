@@ -143,7 +143,7 @@ end
 
 
 local function update(ctx)
-    -- check digest header existance
+    -- check digest header existence
     local digest = core.request.header(nil, METADATA_DIGEST)
     if not digest then
         return core.response.exit(400, {
