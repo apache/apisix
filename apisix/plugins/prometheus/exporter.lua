@@ -139,7 +139,6 @@ function _M.http_init(prometheus_enabled_in_stream)
     end
 
     clear_tab(metrics)
-
     -- Newly added metrics should follow the naming best practices described in
     -- https://prometheus.io/docs/practices/naming/#metric-names
     -- For example,
@@ -242,6 +241,7 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.llm_latency = prometheus:histogram("llm_latency",
         "LLM request latency in milliseconds",
         {"route", "service", "consumer", "node",
+        "request_type", "llm_model",
         unpack(extra_labels("llm_latency"))},
         llm_latency_buckets,
         llm_latency_exptime)
@@ -249,18 +249,22 @@ function _M.http_init(prometheus_enabled_in_stream)
     metrics.llm_prompt_tokens = prometheus:counter("llm_prompt_tokens",
             "LLM service consumed prompt tokens",
             {"route", "service", "consumer", "node",
+            "request_type", "llm_model",
             unpack(extra_labels("llm_prompt_tokens"))},
             llm_prompt_tokens_exptime)
 
     metrics.llm_completion_tokens = prometheus:counter("llm_completion_tokens",
             "LLM service consumed completion tokens",
             {"route", "service", "consumer", "node",
+            "request_type", "llm_model",
             unpack(extra_labels("llm_completion_tokens"))},
             llm_completion_tokens_exptime)
 
     metrics.llm_active_connections = prometheus:gauge("llm_active_connections",
             "Number of active connections to LLM service",
-            {"route", "service", "consumer", "node",
+            {"route", "route_id", "matched_uri", "matched_host",
+            "service", "service_id", "consumer", "node",
+            "request_type", "llm_model",
             unpack(extra_labels("llm_active_connections"))},
             llm_active_connections_exptime)
 
@@ -378,13 +382,13 @@ function _M.http_log(conf, ctx)
     end
 
     if vars.llm_prompt_tokens ~= "" then
-        metrics.llm_prompt_tokens:observe(tonumber(vars.llm_prompt_tokens),
+        metrics.llm_prompt_tokens:inc(tonumber(vars.llm_prompt_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
             vars.request_type, vars.llm_model,
             unpack(extra_labels("llm_prompt_tokens", ctx))))
     end
     if vars.llm_completion_tokens ~= "" then
-        metrics.llm_completion_tokens:observe(tonumber(vars.llm_completion_tokens),
+        metrics.llm_completion_tokens:inc(tonumber(vars.llm_completion_tokens),
             gen_arr(route_id, service_id, consumer_name, balancer_ip,
             vars.request_type, vars.llm_model,
             unpack(extra_labels("llm_completion_tokens", ctx))))
@@ -761,7 +765,6 @@ local function inc_llm_active_connections(ctx, value)
     local service_id = ""
     local service_name = ""
     local consumer_name = ctx.consumer_name or ""
-    local api_product_id = ctx.api_product_id or ""
 
     local matched_route = ctx.matched_route and ctx.matched_route.value
     if matched_route then
@@ -781,11 +784,11 @@ local function inc_llm_active_connections(ctx, value)
         matched_host = ctx.curr_req_matched._host or ""
     end
 
-    metrics.llm_active_connections:set(
-        vars.llm_active_connections + value,
-        gen_arr(route_id, service_id, consumer_name, balancer_ip,
-        route_name, service_name, matched_uri, matched_host,
-        vars.request_type, vars.llm_model,
+    metrics.llm_active_connections:inc(
+        value,
+        gen_arr(route_name, route_id, matched_uri,
+            matched_host, service_name, service_id, consumer_name, balancer_ip,
+            vars.request_type, vars.llm_model,
         unpack(extra_labels("llm_active_connections", ctx)))
     )
 end
