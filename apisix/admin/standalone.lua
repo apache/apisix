@@ -79,20 +79,15 @@ end
 local function get_config()
     local config = shared_dict:get("config")
     if not config then
-        return nil, nil, "not found"
+        return nil, "not found"
     end
 
     local err
     config, err = core.json.decode(config)
     if not config then
-        return nil, nil, "failed to decode json: " .. err
+        return nil, "failed to decode json: " .. err
     end
-    return config, {
-        -- the metadata is also stored in a unique shdict key to prevent
-        -- possible inconsistencies when attempting multiple reads
-        METADATA_LAST_MODIFIED = config[METADATA_LAST_MODIFIED],
-        METADATA_DIGEST = config[METADATA_DIGEST],
-    }
+    return config
 end
 
 
@@ -183,7 +178,7 @@ local function update(ctx)
     end
     req_body = data
 
-    local config, metadata, err = get_config()
+    local config, err = get_config()
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
@@ -194,7 +189,7 @@ local function update(ctx)
     end
 
     -- if the client passes in the same digest, the configuration is not updated
-    if metadata[METADATA_DIGEST] == digest then
+    if config and config[METADATA_DIGEST] == digest then
         -- accepted but not modified because digest is the same
         core.log.info("config not changed: same digest")
         return core.response.exit(204)
@@ -266,6 +261,8 @@ local function update(ctx)
         core.response.exit(500, err)
     end
 
+    core.response.set_header(METADATA_LAST_MODIFIED, apisix_yaml[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, apisix_yaml[METADATA_DIGEST])
     return core.response.exit(202)
 end
 
@@ -274,7 +271,7 @@ local function get(ctx)
     local accept = core.request.header(nil, "accept") or "application/json"
     local want_yaml_resp = core.string.has_prefix(accept, "application/yaml")
 
-    local config, metadata, err = get_config()
+    local config, err = get_config()
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
@@ -315,14 +312,16 @@ local function get(ctx)
         return core.response.exit(500, {error_msg = err})
     end
 
-    core.response.set_header(METADATA_LAST_MODIFIED, metadata[METADATA_LAST_MODIFIED])
-    core.response.set_header(METADATA_DIGEST, metadata[METADATA_DIGEST])
+    ngx.log(ngx.ERR, require('cjson').encode(config))
+
+    core.response.set_header(METADATA_LAST_MODIFIED, config[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, config[METADATA_DIGEST])
     return core.response.exit(200, resp)
 end
 
 
 local function head(ctx)
-    local config, metadata, err = get_config()
+    local config, err = get_config()
     if not config then
         if err ~= "not found" then
             core.log.error("failed to get config from shared dict: ", err)
@@ -332,8 +331,8 @@ local function head(ctx)
         end
     end
 
-    core.response.set_header(METADATA_LAST_MODIFIED, metadata[METADATA_LAST_MODIFIED])
-    core.response.set_header(METADATA_DIGEST, metadata[METADATA_DIGEST])
+    core.response.set_header(METADATA_LAST_MODIFIED, config[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, config[METADATA_DIGEST])
     return core.response.exit(200)
 end
 
