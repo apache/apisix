@@ -132,6 +132,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
 | namespace_id | string | 可选    | public     |       | 服务所在的命名空间 |
 | group_name   | string | 可选    | DEFAULT_GROUP       |       | 服务所在的组 |
+| metadata     | object | 可选    | {}      |       | 使用包含匹配方式根据元数据过滤服务实例 |
 
 #### 指定命名空间
 
@@ -281,3 +282,52 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H "X-API-KEY: $admin_key" -X
   }
 }
 ```
+
+#### 使用元数据过滤服务实例
+
+APISIX 支持根据元数据过滤服务实例。当路由配置了元数据条件时，只有服务实例的元数据包含路由配置中指定的所有键值对，该服务实例才会被选中。
+
+举例：如果服务实例的元数据是 `{lane: "a", env: "prod", version: "1.0"}`，那么它能匹配配置了元数据 `{lane: "a"}` 或 `{lane: "a", env: "prod"}` 的路由，但不能匹配配置了 `{lane: "b"}` 或 `{lane: "a", region: "us"}` 的路由。
+
+使用元数据过滤的路由配置示例：
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/nacosWithMetadata/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "metadata": {
+            "version": "v1"
+          }
+        }
+    }
+}'
+```
+
+此路由只会将流量转发到元数据字段 `version` 为 `v1` 的服务实例。
+
+使用多个元数据条件的示例：
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "uri": "/nacosWithMultipleMetadata/*",
+    "upstream": {
+        "service_name": "APISIX-NACOS",
+        "type": "roundrobin",
+        "discovery_type": "nacos",
+        "discovery_args": {
+          "metadata": {
+            "lane": "a",
+            "env": "prod"
+          }
+        }
+    }
+}'
+```
+
+此路由只会将流量转发到元数据中同时包含 `lane: "a"` 和 `env: "prod"` 的服务实例。
