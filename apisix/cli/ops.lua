@@ -34,7 +34,6 @@ local ipairs = ipairs
 local pairs = pairs
 local print = print
 local type = type
-local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
@@ -212,22 +211,6 @@ Please modify "admin_key" in conf/config.yaml .
         if type(admin_key) ~= "table" or #admin_key == 0
         then
             util.die(help:format("ERROR: missing valid Admin API token."))
-        end
-
-        for _, admin in ipairs(admin_key) do
-            if type(admin.key) == "table" then
-                admin.key = ""
-            else
-                admin.key = tostring(admin.key)
-            end
-
-            if admin.key == "" then
-                stderr:write(
-                    help:format([[WARNING: using empty Admin API.
-                    This will trigger APISIX to automatically generate a random Admin API token.]]),
-                    "\n"
-                )
-            end
         end
     end
 

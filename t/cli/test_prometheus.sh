@@ -84,7 +84,7 @@ plugin_attr:
 
 IP=127.0.0.1 PORT=9092 make run
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(get_admin_key)
 # initialize prometheus metrics public API route #1
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/metrics1 \
     -H "X-API-KEY: $admin_key" \
@@ -160,7 +160,7 @@ plugin_attr:
 
 IP=127.0.0.1 PORT=9092 make run
 
-admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
+admin_key=$(get_admin_key)
 # initialize prometheus metrics public API route #2
 code=$(curl -v -k -i -m 20 -o /dev/null -s -w %{http_code} -X PUT http://127.0.0.1:9180/apisix/admin/routes/metrics2 \
     -H "X-API-KEY: $admin_key" \
