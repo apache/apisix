@@ -52,19 +52,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: test
---- timeout: 15
---- max_size: 204800
---- exec
-cd t && pnpm test admin/standalone.spec.ts 2>&1
---- no_error_log
-failed to execute the script with status
---- response_body eval
-qr/PASS admin\/standalone.spec.ts/
-
-
-
-=== TEST 2: send /healthcheck should fail because config is not loaded yet
+=== TEST 1: send /healthcheck should fail because config is not loaded yet
 --- init_by_lua_block
     require "resty.core"
     apisix = require("apisix")
@@ -86,29 +74,20 @@ GET /t
 
 
 
-=== TEST 3: configure route and send /healthcheck should pass
+=== TEST 2: configure route and send /healthcheck should pass
 --- config
     location /t {
         content_by_lua_block {
+            ngx.sleep(1) -- wait for event broadcast started
+
             local t = require("lib.test_admin").test
             local code, body = t('/apisix/admin/configs',
                  ngx.HTTP_PUT,
                  [[{"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}]],
                  nil,
                  {
-                  ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
-                 }
-                )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            local code, body = t('/apisix/admin/configs',
-                 ngx.HTTP_PUT,
-                 [[{"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}]],
-                 nil,
-                 {
-                  ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1"
+                  ["X-API-KEY"] = "edd1c9f034335f136f87ad84b625c8f1",
+                  ["X-Digest"] = "1"
                  }
                 )
 

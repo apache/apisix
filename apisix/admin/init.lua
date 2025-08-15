@@ -465,7 +465,7 @@ local standalone_uri_route = {
     http_head_route,
     {
         paths = [[/apisix/admin/configs]],
-        methods = {"GET", "PUT"},
+        methods = {"GET", "PUT", "HEAD"},
         handler = standalone_run,
     },
 }
