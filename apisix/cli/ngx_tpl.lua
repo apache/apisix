@@ -806,6 +806,14 @@ http {
             set $dubbo_method                '';
             {% end %}
 
+            set $request_type               'traditional_http';
+
+            set $llm_time_to_first_token        '';
+            set $llm_model                      '';
+            set $llm_prompt_tokens              '';
+            set $llm_completion_tokens          '';
+
+
             access_by_lua_block {
                 apisix.http_access_phase()
             }

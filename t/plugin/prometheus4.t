@@ -121,7 +121,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0.0.1",upstream_addr="127.0.0.1:1980",upstream_status="200"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="10",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",upstream_addr="127.0.0.1:1980",upstream_status="200"\} \d+/
 
 
 
@@ -143,7 +143,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",dummy=""\} \d+/
+qr/apisix_http_status\{code="200",route="10",matched_uri="\/hello",matched_host="",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",dummy=""\} \d+/
 
 
 
@@ -195,11 +195,11 @@ plugin_attr:
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="15"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="55"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="105"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="205"\} \d+
-apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",le="505"\} \d+/
+qr/apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",le="15"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",le="55"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",le="105"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",le="205"\} \d+
+apisix_http_latency_bucket\{type="upstream",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model="",le="505"\} \d+/
 
 
 

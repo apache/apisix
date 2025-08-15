@@ -218,6 +218,11 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
+    # available variables:
+    # request_type: traditional_http / ai_chat / ai_stream
+    # llm_time_to_first_token: duration from the start send request to ai server to the first token received
+    # llm_prompt_tokens: number of tokens in the prompt
+    # llm_completion_tokens: number of tokens in the chat completion
     access_log_format: |
       "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     # Customize log format: http://nginx.org/en/docs/varindex.html
