@@ -312,8 +312,6 @@ local function get(ctx)
         return core.response.exit(500, {error_msg = err})
     end
 
-    ngx.log(ngx.ERR, require('cjson').encode(config))
-
     core.response.set_header(METADATA_LAST_MODIFIED, config[METADATA_LAST_MODIFIED])
     core.response.set_header(METADATA_DIGEST, config[METADATA_DIGEST])
     return core.response.exit(200, resp)
