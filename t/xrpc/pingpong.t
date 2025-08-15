@@ -154,7 +154,7 @@ pp\x01\x00\x00\x00\x00\x00\x00\x00"
 "pp\x02\x00\x00\x00\x00\x00\x00\x03ABC" x 3
 --- log_level: debug
 --- no_error_log
-stream lua tcp socket set keepalive
+stream lua tcp socket keepalive create connection pool for key "127.0.0.1:1995"
 --- stream_conf_enable
 
 
