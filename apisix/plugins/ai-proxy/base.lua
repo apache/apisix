@@ -21,6 +21,27 @@ local bad_request = ngx.HTTP_BAD_REQUEST
 
 local _M = {}
 
+function _M.set_logging(ctx, summaries, payloads)
+    if summaries then
+        ctx.llm_summary = {
+            model = ctx.var.llm_model,
+            duration = ctx.var.llm_time_to_first_token,
+            prompt_tokens = ctx.var.llm_prompt_tokens,
+            completion_tokens = ctx.var.llm_completion_tokens,
+        }
+    end
+    if payloads then
+        ctx.llm_request = {
+            messages = ctx.var.llm_request_body and ctx.var.llm_request_body.messages,
+            stream = ctx.var.request_type == "ai_stream"
+        }
+        ctx.llm_response_text = {
+            content = ctx.var.llm_response_text
+        }
+    end
+end
+
+
 function _M.before_proxy(conf, ctx)
     local ai_instance = ctx.picked_ai_instance
     local ai_driver = require("apisix.plugins.ai-drivers." .. ai_instance.provider)
@@ -42,7 +63,7 @@ function _M.before_proxy(conf, ctx)
             include_usage = true
         }
     end
-
+    ctx.var.llm_request_body = request_body
     return ai_driver:request(ctx, conf, request_body, extra_opts)
 end
 

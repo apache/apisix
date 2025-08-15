@@ -181,117 +181,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: minimal viable configuration
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-proxy")
-            local ok, err = plugin.check_schema({
-                provider = "openai",
-                options = {
-                    model = "gpt-4",
-                },
-                auth = {
-                    header = {
-                        some_header = "some_value"
-                    }
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 2: unsupported provider
---- config
-    location /t {
-        content_by_lua_block {
-            local plugin = require("apisix.plugins.ai-proxy")
-            local ok, err = plugin.check_schema({
-                provider = "some-unique",
-                options = {
-                    model = "gpt-4",
-                },
-                auth = {
-                    header = {
-                        some_header = "some_value"
-                    }
-                }
-            })
-
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("passed")
-            end
-        }
-    }
---- response_body eval
-qr/.*property "provider" validation failed: matches none of the enum values.*/
-
-
-
-=== TEST 3: set route with wrong auth header
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer wrongtoken"
-                                }
-                            },
-                            "options": {
-                                "model": "gpt-35-turbo-instruct",
-                                "max_tokens": 512,
-                                "temperature": 1.0
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724"
-                            },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 4: send request
---- request
-POST /anything
-{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- error_code: 401
---- response_body
-Unauthorized
-
-
-
-=== TEST 5: set route with right auth header
+=== TEST 1: set route with logging summaries and payloads
 --- config
     location /t {
         content_by_lua_block {
@@ -316,8 +206,166 @@ Unauthorized
                             "override": {
                                 "endpoint": "http://localhost:6724"
                             },
-                            "ssl_verify": false
-                        }
+                            "ssl_verify": false,
+                            "logging": {
+                                "summaries": true,
+                                "payloads": true
+                            }
+                        },
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 2: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer token
+--- error_log
+send data to kafka:
+llm_request
+llm_summary
+You are a mathematician
+gpt-35-turbo-instruct
+llm_response_text
+
+
+
+=== TEST 3: set route with logging summary but no payload
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false,
+                            "logging": {
+                                "summaries": true,
+                                "payloads": false
+                            }
+                        },
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer token
+--- error_log
+send data to kafka:
+llm_summary
+gpt-35-turbo-instruct
+--- no_error_log
+llm_request
+llm_response_text
+
+
+
+=== TEST 5: set route with no logging summary and payload - default behaviour
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "options": {
+                                "model": "gpt-35-turbo-instruct",
+                                "max_tokens": 512,
+                                "temperature": 1.0
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724"
+                            },
+                            "ssl_verify": false,
+                            "logging": {
+                                "summaries": false,
+                                "payloads": false
+                            }
+                        },
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
                     }
                 }]]
             )
@@ -339,58 +387,14 @@ POST /anything
 { "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
 --- more_headers
 Authorization: Bearer token
---- error_code: 200
---- response_body eval
-qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
+--- no_error_log
+llm_request
+llm_response_text
+llm_summary
 
 
 
-=== TEST 7: send request with empty body
---- request
-POST /anything
---- more_headers
-Authorization: Bearer token
---- error_code: 400
---- response_body_chomp
-failed to get request body: request body is empty
-
-
-
-=== TEST 8: send request with wrong method (GET) should work
---- request
-GET /anything
-{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
---- more_headers
-Authorization: Bearer token
---- error_code: 200
---- response_body eval
-qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
-
-
-
-=== TEST 9: wrong JSON in request body should give error
---- request
-GET /anything
-{}"messages": [ { "role": "system", "cont
---- error_code: 400
---- response_body
-{"message":"could not get parse JSON request body: Expected the end but found T_STRING at character 3"}
-
-
-
-=== TEST 10: content-type should be JSON
---- request
-POST /anything
-prompt%3Dwhat%2520is%25201%2520%252B%25201
---- more_headers
-Content-Type: application/x-www-form-urlencoded
---- error_code: 400
---- response_body chomp
-unsupported content-type: application/x-www-form-urlencoded, only application/json is supported
-
-
-
-=== TEST 11: model options being merged to request body
+=== TEST 7: set route with stream = true (SSE) with ai-proxy-multi plugin
 --- config
     location /t {
         content_by_lua_block {
@@ -400,151 +404,46 @@ unsupported content-type: application/x-www-form-urlencoded, only application/js
                  [[{
                     "uri": "/anything",
                     "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "self-hosted",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "custom-instruct",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0,
+                                        "stream": true
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:7737/v1/chat/completions"
+                                    }
                                 }
-                            },
-                            "options": {
-                                "model": "some-model",
-                                "foo": "bar",
-                                "temperature": 1.0
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724"
-                            },
-                            "ssl_verify": false
-                        }
+                            ],
+                            "ssl_verify": false,
+                            "logging": {
+                                "summaries": true,
+                                "payloads": true
+                            }
+                        },
+                            "kafka-logger": {
+                                "broker_list" :
+                                  {
+                                    "127.0.0.1":9092
+                                  },
+                                "kafka_topic" : "test2",
+                                "key" : "key1",
+                                "timeout" : 1,
+                                "batch_max_size": 1
+                            }
                     }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body, actual_body = t("/anything",
-                ngx.HTTP_POST,
-                [[{
-                    "messages": [
-                        { "role": "system", "content": "You are a mathematician" },
-                        { "role": "user", "content": "What is 1+1?" }
-                    ]
-                }]],
-                nil,
-                {
-                    ["test-type"] = "options",
-                    ["Content-Type"] = "application/json",
-                }
-            )
-
-            ngx.status = code
-            ngx.say(actual_body)
-
-        }
-    }
---- error_code: 200
---- response_body_chomp
-options_works
-
-
-
-=== TEST 12: override path
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "model": "some-model",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
-                                }
-                            },
-                            "options": {
-                                "foo": "bar",
-                                "temperature": 1.0
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724/random"
-                            },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            local code, body, actual_body = t("/anything",
-                ngx.HTTP_POST,
-                [[{
-                    "messages": [
-                        { "role": "system", "content": "You are a mathematician" },
-                        { "role": "user", "content": "What is 1+1?" }
-                    ]
-                }]],
-                nil,
-                {
-                    ["test-type"] = "path",
-                    ["Content-Type"] = "application/json",
-                }
-            )
-
-            ngx.status = code
-            ngx.say(actual_body)
-
-        }
-    }
---- response_body_chomp
-path override works
-
-
-
-=== TEST 13: set route with stream = true (SSE)
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
-                                }
-                            },
-                            "options": {
-                                "model": "gpt-35-turbo-instruct",
-                                "max_tokens": 512,
-                                "temperature": 1.0,
-                                "stream": true
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:7737"
-                            },
-                            "ssl_verify": false
-                        }
-                    }
-                }]]
+                 }]]
             )
 
             if code >= 300 then
@@ -558,7 +457,7 @@ passed
 
 
 
-=== TEST 14: test is SSE works as expected
+=== TEST 8: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
@@ -585,6 +484,7 @@ passed
                 },
                 path = "/anything",
                 body = [[{
+                    "stream": true,
                     "messages": [
                         { "role": "system", "content": "some content" }
                     ]
@@ -616,58 +516,8 @@ passed
     }
 --- response_body_eval
 qr/6data: \[DONE\]\n\n/
-
-
-
-=== TEST 15: proxy embedding endpoint
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/embeddings",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
-                                }
-                            },
-                            "options": {
-                                "model": "text-embedding-ada-002",
-                                "encoding_format": "float"
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724/v1/embeddings"
-                            }
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-                ngx.say(body)
-                return
-            end
-
-            ngx.say("passed")
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 16: send request to embedding api
---- request
-POST /embeddings
-{
-    "input": "The food was delicious and the waiter..."
-}
---- error_code: 200
---- response_body_like eval
-qr/.*text-embedding-ada-002*/
+--- error_log
+send data to kafka:
+llm_request
+llm_summary
+some content
