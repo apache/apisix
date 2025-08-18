@@ -233,6 +233,7 @@ do
         upstream_upgrade           = true,
         upstream_connection        = true,
         upstream_uri               = true,
+        llm_content_risk_level     = true,
 
         upstream_mirror_host       = true,
         upstream_mirror_uri        = true,

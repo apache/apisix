@@ -856,6 +856,7 @@ _EOC_
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
 
+            set \$llm_content_risk_level         '';
             access_by_lua_block {
                 -- wait for etcd sync
                 ngx.sleep($wait_etcd_sync)

@@ -806,6 +806,7 @@ http {
             set $dubbo_method                '';
             {% end %}
 
+            set $llm_content_risk_level         '';
             access_by_lua_block {
                 apisix.http_access_phase()
             }
