@@ -682,3 +682,51 @@ GET /hello
 --- error_code: 502
 --- error_log
 failed to get ssl cert: ssl id [1] not exits
+
+
+
+=== TEST 19: `tls.verify` only
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local data = {
+                upstream = {
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1983"] = 1,
+                    },
+                    tls = {
+                        verify = true
+                    }
+                },
+                uri = "/hello"
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 20: hit
+When only `tls.verify` is present, the matching logic related to client_cert/client_key 
+or client_cert_id should not be entered.
+--- request
+GET /hello
+--- response_body
+hello world

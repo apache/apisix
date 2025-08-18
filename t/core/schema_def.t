@@ -232,6 +232,19 @@ passed
             assert(not ok)
             assert(err ~= nil)
 
+            upstream = {
+                nodes = {
+                    ["127.0.0.1:8080"] = 1
+                },
+                type = "roundrobin",
+                tls = {
+                    verify = false
+                }
+            }
+            local ok, err = core.schema.check(schema_def.upstream, upstream)
+            assert(not ok)
+            assert(err ~= nil)
+
             ngx.say("passed")
         }
     }
