@@ -92,7 +92,7 @@ jobs:
               # First try to get the key from config.yaml
               local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml)
               # If the key is empty (auto-generated), extract it from logs
-              if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
+              if [ -z "$admin_key" ] || [ "$admin_key" = "null" ]; then
                   admin_key=$(grep -A 10 "Generated admin keys for this session:" logs/error.log | grep -E "^  [A-Za-z0-9]{32}$" | head -1 | sed 's/^  //')
               fi
               echo "$admin_key"
@@ -101,9 +101,9 @@ jobs:
           # Validate that we have a valid admin key
           if [ -z "$admin_key" ] || [ "$admin_key" = "null" ]; then
               echo "ERROR: Could not obtain valid admin key"
-              echo "Config file content:"
+              echo "===============confing.yaml==============="
               cat conf/config.yaml
-              echo "Error log content:"
+              echo "===============error.log==============="
               cat logs/error.log
               exit 1
           fi
