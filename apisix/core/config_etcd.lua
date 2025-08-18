@@ -199,7 +199,7 @@ local function do_run_watch(premature)
     if res and res.body and res.body.header and res.body.header.revision then
         latest_rev = tonumber(res.body.header.revision)
     else
-        log.error("failed to get latest revision, res: ", inspect(res))
+        log.error("failed to get latest revision, res: ", core.json.delay_encode(res))
     end
 
     log.info("restart watchdir: start_revision=", opts.start_revision)
