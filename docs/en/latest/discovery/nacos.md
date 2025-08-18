@@ -132,7 +132,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
 | namespace_id | string | optional    | public     |       | This parameter is used to specify the namespace of the corresponding service |
 | group_name   | string | optional    | DEFAULT_GROUP       |       | This parameter is used to specify the group of the corresponding service |
-| metadata     | object | optional    | {}      |       | Filter service instances by metadata using containment matching |
+| metadata     | object | optional    |         |       | Filter service instances by metadata using containment matching |
 
 #### Specify the namespace
 

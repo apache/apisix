@@ -132,7 +132,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
 | namespace_id | string | 可选    | public     |       | 服务所在的命名空间 |
 | group_name   | string | 可选    | DEFAULT_GROUP       |       | 服务所在的组 |
-| metadata     | object | 可选    | {}      |       | 使用包含匹配方式根据元数据过滤服务实例 |
+| metadata     | object | 可选    |         |       | 使用包含匹配方式根据元数据过滤服务实例 |
 
 #### 指定命名空间
 
