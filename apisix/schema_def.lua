@@ -495,7 +495,8 @@ local upstream_schema = {
                         type = "array",
                         items = {
                             type = "string"
-                        }
+                        },
+                        uniqueItems = true
                     }
                 },
             },

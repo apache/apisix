@@ -317,6 +317,21 @@ passed
                     },
                     expected_error_pattern = "metadata.*wrong type"
                 },
+                {
+                    name = "invalid metadata with duplicate values in array",
+                    should_pass = false,
+                    upstream = {
+                        service_name = "test-service",
+                        discovery_type = "nacos",
+                        type = "roundrobin",
+                        discovery_args = {
+                            metadata = {
+                                lane = {"a", "b", "a"}  -- duplicate "a" should fail uniqueItems validation
+                            }
+                        }
+                    },
+                    expected_error_pattern = "expected unique items"
+                },
             }
 
             -- Execute all test cases
