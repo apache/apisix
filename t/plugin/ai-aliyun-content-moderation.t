@@ -239,7 +239,7 @@ qr/As an AI language model, I cannot write unethical or controversial content fo
 
 
 
-=== TEST 7: check ai reponse (stream=false)
+=== TEST 7: check ai response (stream=false)
 --- config
     location /t {
         content_by_lua_block {
