@@ -29,7 +29,7 @@ local type             = type
 local ngx              = ngx
 
 local admin_key_shm_name = "admin-keys"
-local _M = {version = 0.1}
+local _M = {}
 local admin_keys_cache = {}
 
 function _M.admin_key_required()
