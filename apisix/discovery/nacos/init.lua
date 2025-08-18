@@ -23,6 +23,7 @@ local ipairs             = ipairs
 local pairs              = pairs
 local next               = next
 local type               = type
+local assert             = assert
 local math               = math
 local math_random        = math.random
 local ngx                = ngx
@@ -343,6 +344,7 @@ local function fetch_full_registry(premature)
         local key = get_key(namespace_id, group_name, service_info.service_name)
         service_names[key] = true
         for _, host in ipairs(data.hosts) do
+            assert(host.metadata == nil or type(host.metadata) == "table")
             local node = {
                 host = host.ip,
                 port = host.port,
