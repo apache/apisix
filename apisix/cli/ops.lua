@@ -793,10 +793,6 @@ end
 local function start(env, ...)
     cleanup(env)
 
-    if env.apisix_home then
-        profile.apisix_home = env.apisix_home
-    end
-
     -- Because the worker process started by apisix has "nobody" permission,
     -- it cannot access the `/root` directory. Therefore, it is necessary to
     -- prohibit APISIX from running in the /root directory.
