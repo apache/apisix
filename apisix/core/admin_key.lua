@@ -51,6 +51,10 @@ function _M.get_admin_keys()
 
     -- Try loading from shared memory
     local admin_keys_shm = ngx.shared[admin_key_shm_name]
+    if not admin_keys_shm then
+        log.error("admin-keys shared memory zone not configured")
+        return
+    end
     if admin_keys_shm and admin_keys_shm:get("completed") then
         local total_keys = admin_keys_shm:get("total_keys") or 0
         local keys = {}
