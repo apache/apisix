@@ -328,4 +328,3 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X
 ```
 
 This route will only route traffic to service instances that have `env: "prod"` and `lane` set to either `"a"` or `"b"` in their metadata.
-
