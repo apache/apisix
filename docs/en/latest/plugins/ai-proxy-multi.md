@@ -946,12 +946,6 @@ The following example demonstrates how you can log LLM request related informati
 * `llm_prompt_tokens`: Number of tokens in the prompt.
 * `llm_completion_tokens`: Number of chat completion tokens in the prompt.
 
-:::note
-
-The usage in this example will become available in APISIX 3.13.0.
-
-:::
-
 Update the access log format in your configuration file to include additional LLM related variables:
 
 ```yaml title="conf/config.yaml"
