@@ -44,7 +44,7 @@ get_admin_key() {
     local admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"//g')
     echo "DEBUG: config.yaml admin_key: '$admin_key'" >&2
     # If the key is empty (auto-generated), extract it from logs
-    if [ -z "$admin_key" ] || [ "$admin_key" = "''" ] || [ "$admin_key" = "null" ]; then
+    if [ -z "$admin_key" ] || [ "$admin_key" = "null" ]; then
         for log_file in "logs/error.log" "/usr/local/apisix/logs/error.log"; do
             if [ -f "$log_file" ]; then
                 echo "DEBUG: Checking log file: $log_file" >&2
