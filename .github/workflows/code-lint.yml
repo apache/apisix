@@ -1,11 +1,6 @@
 name: Code Lint
 
 on:
-  push:
-    branches: [master, 'release/**', 'fix/config-rewrites']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   pull_request:
     branches: [master, 'release/**']
     paths-ignore:
