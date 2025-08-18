@@ -282,9 +282,9 @@ The formatted response as below:
 
 #### Metadata filtering
 
-APISIX supports filtering service instances based on metadata. When a route is configured with metadata conditions, only service instances whose metadata contains all the key-value pairs specified in the route's `metadata` configuration will be selected.
+APISIX supports filtering service instances based on metadata. When a route is configured with metadata conditions, only service instances whose metadata contains all the key-value pairs specified in the route's `metadata` configuration will be selected. The metadata values in the route configuration are arrays, and a service instance matches if its metadata value equals any value in the corresponding array.
 
-Example: If a service instance has metadata `{lane: "a", env: "prod", version: "1.0"}`, it will match routes configured with metadata `{lane: "a"}` or `{lane: "a", env: "prod"}`, but not routes configured with `{lane: "b"}` or `{lane: "a", region: "us"}`.
+Example: If a service instance has metadata `{lane: "a", env: "prod", version: "1.0"}`, it will match routes configured with metadata `{lane: ["a"]}` or `{lane: ["a"], env: ["prod"]}`, but not routes configured with `{lane: ["b"]}` or `{lane: ["a"], region: ["us"]}`.
 
 Example of routing a request with metadata filtering:
 
@@ -298,7 +298,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X
         "discovery_type": "nacos",
         "discovery_args": {
           "metadata": {
-            "version": "v1"
+            "version": ["v1"]
           }
         }
     }
@@ -319,12 +319,13 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X
         "discovery_type": "nacos",
         "discovery_args": {
           "metadata": {
-            "lane": "a",
-            "env": "prod"
+            "lane": ["a", "b"],
+            "env": ["prod"]
           }
         }
     }
 }'
 ```
 
-This route will only route traffic to service instances that have both `lane: "a"` and `env: "prod"` in their metadata.
+This route will only route traffic to service instances that have `env: "prod"` and `lane` set to either `"a"` or `"b"` in their metadata.
+
