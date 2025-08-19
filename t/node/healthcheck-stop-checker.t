@@ -45,7 +45,7 @@ deployment:
       - "http://127.0.0.1:2379"
     use_grpc: false
   admin:
-    admin_key_required: false
+    admin_key: null
 _EOC_
 
 add_block_preprocessor(sub {

@@ -27,7 +27,7 @@ apisix:
     node_listen: 1984
     router:
         http: 'radixtree_host_uri'
-    admin_key_required: false
+    admin_key: null
 deployment:
     role: data_plane
     role_data_plane:

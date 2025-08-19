@@ -146,7 +146,7 @@ done
             local data = [[
 apisix:
   node_listen: 1984
-  admin_key_required: false
+  admin_key: null
 plugins:
   - prometheus
             ]]

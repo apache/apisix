@@ -31,7 +31,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key_required: false
+    admin_key: ~
     admin_api_version: v3
 apisix:
     node_listen: 1984
