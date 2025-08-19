@@ -72,6 +72,7 @@ local _M = {
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,
+    worker_startup_time_threshold = 60,
     data_encryption = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }

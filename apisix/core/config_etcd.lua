@@ -1168,10 +1168,14 @@ function _M.init_worker()
         return nil, err
     end
 
+    local threshold = table.try_read_attr(local_conf, "apisix",
+                                    "worker_startup_time_threshold") or 60
     -- if the startup time of a worker differs significantly from that of the master process,
     -- we consider it to have restarted, and at this point,
     -- it is necessary to reload the full configuration from etcd.
-    if configuration_loaded_time and ngx_time() - configuration_loaded_time > 60 then
+    if configuration_loaded_time and ngx_time() - configuration_loaded_time > threshold then
+        log.warn("master process has been running for a long time, ",
+                     "reloading the full configuration from etcd for this new worker")
         local err = init_loaded_configuration()
         if err then
             return nil, err
