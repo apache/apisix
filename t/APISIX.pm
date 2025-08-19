@@ -969,6 +969,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
+    admin_key_required: false
     admin_key: null
 _EOC_
 

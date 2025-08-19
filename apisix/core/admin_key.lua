@@ -35,7 +35,8 @@ function _M.admin_key_required(local_conf)
 
     -- Check if we're in a deployment role that needs admin keys
     local deployment_role = local_conf.deployment and local_conf.deployment.role
-    if not deployment_role or (deployment_role ~= "traditional" and deployment_role ~= "control_plane") then
+    if not deployment_role or (deployment_role ~= "traditional" and 
+                              deployment_role ~= "control_plane") then
         return false  -- Admin keys not required for data_plane or other roles
     end
 
@@ -75,14 +76,16 @@ function _M.init()
     local admin_keys = _M.get_admin_keys(local_conf)
     if not admin_keys or #admin_keys == 0 then
         -- No admin keys configured but admin_key_required is true
-        log.error("admin_key: admin keys are required but none are configured. Please set admin_key values in conf/config.yaml")
+        log.error("admin_key: admin keys are required but none are configured. " ..
+                  "Please set admin_key values in conf/config.yaml")
         ngx_exit(1)
     end
 
     -- Check if any admin keys have empty values
     for _, admin_key in ipairs(admin_keys) do
         if admin_key.role == "admin" and admin_key.key == "" then
-            log.error("admin_key: empty admin API key detected. APISIX cannot start with empty admin keys when admin_key_required is true.")
+            log.error("admin_key: empty admin API key detected. " ..
+                      "APISIX cannot start with empty admin keys when admin_key_required is true.")
             log.error("admin_key: please set proper admin_key values in conf/config.yaml")
             ngx_exit(1)
         end

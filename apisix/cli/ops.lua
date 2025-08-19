@@ -35,7 +35,6 @@ local ipairs = ipairs
 local pairs = pairs
 local print = print
 local type = type
-local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
@@ -183,18 +182,14 @@ local function init(env)
     end
 
     -- check the Admin API token
-    local checked_admin_key = false
     local allow_admin = yaml_conf.deployment.admin and
         yaml_conf.deployment.admin.allow_admin
-    if yaml_conf.apisix.enable_admin and allow_admin
-       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
-        checked_admin_key = true
-    end
+    local admin_bypass_allowed = yaml_conf.apisix.enable_admin and allow_admin
+       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24"
 
     -- Use admin_key module to check if admin key is required and validate
-    if yaml_conf.apisix.enable_admin and not checked_admin_key then
+    if yaml_conf.apisix.enable_admin and not admin_bypass_allowed then
         if not admin_key.admin_key_required(yaml_conf) then
-            checked_admin_key = true
             print("Warning! Admin key is bypassed! "
                     .. "If you are deploying APISIX in a production environment, "
                     .. "please enable `admin_key_required` and set a secure admin key!")
@@ -203,13 +198,16 @@ local function init(env)
             local admin_keys = admin_key.get_admin_keys(yaml_conf)
 
             if not admin_keys or #admin_keys == 0 then
-                util.die("ERROR: Admin keys are required but none are configured. Please set admin_key values in conf/config.yaml")
+                util.die("ERROR: Admin keys are required but none are configured. " ..
+                         "Please set admin_key values in conf/config.yaml")
             end
 
             -- Check for empty admin keys
             for _, admin in ipairs(admin_keys) do
                 if admin.role == "admin" and admin.key == "" then
-                    util.die("ERROR: Empty admin API key detected. APISIX cannot start with empty admin keys. Please set proper admin_key values in conf/config.yaml")
+                    util.die("ERROR: Empty admin API key detected. " ..
+                             "APISIX cannot start with empty admin keys. " ..
+                             "Please set proper admin_key values in conf/config.yaml")
                 end
             end
         end
