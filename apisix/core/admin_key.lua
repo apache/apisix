@@ -30,7 +30,7 @@ local _M = {}
 function _M.admin_key_required(local_conf)
     -- Check if local_conf is valid
     if not local_conf then
-        return false
+        log.error("admin_key: local configuration not available")
     end
 
     -- Check if we're in a deployment role that needs admin keys
@@ -40,19 +40,14 @@ function _M.admin_key_required(local_conf)
     end
 
     -- Check the admin_key_required configuration setting
-    if local_conf.deployment.admin and local_conf.deployment.admin.admin_key_required == false then
-        return false
+    if local_conf.deployment.admin and local_conf.deployment.admin.admin_key_required then
+        return local_conf.deployment.admin.admin_key_required
     end
 
     return true  -- Admin keys are required by default for traditional/control_plane
 end
 
 function _M.get_admin_keys(local_conf)
-    -- Check if admin keys are required for this configuration
-    if not _M.admin_key_required(local_conf) then
-        return {}
-    end
-
     -- Get admin keys from configuration
     local admin_keys = try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if not admin_keys or type(admin_keys) ~= "table" then
