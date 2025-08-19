@@ -42,6 +42,7 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
+  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
