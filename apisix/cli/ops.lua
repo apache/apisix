@@ -22,7 +22,6 @@ local schema = require("apisix.cli.schema")
 local ngx_tpl = require("apisix.cli.ngx_tpl")
 local cli_ip = require("apisix.cli.ip")
 local profile = require("apisix.core.profile")
-local admin_key = require("apisix.core.admin_key")
 local template = require("resty.template")
 local argparse = require("argparse")
 local pl_path = require("pl.path")
@@ -184,31 +183,48 @@ local function init(env)
     -- check the Admin API token
     local allow_admin = yaml_conf.deployment.admin and
         yaml_conf.deployment.admin.allow_admin
-    local admin_bypass_allowed = yaml_conf.apisix.enable_admin and allow_admin
-       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24"
+    if yaml_conf.apisix.enable_admin and allow_admin
+       and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
+        checked_admin_key = true
+    end
+    -- check if admin_key is required
+    if yaml_conf.deployment.admin.admin_key_required == false then
+        checked_admin_key = true
+        print("Warning! Admin key is bypassed! "
+                .. "If you are deploying APISIX in a production environment, "
+                .. "please enable `admin_key_required` and set a secure admin key!")
+    end
 
-    -- Use admin_key module to check if admin key is required and validate
-    if yaml_conf.apisix.enable_admin and not admin_bypass_allowed then
-        if not admin_key.admin_key_required(yaml_conf) then
-            print("Warning! Admin key is bypassed! "
-                    .. "If you are deploying APISIX in a production environment, "
-                    .. "please enable `admin_key_required` and set a secure admin key!")
-        else
-            -- Admin keys are required, validate them
-            local admin_keys = admin_key.get_admin_keys(yaml_conf)
+    if yaml_conf.apisix.enable_admin and not checked_admin_key then
+        local help = [[
 
-            if not admin_keys or #admin_keys == 0 then
-                util.die("ERROR: Admin keys are required but none are configured. " ..
-                         "Please set admin_key values in conf/config.yaml")
+%s
+Please modify "admin_key" in conf/config.yaml .
+
+]]
+        local admin_key = yaml_conf.deployment.admin
+        if admin_key then
+            admin_key = admin_key.admin_key
+        end
+
+        if type(admin_key) ~= "table" or #admin_key == 0
+        then
+            util.die(help:format("ERROR: missing valid Admin API token."))
+        end
+
+        for _, admin in ipairs(admin_key) do
+            if type(admin.key) == "table" then
+                admin.key = ""
+            else
+                admin.key = tostring(admin.key)
             end
 
-            -- Check for empty admin keys
-            for _, admin in ipairs(admin_keys) do
-                if admin.role == "admin" and admin.key == "" then
-                    util.die("ERROR: Empty admin API key detected. " ..
-                             "APISIX cannot start with empty admin keys. " ..
-                             "Please set proper admin_key values in conf/config.yaml")
-                end
+            if admin.key == "" then
+                stderr:write(
+                    help:format([[WARNING: using empty Admin API.
+                    This will trigger APISIX to automatically generate a random Admin API token.]]),
+                    "\n"
+                )
             end
         end
     end

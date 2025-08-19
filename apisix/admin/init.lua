@@ -16,7 +16,6 @@
 --
 local require = require
 local core = require("apisix.core")
-local admin_key = require("apisix.core.admin_key")
 local get_uri_args = ngx.req.get_uri_args
 local route = require("apisix.utils.router")
 local plugin = require("apisix.plugin")
@@ -72,14 +71,13 @@ local router
 local function check_token(ctx)
     local local_conf = core.config.local_conf()
 
-    -- Use admin_key module to check if admin key is required
-    if not admin_key.admin_key_required(local_conf) then
+    -- check if admin_key is required
+    if local_conf.deployment.admin.admin_key_required == false then
         return true
     end
 
-    -- Use admin_key module to get admin keys
-    local admin_keys = admin_key.get_admin_keys(local_conf)
-    if not admin_keys or #admin_keys == 0 then
+    local admin_key = core.table.try_read_attr(local_conf, "deployment", "admin", "admin_key")
+    if not admin_key then
         return true
     end
 
@@ -90,7 +88,7 @@ local function check_token(ctx)
     end
 
     local admin
-    for i, row in ipairs(admin_keys) do
+    for i, row in ipairs(admin_key) do
         if req_token == row.key then
             admin = row
             break
@@ -493,8 +491,8 @@ function _M.init_worker()
     events:register(reload_plugins, reload_event, "PUT")
 
     if ngx_worker_id() == 0 then
-        -- Use admin_key module to check if admin key is required
-        if not admin_key.admin_key_required(local_conf) then
+        -- check if admin_key is required
+        if local_conf.deployment.admin.admin_key_required == false then
             core.log.warn("Admin key is bypassed! ",
                 "If you are deploying APISIX in a production environment, ",
                 "please enable `admin_key_required` and set a secure admin key!")
