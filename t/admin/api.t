@@ -82,7 +82,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: ~
+    admin_key_required: false
     admin_api_version: v2
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
@@ -98,7 +98,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: ~
+    admin_key_required: false
     admin_api_version: v3
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
@@ -117,7 +117,7 @@ Access-Control-Allow-Origin: *
 --- yaml_config
 deployment:
     admin:
-        admin_key: ~
+        admin_key_required: false
         enable_admin_cors: false
 --- response_headers
 Access-Control-Allow-Origin:
@@ -131,7 +131,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: ~
+    admin_key_required: false
     admin_api_version: default
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1

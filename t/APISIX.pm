@@ -970,7 +970,6 @@ deployment:
     config_provider: etcd
   admin:
     admin_key_required: false
-    admin_key: null
 _EOC_
 
     if ($yaml_config !~ m/deployment:/) {
