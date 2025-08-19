@@ -116,7 +116,7 @@ apisix:
 
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
-  # This time will be used to distiguish whether the worker is started first time or restarted due to a crash, unit: second.
+  # This time will be used to distinguish whether the worker is started first time or restarted due to a crash, unit: second.
   worker_startup_time_threshold: 60
 
   data_encryption:                # Data encryption settings.
