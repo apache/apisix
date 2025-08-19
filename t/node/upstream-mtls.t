@@ -724,8 +724,61 @@ passed
 
 
 === TEST 20: hit
-When only `tls.verify` is present, the matching logic related to client_cert/client_key 
-or client_cert_id should not be entered.
+When only `tls.verify` is present, the matching logic related to
+`client_cert`, `client_key` or `client_cert_id` should not be entered
+--- request
+GET /hello
+--- response_body
+hello world
+
+
+
+=== TEST 21: set `verify` with `client_cert`, `client_key`
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin")
+            local json = require("toolkit.json")
+            local ssl_cert = t.read_file("t/certs/mtls_client.crt")
+            local ssl_key = t.read_file("t/certs/mtls_client.key")
+            local data = {
+                upstream = {
+                    scheme = "https",
+                    type = "roundrobin",
+                    nodes = {
+                        ["127.0.0.1:1983"] = 1,
+                    },
+                    tls = {
+                        client_cert = ssl_cert,
+                        client_key = ssl_key,
+                        verify = true
+                    }
+                },
+                uri = "/hello"
+            }
+            local code, body = t.test('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                json.encode(data)
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 22: hit
+`tls.verify` does not affect the parsing of `client_cert`, `client_key`
+--- upstream_server_config
+    ssl_client_certificate ../../certs/mtls_ca.crt;
+    ssl_verify_client on;
 --- request
 GET /hello
 --- response_body

@@ -242,8 +242,8 @@ passed
                 }
             }
             local ok, err = core.schema.check(schema_def.upstream, upstream)
-            assert(not ok)
-            assert(err ~= nil)
+            assert(ok)
+            assert(err == nil)
 
             ngx.say("passed")
         }
