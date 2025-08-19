@@ -181,10 +181,6 @@ GET /apisix/admin/routes
 deployment:
   admin:
     admin_key_required: true
-    admin_key:
-    - name: admin
-      role: admin
-      key: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
 --- more_headers
 X-API-KEY: wrong-key
 --- request
@@ -198,10 +194,6 @@ GET /apisix/admin/routes
 deployment:
   admin:
     admin_key_required: true
-    admin_key:
-    - name: admin
-      role: admin
-      key: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
 --- request
 GET /apisix/admin/routes
 --- error_code: 401
