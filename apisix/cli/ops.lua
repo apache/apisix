@@ -190,7 +190,7 @@ local function init(env)
        and #allow_admin == 1 and allow_admin[1] == "127.0.0.0/24" then
         checked_admin_key = true
     end
-    
+
     -- Use admin_key module to check if admin key is required and validate
     if yaml_conf.apisix.enable_admin and not checked_admin_key then
         if not admin_key.admin_key_required(yaml_conf) then
@@ -201,11 +201,11 @@ local function init(env)
         else
             -- Admin keys are required, validate them
             local admin_keys = admin_key.get_admin_keys(yaml_conf)
-            
+
             if not admin_keys or #admin_keys == 0 then
                 util.die("ERROR: Admin keys are required but none are configured. Please set admin_key values in conf/config.yaml")
             end
-            
+
             -- Check for empty admin keys
             for _, admin in ipairs(admin_keys) do
                 if admin.role == "admin" and admin.key == "" then
