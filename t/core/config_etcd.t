@@ -125,7 +125,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: null
+    admin_key_required: false
   etcd:
     host:
       - "https://127.0.0.1:12379"
@@ -164,13 +164,13 @@ passed
 --- yaml_config
 apisix:
   node_listen: 1984
-  admin_key: null
+  admin_key_required: false
 deployment:
   role: traditional
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: ~
+    admin_key_required: false
   etcd:
     host:
       - "https://127.0.0.1:12379"
@@ -319,7 +319,7 @@ deployment:
     role_traditional:
         config_provider: etcd
     admin:
-        admin_key: null
+        admin_key_required: false
 --- config
     location /t {
         content_by_lua_block {
@@ -366,7 +366,7 @@ deployment:
     role_traditional:
         config_provider: etcd
     admin:
-        admin_key: null
+        admin_key_required: false
         admin_api_version: v2
 --- config
     location /t {
@@ -416,7 +416,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: null
+    admin_key_required: false
   etcd:
     prefix: "/apisix-test"
 --- config
@@ -496,7 +496,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: null
+    admin_key_required: false
   etcd:
     host:
       - "http://127.0.0.1:2379"

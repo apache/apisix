@@ -32,7 +32,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: null
+    admin_key_required: false
 apisix:
   node_listen: 1984
 plugins:
@@ -66,7 +66,7 @@ deployment:
   role_traditional:
     config_provider: etcd
   admin:
-    admin_key: null
+    admin_key_required: false
 apisix:
   node_listen: 1984
 plugins:

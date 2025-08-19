@@ -40,7 +40,7 @@ GET /t
 --- response_body
 node_listen: 1984
 stream_proxy: {"tcp":[9100]}
-admin_key: null
+admin_key_required: false
 
 
 
@@ -58,7 +58,7 @@ failed to parse yaml config: failed to merge, path[apisix->node_listen] expect: 
 --- yaml_config
 deployment:
     admin:
-        admin_key: null
+        admin_key_required: false
 --- config
   location /t {
     content_by_lua_block {
@@ -71,7 +71,7 @@ deployment:
 --- request
 GET /t
 --- response_body
-admin_key: null
+admin_key_required: false
 
 
 
@@ -79,7 +79,7 @@ admin_key: null
 --- yaml_config
 deployment:
     admin:
-        admin_key: null
+        admin_key_required: false
 --- config
   location /t {
     content_by_lua_block {
@@ -92,7 +92,7 @@ deployment:
 --- request
 GET /t
 --- response_body
-admin_key: null
+admin_key_required: false
 
 
 
