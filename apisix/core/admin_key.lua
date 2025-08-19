@@ -21,42 +21,10 @@
 
 local fetch_local_conf = require("apisix.core.config_local").local_conf
 local try_read_attr    = require("apisix.core.table").try_read_attr
-local type             = type
 local log              = require("apisix.core.log")
 local ngx_exit         = ngx.exit
 
 local _M = {}
-
-function _M.admin_key_required(local_conf)
-    -- Check if local_conf is valid
-    if not local_conf then
-        log.error("admin_key: local configuration not available")
-    end
-
-    -- Check if we're in a deployment role that needs admin keys
-    local deployment_role = local_conf.deployment and local_conf.deployment.role
-    if not deployment_role or (deployment_role ~= "traditional" and 
-                              deployment_role ~= "control_plane") then
-        return false  -- Admin keys not required for data_plane or other roles
-    end
-
-    -- Check the admin_key_required configuration setting
-    if local_conf.deployment.admin and local_conf.deployment.admin.admin_key_required then
-        return local_conf.deployment.admin.admin_key_required
-    end
-
-    return true  -- Admin keys are required by default for traditional/control_plane
-end
-
-function _M.get_admin_keys(local_conf)
-    -- Get admin keys from configuration
-    local admin_keys = try_read_attr(local_conf, "deployment", "admin", "admin_key")
-    if not admin_keys or type(admin_keys) ~= "table" then
-        return {}
-    end
-
-    return admin_keys
-end
 
 function _M.init()
     local local_conf = fetch_local_conf()
@@ -67,13 +35,20 @@ function _M.init()
         return
     end
 
-    -- Check if admin key validation is required
-    if not _M.admin_key_required(local_conf) then
+    -- Check if we're in a deployment role that needs admin keys
+    local deployment_role = local_conf.deployment and local_conf.deployment.role
+    if not deployment_role or (deployment_role ~= "traditional" and
+                              deployment_role ~= "control_plane") then
+        return
+    end
+
+    -- Check the admin_key_required configuration setting
+    if local_conf.deployment.admin and local_conf.deployment.admin.admin_key_required == false then
         return
     end
 
     -- Get admin keys from configuration
-    local admin_keys = _M.get_admin_keys(local_conf)
+    local admin_keys = try_read_attr(local_conf, "deployment", "admin", "admin_key")
     if not admin_keys or #admin_keys == 0 then
         -- No admin keys configured but admin_key_required is true
         log.error("admin_key: admin keys are required but none are configured. " ..
