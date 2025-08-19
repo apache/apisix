@@ -34,6 +34,7 @@ local ipairs = ipairs
 local pairs = pairs
 local print = print
 local type = type
+local tostring = tostring
 local tonumber = tonumber
 local io_open = io.open
 local execute = os.execute
@@ -181,6 +182,7 @@ local function init(env)
     end
 
     -- check the Admin API token
+    local checked_admin_key = false
     local allow_admin = yaml_conf.deployment.admin and
         yaml_conf.deployment.admin.allow_admin
     if yaml_conf.apisix.enable_admin and allow_admin
@@ -221,8 +223,9 @@ Please modify "admin_key" in conf/config.yaml .
 
             if admin.key == "" then
                 stderr:write(
-                    help:format([[WARNING: using empty Admin API.
-                    This will trigger APISIX to automatically generate a random Admin API token.]]),
+                    help:format([[ERROR: empty Admin API key detected.
+                    APISIX will refuse to start with empty admin keys for security reasons.
+                    Please set a secure admin key in conf/config.yaml or disable admin_key_required.]]),
                     "\n"
                 )
             end
