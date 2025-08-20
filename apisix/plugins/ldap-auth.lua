@@ -66,10 +66,10 @@ function _M.check_schema(conf, schema_type)
     return ok, err
 end
 
-local function extract_auth_header(authorization)
+local function extract_auth_header(auth)
     local obj = { username = "", password = "" }
-
-    local m, err = ngx.re.match(authorization, "Basic\\s(.+)", "jo")
+    local auth_lower = string.lower(auth)
+    local m, err = ngx.re.match(auth_lower, "basic\\s(.+)", "jo")
     if err then
         -- error authorization
         return nil, err

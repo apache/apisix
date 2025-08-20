@@ -211,7 +211,7 @@ Authorization: Basic Zm9vOmZvbwo=
 
 
 
-=== TEST 11: verify
+=== TEST 11: verify capitalization scheme
 --- request
 GET /hello
 --- more_headers
@@ -223,7 +223,43 @@ find consumer foo
 
 
 
-=== TEST 12: invalid schema, only one field `username`
+=== TEST 12: verify lowercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: basic Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo
+
+
+
+=== TEST 13: verify uppercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: BASIC Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo
+
+
+
+=== TEST 14: verify mixed case scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: bASiC Zm9vOmJhcg==
+--- response_body
+hello world
+--- error_log
+find consumer foo
+
+
+
+=== TEST 15: invalid schema, only one field `username`
 --- config
     location /t {
         content_by_lua_block {
@@ -252,7 +288,7 @@ GET /t
 
 
 
-=== TEST 13: invalid schema, not field given
+=== TEST 16: invalid schema, not field given
 --- config
     location /t {
         content_by_lua_block {
@@ -280,7 +316,7 @@ qr/\{"error_msg":"invalid plugins configuration: failed to check the configurati
 
 
 
-=== TEST 14: invalid schema, not a table
+=== TEST 17: invalid schema, not a table
 --- config
     location /t {
         content_by_lua_block {
@@ -307,7 +343,7 @@ GET /t
 
 
 
-=== TEST 15: get the default schema
+=== TEST 18: get the default schema
 --- config
     location /t {
         content_by_lua_block {
@@ -327,7 +363,7 @@ GET /t
 
 
 
-=== TEST 16: get the schema by schema_type
+=== TEST 19: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -347,7 +383,7 @@ GET /t
 
 
 
-=== TEST 17: get the schema by error schema_type
+=== TEST 20: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -367,7 +403,7 @@ GET /t
 
 
 
-=== TEST 18: enable basic auth plugin using admin api, set hide_credentials = true
+=== TEST 21: enable basic auth plugin using admin api, set hide_credentials = true
 --- config
     location /t {
         content_by_lua_block {
@@ -403,7 +439,7 @@ passed
 
 
 
-=== TEST 19: verify Authorization request header is hidden
+=== TEST 22: verify Authorization request header is hidden
 --- request
 GET /echo
 --- more_headers
@@ -413,7 +449,7 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 20: enable basic auth plugin using admin api, hide_credentials = false
+=== TEST 23: enable basic auth plugin using admin api, hide_credentials = false
 --- config
     location /t {
         content_by_lua_block {
@@ -449,7 +485,7 @@ passed
 
 
 
-=== TEST 21: verify Authorization request header should not hidden
+=== TEST 24: verify Authorization request header should not hidden
 --- request
 GET /echo
 --- more_headers
@@ -459,7 +495,7 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 22: set basic-auth conf: password uses secret ref
+=== TEST 25: set basic-auth conf: password uses secret ref
 --- request
 GET /t
 --- config
@@ -529,7 +565,7 @@ passed
 
 
 
-=== TEST 23: store secret into vault
+=== TEST 26: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/foo passwd=bar
 --- response_body
@@ -537,7 +573,7 @@ Success! Data written to: kv/apisix/foo
 
 
 
-=== TEST 24: verify Authorization with foo/bar, request header should not hidden
+=== TEST 27: verify Authorization with foo/bar, request header should not hidden
 --- request
 GET /echo
 --- more_headers
@@ -547,7 +583,7 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 25: set basic-auth conf with the token in an env var: password uses secret ref
+=== TEST 28: set basic-auth conf with the token in an env var: password uses secret ref
 --- request
 GET /t
 --- config
@@ -613,7 +649,7 @@ passed
 
 
 
-=== TEST 26: verify Authorization with foo/bar, request header should not hidden
+=== TEST 29: verify Authorization with foo/bar, request header should not hidden
 --- request
 GET /echo
 --- more_headers
