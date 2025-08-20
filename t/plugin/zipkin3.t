@@ -55,6 +55,20 @@ _EOC_
             ngx.log(ngx.ERR,"ngx_var.zipkin_context_traceparent:",ngx.var.zipkin_context_traceparent)
         end
 
+        local trace_id = ngx.var.zipkin_trace_id
+        if trace_id == nil or trace_id == '' then
+           ngx.log(ngx.ERR,"ngx_var.zipkin_trace_id is empty")
+        else
+            ngx.log(ngx.ERR,"ngx_var.zipkin_trace_id:",ngx.var.zipkin_trace_id)
+        end
+
+        local span_id = ngx.var.zipkin_span_id
+        if span_id == nil or span_id == '' then
+           ngx.log(ngx.ERR,"ngx_var.zipkin_span_id is empty")
+        else
+            ngx.log(ngx.ERR,"ngx_var.zipkin_span_id:",ngx.var.zipkin_span_id)
+        end
+
         local orig = orig_func(...)
         return orig
     end
@@ -118,7 +132,23 @@ qr/ngx_var.zipkin_context_traceparent:00-\w{32}-\w{16}-01*/
 
 
 
-=== TEST 3: trigger zipkin with disable set variables
+=== TEST 3: trigger zipkin with open set variables
+--- request
+GET /echo
+--- error_log eval
+qr/ngx_var.zipkin_trace_id:\w{32}/
+
+
+
+=== TEST 4: trigger zipkin with open set variables
+--- request
+GET /echo
+--- error_log eval
+qr/ngx_var.zipkin_span_id:\w{16}/
+
+
+
+=== TEST 5: trigger zipkin with disable set variables
 --- extra_yaml_config
 plugins:
     - zipkin

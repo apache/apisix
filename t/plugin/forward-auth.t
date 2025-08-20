@@ -109,16 +109,27 @@ property "request_method" validation failed: matches none of the enum values
                                             core.response.exit(403, core.request.headers(ctx));
                                         end
                                     end]],
-                                    [[
-                                        return function(conf, ctx)
-                                        local core = require("apisix.core")
-                                        if core.request.get_method() == "POST" then
-                                            if core.request.header(ctx, "Authorization") == "large-body" then
-                                                core.response.set_header("X-User-ID", "large-body")
-                                                core.response.exit(200)
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "777" then
+                                            local tenant_id = core.request.header(ctx, "tenant_id")
+                                            if tenant_id == "123" then
+                                                core.response.set_header("X-User-ID", "i-am-an-user");
+                                                core.response.exit(200);
+                                            else
+                                                core.response.exit(400, "tenant_id is "..tenant_id);
                                             end
-                                            if core.request.header(ctx, "Authorization") == "i-am-not-an-user-large-body" then
-                                                core.response.exit(403)
+                                        end
+                                    end]],
+                                    [[return function(conf, ctx)
+                                        local core = require("apisix.core");
+                                        if core.request.header(ctx, "Authorization") == "888" then
+                                            local tenant_id = core.request.header(ctx, "tenant_id")
+                                            if tenant_id == "abcd" then
+                                                core.response.set_header("X-User-ID", "i-am-an-user");
+                                                core.response.exit(200);
+                                            else
+                                                core.response.exit(400, "tenant_id is "..tenant_id);
                                             end
                                         end
                                     end]],
@@ -269,24 +280,6 @@ property "request_method" validation failed: matches none of the enum values
                     }]],
                 },
                 {
-                    url = "/apisix/admin/routes/7",
-                    data = [[{
-                        "plugins": {
-                            "forward-auth": {
-                                "uri": "http://127.0.0.1:1984/auth",
-                                "upstream_headers": ["X-User-ID"],
-                                "request_headers": ["Authorization"],
-                                "request_method": "POST"
-                            },
-                            "proxy-rewrite": {
-                                "uri": "/echo"
-                            }
-                        },
-                        "upstream_id": "u1",
-                        "uri": "/large-body"
-                    }]],
-                },
-                {
                     url = "/apisix/admin/routes/8",
                     data = [[{
                         "plugins": {
@@ -305,6 +298,46 @@ property "request_method" validation failed: matches none of the enum values
                         "upstream_id": "u1",
                         "uri": "/onerror"
                     }]],
+                },
+                {
+                    url = "/apisix/admin/routes/9",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_method": "GET",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "extra_headers": {"tenant_id": "$post_arg.tenant_id"}
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/ping2"
+                    }]]
+                },
+                {
+                    url = "/apisix/admin/routes/10",
+                    data = [[{
+                        "plugins": {
+                            "forward-auth": {
+                                "uri": "http://127.0.0.1:1984/auth",
+                                "request_method": "GET",
+                                "request_headers": ["Authorization"],
+                                "upstream_headers": ["X-User-ID"],
+                                "client_headers": ["Location"],
+                                "extra_headers": {"tenant_id": "abcd"}
+                            },
+                            "proxy-rewrite": {
+                                "uri": "/echo"
+                            }
+                        },
+                        "upstream_id": "u1",
+                        "uri": "/ping3"
+                    }]]
                 }
             }
 
@@ -317,7 +350,7 @@ property "request_method" validation failed: matches none of the enum values
         }
     }
 --- response_body eval
-"passed\n" x 11
+"passed\n" x 12
 
 
 
@@ -437,54 +470,22 @@ Authorization: 333
 
 
 
-=== TEST 14: test large body
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-            local t    = require("lib.test_admin")
-            local http = require("resty.http")
+=== TEST 14: hit route (test extra_headers when use post method)
+--- request
+POST /ping2
+{"tenant_id": 123}
+--- more_headers
+Authorization: 777
+Content-Type: application/json
+--- response_body_like eval
+qr/\"x-user-id\":\"i-am-an-user\"/
 
-            local tempFileName = os.tmpname()
-            local file = io.open(tempFileName, "wb")
 
-            local fileSizeInBytes = 11 * 1024 * 1024 -- 11MB
-            for i = 1, fileSizeInBytes do
-                file:write(string.char(0))
-            end
-            file:close()
 
-            local large_body = t.read_file(tempFileName)
-
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/large-body"
-
-            local httpc = http.new()
-            local res1, err = httpc:request_uri(uri,
-                {
-                    method = "POST",
-                    body = large_body,
-                    headers = {
-                        ["Authorization"] = "i-am-not-an-user-large-body",
-                        ["Content-Type"] = "application/x-www-form-urlencoded"
-                    }
-                }
-            )
-            assert(res1.status == 403, "status: " .. res1.status)
-            data1 = core.json.decode(res1.body)
-
-            local res2, err = httpc:request_uri(uri,
-                {
-                    method = "POST",
-                    body = large_body,
-                    headers = {
-                        ["Authorization"] = "large-body",
-                        ["Content-Type"] = "application/x-www-form-urlencoded"
-                    }
-                }
-            )
-            assert(res2.status == 200, "status: " .. res2.status)
-            data2 = core.json.decode(res2.body)
-            assert(data2["x-user-id"] == "large-body", "x-user-id: " .. data2["x-user-id"])
-        }
-    }
---- error_code: 200
+=== TEST 15: hit route (test extra_headers when extra headers has fixed value)
+--- request
+GET /ping3
+--- more_headers
+Authorization: 888
+--- response_body_like eval
+qr/\"x-user-id\":\"i-am-an-user\"/

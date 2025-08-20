@@ -1,11 +1,14 @@
 {
   "compilerOptions": {
     "target": "esnext",
-    "module": "commonjs",
+    "module": "esnext",
+    "moduleResolution": "node",
     "lib": ["esnext"],
     "esModuleInterop": true,
     "strict": true,
-    "noEmit": true
+    "noEmit": true,
+    "types": ["node", "jest"],
+    "allowJs": true
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts", "**/*.mts", "**/*.cts", "**/*.js"],
 }

@@ -84,6 +84,7 @@ PUT /apisix/admin/configs
 }
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t2
 --- error_code: 202
 
 
@@ -132,6 +133,7 @@ PUT /apisix/admin/configs
 {"routes":[{"id":"r1","uri":"/r1","upstream":{"nodes":{"127.0.0.1:1980":1},"type":"roundrobin"},"plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t4
 --- error_code: 202
 
 
@@ -155,6 +157,7 @@ PUT /apisix/admin/configs
 {}
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t6
 --- error_code: 202
 
 
@@ -178,8 +181,8 @@ GET /r1
 ]
 --- more_headers eval
 [
-    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1",
-    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "x-apisix-conf-version-routes: 100",
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "X-Digest: t8-1",
+    "X-API-KEY: edd1c9f034335f136f87ad84b625c8f1\n" . "x-apisix-conf-version-routes: 100\n" . "X-Digest: t8-2",
 ]
 --- error_code eval
 [202, 202]
@@ -205,6 +208,58 @@ PUT /apisix/admin/configs
 --- more_headers
 X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
 x-apisix-conf-version-routes: 100
+X-Digest: t10
 --- error_code: 400
 --- response_body
 {"error_msg":"routes_conf_version must be greater than or equal to (1062)"}
+
+
+
+=== TEST 11: duplicate route id found
+--- config
+    location /t11 {}
+--- request
+PUT /apisix/admin/configs
+{"routes_conf_version":1063,"routes":[{"id":"r1","uri":"/r2","upstream_id":"u1","plugins":{"proxy-rewrite":{"uri":"/hello"}}},
+{"id":"r1","uri":"/r2","upstream_id":"u1","plugins":{"proxy-rewrite":{"uri":"/hello"}}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t11
+--- error_code: 400
+--- response_body
+{"error_msg":"found duplicate id r1 in routes"}
+
+
+
+=== TEST 12: duplicate consumer username found
+--- config
+    location /t12 {}
+--- request
+PUT /apisix/admin/configs
+{"consumers_conf_version":1064,"consumers":[{"username":"consumer1","plugins":{"key-auth":{"key":"consumer1"}}},
+{"username":"consumer1","plugins":{"key-auth":{"key":"consumer1"}}}]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t12
+--- error_code: 400
+--- response_body
+{"error_msg":"found duplicate username consumer1 in consumers"}
+
+
+
+=== TEST 13: duplicate consumer credential id found
+--- config
+    location /t13 {}
+--- request
+PUT /apisix/admin/configs
+{"consumers_conf_version":1065,"consumers":[
+    {"username": "john_1"},
+    {"id":"john_1/credentials/john-a","plugins":{"key-auth":{"key":"auth-a"}}},
+    {"id":"john_1/credentials/john-a","plugins":{"key-auth":{"key":"auth-a"}}}
+]}
+--- more_headers
+X-API-KEY: edd1c9f034335f136f87ad84b625c8f1
+X-Digest: t13
+--- error_code: 400
+--- response_body
+{"error_msg":"found duplicate credential id john_1/credentials/john-a in consumers"}

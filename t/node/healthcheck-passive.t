@@ -96,12 +96,19 @@ passed
 --- config
     location /t {
         content_by_lua_block {
-            ngx.sleep(1) -- wait for sync
+            ngx.sleep(2) -- wait for sync
 
             local json_sort = require("toolkit.json")
             local http = require("resty.http")
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
-
+            --- trigger the passive healthcheck
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.sleep(3)
             local ports_count = {}
             for i = 1, 6 do
                 local httpc = http.new()
@@ -125,6 +132,7 @@ GET /t
 {"200":5,"502":1}
 --- error_log
 (upstream#/apisix/routes/1) unhealthy HTTP increment (1/1)
+--- timeout: 7
 
 
 
@@ -285,7 +293,17 @@ passed
                 return
             end
             ngx.say(res.status)
-
+            ngx.sleep(2)
+            --- The first request above triggers the passive healthcheck
+            --- The healthchecker is asynchronously created after a minimum of 1 second
+            --- So we need to wait for it to be created and sent another request to verify
+            -- only /hello_ has passive healthcheck
+            local res, err = httpc:request_uri(uri .. "/hello_")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.sleep(2)
             -- only /hello_ has passive healthcheck
             local res, err = httpc:request_uri(uri .. "/hello")
             if not res then
@@ -304,6 +322,7 @@ GET /t
 qr/enabled healthcheck passive/
 --- grep_error_log_out
 enabled healthcheck passive
+--- timeout: 7
 
 
 
@@ -325,6 +344,16 @@ enabled healthcheck passive
             end
             ngx.say(res.status)
 
+            local res, err = httpc:request_uri(uri .. "/hello_")
+            if not res then
+                ngx.say(err)
+                return
+            end
+            ngx.sleep(2)
+            --- The first request above triggers the passive healthcheck
+            --- The healthchecker is asynchronously created after a minimum of 1 second
+            --- So we need to wait for it to be created and sent another request to verify
+            -- only /hello_ has passive healthcheck
             local res, err = httpc:request_uri(uri .. "/hello_")
             if not res then
                 ngx.say(err)

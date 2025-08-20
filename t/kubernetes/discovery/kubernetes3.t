@@ -46,6 +46,23 @@ discovery:
 
 _EOC_
 
+    our $single_yaml_config = <<_EOC_;
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    service:
+      host: "127.0.0.1"
+      port: "6443"
+    client:
+      token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
+    watch_endpoint_slices: true
+_EOC_
+
     our $scale_ns_c = <<_EOC_;
 [
   {
@@ -148,11 +165,11 @@ _EOC_
 
                     if op.op == "replace_endpointslices" then
                         method = "PATCH"
-                        path = "/apis/discovery.k8s.io/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
+                        path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
                         if #op.endpoints == 0 then
                             body = '[{"path":"/endpoints","op":"replace","value":[]}]'
                         else
-                            local t = { { op = "replace", path = "/endpoints", value = op.endpoints } }
+                            local t = { { op = "replace", path = "/endpoints", value = op.endpoints }, { op = "replace", path = "/ports", value = op.ports } }
                             body = core.json.encode(t, true)
                         end
                         headers["Content-Type"] = "application/json-patch+json"
@@ -160,7 +177,7 @@ _EOC_
 
                     if op.op == "replace_labels" then
                         method = "PATCH"
-                        path = "/apis/discovery.k8s.io/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
+                        path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
                         local t = { { op = "replace", path = "/metadata/labels", value = op.labels } }
                         body = core.json.encode(t, true)
                         headers["Content-Type"] = "application/json-patch+json"
@@ -243,7 +260,7 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "ep",
+        "name": "epslice",
         "endpoints": [
             {
                 "addresses": [
@@ -272,7 +289,7 @@ POST /operators
         ],
         "ports": [
             {
-                "name": "p",
+                "name": "p1",
                 "port": 5001
             }
         ]
@@ -284,7 +301,7 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-b",
-        "name": "ep",
+        "name": "epslice",
         "endpoints": [
             {
                 "addresses": [
@@ -313,7 +330,7 @@ POST /operators
         ],
         "ports": [
             {
-                "name": "p",
+                "name": "p2",
                 "port": 5002
             }
         ]
@@ -325,7 +342,7 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-c",
-        "name": "ep",
+        "name": "epslice",
         "endpoints": [
             {
                 "addresses": [
@@ -345,7 +362,7 @@ POST /operators
                     "20.0.0.2"
                 ],
                 "conditions": {
-                    "ready": true,
+                    "ready": false,
                     "serving": true,
                     "terminating": false
                 },
@@ -354,7 +371,7 @@ POST /operators
         ],
         "ports": [
             {
-                "name": "p",
+                "name": "p3",
                 "port": 5003
             }
         ]
@@ -372,13 +389,13 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
-  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
+  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
 ]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 0 0 2 2 0 0 0 0 2 2 0 0 }
+qr{ 2 2 2 2 2 2 2 2 2 2 2 2 }
 
 
 
@@ -411,18 +428,67 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/ep:p1","first/ns-a/ep:p2","first/ns-b/ep:p1","first/ns-b/ep:p2","first/ns-c/ep:5001","first/ns-c/ep:5002",
-  "second/ns-a/ep:p1","second/ns-a/ep:p2","second/ns-b/ep:p1","second/ns-b/ep:p2","second/ns-c/ep:5001","second/ns-c/ep:5002"
+  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
+  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
 ]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 0 0 2 2 0 0 0 0 2 2 0 0 }
+qr{ 2 2 2 2 2 2 2 2 2 2 2 2 }
 
 
 
-=== TEST 4: test dump
+=== TEST 4: use namespace selector equal
+--- yaml_config
+apisix:
+  node_listen: 1984
+deployment:
+  role: data_plane
+  role_data_plane:
+    config_provider: yaml
+discovery:
+  kubernetes:
+    - id: first
+      service:
+        host: ${KUBERNETES_SERVICE_HOST}
+        port: ${KUBERNETES_SERVICE_PORT}
+      client:
+        token_file: ${KUBERNETES_CLIENT_TOKEN_FILE}
+      watch_endpoint_slices: true
+      namespace_selector:
+        equal: ns-a
+    - id: second
+      service:
+        schema: "http"
+        host: "127.0.0.1"
+        port: "6445"
+      watch_endpoint_slices: true
+      client:
+        token: ${KUBERNETES_CLIENT_TOKEN}
+--- request
+GET /queries
+[
+  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
+  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+]
+--- more_headers
+Content-type: application/json
+--- response_body eval
+qr{ 2 2 0 0 0 0 2 2 2 2 2 2 }
+
+
+
+=== TEST 5: test dump
 --- yaml_config eval: $::yaml_config
+--- request
+GET /dump
+--- response_body_like
+.*"name":"default/kubernetes".*
+
+
+
+=== TEST 6: test single mode dump
+--- yaml_config eval: $::single_yaml_config
 --- request
 GET /dump
 --- response_body_like

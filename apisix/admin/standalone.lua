@@ -18,7 +18,11 @@ local type         = type
 local pairs        = pairs
 local ipairs       = ipairs
 local str_lower    = string.lower
+local str_find     = string.find
+local str_sub      = string.sub
+local tostring     = tostring
 local ngx          = ngx
+local ngx_time     = ngx.time
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
 local table_insert = table.insert
@@ -27,13 +31,50 @@ local yaml         = require("lyaml")
 local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
-local check_schema = require("apisix.core.schema").check
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
+-- do not use the HTTP standard Last-Modified header to prevent affecting
+-- the caching implementation in the client
+local METADATA_LAST_MODIFIED = "X-Last-Modified"
+local METADATA_DIGEST = "X-Digest"
 
 local _M = {}
 
+local resources = {
+    routes          = require("apisix.admin.routes"),
+    services        = require("apisix.admin.services"),
+    upstreams       = require("apisix.admin.upstreams"),
+    consumers       = require("apisix.admin.consumers"),
+    credentials     = require("apisix.admin.credentials"),
+    schema          = require("apisix.admin.schema"),
+    ssls            = require("apisix.admin.ssl"),
+    plugins         = require("apisix.admin.plugins"),
+    protos          = require("apisix.admin.proto"),
+    global_rules    = require("apisix.admin.global_rules"),
+    stream_routes   = require("apisix.admin.stream_routes"),
+    plugin_metadata = require("apisix.admin.plugin_metadata"),
+    plugin_configs  = require("apisix.admin.plugin_config"),
+    consumer_groups = require("apisix.admin.consumer_group"),
+    secrets         = require("apisix.admin.secrets"),
+}
+
+local function check_duplicate(item, key, id_set)
+    local identifier, identifier_type
+    if key == "consumers" then
+        identifier = item.id or item.username
+        identifier_type = item.id and "credential id" or "username"
+    else
+        identifier = item.id
+        identifier_type = "id"
+    end
+
+    if id_set[identifier] then
+        return true, "found duplicate " .. identifier_type .. " " .. identifier .. " in " .. key
+    end
+    id_set[identifier] = true
+    return false
+end
 
 local function get_config()
     local config = shared_dict:get("config")
@@ -70,11 +111,48 @@ local function update_and_broadcast_config(apisix_yaml)
     return events:post(EVENT_UPDATE, EVENT_UPDATE)
 end
 
+local function check_conf(checker, schema, item, typ)
+    if not checker then
+        return true
+    end
+    local str_id = tostring(item.id)
+    if typ == "consumers" and
+        core.string.find(str_id, "/credentials/") then
+        local credential_checker = resources.credentials.checker
+        local credential_schema = resources.credentials.schema
+        return credential_checker(item.id, item, false, credential_schema, {
+            skip_references_check = true,
+        })
+    end
+
+    local secret_type
+    if typ == "secrets" then
+        local idx = str_find(str_id or "", "/")
+        if not idx then
+            return false, {
+                error_msg = "invalid secret id: " .. (str_id or "")
+            }
+        end
+        secret_type = str_sub(str_id, 1, idx - 1)
+    end
+    return checker(item.id, item, false, schema, {
+        secret_type = secret_type,
+        skip_references_check = true,
+    })
+end
+
 
 local function update(ctx)
-    local content_type = core.request.header(nil, "content-type") or "application/json"
+    -- check digest header existence
+    local digest = core.request.header(nil, METADATA_DIGEST)
+    if not digest then
+        return core.response.exit(400, {
+            error_msg = "missing digest header"
+        })
+    end
 
     -- read the request body
+    local content_type = core.request.header(nil, "content-type") or "application/json"
     local req_body, err = core.request.get_body()
     if err then
         return core.response.exit(400, {error_msg = "invalid request body: " .. err})
@@ -110,6 +188,13 @@ local function update(ctx)
         end
     end
 
+    -- if the client passes in the same digest, the configuration is not updated
+    if config and config[METADATA_DIGEST] == digest then
+        -- accepted but not modified because digest is the same
+        core.log.info("config not changed: same digest")
+        return core.response.exit(204)
+    end
+
     -- check input by jsonschema
     local apisix_yaml = {}
     local created_objs = config_yaml.fetch_all_created_obj()
@@ -119,6 +204,7 @@ local function update(ctx)
         local conf_version = config and config[conf_version_key] or obj.conf_version
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
+        local resource = resources[key] or {}
         if not new_conf_version then
             new_conf_version = conf_version + 1
         else
@@ -135,48 +221,48 @@ local function update(ctx)
             end
         end
 
+
         apisix_yaml[conf_version_key] = new_conf_version
         if new_conf_version == conf_version then
             apisix_yaml[key] = config and config[key]
         elseif items and #items > 0 then
             apisix_yaml[key] = table_new(#items, 0)
-            local item_schema = obj.item_schema
-            local item_checker = obj.checker
+            local item_schema = resource.schema
+            local item_checker = resource.checker
+            local id_set = {}
 
             for index, item in ipairs(items) do
                 local item_temp = tbl_deepcopy(item)
-                local valid, err
-                -- need to recover to 0-based subscript
-                local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
-                if item_schema then
-                    valid, err = check_schema(obj.item_schema, item_temp)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
+                local valid, err = check_conf(item_checker, item_schema, item_temp, key)
+                if not valid then
+                    local err_prefix = "invalid " .. key .. " at index " .. (index - 1) .. ", err: "
+                    local err_msg = type(err) == "table" and err.error_msg or err
+                    core.response.exit(400, { error_msg = err_prefix .. err_msg })
                 end
-                if item_checker then
-                    local item_checker_key
-                    if item.id then
-                        -- credential need to check key
-                        item_checker_key = "/" .. key .. "/" .. item_temp.id
-                    end
-                    valid, err = item_checker(item_temp, item_checker_key)
-                    if not valid then
-                        core.log.error(err_prefix, err)
-                        core.response.exit(400, {error_msg = err_prefix .. err})
-                    end
+                -- prevent updating resource with the same ID
+                -- (e.g., service ID or other resource IDs) in a single request
+                local duplicated, err = check_duplicate(item, key, id_set)
+                if duplicated then
+                    core.log.error(err)
+                    core.response.exit(400, { error_msg = err })
                 end
+
                 table_insert(apisix_yaml[key], item)
             end
         end
     end
+
+    -- write metadata
+    apisix_yaml[METADATA_LAST_MODIFIED] = ngx_time()
+    apisix_yaml[METADATA_DIGEST] = digest
 
     local ok, err = update_and_broadcast_config(apisix_yaml)
     if not ok then
         core.response.exit(500, err)
     end
 
+    core.response.set_header(METADATA_LAST_MODIFIED, apisix_yaml[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, apisix_yaml[METADATA_DIGEST])
     return core.response.exit(202)
 end
 
@@ -225,7 +311,27 @@ local function get(ctx)
     if not resp then
         return core.response.exit(500, {error_msg = err})
     end
+
+    core.response.set_header(METADATA_LAST_MODIFIED, config and config[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, config and config[METADATA_DIGEST])
     return core.response.exit(200, resp)
+end
+
+
+local function head(ctx)
+    local config, err = get_config()
+    if not config then
+        if err ~= "not found" then
+            core.log.error("failed to get config from shared dict: ", err)
+            return core.response.exit(500, {
+                error_msg = "failed to get config from shared dict: " .. err
+            })
+        end
+    end
+
+    core.response.set_header(METADATA_LAST_MODIFIED, config and config[METADATA_LAST_MODIFIED])
+    core.response.set_header(METADATA_DIGEST, config and config[METADATA_DIGEST])
+    return core.response.exit(200)
 end
 
 
@@ -234,6 +340,8 @@ function _M.run()
     local method = str_lower(get_method())
     if method == "put" then
         return update(ctx)
+    elseif method == "head" then
+        return head(ctx)
     else
         return get(ctx)
     end
@@ -274,7 +382,7 @@ do
                 type = "string",
                 minLength = 15,
                 maxLength = 128,
-                pattern = [[^[a-zA-Z0-9]+/credentials/[a-zA-Z0-9]+$]],
+                pattern = [[^[a-zA-Z0-9-_]+/credentials/[a-zA-Z0-9-_.]+$]],
             }
         end
     end
@@ -303,6 +411,11 @@ function _M.init_worker()
             core.log.error("failed to decode json: ", err)
             return
         end
+
+        -- remove metadata key in-place
+        -- this table is generated by json decode, so there is no need to clone it
+        config[METADATA_LAST_MODIFIED] = nil
+        config[METADATA_DIGEST] = nil
         config_yaml._update_config(config)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)

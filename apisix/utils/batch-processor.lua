@@ -91,6 +91,7 @@ function execute_func(premature, self, batch)
             core.log.error("Batch Processor[", self.name, "] failed to process entries [",
                             #batch.entries + 1 - first_fail, "/", #batch.entries ,"]: ", err)
             batch.entries = slice_batch(batch.entries, first_fail)
+            self.processed_entries = self.processed_entries + first_fail - 1
         else
             core.log.error("Batch Processor[", self.name,
                            "] failed to process entries: ", err)
@@ -101,13 +102,14 @@ function execute_func(premature, self, batch)
             schedule_func_exec(self, self.retry_delay,
                                batch)
         else
+            self.processed_entries = self.processed_entries + #batch.entries
             core.log.error("Batch Processor[", self.name,"] exceeded ",
                            "the max_retry_count[", batch.retry_count,
                            "] dropping the entries")
         end
         return
     end
-
+    self.processed_entries = self.processed_entries + #batch.entries
     core.log.debug("Batch Processor[", self.name,
                    "] successfully processed the entries")
 end
@@ -155,6 +157,9 @@ function batch_processor:new(func, config)
         return nil, "Invalid argument, arg #1 must be a function"
     end
 
+    core.log.debug("creating new batch processor with config: ",
+        core.json.delay_encode(config, true))
+
     local processor = {
         func = func,
         buffer_duration = config.buffer_duration,
@@ -170,11 +175,11 @@ function batch_processor:new(func, config)
         last_entry_t = 0,
         route_id = config.route_id,
         server_addr = config.server_addr,
+        processed_entries = 0
     }
 
     return setmetatable(processor, batch_processor_mt)
 end
-
 
 function batch_processor:push(entry)
     -- if the batch size is one then immediately send for processing

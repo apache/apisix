@@ -35,10 +35,7 @@ create_lua_deps() {
     make deps
 
     # just for jwt-auth test
-    # --only-server is a temporary fix until https://github.com/luarocks/luarocks/issues/1797 is resolved. \
-    # NOTE: This fix is taken from https://github.com/luarocks/luarocks/issues/1797#issuecomment-2927856212 \
-    # and no packages after 29th May 2025 can be installed. This is to be removed as soon as the luarocks issue is fixed \
-    luarocks install --only-server https://raw.githubusercontent.com/rocks-moonscript-org/moonrocks-mirror/daab2726276e3282dc347b89a42a5107c3500567 lua-resty-openssl --tree deps
+    luarocks install lua-resty-openssl --tree deps
 
     # maybe reopen this feature later
     # luarocks install luacov-coveralls --tree=deps --local > build.log 2>&1 || (cat build.log && exit 1)
@@ -69,6 +66,15 @@ rerun_flaky_tests() {
     FLUSH_ETCD=1 prove --timer -I./test-nginx/lib -I./ $(echo "$tests" | xargs)
 }
 
+fail_on_bailout() {
+    local test_output_file="$1"
+
+    # Check for bailout message in test output
+    if grep -q "Bailout called.  Further testing stopped:" "$test_output_file"; then
+        echo "Error: Bailout detected in test output"
+        exit 1
+    fi
+}
 install_curl () {
     CURL_VERSION="8.13.0"
     wget -q https://github.com/stunnel/static-curl/releases/download/${CURL_VERSION}/curl-linux-x86_64-glibc-${CURL_VERSION}.tar.xz
@@ -99,7 +105,10 @@ install_vault_cli () {
 
 install_nodejs () {
     curl -fsSL https://raw.githubusercontent.com/tj/n/master/bin/n | bash -s install --cleanup lts
+    export PNPM_HOME="/pnpm"
+    export PATH="$PNPM_HOME:$PATH"
     corepack enable pnpm
+    pnpm setup
 }
 
 install_brotli () {

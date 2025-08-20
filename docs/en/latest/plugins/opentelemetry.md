@@ -198,7 +198,16 @@ The following example demonstrates how to configure the `opentelemetry` Plugin t
 - `opentelemetry_trace_id`: trace ID of the current span
 - `opentelemetry_span_id`: span ID of the current span
 
-Update the configuration file as below. You should customize the access log format to use the `opentelemetry` Plugin variables, and set `opentelemetry` variables in the `set_ngx_var` field.
+Configure the plugin metadata to set `set_ngx_var` as true:
+
+```shell
+curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/opentelemetry -H "X-API-KEY: $admin_key" -X PUT -d '
+{
+    "set_ngx_var": true
+}'
+```
+
+Update the configuration file as below. You should customize the access log format to use the `opentelemetry` Plugin variables.
 
 ```yaml title="conf/config.yaml"
 nginx_config:
@@ -206,9 +215,6 @@ nginx_config:
     enable_access_log: true
     access_log_format: '{"time": "$time_iso8601","opentelemetry_context_traceparent": "$opentelemetry_context_traceparent","opentelemetry_trace_id": "$opentelemetry_trace_id","opentelemetry_span_id": "$opentelemetry_span_id","remote_addr": "$remote_addr"}'
     access_log_format_escape: json
-plugin_attr:
-  opentelemetry:
-    set_ngx_var: true
 ```
 
 Reload APISIX for configuration changes to take effect.

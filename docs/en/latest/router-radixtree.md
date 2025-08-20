@@ -337,3 +337,79 @@ graphql:
 ```
 
 If you need to pass a GraphQL body which is larger than the limitation, you can increase the value in `conf/config.yaml`.
+
+### How to filter route by POST request JSON body?
+
+APISIX supports filtering route by POST form attributes with `Content-Type` = `application/json`.
+
+We can define the following route:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "methods": ["POST"],
+    "uri": "/_post",
+    "vars": [
+        ["post_arg.name", "==", "xyz"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+It will match the following POST request
+
+```shell
+curl -X POST http://127.0.0.1:9180/_post \
+  -H "Content-Type: application/json" \
+  -d '{"name":"xyz"}'
+```
+
+We can also filter by complex queries like the example below:
+
+```shell
+$ curl http://127.0.0.1:9180/apisix/admin/routes/1 -H "X-API-KEY: $admin_key" -X PUT -i -d '
+{
+    "methods": ["POST"],
+    "uri": "/_post",
+    "vars": [
+         ["post_arg.messages[*].content[*].type","has","image_url"]
+    ],
+    "upstream": {
+        "type": "roundrobin",
+        "nodes": {
+            "127.0.0.1:1980": 1
+        }
+    }
+}'
+```
+
+It will match the following POST request
+
+```shell
+curl -X POST http://127.0.0.1:9180/_post \
+  -H "Content-Type: application/json" \
+  -d '{
+  "model": "deepseek",
+  "messages": [
+    {
+      "role": "system",
+      "content": [
+        {
+          "text": "You are a mathematician",
+          "type": "text"
+        },
+        {
+          "text": "You are a mathematician",
+          "type": "image_url"
+        }
+      ]
+    }
+  ]
+}'
+
+```

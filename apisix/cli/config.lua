@@ -72,6 +72,7 @@ local _M = {
     },
     enable_control = true,
     disable_sync_configuration_during_start = false,
+    worker_startup_time_threshold = 60,
     data_encryption = {
       enable_encrypt_fields = true,
       keyring = { "qeddd145sfvddff3", "edd1c9f0985e76a2" }
@@ -95,6 +96,7 @@ local _M = {
     meta = {
       lua_shared_dict = {
         ["prometheus-metrics"] = "15m",
+        ["prometheus-cache"] = "10m",
         ["standalone-config"] = "10m",
         ["status-report"] = "1m",
       }
@@ -237,7 +239,8 @@ local _M = {
     "limit-count",
     "limit-req",
     "gzip",
-    "server-info",
+    -- deprecated and will be removed in a future release
+    -- "server-info",
     "traffic-split",
     "redirect",
     "response-rewrite",
@@ -322,7 +325,8 @@ local _M = {
       export_addr = {
         ip = "127.0.0.1",
         port = 9091
-      }
+      },
+      refresh_interval = 15
     },
     ["server-info"] = {
       report_ttl = 60

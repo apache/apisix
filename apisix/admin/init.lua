@@ -250,10 +250,8 @@ local function run()
         else
             core.response.set_header("X-API-VERSION", "v2")
         end
-        if resource.need_v3_filter then
-            data = v3_adapter.filter(data)
-        end
 
+        data = v3_adapter.filter(data, resource)
         data = strip_etcd_resp(data)
 
         core.response.exit(code, data)
@@ -467,7 +465,7 @@ local standalone_uri_route = {
     http_head_route,
     {
         paths = [[/apisix/admin/configs]],
-        methods = {"GET", "PUT"},
+        methods = {"GET", "PUT", "HEAD"},
         handler = standalone_run,
     },
 }
