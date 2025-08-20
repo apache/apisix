@@ -27,11 +27,14 @@ local http = require("resty.http")
 local url  = require("socket.url")
 local ngx_re = require("ngx.re")
 
+local ngx = ngx
 local ngx_print = ngx.print
 local ngx_flush = ngx.flush
+local ngx_now = ngx.now
 
 local pairs = pairs
 local type  = type
+local math  = math
 local ipairs = ipairs
 local setmetatable = setmetatable
 local table  = table
@@ -96,6 +99,10 @@ local function read_response(ctx, res)
                 return
             end
 
+            if ctx.var.llm_time_to_first_token == "" then
+                ctx.var.llm_time_to_first_token = math.floor(
+                                                (ngx_now() - ctx.llm_request_start_time) * 1000)
+            end
             ngx_print(chunk)
             ngx_flush(true)
 
@@ -145,6 +152,8 @@ local function read_response(ctx, res)
                         total_tokens = data.usage.total_tokens or 0,
                     }
                     ctx.var.llm_response_text = table.concat(contents, "")
+                    ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
+                    ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
                 end
             end
 
@@ -157,6 +166,8 @@ local function read_response(ctx, res)
         core.log.warn("failed to read response body: ", err)
         return handle_error(err)
     end
+
+    ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
     local res_body, err = core.json.decode(raw_res_body)
     if err then
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
@@ -178,7 +189,10 @@ local function read_response(ctx, res)
             local content_to_check = table.concat(contents, " ")
             ctx.var.llm_response_text = content_to_check
         end
+        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
+        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
     end
+
     return res.status, raw_res_body
 end
 

@@ -42,6 +42,7 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
+  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
@@ -285,19 +286,9 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                     "name": "deepseek",
                                     "provider": "deepseek",
                                     "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},
+                                    "override": {"endpoint": "http://localhost:6724/chat/completions"}
                                 }
                             ],
                             "ssl_verify": false

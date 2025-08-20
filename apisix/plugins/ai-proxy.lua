@@ -45,8 +45,9 @@ end
 
 
 function _M.access(conf, ctx)
-    ctx.picked_ai_instance_name = "ai-proxy"
+    ctx.picked_ai_instance_name = "ai-proxy-" .. conf.provider
     ctx.picked_ai_instance = conf
+    ctx.balancer_ip = ctx.picked_ai_instance_name
     ctx.bypass_nginx_upstream = true
 end
 
