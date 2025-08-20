@@ -19,6 +19,7 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer_mod = require("apisix.consumer")
 local ldap = require("resty.ldap")
+local string = string
 
 local schema = {
     type = "object",

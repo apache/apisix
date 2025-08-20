@@ -20,6 +20,7 @@ local ngx_re = require("ngx.re")
 local consumer = require("apisix.consumer")
 local schema_def = require("apisix.schema_def")
 local auth_utils = require("apisix.utils.auth")
+local string = string
 
 local lrucache = core.lrucache.new({
     ttl = 300, count = 512
