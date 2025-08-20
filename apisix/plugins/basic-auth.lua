@@ -79,21 +79,25 @@ local function extract_auth_header(authorization)
 
     local function do_extract(auth)
         local obj = { username = "", password = "" }
-        local auth_lower = string.lower(auth)
-        local m, err = ngx.re.match(auth_lower, "basic\\s(.+)", "jo")
-        if err then
+        -- Check format of Authorization header.
+        local matches, err = ngx_re.split(auth, "\\s+", nil, nil, 2)
+
+        if not matches then
             -- error authorization
             return nil, err
+        elseif #matches < 2 then
+            -- Header doesn't split into enough tokens.
+            return nil, "Invalid Authorization header format."
         end
 
-        if not m then
-            return nil, "Invalid authorization header format"
+        if string.lower(matches[1]) ~= "basic" then
+            return nil, "Invalid Authorization header format."
         end
 
-        local decoded = ngx.decode_base64(m[1])
+        local decoded = ngx.decode_base64(matches[2])
 
         if not decoded then
-            return nil, "Failed to decode authentication header: " .. m[1]
+            return nil, "Failed to decode authentication header: " .. matches[2]
         end
 
         local res
