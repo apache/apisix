@@ -76,11 +76,11 @@ local function extract_auth_header(auth)
         return nil, err
     elseif #matches < 2 then
         -- Header doesn't split into enough tokens.
-        return nil, "Invalid Authorization header format."
+        return nil, "Invalid authorization header format."
     end
 
     if string.lower(matches[1]) ~= "basic" then
-        return nil, "Invalid Authorization header format."
+        return nil, "Invalid authorization header format."
     end
 
     local decoded = ngx.decode_base64(matches[2])
