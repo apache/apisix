@@ -17,7 +17,7 @@
 
 local host_patterns = {
     { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-    { pattern = [[^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$]] },
+    { pattern = [[^[A-Za-z0-9]([-A-Za-z0-9]*[A-Za-z0-9])?(\.[A-Za-z0-9]([-A-Za-z0-9]*[A-Za-z0-9])?)*$]] },
 }
 
 local port_patterns = {
@@ -176,7 +176,7 @@ return {
                 properties = {
                     id = {
                         type = "string",
-                        pattern = [[^[a-z0-9]{1,8}$]]
+                        pattern = [[^[a-z0-9]{1,64}$]]
                     },
                     service = {
                         type = "object",
