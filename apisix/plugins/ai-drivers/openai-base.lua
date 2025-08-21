@@ -28,10 +28,6 @@ local http = require("resty.http")
 local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-drivers.sse")
 local ngx  = ngx
-local ngx_re = require("ngx.re")
-
-local ngx_print = ngx.print
-local ngx_flush = ngx.flush
 local ngx_now = ngx.now
 
 local table = table
