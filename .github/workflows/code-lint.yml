@@ -1,11 +1,6 @@
 name: Code Lint
 
 on:
-  push:
-    branches: [master, 'release/**', 'fix/empty-admin-keys']
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
   pull_request:
     branches: [master, 'release/**']
     paths-ignore:
