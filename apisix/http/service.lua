@@ -17,6 +17,7 @@
 local core   = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
 local plugin_checker = require("apisix.plugin").plugin_checker
+local plugin = require("apisix.plugin")
 local services
 local error = error
 
@@ -45,6 +46,9 @@ local function filter(service)
     if not service.value then
         return
     end
+
+
+    plugin.set_plugins_meta_parent(service.value.plugins, service)
 
     apisix_upstream.filter_upstream(service.value.upstream, service)
 
