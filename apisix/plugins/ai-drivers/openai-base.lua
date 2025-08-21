@@ -28,10 +28,16 @@ local http = require("resty.http")
 local url  = require("socket.url")
 local sse  = require("apisix.plugins.ai-drivers.sse")
 local ngx  = ngx
+local ngx_re = require("ngx.re")
+
+local ngx_print = ngx.print
+local ngx_flush = ngx.flush
+local ngx_now = ngx.now
 
 local table = table
 local pairs = pairs
 local type  = type
+local math  = math
 local ipairs = ipairs
 local setmetatable = setmetatable
 
@@ -154,6 +160,7 @@ local function read_response(ctx, res)
         return handle_error(err)
     end
     ngx.status = res.status
+    ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
     local res_body, err = core.json.decode(raw_res_body)
     if err then
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
@@ -165,6 +172,8 @@ local function read_response(ctx, res)
             completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
             total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
         }
+        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
+        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
         if res_body.choices and #res_body.choices > 0 then
             local contents = {}
             for _, choice in ipairs(res_body.choices) do
@@ -174,7 +183,6 @@ local function read_response(ctx, res)
             end
             local content_to_check = table.concat(contents, " ")
             ctx.var.llm_response_text = content_to_check
-            plugin.lua_response_filter(ctx, res.headers, res_body)
         end
     end
     plugin.lua_response_filter(ctx, res.headers, raw_res_body)

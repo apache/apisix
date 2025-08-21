@@ -36,6 +36,8 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
+local getmetatable  = getmetatable
+local setmetatable  = setmetatable
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
@@ -1234,6 +1236,30 @@ function _M.run_plugin(phase, plugins, api_ctx)
     end
 
     return api_ctx, plugin_run
+end
+
+function _M.set_plugins_meta_parent(plugins, parent)
+    if not plugins then
+        return
+    end
+    for _, plugin_conf in pairs(plugins) do
+        if not plugin_conf._meta then
+            plugin_conf._meta = {}
+        end
+        if not plugin_conf._meta.parent then
+            local parent_info = {
+                resource_key = parent.key,
+                resource_version = tostring(parent.modifiedIndex)
+            }
+            local mt_table = getmetatable(plugin_conf._meta)
+            if mt_table then
+                mt_table.parent = parent_info
+            else
+                plugin_conf._meta = setmetatable(plugin_conf._meta,
+                                                    { __index = {parent = parent_info} })
+            end
+        end
+    end
 end
 
 

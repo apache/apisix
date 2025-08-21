@@ -235,6 +235,12 @@ do
         upstream_uri               = true,
         llm_content_risk_level     = true,
 
+        request_type               = true,
+        llm_time_to_first_token    = true,
+        llm_model                  = true,
+        llm_prompt_tokens          = true,
+        llm_completion_tokens      = true,
+
         upstream_mirror_host       = true,
         upstream_mirror_uri        = true,
 

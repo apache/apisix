@@ -128,7 +128,8 @@ local function request_to_llm(conf, request_table, ctx)
         headers = (conf.auth.header or {}),
         model_options = conf.options
     }
-
+    ctx.llm_request_start_time = ngx.now()
+    ctx.var.llm_request_body = request_table
     return ai_driver:request(ctx, conf, request_table, extra_opts)
 end
 
