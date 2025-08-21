@@ -223,9 +223,9 @@ Please modify "admin_key" in conf/config.yaml .
 
             if admin.key == "" then
                 stderr:write(
-                    help:format([[ERROR: empty Admin API key detected.
-                    APISIX will refuse to start with empty admin keys for security reasons.
-                    Please set a secure admin key in conf/config.yaml or disable admin_key_required.]]),
+                    help:format([[WARNING: Empty Admin API key detected.
+                    This key will be skipped during authentication
+                    and cannot be used to access the Admin API.]]),
                     "\n"
                 )
             end

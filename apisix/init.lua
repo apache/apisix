@@ -85,7 +85,6 @@ local _M = {version = 0.4}
 function _M.http_init(args)
     core.resolver.init_resolver(args)
     core.id.init()
-    core.admin_key.init()
     core.env.init()
 
     local process = require("ngx.process")
