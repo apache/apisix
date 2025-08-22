@@ -5,16 +5,16 @@ keywords:
   - API Gateway
   - Plugin
   - ai-aliyun-content-moderation
-description: 本文档包含有关 Apache APISIX ai-aws-content-moderation 插件的信息.
+description: 本文档包含有关 Apache APISIX ai-aws-content-moderation 插件的信息。
 ---
 
 <!--
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
-# contributor license agreements.  See the 不TICE file distributed with
+# contributor license agreements.  See the 不 TICE file distributed with
 # this work for additional information regarding copyright ownership.
 # The ASF licenses this file to You under the Apache License, Version 2.0
-# (the "License"); you may 不t use this file except in compliance with
+# (the "License"); you may 不 t use this file except in compliance with
 # the License.  You may obtain a copy of the License at
 #
 #     http://www.apache.org/licenses/LICENSE-2.0
@@ -31,7 +31,7 @@ description: 本文档包含有关 Apache APISIX ai-aws-content-moderation 插�
 
 ai-aliyun-content-moderation 插件与阿里云的内容审核服务集成，用于在使用 LLM 时检查请求和响应内容中是否存在不当内容。它支持实时流式传输检查和最终数据包审核。.
 
-此插件必须在使用 ai-proxy 或 ai-proxy-multi 插件的路由中使用.
+此插件必须在使用 ai-proxy 或 ai-proxy-multi 插件的路由中使用。
 
 ## 插件属性
 
@@ -39,7 +39,7 @@ ai-aliyun-content-moderation 插件与阿里云的内容审核服务集成，用
 | ---------------------------- | ------------ | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | endpoint                     | 是的          | String    | 阿里云服务端点 URL                                                                                                                                                 |
 | region_id                    | 是的          | String    | 阿里云区域 identifier                                                                                                                                                    |
-| access_key_id                | 是的          | String    | 阿里云访问密钥ID                                                                                                                                                        |
+| access_key_id                | 是的          | String    | 阿里云访问密钥 ID                                                                                                                                                        |
 | access_key_secret            | 是的          | String    | 阿里云访问密钥 secret                                                                                                                                                    |
 | check_request                | 不           | Boolean   | 启用请求内容审核。默认值： `true`                                                                                                                          |
 | check_response               | 不           | Boolean   | 启用回复内容审核。默认值： `false`                                                                                                                        |
@@ -54,11 +54,11 @@ ai-aliyun-content-moderation 插件与阿里云的内容审核服务集成，用
 | deny_code                    | 不           | Number    | 被拒绝内容的 HTTP 状态代码。默认值： `200`.                                                                                                                      |
 | deny_message                 | 不           | String    | 被拒绝内容的自定义消息。默认值： `-`.                                                                                                                           |
 | timeout                      | 不           | Integer   | 请求超时（以毫秒为单位）。默认值：10000。必须为 >=1`.                                                                                                          |
-| ssl_verify                   | 不           | Boolean   | 启用 SSL 证书验证。默认值： `true`.                                                                                                                       |
+| ssl_verify                   | 不           | Boolean   | 启用 SSL 证书验证。默认值：`true`.                                                                                                                       |
 
 ## 示例用法
 
-首先初始化这些 shell 变量:
+首先初始化这些 shell 变量：
 
 ```shell
 ADMIN_API_KEY=edd1c9f034335f136f87ad84b625c8f1
