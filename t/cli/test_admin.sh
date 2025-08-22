@@ -315,6 +315,9 @@ deployment:
     role: data_plane
     role_data_plane:
         config_provider: yaml
+    admin:
+      admin_key:
+        - key: "admin"
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -359,6 +362,10 @@ plugins:
   - node-status
 nginx_config:
   error_log_level:  info
+deployment:
+    admin:
+      admin_key:
+        - key: "admin"
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -430,6 +437,10 @@ plugins:
   - public-api
   - node-status
 stream_plugins:
+deployment:
+    admin:
+      admin_key:
+        - key: "admin"
 ' > conf/config.yaml
 
 rm logs/error.log
