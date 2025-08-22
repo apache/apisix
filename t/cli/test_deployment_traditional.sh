@@ -29,6 +29,10 @@ deployment:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
+    admin:
+        admin_key:
+          - key: 'admin'
+
 ' > conf/config.yaml
 
 make run
@@ -59,6 +63,9 @@ deployment:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
+    admin:
+        admin_key:
+          - key: 'admin'
 ' > conf/config.yaml
 
 make run
@@ -89,6 +96,9 @@ deployment:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
+    admin:
+        admin_key:
+          - key: 'admin'
 ' > conf/config.yaml
 
 make run
@@ -113,6 +123,9 @@ deployment:
         prefix: "/apisix"
         tls:
             verify: false
+    admin:
+        admin_key:
+          - key: 'admin'
   ' > conf/config.yaml
 
 out=$(make init 2>&1 || echo "ouch")

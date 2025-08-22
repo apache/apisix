@@ -41,6 +41,9 @@ deployment:
       - "http://127.0.0.1:23792"
   health_check_timeout: '"$HEALTH_CHECK_RETRY_TIMEOUT"'
   timeout: 2
+  admin:
+        admin_key:
+          - key: 'admin'
 ' > conf/config.yaml
 
 docker compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d

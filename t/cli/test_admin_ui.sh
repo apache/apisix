@@ -98,6 +98,8 @@ deployment:
         enable_admin_ui: true
         allow_admin:
             - 1.1.1.1/32
+        admin_key:
+          - key: 'admin'
 " > conf/config.yaml
 
 make run
@@ -118,6 +120,8 @@ echo "
 deployment:
     admin:
         enable_admin_ui: false
+        admin_key:
+          - key: 'admin'
 " > conf/config.yaml
 
 make init
@@ -138,6 +142,8 @@ echo "
 deployment:
     admin:
         enable_admin_ui: true
+        admin_key:
+          - key: 'admin'
 " > conf/config.yaml
 
 make init
