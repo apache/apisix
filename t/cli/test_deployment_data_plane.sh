@@ -35,6 +35,10 @@ deployment:
         timeout: 30
         tls:
             verify: false
+    admin:
+        admin_key:
+            - key: "admin"
+
 ' > conf/config.yaml
 
 make run

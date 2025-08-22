@@ -33,7 +33,10 @@ nginx_config:
             listen 9101;
             return \"OK FROM UPSTREAM\";
         }
-
+deployment:
+    admin:
+        admin_key:
+          - key: 'admin'
 " > conf/config.yaml
 
 make run

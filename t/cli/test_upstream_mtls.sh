@@ -43,6 +43,10 @@ nginx_config:
     }
   http_server_configuration_snippet: |
     proxy_ssl_verify on;
+deployment:
+    admin:
+        admin_key:
+          - key: 'admin'
 ' > conf/config.yaml
 
 rm logs/error.log || true
@@ -103,6 +107,10 @@ nginx_config:
     }
   http_server_configuration_snippet: |
     proxy_ssl_verify on;
+deployment:
+    admin:
+        admin_key:
+          - key: 'admin'
 ' > conf/config.yaml
 
 rm logs/error.log || true

@@ -33,6 +33,10 @@ stream_plugins:
 plugin_attr:
     prometheus:
         refresh_interval: 1
+deployment:
+    admin:
+        admin_key:
+          - key: 'admin'
 " > conf/config.yaml
 
 make run

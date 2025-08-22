@@ -33,6 +33,9 @@ deployment:
             - http://127.0.0.1:2379
         prefix: /apisix
         timeout: 30
+    admin:
+        admin_key:
+            - key: "admin"
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)

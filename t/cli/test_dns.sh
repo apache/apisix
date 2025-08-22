@@ -140,6 +140,10 @@ apisix:
         - 127.0.0.1:1053
 nginx_config:
     error_log_level: info
+deployment:
+    admin:
+        admin_key:
+          - key: 'admin'
 " > conf/config.yaml
 
 make run

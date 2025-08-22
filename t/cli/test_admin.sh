@@ -332,6 +332,10 @@ echo "passed: Admin API can only be used with etcd config_provider"
 echo '
 apisix:
   enable_admin: false
+deployment:
+    admin:
+        admin_key:
+          - key: 'admin'
 ' > conf/config.yaml
 
 rm logs/error.log
