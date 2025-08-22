@@ -46,7 +46,7 @@ nginx_config:
 deployment:
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log || true
@@ -110,7 +110,7 @@ nginx_config:
 deployment:
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log || true

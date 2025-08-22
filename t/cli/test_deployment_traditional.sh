@@ -31,7 +31,7 @@ deployment:
             - http://127.0.0.1:2379
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 
 ' > conf/config.yaml
 
@@ -65,7 +65,7 @@ deployment:
             - http://127.0.0.1:2379
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 make run
@@ -98,7 +98,7 @@ deployment:
             - http://127.0.0.1:2379
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 make run
@@ -125,7 +125,7 @@ deployment:
             verify: false
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
   ' > conf/config.yaml
 
 out=$(make init 2>&1 || echo "ouch")

@@ -43,7 +43,7 @@ deployment:
   timeout: 2
   admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 docker compose -f ./t/cli/docker-compose-etcd-cluster.yaml up -d

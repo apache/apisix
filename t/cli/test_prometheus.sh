@@ -83,7 +83,7 @@ plugin_attr:
 deployment:
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 IP=127.0.0.1 PORT=9092 make run
@@ -163,7 +163,7 @@ plugin_attr:
 deployment:
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 IP=127.0.0.1 PORT=9092 make run

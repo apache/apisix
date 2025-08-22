@@ -143,7 +143,7 @@ nginx_config:
 deployment:
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 " > conf/config.yaml
 
 make run

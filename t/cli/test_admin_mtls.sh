@@ -31,7 +31,7 @@ deployment:
             admin_ssl_cert_key: "../t/certs/mtls_server.key"
             admin_ssl_ca_cert: "../t/certs/mtls_ca.crt"
         admin_key:
-          - key: 'admin'
+          - key: admin
 
 ' > conf/config.yaml
 

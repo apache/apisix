@@ -37,7 +37,7 @@ deployment:
             verify: false
     admin:
         admin_key:
-            - key: "admin"
+            - key: admin
 
 ' > conf/config.yaml
 

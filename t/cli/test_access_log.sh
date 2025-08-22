@@ -191,7 +191,7 @@ deployment:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
         admin_key:
-          - key: 'admin'
+          - key: admin
 nginx_config:
   http:
     access_log_format: '\"\$upstream_scheme://\$upstream_host\" \$ssl_server_name'

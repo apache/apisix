@@ -33,7 +33,7 @@ deployment:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
         admin_key:
-          - key: 'admin'
+          - key: admin
 " > conf/config.yaml
 
 make init
@@ -67,7 +67,7 @@ deployment:
       ip: 127.0.0.2
       port: 9181
     admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 make init
@@ -115,7 +115,7 @@ deployment:
         allow_admin:
             - 127.0.0.9
         admin_key:
-          - key: 'admin'
+          - key: admin
 " > conf/config.yaml
 
 make init
@@ -283,7 +283,7 @@ deployment:
     admin_listen:
       port: 9180
     admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -317,7 +317,7 @@ deployment:
         config_provider: yaml
     admin:
       admin_key:
-        - key: "admin"
+        - key: admin
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -335,7 +335,7 @@ apisix:
 deployment:
     admin:
         admin_key:
-          - key: 'admin'
+          - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -369,7 +369,7 @@ nginx_config:
 deployment:
     admin:
       admin_key:
-        - key: "admin"
+        - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -444,7 +444,7 @@ stream_plugins:
 deployment:
     admin:
       admin_key:
-        - key: "admin"
+        - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log

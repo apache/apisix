@@ -35,7 +35,7 @@ deployment:
         timeout: 30
     admin:
         admin_key:
-            - key: "admin"
+            - key: admin
 ' >conf/config.yaml
 
 out=$(make init 2>&1 || true)
