@@ -261,8 +261,8 @@ function _M.set_by_route(route, api_ctx)
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
     local scheme = up_conf.scheme
-    if (scheme == "https" or scheme == "grpcs") and up_conf.tls then
-
+    local tls_has_cert = up_conf.tls and (up_conf.tls.client_cert or up_conf.tls.client_cert_id)
+    if (scheme == "https" or scheme == "grpcs") and tls_has_cert then
         local client_cert, client_key
         if up_conf.tls.client_cert_id then
             client_cert = api_ctx.upstream_ssl.cert
