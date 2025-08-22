@@ -677,7 +677,7 @@ deployment:                    # Deployment configurations
     admin_key:
       -
         name: admin                             # admin: write access to configurations.
-        key: ''   # Set API key for the admin of Admin API.
+        key: admin   # Set API key for the admin of Admin API.
         role: admin
       # -
       #   name: viewer                            # viewer: read-only to configurations.
