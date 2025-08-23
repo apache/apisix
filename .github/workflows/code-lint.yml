@@ -6,11 +6,6 @@ on:
     paths-ignore:
       - 'docs/**'
       - '**/*.md'
-  push:
-    branches: [master, 'release/**', fix/empty-admin-keys]
-    paths-ignore:
-      - 'docs/**'
-      - '**/*.md'
 
 permissions:
   contents: read
