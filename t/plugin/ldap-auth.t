@@ -255,7 +255,7 @@ passed
 
 
 
-=== TEST 12: verify
+=== TEST 12: verify capitalization scheme
 --- request
 GET /hello
 --- more_headers
@@ -610,6 +610,42 @@ passed
 GET /hello
 --- more_headers
 Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 26: verify lowercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 27: verify uppercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: BASIC dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 28: verify mixed case scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: bASiC dXNlcjAxOnBhc3N3b3JkMQ==
 --- response_body
 hello world
 --- error_log
