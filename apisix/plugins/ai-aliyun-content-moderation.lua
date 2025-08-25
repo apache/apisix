@@ -75,6 +75,8 @@ local schema = {
             default = 10000,
             description = "timeout in milliseconds",
         },
+        keepalive_pool = {type = "integer", minimum = 1, default = 30},
+        keepalive = {type = "boolean", default = true},
         ssl_verify = {type = "boolean", default = true },
     },
     encrypt_fields = {"access_key_secret"},
