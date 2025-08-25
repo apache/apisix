@@ -77,6 +77,7 @@ local schema = {
         },
         keepalive_pool = {type = "integer", minimum = 1, default = 30},
         keepalive = {type = "boolean", default = true},
+        keepalive_timeout = {type = "integer", minimum = 1000, default = 60000},
         ssl_verify = {type = "boolean", default = true },
     },
     encrypt_fields = {"access_key_secret"},
@@ -190,6 +191,12 @@ local function check_single_content(ctx, conf, content, service_name)
     local raw_res_body, err = res:read_body()
     if not raw_res_body then
         return nil, "failed to read response body: " .. err
+    end
+    if conf.keepalive then
+        local ok, err = httpc:set_keepalive(conf.keepalive_timeout, conf.keepalive_pool)
+        if not ok then
+            core.log.warn("failed to keepalive connection: ", err)
+        end
     end
     if res.status ~= 200 then
         return nil, "failed to request aliyun text moderation service, status: " .. res.status
