@@ -623,7 +623,41 @@ Authorization: Basic Zm9vOmJhcg==
 
 
 
-=== TEST 27: verify lowercase scheme
+=== TEST 27: configure the route to verify the basic scheme
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "basic-auth": {}
+                    },
+                    "upstream": {
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        },
+                        "type": "roundrobin"
+                    },
+                    "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 28: verify lowercase scheme
 --- request
 GET /hello
 --- more_headers
@@ -635,7 +669,7 @@ find consumer foo
 
 
 
-=== TEST 28: verify uppercase scheme
+=== TEST 29: verify uppercase scheme
 --- request
 GET /hello
 --- more_headers
@@ -647,7 +681,7 @@ find consumer foo
 
 
 
-=== TEST 29: verify mixed case scheme
+=== TEST 30: verify mixed case scheme
 --- request
 GET /hello
 --- more_headers
