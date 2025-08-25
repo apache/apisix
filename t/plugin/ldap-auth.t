@@ -267,43 +267,7 @@ find consumer user01
 
 
 
-=== TEST 13: verify lowercase scheme
---- request
-GET /hello
---- more_headers
-Authorization: basic dXNlcjAxOnBhc3N3b3JkMQ==
---- response_body
-hello world
---- error_log
-find consumer user01
-
-
-
-=== TEST 14: verify uppercase scheme
---- request
-GET /hello
---- more_headers
-Authorization: BASIC dXNlcjAxOnBhc3N3b3JkMQ==
---- response_body
-hello world
---- error_log
-find consumer user01
-
-
-
-=== TEST 15: verify mixed case scheme
---- request
-GET /hello
---- more_headers
-Authorization: bASiC dXNlcjAxOnBhc3N3b3JkMQ==
---- response_body
-hello world
---- error_log
-find consumer user01
-
-
-
-=== TEST 16: invalid schema
+=== TEST 13: invalid schema
 --- config
     location /t {
         content_by_lua_block {
@@ -331,7 +295,7 @@ find consumer user01
 
 
 
-=== TEST 17: get the default schema
+=== TEST 14: get the default schema
 --- config
     location /t {
         content_by_lua_block {
@@ -349,7 +313,7 @@ find consumer user01
 
 
 
-=== TEST 18: get the schema by schema_type
+=== TEST 15: get the schema by schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -367,7 +331,7 @@ find consumer user01
 
 
 
-=== TEST 19: get the schema by error schema_type
+=== TEST 16: get the schema by error schema_type
 --- config
     location /t {
         content_by_lua_block {
@@ -384,7 +348,7 @@ find consumer user01
 
 
 
-=== TEST 20: enable ldap-auth with tls
+=== TEST 17: enable ldap-auth with tls
 --- config
     location /t {
         content_by_lua_block {
@@ -421,7 +385,7 @@ passed
 
 
 
-=== TEST 21: verify
+=== TEST 18: verify
 --- request
 GET /hello
 --- more_headers
@@ -433,7 +397,7 @@ find consumer user01
 
 
 
-=== TEST 22: enable ldap-auth with tls, verify CA
+=== TEST 19: enable ldap-auth with tls, verify CA
 --- config
     location /t {
         content_by_lua_block {
@@ -471,7 +435,7 @@ passed
 
 
 
-=== TEST 23: verify
+=== TEST 20: verify
 --- request
 GET /hello
 --- more_headers
@@ -483,7 +447,7 @@ find consumer user01
 
 
 
-=== TEST 24: set ldap-auth conf: user_dn uses secret ref
+=== TEST 21: set ldap-auth conf: user_dn uses secret ref
 --- request
 GET /t
 --- config
@@ -554,7 +518,7 @@ passed
 
 
 
-=== TEST 25: store secret into vault
+=== TEST 22: store secret into vault
 --- exec
 VAULT_TOKEN='root' VAULT_ADDR='http://0.0.0.0:8200' vault kv put kv/apisix/user01 user_dn="cn=user01,ou=users,dc=example,dc=org"
 --- response_body
@@ -562,7 +526,7 @@ Success! Data written to: kv/apisix/user01
 
 
 
-=== TEST 26: verify
+=== TEST 23: verify
 --- request
 GET /hello
 --- more_headers
@@ -574,7 +538,7 @@ find consumer user01
 
 
 
-=== TEST 27: set ldap-auth conf with the token in an env var: user_dn uses secret ref
+=== TEST 24: set ldap-auth conf with the token in an env var: user_dn uses secret ref
 --- request
 GET /t
 --- config
@@ -641,11 +605,47 @@ passed
 
 
 
-=== TEST 28: verify
+=== TEST 25: verify
 --- request
 GET /hello
 --- more_headers
 Authorization: Basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 26: verify lowercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: basic dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 27: verify uppercase scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: BASIC dXNlcjAxOnBhc3N3b3JkMQ==
+--- response_body
+hello world
+--- error_log
+find consumer user01
+
+
+
+=== TEST 28: verify mixed case scheme
+--- request
+GET /hello
+--- more_headers
+Authorization: bASiC dXNlcjAxOnBhc3N3b3JkMQ==
 --- response_body
 hello world
 --- error_log
