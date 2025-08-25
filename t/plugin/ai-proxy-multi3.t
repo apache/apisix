@@ -200,30 +200,16 @@ __DATA__
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    },
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-4"},
+                                    "override": {"endpoint": "http://localhost:16724"},
                                     "checks": {
                                         "active": {
                                             "timeout": 5,
                                             "http_path": "/status/gpt4",
                                             "host": "foo.com",
-                                            "healthy": {
-                                                "interval": 1,
-                                                "successes": 1
-                                            },
-                                            "unhealthy": {
-                                                "interval": 1,
-                                                "http_failures": 1
-                                            },
+                                            "healthy": {"interval": 1,"successes": 1},
+                                            "unhealthy": {"interval": 1,"http_failures": 1},
                                             "req_headers": ["User-Agent: curl/7.29.0"]
                                         }
                                     }
@@ -357,30 +343,16 @@ passed
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    },
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-4"},
+                                    "override": {"endpoint": "http://localhost:16724"},
                                     "checks": {
                                         "active": {
                                             "timeout": 5,
                                             "http_path": "/status/gpt4",
                                             "host": "foo.com",
-                                            "healthy": {
-                                                "interval": 1,
-                                                "successes": 1
-                                            },
-                                            "unhealthy": {
-                                                "interval": 1,
-                                                "http_failures": 1
-                                            },
+                                            "healthy": {"interval": 1,"successes": 1},
+                                            "unhealthy": {"interval": 1,"http_failures": 1},
                                             "req_headers": ["User-Agent: curl/7.29.0"]
                                         }
                                     }

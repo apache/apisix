@@ -16,29 +16,46 @@
 --
 local _M = {}
 
-_M.chat_request_schema = {
-    type = "object",
-    properties = {
-        messages = {
-            type = "array",
-            minItems = 1,
-            items = {
-                properties = {
-                    role = {
-                        type = "string",
-                        enum = {"system", "user", "assistant"}
+local openai_compatible_chat_schema = {
+        type = "object",
+        properties = {
+            messages = {
+                type = "array",
+                minItems = 1,
+                items = {
+                    properties = {
+                        role = {
+                            type = "string",
+                            enum = {"system", "user", "assistant"}
+                        },
+                        content = {
+                            type = "string",
+                            minLength = "1",
+                        },
                     },
-                    content = {
-                        type = "string",
-                        minLength = "1",
-                    },
+                    additionalProperties = false,
+                    required = {"role", "content"},
                 },
-                additionalProperties = false,
-                required = {"role", "content"},
-            },
-        }
-    },
-    required = {"messages"}
+            }
+        },
+        required = {"messages"}
+    }
+
+_M.chat_request_schema = {
+    ["openai"] = openai_compatible_chat_schema,
+    ["deepseek"] = openai_compatible_chat_schema,
+    ["openai-compatible"] = openai_compatible_chat_schema,
+    ["azure-openai"] = openai_compatible_chat_schema
 }
+
+function _M.is_openai_compatible_provider(provider)
+    if provider == "openai" or
+       provider == "deepseek" or
+       provider == "openai-compatible" or
+       provider == "azure-openai" then
+        return true
+    end
+    return false
+end
 
 return  _M

@@ -857,6 +857,7 @@ _EOC_
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
 
+            set \$llm_content_risk_level         '';
             set \$request_type               'traditional_http';
 
             set \$llm_time_to_first_token        '';

@@ -18,10 +18,8 @@ local core = require("apisix.core")
 local require = require
 local pcall = pcall
 local ngx = ngx
-local req_set_body_data = ngx.req.set_body_data
 local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 local HTTP_INTERNAL_SERVER_ERROR = ngx.HTTP_INTERNAL_SERVER_ERROR
-
 local plugin_name = "ai-request-rewrite"
 
 local auth_item_schema = {
@@ -150,7 +148,10 @@ local function parse_llm_response(res_body)
         return nil, "'message' not in llm response choices"
     end
 
-    return message.content
+    local data = {
+        data = message.content
+    }
+    return core.json.encode(data)
 end
 
 
@@ -165,6 +166,22 @@ function _M.check_schema(conf)
     end
 
     return core.schema.check(schema, conf)
+end
+
+function _M.lua_body_filter(conf, ctx, headers, body)
+    if ngx.status > 299 then
+        core.log.error("LLM service returned error status: ", ngx.status)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    -- Parse LLM response
+    local llm_response, err = parse_llm_response(body)
+    if err then
+        core.log.error("failed to parse LLM response: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+
+    return ngx.OK, llm_response
 end
 
 
@@ -196,21 +213,11 @@ function _M.access(conf, ctx)
     }
 
     -- Send request to LLM service
-    local code, body = request_to_llm(conf, ai_request_table, ctx)
-    -- Handle LLM response
-    if code > 299 then
-        core.log.error("LLM service returned error status: ", code)
-        return HTTP_INTERNAL_SERVER_ERROR
-    end
-
-    -- Parse LLM response
-    local llm_response, err = parse_llm_response(body)
+    local _, _, err = request_to_llm(conf, ai_request_table, ctx)
     if err then
-        core.log.error("failed to parse LLM response: ", err)
+        core.log.error("failed to request LLM: ", err)
         return HTTP_INTERNAL_SERVER_ERROR
     end
-
-    req_set_body_data(llm_response)
 end
 
 return _M
