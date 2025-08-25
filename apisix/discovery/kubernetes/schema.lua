@@ -17,8 +17,7 @@
 
 local host_patterns = {
     { pattern = [[^\${[_A-Za-z]([_A-Za-z0-9]*[_A-Za-z])*}$]] },
-    { pattern = [[^[A-Za-z0-9]([-A-Za-z0-9]*[A-Za-z0-9])?]] ..
-                [[(\.[A-Za-z0-9]([-A-Za-z0-9]*[A-Za-z0-9])?)*$]] },
+    { pattern = [[^[a-z0-9]([-a-z0-9]*[a-z0-9])?(\.[a-z0-9]([-a-z0-9]*[a-z0-9])?)*$]] },
 }
 
 local port_patterns = {

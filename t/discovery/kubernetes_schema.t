@@ -115,14 +115,14 @@ invalid id too long: .*
             -- Valid host: uppercase domain
             config[1].service.host = "K8S.EXAMPLE.COM"
             ok, err = core.schema.check(k8s_schema, config)
-            assert(ok, err)
-            ngx.say("valid host uppercase: passed")
+            assert(not ok)
+            ngx.say("invalid host uppercase: ", err)
 
             -- Valid host: mixed case domain
             config[1].service.host = "K8s.Example.Com"
             ok, err = core.schema.check(k8s_schema, config)
-            assert(ok, err)
-            ngx.say("valid host mixed case: passed")
+            assert(not ok)
+            ngx.say("invalid host mixed case: ", err)
 
             -- Valid host: environment variable
             config[1].service.host = "${KUBERNETES_SERVICE_HOST}"
@@ -139,7 +139,7 @@ invalid id too long: .*
     }
 --- response_body_like
 valid host lowercase: passed
-valid host uppercase: passed
-valid host mixed case: passed
+invalid host uppercase: .*
+invalid host mixed case: .*
 valid host env var: passed
 invalid host empty: .*
