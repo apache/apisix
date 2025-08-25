@@ -80,7 +80,7 @@ local function extract_auth_header(authorization)
     local function do_extract(auth)
         local obj = { username = "", password = "" }
 
-        local m, err = ngx.re.match(auth, "(?i:basic)\\s(.*)", "jo")
+        local m, err = ngx.re.match(auth, "(?i:basic)\\s(.+)", "jo")
         if err then
             -- error authorization
             return nil, err
