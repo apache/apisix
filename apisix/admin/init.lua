@@ -89,7 +89,8 @@ local function check_token(ctx)
 
     local admin
     for i, row in ipairs(admin_key) do
-        if req_token == row.key then
+        -- Skip empty or invalid admin keys
+        if row.key and row.key ~= "" and req_token == row.key then
             admin = row
             break
         end

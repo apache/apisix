@@ -32,6 +32,8 @@ deployment:
         admin_api_mtls:
             admin_ssl_cert: '../t/certs/apisix_admin_ssl.crt'
             admin_ssl_cert_key: '../t/certs/apisix_admin_ssl.key'
+        admin_key:
+          - key: admin
 " > conf/config.yaml
 
 make init
@@ -64,6 +66,8 @@ deployment:
     admin_listen:
       ip: 127.0.0.2
       port: 9181
+    admin_key:
+          - key: admin
 ' > conf/config.yaml
 
 make init
@@ -110,6 +114,8 @@ deployment:
     admin:
         allow_admin:
             - 127.0.0.9
+        admin_key:
+          - key: admin
 " > conf/config.yaml
 
 make init
@@ -262,9 +268,9 @@ deployment:
 
 make init > output.log 2>&1 | true
 
-grep -E "WARNING: using empty Admin API." output.log > /dev/null
+grep -E "WARNING: Empty Admin API key detected." output.log > /dev/null
 if [ ! $? -eq 0 ]; then
-    echo "failed: need to show `WARNING: using fixed Admin API token has security risk`"
+    echo "failed: need to show `WARNING: empty admin keys will be ignored`"
     exit 1
 fi
 
@@ -276,6 +282,8 @@ deployment:
   admin:
     admin_listen:
       port: 9180
+    admin_key:
+          - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -307,6 +315,9 @@ deployment:
     role: data_plane
     role_data_plane:
         config_provider: yaml
+    admin:
+      admin_key:
+        - key: admin
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
@@ -321,6 +332,10 @@ echo "passed: Admin API can only be used with etcd config_provider"
 echo '
 apisix:
   enable_admin: false
+deployment:
+    admin:
+        admin_key:
+          - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -351,6 +366,10 @@ plugins:
   - node-status
 nginx_config:
   error_log_level:  info
+deployment:
+    admin:
+      admin_key:
+        - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
@@ -422,6 +441,10 @@ plugins:
   - public-api
   - node-status
 stream_plugins:
+deployment:
+    admin:
+      admin_key:
+        - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log
