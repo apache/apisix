@@ -19,7 +19,6 @@ local ngx = ngx
 local ngx_re = require("ngx.re")
 local consumer_mod = require("apisix.consumer")
 local ldap = require("resty.ldap")
-local string = string
 
 local schema = {
     type = "object",
@@ -67,27 +66,23 @@ function _M.check_schema(conf, schema_type)
     return ok, err
 end
 
-local function extract_auth_header(auth)
+local function extract_auth_header(authorization)
     local obj = { username = "", password = "" }
-    -- Check format of Authorization header.
-    local matches, err = ngx_re.split(auth, "\\s+", nil, nil, 2)
 
-    if not matches then
+    local m, err = ngx.re.match(authorization, "(?i:basic)\\s(.*)", "jo")
+    if err then
         -- error authorization
         return nil, err
-    elseif #matches < 2 then
-        -- Header doesn't split into enough tokens.
-        return nil, "Invalid authorization header format."
     end
 
-    if string.lower(matches[1]) ~= "basic" then
-        return nil, "Invalid authorization header format."
+    if not m then
+        return nil, "Invalid authorization header format"
     end
 
-    local decoded = ngx.decode_base64(matches[2])
+    local decoded = ngx.decode_base64(m[1])
 
     if not decoded then
-        return nil, "Failed to decode authentication header: " .. matches[2]
+        return nil, "Failed to decode authentication header: " .. m[1]
     end
 
     local res
