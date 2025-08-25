@@ -176,7 +176,7 @@ return {
                 properties = {
                     id = {
                         type = "string",
-                        pattern = [[^[a-z0-9]{1,8}$]]
+                        pattern = [[^[a-z0-9]{1,64}$]]
                     },
                     service = {
                         type = "object",
