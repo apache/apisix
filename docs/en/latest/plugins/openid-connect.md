@@ -103,6 +103,14 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | claim_schema | object | False |  |  | JSON schema of OIDC response claim. Example: `{"type":"object","properties":{"access_token":{"type":"string"}},"required":["access_token"]}` - validates that the response contains a required string field `access_token`. |
 
 NOTE: `encrypt_fields = {"client_secret"}` is also defined in the schema, which means that the field will be stored encrypted in etcd. See [encrypted storage fields](../plugin-develop.md#encrypted-storage-fields).
+In addition, you can use Environment Variables or APISIX secret to store and reference plugin attributes. APISIX currently supports storing secrets in two ways - [Environment Variables and HashiCorp Vault](../terminology/secret.md).
+
+For example, use below command to set environment variable
+`export keycloak_secret=abc`
+
+and use it in plugin conf like below
+
+`"client_secret": "$ENV://keycloak_secret"`
 
 ## Examples
 
