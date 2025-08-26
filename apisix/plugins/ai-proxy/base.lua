@@ -73,6 +73,7 @@ function _M.before_proxy(conf, ctx)
     if model then
         ctx.var.llm_model = model
     end
+
     local do_request = function()
         ctx.llm_request_start_time = ngx.now()
         ctx.var.llm_request_body = request_body
