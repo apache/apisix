@@ -191,14 +191,15 @@ function _M.new(up_nodes, upstream)
                 return
             end
 
+            -- Decrement connection count in shared dict first
+            incr_server_conn_count(upstream, server, -1)
+            -- Then update score based on new connection count
             local current_conn_count = get_server_conn_count(upstream, server)
-            info.score = (current_conn_count - 1) / info.weight
+            info.score = (current_conn_count + 1) / info.weight
             if info.score < 0 then
                 info.score = 0  -- Prevent negative scores
             end
             servers_heap:update(server, info)
-            -- Decrement connection count in shared dict
-            incr_server_conn_count(upstream, server, -1)
 
             if not before_retry then
                 if ctx.balancer_tried_servers then

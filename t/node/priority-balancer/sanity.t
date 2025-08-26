@@ -224,8 +224,8 @@ connect() failed
 qr/proxy request to \S+:1980 while connecting to upstream/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1980 while connecting to upstream
-proxy request to 0.0.0.0:1980 while connecting to upstream
 proxy request to 127.0.0.1:1980 while connecting to upstream
+proxy request to 0.0.0.0:1980 while connecting to upstream
 
 
 
