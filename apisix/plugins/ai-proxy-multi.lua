@@ -19,6 +19,10 @@ local core = require("apisix.core")
 local schema = require("apisix.plugins.ai-proxy.schema")
 local base   = require("apisix.plugins.ai-proxy.base")
 local plugin = require("apisix.plugin")
+local ipmatcher  = require("resty.ipmatcher")
+local healthcheck_manager = require("apisix.healthcheck_manager")
+local tonumber = tonumber
+local pairs = pairs
 
 local require = require
 local pcall = pcall
@@ -118,17 +122,100 @@ local function transform_instances(new_instances, instance)
     new_instances[instance.priority][instance.name] = instance.weight
 end
 
+local function parse_domain_for_node(node)
+    local host = node.domain or node.host
+    if not ipmatcher.parse_ipv4(host)
+       and not ipmatcher.parse_ipv6(host)
+    then
+        node.domain = host
 
-local function create_server_picker(conf, ups_tab)
+        local ip, err = core.resolver.parse_domain(host)
+        if ip then
+            node.host = ip
+        end
+
+        if err then
+            core.log.error("dns resolver domain: ", host, " error: ", err)
+        end
+    end
+end
+
+
+local function resolve_endpoint(instance_conf)
+    local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
+    local scheme, host, port, _ = endpoint:match("^(https?)://([^:/]+):?(%d*)(/?.*)$")
+    if port == "" then
+        port = (scheme == "https") and "443" or "80"
+    end
+    local node = {
+        host = host,
+        port = tonumber(port),
+        scheme = scheme,
+    }
+    parse_domain_for_node(node)
+    return node
+end
+
+
+local function get_checkers_status_ver(checkers)
+    local status_ver_total = 0
+    for _, checker in pairs(checkers) do
+        status_ver_total = status_ver_total + checker.status_ver
+    end
+    return status_ver_total
+end
+
+
+
+local function fetch_health_instances(conf, checkers)
+    local instances = conf.instances
+    local new_instances = core.table.new(0, #instances)
+    if not checkers then
+        for _, ins in ipairs(conf.instances) do
+            transform_instances(new_instances, ins)
+        end
+        return new_instances
+    end
+
+    for _, ins in ipairs(instances) do
+        local checker = checkers[ins.name]
+        if checker then
+            local host = ins.checks and ins.checks.active and ins.checks.active.host
+            local port = ins.checks and ins.checks.active and ins.checks.active.port
+
+            local node = resolve_endpoint(ins)
+            local ok, err = checker:get_target_status(node.host, port or node.port, host)
+            if ok then
+                transform_instances(new_instances, ins)
+            elseif err then
+                core.log.error("failed to get health check target status, addr: ",
+                    node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
+            end
+        else
+            transform_instances(new_instances, ins)
+        end
+    end
+
+    if core.table.nkeys(new_instances) == 0 then
+        core.log.warn("all upstream nodes is unhealthy, use default")
+        for _, ins in ipairs(instances) do
+            transform_instances(new_instances, ins)
+        end
+    end
+
+    return new_instances
+end
+
+
+local function create_server_picker(conf, ups_tab, checkers)
     local picker = pickers[conf.balancer.algorithm] -- nil check
     if not picker then
         pickers[conf.balancer.algorithm] = require("apisix.balancer." .. conf.balancer.algorithm)
         picker = pickers[conf.balancer.algorithm]
     end
-    local new_instances = {}
-    for _, ins in ipairs(conf.instances) do
-        transform_instances(new_instances, ins)
-    end
+
+    local new_instances = fetch_health_instances(conf, checkers)
+    core.log.info("fetch health instances: ", core.json.delay_encode(new_instances))
 
     if #new_instances._priority_index > 1 then
         core.log.info("new instances: ", core.json.delay_encode(new_instances))
@@ -149,11 +236,57 @@ local function get_instance_conf(instances, name)
 end
 
 
+function _M.construct_upstream(instance)
+    local upstream = {}
+    local node = resolve_endpoint(instance)
+    if not node then
+        return nil, "failed to resolve endpoint for instance: " .. instance.name
+    end
+
+    if not node.host or not node.port then
+        return nil, "invalid upstream node: " .. core.json.encode(node)
+    end
+
+    parse_domain_for_node(node)
+
+    local node = {
+        host = node.host,
+        port = node.port,
+        scheme = node.scheme,
+        weight = instance.weight or 1,
+        priority = instance.priority or 0,
+        name = instance.name,
+    }
+    upstream.nodes = {node}
+    upstream.checks = instance.checks
+    return upstream
+end
+
+
 local function pick_target(ctx, conf, ups_tab)
+    local checkers
+    for i, instance in ipairs(conf.instances) do
+        if instance.checks then
+            -- json path is 0 indexed so we need to decrement i
+            local resource_path = conf._meta.parent.resource_key ..
+                                  "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
+            local resource_version = conf._meta.parent.resource_version
+            local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
+            checkers = checkers or {}
+            checkers[instance.name] = checker
+        end
+    end
+
+    local version = plugin.conf_version(conf)
+    if checkers then
+        local status_ver = get_checkers_status_ver(checkers)
+        version = version .. "#" .. status_ver
+    end
+
     local server_picker = ctx.server_picker
     if not server_picker then
-        server_picker = lrucache_server_picker(ctx.matched_route.key, plugin.conf_version(conf),
-                                               create_server_picker, conf, ups_tab)
+        server_picker = lrucache_server_picker(ctx.matched_route.key, version,
+                                               create_server_picker, conf, ups_tab, checkers)
     end
     if not server_picker then
         return nil, nil, "failed to fetch server picker"

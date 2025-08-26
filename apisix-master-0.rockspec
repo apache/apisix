@@ -84,6 +84,7 @@ dependencies = {
     "jsonpath = 1.0-1",
     "api7-lua-resty-aws == 2.0.2-1",
     "multipart = 0.5.9-1",
+    "luautf8 = 0.1.6-1",
 }
 
 build = {

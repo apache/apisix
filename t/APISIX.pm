@@ -616,6 +616,7 @@ _EOC_
     lua_shared_dict xds-config 1m;
     lua_shared_dict xds-config-version 1m;
     lua_shared_dict cas_sessions 10m;
+    lua_shared_dict test 5m;
 
     proxy_ssl_name \$upstream_host;
     proxy_ssl_server_name on;
@@ -856,6 +857,7 @@ _EOC_
             proxy_no_cache                      \$upstream_no_cache;
             proxy_cache_bypass                  \$upstream_cache_bypass;
 
+            set \$llm_content_risk_level         '';
             set \$request_type               'traditional_http';
 
             set \$llm_time_to_first_token        '';

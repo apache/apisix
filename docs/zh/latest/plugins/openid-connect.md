@@ -104,6 +104,15 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 
 注意：schema 中还定义了 `encrypt_fields = {"client_secret"}`，这意味着该字段将会被加密存储在 etcd 中。具体参考 [加密存储字段](../plugin-develop.md#加密存储字段)。
 
+此外：你可以使用环境变量或者 APISIX secret 来存放和引用插件配置，APISIX 当前支持通过两种方式配置 secrets - [Environment Variables and HashiCorp Vault](../terminology/secret.md)。
+
+例如：你可以使用以下方式来设置环境变量
+`export keycloak_secret=abc`
+
+并且像下面这样在插件里使用
+
+`"client_secret": "$ENV://keycloak_secret"`
+
 ## 示例
 
 以下示例演示了如何针对不同场景配置 `openid-connect` 插件。
