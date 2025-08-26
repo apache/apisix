@@ -17,6 +17,7 @@
 use t::APISIX 'no_plan';
 
 repeat_each(1);
+log_level('debug');
 no_long_string();
 no_root_location();
 

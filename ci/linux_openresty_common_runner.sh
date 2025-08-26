@@ -62,20 +62,14 @@ do_install() {
     # install nodejs
     install_nodejs
 
-    # grpc-web server && client
-    cd t/plugin/grpc-web
-    ./setup.sh
-    # back to home directory
-    cd ../../../
-
-    # install mcp test suite
-    pushd t/plugin/mcp
-    pnpm install
-    popd
-
     # install common jest test suite
     pushd t
     pnpm install
+    popd
+
+    # grpc-web server && client
+    pushd t/plugin/grpc-web
+    ./setup.sh
     popd
 
     # install vault cli capabilities
@@ -99,6 +93,7 @@ script() {
 
     # APISIX_ENABLE_LUACOV=1 PERL5LIB=.:$PERL5LIB prove -Itest-nginx/lib -r t
     FLUSH_ETCD=1 TEST_EVENTS_MODULE=$TEST_EVENTS_MODULE prove --timer -Itest-nginx/lib -I./ -r $TEST_FILE_SUB_DIR | tee /tmp/test.result
+    fail_on_bailout /tmp/test.result
     rerun_flaky_tests /tmp/test.result
 }
 

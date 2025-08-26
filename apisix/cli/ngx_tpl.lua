@@ -67,6 +67,9 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
+    {% if enabled_plugins["prometheus"] or enabled_stream_plugins["prometheus"] then %}
+    lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
+    {% end %}
     {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
     {% end %}
@@ -76,6 +79,7 @@ lua {
     {% if enable_stream then %}
     lua_shared_dict balancer-least-conn {* meta.lua_shared_dict["balancer-least-conn"] *};
     {% end %}
+    lua_shared_dict nacos 10m;
 }
 
 {% if enabled_stream_plugins["prometheus"] and not enable_http then %}
@@ -98,22 +102,20 @@ http {
     }
 
     init_worker_by_lua_block {
-        require("apisix.plugins.prometheus.exporter").http_init(true)
+        local prometheus = require("apisix.plugins.prometheus.exporter")
+        prometheus.http_init(true)
+        prometheus.init_exporter_timer()
     }
 
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *};
 
         access_log off;
 
         location / {
             content_by_lua_block {
                 local prometheus = require("apisix.plugins.prometheus.exporter")
-                prometheus.export_metrics(true)
+                prometheus.export_metrics()
             }
         }
 
@@ -235,8 +237,12 @@ stream {
         ssl_certificate      {* ssl.ssl_cert *};
         ssl_certificate_key  {* ssl.ssl_cert_key *};
 
+        ssl_client_hello_by_lua_block {
+            apisix.ssl_client_hello_phase()
+        }
+
         ssl_certificate_by_lua_block {
-            apisix.stream_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 
@@ -578,11 +584,7 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *};
 
         access_log off;
 
@@ -741,11 +743,9 @@ http {
         {% end %}
 
         # opentelemetry_set_ngx_var starts
-        {% if opentelemetry_set_ngx_var then %}
         set $opentelemetry_context_traceparent          '';
         set $opentelemetry_trace_id                     '';
         set $opentelemetry_span_id                      '';
-        {% end %}
         # opentelemetry_set_ngx_var ends
 
         # zipkin_set_ngx_var starts
@@ -771,11 +771,11 @@ http {
 
         {% if ssl.enable then %}
         ssl_client_hello_by_lua_block {
-            apisix.http_ssl_client_hello_phase()
+            apisix.ssl_client_hello_phase()
         }
 
         ssl_certificate_by_lua_block {
-            apisix.http_ssl_phase()
+            apisix.ssl_phase()
         }
         {% end %}
 
@@ -811,6 +811,15 @@ http {
             set $dubbo_service_version       '';
             set $dubbo_method                '';
             {% end %}
+
+            set $llm_content_risk_level         '';
+            set $request_type               'traditional_http';
+
+            set $llm_time_to_first_token        '';
+            set $llm_model                      '';
+            set $llm_prompt_tokens              '';
+            set $llm_completion_tokens          '';
+
 
             access_by_lua_block {
                 apisix.http_access_phase()

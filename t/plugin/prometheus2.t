@@ -37,6 +37,14 @@ add_block_preprocessor(sub {
     if (!defined $block->request) {
         $block->set_value("request", "GET /t");
     }
+
+    if (!defined $block->yaml_config) {
+        $block->set_value("yaml_config", <<'EOF');
+plugin_attr:
+    prometheus:
+        refresh_interval: 0.1
+EOF
+    }
 });
 
 run_tests;
@@ -126,7 +134,7 @@ passed
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node=""\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="",consumer="",node="",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -172,7 +180,7 @@ apikey: auth-one
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="",service="",consumer="jack",node="127.0.0.1"\} \d+/
+qr/apisix_http_status\{code="200",route="1",matched_uri="\/hello",matched_host="",service="",consumer="jack",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -248,7 +256,7 @@ GET /not_found
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node=""\} \d+/
+qr/apisix_http_status\{code="404",route="",matched_uri="",matched_host="",service="",consumer="",node="",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -267,7 +275,7 @@ qr/404 Not Found/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="foo.com",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_http_status\{code="404",route="9",matched_uri="\/foo\*",matched_host="foo.com",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -286,7 +294,7 @@ qr/404 Not Found/
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_http_status\{code="404",route="9",matched_uri="\/bar\*",matched_host="bar.com",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -759,7 +767,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="route_name",service="service_name",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -802,7 +810,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="route_name",service="1",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -865,7 +873,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 
@@ -909,7 +917,7 @@ GET /hello
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",node="127.0.0.1"\} \d+/
+qr/apisix_bandwidth\{type="egress",route="1",service="service_name",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""\} \d+/
 
 
 

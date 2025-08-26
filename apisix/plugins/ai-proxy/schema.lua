@@ -14,6 +14,8 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local schema_def = require("apisix.schema_def")
+
 local _M = {}
 
 local auth_item_schema = {
@@ -61,8 +63,12 @@ local ai_instance_schema = {
             provider = {
                 type = "string",
                 description = "Type of the AI service instance.",
-                enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
-
+                enum = {
+                    "openai",
+                    "deepseek",
+                    "aimlapi",
+                    "openai-compatible",
+                }, -- add more providers later
             },
             priority = {
                 type = "integer",
@@ -84,6 +90,13 @@ local ai_instance_schema = {
                     },
                 },
             },
+            checks = {
+                type = "object",
+                properties = {
+                    active = schema_def.health_checker_active,
+                },
+                required = {"active"}
+            }
         },
         required = {"name", "provider", "auth", "weight"}
     },
@@ -96,7 +109,12 @@ _M.ai_proxy_schema = {
         provider = {
             type = "string",
             description = "Type of the AI service instance.",
-            enum = { "openai", "deepseek", "openai-compatible" }, -- add more providers later
+            enum = {
+                "openai",
+                "deepseek",
+                "aimlapi",
+                "openai-compatible",
+            }, -- add more providers later
 
         },
         auth = auth_schema,

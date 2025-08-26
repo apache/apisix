@@ -2,12 +2,20 @@
   "tools": [
     {
       "name": "read_file",
-      "description": "Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Only works within allowed directories.",
+      "description": "Read the complete contents of a file from the file system. Handles various text encodings and provides detailed error messages if the file cannot be read. Use this tool when you need to examine the contents of a single file. Use the 'head' parameter to read only the first N lines of a file, or the 'tail' parameter to read only the last N lines of a file. Only works within allowed directories.",
       "inputSchema": {
         "type": "object",
         "properties": {
           "path": {
             "type": "string"
+          },
+          "tail": {
+            "type": "number",
+            "description": "If provided, returns only the last N lines of the file"
+          },
+          "head": {
+            "type": "number",
+            "description": "If provided, returns only the first N lines of the file"
           }
         },
         "required": [
@@ -127,6 +135,32 @@
         "properties": {
           "path": {
             "type": "string"
+          }
+        },
+        "required": [
+          "path"
+        ],
+        "additionalProperties": false,
+        "$schema": "http://json-schema.org/draft-07/schema#"
+      }
+    },
+    {
+      "name": "list_directory_with_sizes",
+      "description": "Get a detailed listing of all files and directories in a specified path, including sizes. Results clearly distinguish between files and directories with [FILE] and [DIR] prefixes. This tool is useful for understanding directory structure and finding specific files within a directory. Only works within allowed directories.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "path": {
+            "type": "string"
+          },
+          "sortBy": {
+            "type": "string",
+            "enum": [
+              "name",
+              "size"
+            ],
+            "default": "name",
+            "description": "Sort entries by name or size"
           }
         },
         "required": [

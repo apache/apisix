@@ -225,6 +225,44 @@ services:
       http.port: 9201
       xpack.security.enabled: 'true'
 
+  elasticsearch-auth-2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.2
+    restart: unless-stopped
+    ports:
+      - "9301:9201"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      xpack.security.enabled: 'true'
+
+  elasticsearch-auth-3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:7.0.0
+    restart: unless-stopped
+    ports:
+      - "9401:9201"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      xpack.security.enabled: 'true'
+
+  elasticsearch-auth-4:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.7.0
+    restart: unless-stopped
+    ports:
+      - "9501:9201"
+    environment:
+      ES_JAVA_OPTS: -Xms512m -Xmx512m
+      discovery.type: single-node
+      ELASTIC_USERNAME: elastic
+      ELASTIC_PASSWORD: 123456
+      http.port: 9201
+      xpack.security.enabled: 'true'
 
   # The function services of OpenFunction
   test-header:

@@ -14,6 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+BEGIN {
+    if ($ENV{TEST_NGINX_CHECK_LEAK}) {
+        $SkipReason = "unavailable for the hup tests";
+
+    } else {
+        $ENV{TEST_NGINX_USE_HUP} = 1;
+        undef $ENV{TEST_NGINX_USE_STAP};
+    }
+}
+
 use t::APISIX;
 
 my $nginx_binary = $ENV{'TEST_NGINX_BINARY'} || 'nginx';
@@ -506,7 +516,32 @@ client certificate verified with SNI localhost, but the host is test.com
 
 
 
-=== TEST 15: set verification (2 ssl objects, both have mTLS)
+=== TEST 15: request localhost and save tls session to reuse
+--- max_size: 1048576
+--- exec
+echo "GET /hello HTTP/1.1\r\nHost: localhost\r\n" | \
+    timeout 1 openssl s_client -ign_eof -connect 127.0.0.1:1994 \
+    -servername localhost -cert t/certs/mtls_client.crt -key t/certs/mtls_client.key \
+    -sess_out session.dat || true
+--- response_body eval
+qr/200 OK/
+
+
+
+=== TEST 16: request test.com with saved tls session
+--- max_size: 1048576
+--- exec
+echo "GET /hello HTTP/1.1\r\nHost: test.com\r\n" | \
+    openssl s_client -ign_eof -connect 127.0.0.1:1994 -servername test.com \
+    -sess_in session.dat
+--- response_body eval
+qr/400 Bad Request/
+--- error_log
+sni in client hello mismatch hostname of ssl session, sni: test.com, hostname: localhost
+
+
+
+=== TEST 17: set verification (2 ssl objects, both have mTLS)
 --- config
     location /t {
         content_by_lua_block {
@@ -577,7 +612,7 @@ GET /t
 
 
 
-=== TEST 16: skip the mtls, although no client cert provided
+=== TEST 18: skip the mtls, although no client cert provided
 --- exec
 curl -k https://localhost:1994/hello1
 --- response_body eval
@@ -585,7 +620,7 @@ qr/hello1 world/
 
 
 
-=== TEST 17: skip the mtls, although with wrong client cert
+=== TEST 19: skip the mtls, although with wrong client cert
 --- exec
 curl -k --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/hello1
 --- response_body eval
@@ -593,7 +628,7 @@ qr/hello1 world/
 
 
 
-=== TEST 18: mtls failed, returns 400
+=== TEST 20: mtls failed, returns 400
 --- exec
 curl -k https://localhost:1994/hello
 --- response_body eval
@@ -603,7 +638,7 @@ client certificate was not present
 
 
 
-=== TEST 19: mtls failed, wrong client cert
+=== TEST 21: mtls failed, wrong client cert
 --- exec
 curl --cert t/certs/test2.crt --key t/certs/test2.key -k https://localhost:1994/hello
 --- response_body eval
@@ -613,7 +648,7 @@ client certificate verification is not passed: FAILED
 
 
 
-=== TEST 20: mtls failed, at handshake phase
+=== TEST 22: mtls failed, at handshake phase
 --- exec
 curl -k -v --resolve "test.com:1994:127.0.0.1" https://test.com:1994/hello
 --- error_log

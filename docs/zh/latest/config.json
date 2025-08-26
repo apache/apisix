@@ -1,5 +1,5 @@
 {
-  "version": "3.12.0",
+  "version": "3.13.0",
   "sidebar": [
     {
       "type": "category",
@@ -28,7 +28,8 @@
         "tutorials/protect-api",
         "tutorials/observe-your-api",
         "tutorials/health-check",
-        "tutorials/client-to-apisix-mtls"
+        "tutorials/client-to-apisix-mtls",
+        "tutorials/keycloak-oidc"
       ]
     },
     {
