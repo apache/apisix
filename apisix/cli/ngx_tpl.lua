@@ -806,6 +806,7 @@ http {
             set $dubbo_method                '';
             {% end %}
 
+            set $llm_content_risk_level         '';
             set $request_type               'traditional_http';
 
             set $llm_time_to_first_token        '';
