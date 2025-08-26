@@ -169,16 +169,6 @@ local function read_response(ctx, res)
             completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
             total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
         }
-        if res_body.choices and #res_body.choices > 0 then
-            local contents = {}
-            for _, choice in ipairs(res_body.choices) do
-                if choice and choice.message and choice.message.content then
-                    core.table.insert(contents, choice.message.content)
-                end
-            end
-            local content_to_check = table.concat(contents, " ")
-            ctx.var.llm_response_text = content_to_check
-        end
         ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
         ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
         if res_body.choices and #res_body.choices > 0 then
