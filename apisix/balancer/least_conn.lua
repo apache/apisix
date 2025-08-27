@@ -274,8 +274,8 @@ local function cleanup_all_conn_counts()
     end
 end
 
--- Public function to clean up all connection counts (for testing purposes only)
-function _M.cleanup_for_testing()
+-- Public function to clean up all connection counts
+function _M.cleanup_all()
     cleanup_all_conn_counts()
 end
 
