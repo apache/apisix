@@ -45,6 +45,7 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
+local trusted_addresses_util = require("apisix.utils.trusted-addresses")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -159,6 +160,8 @@ function _M.http_init_worker()
     -- To ensure that all workers related to Prometheus metrics are initialized,
     -- we need to put the initialization of the Prometheus plugin here.
     plugin.init_prometheus()
+
+    trusted_addresses_util.init_worker()
 end
 
 
@@ -599,6 +602,19 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 end
 
 
+local function handle_x_forwarded_headers(api_ctx)
+    if trusted_addresses_util.is_trusted(api_ctx.var.remote_addr) then
+        api_ctx.var.x_forwarded_proto = core.request.header(api_ctx, "X-Forwarded-Proto") or api_ctx.var.scheme
+        api_ctx.var.x_forwarded_host = core.request.header(api_ctx, "X-Forwarded-Host") or api_ctx.var.host
+        api_ctx.var.x_forwarded_port = core.request.header(api_ctx, "X-Forwarded-Port") or api_ctx.var.server_port
+    else
+        api_ctx.var.x_forwarded_host = api_ctx.var.host
+        api_ctx.var.x_forwarded_proto = api_ctx.var.scheme
+        api_ctx.var.x_forwarded_port = api_ctx.var.server_port
+    end
+end
+
+
 function _M.http_access_phase()
     -- from HTTP/3 to HTTP/1.1 we need to convert :authority pesudo-header
     -- to Host header, so we set upstream_host variable here.
@@ -647,6 +663,8 @@ function _M.http_access_phase()
     -- the original request_uri can be accessed via var.real_request_uri
     api_ctx.var.real_request_uri = api_ctx.var.request_uri
     api_ctx.var.request_uri = api_ctx.var.uri .. api_ctx.var.is_args .. (api_ctx.var.args or "")
+
+    handle_x_forwarded_headers(api_ctx)
 
     router.router_http.match(api_ctx)
 
