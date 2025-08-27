@@ -15,11 +15,35 @@
 -- limitations under the License.
 --
 
+local ngx = ngx
 local core = require("apisix.core")
 local require = require
+local pcall   = pcall
+local exporter = require("apisix.plugins.prometheus.exporter")
 local bad_request = ngx.HTTP_BAD_REQUEST
 
 local _M = {}
+
+function _M.set_logging(ctx, summaries, payloads)
+    if summaries then
+        ctx.llm_summary = {
+            model = ctx.var.llm_model,
+            duration = ctx.var.llm_time_to_first_token,
+            prompt_tokens = ctx.var.llm_prompt_tokens,
+            completion_tokens = ctx.var.llm_completion_tokens,
+        }
+    end
+    if payloads then
+        ctx.llm_request = {
+            messages = ctx.var.llm_request_body and ctx.var.llm_request_body.messages,
+            stream = ctx.var.request_type == "ai_stream"
+        }
+        ctx.llm_response_text = {
+            content = ctx.var.llm_response_text
+        }
+    end
+end
+
 
 function _M.before_proxy(conf, ctx)
     local ai_instance = ctx.picked_ai_instance
@@ -41,9 +65,28 @@ function _M.before_proxy(conf, ctx)
         request_body.stream_options = {
             include_usage = true
         }
+        ctx.var.request_type = "ai_stream"
+    else
+        ctx.var.request_type = "ai_chat"
+    end
+    local model = ai_instance.options and ai_instance.options.model or request_body.model
+    if model then
+        ctx.var.llm_model = model
     end
 
-    return ai_driver:request(ctx, conf, request_body, extra_opts)
+    local do_request = function()
+        ctx.llm_request_start_time = ngx.now()
+        ctx.var.llm_request_body = request_body
+        return ai_driver:request(ctx, conf, request_body, extra_opts)
+    end
+    exporter.inc_llm_active_connections(ctx)
+    local ok, code_or_err, body = pcall(do_request)
+    exporter.dec_llm_active_connections(ctx)
+    if not ok then
+        core.log.error("failed to send request to AI service: ", code_or_err)
+        return 500
+    end
+    return code_or_err, body
 end
 
 

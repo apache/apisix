@@ -42,6 +42,7 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
+  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
@@ -602,5 +603,5 @@ passed
             ngx.print(#final_res .. final_res[6])
         }
     }
---- response_body_like eval
+--- response_body_eval
 qr/6data: \[DONE\]\n\n/

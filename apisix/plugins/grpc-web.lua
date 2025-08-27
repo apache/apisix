@@ -185,6 +185,48 @@ function _M.header_filter(conf, ctx)
         core.response.set_header("Content-Type", ctx.grpc_web_mime)
         core.response.set_header("Content-Length", nil)
     end
+
+    -- Set gRPC Web metadata sent flag
+    -- The RPC calls on the gRPC service may fail without returning any data,
+    -- i.e., send `grpc-status` and `grpc-message`, but send an empty response body
+    -- In this case, the grpc metadata metadata (usually sent in the trailer) may
+    -- be sent with the HTTP/2 header.
+    --
+    -- 1. Normal gRPC (HTTP/2):
+    --
+    --   => HEADER frame => DATA frame => HEADER (trailer) frame with end stream flag => [END]
+    --
+    --   There will be a DATA frame between the HEADER frame (which contains the HTTP/2
+    --   pseudo-header such as :status) and the trailer header frame, which is sent in two
+    --   separate frames, and which was handled correctly by the previous implementation.
+    --
+    -- 2. Exception gRPC (HTTP/2 or gRPC-Web over HTTP1):
+    --
+    --   => HEADER(+trailers) frame (with end header flag and end stream flag) => [END]
+    --
+    --   If the gRPC call chooses not to return any data but instead returns a gRPC error
+    --   directly (via grpc-status), the DATA frame will be omitted and the gRPC metadata field,
+    --   which is normally located in the trailer, will be sent as a header along with the
+    --   regular HTTP/2 header.
+    --   For APISIX, its nginx http grpc module will handle HTTP/2 details on gRPC connections,
+    --   and for this exception case, the gRPC metadata will no longer be treated as a trailer
+    --   but rather as a general HTTP header. So it will no longer be readable as
+    --   an `upstream_trailer_grpc_status` variable, but only with `sent_http_grpc_status`.
+    --
+    -- We must deal with the second exception carefully. As required by the gRPC Web message frame:
+    --
+    --   Trailers-only responses: no change to the gRPC protocol spec. Trailers may be
+    --   sent together with response headers, with no message in the body.
+    --   ref: https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md
+    --
+    -- Therefore, when this situation exists, we confirm here that the `grpc-status` response header
+    -- has been sent and set a flag.
+    -- In subsequent body_filter phases, if it finds that this flag has been set, it skips attempts
+    -- to append additional trailer encoding to the end of the response body.
+    -- This is compliant, i.e., this is a trailers-only response, send the gRPC metadata contained
+    -- in the trailers in the HTTP response header and ensure that an empty response body is
+    -- sent (no trailers block in the end of response body).
+    ctx.grpc_web_metadata_sent = ctx.var.sent_http_grpc_status ~= nil
 end
 
 function _M.body_filter(conf, ctx)
@@ -208,6 +250,12 @@ function _M.body_filter(conf, ctx)
     end
 
     if ngx_arg[2] then -- if eof
+        -- If the gRPC metadata has already been sent through the response header,
+        -- the subsequent logic is skipped and no trailers chunk is appended.
+        if ctx.grpc_web_metadata_sent then
+            return
+        end
+
         local status = ctx.var.upstream_trailer_grpc_status
         local message = ctx.var.upstream_trailer_grpc_message
 

@@ -614,7 +614,7 @@ passed
             ngx.print(#final_res .. final_res[6])
         }
     }
---- response_body_like eval
+--- response_body_eval
 qr/6data: \[DONE\]\n\n/
 
 
