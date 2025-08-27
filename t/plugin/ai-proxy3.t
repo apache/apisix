@@ -67,7 +67,7 @@ add_block_preprocessor(sub {
                         return
                     end
 
-		    local res = [[
+            local res = [[
 {
   "id": "chatcmpl-12345",
   "object": "chat.completion",
@@ -98,7 +98,7 @@ add_block_preprocessor(sub {
                 content_by_lua_block {
                     local json = require("cjson.safe")
 
-		    local res = [[
+            local res = [[
 {
   "model": "gpt-3.5-turbo",
   "choices": [
