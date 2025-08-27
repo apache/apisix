@@ -61,6 +61,7 @@ local type            = type
 local pairs           = pairs
 local tostring       = tostring
 local ngx_re_match    = ngx.re.match
+local ngx_req_clear_header = ngx.req.clear_header
 local control_api_router
 
 local is_http = false
@@ -608,9 +609,26 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.x_forwarded_host = core.request.header(api_ctx, "X-Forwarded-Host") or api_ctx.var.host
         api_ctx.var.x_forwarded_port = core.request.header(api_ctx, "X-Forwarded-Port") or api_ctx.var.server_port
     else
-        api_ctx.var.x_forwarded_host = api_ctx.var.host
-        api_ctx.var.x_forwarded_proto = api_ctx.var.scheme
-        api_ctx.var.x_forwarded_port = api_ctx.var.server_port
+        if core.request.header(api_ctx, "X-Forwarded-Proto") then
+            -- Set the trusted value for the subsequent stages
+            api_ctx.var.x_forwarded_proto = api_ctx.var.scheme
+            -- Store the untrusted value for later use
+            api_ctx.untrusted_x_forwarded_proto = core.request.header(api_ctx, "X-Forwarded-Proto")
+            -- Clear headers to ensure that the subsequent stages get the correct info
+            ngx_req_clear_header("X-Forwarded-Proto")
+        end
+
+        if core.request.header(api_ctx, "X-Forwarded-Host") then
+            api_ctx.var.x_forwarded_host = api_ctx.var.host
+            api_ctx.untrusted_x_forwarded_host = core.request.header(api_ctx, "X-Forwarded-Host")
+            ngx_req_clear_header("X-Forwarded-Host")
+        end
+
+        if core.request.header(api_ctx, "X-Forwarded-Port") then
+            api_ctx.var.x_forwarded_port = api_ctx.var.server_port
+            api_ctx.untrusted_x_forwarded_port = core.request.header(api_ctx, "X-Forwarded-Port")
+            ngx_req_clear_header("X-Forwarded-Port")
+        end
     end
 end
 
