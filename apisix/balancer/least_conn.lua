@@ -112,33 +112,38 @@ function _M.new(up_nodes, upstream)
         conn_count_dict = ngx_shared[CONN_COUNT_DICT_NAME]
     end
 
-    if not conn_count_dict then
-        core.log.error("shared dict '", CONN_COUNT_DICT_NAME, "' not found")
-        return nil, "shared dict not found"
+    local use_persistent_counting = conn_count_dict ~= nil
+    if not use_persistent_counting then
+        core.log.warn("shared dict '", CONN_COUNT_DICT_NAME, "' not found, using traditional least_conn mode")
     end
 
     local servers_heap = binaryHeap.minUnique(least_score)
 
-    -- Clean up stale connection counts for removed servers
-    cleanup_stale_conn_counts(upstream, up_nodes)
+    if use_persistent_counting then
+        -- Clean up stale connection counts for removed servers
+        cleanup_stale_conn_counts(upstream, up_nodes)
+    end
 
     for server, weight in pairs(up_nodes) do
-        -- Get the persisted connection count for this server
-        local conn_count = get_server_conn_count(upstream, server)
-        -- Score directly reflects weighted connection count
-        local score = (conn_count + 1) / weight
-
-        core.log.debug("initializing server ", server,
-                " | weight: ", weight,
-                " | conn_count: ", conn_count,
-                " | score: ", score,
-                " | upstream_id: ", upstream.id or "no-id")
+        local score
+        if use_persistent_counting then
+            -- True least connection mode: use persistent connection counts
+            local conn_count = get_server_conn_count(upstream, server)
+            score = (conn_count + 1) / weight
+            core.log.debug("initializing server ", server, " with persistent counting",
+                    " | weight: ", weight, " | conn_count: ", conn_count, " | score: ", score)
+        else
+            -- Fallback mode: use original weighted round-robin behavior
+            score = 1 / weight
+        end
 
         -- Note: the argument order of insert is different from others
         servers_heap:insert({
             server = server,
             weight = weight,
+            effect_weight = 1 / weight,  -- For backward compatibility
             score = score,
+            use_persistent_counting = use_persistent_counting,
         }, server)
     end
 
@@ -176,11 +181,17 @@ function _M.new(up_nodes, upstream)
                 return nil, err
             end
 
-            -- Get current connection count for detailed logging
-            local current_conn_count = get_server_conn_count(upstream, server)
-            info.score = (current_conn_count + 1) / info.weight
-            servers_heap:update(server, info)
-            incr_server_conn_count(upstream, server, 1)
+            if info.use_persistent_counting then
+                -- True least connection mode: update based on persistent connection counts
+                local current_conn_count = get_server_conn_count(upstream, server)
+                info.score = (current_conn_count + 1) / info.weight
+                servers_heap:update(server, info)
+                incr_server_conn_count(upstream, server, 1)
+            else
+                -- Fallback mode: use original weighted round-robin logic
+                info.score = info.score + info.effect_weight
+                servers_heap:update(server, info)
+            end
             return server
         end,
         after_balance = function(ctx, before_retry)
@@ -191,13 +202,17 @@ function _M.new(up_nodes, upstream)
                 return
             end
 
-            -- Decrement connection count in shared dict first
-            incr_server_conn_count(upstream, server, -1)
-            -- Then update score based on new connection count
-            local current_conn_count = get_server_conn_count(upstream, server)
-            info.score = (current_conn_count + 1) / info.weight
-            if info.score < 0 then
-                info.score = 0  -- Prevent negative scores
+            if info.use_persistent_counting then
+                -- True least connection mode: update based on persistent connection counts
+                incr_server_conn_count(upstream, server, -1)
+                local current_conn_count = get_server_conn_count(upstream, server)
+                info.score = (current_conn_count + 1) / info.weight
+                if info.score < 0 then
+                    info.score = 0  -- Prevent negative scores
+                end
+            else
+                -- Fallback mode: use original weighted round-robin logic  
+                info.score = info.score - info.effect_weight
             end
             servers_heap:update(server, info)
 
@@ -223,6 +238,45 @@ function _M.new(up_nodes, upstream)
             end
         end,
     }
+end
+
+-- Clean up all connection counts in shared dict (for testing purposes)
+local function cleanup_all_conn_counts()
+    if not conn_count_dict then
+        conn_count_dict = ngx_shared[CONN_COUNT_DICT_NAME]
+    end
+    
+    if not conn_count_dict then
+        -- No shared dict available, nothing to cleanup
+        return
+    end
+
+    local keys, err = conn_count_dict:get_keys(0)  -- Get all keys
+    if err then
+        core.log.error("failed to get keys from shared dict during cleanup: ", err)
+        return
+    end
+
+    local cleaned_count = 0
+    for _, key in ipairs(keys or {}) do
+        if core.string.has_prefix(key, "conn_count:") then
+            local ok, delete_err = conn_count_dict:delete(key)
+            if not ok and delete_err then
+                core.log.warn("failed to delete connection count key during cleanup: ", key, ", error: ", delete_err)
+            else
+                cleaned_count = cleaned_count + 1
+            end
+        end
+    end
+    
+    if cleaned_count > 0 then
+        core.log.info("cleaned up ", cleaned_count, " connection count entries from shared dict")
+    end
+end
+
+-- Public function to clean up all connection counts (for testing purposes only)
+function _M.cleanup_for_testing()
+    cleanup_all_conn_counts()
 end
 
 return _M
