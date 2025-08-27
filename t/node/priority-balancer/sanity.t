@@ -62,8 +62,6 @@ run_tests();
 __DATA__
 
 === TEST 1: sanity
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -107,8 +105,6 @@ proxy request to 127.0.0.1:1980
 
 
 === TEST 2: all failed
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -139,8 +135,6 @@ proxy request to 127.0.0.1:1979
 
 
 === TEST 3: default priority is zero
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -171,8 +165,6 @@ proxy request to 127.0.0.1:1980
 
 
 === TEST 4: least_conn
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -224,14 +216,12 @@ connect() failed
 qr/proxy request to \S+:1980 while connecting to upstream/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1980 while connecting to upstream
-proxy request to 127.0.0.1:1980 while connecting to upstream
 proxy request to 0.0.0.0:1980 while connecting to upstream
+proxy request to 127.0.0.1:1980 while connecting to upstream
 
 
 
 === TEST 5: roundrobin
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -267,8 +257,6 @@ proxy request to 127.0.0.4:1979
 
 
 === TEST 6: ewma
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -300,8 +288,6 @@ proxy request to 127.0.0.3:1979
 
 
 === TEST 7: chash
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1

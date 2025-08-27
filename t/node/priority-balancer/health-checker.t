@@ -61,8 +61,6 @@ run_tests();
 __DATA__
 
 === TEST 1: all are down detected by health checker
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -117,8 +115,6 @@ proxy request to 127.0.0.2:1979
 
 
 === TEST 2: use priority as backup (setup rule)
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- config
     location /t {
         content_by_lua_block {
@@ -165,8 +161,6 @@ passed
 
 
 === TEST 3: use priority as backup
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- config
     location /t {
         content_by_lua_block {

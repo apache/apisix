@@ -58,8 +58,6 @@ run_tests();
 __DATA__
 
 === TEST 1: select highest weight
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -75,8 +73,6 @@ proxy request to 127.0.0.1:1980 while connecting to upstream
 
 
 === TEST 2: select least conn
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -114,14 +110,12 @@ GET /t
 qr/proxy request to \S+ while connecting to upstream/
 --- grep_error_log_out
 proxy request to 127.0.0.1:1980 while connecting to upstream
-proxy request to 127.0.0.1:1980 while connecting to upstream
 proxy request to 0.0.0.0:1980 while connecting to upstream
+proxy request to 127.0.0.1:1980 while connecting to upstream
 
 
 
 === TEST 3: retry
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
@@ -140,8 +134,6 @@ proxy request to 127.0.0.1:1980 while connecting to upstream
 
 
 === TEST 4: retry all nodes, failed
---- http_config
-lua_shared_dict balancer-least-conn 10m;
 --- apisix_yaml
 upstreams:
   - id: 1
