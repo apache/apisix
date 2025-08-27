@@ -51,7 +51,7 @@ function _M.is_trusted(address)
         core.log.info("trusted_addresses_matcher is not initialized, skipping subsequent parsing.")
         return false
     end
-    return trusted_addresses_matcher(address)
+    return trusted_addresses_matcher:match(address)
 end
 
 return _M
