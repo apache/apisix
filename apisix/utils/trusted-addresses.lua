@@ -9,12 +9,10 @@ local _M = {}
 
 
 local function validate_trusted_addresses(trusted_addresses)
-    if trusted_addresses and next(trusted_addresses) then
-        for _, cidr in ipairs(trusted_addresses) do
-            if not core.ip.validate_cidr_or_ip(cidr) then
-                core.log.error("Invalid IP/CIDR '", cidr, "' exists in trusted_addresses")
-                return false
-            end
+    for _, cidr in ipairs(trusted_addresses) do
+        if not core.ip.validate_cidr_or_ip(cidr) then
+            core.log.error("Invalid IP/CIDR '", cidr, "' exists in trusted_addresses")
+            return false
         end
     end
     return true
