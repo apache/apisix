@@ -61,6 +61,12 @@ __DATA__
             assert(ok, err)
             ngx.say("valid id: passed")
 
+            -- Valid id: 64 chars
+            config[1].id = string.rep("a", 64)
+            ok, err = core.schema.check(k8s_schema, config)
+            assert(ok, err)
+            ngx.say("valid id 64 chars: passed")
+
             -- Invalid id: uppercase letters
             config[1].id = "CLUSTER1"
             ok, err = core.schema.check(k8s_schema, config)
@@ -82,6 +88,7 @@ __DATA__
     }
 --- response_body_like
 valid id: passed
+valid id 64 chars: passed
 invalid id uppercase: .*
 invalid id special char: .*
 invalid id too long: .*
