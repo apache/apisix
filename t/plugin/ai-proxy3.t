@@ -153,3 +153,108 @@ POST /anything
 qr/.*completion_tokens.*/
 --- access_log eval
 qr/.*gpt-3.5-turbo \d+ 10 20.*/
+
+
+
+=== TEST 3: create a ai-proxy-multi route with delay streaming ai endpoint(every event delay 200ms)
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "self-hosted",
+                                    "provider": "openai-compatible",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-3.5-turbo",
+                                        "stream": true
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:7737/v1/chat/completions?delay=true"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                 }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: assert access log contains right llm variable
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local httpc = http.new()
+            local core = require("apisix.core")
+            local ok, err = httpc:connect({
+                scheme = "http",
+                host = "localhost",
+                port = ngx.var.server_port,
+            })
+            if not ok then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local params = {
+                method = "POST",
+                headers = {
+                    ["Content-Type"] = "application/json",
+                },
+                path = "/anything",
+                body = [[{
+                    "messages": [
+                        { "role": "system", "content": "some content" }
+                    ],
+                    "model": "gpt-4"
+                }]],
+            }
+            local res, err = httpc:request(params)
+            if not res then
+                ngx.status = 500
+                ngx.say(err)
+                return
+            end
+            local final_res = {}
+            local inspect = require("inspect")
+            while true do
+                local chunk, err = res.body_reader() -- will read chunk by chunk
+                if err then
+                    core.log.error("failed to read response chunk: ", err)
+                    break
+                end
+                if not chunk then
+                    break
+                end
+                core.table.insert_tail(final_res, chunk)
+            end
+            ngx.print(#final_res .. final_res[6])
+        }
+    }
+--- response_body_like eval
+qr/6data: \[DONE\]\n\n/
+--- access_log eval
+qr/.*gpt-3.5-turbo 2\d\d 15 20.*/
