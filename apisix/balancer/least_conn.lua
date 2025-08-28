@@ -114,7 +114,8 @@ function _M.new(up_nodes, upstream)
 
     local use_persistent_counting = conn_count_dict ~= nil
     if not use_persistent_counting then
-        core.log.warn("shared dict '", CONN_COUNT_DICT_NAME, "' not found, using traditional least_conn mode")
+        core.log.warn("shared dict '", 
+        CONN_COUNT_DICT_NAME, "' not found, using traditional least_conn mode")
     end
 
     local servers_heap = binaryHeap.minUnique(least_score)
@@ -208,7 +209,8 @@ function _M.new(up_nodes, upstream)
                 local current_conn_count = get_server_conn_count(upstream, server)
                 info.score = (current_conn_count + 1) / info.weight
                 if info.score < 0 then
-                    info.score = 0  -- Prevent negative scores
+                    -- Prevent negative scores
+                    info.score = 0
                 end
             else
                 -- Fallback mode: use original weighted round-robin logic
@@ -240,7 +242,6 @@ function _M.new(up_nodes, upstream)
     }
 end
 
--- Clean up all connection counts in shared dict (for testing purposes)
 local function cleanup_all_conn_counts()
     if not conn_count_dict then
         conn_count_dict = ngx_shared[CONN_COUNT_DICT_NAME]
@@ -262,7 +263,8 @@ local function cleanup_all_conn_counts()
         if core.string.has_prefix(key, "conn_count:") then
             local ok, delete_err = conn_count_dict:delete(key)
             if not ok and delete_err then
-                core.log.warn("failed to delete connection count key during cleanup: ", key, ", error: ", delete_err)
+                core.log.warn("failed to delete connection count key during cleanup: ",
+                key, ", error: ", delete_err)
             else
                 cleaned_count = cleaned_count + 1
             end
@@ -274,7 +276,6 @@ local function cleanup_all_conn_counts()
     end
 end
 
--- Public function to clean up all connection counts
 function _M.cleanup_all()
     cleanup_all_conn_counts()
 end
