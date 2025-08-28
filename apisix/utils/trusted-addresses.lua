@@ -1,7 +1,7 @@
-local require         = require
-local core            = require("apisix.core")
-local next            = next
-local ipairs          = ipairs
+local require       = require
+local core          = require("apisix.core")
+local next          = next
+local ipairs        = ipairs
 
 local trusted_addresses_matcher
 
@@ -26,9 +26,14 @@ function _M.init_worker()
     if not trusted_addresses then
         return
     end
-    
+
     if not core.table.isarray(trusted_addresses) then
         core.log.error("trusted_addresses '", trusted_addresses, "' is not an array, please check your configuration")
+        return
+    end
+
+    if not next(trusted_addresses) then
+        core.log.info("trusted_addresses is an empty array")
         return
     end
 
@@ -41,7 +46,7 @@ function _M.init_worker()
         core.log.error("failed to create ip matcher for trusted_addresses: ", err)
         return
     end
-    
+
     trusted_addresses_matcher = matcher
 end
 
