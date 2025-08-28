@@ -27,6 +27,8 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
+    trusted_addresses:
+        - "127.0.0.1"
 deployment:
     role: data_plane
     role_data_plane:
