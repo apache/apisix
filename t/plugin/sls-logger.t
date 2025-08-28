@@ -267,6 +267,8 @@ apisix:
         enable_encrypt_fields: true
         keyring:
             - edd1c9f0985e76a2
+    trusted_addresses:
+        - "127.0.0.1"
 --- config
     location /t {
         content_by_lua_block {
