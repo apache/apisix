@@ -92,6 +92,30 @@ add_block_preprocessor(sub {
                     ngx.say(res)
                 }
             }
+
+            location /null-content {
+                content_by_lua_block {
+                    local json = require("cjson.safe")
+
+            local res = [[
+{
+  "model": "gpt-3.5-turbo",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "content": null
+      },
+      "finish_reason": "stop"
+    }
+  ],
+  "usage": null
+}]]
+                    ngx.status = 200
+                    ngx.say(res)
+                }
+            }
         }
 _EOC_
 
@@ -153,3 +177,50 @@ POST /anything
 qr/.*completion_tokens.*/
 --- access_log eval
 qr/.*gpt-3.5-turbo \d+ 10 20.*/
+
+
+
+=== TEST 3: proxy to /null-content ai endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy": {
+                            "provider": "openai",
+                            "auth": {
+                                "header": {
+                                    "Authorization": "Bearer token"
+                                }
+                            },
+                            "override": {
+                                "endpoint": "http://localhost:6724/null-content"
+                            }
+                        }
+                    }
+                }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 4: send request
+--- request
+POST /anything
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
+--- error_code: 200
+--- response_body eval
+qr/.*assistant.*/
+--- no_error_log
