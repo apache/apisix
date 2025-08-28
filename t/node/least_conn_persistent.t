@@ -120,7 +120,7 @@ proxy request to 0.0.0.0:1980 while connecting to upstream
                 ngx.say("shared dict available: false")
                 return
             end
-            
+
             -- Test balancer creation with connection counting
             local least_conn = require("apisix.balancer.least_conn")
             local upstream = {
@@ -131,33 +131,33 @@ proxy request to 0.0.0.0:1980 while connecting to upstream
                 ["10.1.1.1:8080"] = 1,
                 ["10.1.1.2:8080"] = 1
             }
-            
+
             -- Clean any existing data
             least_conn.cleanup_all()
-            
+
             -- Create balancer
             local balancer = least_conn.new(nodes, upstream)
             if balancer then
                 ngx.say("balancer with connection counting created: true")
-                
+
                 -- Simulate connections
                 for i = 1, 4 do
                     local ctx = {}
                     local server = balancer.get(ctx)
                     ngx.say("connection ", i, " assigned to a server")
                 end
-                
+
                 -- Check connection counts in shared dict
                 local count1 = dict:get("conn_count:test_conn_counting:10.1.1.1:8080") or 0
                 local count2 = dict:get("conn_count:test_conn_counting:10.1.1.2:8080") or 0
                 ngx.say("final connection counts - server1: ", count1, ", server2: ", count2)
-                
+
                 -- Total connections should be 4
                 local total_connections = count1 + count2
                 ngx.say("total connections tracked: ", total_connections)
                 ngx.say("connection counting working: ", total_connections == 4)
                 ngx.say("connection distribution balanced: ", count1 == 2 and count2 == 2)
-                
+
                 -- Cleanup
                 least_conn.cleanup_all()
             else
@@ -187,7 +187,7 @@ connection distribution balanced: true
     location /t {
         content_by_lua_block {
             local least_conn = require("apisix.balancer.least_conn")
-            
+
             if type(least_conn.cleanup_all) == "function" then
                 ngx.say("cleanup function exists: true")
                 -- Call cleanup function to test it works
@@ -212,24 +212,24 @@ cleanup function executed: true
         content_by_lua_block {
             local least_conn = require("apisix.balancer.least_conn")
             local dict = ngx.shared["balancer-least-conn"]
-            
+
             local upstream = {
                 id = "test_weighted_counting",
                 type = "least_conn"
             }
-            
+
             -- Test with different weights: server1 weight=3, server2 weight=1
             local nodes = {
                 ["172.16.1.1:9000"] = 3,  -- higher weight
                 ["172.16.1.2:9000"] = 1   -- lower weight
             }
-            
+
             -- Clean previous data
             least_conn.cleanup_all()
-            
+
             -- Create balancer
             local balancer = least_conn.new(nodes, upstream)
-            
+
             -- Make several connections
             ngx.say("making connections to test weighted least connection:")
             for i = 1, 6 do
@@ -237,18 +237,18 @@ cleanup function executed: true
                 local server = balancer.get(ctx)
                 ngx.say("connection ", i, " -> ", server)
             end
-            
+
             -- Check final connection counts
             local count1 = dict:get("conn_count:test_weighted_counting:172.16.1.1:9000") or 0
             local count2 = dict:get("conn_count:test_weighted_counting:172.16.1.2:9000") or 0
-            
+
             ngx.say("final connection counts:")
             ngx.say("server1 (weight=3): ", count1, " connections")
             ngx.say("server2 (weight=1): ", count2, " connections")
-            
+
             -- Higher weight server should get more connections
             ngx.say("higher weight server got more connections: ", count1 > count2)
-            
+
             -- Cleanup
             least_conn.cleanup_all()
         }

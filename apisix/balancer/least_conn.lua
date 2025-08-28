@@ -211,7 +211,7 @@ function _M.new(up_nodes, upstream)
                     info.score = 0  -- Prevent negative scores
                 end
             else
-                -- Fallback mode: use original weighted round-robin logic  
+                -- Fallback mode: use original weighted round-robin logic
                 info.score = info.score - info.effect_weight
             end
             servers_heap:update(server, info)
@@ -245,7 +245,7 @@ local function cleanup_all_conn_counts()
     if not conn_count_dict then
         conn_count_dict = ngx_shared[CONN_COUNT_DICT_NAME]
     end
-    
+
     if not conn_count_dict then
         -- No shared dict available, nothing to cleanup
         return
@@ -268,7 +268,7 @@ local function cleanup_all_conn_counts()
             end
         end
     end
-    
+
     if cleaned_count > 0 then
         core.log.info("cleaned up ", cleaned_count, " connection count entries from shared dict")
     end
