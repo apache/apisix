@@ -61,7 +61,6 @@ local type            = type
 local pairs           = pairs
 local tostring       = tostring
 local ngx_re_match    = ngx.re.match
-local ngx_req_clear_header = ngx.req.clear_header
 local control_api_router
 
 local is_http = false
@@ -604,12 +603,8 @@ end
 
 
 local function handle_x_forwarded_headers(api_ctx)
-    local is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
-    if is_trusted then
-        api_ctx.var.http_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto or api_ctx.var.scheme
-        api_ctx.var.http_x_forwarded_host = api_ctx.var.http_x_forwarded_host or api_ctx.var.host
-        api_ctx.var.http_x_forwarded_port = api_ctx.var.http_x_forwarded_port or api_ctx.var.server_port
-    else
+    local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
+    if not addr_is_trusted then
         -- store the original x-forwarded-* headers for later process
         api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
         api_ctx.var.original_x_forwarded_host = api_ctx.var.http_x_forwarded_host
@@ -620,6 +615,8 @@ local function handle_x_forwarded_headers(api_ctx)
         core.request.set_header(api_ctx, "X-Forwarded-Proto", api_ctx.var.scheme)
         core.request.set_header(api_ctx, "X-Forwarded-Host", api_ctx.var.host)
         core.request.set_header(api_ctx, "X-Forwarded-Port", api_ctx.var.server_port)
+        -- clear untrusted values,
+        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`
         core.request.set_header(api_ctx, "X-Forwarded-For", nil)
     end
 end
