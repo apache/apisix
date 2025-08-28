@@ -44,7 +44,8 @@ function _M.init_worker()
     end
 
     if not core.table.isarray(trusted_addresses) then
-        core.log.error("trusted_addresses '", trusted_addresses, "' is not an array, please check your configuration")
+        core.log.error("trusted_addresses '", trusted_addresses,
+                       "' is not an array, please check your configuration")
         return
     end
 
@@ -69,7 +70,7 @@ end
 
 function _M.is_trusted(address)
     if not trusted_addresses_matcher then
-        core.log.info("trusted_addresses_matcher is not initialized, skipping subsequent parsing.")
+        core.log.info("trusted_addresses_matcher is not initialized")
         return false
     end
     return trusted_addresses_matcher:match(address)
