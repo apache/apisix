@@ -236,6 +236,7 @@ do
         llm_content_risk_level     = true,
 
         request_type               = true,
+        apisix_upstream_response_time = true,
         llm_time_to_first_token    = true,
         llm_model                  = true,
         llm_prompt_tokens          = true,
