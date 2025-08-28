@@ -1,0 +1,5 @@
+
+> mcp-test-suite@ test /home/ashish/dev/apisix/t/plugin/mcp
+> jest
+
+ ELIFECYCLE  Test failed. See above for more details.
