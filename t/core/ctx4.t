@@ -60,10 +60,9 @@ __DATA__
                         "serverless-post-function": {
                             "phase": "log",
                             "functions": [
-                                "return function(conf, ctx) 
+                                "return function(conf, ctx)
                                     local apisix_urt = ctx.var.apisix_upstream_response_time
                                     local ngx_urt = ngx.var.upstream_response_time
-                                    
                                     if apisix_urt and ngx_urt and apisix_urt == ngx_urt then
                                         ngx.log(ngx.WARN, 'SUCCESS: apisix_upstream_response_time matches')
                                     else
