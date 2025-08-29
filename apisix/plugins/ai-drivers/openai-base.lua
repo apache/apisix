@@ -165,6 +165,7 @@ local function read_response(ctx, res)
         core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
         ctx.ai_token_usage = {}
         if type(res_body.usage) == "table" then
+            ctx.llm_raw_usage = res_body.usage
             ctx.ai_token_usage.prompt_tokens = res_body.usage.prompt_tokens or 0
             ctx.ai_token_usage.completion_tokens = res_body.usage.completion_tokens or 0
             ctx.ai_token_usage.total_tokens = res_body.usage.total_tokens or 0
