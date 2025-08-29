@@ -651,6 +651,7 @@ http {
 
         {% if enable_admin_ui then %}
         location = /ui {
+            absolute_redirect off;
             return 301 /ui/;
         }
         location ^~ /ui/ {
