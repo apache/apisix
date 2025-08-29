@@ -860,7 +860,7 @@ _EOC_
             set \$llm_content_risk_level         '';
             set \$request_type               'traditional_http';
 
-            set \$llm_time_to_first_token        '';
+            set \$llm_time_to_first_token        '0';
             set \$request_llm_model              '';
             set \$llm_model                      '';
             set \$llm_prompt_tokens              '0';
