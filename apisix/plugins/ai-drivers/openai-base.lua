@@ -97,7 +97,7 @@ local function read_response(ctx, res)
                 return
             end
 
-            if ctx.var.llm_time_to_first_token == "" then
+            if ctx.var.llm_time_to_first_token == "0" then
                 ctx.var.llm_time_to_first_token = math.floor(
                                                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             end
@@ -163,17 +163,20 @@ local function read_response(ctx, res)
             ", it will cause token usage not available")
     else
         core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
-        ctx.ai_token_usage = {
-            prompt_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
-            completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
-            total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
-        }
-        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
-        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
-        if res_body.choices and #res_body.choices > 0 then
+        ctx.ai_token_usage = {}
+        if type(res_body.usage) == "table" then
+            ctx.ai_token_usage.prompt_tokens = res_body.usage.prompt_tokens or 0
+            ctx.ai_token_usage.completion_tokens = res_body.usage.completion_tokens or 0
+            ctx.ai_token_usage.total_tokens = res_body.usage.total_tokens or 0
+        end
+        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
+        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+        if type(res_body.choices) == "table" and #res_body.choices > 0 then
             local contents = {}
             for _, choice in ipairs(res_body.choices) do
-                if choice and choice.message and choice.message.content then
+                if type(choice) == "table"
+                        and type(choice.message) == "table"
+                        and type(choice.message.content) == "string" then
                     core.table.insert(contents, choice.message.content)
                 end
             end
