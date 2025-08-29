@@ -604,7 +604,15 @@ end
 
 local function handle_x_forwarded_headers(api_ctx)
     local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
-    if not addr_is_trusted then
+    if addr_is_trusted then
+        -- later send to upstream in `ngx_tpl` by `var_x_forwarded_*`
+        api_ctx.var.var_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
+                                         or api_ctx.var.scheme
+        api_ctx.var.var_x_forwarded_host = api_ctx.var.http_x_forwarded_host
+                                        or api_ctx.var.host
+        api_ctx.var.var_x_forwarded_port = api_ctx.var.http_x_forwarded_port 
+                                        or api_ctx.var.server_port
+    else
         -- store the original x-forwarded-* headers for later process
         api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
         api_ctx.var.original_x_forwarded_host = api_ctx.var.http_x_forwarded_host
