@@ -293,21 +293,6 @@ end
 
 local function set_upstream_headers(api_ctx, picked_server)
     set_upstream_host(api_ctx, picked_server)
-
-    local proto = api_ctx.var.http_x_forwarded_proto
-    if proto then
-        api_ctx.var.var_x_forwarded_proto = proto
-    end
-
-    local x_forwarded_host = api_ctx.var.http_x_forwarded_host
-    if x_forwarded_host then
-        api_ctx.var.var_x_forwarded_host = x_forwarded_host
-    end
-
-    local port = api_ctx.var.http_x_forwarded_port
-    if port then
-        api_ctx.var.var_x_forwarded_port = port
-    end
 end
 
 
@@ -604,6 +589,7 @@ end
 
 local function handle_x_forwarded_headers(api_ctx)
     local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
+
     if not addr_is_trusted then
         -- store the original x-forwarded-* headers for later process
         api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
@@ -611,19 +597,38 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.original_x_forwarded_port = api_ctx.var.http_x_forwarded_port
         api_ctx.var.original_x_forwarded_for = api_ctx.var.http_x_forwarded_for
 
+        local proto = api_ctx.var.scheme
+        local host = api_ctx.var.host
+        local port = api_ctx.var.server_port
+
+        api_ctx.var.http_x_forwarded_proto = proto
+        api_ctx.var.http_x_forwarded_host = host
+        api_ctx.var.http_x_forwarded_port = port
+
         -- override the x-forwarded-* headers to the trusted ones
-        core.request.set_header(api_ctx, "X-Forwarded-Proto", api_ctx.var.scheme)
-        core.request.set_header(api_ctx, "X-Forwarded-Host", api_ctx.var.host)
-        core.request.set_header(api_ctx, "X-Forwarded-Port", api_ctx.var.server_port)
-        -- clear untrusted values,
+        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
+        core.request.set_header(api_ctx, "X-Forwarded-Host", host)
+        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
         -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`
         core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+    end
+end
 
-        --- need to manually update the values in `var`
-        api_ctx.var.http_x_forwarded_proto = api_ctx.var.scheme
-        api_ctx.var.http_x_forwarded_host = api_ctx.var.host
-        api_ctx.var.http_x_forwarded_port = api_ctx.var.server_port
-        api_ctx.var.http_x_forwarded_for = nil
+
+local function update_var_x_forwarded_headers(api_ctx)
+    local proto = api_ctx.var.http_x_forwarded_proto
+    if proto then
+        api_ctx.var.var_x_forwarded_proto = proto
+    end
+
+    local port = api_ctx.var.http_x_forwarded_port
+    if port then
+        api_ctx.var.var_x_forwarded_port = port
+    end
+
+    local host = api_ctx.var.http_x_forwarded_host
+    if host then
+        api_ctx.var.var_x_forwarded_host = host
     end
 end
 
@@ -785,6 +790,8 @@ function _M.http_access_phase()
     end
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
+
+    update_var_x_forwarded_headers(api_ctx)
 end
 
 
