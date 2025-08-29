@@ -244,3 +244,57 @@ GET /apisix/admin/routes
 --- error_code: 200
 --- error_log
 Admin key is bypassed!
+
+
+
+=== TEST 16: Access with valid key in mixed configuration (valid + empty keys), admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+    admin_key:
+    - name: admin
+      role: admin
+      key: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
+    - name: empty
+      role: admin
+      key: ''
+--- more_headers
+X-API-KEY: rDAkLJbqvoBzBOoxuYAUDbbWaSilvIca
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+
+
+
+=== TEST 17: Access with empty key should be rejected, admin_key_required=true
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: true
+    admin_key:
+    - name: empty
+      role: admin
+      key: ''
+--- more_headers
+X-API-KEY: 
+--- request
+GET /apisix/admin/routes
+--- error_code: 401
+
+
+
+=== TEST 18: Access without key when only empty keys configured, admin_key_required=false
+--- yaml_config
+deployment:
+  admin:
+    admin_key_required: false
+    admin_key:
+    - name: empty
+      role: admin
+      key: ''
+--- request
+GET /apisix/admin/routes
+--- error_code: 200
+--- error_log
+Admin key is bypassed!
