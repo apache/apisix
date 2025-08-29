@@ -604,6 +604,7 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
+        api_ctx.var.http_x_forwarded_for = nil
 
         -- override the x-forwarded-* headers to the trusted ones
         core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
