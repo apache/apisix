@@ -47,6 +47,7 @@ function _M.new(opts)
         host = opts.host,
         port = opts.port,
         path = opts.path,
+        remove_model = opts.options and opts.options.remove_model
     }
     return setmetatable(self, mt)
 end
@@ -252,7 +253,9 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
             request_table[opt] = val
         end
     end
-
+    if self.remove_model then
+        request_table.model = nil
+    end
     local req_json, err = core.json.encode(request_table)
     if not req_json then
         return nil, err
