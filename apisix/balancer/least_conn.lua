@@ -114,7 +114,7 @@ function _M.new(up_nodes, upstream)
 
     local use_persistent_counting = conn_count_dict ~= nil
     if not use_persistent_counting then
-        core.log.warn("shared dict '", 
+        core.log.warn("shared dict '",
         CONN_COUNT_DICT_NAME, "' not found, using traditional least_conn mode")
     end
 
