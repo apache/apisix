@@ -27,6 +27,7 @@ local _M = {}
 function _M.set_logging(ctx, summaries, payloads)
     if summaries then
         ctx.llm_summary = {
+            request_model = ctx.var.request_llm_model,
             model = ctx.var.llm_model,
             duration = ctx.var.llm_time_to_first_token,
             prompt_tokens = ctx.var.llm_prompt_tokens,
@@ -68,6 +69,9 @@ function _M.before_proxy(conf, ctx)
         ctx.var.request_type = "ai_stream"
     else
         ctx.var.request_type = "ai_chat"
+    end
+    if request_body.model then
+        ctx.var.request_llm_model = request_body.model
     end
     local model = ai_instance.options and ai_instance.options.model or request_body.model
     if model then
