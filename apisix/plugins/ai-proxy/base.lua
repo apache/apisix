@@ -31,6 +31,7 @@ function _M.set_logging(ctx, summaries, payloads)
             duration = ctx.var.llm_time_to_first_token,
             prompt_tokens = ctx.var.llm_prompt_tokens,
             completion_tokens = ctx.var.llm_completion_tokens,
+            upstream_response_time = ctx.var.apisix_upstream_response_time,
         }
     end
     if payloads then

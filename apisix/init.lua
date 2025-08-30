@@ -957,6 +957,15 @@ end
 
 
 function _M.http_log_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    if not api_ctx.var.apisix_upstream_response_time or
+    api_ctx.var.apisix_upstream_response_time == "" then
+        api_ctx.var.apisix_upstream_response_time = ngx.var.upstream_response_time
+    end
     local api_ctx = common_phase("log")
     if not api_ctx then
         return

@@ -176,7 +176,7 @@ POST /anything
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*gpt-3.5-turbo \d+ 10 20.*/
+qr/.*[\d.]+ \"http:\/\/localhost\" gpt-3.5-turbo [\d.]+ 10 20.*/
 
 
 
