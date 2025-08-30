@@ -46,6 +46,10 @@ The Plugin is functionally similar to NGINX's [ngx_http_realip_module](https://n
 | recursive  | boolean | False |  False   |    | If false, replace the original client address that matches one of the trusted addresses by the last address sent in the configured `source`.<br />If true, replace the original client address that matches one of the trusted addresses by the last non-trusted address sent in the configured `source`. |
 
 :::note
+Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream.
+:::
+
+:::note
 If the address specified in `source` is missing or invalid, the Plugin would not change the client address.
 :::
 

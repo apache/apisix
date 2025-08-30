@@ -71,6 +71,10 @@ The response headers are listed below:
 | config.real_client_ip    | boolean       | false    | true          | Specifies whether to use the `X-Forwarded-For` as the client IP (if present). If `false`, uses the direct client IP from the connection. |
 
 :::note
+Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream.
+:::
+
+:::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
