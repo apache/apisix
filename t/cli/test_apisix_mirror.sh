@@ -25,6 +25,10 @@ echo '
 nginx_config:
   http:
     enable_access_log: false
+deployment:
+  admin:
+    admin_key:
+      - key: admin
 ' > conf/config.yaml
 
 rm logs/error.log || true

@@ -31,6 +31,9 @@ deployment:
         prefix: "/apisix"
         host:
             - http://127.0.0.1:2379
+    admin:
+        admin_key:
+            - key: admin
 ' > conf/config.yaml
 
 make run
