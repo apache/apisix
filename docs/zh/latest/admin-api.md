@@ -284,6 +284,42 @@ curl 'http://127.0.0.1:9180/apisix/admin/routes?name=test&uri=foo&label=' \
 }
 ```
 
+### 支持引用过滤资源 {#support-reference-filtering-query}
+
+:::note
+
+这个特性于 APISIX 3.13.0 引入。
+
+APISIX 支持通过 `service_id` 和 `upstream_id` 查询路由和 Stream 路由。现在不支持其他资源或字段。
+
+:::
+
+在获取资源列表时，你可以使用 `filter` 参数过滤资源。
+
+它以以下方式编码：
+
+```text
+filter=escape_uri(key1=value1&key2=value2)
+```
+
+以下是一个使用 `service_id` 进行路由列表过滤的例子。当同时设置了多个过滤条件，结果将为它们的交集。
+
+```shell
+curl 'http://127.0.0.1:9180/apisix/admin/routes?filter=service_id%3D1' \
+-H "X-API-KEY: $admin_key" -X GET
+```
+
+```json
+{
+  "total": 1,
+  "list": [
+    {
+      ...
+    }
+  ]
+}
+```
+
 ## Route
 
 Route 也称之为路由，可以通过定义一些规则来匹配客户端的请求，然后根据匹配结果加载并执行相应的插件，并把请求转发给到指定 Upstream（上游）。
@@ -991,6 +1027,7 @@ APISIX 的 Upstream 除了基本的负载均衡算法选择外，还支持对上
 | tls.client_cert    | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书           | 设置跟上游通信时的客户端证书，详细信息请参考下文。                                                                        | |
 | tls.client_key	 | 否，不能和 `tls.client_cert_id` 一起使用               | https 证书私钥           | 设置跟上游通信时的客户端私钥，详细信息请参考下文。                                                                                                                                                                                                                                                                                                              | |
 | tls.client_cert_id | 否，不能和 `tls.client_cert`、`tls.client_key` 一起使用 | SSL           | 设置引用的 SSL id，详见 [SSL](#ssl)。                                                                                                                                                                                                                                                                                                              | |
+| tls.verify                  |否，目前仅支持 Kafka 上游。                | Boolean                       | 开启服务器证书验证功能，目前仅支持 Kafka 上游。                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |                                                                                                                                            |
 |keepalive_pool.size  | 否                                             | 辅助 | 动态设置 `keepalive` 指令，详细信息请参考下文。 |
 |keepalive_pool.idle_timeout  | 否                                             | 辅助 | 动态设置 `keepalive_timeout` 指令，详细信息请参考下文。 |
 |keepalive_pool.requests  | 否                                             | 辅助 | 动态设置 `keepalive_requests` 指令，详细信息请参考下文。 |

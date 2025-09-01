@@ -116,6 +116,9 @@ apisix:
 
   disable_sync_configuration_during_start: false  # Safe exit. TO BE REMOVED.
 
+  # This time will be used to distinguish whether the worker is started first time or restarted due to a crash, unit: second.
+  worker_startup_time_threshold: 60
+
   data_encryption:                # Data encryption settings.
     enable_encrypt_fields: true   # Whether enable encrypt fields specified in `encrypt_fields` in plugin schema.
     keyring:                      # This field is used to encrypt the private key of SSL and the `encrypt_fields`
@@ -136,6 +139,8 @@ apisix:
   #   ip: 127.0.0.1               # /status endpoint will return 200 status code if APISIX has successfully started and running correctly
   #   port: 7085                  # /status/ready endpoint will return 503 status code if any of the workers do not receive config from etcd
                                   # or (standalone mode) the config isn't loaded yet either via file or Admin API.
+  # disable_upstream_healthcheck: false # A global switch for healthcheck. Defaults to false.
+                                        # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
@@ -168,6 +173,9 @@ nginx_config:                     # Config for render the template to generate n
   meta:
     lua_shared_dict:              # Nginx Lua shared memory zone. Size units are m or k.
       prometheus-metrics: 15m
+      prometheus-cache: 10m       # Cache the calculated metrics data text.
+                                  # Please resize when the `error.log` prompts that the data is full.
+                                  # NOTE: Restart APISIX to take effect.
       standalone-config: 10m
 
   stream:
@@ -213,6 +221,11 @@ nginx_config:                     # Config for render the template to generate n
     enable_access_log: true             # Enable HTTP proxy access logging.
     access_log: logs/access.log         # Location of the access log.
     access_log_buffer: 16384            # buffer size of access log.
+    # available variables:
+    # request_type: traditional_http / ai_chat / ai_stream
+    # llm_time_to_first_token: duration from the start send request to ai server to the first token received
+    # llm_prompt_tokens: number of tokens in the prompt
+    # llm_completion_tokens: number of tokens in the chat completion
     access_log_format: |
       "$remote_addr - $remote_user [$time_local] $http_host \"$request\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\""
     # Customize log format: http://nginx.org/en/docs/varindex.html
@@ -500,7 +513,7 @@ plugins:                           # plugin list (sorted by priority)
   - ai-proxy-multi                 # priority: 998
   #- brotli                        # priority: 996
   - gzip                           # priority: 995
-  - server-info                    # priority: 990
+  #- server-info                    # priority: 990
   - traffic-split                  # priority: 966
   - redirect                       # priority: 900
   - response-rewrite               # priority: 899
@@ -603,6 +616,7 @@ plugin_attr:          # Plugin attributes
     export_addr:                            # Set the address for the Prometheus export server.
       ip: 127.0.0.1                         # Set the IP.
       port: 9091                            # Set the port.
+    refresh_interval: 15                    # Set the interval for refreshing cached metric data. unit: second.
     # metrics:    # Create extra labels from nginx variables: https://nginx.org/en/docs/varindex.html
     #  http_status:
     #    expire: 0 # The expiration time after which metrics are removed. unit: second.

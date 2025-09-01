@@ -54,8 +54,7 @@ local plugin_schema = {
     properties = {
         mode = {
             type = "string",
-            enum = { "off", "monitor", "block", nil },
-            default = nil,
+            enum = { "off", "monitor", "block" }
         },
         match = match_schema,
         append_waf_resp_header = {
@@ -100,8 +99,7 @@ local metadata_schema = {
     properties = {
         mode = {
             type = "string",
-            enum = { "off", "monitor", "block", nil },
-            default = nil,
+            enum = { "off", "monitor", "block" }
         },
         nodes = {
             type = "array",
@@ -271,7 +269,7 @@ end
 
 local function get_conf(conf, metadata)
     local t = {
-        mode = "block",
+        mode = "monitor",
         real_client_ip = true,
     }
 
@@ -326,7 +324,7 @@ local function do_access(conf, ctx)
 
     extra_headers[HEADER_CHAITIN_WAF_SERVER] = host
 
-    local mode = t.mode or "block"
+    local mode = t.mode or "monitor"
     if mode == "off" then
         extra_headers[HEADER_CHAITIN_WAF] = "off"
         return nil, nil, extra_headers

@@ -42,7 +42,6 @@ The `elasticsearch-logger` Plugin pushes request and response logs in batches to
 | endpoint_addrs  | array[string] | True     |                             | Elasticsearch API endpoint addresses. If multiple endpoints are configured, they will be written randomly.            |
 | field         | object   | True     |                             | Elasticsearch `field` configuration.                          |
 | field.index   | string  | True     |                             | Elasticsearch [_index field](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field). |
-| field.type    | string  | False    | Elasticsearch default value | Elasticsearch [_type field](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field). |
 | log_format | object | False    |                             | Custom log format in key-value pairs in JSON format. Support [APISIX](../apisix-variable.md) or [NGINX variables](http://nginx.org/en/docs/varindex.html) in values. |
 | auth          | array   | False    |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) configuration. |
 | auth.username | string  | True     |                             | Elasticsearch [authentication](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) username. |
@@ -110,7 +109,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 The following example demonstrates how you can enable the `elasticsearch-logger` Plugin on a route, which logs client requests and responses to the Route and pushes logs to Elasticsearch.
 
-Create a Route with `elasticsearch-logger` to configure the `index` field as `gateway` and the `type` field as `logs`:
+Create a Route with `elasticsearch-logger` to configure the `index` field as `gateway`:
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -122,8 +121,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
         }
       }
     },
@@ -149,7 +147,6 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "CE-JL5QBOkdYRG7kEjTJ",
   "_version": 1,
   "_score": 1,
@@ -215,8 +212,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
       }
     },
     "upstream": {
@@ -257,7 +253,6 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "Ck-WL5QBOkdYRG7kODS0",
   "_version": 1,
   "_score": 1,
@@ -288,8 +283,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
         },
         "include_req_body": true,
         "include_req_body_expr": [["arg_log_body", "==", "yes"]]
@@ -319,7 +313,6 @@ Navigate to the Kibana dashboard on [localhost:5601](http://localhost:5601) and 
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "Dk-cL5QBOkdYRG7k7DSW",
   "_version": 1,
   "_score": 1,
@@ -384,7 +377,6 @@ Navigate to the Kibana dashboard __Discover__ tab and you should see a log gener
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "EU-eL5QBOkdYRG7kUDST",
   "_version": 1,
   "_score": 1,

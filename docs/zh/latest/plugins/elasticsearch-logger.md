@@ -43,7 +43,6 @@ description: elasticsearch-logger Plugin 将请求和响应日志批量推送到
 | endup_addrs | array[string] | 是 | | Elasticsearch API 端点地址。如果配置了多个端点，则会随机写入。 |
 | field | object | 是 | | Elasticsearch `field` 配置。 |
 | field.index | string | 是 | | Elasticsearch [_index 字段](https://www.elastic.co/guide/en/elasticsearch/reference/current/mapping-index-field.html#mapping-index-field)。 |
-| field.type | string | 否 | Elasticsearch 默认值 | Elasticsearch [_type 字段](https://www.elastic.co/guide/en/elasticsearch/reference/7.17/mapping-type-field.html#mapping-type-field)。 |
 | log_format | object | 否 | | JSON 格式的键值对中的自定义日志格式。值中支持 [APISIX](../apisix-variable.md) 或 [NGINX 变量](http://nginx.org/en/docs/varindex.html)。 |
 | auth | array | 否 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 配置。 |
 | auth.username | string | 是 | | Elasticsearch [身份验证](https://www.elastic.co/guide/en/elasticsearch/reference/current/setting-up-authentication.html) 用户名​​。 |
@@ -111,7 +110,7 @@ admin_key=$(yq '.deployment.admin.admin_key[0].key' conf/config.yaml | sed 's/"/
 
 以下示例演示如何在路由上启用 `elasticsearch-logger` 插件，该插件记录客户端对路由的请求和响应，并将日志推送到 Elasticsearch。
 
-使用 `elasticsearch-logger` 创建路由，将 `index` 字段配置为 `gateway`，将 `type` 字段配置为 `logs`：
+使用 `elasticsearch-logger` 创建路由，将 `index` 字段配置为 `gateway`：
 
 ```shell
 curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
@@ -123,8 +122,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
         }
       }
     },
@@ -150,7 +148,6 @@ curl -i "http://127.0.0.1:9080/anything"
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "CE-JL5QBOkdYRG7kEjTJ",
   "_version": 1,
   "_score": 1,
@@ -216,8 +213,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
       }
     },
     "upstream": {
@@ -258,7 +254,6 @@ curl -i "http://127.0.0.1:9080/anything" -H "env: dev"
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "Ck-WL5QBOkdYRG7kODS0",
   "_version": 1,
   "_score": 1,
@@ -289,8 +284,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
       "elasticsearch-logger": {
         "endpoint_addrs": ["http://elasticsearch:9200"],
         "field": {
-          "index": "gateway",
-          "type": "logs"
+          "index": "gateway"
         },
         "include_req_body": true,
         "include_req_body_expr": [["arg_log_body", "==", "yes"]]
@@ -320,7 +314,6 @@ curl -i "http://127.0.0.1:9080/anything?log_body=yes" -X POST -d '{"env": "dev"}
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "Dk-cL5QBOkdYRG7k7DSW",
   "_version": 1,
   "_score": 1,
@@ -385,7 +378,6 @@ curl -i "http://127.0.0.1:9080/anything" -X POST -d '{"env": "dev"}'
 ```json
 {
   "_index": "gateway",
-  "_type": "logs",
   "_id": "EU-eL5QBOkdYRG7kUDST",
   "_version": 1,
   "_score": 1,

@@ -1,5 +1,5 @@
 {
-  "version": "3.12.0",
+  "version": "3.13.0",
   "sidebar": [
     {
       "type": "category",
@@ -39,7 +39,8 @@
         "tutorials/cache-api-responses",
         "tutorials/add-multiple-api-versions",
         "tutorials/client-to-apisix-mtls",
-        "tutorials/websocket-authentication"
+        "tutorials/websocket-authentication",
+        "tutorials/keycloak-oidc"
       ]
     },
     {
@@ -75,6 +76,7 @@
             "plugins/ai-rate-limiting",
             "plugins/ai-prompt-guard",
             "plugins/ai-aws-content-moderation",
+            "plugins/ai-aliyun-content-moderation",
             "plugins/ai-prompt-decorator",
             "plugins/ai-prompt-template",
             "plugins/ai-rag",

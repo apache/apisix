@@ -42,6 +42,7 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
+  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
@@ -602,5 +603,53 @@ passed
             ngx.print(#final_res .. final_res[6])
         }
     }
---- response_body_like eval
+--- response_body_eval
 qr/6data: \[DONE\]\n\n/
+
+
+
+=== TEST 15: set route with wrong override endpoint
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-official",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http//localhost:6724"
+                                    }
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- error_code: 400
+--- response_body eval
+qr/.invalid endpoint.*/

@@ -18,6 +18,7 @@ local next = next
 local error = error
 
 local DECAY_TIME = 10 -- this value is in seconds
+local SHM_TTL = 60
 local LOCK_KEY = ":ewma_key"
 
 local shm_ewma = ngx_shared["balancer-ewma"]
@@ -58,7 +59,7 @@ local function decay_ewma(ewma, last_touched_at, rtt, now)
 end
 
 local function store_stats(upstream, ewma, now)
-    local success, err, forcible = shm_last_touched_at:set(upstream, now)
+    local success, err, forcible = shm_last_touched_at:set(upstream, now, SHM_TTL)
     if not success then
         core.log.error("shm_last_touched_at:set failed: ", err)
     end
@@ -66,7 +67,7 @@ local function store_stats(upstream, ewma, now)
         core.log.warn("shm_last_touched_at:set valid items forcibly overwritten")
     end
 
-    success, err, forcible = shm_ewma:set(upstream, ewma)
+    success, err, forcible = shm_ewma:set(upstream, ewma, SHM_TTL)
     if not success then
         core.log.error("shm_ewma:set failed: ", err)
     end

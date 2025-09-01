@@ -21,8 +21,7 @@ const config: Config = {
   testEnvironment: 'node',
   testRegex: '(/__tests__/.*|(\\.|/)(spec|test))\\.(ts|mts)$',
   transform: {
-    '^.+\\.ts$': ['ts-jest', { useESM: false }],
-    '^.+\\.mts$': ['ts-jest', { useESM: true, tsconfig: 'tsconfig.esm.json' }],
+    '^.+\\.(ts|mts)$': ['ts-jest', { useESM: true }],
   },
   extensionsToTreatAsEsm: ['.mts'],
   moduleFileExtensions: ['ts', 'mts', 'js'],
