@@ -143,6 +143,8 @@ apisix:
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
 # trusted_addresses:              # When enabled, APISIX will trust the `X-Forwarded-*` Headers
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
+#   - 0.0.0.0/0                   # CAUTION: When not configured, APISIX will remove `X-Forwarded-*` headers
+                                  # from requests originating from any IP/CIDR.
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
