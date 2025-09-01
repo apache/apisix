@@ -194,15 +194,29 @@ local function on_endpoint_deleted(handle, endpoint)
 end
 
 
-local function pre_list(handle)
-    handle.endpoint_dict:flush_all()
+local pre_list
+local post_list
+do
+    local existing_keys
+    function pre_list(handle)
+        existing_keys = handle.endpoint_dict:get_keys(0)
+    end
+
+
+    local function post_list(handle)
+        local current_keys = handle.endpoint_dict:get_keys(0)
+        local current_keys_hash = {}
+        for _, key in ipairs(current_keys) do
+            current_keys_hash[key] = true
+        end
+        for _, key in ipairs(existing_keys) do
+            if not current_keys_hash[key] then
+                handle.endpoint_dict:delete(key)
+            end
+        end
+        existing_keys = {}
 end
-
-
-local function post_list(handle)
-    handle.endpoint_dict:flush_expired()
 end
-
 
 local function setup_label_selector(conf, informer)
     informer.label_selector = conf.label_selector
@@ -369,7 +383,7 @@ local function get_apiserver(conf)
 end
 
 local function create_endpoint_lrucache(endpoint_dict, endpoint_key, endpoint_port)
-    local endpoint_content = endpoint_dict:get_stale(endpoint_key)
+    local endpoint_content = endpoint_dict:get(endpoint_key)
     if not endpoint_content then
         core.log.error("get empty endpoint content from discovery DIC, this should not happen ",
                 endpoint_key)
@@ -497,7 +511,7 @@ local function single_mode_nodes(service_name)
     local endpoint_dict = ctx
     local endpoint_key = match[1]
     local endpoint_port = match[2]
-    local endpoint_version = endpoint_dict:get_stale(endpoint_key .. "#version")
+    local endpoint_version = endpoint_dict:get(endpoint_key .. "#version")
     if not endpoint_version then
         core.log.info("get empty endpoint version from discovery DICT ", endpoint_key)
         return nil
@@ -612,7 +626,7 @@ local function multiple_mode_nodes(service_name)
 
     local endpoint_key = match[2]
     local endpoint_port = match[3]
-    local endpoint_version = endpoint_dict:get_stale(endpoint_key .. "#version")
+    local endpoint_version = endpoint_dict:get(endpoint_key .. "#version")
     if not endpoint_version then
         core.log.info("get empty endpoint version from discovery DICT ", endpoint_key)
         return nil
