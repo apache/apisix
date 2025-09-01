@@ -40,7 +40,7 @@ The `request-id` Plugin adds a unique ID to each request proxied through APISIX,
 | ------------------- | ------- | -------- | -------------- | ------------------------------- | ---------------------------------------------------------------------- |
 | header_name         | string  | False    | "X-Request-Id" |                                 | Name of the header that carries the request unique ID. Note that if a request carries an ID in the `header_name` header, the Plugin will use the header value as the unique ID and will not overwrite it with the generated ID.                                 |
 | include_in_response | boolean | False    | true           |                                 | If true, include the generated request ID in the response header, where the name of the header is the `header_name` value. |
-| algorithm           | string  | False    | "uuid"         | ["uuid","nanoid","range_id"] | Algorithm used for generating the unique ID. When set to `uuid` , the Plugin generates a universally unique identifier. When set to `nanoid`, the Plugin generates a compact, URL-safe ID. When set to `range_id`, the Plugin generates a sequential ID with specific parameters.                 |
+| algorithm           | string  | False    | "uuid"         | ["uuid","nanoid","range_id","ksuid"] | Algorithm used for generating the unique ID. When set to `uuid` , the Plugin generates a universally unique identifier. When set to `nanoid`, the Plugin generates a compact, URL-safe ID. When set to `range_id`, the Plugin generates a sequential ID with specific parameters. When set to `ksuid`, the Plugin generates a sequential ID with timestamp and randomly number.                  |
 | range_id      | object | False | |   | Configuration for generating a request ID using the `range_id` algorithm.  |
 | range_id.char_set      | string | False | "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789" | minimum length 6 | Character set used for the `range_id` algorithm. |
 | range_id.length    | integer | False | 16             | >=6 | Length of the generated ID for the `range_id` algorithm. |
@@ -241,6 +241,59 @@ You should receive an `HTTP/1.1 200 OK` response and see the response includes t
 
 ```text
 X-Request-Id: kepgHWCH2ycQ6JknQKrX2
+```
+
+### Use `ksuid` Algorithm
+
+The following example demonstrates how to configure `request-id` on a Route and use the `ksuid` algorithm to generate the request ID.
+
+Create a Route with the `request-id` Plugin as such:
+
+```shell
+curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
+  -H "X-API-KEY: ${ADMIN_API_KEY}" \
+  -d '{
+    "id": "request-id-route",
+    "uri": "/anything",
+    "plugins": {
+      "request-id": {
+        "algorithm": "ksuid"
+      }
+    },
+    "upstream": {
+      "type": "roundrobin",
+      "nodes": {
+        "httpbin.org:80": 1
+      }
+    }
+  }'
+```
+
+Send a request to the Route:
+
+```shell
+curl -i "http://127.0.0.1:9080/anything"
+```
+
+You should receive an `HTTP/1.1 200 OK` response and see the response includes the `X-Req-Identifier` header with an ID generated using the `ksuid` algorithm:
+
+```text
+X-Request-Id: 325ghCANEKjw6Jsfejg5p6QrLYB
+```
+
+If installed [ksuid](https://github.com/segmentio/ksuid?tab=readme-ov-file#command-line-tool) command tool,This ID can be viewed through `ksuid -f inspect 325ghCANEKjw6Jsfejg5p6QrLYB`:
+
+``` text
+REPRESENTATION:
+
+    String: 325ghCANEKjw6Jsfejg5p6QrLYB
+    Raw: 15430DBBD7F68AD7CA0AE277772AB36DDB1A3C13
+
+COMPONENTS:
+
+    Time: 2025-09-01 16:39:23 +0800 CST
+    Timestamp: 356715963
+    Payload: D7F68AD7CA0AE277772AB36DDB1A3C13
 ```
 
 ### Attach Request ID Globally and on a Route
