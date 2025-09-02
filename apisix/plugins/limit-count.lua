@@ -14,9 +14,14 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
+local core = require("apisix.core")
 local fetch_secrets = require("apisix.secret").fetch_secrets
 local limit_count = require("apisix.plugins.limit-count.init")
 local workflow = require("apisix.plugins.workflow")
+
+local secrets_lrucache = core.lrucache.new({
+    ttl = 300, count = 512, invalid_stale = true
+})
 
 local plugin_name = "limit-count"
 local _M = {
@@ -34,7 +39,7 @@ end
 
 
 function _M.access(conf, ctx)
-    conf = fetch_secrets(conf, true, conf, "")
+    conf = fetch_secrets(conf, secrets_lrucache, conf, "")
     return limit_count.rate_limit(conf, ctx, plugin_name, 1)
 end
 

@@ -32,6 +32,11 @@ local HTTP_BAD_REQUEST = ngx.HTTP_BAD_REQUEST
 
 local moderation_categories_pattern = "^(PROFANITY|HATE_SPEECH|INSULT|"..
                                       "HARASSMENT_OR_ABUSE|SEXUAL|VIOLENCE_OR_THREAT)$"
+
+local secrets_lrucache = core.lrucache.new({
+    ttl = 300, count = 512, invalid_stale = true
+})
+
 local schema = {
     type = "object",
     properties = {
@@ -88,7 +93,7 @@ end
 
 
 function _M.rewrite(conf, ctx)
-    conf = fetch_secrets(conf, true, conf, "")
+    conf = fetch_secrets(conf, secrets_lrucache, conf, "")
     if not conf then
         return HTTP_INTERNAL_SERVER_ERROR, "failed to retrieve secrets from conf"
     end

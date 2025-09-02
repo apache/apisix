@@ -185,10 +185,6 @@ local function fetch(uri)
 end
 
 
-local secrets_lrucache = core.lrucache.new({
-    ttl = 300, count = 512
-})
-
 local fetch_secrets
 do
     local retrieve_refs
@@ -211,11 +207,11 @@ do
         return retrieve_refs(new_refs)
     end
 
-    function fetch_secrets(refs, cache, key, version)
+    function fetch_secrets(refs, secrets_lrucache, key, version)
         if not refs or type(refs) ~= "table" then
             return nil
         end
-        if not cache then
+        if not secrets_lrucache then
             return retrieve(refs)
         end
         return secrets_lrucache(key, version, retrieve, refs)

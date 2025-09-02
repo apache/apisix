@@ -40,6 +40,16 @@ local _M = {
 }
 
 
+local secrets_lrucache = core.lrucache.new({
+    ttl = 3600, count = 512, invalid_stale = true
+})
+
+-- for test
+function _M.inject_secrets_lrucache(lru)
+    secrets_lrucache = lru
+end
+
+
 local function create_router(ssl_items)
     local ssl_items = ssl_items or {}
 
@@ -238,8 +248,8 @@ function _M.set(matched_ssl, sni)
     end
     ngx_ssl.clear_certs()
 
-    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, true, matched_ssl.value, "")
-                            or matched_ssl.value
+    local new_ssl_value = secret.fetch_secrets(matched_ssl.value, secrets_lrucache,
+                                matched_ssl.value, "") or matched_ssl.value
 
     ok, err = _M.set_cert_and_key(sni, new_ssl_value)
     if not ok then
