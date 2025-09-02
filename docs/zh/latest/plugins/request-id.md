@@ -277,7 +277,7 @@ curl -i "http://127.0.0.1:9080/anything"
 X-Request-Id: 325ghCANEKjw6Jsfejg5p6QrLYB
 ```
 
-如果装有[ksuid](https://github.com/segmentio/ksuid?tab=readme-ov-file#command-line-tool)命令工具，此 ID 可以通过`ksuid -f inspect 325ghCANEKjw6Jsfejg5p6QrLYB`查看:
+如果装有[ksuid](https://github.com/segmentio/ksuid?tab=readme-ov-file#command-line-tool)命令工具，此 ID 可以通过`ksuid -f inspect 325ghCANEKjw6Jsfejg5p6QrLYB`查看：
 
 ``` text
 REPRESENTATION:
