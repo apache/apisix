@@ -106,7 +106,46 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 3: with CIDR, X-Forwarded headers should be preserved from trusted client
+=== TEST 3: with multiple IPs, X-Forwarded headers should be preserved from trusted client
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.1"
+        - "127.0.0.2"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-Proto: https
+X-Forwarded-Host: example.com
+X-Forwarded-Port: 8443
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: example.com
+x-forwarded-port: 8443
+x-forwarded-proto: https
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 4: with CIDR, X-Forwarded headers should be preserved from trusted client
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -144,7 +183,87 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 4: with `0.0.0.0/0`, X-Forwarded headers should be preserved from trusted client
+=== TEST 5: with multiple CIDRs, X-Forwarded headers should be preserved from trusted client
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.0/24"
+        - "1.1.1.0/24"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-Proto: https
+X-Forwarded-Host: example.com
+X-Forwarded-Port: 8443
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: example.com
+x-forwarded-port: 8443
+x-forwarded-proto: https
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 6: with multiple IPs and CIDRs, X-Forwarded headers should be preserved from trusted client
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "127.0.0.0/24"
+        - "1.1.1.0/24"
+        - "127.0.0.1"
+        - "1.1.1.1"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-Proto: https
+X-Forwarded-Host: example.com
+X-Forwarded-Port: 8443
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: example.com
+x-forwarded-port: 8443
+x-forwarded-proto: https
+x-real-ip: 127.0.0.1
+
+
+
+=== TEST 7: with `0.0.0.0/0`, X-Forwarded headers should be preserved from trusted client
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -182,12 +301,13 @@ x-real-ip: 127.0.0.1
 
 
 
-=== TEST 5: with trusted_addresses configuration, but client not in trusted list, X-Forwarded headers should be overridden
+=== TEST 8: with trusted_addresses configuration, but client not in trusted list, X-Forwarded headers should be overridden
 --- yaml_config
 apisix:
     node_listen: 1984
     enable_admin: false
     trusted_addresses:
+        - "1.0.0.1"
         - "10.0.0.0/8"
 deployment:
     role: data_plane
