@@ -493,3 +493,15 @@ GET /dump
 GET /dump
 --- response_body_like
 .*"name":"default/kubernetes".*
+
+
+
+=== TEST 7: test pre_list and post_list work
+--- yaml_config eval: $::single_yaml_config
+--- log_level: debug
+--- extra_init_by_lua
+local ngx = ngx
+local dict = ngx.shared["kubernetes"]
+dict:set("dirty_key", true)
+--- grep_error_log_out
+kubernetes discovery module find dirty data in shared dict
