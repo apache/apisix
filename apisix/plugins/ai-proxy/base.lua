@@ -20,7 +20,6 @@ local core = require("apisix.core")
 local require = require
 local pcall   = pcall
 local exporter = require("apisix.plugins.prometheus.exporter")
-local bad_request = ngx.HTTP_BAD_REQUEST
 
 local _M = {}
 
