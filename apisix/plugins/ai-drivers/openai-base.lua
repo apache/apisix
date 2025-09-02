@@ -90,6 +90,8 @@ local function read_response(ctx, res)
         local contents = {}
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
+            ctx.var.apisix_upstream_response_time = math.floor((ngx_now() -
+                                             ctx.llm_request_start_time) * 1000)
             if err then
                 core.log.warn("failed to read response chunk: ", err)
                 return handle_error(err)
@@ -158,6 +160,7 @@ local function read_response(ctx, res)
     end
     ngx.status = res.status
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
+    ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
     local res_body, err = core.json.decode(raw_res_body)
     if err then
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,

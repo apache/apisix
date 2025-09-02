@@ -807,6 +807,7 @@ http {
             {% end %}
 
             set $llm_content_risk_level         '';
+            set $apisix_upstream_response_time  $upstream_response_time;
             set $request_type               'traditional_http';
             set $request_llm_model              '';
 
