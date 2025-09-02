@@ -758,3 +758,182 @@ GET /t
 --- timeout: 10
 --- error_log
 distribution: deepseek: 10
+
+
+
+=== TEST 13: set route with fallback_strategy with service unavailable openai having high priority.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "balancer": {
+                                "algorithm": "roundrobin",
+                                "hash_on": "vars"
+                            },
+                            "fallback_strategy": [
+                                "http_429",
+                                "http_5xx"
+                            ],
+                            "instances": [
+                               {"auth":{"header":{"Authorization":"Bearertoken"}},"name":"mock-429","override":{"endpoint":"http://localhost:6726"},"priority":10,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearertoken"}},"name":"mock-500","override":{"endpoint":"http://localhost:6727"},"priority":0,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearertoken"}},"name":"mock-200","override":{"endpoint":"http://localhost:6724/chat/completions"},"priority":0,"provider":"openai-compatible","weight":1}
+                            ],                            
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: test all requests success with fallback deepseek
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: deepseek: 10
+
+
+
+=== TEST 15: set route with fallback_strategy with only service unavailable and 429.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "balancer": {
+                                "algorithm": "roundrobin",
+                                "hash_on": "vars"
+                            },
+                            "fallback_strategy": [
+                                "http_429",
+                                "http_5xx"
+                            ],
+                            "instances": [
+                                {
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "name": "mock-429",
+                                    "override": {
+                                        "endpoint":  "http://localhost:6726"
+                                    },
+                                    "priority": 10,
+                                    "provider": "openai-compatible",
+                                    "weight": 10
+                                    },
+                                {
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "name": "mock-500",
+                                    "override": {
+                                        "endpoint": "http://localhost:6727"
+                                    },
+                                    "priority": 0,
+                                    "provider": "openai-compatible",
+                                    "weight": 10
+                                }
+                            ],                            
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: test all requests success with fallback deepseek should return 502
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.status)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: 502: 10
