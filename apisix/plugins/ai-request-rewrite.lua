@@ -213,9 +213,13 @@ function _M.access(conf, ctx)
     }
 
     -- Send request to LLM service
-    local _, _, err = request_to_llm(conf, ai_request_table, ctx)
+    local code, _, err = request_to_llm(conf, ai_request_table, ctx)
     if err then
         core.log.error("failed to request LLM: ", err)
+        return HTTP_INTERNAL_SERVER_ERROR
+    end
+    if code == 429 or (code >= 500 and code < 600 ) then
+        core.log.error("LLM service returned error status: ", code)
         return HTTP_INTERNAL_SERVER_ERROR
     end
 end
