@@ -133,8 +133,7 @@ X-Request-Id
                         ngx.say("incorrect char set for id")
                         ngx.say(id)
                         return
-                    end
-                    
+                    end       
                     if ids[id] == true then
                         ngx.say("ids not unique")
                         return

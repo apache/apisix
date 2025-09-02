@@ -33,7 +33,7 @@ local schema = {
         include_in_response = {type = "boolean", default = true},
         algorithm = {
             type = "string",
-            enum = {"uuid", "nanoid", "range_id","ksuid"},
+            enum = {"uuid", "nanoid", "range_id", "ksuid"},
             default = "uuid"
         },
         range_id = {
