@@ -46,7 +46,7 @@ description: real-ip 插件允许 Apache APISIX 通过 HTTP 请求头或 HTTP �
 | recursive         | boolean       | 否       | false  |                            | 如果为 false，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个地址。<br />如果为 true，则将匹配可信地址之一的原始客户端地址替换为配置的 `source` 中发送的最后一个非可信地址。 |
 
 :::note
-只有来自 `apisix.trusted_addresses` 配置（支持 IP 和 CIDR）中的地址发送的 `X-Forwarded-*` 头才会被信任，并传递给插件或上游。
+只有发送自 `apisix.trusted_addresses` 配置（支持 IP 和 CIDR）地址的 `X-Forwarded-*` 头才会被信任，并传递给插件或上游。如果未配置 `apisix.trusted_addresses` 或 ip 不在配置地址范围内的，`X-Forwarded-*` 头将全部丢弃。
 :::
 
 :::note
