@@ -51,8 +51,6 @@ _EOC_
 apisix:
     node_listen: 1984
     enable_admin: false
-    trusted_addresses:
-        - "127.0.0.1"
 deployment:
     role: data_plane
     role_data_plane:
