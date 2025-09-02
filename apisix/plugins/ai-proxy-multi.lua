@@ -385,6 +385,9 @@ end
 
 
 local function retry_on_error(ctx, conf, code)
+    if not ctx.server_picker then
+        return code
+    end
     ctx.server_picker.after_balance(ctx, true)
     if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
        (code >= 500 and code < 600 and
