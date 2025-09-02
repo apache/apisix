@@ -51,7 +51,7 @@ local function sort_nodes_cmp(left, right)
     return left.port < right.port
 end
 
-local function on_endpoint_slices_modified(handle, endpoint)
+local function on_endpoint_slices_modified(handle, endpoint, operate)
     if handle.namespace_selector and
             not handle:namespace_selector(endpoint.metadata.namespace) then
         return
@@ -115,9 +115,12 @@ local function on_endpoint_slices_modified(handle, endpoint)
         core.log.error("set endpoint into discovery DICT failed, ", err)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
     end
+    if operate == "list" then
+        handle.endpoint_list_hash[endpoint_key] = true
+    end
 end
 
-local function on_endpoint_modified(handle, endpoint)
+local function on_endpoint_modified(handle, endpoint, operate)
     if handle.namespace_selector and
             not handle:namespace_selector(endpoint.metadata.namespace) then
         return
@@ -178,6 +181,9 @@ local function on_endpoint_modified(handle, endpoint)
         core.log.error("set endpoint into discovery DICT failed, ", err)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
     end
+    if operate == "list" then
+        handle.endpoint_list_hash[endpoint_key] = true
+    end
 end
 
 
@@ -194,29 +200,25 @@ local function on_endpoint_deleted(handle, endpoint)
 end
 
 
-local pre_list
-local post_list
-do
-    local existing_keys
-    function pre_list(handle)
-        existing_keys = handle.endpoint_dict:get_keys(0)
+local function pre_list(handle)
+    handle.current_keys_hash = {}
+    handle.existing_keys = handle.endpoint_dict:get_keys(0)
+end
+
+
+local function post_list(handle)
+    if not handle.existing_keys or not handle.endpoint_list_hash then
+        return
     end
-
-
-    local function post_list(handle)
-        local current_keys = handle.endpoint_dict:get_keys(0)
-        local current_keys_hash = {}
-        for _, key in ipairs(current_keys) do
-            current_keys_hash[key] = true
+    for _, key in ipairs(handle.existing_keys) do
+        if not handle.current_keys_hash[key] then
+            handle.endpoint_dict:delete(key)
         end
-        for _, key in ipairs(existing_keys) do
-            if not current_keys_hash[key] then
-                handle.endpoint_dict:delete(key)
-            end
-        end
-        existing_keys = {}
+    end
+    handle.existing_keys = nil
+    handle.current_keys_hash = nil
 end
-end
+
 
 local function setup_label_selector(conf, informer)
     informer.label_selector = conf.label_selector
