@@ -171,12 +171,12 @@ passed
 === TEST 2: send request
 --- request
 POST /anything
-{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+{"messages":[{"role":"system","content":"You are a mathematician"},{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
 --- error_code: 200
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*gpt-3.5-turbo \d+ 10 20.*/
+qr/.*gpt-4 gpt-3.5-turbo \d+ 10 20.*/
 
 
 
@@ -328,4 +328,4 @@ passed
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
-qr/.*gpt-3.5-turbo 2\d\d 15 20.*/
+qr/.*gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
