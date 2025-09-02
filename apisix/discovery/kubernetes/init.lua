@@ -116,7 +116,7 @@ local function on_endpoint_slices_modified(handle, endpoint, operate)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
     end
     if operate == "list" then
-        handle.endpoint_list_hash[endpoint_key] = true
+        handle.current_keys_hash[endpoint_key] = true
     end
 end
 
@@ -182,7 +182,7 @@ local function on_endpoint_modified(handle, endpoint, operate)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
     end
     if operate == "list" then
-        handle.endpoint_list_hash[endpoint_key] = true
+        handle.current_keys_hash[endpoint_key] = true
     end
 end
 
@@ -207,7 +207,7 @@ end
 
 
 local function post_list(handle)
-    if not handle.existing_keys or not handle.endpoint_list_hash then
+    if not handle.existing_keys or not handle.current_keys_hash then
         return
     end
     for _, key in ipairs(handle.existing_keys) do
