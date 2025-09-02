@@ -650,7 +650,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "key-auth": {},
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",

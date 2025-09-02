@@ -186,7 +186,7 @@ DeepSeek responses: 2
 
 ### Configure Instance Priority and Rate Limiting
 
-The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `instance_health_and_rate_limiting`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
+The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `["rate_limiting"]`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
 
 Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
 
@@ -199,7 +199,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -423,7 +423,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "key-auth": {},
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
