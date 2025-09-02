@@ -521,7 +521,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6726"
                                     }
                                 },
-                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -613,7 +613,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6725"
                                     }
                                 },
-                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -705,7 +705,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6728"
                                     }
                                 },
-                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -781,7 +781,7 @@ distribution: deepseek: 10
                                 "http_5xx"
                             ],
                             "instances": [
-                               {"auth":{"header":{"Authorization":"Bearertoken"}},"name":"mock-429","override":{"endpoint":"http://localhost:6726"},"priority":10,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearertoken"}},"name":"mock-500","override":{"endpoint":"http://localhost:6727"},"priority":0,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearertoken"}},"name":"mock-200","override":{"endpoint":"http://localhost:6724/chat/completions"},"priority":0,"provider":"openai-compatible","weight":1}
+                               {"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-429","override":{"endpoint":"http://localhost:6726"},"priority":10,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-500","override":{"endpoint":"http://localhost:6727"},"priority":0,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-200","override":{"endpoint":"http://localhost:6724/chat/completions"},"priority":0,"provider":"openai-compatible","weight":1}
                             ],                            
                             "ssl_verify": false
                         }
