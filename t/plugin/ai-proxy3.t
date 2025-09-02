@@ -176,7 +176,7 @@ POST /anything
 --- response_body eval
 qr/.*completion_tokens.*/
 --- access_log eval
-qr/.*gpt-4 gpt-3.5-turbo \d+ 10 20.*/
+qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
 
 
 
@@ -328,4 +328,4 @@ passed
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
 --- access_log eval
-qr/.*gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
+qr/.*[\d.]+ \"http:\/\/localhost:1984\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
