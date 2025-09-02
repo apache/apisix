@@ -428,20 +428,8 @@ distribution: openai: 8
                                     "name": "deepseek",
                                     "provider": "deepseek",
                                     "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
-                                }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},"override": {"endpoint": "http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -533,24 +521,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6726"
                                     }
                                 },
-                                {
-                                    "name": "deepseek",
-                                    "provider": "deepseek",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
-                                }
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -642,24 +613,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6725"
                                     }
                                 },
-                                {
-                                    "name": "deepseek",
-                                    "provider": "deepseek",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
-                                }
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
@@ -751,24 +705,7 @@ distribution: deepseek: 10
                                         "endpoint": "http://localhost:6728"
                                     }
                                 },
-                                {
-                                    "name": "deepseek",
-                                    "provider": "deepseek",
-                                    "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
-                                }
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
                             ],
                             "ssl_verify": false
                         }
