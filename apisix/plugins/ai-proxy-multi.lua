@@ -315,7 +315,7 @@ local function pick_target(ctx, conf, ups_tab)
     local server_picker = ctx.server_picker
     if not server_picker then
         server_picker = lrucache_server_picker(ctx.matched_route.key, version,
-                                               create_server_picker, conf, ups_tab, checkers)
+                                               create_server_picker, ctx, conf, ups_tab, checkers)
     end
     if not server_picker then
         return nil, nil, "failed to fetch server picker"
