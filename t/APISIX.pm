@@ -674,7 +674,7 @@ _EOC_
         require("apisix").http_exit_worker()
     }
 
-    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
+    log_format main escape=default '\$remote_addr - \$remote_user [\$time_local] \$http_host "\$request" \$status \$body_bytes_sent \$request_time "\$http_referer" "\$http_user_agent" \$upstream_addr \$upstream_status \$upstream_response_time "\$upstream_scheme://\$upstream_host\$upstream_uri" \$request_llm_model \$llm_model \$llm_time_to_first_token \$llm_prompt_tokens \$llm_completion_tokens';
 
     # fake server, only for test
     server {
@@ -861,6 +861,7 @@ _EOC_
             set \$request_type               'traditional_http';
 
             set \$llm_time_to_first_token        '0';
+            set \$request_llm_model              '';
             set \$llm_model                      '';
             set \$llm_prompt_tokens              '0';
             set \$llm_completion_tokens          '0';
