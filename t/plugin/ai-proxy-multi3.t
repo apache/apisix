@@ -879,7 +879,7 @@ passed
                                         }
                                     }
                                 },
-                                {"name":"openai-gpt3","provider":"openai","weight":1,"priority":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"gpt-3"}}
+                                {"name":"openai-gpt3","provider":"openai","weight":1,"priority":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-3"}}
                             ],
                             "ssl_verify": false
                         }
