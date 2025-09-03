@@ -45,6 +45,26 @@ local _M = {
     schema = schema.ai_proxy_multi_schema,
 }
 
+local function fallback_strategy_has(strategy, name)
+    if not strategy then
+        return false
+    end
+
+    if type(strategy) == "string" then
+        return strategy == name
+    end
+
+    if type(strategy) == "table" then
+        for _, v in ipairs(strategy) do
+            if v == name then
+                return true
+            end
+        end
+    end
+
+    return false
+end
+
 
 local function get_chash_key_schema(hash_on)
     if hash_on == "vars" then
@@ -306,7 +326,8 @@ local function pick_target(ctx, conf, ups_tab)
         return nil, nil, err
     end
     ctx.balancer_server = instance_name
-    if conf.fallback_strategy == "instance_health_and_rate_limiting" then
+    if conf.fallback_strategy == "instance_health_and_rate_limiting" or -- for backwards compatible
+       fallback_strategy_has(conf.fallback_strategy, "rate_limiting") then
         local ai_rate_limiting = require("apisix.plugins.ai-rate-limiting")
         for _ = 1, #conf.instances do
             if ai_rate_limiting.check_instance_status(nil, ctx, instance_name) then
@@ -363,7 +384,32 @@ function _M.access(conf, ctx)
 end
 
 
-_M.before_proxy = base.before_proxy
+local function retry_on_error(ctx, conf, code)
+    if not ctx.server_picker then
+        return code
+    end
+    ctx.server_picker.after_balance(ctx, true)
+    if (code == 429 and fallback_strategy_has(conf.fallback_strategy, "http_429")) or
+       (code >= 500 and code < 600 and
+       fallback_strategy_has(conf.fallback_strategy, "http_5xx")) then
+        local name, ai_instance, err = pick_ai_instance(ctx, conf)
+        if err then
+            core.log.error("failed to pick new AI instance: ", err)
+            return 502
+        end
+        ctx.balancer_ip = name
+        ctx.picked_ai_instance_name = name
+        ctx.picked_ai_instance = ai_instance
+        return
+    end
+    return code
+end
+
+function _M.before_proxy(conf, ctx)
+     return base.before_proxy(conf, ctx, function (ctx, conf, code)
+        return retry_on_error(ctx, conf, code)
+    end)
+end
 
 function _M.log(conf, ctx)
     if conf.logging then

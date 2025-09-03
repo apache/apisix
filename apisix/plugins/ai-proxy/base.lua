@@ -20,7 +20,6 @@ local core = require("apisix.core")
 local require = require
 local pcall   = pcall
 local exporter = require("apisix.plugins.prometheus.exporter")
-local bad_request = ngx.HTTP_BAD_REQUEST
 
 local _M = {}
 
@@ -47,51 +46,63 @@ function _M.set_logging(ctx, summaries, payloads)
 end
 
 
-function _M.before_proxy(conf, ctx)
-    local ai_instance = ctx.picked_ai_instance
-    local ai_driver = require("apisix.plugins.ai-drivers." .. ai_instance.provider)
+-- when on_error function is passed, before_proxy will keep on retrying until
+-- on_error returns abort code
+function _M.before_proxy(conf, ctx, on_error)
+    while true do
+        local ai_instance = ctx.picked_ai_instance
+        local ai_driver = require("apisix.plugins.ai-drivers." .. ai_instance.provider)
 
-    local request_body, err = ai_driver.validate_request(ctx)
-    if not request_body then
-        return bad_request, err
-    end
+        local request_body, err = ai_driver.validate_request(ctx)
+        if not request_body then
+            return 400, err
+        end
 
-    local extra_opts = {
-        endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
-        query_params = ai_instance.auth.query or {},
-        headers = (ai_instance.auth.header or {}),
-        model_options = ai_instance.options,
-    }
-
-    if request_body.stream then
-        request_body.stream_options = {
-            include_usage = true
+        local extra_opts = {
+            endpoint = core.table.try_read_attr(ai_instance, "override", "endpoint"),
+            query_params = ai_instance.auth.query or {},
+            headers = (ai_instance.auth.header or {}),
+            model_options = ai_instance.options,
         }
-        ctx.var.request_type = "ai_stream"
-    else
-        ctx.var.request_type = "ai_chat"
-    end
-    if request_body.model then
-        ctx.var.request_llm_model = request_body.model
-    end
-    local model = ai_instance.options and ai_instance.options.model or request_body.model
-    if model then
-        ctx.var.llm_model = model
-    end
 
-    local do_request = function()
-        ctx.llm_request_start_time = ngx.now()
-        ctx.var.llm_request_body = request_body
-        return ai_driver:request(ctx, conf, request_body, extra_opts)
+        if request_body.stream then
+            request_body.stream_options = {
+                include_usage = true
+            }
+            ctx.var.request_type = "ai_stream"
+        else
+            ctx.var.request_type = "ai_chat"
+        end
+        if request_body.model then
+            ctx.var.request_llm_model = request_body.model
+        end
+        local model = ai_instance.options and ai_instance.options.model or request_body.model
+        if model then
+            ctx.var.llm_model = model
+        end
+
+        local do_request = function()
+            ctx.llm_request_start_time = ngx.now()
+            ctx.var.llm_request_body = request_body
+            return ai_driver:request(ctx, conf, request_body, extra_opts)
+        end
+
+        exporter.inc_llm_active_connections(ctx)
+        local ok, code_or_err, body = pcall(do_request)
+        exporter.dec_llm_active_connections(ctx)
+        if not ok then
+            core.log.error("failed to send request to AI service: ", code_or_err)
+            return 500
+        end
+        if code_or_err and on_error then
+            local abort_code = on_error(ctx, conf, code_or_err)
+            if abort_code then
+                return abort_code, body
+            end
+        else
+            return code_or_err, body
+        end
     end
-    exporter.inc_llm_active_connections(ctx)
-    local ok, code_or_err, body = pcall(do_request)
-    exporter.dec_llm_active_connections(ctx)
-    if not ok then
-        core.log.error("failed to send request to AI service: ", code_or_err)
-        return 500
-    end
-    return code_or_err, body
 end
 
 
