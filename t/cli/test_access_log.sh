@@ -138,6 +138,32 @@ make stop
 
 echo "passed: access log with JSON format"
 
+# access log with unset llm_token JSON format
+
+echo '
+nginx_config:
+  http:
+    access_log_format: |-
+      {"@timestamp": "$time_iso8601", "client_ip": "$remote_addr", "status": "$status", "llm_prompt_tokens": $llm_prompt_tokens}
+    access_log_format_escape: json
+' > conf/config.yaml
+
+make init
+make run
+sleep 0.1
+curl http://127.0.0.1:9080/hello2
+sleep 4
+tail -n 1 logs/access.log > output.log
+
+if [ `grep -c '"llm_prompt_tokens": 0' output.log` -eq '0' ]; then
+    echo "failed: invalid JSON log in access log"
+    exit 1
+fi
+
+make stop
+
+echo "passed: access log with JSON format and llm_prompt_tokens"
+
 # check uninitialized variable in access log when access admin
 git checkout conf/config.yaml
 

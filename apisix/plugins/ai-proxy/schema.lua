@@ -68,6 +68,7 @@ local ai_instance_schema = {
                     "deepseek",
                     "aimlapi",
                     "openai-compatible",
+                    "azure-openai"
                 }, -- add more providers later
             },
             priority = {
@@ -102,6 +103,21 @@ local ai_instance_schema = {
     },
 }
 
+local logging_schema = {
+    type = "object",
+    properties = {
+        summaries = {
+            type = "boolean",
+            default = false,
+            description = "Record user request llm model, duration, req/res token"
+        },
+        payloads = {
+            type = "boolean",
+            default = false,
+            description = "Record user request and response payload"
+        }
+    }
+}
 
 _M.ai_proxy_schema = {
     type = "object",
@@ -114,9 +130,11 @@ _M.ai_proxy_schema = {
                 "deepseek",
                 "aimlapi",
                 "openai-compatible",
+                "azure-openai"
             }, -- add more providers later
 
         },
+        logging = logging_schema,
         auth = auth_schema,
         options = model_options_schema,
         timeout = {
@@ -176,10 +194,21 @@ _M.ai_proxy_multi_schema = {
             default = { algorithm = "roundrobin" }
         },
         instances = ai_instance_schema,
+        logging_schema = logging_schema,
         fallback_strategy = {
-            type = "string",
-            enum = { "instance_health_and_rate_limiting" },
-            default = "instance_health_and_rate_limiting",
+            anyOf = {
+              {
+                type = "string",
+                enum = {"instance_health_and_rate_limiting", "http_429", "http_5xx"}
+              },
+              {
+                type = "array",
+                items = {
+                  type = "string",
+                  enum = {"rate_limiting", "http_429", "http_5xx"}
+                }
+              }
+            }
         },
         timeout = {
             type = "integer",

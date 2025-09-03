@@ -1,3 +1,4 @@
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -96,7 +97,11 @@ _EOC_
                             ngx.say([[{ "error": "bad request"}]])
                             return
                         end
-
+                        if body.model then
+                            ngx.status = 400
+                            ngx.say([[{ "error": "bad request. model passed"}]])
+                            return
+                        end
                         if body.messages[1].content == "write an SQL query to get all rows from student table" then
                             ngx.print("SELECT * FROM STUDENTS")
                             return
@@ -141,8 +146,8 @@ __DATA__
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "self-hosted",
-                                    "provider": "openai-compatible",
+                                    "name": "azure-openai",
+                                    "provider": "azure-openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -150,7 +155,7 @@ __DATA__
                                         }
                                     },
                                     "options": {
-                                        "model": "custom",
+                                        "model": "gpt-4o",
                                         "max_tokens": 512,
                                         "temperature": 1.0
                                     },
@@ -201,8 +206,8 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "self-hosted",
-                                    "provider": "openai-compatible",
+                                    "name": "azure-openai",
+                                    "provider": "azure-openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -210,7 +215,7 @@ qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
                                         }
                                     },
                                     "options": {
-                                        "model": "custom-instruct",
+                                        "model": "gpt-4o",
                                         "max_tokens": 512,
                                         "temperature": 1.0,
                                         "stream": true

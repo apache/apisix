@@ -275,12 +275,12 @@ You should see an output similar to the following:
 ```text
 # HELP apisix_bandwidth Total bandwidth in bytes consumed per Service in Apisix
 # TYPE apisix_bandwidth counter
-apisix_bandwidth{type="egress",route="",service="",consumer="",node="",request_type="traditional_http",llm_model=""} 8417
-apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""} 1420
-apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""} 1420
-apisix_bandwidth{type="ingress",route="",service="",consumer="",node="",request_type="traditional_http",llm_model=""} 189
-apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""} 332
-apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",llm_model=""} 332
+apisix_bandwidth{type="egress",route="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""} 8417
+apisix_bandwidth{type="egress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 1420
+apisix_bandwidth{type="egress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 1420
+apisix_bandwidth{type="ingress",route="",service="",consumer="",node="",request_type="traditional_http",request_llm_model="",llm_model=""} 189
+apisix_bandwidth{type="ingress",route="1",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 332
+apisix_bandwidth{type="ingress",route="2",service="",consumer="",node="127.0.0.1",request_type="traditional_http",request_llm_model="",llm_model=""} 332
 # HELP apisix_etcd_modify_indexes Etcd modify index for APISIX keys
 # TYPE apisix_etcd_modify_indexes gauge
 apisix_etcd_modify_indexes{key="consumers"} 0
