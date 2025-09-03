@@ -835,3 +835,77 @@ passed
 --- timeout: 20
 --- response_body
 passed
+
+
+
+=== TEST 11: configure health check for well-known ai service
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "openai-gpt4",
+                                    "provider": "openai",
+                                    "weight": 1,
+                                    "priority": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4"
+                                    },
+                                    "checks": {
+                                        "active": {
+                                            "timeout": 5,
+                                            "http_path": "/",
+                                            "healthy": {
+                                                "interval": 1,
+                                                "successes": 1
+                                            },
+                                            "unhealthy": {
+                                                "interval": 1,
+                                                "http_failures": 1
+                                            },
+                                            "req_headers": ["User-Agent: curl/7.29.0"]
+                                        }
+                                    }
+                                },
+                                {"name":"openai-gpt3","provider":"openai","weight":1,"priority":1,"auth":{"header":{"Authorization":"Bearertoken"}},"options":{"model":"gpt-3"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: send request to /ai should failed with 401
+--- request
+POST /ai
+{
+  "messages": [
+    {
+      "role": "user",
+      "content": "write a haiku about ai"
+    }
+  ]
+}
+--- error_code: 401
