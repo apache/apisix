@@ -28,6 +28,7 @@ local require = require
 local pcall = pcall
 local ipairs = ipairs
 local type = type
+local string = string
 
 local priority_balancer = require("apisix.balancer.priority")
 local endpoint_regex = "^(https?)://([^:/]+):?(%d*)/?.*$"
@@ -296,6 +297,18 @@ function _M.construct_upstream(instance)
         name = instance.name,
     }
     upstream.nodes = {node}
+    if instance.auth.header then
+        if not instance.checks.active.req_headers then
+            instance.checks.active.req_headers = {}
+        end
+        for k, v in pairs(instance.auth.header) do
+            core.table.insert(instance.checks.active.req_headers, string.format("%s: %s", k, v))
+        end
+    end
+    if instance.auth.query then
+        instance.checks.active.http_path = string.format("%s?%s",
+                instance.checks.active.http_path, core.string.encode_args(instance.auth.query))
+    end
     upstream.checks = instance.checks
     return upstream
 end

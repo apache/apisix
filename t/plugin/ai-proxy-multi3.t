@@ -166,6 +166,26 @@ add_block_preprocessor(sub {
                 }
             }
 
+            location /post {
+                content_by_lua_block {
+                    ngx.req.read_body()
+                    local body, err = ngx.req.get_body_data()
+                    if err then
+                        ngx.status = 500
+                        ngx.say("error: ", err)
+                        return
+                    end
+                    local headers = ngx.req.get_headers()
+                    local query = ngx.req.get_uri_args()
+                    ngx.log(ngx.INFO, "probe method: ", ngx.req.get_method())
+                    ngx.log(ngx.INFO, "probe authorization header: ", headers["authorization"])
+                    ngx.log(ngx.INFO, "probe apikey query: ", query["apikey"])
+                    ngx.log(ngx.INFO, "probe content-length: ", headers["content-length"])
+                    ngx.log(ngx.INFO, "probe body: ", body)
+                    ngx.say("ok")
+                }
+            }
+
             location /error {
                 content_by_lua_block {
                     ngx.status = 500
@@ -909,3 +929,91 @@ POST /ai
   ]
 }
 --- error_code: 401
+
+
+
+=== TEST 13: create a ai-proxy-multi plugin that use post method as health check
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/ai",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": "instance_health_and_rate_limiting",
+                            "instances": [
+                                {
+                                    "name":"openai-gpt4","provider":"openai","weight":1,"priority":1,"auth":{"header":{"Authorization":"Bearer token"},"query":{"apikey":"token_in_query"}},"options":{"model":"gpt-4"},"override":{"endpoint":"http://localhost:16724"},
+                                    "checks": {
+                                        "active": {
+                                            "timeout": 5,
+                                            "http_method": "POST",
+                                            "http_path": "/post",
+                                            "http_req_body": "{\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"write a haiku about ai\"}],\"stream\":false}",
+                                            "host": "foo.com",
+                                            "healthy": {
+                                                "interval": 1,
+                                                "successes": 1
+                                            },
+                                            "req_headers": ["User-Agent: curl/7.29.0"]
+                                        }
+                                    }
+                                },
+                                {"name":"openai-gpt3","provider":"openai","weight":1,"priority":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"gpt-3"},"override":{"endpoint":"http://localhost:16724"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: check if the health check works
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local core = require("apisix.core")
+            local send_request = function()
+                local code, _, body = t("/ai",
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "You are a mathematician" },
+                            { "role": "user", "content": "What is 1+1?" }
+                        ]
+                    }]],
+                    nil,
+                    {
+                        ["Content-Type"] = "application/json",
+                    }
+                )
+                assert(code == 200, "request should be successful")
+                return body
+            end
+            -- trigger the health check
+            send_request()
+            ngx.sleep(1)
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+--- error_log
+probe method: POST
+probe authorization header: Bearer token
+probe apikey query: token_in_query
+probe content-length: 102
+probe body: {"model":"gpt-4o-mini","messages":[{"role":"user","content":"write a haiku about ai"}],"stream":false}
