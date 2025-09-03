@@ -81,7 +81,14 @@ end
 
 
 local function decorate(conf, body_tab)
-    local new_messages = conf.prepend or EMPTY
+    local new_messages = {}
+    
+    if conf.prepend then
+        for i = 1, #conf.prepend do
+            new_messages[i] = conf.prepend[i]
+        end
+    end
+
     for _, message in pairs(body_tab.messages) do
         core.table.insert_tail(new_messages, message)
     end
