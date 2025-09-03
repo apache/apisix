@@ -940,6 +940,7 @@ For verification, the behaviours should be consistent with the verification in [
 
 The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:
 
+* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response
 * `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
