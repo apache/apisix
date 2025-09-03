@@ -65,6 +65,8 @@ description: 本文介绍了如何使用 API 网关 Apache APISIX 的健康检�
 | upstream.checks.active.host                     | 主动检查            | string  |                      | ${upstream.node.host}                                                                          | 主动检查的 HTTP 请求主机名。                                   |
 | upstream.checks.active.port                     | 主动检查            | integer | `1` 至 `65535`       | ${upstream.node.port}                                                                          | 主动检查的 HTTP 请求主机端口。                                |
 | upstream.checks.active.https_verify_certificate | 主动检查            | boolean |                      | true                                                                                           | 主动检查使用 HTTPS 类型检查时，是否检查远程主机的 SSL 证书。 |
+| upstream.checks.active.http_method | string   | False    | "GET"                            |              | 用于健康检查的请求方法。 |
+| upstream.checks.active.request_body | string   | False    | ""                            |              | 请求正文用于健康检查。 |
 | upstream.checks.active.req_headers              | 主动检查            | array   |                      | []                                                                                             | 主动检查使用 HTTP 或 HTTPS 类型检查时，设置额外的请求头信息。 |
 | upstream.checks.active.healthy.interval         | 主动检查（健康节点）| integer | `>= 1`               | 1                                                                                              | 主动检查（健康节点）检查的间隔时间（单位为秒）|
 | upstream.checks.active.healthy.http_statuses    | 主动检查（健康节点）| array   | `200` 至 `599`       | [200, 302]                                                                                      | 主动检查（健康节点）HTTP 或 HTTPS 类型检查时，健康节点的 HTTP 状态码。 |

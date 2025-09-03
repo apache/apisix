@@ -80,6 +80,8 @@ In addition, the Plugin also supports logging LLM request information in the acc
 | checks.active.port                  | integer        | False    |                                   | between 1 and 65535 inclusive | HTTP port. |
 | checks.active.http_path             | string         | False    | /                               |              | Path for HTTP probing requests. |
 | checks.active.https_verify_certificate | boolean   | False    | true                            |              | If true, verify the node's TLS certificate. |
+| checks.active.http_method | string   | False    | "GET"                            |              | Request Method to be used for healthchecks. |
+| checks.active.request_body | string   | False    | ""                            |              | Request Body to be used for healthchecks. |
 | timeout                             | integer        | False    | 30000                           | greater than or equal to 1 | Request timeout in milliseconds when requesting the LLM service. |
 | keepalive                           | boolean        | False    | true                            |              | If true, keep the connection alive when requesting the LLM service. |
 | keepalive_timeout                   | integer        | False    | 60000                           | greater than or equal to 1000 | Request timeout in milliseconds when requesting the LLM service. |
