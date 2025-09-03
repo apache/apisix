@@ -196,9 +196,19 @@ _M.ai_proxy_multi_schema = {
         instances = ai_instance_schema,
         logging_schema = logging_schema,
         fallback_strategy = {
-            type = "string",
-            enum = { "instance_health_and_rate_limiting" },
-            default = "instance_health_and_rate_limiting",
+            anyOf = {
+              {
+                type = "string",
+                enum = {"instance_health_and_rate_limiting", "http_429", "http_5xx"}
+              },
+              {
+                type = "array",
+                items = {
+                  type = "string",
+                  enum = {"rate_limiting", "http_429", "http_5xx"}
+                }
+              }
+            }
         },
         timeout = {
             type = "integer",

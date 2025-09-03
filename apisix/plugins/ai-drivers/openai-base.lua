@@ -272,6 +272,11 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
         return handle_error(err)
     end
 
+    -- handling this error separately is needed for retries
+    if res.status == 429 or (res.status >= 500 and res.status < 600 )then
+        return res.status
+    end
+
     local code, body = read_response(ctx, res)
 
     if conf.keepalive then

@@ -51,7 +51,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 | Name                               | Type            | Required | Default                           | Valid Values | Description |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
-| fallback_strategy                  | string         | False    | instance_health_and_rate_limiting | instance_health_and_rate_limiting | Fallback strategy. When set, the Plugin will check whether the specified instance’s token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
+| fallback_strategy                  | string or array         | False    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br>array: ["rate_limiting", "http_429", "http_5xx"] | Fallback strategy. When set, the Plugin will check whether the specified instance’s token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
 | balancer                           | object         | False    |                                   |              | Load balancing configurations. |
 | balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. |
 | balancer.hash_on                   | string         | False    |                                   | [vars, headers, cookie, consumer, vars_combinations] | Used when `type` is `chash`. Support hashing on [NGINX variables](https://nginx.org/en/docs/varindex.html), headers, cookie, consumer, or a combination of [NGINX variables](https://nginx.org/en/docs/varindex.html). |
@@ -186,7 +186,7 @@ DeepSeek responses: 2
 
 ### Configure Instance Priority and Rate Limiting
 
-The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `instance_health_and_rate_limiting`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
+The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `["rate_limiting"]`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
 
 Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
 
@@ -199,7 +199,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -423,7 +423,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "key-auth": {},
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
