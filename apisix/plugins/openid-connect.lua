@@ -31,6 +31,10 @@ local concat            = table.concat
 
 local ngx_encode_base64 = ngx.encode_base64
 
+local secrets_lrucache = core.lrucache.new({
+    ttl = 300, count = 512, invalid_stale = true
+})
+
 local plugin_name       = "openid-connect"
 
 
@@ -556,7 +560,7 @@ end
 
 function _M.rewrite(plugin_conf, ctx)
     local conf_clone = core.table.clone(plugin_conf)
-    local conf = fetch_secrets(conf_clone, true, plugin_conf, "")
+    local conf = fetch_secrets(conf_clone, secrets_lrucache, plugin_conf, "")
 
     -- Previously, we multiply conf.timeout before storing it in etcd.
     -- If the timeout is too large, we should not multiply it again.

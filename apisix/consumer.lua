@@ -239,7 +239,7 @@ do
 
 local function fill_consumer_secret(consumer)
     local new_consumer = core.table.clone(consumer)
-    new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf, false)
+    new_consumer.auth_conf = secret.fetch_secrets(new_consumer.auth_conf)
     return new_consumer
 end
 
