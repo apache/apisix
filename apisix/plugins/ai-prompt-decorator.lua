@@ -82,7 +82,7 @@ end
 
 local function decorate(conf, body_tab)
     local new_messages = {}
-    
+
     if conf.prepend then
         for i = 1, #conf.prepend do
             new_messages[i] = conf.prepend[i]

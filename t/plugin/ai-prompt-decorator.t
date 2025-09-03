@@ -265,7 +265,7 @@ passed
     location /t {
         content_by_lua_block {
             local t = require("lib.test_admin").test
-            
+
             -- Configure route with prepend
             local code, body = t('/apisix/admin/routes/1',
                 ngx.HTTP_PUT,
@@ -289,13 +289,13 @@ passed
                     }
             }]]
             )
-            
+
             if code >= 300 then
                 ngx.status = code
                 ngx.say("failed to configure route")
                 return
             end
-            
+
             -- First request
             local code1, body1, actual_resp1 = t('/echo',
                     ngx.HTTP_POST,
@@ -311,13 +311,13 @@ passed
                         ]
                     }]]
             )
-            
+
             if code1 >= 300 then
                 ngx.status = code1
                 ngx.say("first request failed")
                 return
             end
-            
+
             -- Second request should have the same structure, not accumulating history
             local code2, body2, actual_resp2 = t('/echo',
                     ngx.HTTP_POST,
@@ -333,13 +333,13 @@ passed
                         ]
                     }]]
             )
-            
+
             if code2 >= 300 then
                 ngx.status = code2
                 ngx.say("second request failed")
                 return
             end
-            
+
             ngx.say("passed")
         }
     }
