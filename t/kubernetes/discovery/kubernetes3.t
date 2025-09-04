@@ -500,12 +500,28 @@ GET /dump
 
 
 
-=== TEST 7: test pre_list and post_list work
---- log_level: debug
+=== TEST 7: test pre_list and post_list work  for single-k8s
+--- log_level: info
 --- yaml_config eval: $::single_yaml_config
 --- extra_init_by_lua
     local ngx = ngx
     local dict = ngx.shared["kubernetes"]
+    dict:set("dirty_key", true)
+--- request
+GET /t
+--- grep_error_log eval
+qr/kubernetes discovery module find dirty data in shared dict/
+--- grep_error_log_out
+kubernetes discovery module find dirty data in shared dict
+
+
+
+=== TEST 8: test pre_list and post_list work for multi-k8s
+--- log_level: info
+--- yaml_config eval: $::yaml_config
+--- extra_init_by_lua
+    local ngx = ngx
+    local dict = ngx.shared["kubernetes-first"]
     dict:set("dirty_key", true)
 --- request
 GET /t
