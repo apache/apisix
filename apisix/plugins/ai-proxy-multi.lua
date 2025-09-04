@@ -170,14 +170,24 @@ end
 
 
 local function resolve_endpoint(instance_conf)
+    local scheme, host, port
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
-    local scheme, host, port, _ = endpoint:match(endpoint_regex)
-    if port == "" then
-        port = (scheme == "https") and "443" or "80"
+    if endpoint then
+        scheme, host, port = endpoint:match(endpoint_regex)
+        if port == "" then
+            port = (scheme == "https") and "443" or "80"
+        end
+        port = tonumber(port)
+    else
+        local ai_driver = require("apisix.plugins.ai-drivers." .. instance_conf.provider)
+        -- built-in ai driver always use https
+        scheme = "https"
+        host = ai_driver.host
+        port = ai_driver.port
     end
     local node = {
         host = host,
-        port = tonumber(port),
+        port = port,
         scheme = scheme,
     }
     parse_domain_for_node(node)
@@ -216,7 +226,7 @@ local function fetch_health_instances(conf, checkers)
             if ok then
                 transform_instances(new_instances, ins)
             elseif err then
-                core.log.error("failed to get health check target status, addr: ",
+                core.log.warn("failed to get health check target status, addr: ",
                     node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             end
         else
