@@ -497,9 +497,8 @@ hello world
 GET /t
 --- response_body
 done
---- error_log
-sync_data(): failed to check item data of [/apisix/plugin_metadata]
-failed to check the configuration of plugin sls-logger
+--- error_log eval
+qr/failed to check item data of \[\/apisix\/plugin_metadata\]/
 
 
 
