@@ -242,6 +242,10 @@ _EOC_
             }
         }
 
+        location /t {
+            return 200
+        }
+
 _EOC_
 
     $block->set_value("config", $config);
@@ -504,7 +508,7 @@ GET /dump
     local dict = ngx.shared["kubernetes"]
     dict:set("dirty_key", true)
 --- request
-GET /dump
+GET /t
 --- grep_error_log eval
 qr/kubernetes discovery module find dirty data in shared dict/
 --- grep_error_log_out
