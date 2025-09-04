@@ -509,6 +509,8 @@ GET /dump
     dict:set("dirty_key", true)
 --- request
 GET /t
+--- no_error_log
+[error]
 --- grep_error_log eval
 qr/kubernetes discovery module find dirty data in shared dict/
 --- grep_error_log_out
@@ -525,6 +527,8 @@ kubernetes discovery module find dirty data in shared dict
     dict:set("dirty_key", true)
 --- request
 GET /t
+--- no_error_log
+[error]
 --- grep_error_log eval
 qr/kubernetes discovery module find dirty data in shared dict/
 --- grep_error_log_out
