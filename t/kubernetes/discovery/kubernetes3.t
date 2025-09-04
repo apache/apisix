@@ -97,7 +97,7 @@ _EOC_
 use t::APISIX 'no_plan';
 
 repeat_each(1);
-log_level('info');
+log_level('warn');
 no_root_location();
 no_shuffle();
 workers(4);
@@ -243,7 +243,10 @@ _EOC_
         }
 
         location /t {
-            return 200;
+            content_by_lua_block {
+                ngx.sleep(1)
+                ngx.exit(200)
+            }
         }
 
 _EOC_
@@ -501,6 +504,7 @@ GET /dump
 
 
 === TEST 7: test pre_list and post_list work  for single-k8s
+--- log_level: info
 --- yaml_config eval: $::single_yaml_config
 --- extra_init_by_lua
     local ngx = ngx
@@ -523,6 +527,7 @@ kubernetes discovery module find dirty data in shared dict
 
 
 === TEST 8: test pre_list and post_list work for multi-k8s
+--- log_level: info
 --- yaml_config eval: $::yaml_config
 --- extra_init_by_lua
     local ngx = ngx
