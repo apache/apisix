@@ -174,7 +174,7 @@ local function resolve_endpoint(instance_conf)
     local scheme, host, port
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
     if endpoint then
-        scheme, host, port = endpoint:match("^(https?)://([^:/]+):?(%d*)/?.*$")
+        scheme, host, port = endpoint:match(endpoint_regex)
         if port == "" then
             port = (scheme == "https") and "443" or "80"
         end
