@@ -504,8 +504,13 @@ GET /dump
 --- yaml_config eval: $::single_yaml_config
 --- extra_init_by_lua
     local ngx = ngx
+    local core = require("apisix.core")
+
     local dict = ngx.shared["kubernetes"]
-    dict:set("dirty_key", true)
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
 --- request
 GET /t
 --- no_error_log
@@ -521,8 +526,13 @@ kubernetes discovery module find dirty data in shared dict
 --- yaml_config eval: $::yaml_config
 --- extra_init_by_lua
     local ngx = ngx
+    local core = require("apisix.core")
+
     local dict = ngx.shared["kubernetes-first"]
-    dict:set("dirty_key", true)
+    local ok,err = dict:set("dirty_key", true)
+    if not ok then
+        core.log.error("set dirty_key to dict fail, err: ", err)
+    end
 --- request
 GET /t
 --- no_error_log
