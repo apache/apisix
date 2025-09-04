@@ -651,6 +651,11 @@ http {
 
         {% if enable_admin_ui then %}
         location = /ui {
+            # Fixes incorrect redirect URLs when Nginx is behind a reverse proxy.
+            # By default, Nginx generates an absolute URL (e.g., http://backend:9180/ui/).
+            # Setting this to "off" generates a relative URL (e.g., /ui/), which the browser
+            # correctly resolves against the public-facing domain.
+            absolute_redirect off;
             return 301 /ui/;
         }
         location ^~ /ui/ {
