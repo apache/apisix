@@ -497,16 +497,16 @@ GET /dump
 
 
 === TEST 7: test pre_list and post_list work
+--- log_level: debug
+--- yaml_config eval: $::single_yaml_config
+--- extra_init_by_lua
+    local ngx = ngx
+    local dict = ngx.shared["kubernetes"]
+    dict:set("dirty_key", true)
 --- config
     location /t {
         return 200
     }
---- yaml_config eval: $::single_yaml_config
---- log_level: debug
---- extra_init_by_lua
-local ngx = ngx
-local dict = ngx.shared["kubernetes"]
-dict:set("dirty_key", true)
 --- request
 GET /t
 --- grep_error_log_out
