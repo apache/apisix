@@ -503,11 +503,7 @@ GET /dump
     local ngx = ngx
     local dict = ngx.shared["kubernetes"]
     dict:set("dirty_key", true)
---- config
-    location /t {
-        return 200
-    }
 --- request
-GET /t
+GET /dump
 --- grep_error_log_out
 kubernetes discovery module find dirty data in shared dict
