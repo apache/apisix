@@ -243,7 +243,7 @@ _EOC_
         }
 
         location /t {
-            return 200
+            return 200;
         }
 
 _EOC_
