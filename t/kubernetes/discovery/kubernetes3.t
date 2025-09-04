@@ -603,7 +603,7 @@ discovery:
         port: "6443"
       client:
         token_file: "/tmp/var/run/secrets/kubernetes.io/serviceaccount/token"
-      watch_endpoint_slices: true
+      watch_endpoint_slices: false
     - id: second
       service:
         schema: "http"
