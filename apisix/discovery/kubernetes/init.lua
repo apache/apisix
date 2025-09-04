@@ -114,9 +114,11 @@ local function on_endpoint_slices_modified(handle, endpoint, operate)
     if err then
         core.log.error("set endpoint into discovery DICT failed, ", err)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
+        return
     end
     if operate == "list" then
         handle.current_keys_hash[endpoint_key] = true
+        handle.current_keys_hash[endpoint_key .. "#version"] = true
     end
 end
 
@@ -180,9 +182,11 @@ local function on_endpoint_modified(handle, endpoint, operate)
     if err then
         core.log.error("set endpoint into discovery DICT failed, ", err)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
+        return
     end
     if operate == "list" then
         handle.current_keys_hash[endpoint_key] = true
+        handle.current_keys_hash[endpoint_key .. "#version"] = true
     end
 end
 
@@ -212,7 +216,7 @@ local function post_list(handle)
     end
     for _, key in ipairs(handle.existing_keys) do
         if not handle.current_keys_hash[key] then
-            core.log.debug("kubernetes discovery module find dirty data in shared dict, key:", key)
+            core.log.info("kubernetes discovery module find dirty data in shared dict, key:", key)
             handle.endpoint_dict:delete(key)
         end
     end
