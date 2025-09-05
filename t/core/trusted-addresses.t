@@ -106,6 +106,9 @@ x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
 x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -145,6 +148,9 @@ x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
 x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -183,6 +189,9 @@ x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
 x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -222,6 +231,9 @@ x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
 x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -263,6 +275,9 @@ x-forwarded-host: example.com
 x-forwarded-port: 8443
 x-forwarded-proto: https
 x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -340,6 +355,9 @@ x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
 x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -354,8 +372,20 @@ deployment:
     role: data_plane
     role_data_plane:
         config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
 --- error_log
-failed to create ip matcher for trusted_addresses: invalid ip address: 1.0.0
+invalid IP/CIDR '1.0.0' exists in trusted_addresses
 
 
 
@@ -370,5 +400,17 @@ deployment:
     role: data_plane
     role_data_plane:
         config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
 --- error_log
-failed to create ip matcher for trusted_addresses: invalid ip address: 1.0.0.0/33
+invalid IP/CIDR '1.0.0.0/33' exists in trusted_addresses

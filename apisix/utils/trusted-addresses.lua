@@ -16,11 +16,22 @@
 --
 local require       = require
 local core          = require("apisix.core")
+local ipairs        = ipairs
 
 local trusted_addresses_matcher
 
 local _M = {}
 
+
+local function validate_trusted_addresses(trusted_addresses)
+    for _, cidr in ipairs(trusted_addresses) do
+        if not core.ip.validate_cidr_or_ip(cidr) then
+            core.log.error("invalid IP/CIDR '", cidr, "' exists in trusted_addresses")
+            return false
+        end
+    end
+    return true
+end
 
 function _M.init_worker()
     local local_conf = core.config.local_conf()
@@ -28,6 +39,10 @@ function _M.init_worker()
 
     if not trusted_addresses then
         core.log.info("trusted_addresses is not configured")
+        return
+    end
+
+    if not validate_trusted_addresses(trusted_addresses) then
         return
     end
 
