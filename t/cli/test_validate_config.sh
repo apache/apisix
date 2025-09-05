@@ -227,6 +227,28 @@ fi
 
 echo "passed: trusted_addresses rejects non-array value"
 
+# Test trusted_addresses with empty array (should be rejected)
+echo '
+apisix:
+  trusted_addresses: []
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: expect array to have at least 1 items'; then
+    echo "failed: trusted_addresses should reject empty array"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects empty array"
+
 # Test trusted_addresses with non-string items in array
 echo '
 apisix:

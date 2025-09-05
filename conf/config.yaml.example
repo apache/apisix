@@ -144,7 +144,7 @@ apisix:
 # trusted_addresses:              # When configured, APISIX will trust the `X-Forwarded-*` Headers
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
 #   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
-                                  # APISIX will override `X-Forwarded-*` headers with values from the request context.
+                                  # APISIX will override `X-Forwarded-*` headers with trusted values.
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
