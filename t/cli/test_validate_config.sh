@@ -291,7 +291,7 @@ etcd:
 ' > conf/config.yaml
 
 out=$(make init 2>&1 || true)
-if ! echo "$out" | grep 'property "trusted_addresses" validation failed.*duplicate'; then
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed.*equal'; then
     echo "failed: trusted_addresses should reject duplicate items"
     exit 1
 fi
