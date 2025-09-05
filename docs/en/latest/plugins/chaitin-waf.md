@@ -71,7 +71,7 @@ The response headers are listed below:
 | config.real_client_ip    | boolean       | false    | true          | Specifies whether to use the `X-Forwarded-For` as the client IP (if present). If `false`, uses the direct client IP from the connection. |
 
 :::note
-Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, all `X-Forwarded-*` headers will be discarded.
+Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, all `X-Forwarded-*` headers will be overridden with trusted values.
 :::
 
 :::note

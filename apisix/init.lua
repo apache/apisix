@@ -591,7 +591,8 @@ local function handle_x_forwarded_headers(api_ctx)
     local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
 
     if not addr_is_trusted then
-        -- store the original x-forwarded-* headers for later process
+        -- store the original x-forwarded-* headers
+        -- to allow future use by other plugins or processes
         api_ctx.var.original_x_forwarded_proto = api_ctx.var.http_x_forwarded_proto
         api_ctx.var.original_x_forwarded_host = api_ctx.var.http_x_forwarded_host
         api_ctx.var.original_x_forwarded_port = api_ctx.var.http_x_forwarded_port
