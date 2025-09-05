@@ -19,6 +19,7 @@ local ngx = ngx
 local core = require("apisix.core")
 local uuid = require("resty.jit-uuid")
 local nanoid = require("nanoid")
+local ksuid = require("resty.ksuid")
 local math_random = math.random
 local str_byte = string.byte
 local ffi = require "ffi"
@@ -32,7 +33,7 @@ local schema = {
         include_in_response = {type = "boolean", default = true},
         algorithm = {
             type = "string",
-            enum = {"uuid", "nanoid", "range_id"},
+            enum = {"uuid", "nanoid", "range_id", "ksuid"},
             default = "uuid"
         },
         range_id = {
@@ -85,6 +86,10 @@ local function get_request_id(conf)
 
     if conf.algorithm == "range_id" then
         return get_range_id(conf.range_id)
+    end
+
+    if conf.algorithm == "ksuid" then
+        return ksuid.generate()
     end
 
     return uuid()
