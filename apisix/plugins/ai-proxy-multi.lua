@@ -238,7 +238,7 @@ local function fetch_health_instances(conf, checkers)
             if ok then
                 transform_instances(new_instances, ins)
             elseif err then
-                core.log.error("failed to get health check target status, addr: ",
+                core.log.warn("failed to get health check target status, addr: ",
                     node.host, ":", port or node.port, ", host: ", host, ", err: ", err)
             end
         else
