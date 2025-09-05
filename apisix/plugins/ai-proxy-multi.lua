@@ -298,8 +298,6 @@ function _M.construct_upstream(instance)
         return nil, "invalid upstream node: " .. core.json.encode(node)
     end
 
-    parse_domain_for_node(node)
-
     local node = {
         host = node.host,
         port = node.port,
@@ -319,10 +317,14 @@ local function pick_target(ctx, conf, ups_tab)
     local checkers
     for i, instance in ipairs(conf.instances) do
         if instance.checks then
+            resolve_endpoint(instance)
             -- json path is 0 indexed so we need to decrement i
             local resource_path = conf._meta.parent.resource_key ..
                                   "#plugins['ai-proxy-multi'].instances[" .. i-1 .. "]"
             local resource_version = conf._meta.parent.resource_version
+            if instance._nodes_ver then
+                resource_version = resource_version .. instance._nodes_ver
+            end
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers = checkers or {}
             checkers[instance.name] = checker

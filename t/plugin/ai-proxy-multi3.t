@@ -1019,7 +1019,7 @@ POST /ai
             
             -- Restore original function
             resolver.parse_domain = original_parse_domain
-            
+            ngx.sleep(3)
             ngx.say("passed")
         }
     }
@@ -1028,3 +1028,6 @@ passed
 passed
 --- no_error_log
 failed to get health check target status
+--- error_log
+try to release checker
+--- timeout: 5
