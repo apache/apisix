@@ -127,7 +127,7 @@ function _M.post(self, ...)
 end
 
 
-function _M.get_healthcheck_events_modele(self)
+function _M.get_healthcheck_events_module(self)
     if self.events_module == _M.EVENTS_MODULE_LUA_RESTY_EVENTS then
         return "resty.events"
     else
