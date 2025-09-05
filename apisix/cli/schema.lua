@@ -259,6 +259,14 @@ local config_schema = {
                     default = false,
                     description = "a global switch to disable upstream health checks",
                 },
+                trusted_addresses = {
+                    type = "array",
+                    minItems = 0,
+                    items = {
+                        type = "string",
+                    },
+                    uniqueItems = true
+                },
             }
         },
         nginx_config = {

@@ -204,3 +204,49 @@ if ! echo "$out" | grep 'property "host" validation failed'; then
 fi
 
 echo "passed: check etcd schema during init"
+
+# Test trusted_addresses with non-array value (string instead of array)
+echo '
+apisix:
+  trusted_addresses: "127.0.0.1"
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: wrong type: expected array, got string'; then
+    echo "failed: trusted_addresses should reject string value"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects non-array value"
+
+# Test trusted_addresses with non-string items in array
+echo '
+apisix:
+  trusted_addresses:
+    - "127.0.0.1"
+    - 123
+deployment:
+  role: traditional
+  role_traditional:
+    config_provider: etcd
+etcd:
+  host:
+    - "http://127.0.0.1:2379"
+  prefix: "/apisix"
+' > conf/config.yaml
+
+out=$(make init 2>&1 || true)
+if ! echo "$out" | grep 'property "trusted_addresses" validation failed: failed to validate item 2: wrong type: expected string, got number'; then
+    echo "failed: trusted_addresses should reject non-string items"
+    exit 1
+fi
+
+echo "passed: trusted_addresses rejects non-string array items"

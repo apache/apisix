@@ -65,6 +65,9 @@ x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
 x-real-ip: 127.0.0.1
+--- error_log
+trusted_addresses is not configured
+trusted_addresses_matcher is not initialized
 
 
 
@@ -337,3 +340,77 @@ x-forwarded-host: localhost
 x-forwarded-port: 1984
 x-forwarded-proto: http
 x-real-ip: 127.0.0.1
+
+
+
+=== TEST 9: with empty trusted_addresses configuration, X-Forwarded headers should be overridden
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses: []
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /old_uri
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+#END
+--- request
+GET /old_uri
+--- more_headers
+X-Forwarded-Proto: https
+X-Forwarded-Host: example.com
+X-Forwarded-Port: 8443
+--- response_body
+uri: /old_uri
+host: localhost
+x-forwarded-for: 127.0.0.1
+x-forwarded-host: localhost
+x-forwarded-port: 1984
+x-forwarded-proto: http
+x-real-ip: 127.0.0.1
+--- no_error_log
+trusted_addresses is not configured
+--- error_log
+trusted_addresses is an empty array
+trusted_addresses_matcher is not initialized
+
+
+
+=== TEST 9: invalid trusted_addresses configuration: IP is invalid
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "1.0.0"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- error_log
+failed to create ip matcher for trusted_addresses: invalid ip address: 1.0.0
+
+
+
+=== TEST 10: invalid trusted_addresses configuration: CIDR is invalid
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: false
+    trusted_addresses:
+        - "1.0.0.0/33"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- error_log
+failed to create ip matcher for trusted_addresses: invalid ip address: 1.0.0.0/33
