@@ -170,10 +170,20 @@ end
 
 
 local function resolve_endpoint(instance_conf)
+    local scheme, host, port
     local endpoint = core.table.try_read_attr(instance_conf, "override", "endpoint")
-    local scheme, host, port, _ = endpoint:match(endpoint_regex)
-    if port == "" then
-        port = (scheme == "https") and "443" or "80"
+    if endpoint then
+        scheme, host, port = endpoint:match(endpoint_regex)
+        if port == "" then
+            port = (scheme == "https") and "443" or "80"
+        end
+        port = tonumber(port)
+    else
+        local ai_driver = require("apisix.plugins.ai-drivers." .. instance_conf.provider)
+        -- built-in ai driver always use https
+        scheme = "https"
+        host = ai_driver.host
+        port = ai_driver.port
     end
     local new_node = {
         host = host,
