@@ -385,7 +385,7 @@ trusted_addresses_matcher is not initialized
 
 
 
-=== TEST 9: invalid trusted_addresses configuration: IP is invalid
+=== TEST 10: invalid trusted_addresses configuration: IP is invalid
 --- yaml_config
 apisix:
     node_listen: 1984
@@ -401,7 +401,7 @@ failed to create ip matcher for trusted_addresses: invalid ip address: 1.0.0
 
 
 
-=== TEST 10: invalid trusted_addresses configuration: CIDR is invalid
+=== TEST 11: invalid trusted_addresses configuration: CIDR is invalid
 --- yaml_config
 apisix:
     node_listen: 1984

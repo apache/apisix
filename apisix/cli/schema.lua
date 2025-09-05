@@ -261,7 +261,7 @@ local config_schema = {
                 },
                 trusted_addresses = {
                     type = "array",
-                    minItems = 0,
+                    minItems = 1,
                     items = {
                         type = "string",
                     },

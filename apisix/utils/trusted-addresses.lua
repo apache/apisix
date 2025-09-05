@@ -33,11 +33,6 @@ function _M.init_worker()
         return
     end
 
-    if not next(trusted_addresses) then
-        core.log.info("trusted_addresses is an empty array")
-        return
-    end
-
     local matcher, err = core.ip.create_ip_matcher(trusted_addresses)
     if not matcher then
         core.log.error("failed to create ip matcher for trusted_addresses: ", err)
