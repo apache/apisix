@@ -983,7 +983,7 @@ POST /ai
                 ngx.status = code
             end
             ngx.say(body)
-            
+
             local code, _, body = t("/ai",
                 ngx.HTTP_POST,
                 [[{
@@ -998,10 +998,10 @@ POST /ai
                     ["Content-Type"] = "application/json",
                 }
             )
-            
+
             -- Wait a bit for health check to run
             ngx.sleep(1.5)
-            
+
             local code, _, body = t("/ai",
                 ngx.HTTP_POST,
                 [[{
@@ -1016,7 +1016,7 @@ POST /ai
                     ["Content-Type"] = "application/json",
                 }
             )
-            
+
             -- Restore original function
             resolver.parse_domain = original_parse_domain
             ngx.sleep(3)

@@ -301,7 +301,7 @@ local function timer_working_pool_check()
         local res_conf = fetch_latest_conf(resource_path)
         local need_destroy = true
         if res_conf and res_conf.value then
-                        local upstream
+            local upstream
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
                 local _, sub_path = parse_path(resource_path)
