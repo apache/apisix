@@ -1066,3 +1066,169 @@ GET /t
 --- response_body
 server 1
 server 4
+
+
+
+=== TEST 27: get APISIX-NACOS info from NACOS - metadata filtering lane=a (only server1)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          lane: ["a"]
+#END
+--- pipelined_requests eval
+[
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+    qr/server 1/,
+]
+
+
+
+=== TEST 28: get APISIX-NACOS info from NACOS - metadata filtering empty (load balance between server1 and server2)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+            local server1_count = 0
+            local server2_count = 0
+
+            -- Send multiple requests to test load balancing
+            for i = 1, 10 do
+                local res, err = httpc:request_uri(uri .. "/hello")
+                if not res then
+                    ngx.log(ngx.ERR, "Request failed: ", err)
+                else
+                    -- Clean and validate response
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" then
+                        server1_count = server1_count + 1
+                    elseif clean_body == "server 2" then
+                        server2_count = server2_count + 1
+                    else
+                        ngx.log(ngx.ERR, "Invalid response: ", clean_body)
+                    end
+                end
+            end
+
+            -- Verify that both servers were used
+            if server1_count > 0 and server2_count > 0 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
+
+
+
+=== TEST 29: get APISIX-NACOS info from NACOS - metadata filtering no match (lane=c)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          lane: ["c"]
+#END
+--- request
+GET /hello
+--- error_code: 503
+--- error_log
+no valid upstream node
+
+
+
+=== TEST 30: metadata filtering with multiple values - should match both servers (lane=a,b)
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /hello
+    upstream:
+      service_name: APISIX-NACOS
+      discovery_type: nacos
+      type: roundrobin
+      discovery_args:
+        metadata:
+          lane: ["a", "b"]
+#END
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require("resty.http")
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+
+            -- Wait for 2 seconds for APISIX initialization
+            ngx.sleep(2)
+            local httpc = http.new()
+
+            local server1_count = 0
+            local server2_count = 0
+            for i = 1, 10 do
+                local res, err = httpc:request_uri(uri .. "/hello", {method = "GET"})
+                if res then
+                    local clean_body = res.body:gsub("%s+$", "")
+                    if clean_body == "server 1" then
+                        server1_count = server1_count + 1
+                    elseif clean_body == "server 2" then
+                        server2_count = server2_count + 1
+                    end
+                end
+                ngx.sleep(0.1)
+            end
+
+            if server1_count > 0 and server2_count > 0 then
+                ngx.say("PASS")
+            else
+                ngx.say("FAIL")
+            end
+        }
+    }
+--- request
+GET /t
+--- response_body
+PASS
