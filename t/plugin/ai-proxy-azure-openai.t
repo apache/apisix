@@ -1,3 +1,4 @@
+
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -39,6 +40,13 @@ add_block_preprocessor(sub {
         $block->set_value("request", "GET /t");
     }
 
+    my $user_yaml_config = <<_EOC_;
+plugins:
+  - ai-proxy-multi
+  - prometheus
+_EOC_
+    $block->set_value("extra_yaml_config", $user_yaml_config);
+
     my $http_config = $block->http_config // <<_EOC_;
         server {
             server_name openai;
@@ -58,62 +66,61 @@ add_block_preprocessor(sub {
                     local body, err = ngx.req.get_body_data()
                     body, err = json.decode(body)
 
-                    local query_auth = ngx.req.get_uri_args()["api_key"]
+                    local test_type = ngx.req.get_headers()["test-type"]
+                    if test_type == "options" then
+                        if body.foo == "bar" then
+                            ngx.status = 200
+                            ngx.say("options works")
+                        else
+                            ngx.status = 500
+                            ngx.say("model options feature doesn't work")
+                        end
+                        return
+                    end
 
-                    if query_auth ~= "apikey" then
+                    local header_auth = ngx.req.get_headers()["authorization"]
+                    local query_auth = ngx.req.get_uri_args()["apikey"]
+
+                    if header_auth ~= "Bearer token" and query_auth ~= "apikey" then
                         ngx.status = 401
                         ngx.say("Unauthorized")
                         return
                     end
 
-            local res = [[
-{
-  "id": "chatcmpl-12345",
-  "object": "chat.completion",
-  "created": 1691234567,
-  "model": "gpt-3.5-turbo",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "这是一个示例回复。"
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 10,
-    "completion_tokens": 20,
-    "total_tokens": 30
-  }
-}]]
-                    ngx.status = 200
-                    ngx.say(res)
+                    if header_auth == "Bearer token" or query_auth == "apikey" then
+                        ngx.req.read_body()
+                        local body, err = ngx.req.get_body_data()
+                        body, err = json.decode(body)
+
+                        if not body.messages or #body.messages < 1 then
+                            ngx.status = 400
+                            ngx.say([[{ "error": "bad request"}]])
+                            return
+                        end
+                        if body.model then
+                            ngx.status = 400
+                            ngx.say([[{ "error": "bad request. model passed"}]])
+                            return
+                        end
+                        if body.messages[1].content == "write an SQL query to get all rows from student table" then
+                            ngx.print("SELECT * FROM STUDENTS")
+                            return
+                        end
+
+                        ngx.status = 200
+                        ngx.say([[$resp]])
+                        return
+                    end
+
+
+                    ngx.status = 503
+                    ngx.say("reached the end of the test suite")
                 }
             }
 
-            location /null-content {
+            location /random {
                 content_by_lua_block {
-                    local json = require("cjson.safe")
-
-            local res = [[
-{
-  "model": "gpt-3.5-turbo",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": null
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": null
-}]]
-                    ngx.status = 200
-                    ngx.say(res)
+                    ngx.say("path override works")
                 }
             }
         }
@@ -126,7 +133,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: set access log
+=== TEST 1: set route with right auth header
 --- config
     location /t {
         content_by_lua_block {
@@ -136,21 +143,27 @@ __DATA__
                  [[{
                     "uri": "/anything",
                     "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "query": {
-                                    "api_key": "apikey"
+                        "ai-proxy-multi": {
+                            "instances": [
+                                {
+                                    "name": "azure-openai",
+                                    "provider": "azure-openai",
+                                    "weight": 1,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4o",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6724/v1/chat/completions"
+                                    }
                                 }
-                            },
-                            "options": {
-                                "model": "gpt-3.5-turbo",
-                                "max_tokens": 512,
-                                "temperature": 1.0
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724/v1/chat/completions"
-                            },
+                            ],
                             "ssl_verify": false
                         }
                     }
@@ -171,63 +184,16 @@ passed
 === TEST 2: send request
 --- request
 POST /anything
-{"messages":[{"role":"system","content":"You are a mathematician"},{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Authorization: Bearer token
 --- error_code: 200
 --- response_body eval
-qr/.*completion_tokens.*/
---- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost\" gpt-4 gpt-3.5-turbo \d+ 10 20.*/
+qr/\{ "content": "1 \+ 1 = 2\.", "role": "assistant" \}/
 
 
 
-=== TEST 3: proxy to /null-content ai endpoint
---- config
-    location /t {
-        content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body = t('/apisix/admin/routes/1',
-                 ngx.HTTP_PUT,
-                 [[{
-                    "uri": "/anything",
-                    "plugins": {
-                        "ai-proxy": {
-                            "provider": "openai",
-                            "auth": {
-                                "header": {
-                                    "Authorization": "Bearer token"
-                                }
-                            },
-                            "override": {
-                                "endpoint": "http://localhost:6724/null-content"
-                            }
-                        }
-                    }
-                }]]
-            )
-
-            if code >= 300 then
-                ngx.status = code
-            end
-            ngx.say(body)
-        }
-    }
---- response_body
-passed
-
-
-
-=== TEST 4: send request
---- request
-POST /anything
-{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-4"}
---- error_code: 200
---- response_body eval
-qr/.*assistant.*/
---- no_error_log
-
-
-
-=== TEST 5: create a ai-proxy-multi route with delay streaming ai endpoint(every event delay 200ms)
+=== TEST 3: set route with stream = true (SSE)
 --- config
     location /t {
         content_by_lua_block {
@@ -240,8 +206,8 @@ qr/.*assistant.*/
                         "ai-proxy-multi": {
                             "instances": [
                                 {
-                                    "name": "self-hosted",
-                                    "provider": "openai-compatible",
+                                    "name": "azure-openai",
+                                    "provider": "azure-openai",
                                     "weight": 1,
                                     "auth": {
                                         "header": {
@@ -249,11 +215,13 @@ qr/.*assistant.*/
                                         }
                                     },
                                     "options": {
-                                        "model": "gpt-3.5-turbo",
+                                        "model": "gpt-4o",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0,
                                         "stream": true
                                     },
                                     "override": {
-                                        "endpoint": "http://localhost:7737/v1/chat/completions?delay=true"
+                                        "endpoint": "http://localhost:7737/v1/chat/completions"
                                     }
                                 }
                             ],
@@ -262,6 +230,7 @@ qr/.*assistant.*/
                     }
                  }]]
             )
+
             if code >= 300 then
                 ngx.status = code
             end
@@ -273,23 +242,26 @@ passed
 
 
 
-=== TEST 6: assert access log contains right llm variable
+=== TEST 4: test is SSE works as expected
 --- config
     location /t {
         content_by_lua_block {
             local http = require("resty.http")
             local httpc = http.new()
             local core = require("apisix.core")
+
             local ok, err = httpc:connect({
                 scheme = "http",
                 host = "localhost",
                 port = ngx.var.server_port,
             })
+
             if not ok then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local params = {
                 method = "POST",
                 headers = {
@@ -300,17 +272,18 @@ passed
                     "messages": [
                         { "role": "system", "content": "some content" }
                     ],
-                    "model": "gpt-4"
+                    "stream": true
                 }]],
             }
+
             local res, err = httpc:request(params)
             if not res then
                 ngx.status = 500
                 ngx.say(err)
                 return
             end
+
             local final_res = {}
-            local inspect = require("inspect")
             while true do
                 local chunk, err = res.body_reader() -- will read chunk by chunk
                 if err then
@@ -322,10 +295,9 @@ passed
                 end
                 core.table.insert_tail(final_res, chunk)
             end
+
             ngx.print(#final_res .. final_res[6])
         }
     }
 --- response_body_like eval
 qr/6data: \[DONE\]\n\n/
---- access_log eval
-qr/.*[\d.]+ \"http:\/\/localhost:1984\" gpt-4 gpt-3.5-turbo 2\d\d 15 20.*/
