@@ -389,42 +389,6 @@ make: *** [deps] Error 1
 
 这是由于缺少 OpenResty openssl 开发工具包。要安装它，请参考[installation dependencies](install-dependencies.md)。
 
-## 我如何通过 APISIX 代理访问 APISIX Dashboard？
-
-你可以按照以下步骤进行配置：
-
-1. 为 Apache APISIX 代理和 Admin API 配置不同的端口，或者禁用 Admin API。
-
-```yaml
-deployment:
-  admin:
-    admin_listen: # use a separate port
-      ip: 127.0.0.1
-      port: 9180
-```
-
-2、添加 APISIX Dashboard 的代理路由：
-
-```shell
-curl -i http://127.0.0.1:9180/apisix/admin/routes/1  -H "X-API-KEY: $admin_key" -X PUT -d '
-{
-    "uris":[ "/*" ],
-    "name":"apisix_proxy_dashboard",
-    "upstream":{
-        "nodes":[
-            {
-                "host":"127.0.0.1",
-                "port":9000,
-                "weight":1
-            }
-        ],
-        "type":"roundrobin"
-    }
-}'
-```
-
-**注意**: Apache APISIX Dashboard 正在监听 `127.0.0.1:9000`。
-
 ## 如何使用正则表达式 (regex) 匹配 Route 中的 `uri`？
 
 你可以在 Route 中使用 `vars` 字段来匹配正则表达式：

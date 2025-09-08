@@ -260,7 +260,95 @@ passed
 
 
 
-=== TEST 7: sanity: configure neither append nor prepend should fail
+=== TEST 7: verify no message accumulation across multiple requests
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+
+            -- Configure route with prepend
+            local code, body = t('/apisix/admin/routes/1',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/echo",
+                    "upstream": {
+                        "type": "roundrobin",
+                        "nodes": {
+                            "127.0.0.1:1980": 1
+                        }
+                    },
+                    "plugins": {
+                        "ai-prompt-decorator": {
+                            "prepend":[
+                                {
+                                    "role": "system",
+                                    "content": "system prompt"
+                                }
+                            ]
+                        }
+                    }
+            }]]
+            )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say("failed to configure route")
+                return
+            end
+
+            -- First request
+            local code1, body1, actual_resp1 = t('/echo',
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "user", "content": "first message" }
+                        ]
+                    }]],
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "system prompt" },
+                            { "role": "user", "content": "first message" }
+                        ]
+                    }]]
+            )
+
+            if code1 >= 300 then
+                ngx.status = code1
+                ngx.say("first request failed")
+                return
+            end
+
+            -- Second request should have the same structure, not accumulating history
+            local code2, body2, actual_resp2 = t('/echo',
+                    ngx.HTTP_POST,
+                    [[{
+                        "messages": [
+                            { "role": "user", "content": "second message" }
+                        ]
+                    }]],
+                    [[{
+                        "messages": [
+                            { "role": "system", "content": "system prompt" },
+                            { "role": "user", "content": "second message" }
+                        ]
+                    }]]
+            )
+
+            if code2 >= 300 then
+                ngx.status = code2
+                ngx.say("second request failed")
+                return
+            end
+
+            ngx.say("passed")
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: sanity: configure neither append nor prepend should fail
 --- config
     location /t {
         content_by_lua_block {

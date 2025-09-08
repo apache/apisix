@@ -31,7 +31,7 @@ jobs:
           - redhat
     services:
       etcd:
-        image: bitnami/etcd:3.5.4
+        image: bitnamilegacy/etcd:3.5.4
         ports:
           - 2379:2379
           - 2380:2380

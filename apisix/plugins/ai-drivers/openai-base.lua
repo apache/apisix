@@ -47,6 +47,7 @@ function _M.new(opts)
         host = opts.host,
         port = opts.port,
         path = opts.path,
+        remove_model = opts.options and opts.options.remove_model
     }
     return setmetatable(self, mt)
 end
@@ -89,6 +90,8 @@ local function read_response(ctx, res)
         local contents = {}
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
+            ctx.var.apisix_upstream_response_time = math.floor((ngx_now() -
+                                             ctx.llm_request_start_time) * 1000)
             if err then
                 core.log.warn("failed to read response chunk: ", err)
                 return handle_error(err)
@@ -97,7 +100,7 @@ local function read_response(ctx, res)
                 return
             end
 
-            if ctx.var.llm_time_to_first_token == "" then
+            if ctx.var.llm_time_to_first_token == "0" then
                 ctx.var.llm_time_to_first_token = math.floor(
                                                 (ngx_now() - ctx.llm_request_start_time) * 1000)
             end
@@ -157,23 +160,28 @@ local function read_response(ctx, res)
     end
     ngx.status = res.status
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
+    ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
     local res_body, err = core.json.decode(raw_res_body)
     if err then
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
             ", it will cause token usage not available")
     else
         core.log.info("got token usage from ai service: ", core.json.delay_encode(res_body.usage))
-        ctx.ai_token_usage = {
-            prompt_tokens = res_body.usage and res_body.usage.prompt_tokens or 0,
-            completion_tokens = res_body.usage and res_body.usage.completion_tokens or 0,
-            total_tokens = res_body.usage and res_body.usage.total_tokens or 0,
-        }
-        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens
-        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens
-        if res_body.choices and #res_body.choices > 0 then
+        ctx.ai_token_usage = {}
+        if type(res_body.usage) == "table" then
+            ctx.llm_raw_usage = res_body.usage
+            ctx.ai_token_usage.prompt_tokens = res_body.usage.prompt_tokens or 0
+            ctx.ai_token_usage.completion_tokens = res_body.usage.completion_tokens or 0
+            ctx.ai_token_usage.total_tokens = res_body.usage.total_tokens or 0
+        end
+        ctx.var.llm_prompt_tokens = ctx.ai_token_usage.prompt_tokens or 0
+        ctx.var.llm_completion_tokens = ctx.ai_token_usage.completion_tokens or 0
+        if type(res_body.choices) == "table" and #res_body.choices > 0 then
             local contents = {}
             for _, choice in ipairs(res_body.choices) do
-                if choice and choice.message and choice.message.content then
+                if type(choice) == "table"
+                        and type(choice.message) == "table"
+                        and type(choice.message.content) == "string" then
                     core.table.insert(contents, choice.message.content)
                 end
             end
@@ -248,7 +256,9 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
             request_table[opt] = val
         end
     end
-
+    if self.remove_model then
+        request_table.model = nil
+    end
     local req_json, err = core.json.encode(request_table)
     if not req_json then
         return nil, err
@@ -260,6 +270,11 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
     if not res then
         core.log.warn("failed to send request to LLM server: ", err)
         return handle_error(err)
+    end
+
+    -- handling this error separately is needed for retries
+    if res.status == 429 or (res.status >= 500 and res.status < 600 )then
+        return res.status
     end
 
     local code, body = read_response(ctx, res)
