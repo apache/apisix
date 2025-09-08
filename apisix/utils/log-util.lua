@@ -199,7 +199,9 @@ local function get_full_log(ngx, conf)
     }
 
     if ctx.resp_body then
-        log.response.body = ctx.resp_body
+        if conf.include_resp_body then
+            log.response.body = ctx.resp_body
+        end
     end
 
     if conf.include_req_body then
