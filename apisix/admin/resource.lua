@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
 local apisix_consumer = require("apisix.consumer")
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 local setmetatable = setmetatable
 local tostring = tostring
 local ipairs = ipairs
@@ -191,7 +192,8 @@ function _M:post(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `POST` method for " .. self.kind}
     end
 
-    local id, err = self:check_conf(id, conf, false)
+    local conf_for_check = tbl_deepcopy(conf)
+    local id, err = self:check_conf(id, conf_for_check, false)
     if not id then
         return 400, err
     end
@@ -238,7 +240,8 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local ok, err = self:check_conf(id, conf, need_id, typ)
+    local conf_for_check = tbl_deepcopy(conf)
+    local ok, err = self:check_conf(id, conf_for_check, need_id, typ)
     if not ok then
         return 400, err
     end
@@ -440,7 +443,8 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local ok, err = self:check_conf(id, node_value, true, typ, true)
+    local node_value_for_check = tbl_deepcopy(node_value)
+    local ok, err = self:check_conf(id, node_value_for_check, true, typ, true)
     if not ok then
         return 400, err
     end
