@@ -106,6 +106,11 @@ curl http://127.0.0.1:9180/apisix/admin/plugin_metadata/chaitin-waf -H "X-API-KE
 | config.req_body_size     | integer       | 否   |       | 请求体大小，单位为 KB                                                                                                                                                                                                                                                                 |
 | config.keepalive_size    | integer       | 否   |       | 长亭 WAF 服务的最大并发空闲连接数                                                                                                                                                                                                                                                          |
 | config.keepalive_timeout | integer       | 否   |       | 空闲链接超时，毫秒                                                                                                                                                                                                                                                                    |
+| config.real_client_ip    | boolean       | 否    | true          | 指定是否使用 `X-Forwarded-For` 作为客户端 IP 地址（如果存在）。如果设置为 `false`，则使用连接的直接客户端 IP 地址。 |
+
+:::note
+只有发送自 `apisix.trusted_addresses` 配置（支持 IP 和 CIDR）地址的 `X-Forwarded-*` 头才会被信任，并传递给插件或上游。如果未配置 `apisix.trusted_addresses` 或 ip 不在配置地址范围内的，`X-Forwarded-*` 头将全部被可信值覆盖。
+:::
 
 一个典型的示例配置如下，这里使用 `httpbun.org` 作为示例后端，可以按需替换：
 

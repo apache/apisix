@@ -470,3 +470,39 @@ passed
 GET /hello
 --- more_headers
 X-Forwarded-For: 1.1.1.1, 192.128.1.1, 127.0.0.1
+
+
+
+=== TEST 24: trusted in real-ip, but not trusted by `apisix.trusted_addresses`
+should be rejected
+--- yaml_config
+apisix:
+    node_listen: 1984
+    enable_admin: true
+    trusted_addresses:
+        - "192.128.0.0/16"
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /hello
+    upstream:
+        nodes:
+            "127.0.0.1:1980": 1
+        type: roundrobin
+    plugins:
+      real-ip:
+        trusted_addresses: ["192.128.0.0/16", "127.0.0.0/24"]
+        source: http_x_forwarded_for
+      ip-restriction:
+        whitelist: ["1.1.1.1"]
+#END
+--- request
+GET /hello
+--- more_headers
+X-Forwarded-For: 1.1.1.1
+--- error_code: 403

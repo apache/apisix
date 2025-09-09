@@ -27,6 +27,8 @@ add_block_preprocessor(sub {
     my $yaml_config = $block->yaml_config // <<_EOC_;
 apisix:
     node_listen: 1984
+    trusted_addresses:
+        - "127.0.0.1"
 deployment:
     role: data_plane
     role_data_plane:
@@ -230,3 +232,34 @@ GET /echo
 X-Forwarded-Port: 8080
 --- response_headers
 X-Forwarded-Port: 10080
+
+
+
+=== TEST 8: pass duplicate X-Forwarded-Proto, but not configured trusted_addresses
+--- yaml_config
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+--- apisix_yaml
+routes:
+  -
+    id: 1
+    uri: /echo
+    upstream_id: 1
+upstreams:
+  -
+    id: 1
+    nodes:
+        "127.0.0.1:1980": 1
+    type: roundrobin
+#END
+--- request
+GET /echo
+--- more_headers
+X-Forwarded-Proto: http
+X-Forwarded-Proto: grpc
+--- response_headers
+X-Forwarded-Proto: http
