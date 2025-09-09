@@ -198,7 +198,7 @@ local function get_full_log(ngx, conf)
         apisix_latency = apisix_latency
     }
 
-    if ctx.resp_body then
+    if conf.include_resp_body then
         log.response.body = ctx.resp_body
     end
 
