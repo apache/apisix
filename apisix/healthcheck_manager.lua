@@ -232,7 +232,6 @@ end
 
 
 function _M.upstream_version(index, nodes_ver)
-    core.log.warn("index: ", index, " nodes_ver: ", nodes_ver)
     if not index then
         return
     end
@@ -284,7 +283,6 @@ local function timer_create_checker()
                             res_conf.value.upstream or res_conf.value -- service discovery
             end
             local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
-            core.log.warn("ashish bhai upar se aaya upstream with node version ", upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
             if resource_ver ~= new_version then
@@ -345,7 +343,6 @@ local function timer_working_pool_check()
         end
         local need_destroy = true
         if res_conf and res_conf.value then
-            core.log.warn("ashish bhai upar se aaya upstream with node version ", upstream._nodes_ver)
             local current_ver = _M.upstream_version(res_conf.modifiedIndex,
                                                     upstream._nodes_ver)
             core.log.info("checking working pool for resource: ", resource_path,
