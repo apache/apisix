@@ -191,11 +191,12 @@ function _M.set_by_route(route, api_ctx)
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
-            if not up_conf._nodes_ver then
-                up_conf._nodes_ver = 0
+            local nodes_ver = healthcheck_manager.get_nodes_ver(up_conf.resource_key)
+            if not nodes_ver then
+                nodes_ver = 0
             end
-            up_conf._nodes_ver = up_conf._nodes_ver + 1
-
+            nodes_ver = nodes_ver + 1
+            healthcheck_manager.set_nodes_ver_and_nodes(up_conf.resource_key, nodes_ver, new_nodes)
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
@@ -243,8 +244,9 @@ function _M.set_by_route(route, api_ctx)
                 ngx_var.upstream_sni = sni
             end
         end
+        local node_ver = healthcheck_manager.get_nodes_ver(up_conf.resource_key)
         local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version,
-                                                                      up_conf._nodes_ver)
+                                                                      node_ver)
         local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
         api_ctx.up_checker = checker
         return
@@ -256,8 +258,9 @@ function _M.set_by_route(route, api_ctx)
     if not ok then
         return 503, err
     end
+    local node_ver = healthcheck_manager.get_nodes_ver(up_conf.resource_key)
     local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version,
-                                                                  up_conf._nodes_ver )
+                                                                  node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
     local scheme = up_conf.scheme

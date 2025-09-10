@@ -1,0 +1,148 @@
+use t::APISIX 'no_plan';
+
+repeat_each(1);
+log_level('info');
+no_root_location();
+no_shuffle();
+
+add_block_preprocessor(sub {
+    my ($block) = @_;
+
+    if (!$block->yaml_config) {
+        my $yaml_config = <<_EOC_;
+apisix:
+    node_listen: 1984
+deployment:
+    role: data_plane
+    role_data_plane:
+        config_provider: yaml
+_EOC_
+
+        $block->set_value("yaml_config", $yaml_config);
+    }
+
+    if ($block->apisix_yaml) {
+        my $services = <<_EOC_;
+services:
+  - id: 1
+    upstream:
+      service_name: test_service
+      discovery_type: mock
+      type: roundrobin
+      checks:
+        active:
+            http_path: "/status"
+            host: 127.0.0.1
+            port: 1988
+            healthy:
+                interval: 1
+                successes: 1
+            unhealthy:
+                interval: 1
+                http_failures: 1
+#END
+_EOC_
+
+        $block->set_value("apisix_yaml", $block->apisix_yaml . $services);
+    }
+
+    if (!$block->request) {
+        $block->set_value("request", "GET /t");
+    }
+});
+
+run_tests();
+
+__DATA__
+
+=== TEST 1: service with nested upstream - healthchecker created on first request
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /server_port
+    service_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local discovery = require("apisix.discovery.init").discovery
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 1980, weight = 1},
+                        {host = "127.0.0.1", port = 1981, weight = 1},
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(5)
+            ngx.say(res.status)
+        }
+    }
+--- response_body
+200
+--- grep_error_log eval
+qr/create new checker/
+--- grep_error_log_out
+create new checker
+--- timeout: 10
+
+
+
+=== TEST 2: service with nested upstream - healthchecker recreated when nodes change
+--- apisix_yaml
+routes:
+  -
+    uris:
+        - /server_port
+    service_id: 1
+--- config
+    location /t {
+        content_by_lua_block {
+            local discovery = require("apisix.discovery.init").discovery
+            
+            -- First request with initial nodes
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 1980, weight = 1},
+                        {host = "127.0.0.1", port = 1981, weight = 1},
+                    }
+                end
+            }
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/server_port"
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(2)
+            
+            -- Second request with different nodes to trigger _nodes_ver change
+            discovery.mock = {
+                nodes = function()
+                    return {
+                        {host = "127.0.0.1", port = 1982, weight = 1},
+                        {host = "127.0.0.1", port = 1983, weight = 1},
+                    }
+                end
+            }
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.sleep(2)
+            ngx.say(res.status)
+        }
+    }
+--- response_body
+200
+--- wait: 4
+--- grep_error_log eval
+qr/create new checker|release checker/
+--- grep_error_log_out eval
+[
+qr/create new checker/,
+qr/release checker/,
+qr/create new checker/,
+]
+--- timeout: 10

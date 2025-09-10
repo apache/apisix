@@ -47,7 +47,6 @@ local function get_healthchecker_name(value)
 end
 _M.get_healthchecker_name = get_healthchecker_name
 
-
 local function remove_etcd_prefix(key)
     local prefix = ""
     local local_conf = config_local.local_conf()
@@ -111,6 +110,28 @@ local function fetch_latest_conf(resource_path)
     end
 
     return resource
+end
+
+function _M.get_nodes_ver(resource_path)
+    local res_conf = fetch_latest_conf(resource_path)
+    local upstream = res_conf.value.upstream or res_conf.value
+    return upstream._nodes_ver
+end
+
+
+function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
+    local res_conf = fetch_latest_conf(resource_path)
+    local upstream = res_conf.value.upstream or res_conf.value
+    upstream._nodes_ver = nodes_ver
+    upstream.nodes = nodes
+end
+
+
+function _M.set_nodes_ver_and_dns_value(resource_path, nodes_ver, dns_value)
+    local res_conf = fetch_latest_conf(resource_path)
+    local upstream = res_conf.value.upstream or res_conf.value
+    upstream._nodes_ver = nodes_ver
+    upstream.nodes = nodes
 end
 
 
@@ -299,10 +320,29 @@ local function timer_working_pool_check()
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
+        if not res_conf then
+            goto continue
+        end
+        local upstream
+        local plugin_name = get_plugin_name(resource_path)
+        if plugin_name and plugin_name ~= "" then
+            local _, sub_path = parse_path(resource_path)
+            local json_path = "$." .. sub_path
+            --- the users of the API pass the jsonpath(in resourcepath) to
+            --- upstream_constructor_config which is passed to the
+            --- callback construct_upstream to create an upstream dynamically
+            local upstream_constructor_config = jp.value(res_conf.value, json_path)
+            local plugin = require("apisix.plugins." .. plugin_name)
+            upstream = plugin.construct_upstream(upstream_constructor_config)
+            upstream.resource_key = resource_path
+        else
+            upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or -- dns
+                        res_conf.value.upstream or res_conf.value -- service discovery
+        end
         local need_destroy = true
         if res_conf and res_conf.value then
             local current_ver = _M.upstream_version(res_conf.modifiedIndex,
-                                                    res_conf.value._nodes_ver)
+                                                    upstream._nodes_ver)
             core.log.info("checking working pool for resource: ", resource_path,
                         " current version: ", current_ver, " item version: ", item.version)
             if item.version == current_ver then
@@ -318,6 +358,7 @@ local function timer_working_pool_check()
             core.log.info("try to release checker: ", tostring(item.checker), " for resource: ",
                         resource_path, " and version : ", item.version)
         end
+    ::continue::
     end
 end
 
