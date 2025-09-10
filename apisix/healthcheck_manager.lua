@@ -47,6 +47,7 @@ local function get_healthchecker_name(value)
 end
 _M.get_healthchecker_name = get_healthchecker_name
 
+
 local function remove_etcd_prefix(key)
     local prefix = ""
     local local_conf = config_local.local_conf()
