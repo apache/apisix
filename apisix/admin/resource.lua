@@ -124,7 +124,8 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
         core.log.info("schema: ", core.json.delay_encode(self.schema))
     end
 
-    local ok, err = self.checker(id, conf, need_id, self.schema, {secret_type = typ})
+    local conf_for_check = tbl_deepcopy(conf)
+    local ok, err = self.checker(id, conf_for_check, need_id, self.schema, {secret_type = typ})
 
     if not ok then
         return ok, err
@@ -192,8 +193,7 @@ function _M:post(id, conf, sub_path, args)
         return 405, {error_msg = "not supported `POST` method for " .. self.kind}
     end
 
-    local conf_for_check = tbl_deepcopy(conf)
-    local id, err = self:check_conf(id, conf_for_check, false)
+    local id, err = self:check_conf(id, conf, false)
     if not id then
         return 400, err
     end
@@ -240,8 +240,7 @@ function _M:put(id, conf, sub_path, args)
     end
 
     local need_id = not no_id_res[self.name]
-    local conf_for_check = tbl_deepcopy(conf)
-    local ok, err = self:check_conf(id, conf_for_check, need_id, typ)
+    local ok, err = self:check_conf(id, conf, need_id, typ)
     if not ok then
         return 400, err
     end
@@ -443,8 +442,7 @@ function _M:patch(id, conf, sub_path, args)
 
     core.log.info("new conf: ", core.json.delay_encode(node_value, true))
 
-    local node_value_for_check = tbl_deepcopy(node_value)
-    local ok, err = self:check_conf(id, node_value_for_check, true, typ, true)
+    local ok, err = self:check_conf(id, node_value, true, typ, true)
     if not ok then
         return 400, err
     end
