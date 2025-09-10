@@ -262,7 +262,8 @@ local function parse_domain_in_route(route)
         nodes_ver = 0
     end
     nodes_ver = nodes_ver + 1
-    healthcheck_manager.set_nodes_ver_and_dns_value(route.value.upstream.resource_key, nodes_ver, route.dns_value)
+    healthcheck_manager.set_nodes_ver_and_dns_value(route.value.upstream.resource_key,
+                                                    nodes_ver, route.dns_value)
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route

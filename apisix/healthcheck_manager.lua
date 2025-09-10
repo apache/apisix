@@ -280,7 +280,7 @@ local function timer_create_checker()
                 upstream = plugin.construct_upstream(upstream_constructor_config)
                 upstream.resource_key = resource_path
             else
-                upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or -- dns
+                upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or-- dns
                             res_conf.value.upstream or res_conf.value -- service discovery
             end
             local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
