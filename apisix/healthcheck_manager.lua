@@ -323,27 +323,24 @@ local function timer_working_pool_check()
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
         local res_conf = fetch_latest_conf(resource_path)
-        if not res_conf then
-            goto continue
-        end
-        local upstream
-        local plugin_name = get_plugin_name(resource_path)
-        if plugin_name and plugin_name ~= "" then
-            local _, sub_path = parse_path(resource_path)
-            local json_path = "$." .. sub_path
-            --- the users of the API pass the jsonpath(in resourcepath) to
-            --- upstream_constructor_config which is passed to the
-            --- callback construct_upstream to create an upstream dynamically
-            local upstream_constructor_config = jp.value(res_conf.value, json_path)
-            local plugin = require("apisix.plugins." .. plugin_name)
-            upstream = plugin.construct_upstream(upstream_constructor_config)
-            upstream.resource_key = resource_path
-        else
-            upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or -- dns
-                        res_conf.value.upstream or res_conf.value -- service discovery
-        end
         local need_destroy = true
         if res_conf and res_conf.value then
+            local upstream
+            local plugin_name = get_plugin_name(resource_path)
+            if plugin_name and plugin_name ~= "" then
+                local _, sub_path = parse_path(resource_path)
+                local json_path = "$." .. sub_path
+                --- the users of the API pass the jsonpath(in resourcepath) to
+                --- upstream_constructor_config which is passed to the
+                --- callback construct_upstream to create an upstream dynamically
+                local upstream_constructor_config = jp.value(res_conf.value, json_path)
+                local plugin = require("apisix.plugins." .. plugin_name)
+                upstream = plugin.construct_upstream(upstream_constructor_config)
+                upstream.resource_key = resource_path
+            else
+                upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or -- dns
+                            res_conf.value.upstream or res_conf.value -- service discovery
+            end
             local current_ver = _M.upstream_version(res_conf.modifiedIndex,
                                                     upstream._nodes_ver)
             core.log.info("checking working pool for resource: ", resource_path,
