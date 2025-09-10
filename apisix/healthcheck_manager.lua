@@ -131,7 +131,6 @@ function _M.set_nodes_ver_and_dns_value(resource_path, nodes_ver, dns_value)
     local res_conf = fetch_latest_conf(resource_path)
     local upstream = res_conf.value.upstream or res_conf.value
     upstream._nodes_ver = nodes_ver
-    upstream.nodes = nodes
     res_conf.value.dns_value = dns_value
     res_conf.value.dns_value.upstream._nodes_ver = nodes_ver
 end
