@@ -54,7 +54,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: setup route with domain-based upstream
+=== TEST 1: healthchecker recreation with changing DNS resolution
 --- apisix_yaml
 routes:
   -
@@ -70,71 +70,59 @@ routes:
                 host: 127.0.0.1
                 port: 1988
                 healthy:
-                interval: 1
-                successes: 1
+                    interval: 1
+                    successes: 1
                 unhealthy:
-                interval: 1
-                http_failures: 1
+                    interval: 1
+                    http_failures: 1
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            ngx.say("Route setup complete")
-        }
-    }
---- response_body
-Route setup complete
---- timeout: 5
-
-
-
-=== TEST 2: healthchecker created on first request with initial DNS resolution
---- apisix_yaml
-routes:
-  -
-    uris:
-        - /hello
-    upstream:
-        type: roundrobin
-        nodes:
-            "test.com:1980": 1
-        checks:
-            active:
-                http_path: "/status"
-                host: 127.0.0.1
-                port: 1988
-                healthy:
-                interval: 1
-                successes: 1
-                unhealthy:
-                interval: 1
-                http_failures: 1
---- config
-    location /t {
-        content_by_lua_block {
-            -- Mock DNS resolution to return initial IP
-            local utils = require("apisix.core.utils")
-            utils.dns_parse = function(domain)
+            -- Counter to track DNS resolution calls
+            local dns_call_count = 0
+            
+            -- Override the core.resolver.parse_domain function
+            local core = require("apisix.core")
+            local original_parse_domain = core.resolver.parse_domain
+            core.resolver.parse_domain = function(domain)
                 if domain == "test.com" then
-                    return {address = "127.0.0.1"}
+                    dns_call_count = dns_call_count + 1
+                    if dns_call_count == 1 then
+                        return "127.0.0.1", nil
+                    else
+                        return "127.0.0.2", nil
+                    end
                 end
-                error("unknown domain: " .. domain)
+                return original_parse_domain(domain)
             end
 
+            -- First request
             local http = require "resty.http"
             local uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/hello"
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.say("First request status: ", res.status)
+            
+            -- Wait for healthchecker to be created
+            ngx.sleep(2)
+            
+            -- Second request - should trigger DNS resolution again
+            local httpc = http.new()
+            local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
+            ngx.say("Second request status: ", res.status)
+            
+            -- Wait for healthchecker recreation
             ngx.sleep(4)
-            ngx.say(res.status)
+            
+            -- Restore original DNS function
+            core.resolver.parse_domain = original_parse_domain
         }
     }
 --- response_body
-200
---- grep_error_log eval
-qr/create new checker/
---- grep_error_log_out eval
-[
-qr/create new checker/,
-]
+First request status: 200
+Second request status: 200
+--- error_log
+create new checker
+try to release checker
+create new checker
 --- timeout: 10

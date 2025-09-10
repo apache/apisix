@@ -61,7 +61,7 @@ local pairs           = pairs
 local tostring       = tostring
 local ngx_re_match    = ngx.re.match
 local control_api_router
-local inspect = require("inspect")
+
 local is_http = false
 if ngx.config.subsystem == "http" then
     is_http = true
@@ -239,10 +239,7 @@ local function fetch_ctx()
     return ctx
 end
 
-local inspect = require("inspect")
-
 local function parse_domain_in_route(route)
-    core.log.warn("parse_domain_in_route")
     local nodes = route.value.upstream.nodes
     local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
     if not new_nodes then
@@ -266,7 +263,6 @@ local function parse_domain_in_route(route)
     end
     nodes_ver = nodes_ver + 1
     healthcheck_manager.set_nodes_ver_and_dns_value(route.value.upstream.resource_key, nodes_ver, route.dns_value)
-    core.log.info("ashish i have set route.dns_value", inspect(route.dns_value))
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route

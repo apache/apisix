@@ -29,7 +29,7 @@ local timer_every = ngx.timer.every
 local ngx_re      = require('ngx.re')
 local jp = require("jsonpath")
 local string_sub     = string.sub
-local inspect = require("inspect")
+
 local _M = {}
 local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
 local waiting_pool = {}      -- resource_path -> resource_ver
@@ -126,7 +126,7 @@ function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
     upstream.nodes = nodes
 end
 
-local inspect = require("inspect")
+
 function _M.set_nodes_ver_and_dns_value(resource_path, nodes_ver, dns_value)
     local res_conf = fetch_latest_conf(resource_path)
     local upstream = res_conf.value.upstream or res_conf.value
@@ -134,7 +134,6 @@ function _M.set_nodes_ver_and_dns_value(resource_path, nodes_ver, dns_value)
     upstream.nodes = nodes
     res_conf.value.dns_value = dns_value
     res_conf.value.dns_value.upstream._nodes_ver = nodes_ver
-    core.log.info("setting dns value bhai", inspect(res_conf.value.dns_value))
 end
 
 
@@ -282,7 +281,6 @@ local function timer_create_checker()
                 upstream = plugin.construct_upstream(upstream_constructor_config)
                 upstream.resource_key = resource_path
             else
-                core.log.warn("res_conf.value",inspect(res_conf.value))
                 upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or -- dns
                             res_conf.value.upstream or res_conf.value -- service discovery
             end
