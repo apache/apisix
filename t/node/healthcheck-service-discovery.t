@@ -120,7 +120,7 @@ routes:
     location /t {
         content_by_lua_block {
             local discovery = require("apisix.discovery.init").discovery
-            
+
             -- First request with initial nodes
             discovery.mock = {
                 nodes = function()
@@ -135,7 +135,7 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.sleep(2)
-            
+
             -- Second request with different nodes to trigger _nodes_ver change
             discovery.mock = {
                 nodes = function()

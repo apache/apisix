@@ -97,7 +97,7 @@ routes:
         content_by_lua_block {
             -- Counter to track DNS resolution calls
             local dns_call_count = 0
-            
+
             -- Override the core.resolver.parse_domain function
             local core = require("apisix.core")
             local original_parse_domain = core.resolver.parse_domain
@@ -119,18 +119,18 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.say("First request status: ", res.status)
-            
+
             -- Wait for healthchecker to be created
             ngx.sleep(2)
-            
+
             -- Second request - should trigger DNS resolution again
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.say("Second request status: ", res.status)
-            
+
             -- Wait for healthchecker recreation
             ngx.sleep(4)
-            
+
             -- Restore original DNS function
             core.resolver.parse_domain = original_parse_domain
         }
