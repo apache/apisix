@@ -419,9 +419,9 @@ POST /ai
 --- more_headers
 Authorization: Bearer token
 --- response_headers
-X-AI-RateLimit-Limit-ai-proxy: 30
-X-AI-RateLimit-Remaining-ai-proxy: 29
-X-AI-RateLimit-Reset-ai-proxy: 60
+X-AI-RateLimit-Limit-ai-proxy-openai: 30
+X-AI-RateLimit-Remaining-ai-proxy-openai: 29
+X-AI-RateLimit-Reset-ai-proxy-openai: 60
 
 
 
@@ -439,10 +439,10 @@ Authorization: Bearer token
 [200, 200, 200, 403]
 --- response_headers eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy: 29",
-    "X-AI-RateLimit-Remaining-ai-proxy: 19",
-    "X-AI-RateLimit-Remaining-ai-proxy: 9",
-    "X-AI-RateLimit-Remaining-ai-proxy: 0",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 29",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 19",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 9",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 0",
 ]
 
 
@@ -523,9 +523,9 @@ POST /ai2
 --- more_headers
 Authorization: Bearer token
 --- response_headers
-X-AI-RateLimit-Limit-ai-proxy: 20
-X-AI-RateLimit-Remaining-ai-proxy: 19
-X-AI-RateLimit-Reset-ai-proxy: 45
+X-AI-RateLimit-Limit-ai-proxy-openai: 20
+X-AI-RateLimit-Remaining-ai-proxy-openai: 19
+X-AI-RateLimit-Reset-ai-proxy-openai: 45
 
 
 
@@ -544,11 +544,11 @@ Authorization: Bearer token
 [200, 200, 200, 200, 503]
 --- response_headers eval
 [
-    "X-AI-RateLimit-Remaining-ai-proxy: 19",
-    "X-AI-RateLimit-Remaining-ai-proxy: 14",
-    "X-AI-RateLimit-Remaining-ai-proxy: 9",
-    "X-AI-RateLimit-Remaining-ai-proxy: 4",
-    "X-AI-RateLimit-Remaining-ai-proxy: 0",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 19",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 14",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 9",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 4",
+    "X-AI-RateLimit-Remaining-ai-proxy-openai: 0",
 ]
 
 
@@ -608,17 +608,9 @@ Authorization: Bearer token
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -736,34 +728,18 @@ passed
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-4"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-4"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 },
                                 {
                                     "name": "openai-gpt3",
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
@@ -876,34 +852,14 @@ passed
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
                         },
-                        "ai-rate-limiting": {
-                            "instances": [
-                                {
-                                    "name": "openai-gpt3",
-                                    "limit": 50,
-                                    "time_window": 60
-                                },
-                                {
-                                    "name": "openai-gpt4",
-                                    "limit": 20,
-                                    "time_window": 60
-                                }
-                            ]
+                        "ai-rate-limiting": {"instances": [{"name": "openai-gpt3","limit": 50,"time_window": 60},{"name": "openai-gpt4","limit": 20,"time_window": 60}]
                         }
                     },
                     "upstream": {
@@ -981,31 +937,14 @@ Authorization: Bearer token
                                     "provider": "openai",
                                     "weight": 1,
                                     "priority": 0,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "gpt-3"
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:16724"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "gpt-3"},
+                                    "override": {"endpoint": "http://localhost:16724"}
                                 }
                             ],
                             "ssl_verify": false
                         },
-                        "ai-rate-limiting": {
-                            "limit": 20,
-                            "time_window": 60,
-                            "instances": [
-                                {
-                                    "name": "openai-gpt3",
-                                    "limit": 50,
-                                    "time_window": 60
-                                }
-                            ]
+                        "ai-rate-limiting": {"limit": 20, "time_window": 60, "instances": [{"name": "openai-gpt3","limit": 50,"time_window": 60}]
                         }
                     },
                     "upstream": {

@@ -61,6 +61,8 @@ Server: APISIX/Version
 
 现在，你已经成功安装并运行了 APISIX！
 
+APISIX 提供内置的 Dashboard UI，可访问 `http://127.0.0.1:9180/ui` 使用。
+
 ## 下一步
 
 如果你已经成功地安装了 APISIX 并且正常运行，那么你可以继续进行下面的教程。

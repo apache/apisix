@@ -155,6 +155,10 @@ function _M.http_init_worker()
     if local_conf.apisix and local_conf.apisix.enable_server_tokens == false then
         ver_header = "APISIX"
     end
+
+    -- To ensure that all workers related to Prometheus metrics are initialized,
+    -- we need to put the initialization of the Prometheus plugin here.
+    plugin.init_prometheus()
 end
 
 
@@ -251,8 +255,12 @@ local function parse_domain_in_route(route)
     -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
     -- has changed
 
-    route.dns_value = core.table.deepcopy(route.value, { shallows = { "self.upstream.parent"}})
+    route.dns_value = core.table.deepcopy(route.value)
     route.dns_value.upstream.nodes = new_nodes
+    if not route.dns_value._nodes_ver then
+        route.dns_value._nodes_ver = 0
+    end
+    route.dns_value._nodes_ver = route.dns_value._nodes_ver + 1
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route
@@ -838,7 +846,7 @@ local function healthcheck_passive(api_ctx)
     end
 
     local up_conf = api_ctx.upstream_conf
-    local passive = up_conf.checks.passive
+    local passive = up_conf.checks and up_conf.checks.passive
     if not passive then
         return
     end
@@ -949,6 +957,15 @@ end
 
 
 function _M.http_log_phase()
+    local api_ctx = ngx.ctx.api_ctx
+    if not api_ctx then
+        return
+    end
+
+    if not api_ctx.var.apisix_upstream_response_time or
+    api_ctx.var.apisix_upstream_response_time == "" then
+        api_ctx.var.apisix_upstream_response_time = ngx.var.upstream_response_time
+    end
     local api_ctx = common_phase("log")
     if not api_ctx then
         return

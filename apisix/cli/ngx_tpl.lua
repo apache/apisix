@@ -67,6 +67,9 @@ lua {
     {% if enabled_stream_plugins["prometheus"] then %}
     lua_shared_dict prometheus-metrics {* meta.lua_shared_dict["prometheus-metrics"] *};
     {% end %}
+    {% if enabled_plugins["prometheus"] or enabled_stream_plugins["prometheus"] then %}
+    lua_shared_dict prometheus-cache {* meta.lua_shared_dict["prometheus-cache"] *};
+    {% end %}
     {% if standalone_with_admin_api then %}
     lua_shared_dict standalone-config {* meta.lua_shared_dict["standalone-config"] *};
     {% end %}
@@ -96,22 +99,20 @@ http {
     }
 
     init_worker_by_lua_block {
-        require("apisix.plugins.prometheus.exporter").http_init(true)
+        local prometheus = require("apisix.plugins.prometheus.exporter")
+        prometheus.http_init(true)
+        prometheus.init_exporter_timer()
     }
 
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *};
 
         access_log off;
 
         location / {
             content_by_lua_block {
                 local prometheus = require("apisix.plugins.prometheus.exporter")
-                prometheus.export_metrics(true)
+                prometheus.export_metrics()
             }
         }
 
@@ -577,11 +578,7 @@ http {
 
     {% if enabled_plugins["prometheus"] and prometheus_server_addr then %}
     server {
-        {% if use_apisix_base then %}
-            listen {* prometheus_server_addr *} enable_process=privileged_agent;
-        {% else %}
-            listen {* prometheus_server_addr *};
-        {% end %}
+        listen {* prometheus_server_addr *};
 
         access_log off;
 
@@ -740,11 +737,9 @@ http {
         {% end %}
 
         # opentelemetry_set_ngx_var starts
-        {% if opentelemetry_set_ngx_var then %}
         set $opentelemetry_context_traceparent          '';
         set $opentelemetry_trace_id                     '';
         set $opentelemetry_span_id                      '';
-        {% end %}
         # opentelemetry_set_ngx_var ends
 
         # zipkin_set_ngx_var starts
@@ -810,6 +805,17 @@ http {
             set $dubbo_service_version       '';
             set $dubbo_method                '';
             {% end %}
+
+            set $llm_content_risk_level         '';
+            set $apisix_upstream_response_time  $upstream_response_time;
+            set $request_type               'traditional_http';
+            set $request_llm_model              '';
+
+            set $llm_time_to_first_token        '0';
+            set $llm_model                      '';
+            set $llm_prompt_tokens              '0';
+            set $llm_completion_tokens          '0';
+
 
             access_by_lua_block {
                 apisix.http_access_phase()

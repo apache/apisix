@@ -42,10 +42,47 @@ add_block_preprocessor(sub {
     my $user_yaml_config = <<_EOC_;
 plugins:
   - ai-proxy-multi
+  - prometheus
 _EOC_
     $block->set_value("extra_yaml_config", $user_yaml_config);
 
     my $http_config = $block->http_config // <<_EOC_;
+        server {
+            server_name openai_rate_limit;
+            default_type 'application/json';
+            listen 6726;
+            location / {
+              content_by_lua_block {
+                ngx.status = 429
+                ngx.say([[{ "error": {"message":"rate limit exceeded"}}]])
+                return
+              }
+            }
+        }
+        server {
+            server_name openai_internal_error;
+            default_type 'application/json';
+            listen 6727;
+            location / {
+              content_by_lua_block {
+                ngx.status = 500
+                ngx.say([[{ "error": {"message":"internal server error"}}]])
+                return
+              }
+            }
+        }
+        server {
+            server_name openai_internal_error;
+            default_type 'application/json';
+            listen 6728;
+            location / {
+              content_by_lua_block {
+                ngx.status = 503
+                ngx.say([[{ "error": {"message":"service unavailable"}}]])
+                return
+              }
+            }
+        }
         server {
             server_name openai;
             listen 6724;
@@ -285,19 +322,9 @@ deepseek.deepseek.openai.openai.openai.openai.openai.openai.openai.openai
                                     "name": "deepseek",
                                     "provider": "deepseek",
                                     "weight": 1,
-                                    "auth": {
-                                        "header": {
-                                            "Authorization": "Bearer token"
-                                        }
-                                    },
-                                    "options": {
-                                        "model": "deepseek-chat",
-                                        "max_tokens": 512,
-                                        "temperature": 1.0
-                                    },
-                                    "override": {
-                                        "endpoint": "http://localhost:6724/chat/completions"
-                                    }
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},
+                                    "override": {"endpoint": "http://localhost:6724/chat/completions"}
                                 }
                             ],
                             "ssl_verify": false
@@ -358,3 +385,608 @@ GET /t
 --- error_log
 distribution: deepseek: 2
 distribution: openai: 8
+
+
+
+=== TEST 5: set route with fallback_strategy with 500 response code openai.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "balancer": {
+                                "algorithm": "chash",
+                                "hash_on": "vars",
+                                "key": "query_string"
+                            },
+                            "instances": [
+                                {
+                                    "name": "openai",
+                                    "provider": "openai",
+                                    "weight": 4,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6727"
+                                    }
+                                },
+                                {
+                                    "name": "deepseek",
+                                    "provider": "deepseek",
+                                    "weight": 1,
+                                    "auth": {"header": {"Authorization": "Bearer token"}},
+                                    "options": {"model": "deepseek-chat","max_tokens": 512,"temperature": 1.0},"override": {"endpoint": "http://localhost:6724/chat/completions"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 6: test all requests success with fallback deepseek
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: deepseek: 10
+
+
+
+=== TEST 7: set route with fallback_strategy with too many requests openai.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_429"],
+                            "balancer": {
+                                "algorithm": "chash",
+                                "hash_on": "vars",
+                                "key": "query_string"
+                            },
+                            "instances": [
+                                {
+                                    "name": "openai",
+                                    "provider": "openai",
+                                    "weight": 4,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6726"
+                                    }
+                                },
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 8: test all requests success with fallback deepseek
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: deepseek: 10
+
+
+
+=== TEST 9: set route with fallback_strategy with unreachable openai.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "balancer": {
+                                "algorithm": "chash",
+                                "hash_on": "vars",
+                                "key": "query_string"
+                            },
+                            "instances": [
+                                {
+                                    "name": "openai",
+                                    "provider": "openai",
+                                    "weight": 4,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6725"
+                                    }
+                                },
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 10: test all requests success with fallback deepseek
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: deepseek: 10
+
+
+
+=== TEST 11: set route with fallback_strategy with service unavailable openai.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "fallback_strategy": ["http_5xx"],
+                            "balancer": {
+                                "algorithm": "chash",
+                                "hash_on": "vars",
+                                "key": "query_string"
+                            },
+                            "instances": [
+                                {
+                                    "name": "openai",
+                                    "provider": "openai",
+                                    "weight": 4,
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "options": {
+                                        "model": "gpt-4",
+                                        "max_tokens": 512,
+                                        "temperature": 1.0
+                                    },
+                                    "override": {
+                                        "endpoint": "http://localhost:6728"
+                                    }
+                                },
+                                {"name":"deepseek","provider":"deepseek","weight":1,"auth":{"header":{"Authorization":"Bearer token"}},"options":{"model":"deepseek-chat","max_tokens":512,"temperature":1.0},"override":{"endpoint":"http://localhost:6724/chat/completions"}}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 12: test all requests success with fallback deepseek
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: deepseek: 10
+
+
+
+=== TEST 13: set route with fallback_strategy with service unavailable openai having high priority.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "balancer": {
+                                "algorithm": "roundrobin",
+                                "hash_on": "vars"
+                            },
+                            "fallback_strategy": [
+                                "http_429",
+                                "http_5xx"
+                            ],
+                            "instances": [
+                               {"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-429","override":{"endpoint":"http://localhost:6726"},"priority":10,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-500","override":{"endpoint":"http://localhost:6727"},"priority":0,"provider":"openai-compatible","weight":10},{"auth":{"header":{"Authorization":"Bearer token"}},"name":"mock-200","override":{"endpoint":"http://localhost:6724/chat/completions"},"priority":0,"provider":"openai-compatible","weight":1}
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 14: test all requests success with fallback deepseek
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.body)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: deepseek: 10
+
+
+
+=== TEST 15: set route with fallback_strategy with only service unavailable and 429.
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "uri": "/anything",
+                    "plugins": {
+                        "ai-proxy-multi": {
+                            "balancer": {
+                                "algorithm": "roundrobin",
+                                "hash_on": "vars"
+                            },
+                            "fallback_strategy": [
+                                "http_429",
+                                "http_5xx"
+                            ],
+                            "instances": [
+                                {
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "name": "mock-429",
+                                    "override": {
+                                        "endpoint":  "http://localhost:6726"
+                                    },
+                                    "priority": 10,
+                                    "provider": "openai-compatible",
+                                    "weight": 10
+                                    },
+                                {
+                                    "auth": {
+                                        "header": {
+                                            "Authorization": "Bearer token"
+                                        }
+                                    },
+                                    "name": "mock-500",
+                                    "override": {
+                                        "endpoint": "http://localhost:6727"
+                                    },
+                                    "priority": 0,
+                                    "provider": "openai-compatible",
+                                    "weight": 10
+                                }
+                            ],
+                            "ssl_verify": false
+                        }
+                    }
+                }]]
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 16: test all requests success with fallback deepseek should return 502
+--- config
+    location /t {
+        content_by_lua_block {
+            local http = require "resty.http"
+            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+                        .. "/anything"
+            local restab = {}
+            local body = [[{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }]]
+            for i = 1, 10 do
+                local httpc = http.new()
+                local query = {
+                    index = i
+                }
+                local res, err = httpc:request_uri(uri, {method = "POST", body = body, query = query})
+                if not res then
+                    ngx.say(err)
+                    return
+                end
+                table.insert(restab, res.status)
+            end
+            local count = {}
+            for _, value in ipairs(restab) do
+                count[value] = (count[value] or 0) + 1
+            end
+            for p, num in pairs(count) do
+                ngx.log(ngx.WARN, "distribution: ", p, ": ", num)
+            end
+        }
+    }
+--- request
+GET /t
+--- timeout: 10
+--- error_log
+distribution: 502: 10
+
+
+
+=== TEST 17: set route with only one instance and configure it with http_5xx fallback_strategy
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local json = require("toolkit.json")
+            local request_body = {
+                uri = "/anything",
+                plugins = {
+                    ["ai-proxy-multi"] = {
+                        fallback_strategy = {"http_5xx"},
+                        instances = {
+                          {
+                            name = "deepseek",
+                            provider = "deepseek",
+                            auth = {
+                                header = {Authorization = "Bearer token" }
+                            },
+                            weight = 1,
+                            override = { endpoint = "http://localhost:6727" }
+                          }
+                        },
+                        ssl_verify = false
+                    }
+                }
+            }
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 json.encode(request_body)
+            )
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- response_body
+passed
+
+
+
+=== TEST 18: send request
+--- request
+POST /anything
+{ "messages": [ { "role": "system", "content": "You are a mathematician" }, { "role": "user", "content": "What is 1+1?"} ] }
+--- more_headers
+Host: openai_internal_error
+--- error_code: 500
+--- no_error_log
+[error]

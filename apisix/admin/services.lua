@@ -26,7 +26,8 @@ local type = type
 local loadstring = loadstring
 
 
-local function check_conf(id, conf, need_id, schema)
+local function check_conf(id, conf, need_id, schema, opts)
+    opts = opts or {}
     local ok, err = core.schema.check(schema, conf)
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
@@ -45,7 +46,7 @@ local function check_conf(id, conf, need_id, schema)
     end
 
     local upstream_id = conf.upstream_id
-    if upstream_id then
+    if upstream_id and not opts.skip_references_check then
         local key = "/upstreams/" .. upstream_id
         local res, err = core.etcd.get(key)
         if not res then
