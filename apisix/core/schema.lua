@@ -23,6 +23,7 @@ local jsonschema = require('jsonschema')
 local lrucache = require("apisix.core.lrucache")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
 local pcall = pcall
+local tbl_deepcopy = require("apisix.core.table").deepcopy
 
 local _M = {
     version = 0.3,
@@ -63,7 +64,8 @@ function _M.check(schema, json)
         return false, err
     end
 
-    return validator(json)
+    local json_for_check = tbl_deepcopy(json)
+    return validator(json_for_check)
 end
 
 _M.valid = get_validator
