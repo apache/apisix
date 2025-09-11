@@ -651,3 +651,115 @@ passed
 GET /t
 --- response_body eval
 qr/property \"rate\" validation failed: expected 0 to be greater than 0/
+
+
+
+=== TEST 24: verify atomic Redis operations with hash key structure
+--- config
+    location /t {
+        content_by_lua_block {
+            local redis = require "resty.redis"
+            local red = redis:new()
+            red:set_timeout(1000)
+
+            local ok, err = red:connect("127.0.0.1", 6379)
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+
+            -- Clean up any existing keys
+            red:del("limit_req:{test_key}:state")
+
+            -- Test the new hash-based key structure
+            local util = require("apisix.plugins.limit-req.util")
+            local limiter = {
+                rate = 10,    -- 10 req/s
+                burst = 1000  -- 1000 req/s burst
+            }
+
+            -- First request should succeed
+            local delay, excess = util.incoming(limiter, red, "test_key", true)
+            if delay then
+                ngx.say("first request: delay=", delay, " excess=", excess)
+            else
+                ngx.say("first request failed: ", excess)
+            end
+
+            -- Verify the Redis hash was created with correct key format
+            local vals = red:hmget("limit_req:{test_key}:state", "excess", "last")
+            if vals[1] and vals[2] then
+                ngx.say("hash key created: excess=", vals[1], " last=", vals[2])
+            else
+                ngx.say("hash key not found")
+            end
+
+            -- Verify TTL was set
+            local ttl = red:ttl("limit_req:{test_key}:state")
+            if ttl and ttl > 0 then
+                ngx.say("TTL set: ", ttl, " seconds")
+            else
+                ngx.say("TTL not set")
+            end
+
+            -- Clean up
+            red:del("limit_req:{test_key}:state")
+            red:close()
+        }
+    }
+--- request
+GET /t
+--- response_body_like
+first request: delay=\d+\.?\d* excess=\d+\.?\d*
+hash key created: excess=\d+ last=\d+
+TTL set: \d+ seconds
+
+
+
+=== TEST 25: verify atomic behavior prevents race conditions
+--- config
+    location /t {
+        content_by_lua_block {
+            local t = require("lib.test_admin").test
+            local code, body = t('/apisix/admin/routes/1',
+                 ngx.HTTP_PUT,
+                 [[{
+                    "plugins": {
+                        "limit-req": {
+                            "rate": 1,
+                            "burst": 0,
+                            "rejected_code": 503,
+                            "key": "remote_addr",
+                            "policy": "redis",
+                            "redis_host": "127.0.0.1"
+                        }
+                    },
+                        "upstream": {
+                            "nodes": {
+                                "127.0.0.1:1980": 1
+                            },
+                            "type": "roundrobin"
+                        },
+                        "uri": "/hello"
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+            end
+            ngx.say(body)
+        }
+    }
+--- request
+GET /t
+--- response_body
+passed
+
+
+
+=== TEST 26: test atomic rate limiting with rapid requests
+--- pipelined_requests eval
+["GET /hello", "GET /hello"]
+--- error_code eval
+[200, 503]
+

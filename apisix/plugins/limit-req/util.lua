@@ -27,7 +27,7 @@ local _M = {version = 0.1}
 
 
 local script = core.string.compress_script([=[
-  local state_key  = KEYS[1]             -- state_key (hash), fields: "excess", "last"    
+  local state_key  = KEYS[1]             -- state_key (hash), fields: "excess", "last"
   local rate       = tonumber(ARGV[1])   -- req/s
   local now        = tonumber(ARGV[2])   -- ms
   local burst      = tonumber(ARGV[3])   -- req/s
