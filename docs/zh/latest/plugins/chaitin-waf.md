@@ -199,7 +199,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "id": "chaitin-waf-route",
     "uri": "/anything",
     "plugins": {
-      # highlight-next-line
       "chaitin-waf": {}
     },
     "upstream": {
