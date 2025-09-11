@@ -149,6 +149,6 @@ routes:
     }
 --- error_log
 create new checker
-release checker
+releasing existing checker
 create new checker
 --- timeout: 10
