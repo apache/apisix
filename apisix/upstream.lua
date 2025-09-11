@@ -196,6 +196,7 @@ function _M.set_by_route(route, api_ctx)
                 nodes_ver = 0
             end
             nodes_ver = nodes_ver + 1
+            up_conf._nodes_ver = nodes_ver
             healthcheck_manager.set_nodes_ver_and_nodes(up_conf.resource_key, nodes_ver, new_nodes)
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
