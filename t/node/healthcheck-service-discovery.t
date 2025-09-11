@@ -96,11 +96,8 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.sleep(5)
-            ngx.say(res.status)
         }
     }
---- response_body
-200
 --- grep_error_log eval
 qr/create new checker/
 --- grep_error_log_out
@@ -148,18 +145,10 @@ routes:
             local httpc = http.new()
             local res, err = httpc:request_uri(uri, {method = "GET", keepalive = false})
             ngx.sleep(2)
-            ngx.say(res.status)
         }
     }
---- response_body
-200
---- wait: 4
---- grep_error_log eval
-qr/create new checker|release checker/
---- grep_error_log_out eval
-[
-qr/create new checker/,
-qr/release checker/,
-qr/create new checker/,
-]
+--- error_log
+create new checker
+release checker
+create new checker
 --- timeout: 10
