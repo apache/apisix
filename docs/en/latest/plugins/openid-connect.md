@@ -64,7 +64,7 @@ The `openid-connect` Plugin supports the integration with [OpenID Connect (OIDC)
 | set_userinfo_header                  | boolean  | False    | true                  |              | If true and if user info data is available, set the value in the `X-Userinfo` request header.    |
 | set_refresh_token_header             | boolean  | False    | false                 |              | If true and if the refresh token is available, set the value in the `X-Refresh-Token` request header.        |
 | session            | object   | False    |     |              | Session configuration used when `bearer_only` is `false` and the Plugin uses Authorization Code flow.              |
-| session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`. It is automatically generated and saved to etcd if not configured. When using APISIX in the standalone mode where etcd is no longer the configuration center, the `secret` should be configured.         |
+| session.secret     | string   | True     |  | 16 or more characters | Key used for session encryption and HMAC operation when `bearer_only` is `false`.         |
 | session.cookie     | object   | False    |     |             |   Cookie configurations.    |
 | session.cookie.lifetime              | integer   | False    | 3600                  |             | Cookie lifetime in seconds. |
 | session_contents   | object   | False    |                   |             | Session content configurations. If unconfigured, all data will be stored in the session. |

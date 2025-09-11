@@ -64,7 +64,7 @@ description: openid-connect 插件支持与 OpenID Connect (OIDC) 身份提供�
 | set_userinfo_header | boolean | 否 | true | | 如果为 true 并且用户信息数据可用，则在 `X-Userinfo` 请求标头中设置值。 |
 | set_refresh_token_header | boolean | 否 | false | | 如果为 true 并且刷新令牌可用，则在 `X-Refresh-Token` 请求标头中设置值。 |
 | session | object | 否 | | | 当 `bearer_only` 为 `false` 且插件使用 Authorization Code 流程时使用的 Session 配置。 |
-| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥，若未配置则自动生成并保存到 etcd。当在独立模式下使用 APISIX 时，etcd 不再是配置中心，需要配置 `secret`。 |
+| session.secret | string | 是 | | 16 个字符以上 | 当 `bearer_only` 为 `false` 时，用于 session 加密和 HMAC 运算的密钥。|
 | session.cookie | object | 否 | | | Cookie 配置。 |
 | session.cookie.lifetime | integer | 否 | 3600 | | Cookie 生存时间（秒）。|
 | unauth_action | string | 否 | auth | ["auth","deny","pass"] | 未经身份验证的请求的操作。设置为 `auth` 时，重定向到 OpenID 提供程序的身份验证端点。设置为 `pass` 时，允许请求而无需身份验证。设置为 `deny` 时，返回 401 未经身份验证的响应，而不是启动授权代码授予流程。|
