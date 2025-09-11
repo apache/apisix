@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local get_routes = require("apisix.router").http_routes
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local type = type
 local tostring = tostring
 local ipairs = ipairs
@@ -35,6 +36,11 @@ local function check_conf(id, conf, need_id, schema)
     end
 
     return true
+end
+
+
+local function encrypt_conf(conf)
+    plugins_encrypt_conf(conf.plugins)
 end
 
 
@@ -61,6 +67,7 @@ return resource.new({
     kind = "plugin config",
     schema = core.schema.plugin_config,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post"},
     delete_checker = delete_checker
 })

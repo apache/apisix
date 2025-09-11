@@ -17,6 +17,7 @@
 local core = require("apisix.core")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 
 
 local function check_conf(id, conf, need_id, schema)
@@ -34,10 +35,16 @@ local function check_conf(id, conf, need_id, schema)
 end
 
 
+local function encrypt_conf(conf)
+    plugins_encrypt_conf(conf.plugins)
+end
+
+
 return resource.new({
     name = "global_rules",
     kind = "global rule",
     schema = core.schema.global_rule,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post"}
 })

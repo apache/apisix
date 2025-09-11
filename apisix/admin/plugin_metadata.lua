@@ -64,13 +64,15 @@ local function check_conf(plugin_name, conf)
         ok, err = plugin_object.check_schema(conf, core.schema.TYPE_METADATA)
     end
 
-    encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
-
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     return plugin_name
+end
+
+local function encrypt_conf(plugin_name, conf)
+    encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
 end
 
 
@@ -79,5 +81,6 @@ return resource.new({
     kind = "plugin_metadata",
     schema = core.schema.plugin_metadata,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post", "patch"}
 })

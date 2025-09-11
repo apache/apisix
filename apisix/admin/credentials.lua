@@ -18,6 +18,7 @@ local core     = require("apisix.core")
 local plugins  = require("apisix.admin.plugins")
 local plugin   = require("apisix.plugin")
 local resource = require("apisix.admin.resource")
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local pairs    = pairs
 
 local function check_conf(_id, conf, _need_id, schema)
@@ -46,6 +47,12 @@ local function check_conf(_id, conf, _need_id, schema)
     return true, nil
 end
 
+
+local function encrypt_conf(conf)
+    plugins_encrypt_conf(conf.plugins, core.schema.TYPE_CONSUMER)
+end
+
+
 -- get_credential_etcd_key is used to splice the credential's etcd key (without prefix)
 -- from credential_id and sub_path.
 -- Parameter credential_id is from the uri or payload; sub_path is in the form of
@@ -69,6 +76,7 @@ return resource.new({
     kind = "credential",
     schema = core.schema.credential,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     get_resource_etcd_key = get_credential_etcd_key,
     unsupported_methods = {"post", "patch"}
 })
