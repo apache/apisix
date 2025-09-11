@@ -124,7 +124,8 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
         core.log.info("schema: ", core.json.delay_encode(self.schema))
     end
 
-    local ok, err = self.checker(id, conf, need_id, self.schema, {secret_type = typ})
+    local conf_for_check = tbl_deepcopy(conf)
+    local ok, err = self.checker(id, conf_for_check, need_id, self.schema, {secret_type = typ})
 
     if not ok then
         return ok, err
