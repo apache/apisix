@@ -51,7 +51,7 @@ In addition, the Plugin also supports logging LLM request information in the acc
 
 | Name                               | Type            | Required | Default                           | Valid Values | Description |
 |------------------------------------|----------------|----------|-----------------------------------|--------------|-------------|
-| fallback_strategy                  | string         | False    | instance_health_and_rate_limiting | instance_health_and_rate_limiting | Fallback strategy. When set, the Plugin will check whether the specified instance’s token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
+| fallback_strategy                  | string or array         | False    |  | string: "instance_health_and_rate_limiting", "http_429", "http_5xx"<br />array: ["rate_limiting", "http_429", "http_5xx"] | Fallback strategy. When set, the Plugin will check whether the specified instance’s token has been exhausted when a request is forwarded. If so, forward the request to the next instance regardless of the instance priority. When not set, the Plugin will not forward the request to low priority instances when token of the high priority instance is exhausted. |
 | balancer                           | object         | False    |                                   |              | Load balancing configurations. |
 | balancer.algorithm                 | string         | False    | roundrobin                     | [roundrobin, chash] | Load balancing algorithm. When set to `roundrobin`, weighted round robin algorithm is used. When set to `chash`, consistent hashing algorithm is used. |
 | balancer.hash_on                   | string         | False    |                                   | [vars, headers, cookie, consumer, vars_combinations] | Used when `type` is `chash`. Support hashing on [NGINX variables](https://nginx.org/en/docs/varindex.html), headers, cookie, consumer, or a combination of [NGINX variables](https://nginx.org/en/docs/varindex.html). |
@@ -186,7 +186,7 @@ DeepSeek responses: 2
 
 ### Configure Instance Priority and Rate Limiting
 
-The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `instance_health_and_rate_limiting`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
+The following example demonstrates how you can configure two models with different priorities and apply rate limiting on the instance with a higher priority. In the case where `fallback_strategy` is set to `["rate_limiting"]`, the Plugin should continue to forward requests to the low priority instance once the high priority instance's rate limiting quota is fully consumed.
 
 Create a Route as such and update with your LLM providers, models, API keys, and endpoints if applicable:
 
@@ -199,7 +199,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "methods": ["POST"],
     "plugins": {
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -423,7 +423,7 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "plugins": {
       "key-auth": {},
       "ai-proxy-multi": {
-        "fallback_strategy: "instance_health_and_rate_limiting",
+        "fallback_strategy: ["rate_limiting"],
         "instances": [
           {
             "name": "openai-instance",
@@ -940,6 +940,8 @@ For verification, the behaviours should be consistent with the verification in [
 
 The following example demonstrates how you can log LLM request related information in the gateway's access log to improve analytics and audit. The following variables are available:
 
+* `request_llm_model`: LLM model name specified in the request.
+* `apisix_upstream_response_time`: Time taken for APISIX to send the request to the upstream service and receive the full response
 * `request_type`: Type of request, where the value could be `traditional_http`, `ai_chat`, or `ai_stream`.
 * `llm_time_to_first_token`: Duration from request sending to the first token received from the LLM service, in milliseconds.
 * `llm_model`: LLM model.
@@ -951,7 +953,7 @@ Update the access log format in your configuration file to include additional LL
 ```yaml title="conf/config.yaml"
 nginx_config:
   http:
-    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
+    access_log_format: "$remote_addr - $remote_user [$time_local] $http_host \"$request_line\" $status $body_bytes_sent $request_time \"$http_referer\" \"$http_user_agent\" $upstream_addr $upstream_status $apisix_upstream_response_time \"$upstream_scheme://$upstream_host$upstream_uri\" \"$apisix_request_id\" \"$request_type\" \"$llm_time_to_first_token\" \"$llm_model\" \"$request_llm_model\"  \"$llm_prompt_tokens\" \"$llm_completion_tokens\""
 ```
 
 Reload APISIX for configuration changes to take effect.
@@ -993,7 +995,7 @@ Next, create a Route with the `ai-proxy-multi` Plugin and send a request. For in
 In the gateway's access log, you should see a log entry similar to the following:
 
 ```text
-192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" - - - "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "23" "8"
+192.168.215.1 - - [21/Mar/2025:04:28:03 +0000] api.openai.com "POST /anything HTTP/1.1" 200 804 2.858 "-" "curl/8.6.0" - - - 5765 "http://api.openai.com" "5c5e0b95f8d303cb81e4dc456a4b12d9" "ai_chat" "2858" "gpt-4" "gpt-4" "23" "8"
 ```
 
-The access log entry shows the request type is `ai_chat`, time to first token is `2858` milliseconds, LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.
+The access log entry shows the request type is `ai_chat`, Apisix upstream response time is `5765` milliseconds, time to first token is `2858` milliseconds, Requested LLM model is `gpt-4`. LLM model is `gpt-4`, prompt token usage is `23`, and completion token usage is `8`.

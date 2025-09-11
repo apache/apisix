@@ -90,6 +90,8 @@ local function read_response(ctx, res)
         local contents = {}
         while true do
             local chunk, err = body_reader() -- will read chunk by chunk
+            ctx.var.apisix_upstream_response_time = math.floor((ngx_now() -
+                                             ctx.llm_request_start_time) * 1000)
             if err then
                 core.log.warn("failed to read response chunk: ", err)
                 return handle_error(err)
@@ -158,6 +160,7 @@ local function read_response(ctx, res)
     end
     ngx.status = res.status
     ctx.var.llm_time_to_first_token = math.floor((ngx_now() - ctx.llm_request_start_time) * 1000)
+    ctx.var.apisix_upstream_response_time = ctx.var.llm_time_to_first_token
     local res_body, err = core.json.decode(raw_res_body)
     if err then
         core.log.warn("invalid response body from ai service: ", raw_res_body, " err: ", err,
@@ -267,6 +270,11 @@ function _M.request(self, ctx, conf, request_table, extra_opts)
     if not res then
         core.log.warn("failed to send request to LLM server: ", err)
         return handle_error(err)
+    end
+
+    -- handling this error separately is needed for retries
+    if res.status == 429 or (res.status >= 500 and res.status < 600 )then
+        return res.status
     end
 
     local code, body = read_response(ctx, res)
