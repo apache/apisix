@@ -76,7 +76,7 @@ routes:
         }
     }
 --- response_body eval
-qr/\{"upstream":\{"dns_nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\},"uris":\["\/hello"\]\}/
+qr/\{"upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\},"uris":\["\/hello"\]\}/
 
 
 
@@ -109,7 +109,7 @@ routes:
         }
     }
 --- response_body eval
-qr/\{"upstream":\{"dns_nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\},"uris":\["\/hello"\]\}/
+qr/\{"upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\},"uris":\["\/hello"\]\}/
 
 
 
