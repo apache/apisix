@@ -42,11 +42,13 @@ local schema = {
                 length = {
                     type = "integer",
                     minimum = 6,
+                    default = 16
                 },
                 char_set = {
                     type = "string",
                     -- The Length is set to 6 just avoid too short length, it may repeat
                     minLength = 6,
+                    default = "abcdefghijklmnopqrstuvwxyzABCDEFGHIGKLMNOPQRSTUVWXYZ0123456789"
                 }
             },
             default = {
