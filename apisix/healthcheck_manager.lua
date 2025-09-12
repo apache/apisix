@@ -273,7 +273,6 @@ local function timer_create_checker()
                 upstream.resource_key = resource_path
             else
                 upstream = res_conf.value.upstream or res_conf.value
-                             -- service discovery
             end
             local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
