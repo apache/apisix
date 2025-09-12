@@ -76,7 +76,7 @@ services:
         }
     }
 --- response_body eval
-qr/\{"id":"200","upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass".*,"scheme":"http","type":"roundrobin"\}\}/
+qr/\{"id":"200","upstream":\{"dns_nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass".*,"scheme":"http","type":"roundrobin"\}\}/
 
 
 
@@ -118,7 +118,7 @@ services:
         }
     }
 --- response_body eval
-qr/\{"id":"200","upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass".*,"scheme":"http","type":"roundrobin"\}\}/
+qr/\{"id":"200","upstream":\{"dns_nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass".*,"scheme":"http","type":"roundrobin"\}\}/
 
 
 
@@ -157,7 +157,7 @@ services:
         }
     }
 --- response_body eval
-qr/\{"id":"5","plugins":\{"limit-count":\{"_meta":\{\},"allow_degradation":false,"count":2,"key":"remote_addr","key_type":"var","policy":"local","rejected_code":503,"show_limit_quota_header":true,"time_window":60\}\},"upstream":\{"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\}\}/
+qr/\{"id":"5","plugins":\{"limit-count":\{"_meta":\{\},"allow_degradation":false,"count":2,"key":"remote_addr","key_type":"var","policy":"local","rejected_code":503,"show_limit_quota_header":true,"time_window":60\}\},"upstream":\{"dns_nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"hash_on":"vars","nodes":\[\{"host":"127.0.0.1","port":1980,"weight":1\}\],"pass_host":"pass",.*"scheme":"http","type":"roundrobin"\}\}/
 
 
 
