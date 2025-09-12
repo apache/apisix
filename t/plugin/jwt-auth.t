@@ -1235,58 +1235,36 @@ hello world
             local ok, err = plugin.check_schema({
                 key = "123",
             }, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
+            assert(not ok, "secret should be required when algorithm is HS256(default)")
 
             ok, err = plugin.check_schema({
                 key = "123",
                 algorithm = "HS256",
             }, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
-
+            assert(not ok, "secret should be required when algorithm is HS256")
+            
             ok, err = plugin.check_schema({
                 key = "123",
                 algorithm = "HS512",
             }, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
+            assert(not ok, "secret should be required when algorithm is HS512")
 
             ok, err = plugin.check_schema({
                 key = "123",
                 algorithm = "RS256",
                 public_key = "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----"
             }, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
+            assert(ok, "secret should not be required when algorithm is RS256")
 
             ok, err = plugin.check_schema({
                 key = "123",
                 algorithm = "ES256",
                 public_key = "-----BEGIN PUBLIC KEY-----\nMFwwDQYJKoZIhvcNAQEBBQADSwAwSAJBAKebDxlvQMGyEesAL1r1nIJBkSdqu3Hr\n7noq/0ukiZqVQLSJPMOv0oxQSutvvK3hoibwGakDOza+xRITB7cs2cECAwEAAQ==\n-----END PUBLIC KEY-----"
             }, core.schema.TYPE_CONSUMER)
-            if not ok then
-                ngx.say(err)
-            else
-                ngx.say("done")
-            end
+            assert(ok, "secret should not be required when algorithm is ES256")
+
+            ngx.say("passed")
         }
     }
 --- response_body
-property "secret" is required when "algorithm" is "HS256" or "HS512"
-property "secret" is required when "algorithm" is "HS256" or "HS512"
-property "secret" is required when "algorithm" is "HS256" or "HS512"
-done
-done
+passed
