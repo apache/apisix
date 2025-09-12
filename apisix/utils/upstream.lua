@@ -106,13 +106,13 @@ _M.parse_domain_for_nodes = parse_domain_for_nodes
 
 
 function _M.parse_domain_in_up(up)
-    local nodes = up.value.nodes
+    local nodes = up.value.dns_nodes
     local new_nodes, err = parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
 
-    local ok = compare_upstream_node(up, new_nodes)
+    local ok = compare_upstream_node(up.value, new_nodes)
     if ok then
         return up
     end
@@ -121,10 +121,7 @@ function _M.parse_domain_in_up(up)
         up.orig_modifiedIndex = up.modifiedIndex
     end
     up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
-
-    up.nodes = new_nodes
-    core.log.info("resolve upstream which contain domain: ",
-                  core.json.delay_encode(up, true))
+    up.value.nodes = new_nodes
     return up
 end
 

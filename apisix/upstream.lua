@@ -474,7 +474,6 @@ local function filter_upstream(value, parent)
                 break
             end
         end
-        value.dns_nodes = nodes
     else
         local new_nodes = core.table.new(core.table.nkeys(nodes), 0)
         for addr, weight in pairs(nodes) do
@@ -490,8 +489,9 @@ local function filter_upstream(value, parent)
             }
             core.table.insert(new_nodes, node)
         end
-        value.dns_nodes = new_nodes
+        value.nodes = new_nodes
     end
+    value.dns_nodes = value.nodes
 end
 _M.filter_upstream = filter_upstream
 

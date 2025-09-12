@@ -128,7 +128,6 @@ function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
 end
 
 
-
 local function create_checker(up_conf)
     if not up_conf.checks then
         return nil
