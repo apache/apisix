@@ -18,7 +18,6 @@
 local core              = require("apisix.core")
 local ngx_re            = require("ngx.re")
 local openidc           = require("resty.openidc")
-local random            = require("resty.random")
 local fetch_secrets     = require("apisix.secret").fetch_secrets
 local jsonschema        = require('jsonschema')
 local string            = string
