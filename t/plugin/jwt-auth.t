@@ -1242,7 +1242,7 @@ hello world
                 algorithm = "HS256",
             }, core.schema.TYPE_CONSUMER)
             assert(not ok, "secret should be required when algorithm is HS256")
-            
+
             ok, err = plugin.check_schema({
                 key = "123",
                 algorithm = "HS512",
