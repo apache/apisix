@@ -543,7 +543,7 @@ function _M.get_by_id(up_id)
     end
 
     core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
-    return upstream.dns_value or upstream.value
+    return upstream.value
 end
 
 

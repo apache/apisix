@@ -526,9 +526,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
         local route_val = route.value
 
-        api_ctx.matched_upstream = (route.dns_value and
-                                    route.dns_value.upstream)
-                                   or route_val.upstream
+        api_ctx.matched_upstream = route_val.upstream
     end
 
     if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
@@ -1197,9 +1195,7 @@ function _M.stream_preread_phase()
         end
 
         local route_val = matched_route.value
-        api_ctx.matched_upstream = (matched_route.dns_value and
-                                    matched_route.dns_value.upstream)
-                                   or route_val.upstream
+        api_ctx.matched_upstream = route_val.upstream
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)
