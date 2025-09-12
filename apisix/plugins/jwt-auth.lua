@@ -142,8 +142,8 @@ function _M.check_schema(conf, schema_type)
         return false, err
     end
 
-    if conf.algorithm ~= "RS256" and conf.algorithm ~= "ES256" and not conf.secret then
-        err = "property \"secret\" is required when \"algorithm\" is not \"RS256\" or \"ES256\""
+    if (conf.algorithm == "HS256" or conf.algorithm == "HS512") and not conf.secret then
+        err = "property \"secret\" is required when \"algorithm\" is \"HS256\" or \"HS512\""
         return false, err
     elseif conf.base64_secret then
         if ngx_decode_base64(conf.secret) == nil then

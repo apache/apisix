@@ -1285,8 +1285,8 @@ hello world
         }
     }
 --- response_body
-property "secret" is required when "algorithm" is not "RS256" or "ES256"
-property "secret" is required when "algorithm" is not "RS256" or "ES256"
-property "secret" is required when "algorithm" is not "RS256" or "ES256"
+property "secret" is required when "algorithm" is "HS256" or "HS512"
+property "secret" is required when "algorithm" is "HS256" or "HS512"
+property "secret" is required when "algorithm" is "HS256" or "HS512"
 done
 done
