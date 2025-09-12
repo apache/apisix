@@ -232,17 +232,11 @@ the error request to the redirect_uri path, but there's no session state found
 
 您还应该确保 `redirect_uri` 包含 scheme，例如 `http` 或 `https` 。
 
-#### 2. 缺少 Session Secret
-
-如果您在[standalone 模式](../../../en/latest/deployment-modes.md#standalone)下部署 APISIX，请确保配置了 `session.secret`。
-
-用户 session 作为 cookie 存储在浏览器中，并使用 session 密钥进行加密。如果没有通过 `session.secret` 属性配置机密，则会自动生成机密并将其保存到 etcd。然而，在独立模式下，etcd 不再是配置中心。因此，您应该在 YAML 配置中心 `apisix.yaml` 中为此插件显式配置 `session.secret`。
-
-#### 3. Cookie 未发送或不存在
+#### 2. Cookie 未发送或不存在
 
 检查 [`SameSite`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Set-Cookie#samesitesamesite-value) cookie 属性是否已正确设置（即您的应用程序是否需要跨站点发送 cookie），看看这是否会成为阻止 cookie 保存到浏览器的 cookie jar 或从浏览器发送的因素。
 
-#### 4. 上游发送的标头太大
+#### 3. 上游发送的标头太大
 
 如果您有 NGINX 位于 APISIX 前面来代理客户端流量，请查看 NGINX 的 `error.log` 中是否观察到以下错误：
 
@@ -254,11 +248,11 @@ upstream sent too big header while reading response header from upstream
 
 另一个选项是配置 `session_content` 属性来调整在会话中存储哪些数据。例如，你可以将 `session_content.access_token` 设置为 `true`。
 
-#### 5. 无效的客户端密钥
+#### 4. 无效的客户端密钥
 
 验证 `client_secret` 是否有效且正确。无效的 `client_secret` 将导致身份验证失败，并且不会返回任何令牌并将其存储在 session 中。
 
-#### 6. PKCE IdP 配置
+#### 5. PKCE IdP 配置
 
 如果您使用授权码流程启用 PKCE，请确保您已将 IdP 客户端配置为使用 PKCE。例如，在 Keycloak 中，您应该在客户端的高级设置中配置 PKCE 质询方法：
 
