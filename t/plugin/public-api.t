@@ -66,7 +66,8 @@ property "uri" validation failed: wrong type: expected string, got number
                         "plugins": {
                             "jwt-auth": {
                                 "key": "user-key",
-                                "algorithm": "HS256"
+                                "algorithm": "HS256",
+                                "secret": "my-secret-key"
                             }
                         }
                     }]]
