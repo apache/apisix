@@ -940,6 +940,7 @@ OIDC introspection failed: invalid token
 {"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","session":{"secret":"jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"},"set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
 
 
+
 === TEST 26: Update plugin with ID provider jwks endpoint for token verification.
 --- config
     location /t {

@@ -64,6 +64,7 @@ Using opa host with no TLS is a security risk
 
 
 === TEST 3: openid-connect with no TLS
+--- ONLY
 --- config
     location /t {
         content_by_lua_block {
@@ -79,8 +80,8 @@ Using opa host with no TLS is a security risk
                 proxy_opts = {
                     http_proxy = "http://e.com"
                 },
-                "session" = {
-                    "secret" = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                 }
             })
             if not ok then
@@ -117,8 +118,8 @@ Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
                 proxy_opts = {
                     http_proxy = "https://e.com"
                 },
-                "session" = {
-                    "secret" = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                 }
             })
 
