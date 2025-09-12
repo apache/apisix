@@ -1001,12 +1001,13 @@ base64_secret required but the secret is not in base64 format
 --- config
     location /t {
         content_by_lua_block {
+            local core = require("apisix.core")
             local plugin = require("apisix.plugins.jwt-auth")
             local conf = {
                 key = "exp-not-set",
                 secret = "my-secret-key"
             }
-            local ok, err = plugin.check_schema(conf)
+            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
 
             if not ok then
                 ngx.say(err)
