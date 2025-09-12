@@ -128,14 +128,6 @@ function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
 end
 
 
-function _M.set_nodes_ver_and_dns_value(resource_path, nodes_ver, dns_value)
-    local res_conf = fetch_latest_conf(resource_path)
-    local upstream = res_conf.value.upstream or res_conf.value
-    upstream._nodes_ver = nodes_ver
-    res_conf.value.dns_value = dns_value
-    res_conf.value.dns_value.upstream._nodes_ver = nodes_ver
-end
-
 
 local function create_checker(up_conf)
     if not up_conf.checks then
@@ -280,8 +272,8 @@ local function timer_create_checker()
                 upstream = plugin.construct_upstream(upstream_constructor_config)
                 upstream.resource_key = resource_path
             else
-                upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or-- dns
-                            res_conf.value.upstream or res_conf.value -- service discovery
+                upstream = res_conf.value.upstream or res_conf.value
+                             -- service discovery
             end
             local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
@@ -338,8 +330,7 @@ local function timer_working_pool_check()
                 upstream = plugin.construct_upstream(upstream_constructor_config)
                 upstream.resource_key = resource_path
             else
-                upstream = (res_conf.value.dns_value and res_conf.value.dns_value.upstream) or-- dns
-                            res_conf.value.upstream or res_conf.value -- service discovery
+                upstream = res_conf.value.upstream or res_conf.value
             end
             local current_ver = _M.upstream_version(res_conf.modifiedIndex,
                                                     upstream._nodes_ver)

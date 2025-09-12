@@ -489,7 +489,7 @@ local function filter_upstream(value, parent)
             }
             core.table.insert(new_nodes, node)
         end
-        value.nodes = new_nodes
+        value.dns_nodes = new_nodes
     end
 end
 _M.filter_upstream = filter_upstream

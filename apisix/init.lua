@@ -240,31 +240,27 @@ local function fetch_ctx()
 end
 
 local function parse_domain_in_route(route)
-    local nodes = route.value.upstream.nodes
+    local nodes = route.value.upstream.dns_nodes
     local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
 
-    local up_conf = route.dns_value and route.dns_value.upstream
+    local up_conf = route.value.upstream
     local ok = upstream_util.compare_upstream_node(up_conf, new_nodes)
     if ok then
         return route
     end
 
-    -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
-    -- has changed
-
-    route.dns_value = core.table.deepcopy(route.value)
-    route.dns_value.upstream.nodes = new_nodes
     local nodes_ver = healthcheck_manager.get_nodes_ver(route.value.upstream.resource_key)
     if not nodes_ver then
         nodes_ver = 0
     end
     nodes_ver = nodes_ver + 1
-    route.dns_value._nodes_ver = nodes_ver
-    healthcheck_manager.set_nodes_ver_and_dns_value(route.value.upstream.resource_key,
-                                                    nodes_ver, route.dns_value)
+    route.value._nodes_ver = nodes_ver
+    route.value.upstream.nodes = new_nodes
+    healthcheck_manager.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
+                                                    nodes_ver, new_nodes)
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route
