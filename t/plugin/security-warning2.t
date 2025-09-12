@@ -64,7 +64,6 @@ Using opa host with no TLS is a security risk
 
 
 === TEST 3: openid-connect with no TLS
---- ONLY
 --- config
     location /t {
         content_by_lua_block {
