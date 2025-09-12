@@ -122,6 +122,8 @@ function _M.parse_domain_in_up(up)
     end
     up.modifiedIndex = up.orig_modifiedIndex .. "#" .. ngx_now()
     up.value.nodes = new_nodes
+    core.log.info("resolve upstream which contain domain: ",
+                  core.json.delay_encode(up, true))
     return up
 end
 
