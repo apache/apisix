@@ -491,7 +491,9 @@ local function filter_upstream(value, parent)
         end
         value.nodes = new_nodes
     end
-    value.dns_nodes = value.nodes
+    if parent.has_domain then
+        value.dns_nodes = value.nodes
+    end
 end
 _M.filter_upstream = filter_upstream
 
