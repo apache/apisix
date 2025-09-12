@@ -17,11 +17,9 @@
 local core     = require("apisix.core")
 local jwt      = require("resty.jwt")
 local consumer_mod = require("apisix.consumer")
-local resty_random = require("resty.random")
 local new_tab = require ("table.new")
 local auth_utils = require("apisix.utils.auth")
 
-local ngx_encode_base64 = ngx.encode_base64
 local ngx_decode_base64 = ngx.decode_base64
 local ngx      = ngx
 local sub_str  = string.sub

@@ -39,7 +39,7 @@ __DATA__
         content_by_lua_block {
             local plugin = require("apisix.plugins.jwt-auth")
             local core = require("apisix.core")
-            local conf = {key = "123"}
+            local conf = {key = "123", secret = "my-secret-key"}
 
             local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
             if not ok then
@@ -50,7 +50,7 @@ __DATA__
         }
     }
 --- response_body_like eval
-qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"[a-zA-Z0-9+\\\/]+={0,2}"}/
+qr/{"algorithm":"HS256","base64_secret":false,"exp":86400,"key":"123","lifetime_grace_period":0,"secret":"my-secret-key"}/
 
 
 
