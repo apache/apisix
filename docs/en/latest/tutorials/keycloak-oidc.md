@@ -177,6 +177,9 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
   "plugins": {
     "openid-connect": {
       "bearer_only": false,
+      "session": {
+        "secret": "change_to_whatever_secret_you_want"
+      },
       "client_id": "'"$OIDC_CLIENT_ID"'",
       "client_secret": "'"$OIDC_CLIENT_SECRET"'",
       "discovery": "'"$OIDC_DISCOVERY"'",
@@ -203,6 +206,9 @@ curl -i "http://127.0.0.1:9180/apisix/admin/routes" -X PUT -d '
   "plugins": {
     "openid-connect": {
       "bearer_only": false,
+      "session": {
+        "secret": "change_to_whatever_secret_you_want"
+      },
       "use_pkce": true,
       "client_id": "'"$OIDC_CLIENT_ID"'",
       "client_secret": "'"$OIDC_CLIENT_SECRET"'",
