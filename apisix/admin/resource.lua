@@ -128,7 +128,7 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
     local ok, err = self.checker(id, conf_for_check, need_id, self.schema, {secret_type = typ})
 
     if self.encrypt_conf then
-        self.encrypt_conf(conf)
+        self.encrypt_conf(id, conf)
     end
 
     if not ok then

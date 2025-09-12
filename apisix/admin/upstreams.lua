@@ -38,7 +38,7 @@ local function check_conf(id, conf, need_id)
 end
 
 
-local function encrypt_conf(conf)
+local function encrypt_conf(id, conf)
     apisix_upstream.encrypt_conf(conf)
 end
 

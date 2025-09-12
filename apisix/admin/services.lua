@@ -121,7 +121,7 @@ local function delete_checker(id)
 end
 
 
-local function encrypt_conf(conf)
+local function encrypt_conf(id, conf)
     apisix_upstream.encrypt_conf(conf.upstream)
     plugins_encrypt_conf(conf.plugins)
 end

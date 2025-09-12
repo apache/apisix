@@ -58,7 +58,7 @@ local function check_conf(username, conf, need_username, schema, opts)
 end
 
 
-local function encrypt_conf(conf)
+local function encrypt_conf(id, conf)
     plugins_encrypt_conf(conf.plugins, core.schema.TYPE_CONSUMER)
 end
 
