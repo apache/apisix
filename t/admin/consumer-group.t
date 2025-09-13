@@ -135,7 +135,6 @@ passed
                                 "plugins": {
                                     "limit-count": {
                                     "time_window": 60,
-                                    "policy": "local",
                                     "count": 2,
                                     "key": "remote_addr",
                                     "rejected_code": 503

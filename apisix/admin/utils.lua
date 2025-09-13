@@ -106,7 +106,7 @@ function _M.decrypt_params(decrypt_func, body, schema_type)
     -- metadata
     if schema_type == core.schema.TYPE_METADATA then
         local conf = body.node and body.node.value
-        decrypt_func(conf.name, conf, schema_type)
+        decrypt_func(conf.id, conf, schema_type)
     end
 end
 

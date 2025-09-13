@@ -76,7 +76,7 @@ __DATA__
         }
     }
 --- response_body
-{"value":{"cert":"","key":"","sni":"not-unwanted-post.com","status":1,"type":"server"}}
+{"value":{"cert":"","key":"","sni":"not-unwanted-post.com"}}
 
 
 
@@ -113,7 +113,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"test.com","status":1,"type":"server"}}
+{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"test.com"}}
 
 
 
@@ -150,7 +150,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"t.com","status":1,"type":"server"}}
+{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","key":"","sni":"t.com"}}
 
 
 
@@ -186,7 +186,7 @@ __DATA__
         }
     }
 --- response_body
-{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","sni":"t.com","status":1,"type":"server"}}
+{"key":"/apisix/ssls/1","value":{"cert":"","id":"1","sni":"t.com"}}
 
 
 

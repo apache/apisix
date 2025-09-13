@@ -122,8 +122,7 @@ GET /opentracing
                  [[{
                        "plugins": {
                             "request-id": {
-                                "algorithm": "range_id",
-                                "range_id": {}
+                                "algorithm": "range_id"
                             }
                         },
                         "upstream": {

@@ -1009,17 +1009,14 @@ passed
                                 "time_window":60,
                                 "count":2,
                                 "rejected_code":503,
-                                "key":"remote_addr",
-                                "policy":"local"
+                                "key":"remote_addr"
                             }
                         },
                         "upstream":{
                             "type":"roundrobin",
                             "nodes":{
                                 "127.0.0.1:80":1
-                            },
-                            "hash_on":"vars",
-                            "pass_host":"pass"
+                            }
                         },
                         "id":"1"
                     }

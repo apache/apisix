@@ -708,7 +708,6 @@ GET /t
                         "nodes": {
                             "127.0.0.1:8080": 1
                         },
-                        "type": "roundrobin",
                         "desc": "new upstream"
                     },
                     "key": "/apisix/upstreams/admin_up"

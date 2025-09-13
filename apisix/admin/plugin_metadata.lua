@@ -18,7 +18,7 @@ local pcall   = pcall
 local require = require
 local core    = require("apisix.core")
 local resource = require("apisix.admin.resource")
-local encrypt_conf = require("apisix.plugin").encrypt_conf
+local plugin_encrypt_conf = require("apisix.plugin").encrypt_conf
 
 local injected_mark = "injected metadata_schema"
 
@@ -35,6 +35,17 @@ local function validate_plugin(name)
 end
 
 
+local function inject_metadata_schema(plugin_object)
+    if not plugin_object.metadata_schema then
+        plugin_object.metadata_schema = {
+            type = "object",
+            ['$comment'] = injected_mark,
+            properties = {},
+        }
+    end
+end
+
+
 local function check_conf(plugin_name, conf)
     if not plugin_name then
         return nil, {error_msg = "missing plugin name"}
@@ -45,13 +56,8 @@ local function check_conf(plugin_name, conf)
         return nil, {error_msg = "invalid plugin name"}
     end
 
-    if not plugin_object.metadata_schema then
-        plugin_object.metadata_schema = {
-            type = "object",
-            ['$comment'] = injected_mark,
-            properties = {},
-        }
-    end
+    inject_metadata_schema(plugin_object)
+
     local schema = plugin_object.metadata_schema
 
     local ok, err
@@ -64,13 +70,33 @@ local function check_conf(plugin_name, conf)
         ok, err = plugin_object.check_schema(conf, core.schema.TYPE_METADATA)
     end
 
-    encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
-
     if not ok then
         return nil, {error_msg = "invalid configuration: " .. err}
     end
 
     return plugin_name
+end
+
+local function encrypt_conf(plugin_name, conf)
+    if not plugin_name then
+        -- This situation shouldn't happen according to the execution order.
+        core.log.info("missing plugin name")
+        return
+    end
+
+    local ok, plugin_object = validate_plugin(plugin_name)
+    if not ok then
+        -- This situation shouldn't happen according to the execution order.
+        core.log.info("invalid plugin name")
+        return
+    end
+
+    inject_metadata_schema(plugin_object)
+
+    local schema = plugin_object.metadata_schema
+    if schema['$comment'] ~= injected_mark and plugin_object.check_schema then
+        plugin_encrypt_conf(plugin_name, conf, core.schema.TYPE_METADATA)
+    end
 end
 
 
@@ -79,5 +105,6 @@ return resource.new({
     kind = "plugin_metadata",
     schema = core.schema.plugin_metadata,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     unsupported_methods = {"post", "patch"}
 })

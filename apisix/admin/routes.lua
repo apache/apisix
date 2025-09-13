@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local apisix_upstream = require("apisix.upstream")
 local resource = require("apisix.admin.resource")
 local schema_plugin = require("apisix.admin.plugins").check_schema
+local plugins_encrypt_conf = require("apisix.admin.plugins").encrypt_conf
 local type = type
 local loadstring = loadstring
 local ipairs = ipairs
@@ -173,11 +174,18 @@ local function check_conf(id, conf, need_id, schema, opts)
 end
 
 
+local function encrypt_conf(id, conf)
+    apisix_upstream.encrypt_conf(conf.upstream)
+    plugins_encrypt_conf(conf.plugins)
+end
+
+
 return resource.new({
     name = "routes",
     kind = "route",
     schema = core.schema.route,
     checker = check_conf,
+    encrypt_conf = encrypt_conf,
     list_filter_fields = {
         service_id = true,
         upstream_id = true,

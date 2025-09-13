@@ -197,7 +197,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"value":{"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/not_unwanted_data_post"}}
+{"value":{"methods":["GET"],"upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"},"uri":"/not_unwanted_data_post"}}
 
 
 
@@ -237,7 +237,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index.html"}}
+{"key":"/apisix/routes/1","value":{"id":1,"methods":["GET"],"upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"},"uri":"/index.html"}}
 
 
 
@@ -276,7 +276,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
+{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"},"uri":"/index"}}
 
 
 
@@ -311,7 +311,7 @@ GET /t
 --- request
 GET /t
 --- response_body
-{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"priority":0,"status":1,"upstream":{"hash_on":"vars","nodes":{"127.0.0.1:8080":1},"pass_host":"pass","scheme":"http","type":"roundrobin"},"uri":"/index"}}
+{"key":"/apisix/routes/1","value":{"id":"1","methods":["GET"],"upstream":{"nodes":{"127.0.0.1:8080":1},"type":"roundrobin"},"uri":"/index"}}
 
 
 
