@@ -697,7 +697,58 @@ ssl handshake: true
 
 
 
-=== TEST 18: set ssl conf with secret ref: env
+=== TEST 18: get cert and key from vault with a custom ttl
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+
+location /t {
+    content_by_lua_block {
+        local core = require("apisix.core")
+        local radixtree_sni = require("apisix.ssl.router.radixtree_sni")
+        local secrets_lrucache = core.lrucache.new({
+            ttl = 3, count = 512, invalid_stale = true
+        })
+        radixtree_sni.inject_secrets_lrucache(secrets_lrucache)
+
+        local tls_handshake = function()
+            local sock = ngx.socket.tcp()
+            sock:settimeout(2000)
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local sess, err = sock:sslhandshake(nil, "test2.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            sock:close()
+        end
+
+        -- send three requests within ttl
+        for i = 1, 3 do
+            tls_handshake()
+        end
+
+        -- wait for ttl to expire
+        ngx.sleep(3)
+
+        -- send one request after ttl expired
+        tls_handshake()
+
+        ngx.say("passed")
+    }
+}
+--- response_body
+passed
+--- error_log
+fetching data from secret uri
+fetching data from secret uri
+
+
+
+=== TEST 19: set ssl conf with secret ref: env
 --- request
 GET /t
 --- config
@@ -726,7 +777,7 @@ passed
 
 
 
-=== TEST 19: get cert and key from env
+=== TEST 20: get cert and key from env
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -758,7 +809,7 @@ ssl handshake: true
 
 
 
-=== TEST 20: set ssl conf with secret ref: only cert use env
+=== TEST 21: set ssl conf with secret ref: only cert use env
 --- request
 GET /t
 --- config
@@ -791,7 +842,7 @@ passed
 
 
 
-=== TEST 21: get cert from env
+=== TEST 22: get cert from env
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
