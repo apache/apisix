@@ -22,6 +22,9 @@
 local lru_new = require("resty.lrucache").new
 local resty_lock = require("resty.lock")
 local log = require("apisix.core.log")
+local pairs = pairs
+local pcall = pcall
+local unpack = unpack
 local tostring = tostring
 local ngx = ngx
 local get_phase = ngx.get_phase
@@ -201,7 +204,8 @@ local function refresh_stale_objs()
             if obj ~= nil then
                 lru_obj:set(key, {val = obj, ver = new_obj.ver}, new_obj.ttl)
                 keys[key] = nil
-                log.info("successfully refresh stale obj for key ", tostring(key), " to ver ", new_obj.ver)
+                log.info("successfully refresh stale obj for key ",
+                            tostring(key), " to ver ", new_obj.ver)
             else
                 log.error("failed to refresh stale obj for key ", key, ": ", err)
             end
