@@ -25,6 +25,8 @@ local log = require("apisix.core.log")
 local tostring = tostring
 local ngx = ngx
 local get_phase = ngx.get_phase
+local timer_every = ngx.timer.every
+local exiting = ngx.worker.exiting
 
 
 local lock_shdict_name = "lrucache-lock"
@@ -42,6 +44,8 @@ local can_yield_phases = {
     timer = true
 }
 
+local stale_obj_pool = {}
+
 local GLOBAL_ITEMS_COUNT = 1024
 local GLOBAL_TTL         = 60 * 60          -- 60 min
 local PLUGIN_TTL         = 5 * 60           -- 5 min
@@ -49,20 +53,28 @@ local PLUGIN_ITEMS_COUNT = 8
 local global_lru_fun
 
 
-local function fetch_valid_cache(lru_obj, invalid_stale, item_ttl,
-                                 item_release, key, version)
+local function fetch_valid_cache(lru_obj, invalid_stale, refresh_stale, item_ttl,
+                                 key, version, create_obj_fun, ...)
     local obj, stale_obj = lru_obj:get(key)
     if obj and obj.ver == version then
         return obj
     end
 
-    if not invalid_stale and stale_obj and stale_obj.ver == version then
-        lru_obj:set(key, stale_obj, item_ttl)
-        return stale_obj
-    end
+    if stale_obj and stale_obj.ver == version then
+        if not invalid_stale then
+            lru_obj:set(key, stale_obj, item_ttl)
+            return stale_obj
+        end
 
-    if item_release and obj then
-        item_release(obj.val)
+        if refresh_stale then
+            stale_obj_pool[lru_obj][key] = {
+                fn = create_obj_fun,
+                args = {...},
+                ver = version,
+                ttl = item_ttl,
+            }
+            return stale_obj
+        end
     end
 
     return nil
@@ -79,15 +91,16 @@ local function new_lru_fun(opts)
         item_ttl = opts and opts.ttl or GLOBAL_TTL
     end
 
-    local item_release = opts and opts.release
     local invalid_stale = opts and opts.invalid_stale
+    local refresh_stale = opts and opts.refresh_stale
     local serial_creating = opts and opts.serial_creating
     local lru_obj = lru_new(item_count)
+    stale_obj_pool[lru_obj] = {}
 
     return function (key, version, create_obj_fun, ...)
         if not serial_creating or not can_yield_phases[get_phase()] then
-            local cache_obj = fetch_valid_cache(lru_obj, invalid_stale,
-                                item_ttl, item_release, key, version)
+            local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, refresh_stale,
+                                item_ttl, key, version, create_obj_fun, ...)
             if cache_obj then
                 return cache_obj.val
             end
@@ -100,8 +113,8 @@ local function new_lru_fun(opts)
             return obj, err
         end
 
-        local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, item_ttl,
-                            item_release, key, version)
+        local cache_obj = fetch_valid_cache(lru_obj, invalid_stale, refresh_stale, item_ttl,
+                            key, version, create_obj_fun, ...)
         if cache_obj then
             return cache_obj.val
         end
@@ -119,8 +132,8 @@ local function new_lru_fun(opts)
             return nil, "failed to acquire the lock: " .. err
         end
 
-        cache_obj = fetch_valid_cache(lru_obj, invalid_stale, item_ttl,
-                        nil, key, version)
+        cache_obj = fetch_valid_cache(lru_obj, invalid_stale, refresh_stale, item_ttl,
+                        key, version, create_obj_fun, ...)
         if cache_obj then
             lock:unlock()
             log.info("unlock with key ", key_s)
@@ -181,8 +194,44 @@ local function plugin_ctx_id(api_ctx, extra_key)
 end
 
 
+local function refresh_stale_objs()
+    for lru_obj, keys in pairs(stale_obj_pool) do
+        for key, new_obj in pairs(keys) do
+            local obj, err = new_obj.fn(unpack(new_obj.args))
+            if obj ~= nil then
+                lru_obj:set(key, {val = obj, ver = new_obj.ver}, new_obj.ttl)
+                keys[key] = nil
+                log.info("successfully refresh stale obj for key ", tostring(key), " to ver ", new_obj.ver)
+            else
+                log.error("failed to refresh stale obj for key ", key, ": ", err)
+            end
+        end
+    end
+end
+
+
+local function init_worker()
+    local running = false
+    timer_every(1, function ()
+        if not exiting() then
+            if running then
+                log.info("timer_refresh_stale is already running, skipping this iteration")
+                return
+            end
+            running = true
+            local ok, err = pcall(refresh_stale_objs)
+            if not ok then
+                log.error("failed to run timer_refresh_stale: ", err)
+            end
+            running = false
+        end
+    end)
+end
+
+
 local _M = {
     version = 0.1,
+    init_worker = init_worker,
     new = new_lru_fun,
     global = global_lru_fun,
     plugin_ctx = plugin_ctx,

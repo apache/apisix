@@ -141,6 +141,11 @@ apisix:
                                   # or (standalone mode) the config isn't loaded yet either via file or Admin API.
   # disable_upstream_healthcheck: false # A global switch for healthcheck. Defaults to false.
                                         # When set to true, it overrides all upstream healthcheck configurations and globally disabling healthchecks.
+  # fine tune the parameters of LRU cache for some features like secret
+  lru:
+    secret:
+      ttl: 300 # seconds
+      count: 512
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.

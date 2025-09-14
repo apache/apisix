@@ -697,7 +697,65 @@ ssl handshake: true
 
 
 
-=== TEST 18: set ssl conf with secret ref: env
+=== TEST 18: get cert and key from vault with a custom ttl
+--- yaml_config
+apisix:
+  lru:
+    secret:
+      ttl: 2
+      count: 1024
+--- config
+listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
+location /t {
+    content_by_lua_block {
+        local tls_handshake = function()
+            local sock = ngx.socket.tcp()
+            sock:settimeout(2000)
+            local ok, err = sock:connect("unix:$TEST_NGINX_HTML_DIR/nginx.sock")
+            if not ok then
+                ngx.say("failed to connect: ", err)
+                return
+            end
+            local sess, err = sock:sslhandshake(nil, "test2.com", false)
+            if not sess then
+                ngx.say("failed to do SSL handshake: ", err)
+                return
+            end
+            sock:close()
+        end
+        -- send three requests within ttl
+        for i = 1, 3 do
+            tls_handshake()
+        end
+        -- wait for ttl to expire
+        ngx.sleep(2)
+        -- send one requests to trigger refresh
+        tls_handshake()
+        -- wait for refresh to complete
+        ngx.sleep(1)
+        -- send another three requests after refresh
+        for i = 1, 3 do
+            tls_handshake()
+        end
+        ngx.say("passed")
+    }
+}
+--- response_body
+passed
+--- error_log
+secret lrucache ttl: 2, count: 1024
+successfully refresh stale obj for key
+--- grep_error_log eval
+qr/fetching data from secret uri: \S+ context: \S+/
+--- grep_error_log_out
+fetching data from secret uri: $secret://vault/test1/ssl/test2.com.crt, context: ssl_certificate_by_lua*,
+fetching data from secret uri: $secret://vault/test1/ssl/test2.com.key, context: ssl_certificate_by_lua*,
+fetching data from secret uri: $secret://vault/test1/ssl/test2.com.crt, context: ngx.timer
+fetching data from secret uri: $secret://vault/test1/ssl/test2.com.key, context: ngx.timer
+
+
+
+=== TEST 19: set ssl conf with secret ref: env
 --- request
 GET /t
 --- config
@@ -726,7 +784,7 @@ passed
 
 
 
-=== TEST 19: get cert and key from env
+=== TEST 20: get cert and key from env
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
@@ -758,7 +816,7 @@ ssl handshake: true
 
 
 
-=== TEST 20: set ssl conf with secret ref: only cert use env
+=== TEST 21: set ssl conf with secret ref: only cert use env
 --- request
 GET /t
 --- config
@@ -791,7 +849,7 @@ passed
 
 
 
-=== TEST 21: get cert from env
+=== TEST 22: get cert from env
 --- config
 listen unix:$TEST_NGINX_HTML_DIR/nginx.sock ssl;
 
