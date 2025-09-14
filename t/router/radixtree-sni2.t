@@ -746,12 +746,10 @@ passed
 secret lrucache ttl: 2, count: 1024
 successfully refresh stale obj for key
 --- grep_error_log eval
-qr/fetching data from secret uri: \S+ context: \S+/
+qr/fetching data from secret uri: \$secret:\/\/vault\/test1\/ssl\/test2.com.crt, context: \S+/
 --- grep_error_log_out
 fetching data from secret uri: $secret://vault/test1/ssl/test2.com.crt, context: ssl_certificate_by_lua*,
-fetching data from secret uri: $secret://vault/test1/ssl/test2.com.key, context: ssl_certificate_by_lua*,
 fetching data from secret uri: $secret://vault/test1/ssl/test2.com.crt, context: ngx.timer
-fetching data from secret uri: $secret://vault/test1/ssl/test2.com.key, context: ngx.timer
 
 
 
