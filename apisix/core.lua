@@ -20,6 +20,7 @@ local table = require("apisix.core.table")
 local string_sub = string.sub
 local config_util = require("apisix.core.config_util")
 local local_conf, err = require("apisix.core.config_local").local_conf()
+local require = require
 if not local_conf then
     error("failed to parse yaml config: " .. err)
 end
