@@ -45,6 +45,7 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
+local resource        = require("apisix.resource")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -251,14 +252,14 @@ local function parse_domain_in_route(route)
         return route
     end
 
-    local nodes_ver = core.get_nodes_ver(route.value.upstream.resource_key)
+    local nodes_ver = resource.get_nodes_ver(route.value.upstream.resource_key)
     if not nodes_ver then
         nodes_ver = 0
     end
     nodes_ver = nodes_ver + 1
     route.value._nodes_ver = nodes_ver
     route.value.upstream.nodes = new_nodes
-    core.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
+    resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
                                                     nodes_ver, new_nodes)
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))

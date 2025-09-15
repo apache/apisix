@@ -16,10 +16,10 @@
 --
 local require = require
 local core = require("apisix.core")
-local util = require("apisix.core.config_util")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
+local resource = require("apisix.resource")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -192,13 +192,13 @@ function _M.set_by_route(route, api_ctx)
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
-            local nodes_ver = core.get_nodes_ver(up_conf.resource_key)
+            local nodes_ver = resource.get_nodes_ver(up_conf.resource_key)
             if not nodes_ver then
                 nodes_ver = 0
             end
             nodes_ver = nodes_ver + 1
             up_conf._nodes_ver = nodes_ver
-            core.set_nodes_ver_and_nodes(up_conf.resource_key, nodes_ver, new_nodes)
+            resource.set_nodes_ver_and_nodes(up_conf.resource_key, nodes_ver, new_nodes)
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
@@ -246,8 +246,8 @@ function _M.set_by_route(route, api_ctx)
                 ngx_var.upstream_sni = sni
             end
         end
-        local node_ver = core.get_nodes_ver(up_conf.resource_key)
-        local resource_version = util.upstream_version(up_conf.resource_version,
+        local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+        local resource_version = upstream_util.version(up_conf.resource_version,
                                                                       node_ver)
         local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
         api_ctx.up_checker = checker
@@ -260,8 +260,8 @@ function _M.set_by_route(route, api_ctx)
     if not ok then
         return 503, err
     end
-    local node_ver = core.get_nodes_ver(up_conf.resource_key)
-    local resource_version = util.upstream_version(up_conf.resource_version,
+    local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+    local resource_version = upstream_util.version(up_conf.resource_version,
                                                                   node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker

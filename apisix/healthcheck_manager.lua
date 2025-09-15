@@ -22,6 +22,8 @@ local pairs    = pairs
 local tostring = tostring
 local core = require("apisix.core")
 local config_local   = require("apisix.core.config_local")
+local resource = require("apisix.resource")
+local upstream_utils = require("apisix.utils.upstream")
 local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
@@ -165,7 +167,7 @@ local function timer_create_checker()
                                resource_ver)
                 goto continue
             end
-            local res_conf = core.fetch_latest_conf(resource_path)
+            local res_conf = resource.fetch_latest_conf(resource_path)
             if not res_conf then
                 goto continue
             end
@@ -184,7 +186,7 @@ local function timer_create_checker()
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local new_version = config_util.upstream_version(res_conf.modifiedIndex,
+            local new_version = upstream_utils.version(res_conf.modifiedIndex,
                                                              upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
@@ -224,7 +226,7 @@ local function timer_working_pool_check()
     local working_snapshot = tab_clone(working_pool)
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
-        local res_conf = core.fetch_latest_conf(resource_path)
+        local res_conf = resource.fetch_latest_conf(resource_path)
         local need_destroy = true
         if res_conf and res_conf.value then
             local upstream
@@ -242,7 +244,7 @@ local function timer_working_pool_check()
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local current_ver = config_util.upstream_version(res_conf.modifiedIndex,
+            local current_ver = upstream_utils.version(res_conf.modifiedIndex,
                                                     upstream._nodes_ver)
             core.log.info("checking working pool for resource: ", resource_path,
                         " current version: ", current_ver, " item version: ", item.version)

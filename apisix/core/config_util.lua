@@ -214,12 +214,6 @@ function _M.parse_time_unit(s)
     return size
 end
 
-function _M.upstream_version(index, nodes_ver)
-    if not index then
-        return
-    end
-    return index .. tostring(nodes_ver or '')
-end
 
 function _M.parse_path(resource_full_path)
     local resource_path_parts = ngx_re.split(resource_full_path, "#")

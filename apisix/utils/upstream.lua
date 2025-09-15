@@ -128,4 +128,11 @@ function _M.parse_domain_in_up(up)
 end
 
 
+function _M.version(index, nodes_ver)
+    if not index then
+        return
+    end
+    return index .. tostring(nodes_ver or '')
+end
+
 return _M
