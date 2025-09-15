@@ -18,7 +18,7 @@ local log = require("apisix.core.log")
 local utils = require("apisix.core.utils")
 local table = require("apisix.core.table")
 local string_sub = string.sub
-local ngx_re = require('ngx.re')
+local config_util = require("apisix.core.config_util")
 local local_conf, err = require("apisix.core.config_local").local_conf()
 if not local_conf then
     error("failed to parse yaml config: " .. err)
@@ -51,17 +51,10 @@ local function remove_etcd_prefix(key)
     return string_sub(key, #prefix + 1)
 end
 
-local function parse_path(resource_full_path)
-    local resource_path_parts = ngx_re.split(resource_full_path, "#")
-    local resource_path = resource_path_parts[1] or resource_full_path
-    local resource_sub_path = resource_path_parts[2] or ""
-    return resource_path, resource_sub_path
-end
-
 local function fetch_latest_conf(resource_path)
     -- if resource path contains json path, extract out the prefix
     -- for eg: extracts /routes/1 from /routes/1#plugins.abc
-    resource_path = parse_path(resource_path)
+    resource_path = config_util.parse_path(resource_path)
     local resource_type, id
     -- Handle both formats:
     -- 1. /<etcd-prefix>/<resource_type>/<id>
@@ -122,7 +115,7 @@ return {
     version     = require("apisix.core.version"),
     log         = log,
     config      = config,
-    config_util = require("apisix.core.config_util"),
+    config_util = config_util,
     sleep       = utils.sleep,
     fetch_latest_conf = fetch_latest_conf,
     get_nodes_ver = get_nodes_ver,
