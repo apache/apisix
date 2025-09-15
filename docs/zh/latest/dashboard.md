@@ -104,7 +104,7 @@ export ADMIN_KEY=your-secure-api-key
 
 ![Apache APISIX Dashboard - Need Admin Key](../../assets/images/dashboard-need-admin-key.png)
 
-如果不小心关闭了设置模态框，也可以点击导航栏右侧的按钮 ![Apache APISIX Dashboard - Settings btn icon](../../assets/images/dashboard-settings-btn-icon.png) 再次打开。
+如果不小心关闭了设置模态框，也可以点击导航栏右侧的按钮 <img src="../../assets/images/dashboard-settings-btn-icon.png" alt="Apache APISIX Dashboard - Settings btn icon" width="25px" /> 再次打开。
 
 ![Apache APISIX Dashboard - Reopen Settings Modal](../../assets/images/dashboard-reopen-settings-modal.png)
 

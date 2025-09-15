@@ -104,7 +104,7 @@ When the Admin API Key is not configured, the settings modal will pop up:
 
 ![Apache APISIX Dashboard - Need Admin Key](../../assets/images/dashboard-need-admin-key.png)
 
-If you accidentally close the settings modal, you can click the button ![Apache APISIX Dashboard - Settings btn icon](../../assets/images/dashboard-settings-btn-icon.png) on the right side of the navigation bar to reopen it.
+If you accidentally close the settings modal, you can click the button <img src="../../assets/images/dashboard-settings-btn-icon.png" alt="Apache APISIX Dashboard - Settings btn icon" width="25px" /> on the right side of the navigation bar to reopen it.
 
 ![Apache APISIX Dashboard - Reopen Settings Modal](../../assets/images/dashboard-reopen-settings-modal.png)
 
