@@ -54,38 +54,40 @@ end
 
 local function update_endpoint_slices_cache(handle, endpoint_key, slice, slice_name)
     if not handle.endpoint_slices_cache[endpoint_key] then
-        handle.update_endpoint_slices_cache[endpoint_key] = {}
+        handle.endpoint_slices_cache[endpoint_key] = {}
     end
     local endpoint_slices = handle.endpoint_slices_cache[endpoint_key]
     endpoint_slices[slice_name] = slice
 end
 
 local function get_endpoints_from_cache(handle, endpoint_key)
-    local cached_endpoint_slices = handle.endpoint_slices_cache[endpoint_key] or {}
-    local service_endpoints = {}
-    for _, endpoint_slice in pairs(cached_endpoint_slices) do
-        for port, nodes in pairs(endpoint_slice) do
-            if not service_endpoints[port] then
-                service_endpoints[port] = core.table.new(0, #nodes)
+    local endpoint_slices = handle.endpoint_slices_cache[endpoint_key] or {}
+    local endpoints = {}
+    for _, endpoint_slice in pairs(endpoint_slices) do
+        for port, targets in pairs(endpoint_slice) do
+            if not endpoints[port] then
+                endpoints[port] = core.table.new(0, #targets)
             end
-            core.table.insert_tail(service_endpoints[port], unpack(nodes))
+            core.table.insert_tail(endpoints[port], unpack(targets))
         end
     end
-    return service_endpoints
+    return endpoints
 end
 
 local function update_endpoint_dict(handle, endpoints, endpoint_key)
-    local endpoints_content = core.json.encode(endpoints, true)
-    local endpoints_version = ngx.crc32_long(endpoints_content)
+    local endpoint_content = core.json.encode(endpoints, true)
+    local endpoint_version = ngx.crc32_long(endpoint_content)
     local _, err
-    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoints_version)
+    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
     if err then
         core.log.error("set endpoint version into discovery DICT failed, ", err)
+        return false, err
     end
-    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoints_content)
+    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
     if err then
         core.log.error("set endpoint into discovery DICT failed, ", err)
         handle.endpoint_dict:delete(endpoint_key .. "#version")
+        return false, err
     end
 end
 
@@ -142,9 +144,9 @@ local function on_endpoint_slices_modified(handle, endpoint_slice)
                     port_to_nodes[port_name] = nodes
                 end
 
-                for _, address in ipairs(addresses) do
+                for _, ip in ipairs(addresses) do
                     core.table.insert(nodes, {
-                        host = address,
+                        host = ip,
                         port = port.port,
                         weight = handle.default_weight
                     })
@@ -157,12 +159,12 @@ local function on_endpoint_slices_modified(handle, endpoint_slice)
     local endpoint_key = endpoint_slice.metadata.namespace .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
     update_endpoint_slices_cache(handle, endpoint_key, port_to_nodes, endpoint_slice.metadata.name)
 
-    local cached_service_endpoints = get_endpoints_from_cache(handle, endpoint_key)
-    for _, nodes in pairs(cached_service_endpoints) do
+    local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
+    for _, nodes in pairs(cached_endpoints) do
         core.table.sort(nodes, sort_nodes_cmp)
     end
 
-    update_endpoint_dict(handle, cached_service_endpoints, endpoint_key)
+    update_endpoint_dict(handle, cached_endpoints, endpoint_key)
 end
 
 local function on_endpoint_slices_deleted(handle, endpoint_slice)
@@ -193,12 +195,12 @@ local function on_endpoint_slices_deleted(handle, endpoint_slice)
     local endpoint_key = endpoint_slice.metadata.namespace .. "/" .. endpoint_slice.metadata.labels["kubernetes.io/service-name"]
     update_endpoint_slices_cache(handle, endpoint_key, nil, endpoint_slice.metadata.name)
 
-    local cached_service_endpoints = get_endpoints_from_cache(handle, endpoint_key)
-    for _, nodes in pairs(cached_service_endpoints) do
+    local cached_endpoints = get_endpoints_from_cache(handle, endpoint_key)
+    for _, nodes in pairs(cached_endpoints) do
         core.table.sort(nodes, sort_nodes_cmp)
     end
 
-    update_endpoint_dict(handle, cached_service_endpoints, endpoint_key)
+    update_endpoint_dict(handle, cached_endpoints, endpoint_key)
 end
 
 local function on_endpoint_modified(handle, endpoint)
@@ -241,27 +243,14 @@ local function on_endpoint_modified(handle, endpoint)
         end
     end
 
-    for _, ports in pairs(endpoint_buffer) do
-        for _, nodes in pairs(ports) do
-            core.table.sort(nodes, sort_nodes_cmp)
-        end
+
+    for _, nodes in pairs(endpoint_buffer) do
+        core.table.sort(nodes, sort_nodes_cmp)
     end
+
 
     local endpoint_key = endpoint.metadata.namespace .. "/" .. endpoint.metadata.name
-    local endpoint_content = core.json.encode(endpoint_buffer, true)
-    local endpoint_version = ngx.crc32_long(endpoint_content)
-
-    local _, err
-    _, err = handle.endpoint_dict:safe_set(endpoint_key .. "#version", endpoint_version)
-    if err then
-        core.log.error("set endpoint version into discovery DICT failed, ", err)
-        return
-    end
-    _, err = handle.endpoint_dict:safe_set(endpoint_key, endpoint_content)
-    if err then
-        core.log.error("set endpoint into discovery DICT failed, ", err)
-        handle.endpoint_dict:delete(endpoint_key .. "#version")
-    end
+    update_endpoint_dict(handle, endpoint_buffer, endpoint_key)
 end
 
 
@@ -280,7 +269,9 @@ end
 
 local function pre_list(handle)
     handle.endpoint_dict:flush_all()
-    handle.endpoint_slices_cache = {}
+    if handle.endpoint_slices_cache then
+        handle.endpoint_slices_cache = {}
+    end
 end
 
 
