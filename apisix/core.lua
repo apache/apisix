@@ -16,10 +16,7 @@
 --
 local log = require("apisix.core.log")
 local utils = require("apisix.core.utils")
-local table = require("apisix.core.table")
-local config_util = require("apisix.core.config_util")
 local local_conf, err = require("apisix.core.config_local").local_conf()
-local require = require
 if not local_conf then
     error("failed to parse yaml config: " .. err)
 end
@@ -44,10 +41,10 @@ return {
     version     = require("apisix.core.version"),
     log         = log,
     config      = config,
-    config_util = config_util,
+    config_util = require("apisix.core.config_util"),
     sleep       = utils.sleep,
     json        = require("apisix.core.json"),
-    table       = table,
+    table       = require("apisix.core.table"),
     request     = require("apisix.core.request"),
     response    = require("apisix.core.response"),
     lrucache    = require("apisix.core.lrucache"),
