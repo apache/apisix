@@ -617,7 +617,7 @@ local function handle_x_forwarded_headers(api_ctx)
 end
 
 
-local function update_var_x_forwarded_headers(api_ctx)
+local function set_upstream_x_forwarded_headers(api_ctx)
     local proto = api_ctx.var.http_x_forwarded_proto
     if proto then
         api_ctx.var.var_x_forwarded_proto = proto
@@ -793,7 +793,7 @@ function _M.http_access_phase()
 
     _M.handle_upstream(api_ctx, route, enable_websocket)
 
-    update_var_x_forwarded_headers(api_ctx)
+    set_upstream_x_forwarded_headers(api_ctx)
 end
 
 
