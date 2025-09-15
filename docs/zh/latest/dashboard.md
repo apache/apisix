@@ -144,7 +144,7 @@ Apache APISIX Dashboard 经历了多个版本的演进：
 
 在 Apache APISIX 发布时，将直接基于指定的 Git commit hash 构建 Dashboard，并将产物嵌入到 Apache APISIX 中。
 
-### 旧版本的 Apache APSIX Dashboard
+### 旧版本的 Apache APISIX Dashboard
 
 Apache APISIX Dashboard 3.0.1 是在重构前，使用旧发布模式的最后一个版本。它仅应与 Apache APISIX 3.0 一起使用，任何更高或更低版本未进行测试。
 
