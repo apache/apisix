@@ -184,7 +184,8 @@ local function timer_create_checker()
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local new_version = config_util.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
+            local new_version = config_util.upstream_version(res_conf.modifiedIndex,
+                                                             upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
             if resource_ver ~= new_version then
