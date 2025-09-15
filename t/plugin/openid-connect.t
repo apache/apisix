@@ -42,7 +42,12 @@ __DATA__
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({client_id = "a", client_secret = "b", discovery = "c"})
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+                session = {secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"}
+            })
             if not ok then
                 ngx.say(err)
             end
@@ -60,7 +65,11 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({client_secret = "b", discovery = "c"})
+            local ok, err = plugin.check_schema({
+                client_secret = "b",
+                discovery = "c",
+                session = {secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"}
+            })
             if not ok then
                 ngx.say(err)
             end
@@ -79,7 +88,12 @@ done
     location /t {
         content_by_lua_block {
             local plugin = require("apisix.plugins.openid-connect")
-            local ok, err = plugin.check_schema({client_id = 123, client_secret = "b", discovery = "c"})
+            local ok, err = plugin.check_schema({
+                client_id = 123,
+                client_secret = "b",
+                discovery = "c",
+                session = {secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"}
+            })
             if not ok then
                 ngx.say(err)
             end
@@ -111,7 +125,10 @@ done
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "scope": "apisix",
-                                "use_pkce": false
+                                "use_pkce": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -204,7 +221,10 @@ true
                                 "access_token_in_authorization_header": false,
                                 "set_id_token_header": true,
                                 "set_userinfo_header": true,
-                                "set_refresh_token_header": true
+                                "set_refresh_token_header": true,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -308,7 +328,10 @@ x-userinfo: ey.*
                                 "set_access_token_header": true,
                                 "access_token_in_authorization_header": true,
                                 "set_id_token_header": false,
-                                "set_userinfo_header": false
+                                "set_userinfo_header": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -901,22 +924,20 @@ OIDC introspection failed: invalid token
                 client_id = "kbyuFDidLLm280LIwVFiazOqjO3ty8KH",
                 client_secret = "60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa",
                 discovery = "http://127.0.0.1:1980/.well-known/openid-configuration",
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                },
             }
             local ok, err = plugin.check_schema(s)
             if not ok then
                 ngx.say(err)
             end
 
-            -- ensure session secret generated when bearer_only = false
-            -- then remove it from table, because it's a random value that I cannot verify it by response body
-            assert(s.session and s.session.secret, "no session secret generated")
-            s.session = nil
-
             ngx.say(json.encode(s))
         }
     }
 --- response_body
-{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
+{"accept_none_alg":false,"accept_unsupported_alg":true,"access_token_expires_leeway":0,"access_token_in_authorization_header":false,"bearer_only":false,"client_id":"kbyuFDidLLm280LIwVFiazOqjO3ty8KH","client_jwt_assertion_expires_in":60,"client_secret":"60Op4HFM0I8ajz0WdiStAbziZ-VFQttXuxixHHs2R7r7-CW8GR79l-mmLqMhc-Sa","discovery":"http://127.0.0.1:1980/.well-known/openid-configuration","force_reauthorize":false,"iat_slack":120,"introspection_endpoint_auth_method":"client_secret_basic","introspection_interval":0,"jwk_expires_in":86400,"jwt_verification_cache_ignore":false,"logout_path":"/logout","realm":"apisix","renew_access_token_on_expiry":true,"revoke_tokens_on_logout":false,"scope":"openid","session":{"secret":"jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"},"set_access_token_header":true,"set_id_token_header":true,"set_refresh_token_header":false,"set_userinfo_header":true,"ssl_verify":false,"timeout":3,"token_endpoint_auth_method":"client_secret_basic","unauth_action":"auth","use_nonce":false,"use_pkce":false}
 
 
 
@@ -1076,7 +1097,10 @@ OIDC introspection failed: invalid jwt: invalid jwt string
                                 "access_token_in_authorization_header": false,
                                 "set_id_token_header": true,
                                 "set_userinfo_header": true,
-                                "post_logout_redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/hello"
+                                "post_logout_redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/hello",
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -1183,7 +1207,10 @@ http://127.0.0.1:.*/hello
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "scope": "apisix",
-                                "use_pkce": true
+                                "use_pkce": true,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -1360,7 +1387,10 @@ x-userinfo: ey.*
                                 "discovery": "https://samples.auth0.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "post_logout_redirect_uri": "https://iresty.com",
-                                "scope": "openid profile"
+                                "scope": "openid profile",
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -1421,7 +1451,10 @@ true
                                 "discovery": "https://accounts.google.com/.well-known/openid-configuration",
                                 "redirect_uri": "https://iresty.com",
                                 "post_logout_redirect_uri": "https://iresty.com",
-                                "scope": "openid profile"
+                                "scope": "openid profile",
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
@@ -1485,6 +1518,9 @@ true
                                 "ssl_verify": false,
                                 "timeout": 10,
                                 "bearer_only": false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
                                 "use_jwks": true,
                                 "realm": "University",
                                 "introspection_endpoint_auth_method": "client_secret_post",
@@ -1569,3 +1605,26 @@ true
 qr/token validate successfully by \w+/
 --- grep_error_log_out
 token validate successfully by jwks
+
+
+
+=== TEST 41: Missing `session.secret`.
+--- config
+    location /t {
+        content_by_lua_block {
+            local plugin = require("apisix.plugins.openid-connect")
+            local ok, err = plugin.check_schema({
+                client_id = "a",
+                client_secret = "b",
+                discovery = "c",
+            })
+            if not ok then
+                ngx.say(err)
+            end
+
+            ngx.say("done")
+        }
+    }
+--- response_body
+property "session.secret" is required when "bearer_only" is false
+done

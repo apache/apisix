@@ -57,20 +57,12 @@ curl "http://127.0.0.1:9180/apisix/admin/consumers" -X PUT \
   -H "X-API-KEY: ${ADMIN_API_KEY}" \
   -d '{
     "username": "john",
-    # highlight-start
     "labels": {
-      // Annotate 1
       "department": "devops",
-      // Annotate 2
       "company": "api7"
     }
-    # highlight-end
   }'
 ```
-
-❶ Label the `department` information for the consumer.
-
-❷ Label the `company` information for the consumer.
 
 Configure the `key-auth` credential for the consumer `john`:
 
@@ -97,18 +89,13 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     "uri": "/get",
     "plugins": {
       "key-auth": {},
-      # highlight-start
       "attach-consumer-label": {
         "headers": {
-          // Annotate 1
           "X-Consumer-Department": "$department",
-          // Annotate 2
           "X-Consumer-Company": "$company",
-          // Annotate 3
           "X-Consumer-Role": "$role"
         }
       }
-      # highlight-end
     },
     "upstream": {
       "type": "roundrobin",
@@ -118,12 +105,6 @@ curl "http://127.0.0.1:9180/apisix/admin/routes" -X PUT \
     }
   }'
 ```
-
-❶ Attach the `department` consumer label value in the `X-Consumer-Department` request header.
-
-❷ Attach the `company` consumer label value in the `X-Consumer-Company` request header.
-
-❸ Attach the `role` consumer label value in the `X-Consumer-Role` request header. As the `role` label is not configured on the consumer, it is expected that the header will not appear in the request forwarded to the upstream service.
 
 :::tip
 
@@ -139,19 +120,17 @@ curl -i "http://127.0.0.1:9080/get" -H 'apikey: john-key'
 
 You should see an `HTTP/1.1 200 OK` response similar to the following:
 
-```text
+```json
 {
   "args": {},
   "headers": {
     "Accept": "*/*",
     "Apikey": "john-key",
     "Host": "127.0.0.1",
-    # highlight-start
     "X-Consumer-Username": "john",
     "X-Credential-Indentifier": "cred-john-key-auth",
     "X-Consumer-Company": "api7",
     "X-Consumer-Department": "devops",
-    # highlight-end
     "User-Agent": "curl/8.6.0",
     "X-Amzn-Trace-Id": "Root=1-66e5107c-5bb3e24f2de5baf733aec1cc",
     "X-Forwarded-Host": "127.0.0.1"
