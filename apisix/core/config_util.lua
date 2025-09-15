@@ -221,7 +221,7 @@ function _M.upstream_version(index, nodes_ver)
     return index .. tostring(nodes_ver or '')
 end
 
-function  _M.parse_path(resource_full_path)
+function _M.parse_path(resource_full_path)
     local resource_path_parts = ngx_re.split(resource_full_path, "#")
     local resource_path = resource_path_parts[1] or resource_full_path
     local resource_sub_path = resource_path_parts[2] or ""
