@@ -68,7 +68,6 @@ if ngx.config.subsystem == "http" then
     control_api_router = require("apisix.control.router")
 end
 
-local healthcheck_manager = require("apisix.healthcheck_manager")
 local ok, apisix_base_flags = pcall(require, "resty.apisix.patch")
 if not ok then
     apisix_base_flags = {}
@@ -252,14 +251,14 @@ local function parse_domain_in_route(route)
         return route
     end
 
-    local nodes_ver = healthcheck_manager.get_nodes_ver(route.value.upstream.resource_key)
+    local nodes_ver = core.get_nodes_ver(route.value.upstream.resource_key)
     if not nodes_ver then
         nodes_ver = 0
     end
     nodes_ver = nodes_ver + 1
     route.value._nodes_ver = nodes_ver
     route.value.upstream.nodes = new_nodes
-    healthcheck_manager.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
+    core.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
                                                     nodes_ver, new_nodes)
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))

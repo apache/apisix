@@ -28,7 +28,6 @@ local setmetatable = setmetatable
 local tostring = tostring
 local type = type
 
-
 local _M = {}
 
 
@@ -215,5 +214,11 @@ function _M.parse_time_unit(s)
     return size
 end
 
+function _M.upstream_version(index, nodes_ver)
+    if not index then
+        return
+    end
+    return index .. tostring(nodes_ver or '')
+end
 
 return _M

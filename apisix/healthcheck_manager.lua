@@ -26,9 +26,8 @@ local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
-local ngx_re      = require('ngx.re')
 local jp = require("jsonpath")
-local string_sub     = string.sub
+local config_util = require("apisix.core.config_util")
 
 local _M = {}
 local working_pool = {}     -- resource_path -> {version = ver, checker = checker}
@@ -46,86 +45,6 @@ local function get_healthchecker_name(value)
     return "upstream#" .. (value.resource_key or value.upstream.resource_key)
 end
 _M.get_healthchecker_name = get_healthchecker_name
-
-
-local function remove_etcd_prefix(key)
-    local prefix = ""
-    local local_conf = config_local.local_conf()
-    local role = core.table.try_read_attr(local_conf, "deployment", "role")
-    local provider = core.table.try_read_attr(local_conf, "deployment", "role_" ..
-    role, "config_provider")
-    if provider == "etcd" and local_conf.etcd and local_conf.etcd.prefix then
-        prefix = local_conf.etcd.prefix
-    end
-    return string_sub(key, #prefix + 1)
-end
-
-local function parse_path(resource_full_path)
-    local resource_path_parts = ngx_re.split(resource_full_path, "#")
-    local resource_path = resource_path_parts[1] or resource_full_path
-    local resource_sub_path = resource_path_parts[2] or ""
-    return resource_path, resource_sub_path
-end
-
-local function fetch_latest_conf(resource_path)
-    -- if resource path contains json path, extract out the prefix
-    -- for eg: extracts /routes/1 from /routes/1#plugins.abc
-    resource_path = parse_path(resource_path)
-    local resource_type, id
-    -- Handle both formats:
-    -- 1. /<etcd-prefix>/<resource_type>/<id>
-    -- 2. /<resource_type>/<id>
-    resource_path = remove_etcd_prefix(resource_path)
-    resource_type, id = resource_path:match("^/([^/]+)/([^/]+)$")
-    if not resource_type or not id then
-        core.log.error("invalid resource path: ", resource_path)
-        return nil
-    end
-
-    local key
-    if resource_type == "upstreams" then
-        key = "/upstreams"
-    elseif resource_type == "routes" then
-        key = "/routes"
-    elseif resource_type == "services" then
-        key = "/services"
-    elseif resource_type == "stream_routes" then
-        key = "/stream_routes"
-    else
-        core.log.error("unsupported resource type: ", resource_type)
-        return nil
-    end
-
-    local data = core.config.fetch_created_obj(key)
-    if not data then
-        core.log.error("failed to fetch configuration for type: ", key)
-        return nil
-    end
-    local resource = data:get(id)
-    if not resource then
-        -- this can happen if the resource was deleted
-        -- after the this function was called so we don't throw error
-        core.log.warn("resource not found: ", id, " in ", key,
-                      "this can happen if the resource was deleted")
-        return nil
-    end
-
-    return resource
-end
-
-function _M.get_nodes_ver(resource_path)
-    local res_conf = fetch_latest_conf(resource_path)
-    local upstream = res_conf.value.upstream or res_conf.value
-    return upstream._nodes_ver
-end
-
-
-function _M.set_nodes_ver_and_nodes(resource_path, nodes_ver, nodes)
-    local res_conf = fetch_latest_conf(resource_path)
-    local upstream = res_conf.value.upstream or res_conf.value
-    upstream._nodes_ver = nodes_ver
-    upstream.nodes = nodes
-end
 
 
 local function create_checker(up_conf)
@@ -223,14 +142,6 @@ local function find_in_working_pool(resource_path, resource_ver)
 end
 
 
-function _M.upstream_version(index, nodes_ver)
-    if not index then
-        return
-    end
-    return index .. tostring(nodes_ver or '')
-end
-
-
 local function get_plugin_name(path)
     -- Extract JSON path (after '#') or use full path
     local json_path = path:match("#(.+)$") or path
@@ -254,14 +165,14 @@ local function timer_create_checker()
                                resource_ver)
                 goto continue
             end
-            local res_conf = fetch_latest_conf(resource_path)
+            local res_conf = core.fetch_latest_conf(resource_path)
             if not res_conf then
                 goto continue
             end
             local upstream
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
-                local _, sub_path = parse_path(resource_path)
+                local _, sub_path = config_util.parse_path(resource_path)
                 local json_path = "$." .. sub_path
                 --- the users of the API pass the jsonpath(in resourcepath) to
                 --- upstream_constructor_config which is passed to the
@@ -273,7 +184,7 @@ local function timer_create_checker()
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
+            local new_version = config_util.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
             if resource_ver ~= new_version then
@@ -312,13 +223,13 @@ local function timer_working_pool_check()
     local working_snapshot = tab_clone(working_pool)
     for resource_path, item in pairs(working_snapshot) do
         --- remove from working pool if resource doesn't exist
-        local res_conf = fetch_latest_conf(resource_path)
+        local res_conf = core.fetch_latest_conf(resource_path)
         local need_destroy = true
         if res_conf and res_conf.value then
             local upstream
             local plugin_name = get_plugin_name(resource_path)
             if plugin_name and plugin_name ~= "" then
-                local _, sub_path = parse_path(resource_path)
+                local _, sub_path = config_util.parse_path(resource_path)
                 local json_path = "$." .. sub_path
                 --- the users of the API pass the jsonpath(in resourcepath) to
                 --- upstream_constructor_config which is passed to the
@@ -330,7 +241,7 @@ local function timer_working_pool_check()
             else
                 upstream = res_conf.value.upstream or res_conf.value
             end
-            local current_ver = _M.upstream_version(res_conf.modifiedIndex,
+            local current_ver = config_util.upstream_version(res_conf.modifiedIndex,
                                                     upstream._nodes_ver)
             core.log.info("checking working pool for resource: ", resource_path,
                         " current version: ", current_ver, " item version: ", item.version)
