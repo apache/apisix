@@ -23,6 +23,8 @@ local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
 local re_split      = require("ngx.re").split
 local ngx           = ngx
+local ngx_ok        = ngx.OK
+local ngx_print     = ngx.print
 local crc32         = ngx.crc32_short
 local ngx_exit      = ngx.exit
 local pkg_loaded    = package.loaded
@@ -34,6 +36,8 @@ local type          = type
 local local_plugins = core.table.new(32, 0)
 local tostring      = tostring
 local error         = error
+local getmetatable  = getmetatable
+local setmetatable  = setmetatable
 -- make linter happy to avoid error: getting the Lua global "load"
 -- luacheck: globals load, ignore lua_load
 local lua_load          = load
@@ -1234,6 +1238,30 @@ function _M.run_plugin(phase, plugins, api_ctx)
     return api_ctx, plugin_run
 end
 
+function _M.set_plugins_meta_parent(plugins, parent)
+    if not plugins then
+        return
+    end
+    for _, plugin_conf in pairs(plugins) do
+        if not plugin_conf._meta then
+            plugin_conf._meta = {}
+        end
+        if not plugin_conf._meta.parent then
+            local parent_info = {
+                resource_key = parent.key,
+                resource_version = tostring(parent.modifiedIndex)
+            }
+            local mt_table = getmetatable(plugin_conf._meta)
+            if mt_table then
+                mt_table.parent = parent_info
+            else
+                plugin_conf._meta = setmetatable(plugin_conf._meta,
+                                                    { __index = {parent = parent_info} })
+            end
+        end
+    end
+end
+
 
 function _M.run_global_rules(api_ctx, global_rules, phase_name)
     if global_rules and #global_rules > 0 then
@@ -1268,6 +1296,41 @@ function _M.run_global_rules(api_ctx, global_rules, phase_name)
         api_ctx.conf_version = orig_conf_version
         api_ctx.conf_id = orig_conf_id
     end
+end
+
+function _M.lua_response_filter(api_ctx, headers, body)
+    local plugins = api_ctx.plugins
+    if not plugins or #plugins == 0 then
+        -- if there is no any plugin, just print the original body to downstream
+        ngx_print(body)
+        return
+    end
+    for i = 1, #plugins, 2 do
+        local phase_func = plugins[i]["lua_body_filter"]
+        if phase_func then
+            local conf = plugins[i + 1]
+            if not meta_filter(api_ctx, plugins[i]["name"], conf)then
+                goto CONTINUE
+            end
+
+            run_meta_pre_function(conf, api_ctx, plugins[i]["name"])
+            local code, new_body = phase_func(conf, api_ctx, headers, body)
+            if code then
+                if code ~= ngx_ok then
+                    ngx.status = code
+                end
+
+                ngx_print(new_body)
+                ngx_exit(ngx_ok)
+            end
+            if new_body then
+                body = new_body
+            end
+        end
+
+        ::CONTINUE::
+    end
+    ngx_print(body)
 end
 
 

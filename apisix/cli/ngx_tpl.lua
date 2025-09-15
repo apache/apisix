@@ -806,12 +806,15 @@ http {
             set $dubbo_method                '';
             {% end %}
 
+            set $llm_content_risk_level         '';
+            set $apisix_upstream_response_time  $upstream_response_time;
             set $request_type               'traditional_http';
+            set $request_llm_model              '';
 
-            set $llm_time_to_first_token        '';
+            set $llm_time_to_first_token        '0';
             set $llm_model                      '';
-            set $llm_prompt_tokens              '';
-            set $llm_completion_tokens          '';
+            set $llm_prompt_tokens              '0';
+            set $llm_completion_tokens          '0';
 
 
             access_by_lua_block {

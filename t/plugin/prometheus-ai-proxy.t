@@ -160,7 +160,7 @@ __DATA__
 === TEST 2: send a chat request
 --- request
 POST /chat
-{"messages":[{"role":"user","content":"What is 1+1?"}]}
+{"messages":[{"role":"user","content":"What is 1+1?"}], "model": "gpt-3"}
 --- error_code: 200
 
 
@@ -169,7 +169,7 @@ POST /chat
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_latency_bucket\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",llm_model="gpt-4",le="\d+"\} 1/
+qr/apisix_llm_latency_bucket\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4",le="\d+"\} 1/
 
 
 
@@ -177,7 +177,7 @@ qr/apisix_llm_latency_bucket\{.*route_id="1",.*,node="openai-gpt4".*.*request_ty
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_latency_count\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",llm_model="gpt-4"\} 1/
+qr/apisix_llm_latency_count\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 1/
 
 
 
@@ -185,7 +185,7 @@ qr/apisix_llm_latency_count\{.*route_id="1",.*,node="openai-gpt4".*.*request_typ
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_latency_count\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",llm_model="gpt-4"\} \d+/
+qr/apisix_llm_latency_count\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} \d+/
 
 
 
@@ -193,7 +193,7 @@ qr/apisix_llm_latency_count\{.*route_id="1",.*,node="openai-gpt4".*.*request_typ
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_prompt_tokens\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",llm_model="gpt-4"\} 8/
+qr/apisix_llm_prompt_tokens\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 8/
 
 
 
@@ -201,7 +201,7 @@ qr/apisix_llm_prompt_tokens\{.*route_id="1",.*,node="openai-gpt4".*.*request_typ
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_completion_tokens\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",llm_model="gpt-4"\} 5/
+qr/apisix_llm_completion_tokens\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 5/
 
 
 
@@ -209,7 +209,7 @@ qr/apisix_llm_completion_tokens\{.*route_id="1",.*,node="openai-gpt4".*.*request
 --- request
 GET /apisix/prometheus/metrics
 --- response_body eval
-qr/apisix_llm_active_connections\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",llm_model="gpt-4"\} 0/
+qr/apisix_llm_active_connections\{.*route_id="1",.*,node="openai-gpt4".*.*request_type="ai_chat",request_llm_model="gpt-3",llm_model="gpt-4"\} 0/
 
 
 

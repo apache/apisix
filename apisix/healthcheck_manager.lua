@@ -26,6 +26,8 @@ local healthcheck
 local events = require("apisix.events")
 local tab_clone = core.table.clone
 local timer_every = ngx.timer.every
+local ngx_re      = require('ngx.re')
+local jp = require("jsonpath")
 local string_sub     = string.sub
 
 local _M = {}
@@ -58,8 +60,17 @@ local function remove_etcd_prefix(key)
     return string_sub(key, #prefix + 1)
 end
 
+local function parse_path(resource_full_path)
+    local resource_path_parts = ngx_re.split(resource_full_path, "#")
+    local resource_path = resource_path_parts[1] or resource_full_path
+    local resource_sub_path = resource_path_parts[2] or ""
+    return resource_path, resource_sub_path
+end
 
 local function fetch_latest_conf(resource_path)
+    -- if resource path contains json path, extract out the prefix
+    -- for eg: extracts /routes/1 from /routes/1#plugins.abc
+    resource_path = parse_path(resource_path)
     local resource_type, id
     -- Handle both formats:
     -- 1. /<etcd-prefix>/<resource_type>/<id>
@@ -121,7 +132,7 @@ local function create_checker(up_conf)
         name = get_healthchecker_name(up_conf),
         shm_name = healthcheck_shdict_name,
         checks = up_conf.checks,
-        events_module = events:get_healthcheck_events_modele(),
+        events_module = events:get_healthcheck_events_module(),
     })
 
     if not checker then
@@ -206,6 +217,15 @@ function _M.upstream_version(index, nodes_ver)
 end
 
 
+local function get_plugin_name(path)
+    -- Extract JSON path (after '#') or use full path
+    local json_path = path:match("#(.+)$") or path
+    -- Match plugin name in the JSON path segment
+    return json_path:match("^plugins%['([^']+)'%]")
+        or json_path:match('^plugins%["([^"]+)"%]')
+        or json_path:match("^plugins%.([^%.]+)")
+end
+
 local function timer_create_checker()
     if core.table.nkeys(waiting_pool) == 0 then
         return
@@ -224,7 +244,21 @@ local function timer_create_checker()
             if not res_conf then
                 goto continue
             end
-            local upstream = res_conf.value.upstream or res_conf.value
+            local upstream
+            local plugin_name = get_plugin_name(resource_path)
+            if plugin_name and plugin_name ~= "" then
+                local _, sub_path = parse_path(resource_path)
+                local json_path = "$." .. sub_path
+                --- the users of the API pass the jsonpath(in resourcepath) to
+                --- upstream_constructor_config which is passed to the
+                --- callback construct_upstream to create an upstream dynamically
+                local upstream_constructor_config = jp.value(res_conf.value, json_path)
+                local plugin = require("apisix.plugins." .. plugin_name)
+                upstream = plugin.construct_upstream(upstream_constructor_config)
+                upstream.resource_key = resource_path
+            else
+                upstream = res_conf.value.upstream or res_conf.value
+            end
             local new_version = _M.upstream_version(res_conf.modifiedIndex, upstream._nodes_ver)
             core.log.info("checking waiting pool for resource: ", resource_path,
                     " current version: ", new_version, " requested version: ", resource_ver)
