@@ -19,6 +19,7 @@ local table = require("apisix.core.table")
 local core = require("apisix.core")
 local string_sub = string.sub
 local config_util = require("apisix.core.config_util")
+local require = require
 
 local _M = {}
 local function remove_etcd_prefix(key)
