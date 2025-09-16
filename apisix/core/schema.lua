@@ -24,6 +24,7 @@ local lrucache = require("apisix.core.lrucache")
 local schema_def = require("apisix.schema_def")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
 local pcall = pcall
+local error = error
 
 local _M = {
     version = 0.3,
