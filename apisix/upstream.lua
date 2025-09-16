@@ -19,6 +19,7 @@ local core = require("apisix.core")
 local discovery = require("apisix.discovery.init").discovery
 local upstream_util = require("apisix.utils.upstream")
 local apisix_ssl = require("apisix.ssl")
+local resource = require("apisix.resource")
 local error = error
 local tostring = tostring
 local ipairs = ipairs
@@ -191,11 +192,13 @@ function _M.set_by_route(route, api_ctx)
 
         local same = upstream_util.compare_upstream_node(up_conf, new_nodes)
         if not same then
-            if not up_conf._nodes_ver then
-                up_conf._nodes_ver = 0
+            local nodes_ver = resource.get_nodes_ver(up_conf.resource_key)
+            if not nodes_ver then
+                nodes_ver = 0
             end
-            up_conf._nodes_ver = up_conf._nodes_ver + 1
-
+            nodes_ver = nodes_ver + 1
+            up_conf._nodes_ver = nodes_ver
+            resource.set_nodes_ver_and_nodes(up_conf.resource_key, nodes_ver, new_nodes)
             local pass, err = core.schema.check(core.schema.discovery_nodes, new_nodes)
             if not pass then
                 return HTTP_CODE_UPSTREAM_UNAVAILABLE, "invalid nodes format: " .. err
@@ -243,8 +246,9 @@ function _M.set_by_route(route, api_ctx)
                 ngx_var.upstream_sni = sni
             end
         end
-        local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version,
-                                                                      up_conf._nodes_ver)
+        local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+        local resource_version = upstream_util.version(up_conf.resource_version,
+                                                                      node_ver)
         local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
         api_ctx.up_checker = checker
         return
@@ -256,8 +260,9 @@ function _M.set_by_route(route, api_ctx)
     if not ok then
         return 503, err
     end
-    local resource_version = healthcheck_manager.upstream_version(up_conf.resource_version,
-                                                                  up_conf._nodes_ver )
+    local node_ver = resource.get_nodes_ver(up_conf.resource_key)
+    local resource_version = upstream_util.version(up_conf.resource_version,
+                                                                  node_ver )
     local checker = healthcheck_manager.fetch_checker(up_conf.resource_key, resource_version)
     api_ctx.up_checker = checker
     local scheme = up_conf.scheme
@@ -487,6 +492,9 @@ local function filter_upstream(value, parent)
         end
         value.nodes = new_nodes
     end
+    if parent.has_domain then
+        value.dns_nodes = value.nodes
+    end
 end
 _M.filter_upstream = filter_upstream
 
@@ -539,7 +547,7 @@ function _M.get_by_id(up_id)
     end
 
     core.log.info("parsed upstream: ", core.json.delay_encode(upstream, true))
-    return upstream.dns_value or upstream.value
+    return upstream.value
 end
 
 
