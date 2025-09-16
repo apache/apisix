@@ -590,6 +590,7 @@ end
 local function handle_x_forwarded_headers(api_ctx)
     local addr_is_trusted = trusted_addresses_util.is_trusted(api_ctx.var.realip_remote_addr)
 
+    -- Only untrusted values need to be overwritten or cleared.
     if not addr_is_trusted then
         -- store the original x-forwarded-* headers
         -- to allow future use by other plugins or processes
@@ -598,25 +599,49 @@ local function handle_x_forwarded_headers(api_ctx)
         api_ctx.var.original_x_forwarded_port = api_ctx.var.http_x_forwarded_port
         api_ctx.var.original_x_forwarded_for = api_ctx.var.http_x_forwarded_for
 
+        -- trusted ones
+        -- ref: ngx_tpl.lua#L831-L840
+        --
+        -- these values are observed directly by APISIX and cannot be forged,
+        -- making them highly credible.
         local proto = api_ctx.var.scheme
         local host = api_ctx.var.host
         local port = api_ctx.var.server_port
 
+        -- override the x-forwarded-* headers to the trusted ones.
+        -- make sure that the correct values ​​are obtained
+        -- in the subsequent stages using `core.request.header`.
+        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
+        core.request.set_header(api_ctx, "X-Forwarded-Host", host)
+        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
+        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`.
+        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
+
+        -- update the cached value in http_x_forwarded_* to the trusted ones.
+        -- make sure that the correct values ​​are obtained
+        -- in the subsequent stages using `var.http_x_forwarded_*`.
         api_ctx.var.http_x_forwarded_proto = proto
         api_ctx.var.http_x_forwarded_host = host
         api_ctx.var.http_x_forwarded_port = port
         api_ctx.var.http_x_forwarded_for = nil
-
-        -- override the x-forwarded-* headers to the trusted ones
-        core.request.set_header(api_ctx, "X-Forwarded-Proto", proto)
-        core.request.set_header(api_ctx, "X-Forwarded-Host", host)
-        core.request.set_header(api_ctx, "X-Forwarded-Port", port)
-        -- later processed in ngx_tpl by `$proxy_add_x_forwarded_for`
-        core.request.set_header(api_ctx, "X-Forwarded-For", nil)
     end
 end
 
 
+-- in ngx_tpl.lua#L831-L840,
+-- there is such code: `proxy_set_header X-Forwarded-XXX $var_x_forwarded_xxx;`
+-- that is, set the `X-Forwarded-XXX` header through `var_x_forwarded_xxx`.
+--
+-- therefore, it is necessary to set the trusted `http_x_forwarded_xxx` to `var_x_forwarded_xxx`.
+-- So that the `X-Forwarded-XXX` header is updated to a trusted value.
+--
+-- currently, only following headers are updated through these variables:
+-- - X-Forwarded-Proto
+-- - X-Forwarded-Port
+-- - X-Forwarded-Host
+--
+-- the `X-Forwarded-For` header is not updated through these variables.
+-- because it is set by the `proxy_add_x_forwarded_for` directive.
 local function set_upstream_x_forwarded_headers(api_ctx)
     local proto = api_ctx.var.http_x_forwarded_proto
     if proto then
