@@ -79,6 +79,12 @@ local _M = {
     },
     events = {
       module = "lua-resty-events"
+    },
+    lru = {
+      secret = {
+        ttl = 300,
+        count = 512
+      }
     }
   },
   nginx_config = {
