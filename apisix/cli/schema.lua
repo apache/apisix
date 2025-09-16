@@ -19,8 +19,7 @@ local jsonschema = require("jsonschema")
 local pairs = pairs
 local pcall = pcall
 local require = require
-local table_insert = table.insert
-local table_concat = table.concat
+local schema_def = require("apisix.schema_def")
 
 
 local _M = {}
@@ -66,24 +65,6 @@ local etcd_schema = {
         },
     },
     required = {"prefix", "host"}
-}
-
--- copy from apisix/schema_def.lua
-local ipv4_seg = "([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])"
-local ipv4_def_buf = {}
-for i = 1, 4 do
-    table_insert(ipv4_def_buf, ipv4_seg)
-end
-local ipv4_def = table_concat(ipv4_def_buf, [[\.]])
--- There is false negative for ipv6/cidr. For instance, `:/8` will be valid.
--- It is fine as the correct regex will be too complex.
-local ipv6_def = "([a-fA-F0-9]{0,4}:){1,8}(:[a-fA-F0-9]{0,4}){0,8}"
-                 .. "([a-fA-F0-9]{0,4})?"
-local ip_def = {
-    {title = "IPv4", type = "string", format = "ipv4"},
-    {title = "IPv4/CIDR", type = "string", pattern = "^" .. ipv4_def .. "/([12]?[0-9]|3[0-2])$"},
-    {title = "IPv6", type = "string", format = "ipv6"},
-    {title = "IPv6/CIDR", type = "string", pattern = "^" .. ipv6_def .. "/[0-9]{1,3}$"},
 }
 
 local config_schema = {
@@ -283,7 +264,7 @@ local config_schema = {
                     type = "array",
                     minItems = 1,
                     items = {
-                        anyOf = ip_def,
+                        anyOf = schema_def.ip_def,
                     },
                     uniqueItems = true
                 },

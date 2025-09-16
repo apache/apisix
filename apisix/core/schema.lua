@@ -21,6 +21,7 @@
 
 local jsonschema = require('jsonschema')
 local lrucache = require("apisix.core.lrucache")
+local schema_def = require("apisix.schema_def")
 local cached_validator = lrucache.new({count = 1000, ttl = 0})
 local pcall = pcall
 
@@ -67,5 +68,10 @@ function _M.check(schema, json)
 end
 
 _M.valid = get_validator
+
+setmetatable(_M, {
+    __index = schema_def,
+    __newindex = function() error("no modification allowed") end,
+})
 
 return _M
