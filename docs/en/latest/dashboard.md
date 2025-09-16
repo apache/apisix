@@ -139,7 +139,7 @@ Future Apache APISIX Dashboard will focus on:
 
 For more planning information, please see: [Dashboard Roadmap](https://github.com/apache/apisix-dashboard/issues/2981)
 
-### Release Model
+### Release Cycles
 
 The project no longer releases independently and has deprecated the release and tag versioning approach.
 
