@@ -139,7 +139,7 @@ Apache APISIX Dashboard 经历了多个版本的演进：
 
 更多规划信息请查看：[Dashboard 路线图](https://github.com/apache/apisix-dashboard/issues/2981)
 
-### 发布模式
+### 发布周期
 
 项目不再独立发布，且已弃用 release 和 tag 的版本标记方式。
 
@@ -155,4 +155,4 @@ Apache APISIX Dashboard 3.0.1 是在重构前，使用旧发布模式的最后�
 
 ### 贡献指南
 
-请阅读 [Apache APISIX Dashboard README](https://github.com/apache/apisix-dashboard/blob/master/README.md)
+请阅读 [Apache APISIX Dashboard README](https://github.com/apache/apisix-dashboard/blob/master/README.md)。

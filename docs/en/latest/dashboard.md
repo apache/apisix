@@ -155,4 +155,4 @@ If you are a new user of Apache APISIX or Apache APISIX Dashboard, we strongly r
 
 ### Contributing Guide
 
-For details, please read the [Apache APISIX Dashboard README](https://github.com/apache/apisix-dashboard/blob/master/README.md)
+For details, please read the [Apache APISIX Dashboard README](https://github.com/apache/apisix-dashboard/blob/master/README.md).
