@@ -1,5 +1,6 @@
 ---
 title: Apache APISIX Dashboard
+id: dashboard
 ---
 
 <!--
