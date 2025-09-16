@@ -99,7 +99,7 @@ Restart Apache APISIX after modifying the configuration for changes to take effe
 
 #### Using in Dashboard
 
-Access the Dashboard, for example at `http://127.0.0.1:9180/ui`.
+Access the Dashboard, for example at `http://127.0.0.1:9180/ui/`.
 
 When the Admin API Key is not configured, the settings modal will pop up:
 
