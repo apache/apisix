@@ -145,6 +145,11 @@ apisix:
 #   - 127.0.0.1                   # passed in requests from the IP/CIDR in the list.
 #   - 172.18.0.0/16               # CAUTION: When not configured or the request from an untrusted address,
                                   # APISIX will override `X-Forwarded-*` headers with trusted values.
+  # fine tune the parameters of LRU cache for some features like secret
+  lru:
+    secret:
+      ttl: 300 # seconds
+      count: 512
 nginx_config:                     # Config for render the template to generate nginx.conf
   # user: root                    # Set the execution user of the worker process. This is only
                                   # effective if the master process runs with super-user privileges.
