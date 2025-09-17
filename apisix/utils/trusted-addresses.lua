@@ -16,7 +16,6 @@
 --
 local require       = require
 local core          = require("apisix.core")
-local ipairs        = ipairs
 
 local trusted_addresses_matcher
 
