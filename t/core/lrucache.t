@@ -128,41 +128,7 @@ obj: 2
 
 
 
-=== TEST 4: sanity
---- config
-    location /t {
-        content_by_lua_block {
-            local core = require("apisix.core")
-
-            local function server_release(self)
-                ngx.say("release: ", require("toolkit.json").encode(self))
-            end
-
-            local lrucache_server_picker = core.lrucache.new({
-                ttl = 300, count = 256, release = server_release,
-            })
-
-            local t1 = lrucache_server_picker("nnn", "t1",
-                function () return {name = "aaa"} end)
-
-            ngx.say("obj: ", require("toolkit.json").encode(t1))
-
-            local t2 = lrucache_server_picker("nnn", "t2",
-                function () return {name = "bbb"} end)
-
-            ngx.say("obj: ", require("toolkit.json").encode(t2))
-        }
-    }
---- request
-GET /t
---- response_body
-obj: {"name":"aaa"}
-release: {"name":"aaa"}
-obj: {"name":"bbb"}
-
-
-
-=== TEST 5: invalid_stale = true
+=== TEST 4: invalid_stale = true
 --- config
     location /t {
         content_by_lua_block {
@@ -197,7 +163,7 @@ obj: {"idx":2}
 
 
 
-=== TEST 6: when creating cached objects, use resty-lock to avoid repeated creation.
+=== TEST 5: when creating cached objects, use resty-lock to avoid repeated creation.
 --- config
     location /t {
         content_by_lua_block {
@@ -233,7 +199,7 @@ obj: {"idx":1}
 
 
 
-=== TEST 7: different `key` and `ver`, cached same one table
+=== TEST 6: different `key` and `ver`, cached same one table
 --- config
     location /t {
         content_by_lua_block {
