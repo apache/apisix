@@ -78,6 +78,9 @@ Using opa host with no TLS is a security risk
                 post_logout_redirect_uri = "http://d.com",
                 proxy_opts = {
                     http_proxy = "http://e.com"
+                },
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                 }
             })
             if not ok then
@@ -113,6 +116,9 @@ Using openid-connect proxy_opts.http_proxy with no TLS is a security risk
                 post_logout_redirect_uri = "https://d.com",
                 proxy_opts = {
                     http_proxy = "https://e.com"
+                },
+                session = {
+                    secret = "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
                 }
             })
 

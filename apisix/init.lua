@@ -45,6 +45,7 @@ local xrpc            = require("apisix.stream.xrpc")
 local ctxdump         = require("resty.ctxdump")
 local debug           = require("apisix.debug")
 local pubsub_kafka    = require("apisix.pubsub.kafka")
+local resource        = require("apisix.resource")
 local ngx             = ngx
 local get_method      = ngx.req.get_method
 local ngx_exit        = ngx.exit
@@ -115,6 +116,8 @@ function _M.http_init_worker()
     core.log.info("random test in [1, 10000]: ", math.random(1, 10000))
 
     require("apisix.events").init_worker()
+
+    core.lrucache.init_worker()
 
     local discovery = require("apisix.discovery.init").discovery
     if discovery and discovery.init_worker then
@@ -238,29 +241,28 @@ local function fetch_ctx()
     return ctx
 end
 
-
 local function parse_domain_in_route(route)
-    local nodes = route.value.upstream.nodes
+    local nodes = route.value.upstream.dns_nodes
     local new_nodes, err = upstream_util.parse_domain_for_nodes(nodes)
     if not new_nodes then
         return nil, err
     end
 
-    local up_conf = route.dns_value and route.dns_value.upstream
+    local up_conf = route.value.upstream
     local ok = upstream_util.compare_upstream_node(up_conf, new_nodes)
     if ok then
         return route
     end
 
-    -- don't modify the modifiedIndex to avoid plugin cache miss because of DNS resolve result
-    -- has changed
-
-    route.dns_value = core.table.deepcopy(route.value)
-    route.dns_value.upstream.nodes = new_nodes
-    if not route.dns_value._nodes_ver then
-        route.dns_value._nodes_ver = 0
+    local nodes_ver = resource.get_nodes_ver(route.value.upstream.resource_key)
+    if not nodes_ver then
+        nodes_ver = 0
     end
-    route.dns_value._nodes_ver = route.dns_value._nodes_ver + 1
+    nodes_ver = nodes_ver + 1
+    route.value._nodes_ver = nodes_ver
+    route.value.upstream.nodes = new_nodes
+    resource.set_nodes_ver_and_nodes(route.value.upstream.resource_key,
+                                                    nodes_ver, new_nodes)
     core.log.info("parse route which contain domain: ",
                   core.json.delay_encode(route, true))
     return route
@@ -526,9 +528,7 @@ function _M.handle_upstream(api_ctx, route, enable_websocket)
 
         local route_val = route.value
 
-        api_ctx.matched_upstream = (route.dns_value and
-                                    route.dns_value.upstream)
-                                   or route_val.upstream
+        api_ctx.matched_upstream = route_val.upstream
     end
 
     if api_ctx.matched_upstream and api_ctx.matched_upstream.tls and
@@ -1090,6 +1090,8 @@ function _M.stream_init_worker()
     -- for testing only
     core.log.info("random stream test in [1, 10000]: ", math.random(1, 10000))
 
+    core.lrucache.init_worker()
+
     if core.config.init_worker then
         local ok, err = core.config.init_worker()
         if not ok then
@@ -1197,9 +1199,7 @@ function _M.stream_preread_phase()
         end
 
         local route_val = matched_route.value
-        api_ctx.matched_upstream = (matched_route.dns_value and
-                                    matched_route.dns_value.upstream)
-                                   or route_val.upstream
+        api_ctx.matched_upstream = route_val.upstream
     end
 
     local plugins = core.tablepool.fetch("plugins", 32, 0)

@@ -72,6 +72,9 @@ __DATA__
                                 "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
                                 "ssl_verify": false,
                                 "bearer_only" : false,
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                },
                                 "timeout": 10,
                                 "introspection_endpoint_auth_method": "client_secret_post",
                                 "introspection_endpoint": "http://127.0.0.1:8080/realms/University/protocol/openid-connect/token/introspect",
@@ -164,7 +167,10 @@ hello world
                                 "client_secret": "d1ec69e9-55d2-4109-a3ea-befa071579d5",
                                 "redirect_uri": "http://127.0.0.1:]] .. ngx.var.server_port .. [[/authenticated",
                                 "ssl_verify": false,
-                                "unauth_action": "deny"
+                                "unauth_action": "deny",
+                                "session": {
+                                    "secret": "jwcE5v3pM9VhqLxmxFOH9uZaLo8u7KQK"
+                                }
                             }
                         },
                         "upstream": {
