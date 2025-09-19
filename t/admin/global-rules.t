@@ -127,7 +127,6 @@ passed
                                 "plugins": {
                                     "limit-count": {
                                     "time_window": 60,
-                                    "policy": "local",
                                     "count": 2,
                                     "key": "remote_addr",
                                     "rejected_code": 503
@@ -403,7 +402,7 @@ passed
         }
     }
 --- response_body
-{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}
 --- request
 GET /t
 
@@ -439,7 +438,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}
 --- request
 GET /t
 
@@ -474,7 +473,7 @@ GET /t
         }
     }
 --- response_body
-{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":false}}}}
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/"}}}}
 --- request
 GET /t
 
@@ -502,5 +501,42 @@ GET /t
     }
 --- response_body
 {"deleted":"1","key":"/apisix/global_rules/1"}
+--- request
+GET /t
+
+
+
+=== TEST 15: not unwanted data, PUT with use_real_request_uri_unsafe
+--- config
+    location /t {
+        content_by_lua_block {
+            local json = require("toolkit.json")
+            local t = require("lib.test_admin").test
+            local code, message, res = t('/apisix/admin/global_rules/1',
+                 ngx.HTTP_PUT,
+                [[{
+                    "plugins": {
+                        "proxy-rewrite": {
+                            "uri": "/",
+                            "use_real_request_uri_unsafe": true
+                        }
+                    }
+                }]]
+                )
+
+            if code >= 300 then
+                ngx.status = code
+                ngx.say(message)
+                return
+            end
+
+            res = json.decode(res)
+            res.value.create_time = nil
+            res.value.update_time = nil
+            ngx.say(json.encode(res))
+        }
+    }
+--- response_body
+{"key":"/apisix/global_rules/1","value":{"id":"1","plugins":{"proxy-rewrite":{"uri":"/","use_real_request_uri_unsafe":true}}}}
 --- request
 GET /t
