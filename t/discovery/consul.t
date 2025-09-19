@@ -781,3 +781,71 @@ location /sleep {
     qr//
 ]
 --- ignore_error_log
+
+
+
+=== TEST 16: test metadata_match with consul discovery
+--- yaml_config eval: $::yaml_config
+--- apisix_yaml
+routes:
+  -
+    uri: /*
+    upstream:
+      service_name: service-a
+      type: roundrobin
+      discovery_type: consul
+      discovery_args:
+        metadata_match:
+          version:
+            - v2
+            - v3
+#END
+--- config
+location /v1/agent {
+    proxy_pass http://127.0.0.1:8500;
+}
+location /sleep {
+    content_by_lua_block {
+        local args = ngx.req.get_uri_args()
+        local sec = args.sec or "2"
+        ngx.sleep(tonumber(sec))
+        ngx.say("ok")
+    }
+}
+--- timeout: 5
+--- pipelined_requests eval
+[
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a1\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a2\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30512,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v2\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a3\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30513,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v3\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service-a4\",\"Name\":\"service-a\",\"Address\":\"127.0.0.1\",\"Port\":30514,\"Meta\":{\"service_b_version\":\"4.1\",\"version\":\"v4\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep",
+
+    "GET /hello?run1",
+    "GET /hello?run2",
+    "GET /hello?run3",
+
+    "PUT /v1/agent/service/deregister/service-a1",
+    "PUT /v1/agent/service/deregister/service-a2",
+    "PUT /v1/agent/service/deregister/service-a3",
+    "PUT /v1/agent/service/deregister/service-a4",
+]
+--- response_body_like eval
+[
+    qr//,
+    qr//,
+    qr//,
+    qr//,
+    qr/ok\n/,
+
+    qr/[2-3]/,
+    qr/[2-3]/,
+    qr/[2-3]/,
+
+    qr//,
+    qr//,
+    qr//,
+    qr//
+]
+--- no_error_log
+[error]
