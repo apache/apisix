@@ -1029,5 +1029,5 @@ passed
 --- no_error_log
 failed to get health check target status
 --- error_log
-try to release checker
+releasing existing checker
 --- timeout: 5

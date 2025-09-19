@@ -287,12 +287,9 @@ local function get_instance_conf(instances, name)
 end
 
 
-local inspect = require("inspect")
 function _M.construct_upstream(instance)
     local upstream = {}
-    -- resolve_endpoint(instance)
     local node = instance._dns_value
-    core.log.warn("INSTANCE FROM NEW:::: ", inspect(instance))
     if not node then
         return nil, "failed to resolve endpoint for instance: " .. instance.name
     end
@@ -322,9 +319,7 @@ local function pick_target(ctx, conf, ups_tab)
     if not res_conf then
         return nil, nil, "failed to fetch the parent config"
     end
-    core.log.warn("res_conf", inspect(res_conf))
     local instances = res_conf.value.plugins[plugin_name].instances
-    core.log.warn("instances:::", inspect(instances))
     for i, instance in ipairs(conf.instances) do
         if instance.checks then
             resolve_endpoint(instance)
@@ -335,7 +330,6 @@ local function pick_target(ctx, conf, ups_tab)
             if instance._nodes_ver then
                 resource_version = resource_version .. instance._nodes_ver
             end
-            core.log.warn("instance:::", inspect(instance))
             instances[i]._dns_value = instance._dns_value
             instances[i]._nodes_ver = instance._nodes_ver
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
