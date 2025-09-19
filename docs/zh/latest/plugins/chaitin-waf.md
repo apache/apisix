@@ -90,6 +90,10 @@ description: chaitin-waf 插件与长亭雷池 WAF 集成，以检测和阻止�
 继续操作之前，请确保您已安装 [长亭雷池 WAF](https://docs.waf.chaitin.com/en/GetStarted/Deploy)。
 
 :::note
+只有发送自 `apisix.trusted_addresses` 配置（支持 IP 和 CIDR）地址的 `X-Forwarded-*` 头才会被信任，并传递给插件或上游。如果未配置 `apisix.trusted_addresses` 或 ip 不在配置地址范围内的，`X-Forwarded-*` 头将全部被可信值覆盖。
+:::
+
+:::note
 
 您可以这样从 `config.yaml` 中获取 `admin_key` 并存入环境变量：
 
