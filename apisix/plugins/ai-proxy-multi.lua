@@ -292,7 +292,7 @@ function _M.construct_upstream(instance)
     local upstream = {}
     -- resolve_endpoint(instance)
     local node = instance._dns_value
-    core.log.warn("NODE:::: ", inspect(node))
+    core.log.warn("INSTANCE FROM NEW:::: ", inspect(instance))
     if not node then
         return nil, "failed to resolve endpoint for instance: " .. instance.name
     end
@@ -337,6 +337,7 @@ local function pick_target(ctx, conf, ups_tab)
             end
             core.log.warn("instance:::", inspect(instance))
             instances[i]._dns_value = instance._dns_value
+            instances[i]._nodes_ver = instance._nodes_ver
             local checker = healthcheck_manager.fetch_checker(resource_path, resource_version)
             checkers = checkers or {}
             checkers[instance.name] = checker
