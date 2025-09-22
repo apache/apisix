@@ -14,11 +14,7 @@
 -- See the License for the specific language governing permissions and
 -- limitations under the License.
 --
-local math              = require "math"
-local abs               = math.abs
-local max               = math.max
 local ngx_now           = ngx.now
-local ngx_null          = ngx.null
 local tonumber          = tonumber
 local core              = require("apisix.core")
 
