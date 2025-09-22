@@ -610,14 +610,19 @@ qr/property \"rate\" validation failed: expected 0 to be greater than 0/
 --- config
     location /t {
         content_by_lua_block {
-            local redis_cluster = require "resty.rediscluster"
-            local red_c = redis_cluster:new({
-                name = "test",
-                serv_list = {
-                    { ip = "127.0.0.1", port = 5000 },
-                    { ip = "127.0.0.1", port = 5002 }
+            local redis_cluster = require("apisix.utils.rediscluster")
+            local conf = {
+                redis_cluster_name = "test",
+                redis_cluster_nodes = {
+                    "127.0.0.1:5000",
+                    "127.0.0.1:5002"
                 }
-            }, "plugin-limit-req-redis-cluster-slot-lock")
+            }
+            local red_c, err = redis_cluster.new(conf, "plugin-limit-req-redis-cluster-slot-lock")
+            if not red_c then
+                ngx.say("Failed to create Redis cluster client: ", err)
+                return
+            end
 
             -- Clean up any existing keys
             red_c:del("limit_req:{test_key}:state")
