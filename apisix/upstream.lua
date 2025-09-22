@@ -396,11 +396,6 @@ local function check_upstream_conf(in_dp, conf)
                                     .. "wrong ssl type"
             end
         end
-
-        -- encrypt the key in the admin
-        if conf.tls and conf.tls.client_key then
-            conf.tls.client_key = apisix_ssl.aes_encrypt_pkey(conf.tls.client_key)
-        end
     end
 
     if is_http then
@@ -446,6 +441,14 @@ end
 
 function _M.check_upstream_conf(conf)
     return check_upstream_conf(false, conf)
+end
+
+
+function _M.encrypt_conf(conf)
+    -- encrypt the key in the admin
+    if conf and conf.tls and conf.tls.client_key then
+        conf.tls.client_key = apisix_ssl.aes_encrypt_pkey(conf.tls.client_key)
+    end
 end
 
 

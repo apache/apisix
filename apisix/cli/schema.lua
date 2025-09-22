@@ -19,6 +19,7 @@ local jsonschema = require("jsonschema")
 local pairs = pairs
 local pcall = pcall
 local require = require
+local schema_def = require("apisix.schema_def")
 
 
 local _M = {}
@@ -258,6 +259,14 @@ local config_schema = {
                     type = "boolean",
                     default = false,
                     description = "a global switch to disable upstream health checks",
+                },
+                trusted_addresses = {
+                    type = "array",
+                    minItems = 1,
+                    items = {
+                        anyOf = schema_def.ip_def,
+                    },
+                    uniqueItems = true
                 },
             }
         },

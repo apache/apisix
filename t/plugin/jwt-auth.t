@@ -1001,25 +1001,20 @@ base64_secret required but the secret is not in base64 format
 --- config
     location /t {
         content_by_lua_block {
-            local t = require("lib.test_admin").test
-            local code, body, res = t('/apisix/admin/consumers',
-                ngx.HTTP_PUT,
-                [[{
-                    "username": "kerouac",
-                    "plugins": {
-                        "jwt-auth": {
-                            "key": "exp-not-set",
-                            "secret": "my-secret-key"
-                        }
-                    }
-                }]]
-            )
+            local core = require("apisix.core")
+            local plugin = require("apisix.plugins.jwt-auth")
+            local conf = {
+                key = "exp-not-set",
+                secret = "my-secret-key"
+            }
+            local ok, err = plugin.check_schema(conf, core.schema.TYPE_CONSUMER)
 
-            res = require("toolkit.json").decode(res)
-            assert(res.value.plugins["jwt-auth"].exp == 86400)
-
-            ngx.status = code
-            ngx.say(body)
+            if not ok then
+                ngx.say(err)
+            else
+                assert(conf.exp == 86400, "exp should be 86400")
+                ngx.say("passed")
+            end
         }
     }
 --- response_body

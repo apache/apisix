@@ -90,7 +90,10 @@ The examples below demonstrate how you can configure chaitin-waf Plugin for diff
 Before proceeding, make sure you have installed [Chaitin WAF (SafeLine)](https://docs.waf.chaitin.com/en/GetStarted/Deploy).
 
 :::note
+Only `X-Forwarded-*` headers sent from addresses in the `apisix.trusted_addresses` configuration (supports IP and CIDR) will be trusted and passed to plugins or upstream. If `apisix.trusted_addresses` is not configured or the IP is not within the configured address range, all `X-Forwarded-*` headers will be overridden with trusted values.
+:::
 
+:::note
 You can fetch the `admin_key` from `config.yaml` and save to an environment variable with the following command:
 
 ```bash
