@@ -25,6 +25,8 @@ local ngx          = ngx
 local ngx_time     = ngx.time
 local get_method   = ngx.req.get_method
 local shared_dict  = ngx.shared["standalone-config"]
+local timer_every  = ngx.timer.every
+local exiting      = ngx.worker.exiting
 local table_insert = table.insert
 local table_new    = require("table.new")
 local yaml         = require("lyaml")
@@ -32,8 +34,22 @@ local events       = require("apisix.events")
 local core         = require("apisix.core")
 local config_yaml  = require("apisix.core.config_yaml")
 local tbl_deepcopy = require("apisix.core.table").deepcopy
+local constants    = require("apisix.constants")
+
+-- combine all resources that using in http and stream substreams as one constant
+local CONF_VERSION_KEY_SUFFIX = "_conf_version"
+local ALL_RESOURCE_KEYS = {}
+for dir in pairs(constants.HTTP_ETCD_DIRECTORY) do
+    local key = str_sub(dir, 2)
+    ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
+end
+for dir in pairs(constants.STREAM_ETCD_DIRECTORY) do
+    local key = str_sub(dir, 2)
+    ALL_RESOURCE_KEYS[key] = key .. CONF_VERSION_KEY_SUFFIX
+end
 
 local EVENT_UPDATE = "standalone-api-configuration-update"
+local NOT_FOUND_ERR = "not found"
 -- do not use the HTTP standard Last-Modified header to prevent affecting
 -- the caching implementation in the client
 local METADATA_LAST_MODIFIED = "X-Last-Modified"
@@ -79,7 +95,7 @@ end
 local function get_config()
     local config = shared_dict:get("config")
     if not config then
-        return nil, "not found"
+        return nil, NOT_FOUND_ERR
     end
 
     local err
@@ -180,7 +196,7 @@ local function update(ctx)
 
     local config, err = get_config()
     if not config then
-        if err ~= "not found" then
+        if err ~= NOT_FOUND_ERR then
             core.log.error("failed to get config from shared dict: ", err)
             return core.response.exit(500, {
                 error_msg = "failed to get config from shared dict: " .. err
@@ -197,11 +213,9 @@ local function update(ctx)
 
     -- check input by jsonschema
     local apisix_yaml = {}
-    local created_objs = config_yaml.fetch_all_created_obj()
 
-    for key, obj in pairs(created_objs) do
-        local conf_version_key = obj.conf_version_key
-        local conf_version = config and config[conf_version_key] or obj.conf_version
+    for key, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
+        local conf_version = config and config[conf_version_key] or 0
         local items = req_body[key]
         local new_conf_version = req_body[conf_version_key]
         local resource = resources[key] or {}
@@ -273,16 +287,15 @@ local function get(ctx)
 
     local config, err = get_config()
     if not config then
-        if err ~= "not found" then
+        if err ~= NOT_FOUND_ERR then
             core.log.error("failed to get config from shared dict: ", err)
             return core.response.exit(500, {
                 error_msg = "failed to get config from shared dict: " .. err
             })
         end
         config = {}
-        local created_objs = config_yaml.fetch_all_created_obj()
-        for _, obj in pairs(created_objs) do
-            config[obj.conf_version_key] = obj.conf_version
+        for _, conf_version_key in pairs(ALL_RESOURCE_KEYS) do
+            config[conf_version_key] = 0
         end
     end
 
@@ -321,7 +334,7 @@ end
 local function head(ctx)
     local config, err = get_config()
     if not config then
-        if err ~= "not found" then
+        if err ~= NOT_FOUND_ERR then
             core.log.error("failed to get config from shared dict: ", err)
             return core.response.exit(500, {
                 error_msg = "failed to get config from shared dict: " .. err
@@ -354,6 +367,7 @@ do
         "proto",
         "global_rule",
         "route",
+        "stream_route",
         "service",
         "upstream",
         "consumer",
@@ -399,17 +413,14 @@ end
 
 
 function _M.init_worker()
-    local function update_config()
-        local config, err = shared_dict:get("config")
+    local function update_config(config)
         if not config then
-            core.log.error("failed to get config from shared dict: ", err)
-            return
-        end
-
-        config, err = core.json.decode(config)
-        if not config then
-            core.log.error("failed to decode json: ", err)
-            return
+            local err
+            config, err = get_config()
+            if not config then
+                core.log.error("failed to get config: ", err)
+                return
+            end
         end
 
         -- remove metadata key in-place
@@ -419,6 +430,26 @@ function _M.init_worker()
         config_yaml._update_config(config)
     end
     events:register(update_config, EVENT_UPDATE, EVENT_UPDATE)
+
+    -- due to the event module can not broadcast events between http and stream subsystems,
+    -- we need to poll the shared dict to keep the config in sync
+    local last_modified_per_worker
+    timer_every(1, function ()
+        if not exiting() then
+            local config, err = get_config()
+            if not config then
+                if err ~= NOT_FOUND_ERR then
+                    core.log.error("failed to get config: ", err)
+                end
+            else
+                local last_modified = config[METADATA_LAST_MODIFIED]
+                if last_modified_per_worker ~= last_modified then
+                    update_config(config)
+                    last_modified_per_worker = last_modified
+                end
+            end
+        end
+    end)
 
     patch_schema()
 end

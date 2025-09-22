@@ -1422,6 +1422,7 @@ Plugin Metadata resource request address: /apisix/admin/plugin_metadata/{plugin_
 
 | Method | Request URI                                 | Request Body | Description                                                     |
 | ------ | ------------------------------------------- | ------------ | --------------------------------------------------------------- |
+| GET    | /apisix/admin/plugin_metadata               | NULL         | Fetches a list of all Plugin metadata.                          |
 | GET    | /apisix/admin/plugin_metadata/{plugin_name} | NULL         | Fetches the metadata of the specified Plugin by `plugin_name`.  |
 | PUT    | /apisix/admin/plugin_metadata/{plugin_name} | {...}        | Creates metadata for the Plugin specified by the `plugin_name`. |
 | DELETE | /apisix/admin/plugin_metadata/{plugin_name} | NULL         | Removes metadata for the Plugin specified by the `plugin_name`. |

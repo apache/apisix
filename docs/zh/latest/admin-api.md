@@ -1424,6 +1424,7 @@ Plugin Config 资源请求地址：/apisix/admin/plugin_metadata/{plugin_name}
 
 | Method | 请求 URI                                    | 请求 body | 描述                      |
 | ------ | ------------------------------------------- | --------- | ------------------------- |
+| GET    | /apisix/admin/plugin_metadata               | 无        | 获取所有插件元数据列表。    |
 | GET    | /apisix/admin/plugin_metadata/{plugin_name} | 无        | 获取资源。                  |
 | PUT    | /apisix/admin/plugin_metadata/{plugin_name} | {...}     | 根据 `plugin name` 创建资源。 |
 | DELETE | /apisix/admin/plugin_metadata/{plugin_name} | 无        | 删除资源。                  |
