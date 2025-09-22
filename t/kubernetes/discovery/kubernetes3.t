@@ -258,9 +258,13 @@ __DATA__
 POST /operators
 [
     {
-        "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "epslice",
+        "name": "epslice-ab1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "epslice"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -301,7 +305,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-b",
-        "name": "epslice",
+        "name": "epslice-ab1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "epslice"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -342,7 +351,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-c",
-        "name": "epslice",
+        "name": "epslice-ab1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "epslice"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
