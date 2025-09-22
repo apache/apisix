@@ -492,11 +492,7 @@ local upstream_schema = {
                     description = "metadata for filtering service instances",
                     type = "object",
                     additionalProperties = {
-                        type = "array",
-                        items = {
-                            type = "string"
-                        },
-                        uniqueItems = true
+                        type = "string"
                     }
                 },
             },

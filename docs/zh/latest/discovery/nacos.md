@@ -132,7 +132,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/stream_routes/1 -H "X-API-KEY: $admin_
 | ------------ | ------ | ----------- | ------- | ----- | ------------------------------------------------------------ |
 | namespace_id | string | 可选    | public     |       | 服务所在的命名空间 |
 | group_name   | string | 可选    | DEFAULT_GROUP       |       | 服务所在的组 |
-| metadata     | object | 可选    |         |       | 使用包含匹配方式根据元数据过滤服务实例 |
+| metadata     | object | 可选    |         |       | 使用字符串等值匹配根据元数据过滤服务实例 |
 
 #### 指定命名空间
 
@@ -285,9 +285,9 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/4 -H "X-API-KEY: $admin_key" -X
 
 #### 使用元数据过滤服务实例
 
-APISIX 支持根据元数据过滤服务实例。当路由配置了元数据条件时，只有服务实例的元数据包含路由配置中指定的所有键值对，该服务实例才会被选中。路由配置中的元数据值为数组，如果服务实例的元数据值等于数组中的任意一个值，则匹配成功。
+APISIX 支持根据元数据过滤服务实例。当路由配置了元数据条件时，只有服务实例的元数据包含路由配置中指定的所有键值对，该服务实例才会被选中。路由配置中的元数据值必须是字符串，只有当服务实例的元数据值与配置字符串完全相等时才视为匹配。
 
-举例：如果服务实例的元数据是 `{lane: "a", env: "prod", version: "1.0"}`，那么它能匹配配置了元数据 `{lane: ["a"]}` 或 `{lane: ["a"], env: ["prod"]}` 的路由，但不能匹配配置了 `{lane: ["b"]}` 或 `{lane: ["a"], region: ["us"]}` 的路由。
+举例：如果服务实例的元数据是 `{lane: "a", env: "prod", version: "1.0"}`，那么它能匹配配置了元数据 `{lane: "a"}` 或 `{lane: "a", env: "prod"}` 的路由，但不能匹配配置了 `{lane: "b"}` 或 `{lane: "a", region: "us"}` 的路由。
 
 使用元数据过滤的路由配置示例：
 
@@ -301,7 +301,7 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/5 -H "X-API-KEY: $admin_key" -X
         "discovery_type": "nacos",
         "discovery_args": {
           "metadata": {
-            "version": ["v1"]
+            "version": "v1"
           }
         }
     }
@@ -322,12 +322,12 @@ $ curl http://127.0.0.1:9180/apisix/admin/routes/6 -H "X-API-KEY: $admin_key" -X
         "discovery_type": "nacos",
         "discovery_args": {
           "metadata": {
-            "lane": ["a", "b"],
-            "env": ["prod"]
+            "lane": "a",
+            "env": "prod"
           }
         }
     }
 }'
 ```
 
-此路由只会将流量转发到元数据中包含 `env: "prod"` 且 `lane` 为 `"a"` 或 `"b"` 的服务实例。
+此路由只会将流量转发到元数据中包含 `env: "prod"` 且 `lane: "a"` 的服务实例。

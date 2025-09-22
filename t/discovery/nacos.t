@@ -1081,7 +1081,7 @@ routes:
       type: roundrobin
       discovery_args:
         metadata:
-          lane: ["a"]
+          lane: "a"
 #END
 --- pipelined_requests eval
 [
@@ -1172,7 +1172,7 @@ routes:
       type: roundrobin
       discovery_args:
         metadata:
-          lane: ["c"]
+          lane: "c"
 #END
 --- request
 GET /hello
@@ -1182,53 +1182,49 @@ no valid upstream node
 
 
 
-=== TEST 30: metadata filtering with multiple values - should match both servers (lane=a,b)
---- yaml_config eval: $::yaml_config
---- apisix_yaml
-routes:
-  -
-    uri: /hello
-    upstream:
-      service_name: APISIX-NACOS
-      discovery_type: nacos
-      type: roundrobin
-      discovery_args:
-        metadata:
-          lane: ["a", "b"]
-#END
+=== TEST 30: metadata filtering rejects array values
+--- extra_yaml_config
+discovery:
+  nacos:
+      host:
+        - "http://127.0.0.1:8858"
+      prefix: "/nacos/v1/"
+      fetch_interval: 1
+      weight: 1
+      timeout:
+        connect: 2000
+        send: 2000
+        read: 5000
 --- config
     location /t {
         content_by_lua_block {
-            local http = require("resty.http")
-            local uri = "http://127.0.0.1:" .. ngx.var.server_port
+            local t = require("lib.test_admin").test
 
-            -- Wait for 2 seconds for APISIX initialization
-            ngx.sleep(2)
-            local httpc = http.new()
+            local code, body = t('/apisix/admin/routes/30',
+                ngx.HTTP_PUT,
+                [[{
+                    "uri": "/hello-array",
+                    "upstream": {
+                        "service_name": "APISIX-NACOS",
+                        "discovery_type": "nacos",
+                        "type": "roundrobin",
+                        "discovery_args": {
+                            "metadata": {
+                                "lane": ["a"]
+                            }
+                        }
+                    }
+                }]]
+            )
 
-            local server1_count = 0
-            local server2_count = 0
-            for i = 1, 10 do
-                local res, err = httpc:request_uri(uri .. "/hello", {method = "GET"})
-                if res then
-                    local clean_body = res.body:gsub("%s+$", "")
-                    if clean_body == "server 1" then
-                        server1_count = server1_count + 1
-                    elseif clean_body == "server 2" then
-                        server2_count = server2_count + 1
-                    end
-                end
-                ngx.sleep(0.1)
+            if code >= 300 then
+                ngx.status = code
             end
-
-            if server1_count > 0 and server2_count > 0 then
-                ngx.say("PASS")
-            else
-                ngx.say("FAIL")
-            end
+            ngx.say(body)
         }
     }
 --- request
 GET /t
---- response_body
-PASS
+--- error_code: 400
+--- response_body_like eval
+qr/wrong type: expected string, got table/

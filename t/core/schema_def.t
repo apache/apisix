@@ -252,7 +252,7 @@ passed
             local test_cases = {
                 -- Valid cases
                 {
-                    name = "valid metadata with multiple string values",
+                    name = "valid metadata with string values",
                     should_pass = true,
                     upstream = {
                         service_name = "test-service",
@@ -262,9 +262,9 @@ passed
                             namespace_id = "test-ns",
                             group_name = "test-group",
                             metadata = {
-                                version = {"v1"},
-                                env = {"prod"},
-                                lane = {"a"},
+                                version = "v1",
+                                env = "prod",
+                                lane = "a",
                             }
                         }
                     }
@@ -284,7 +284,7 @@ passed
 
                 -- Invalid cases
                 {
-                    name = "invalid metadata with non-array or non-string values",
+                    name = "invalid metadata with non-string values",
                     should_pass = false,
                     upstream = {
                         service_name = "test-service",
@@ -292,18 +292,16 @@ passed
                         type = "roundrobin",
                         discovery_args = {
                             metadata = {
-                                version = 123,   -- should be array
-                                env = true,      -- should be array
-                                count = 456,     -- should be array
-                                config = { port = 8080 }, -- should be array of strings
-                                lane = {"a", 1} -- mixed types not allowed
+                                version = 123,
+                                env = true,
+                                config = { port = 8080 },
                             }
                         }
                     },
-                    expected_error_pattern = "discovery_args.*metadata"
+                    expected_error_pattern = "expected string"
                 },
                 {
-                    name = "invalid metadata with string instead of array",
+                    name = "invalid metadata with array value",
                     should_pass = false,
                     upstream = {
                         service_name = "test-service",
@@ -311,26 +309,11 @@ passed
                         type = "roundrobin",
                         discovery_args = {
                             metadata = {
-                                lane = "a"
+                                lane = {"a", "b"}
                             }
                         }
                     },
-                    expected_error_pattern = "metadata.*wrong type"
-                },
-                {
-                    name = "invalid metadata with duplicate values in array",
-                    should_pass = false,
-                    upstream = {
-                        service_name = "test-service",
-                        discovery_type = "nacos",
-                        type = "roundrobin",
-                        discovery_args = {
-                            metadata = {
-                                lane = {"a", "b", "a"}  -- duplicate "a" should fail uniqueItems validation
-                            }
-                        }
-                    },
-                    expected_error_pattern = "expected unique items"
+                    expected_error_pattern = "expected string"
                 },
             }
 
