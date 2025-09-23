@@ -174,8 +174,12 @@ local function get_consumer(key)
     if not consumers then
         return nil
     end
-    core.log.info("consumers: ", core.json.delay_encode(consumers))
-    return consumers[key]
+    local consumer = consumers[key]
+    local redacted_auth = core.utils.redact_encrypted(consumer.auth_conf, consumer_schema)
+    local redacted_consumer = core.table.deepcopy(consumer)
+    redacted_consumer.auth_conf = redacted_auth
+    core.log.info("consumer: ", core.json.delay_encode(redacted_consumer))
+    return consumer
 end
 
 
@@ -238,8 +242,6 @@ local function gen_token()
     if not consumer then
         return core.response.exit(404)
     end
-
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local iv = args.iv
     if not iv then

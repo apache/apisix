@@ -129,12 +129,13 @@ local _M = {
 
 
 function _M.check_schema(conf, schema_type)
-    core.log.info("input conf: ", core.json.delay_encode(conf))
-
     local ok, err
     if schema_type == core.schema.TYPE_CONSUMER then
+        local redacted = core.utils.redact_encrypted(conf, consumer_schema)
+        core.log.info("input conf: ", core.json.delay_encode(redacted))
         ok, err = core.schema.check(consumer_schema, conf)
     else
+        core.log.info("input conf: ", core.json.delay_encode(conf))
         return core.schema.check(schema, conf)
     end
 
@@ -272,7 +273,6 @@ local function find_consumer(conf, ctx)
         core.log.warn("failed to find consumer: ", err or "invalid user key")
         return nil, nil, "Invalid user key in JWT token"
     end
-    core.log.info("consumer: ", core.json.delay_encode(consumer))
 
     local auth_secret, err = get_auth_secret(consumer.auth_conf)
     if not auth_secret then
