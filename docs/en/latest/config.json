@@ -212,6 +212,7 @@
                 "plugins/splunk-hec-logging",
                 "plugins/file-logger",
                 "plugins/loggly",
+                "plugins/etcd-logger",
                 "plugins/elasticsearch-logger",
                 "plugins/tencent-cloud-cls",
                 "plugins/loki-logger",

@@ -568,3 +568,52 @@ Using loki-logger endpoint_addrs with no TLS is a security risk
 done
 --- no_error_log
 Using loki-logger endpoint_addrs with no TLS is a security risk
+
+
+
+=== TEST 21: elastic search logger with no TLS
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok, err
+            local plugin = require("apisix.plugins.elasticsearch-logger")
+                ok, err = plugin.check_schema({
+                    auth = { username = "user", password = "pass" },
+                    etcd = { urls = [ "http://127.0.0.1:2379" ] },
+                })
+                if err then
+                    ngx.say(err)
+                else
+                    ngx.say("passed")
+                end
+
+        }
+    }
+--- response_body_like
+passed
+--- error_log
+Using etcd-logger etcd.urls with no TLS is a security risk
+
+
+=== TEST 22: elastic search logger with TLS
+--- config
+    location /t {
+        content_by_lua_block {
+            local ok, err
+            local plugin = require("apisix.plugins.etcd-logger")
+                ok, err = plugin.check_schema({
+                    auth = { username = "user", password = "pass" },
+                    etcd = { urls = [ "http://127.0.0.1:2379" ] },
+                })
+                if err then
+                    ngx.say(err)
+                else
+                    ngx.say("passed")
+                end
+
+        }
+    }
+--- response_body_like
+passed
+--- no_error_log
+Using etcd-logger etcd.urls with no TLS is a security risk

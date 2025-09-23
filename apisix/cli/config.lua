@@ -260,6 +260,7 @@ local _M = {
     "public-api",
     "prometheus",
     "datadog",
+    "etcd-logger",
     "lago",
     "loki-logger",
     "elasticsearch-logger",

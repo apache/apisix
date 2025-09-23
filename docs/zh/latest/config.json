@@ -183,6 +183,7 @@
                 "plugins/file-logger",
                 "plugins/loggly",
                 "plugins/elasticsearch-logger",
+                "plugins/etcd-logger",
                 "plugins/tencent-cloud-cls",
                 "plugins/loki-logger"
               ]
