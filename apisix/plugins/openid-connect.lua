@@ -314,6 +314,7 @@ local schema = {
                 pattern = "^[^:]+$"
             }
         },
+        auth_accept_token_as_header_name = { type = "string", default = "Authorization" },
         required_scopes = {
             description = "List of scopes that are required to be granted to the access token",
             type = "array",
@@ -369,19 +370,12 @@ function _M.check_schema(conf)
     return true
 end
 
-local function get_bearer_access_token(ctx)
+local function get_bearer_access_token(ctx, conf)
     -- Get Authorization header, maybe.
-    local auth_header = core.request.header(ctx, "Authorization")
+    local auth_header = core.request.header(ctx, conf.auth_accept_token_as_header_name)
     if not auth_header then
-        -- No Authorization header, get X-Access-Token header, maybe.
-        local access_token_header = core.request.header(ctx, "X-Access-Token")
-        if not access_token_header then
-            -- No X-Access-Token header neither.
-            return false, nil, nil
-        end
-
-        -- Return extracted header value.
-        return true, access_token_header, nil
+        core.log.error("Authorization header not found.")
+        return false, nil, nil
     end
 
     -- Check format of Authorization header.
@@ -406,7 +400,7 @@ end
 
 local function introspect(ctx, conf)
     -- Extract token, maybe.
-    local has_token, token, err = get_bearer_access_token(ctx)
+    local has_token, token, err = get_bearer_access_token(ctx, conf)
 
     if err then
         return ngx.HTTP_BAD_REQUEST, err, nil, nil
