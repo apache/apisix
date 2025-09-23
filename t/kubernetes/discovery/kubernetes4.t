@@ -328,8 +328,8 @@ POST /operators
 ]
 --- more_headers
 Content-type: application/json
---- response_body_like
-.*"name":"default/kubernetes".*
+--- response_body
+DONE
 
 
 
