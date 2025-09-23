@@ -252,23 +252,6 @@ run_tests();
 
 __DATA__
 
-
-
---- request eval
-[
-    "GET /hello",
-    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
-    "GET /sleep?sec=5",
-    "GET /hello",
-]
---- response_body_like eval
-[
-    qr/missing consul services\n/,
-    qr//,
-    qr/ok\n/,
-    qr/server 1\n/
-]
-
 === TEST 1: endpointSlice1 update
 --- yaml_config eval: $::yaml_config
 --- request
@@ -347,7 +330,6 @@ qr{ 3 }
 
 
 
-
 === TEST 3: test single-k8s watching endpointSlices
 --- yaml_config eval: $::single_yaml_config
 --- request
@@ -359,7 +341,6 @@ GET /queries
 Content-type: application/json
 --- response_body eval
 qr{ 3 }
-
 
 
 
@@ -446,6 +427,7 @@ Content-type: application/json
 ]
 
 
+
 === TEST 5: endpointSlice2 create and delete for single-k8s mode
 --- yaml_config eval: $::single_yaml_config
 --- request eval
@@ -527,6 +509,7 @@ Content-type: application/json
     "DONE\n",
     "{ 3 }\n",
 ]
+
 
 
 === TEST 6: endpointSlice scale for multi-k8s mode
@@ -659,6 +642,7 @@ Content-type: application/json
     "DONE\n",
     "{ 3 }\n",
 ]
+
 
 
 === TEST 7: endpointSlice scale for single-k8s mode
