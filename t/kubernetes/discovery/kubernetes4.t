@@ -650,7 +650,7 @@ Content-type: application/json
 
 "GET /queries
 [
-  \"first/ns-a/service-a:p1\"
+  \"ns-a/service-a:p1\"
 ]",
 
 "POST /operators
@@ -714,7 +714,7 @@ Content-type: application/json
 
 "GET /queries
 [
-  \"first/ns-a/service-a:p1\"
+  \"ns-a/service-a:p1\"
 ]",
 
 ]
