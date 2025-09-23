@@ -178,7 +178,12 @@ function _M.rewrite(conf, ctx)
         end
     end
 
-    core.log.info("consumer: ", core.json.delay_encode(cur_consumer))
+    local redacted_auth = redact_encrypted(cur_consumer.auth_conf, consumer_schema)
+    local redacted_plugin = redact_encrypted(cur_consumer.plugins[plugin_name], consumer_schema)
+    local redacted_consumer = core.table.deepcopy(cur_consumer)
+    redacted_consumer.auth_conf = redacted_auth
+    redacted_consumer.plugins[plugin_name] = redacted_plugin
+    core.log.info("consumer: ", core.json.delay_encode(redacted_consumer))
 
     if conf.hide_credentials then
         core.request.set_header(ctx, "Authorization", nil)
