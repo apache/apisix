@@ -20,6 +20,7 @@ local core              = require("apisix.core")
 local priority_balancer = require("apisix.balancer.priority")
 local apisix_upstream   = require("apisix.upstream")
 local healthcheck_manager = require("apisix.healthcheck_manager")
+local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local ipairs            = ipairs
 local is_http           = ngx.config.subsystem == "http"
 local enable_keepalive = balancer.enable_keepalive and is_http
@@ -194,7 +195,20 @@ end
 -- 2. each time we need to retry upstream
 local function pick_server(route, ctx)
     core.log.info("route: ", core.json.delay_encode(route, true))
-    core.log.info("ctx: ", core.json.delay_encode(ctx, true))
+    local redacted_ctx = core.table.deepcopy(ctx)
+    for name, conf in pairs(ctx.var._ctx.consumer.plugins) do
+        local plugin = require("apisix.plugins."..name)
+        local schema
+        if plugin.type == "auth" then
+            schema = plugin.consumer_schema
+        else
+            schema = plugin.schema
+        end
+        redacted_ctx.var._ctx.consumer.plugins[name] = redact_encrypted(conf, schema)
+        local redacted_auth = redact_encrypted(redacted_ctx.var._ctx.consumer.auth_conf, schema)
+        redacted_ctx.var._ctx.consumer.auth_conf = redacted_auth
+    end
+    core.log.info("ctx: ", core.json.delay_encode(redacted_ctx, true))
     local up_conf = ctx.upstream_conf
 
     for _, node in ipairs(up_conf.nodes) do

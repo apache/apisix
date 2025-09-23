@@ -19,6 +19,7 @@ local http_route = require("apisix.http.route")
 local apisix_upstream = require("apisix.upstream")
 local core    = require("apisix.core")
 local set_plugins_meta_parent = require("apisix.plugin").set_plugins_meta_parent
+local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local str_lower = string.lower
 local ipairs  = ipairs
 
@@ -45,8 +46,18 @@ local function filter(route)
     end
 
     apisix_upstream.filter_upstream(route.value.upstream, route)
-
-    core.log.info("filter route: ", core.json.delay_encode(route, true))
+    local redacted_route = core.table.deepcopy(route)
+    for name, conf in pairs(redacted_route.value.plugins) do
+        local plugin = require("apisix.plugins."..name)
+        local schema
+        if plugin.type == "auth" then
+            schema = plugin.consumer_schema
+        else
+            schema = plugin.schema
+        end
+        redacted_route.value.plugins[name] = redact_encrypted(conf, schema)
+    end
+    core.log.info("filter route: ", core.json.delay_encode(redacted_route, true))
 end
 
 

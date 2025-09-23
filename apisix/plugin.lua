@@ -22,6 +22,7 @@ local wasm          = require("apisix.wasm")
 local expr          = require("resty.expr.v1")
 local apisix_ssl    = require("apisix.ssl")
 local re_split      = require("ngx.re").split
+local redact_encrypted = require("apisix.core.utils").redact_encrypted
 local ngx           = ngx
 local ngx_ok        = ngx.OK
 local ngx_print     = ngx.print
@@ -730,7 +731,15 @@ local function merge_consumer_route(route_conf, consumer_conf, consumer_group_co
         if new_route_conf.value.plugins[name] == nil then
             conf._from_consumer = true
         end
-        new_route_conf.value.plugins[name] = conf
+        local plugin = require("apisix.plugins."..name)
+        local schema
+        if plugin.type == "auth" then
+            schema = plugin.consumer_schema
+        else
+            schema = plugin.schema
+        end
+        local redacted_conf = redact_encrypted(conf, schema)
+        new_route_conf.value.plugins[name] = redacted_conf
     end
 
     core.log.info("merged conf : ", core.json.delay_encode(new_route_conf))
@@ -740,7 +749,21 @@ end
 
 function _M.merge_consumer_route(route_conf, consumer_conf, consumer_group_conf, api_ctx)
     core.log.info("route conf: ", core.json.delay_encode(route_conf))
-    core.log.info("consumer conf: ", core.json.delay_encode(consumer_conf))
+    local redacted_consumer = core.table.deepcopy(consumer_conf)
+    for name, conf in pairs(consumer_conf.plugins) do
+        local plugin = require("apisix.plugins."..name)
+        local schema
+        if plugin.type == "auth" then
+            schema = plugin.consumer_schema
+        else
+            schema = plugin.schema
+        end
+        local redacted_conf = redact_encrypted(conf, schema)
+        redacted_consumer.plugins[name] = redacted_conf
+        local redacted_auth_conf = redact_encrypted(consumer_conf.auth_conf, schema)
+        redacted_consumer.auth_conf = redacted_auth_conf
+    end
+    core.log.info("consumer conf: ", core.json.delay_encode(redacted_consumer))
     core.log.info("consumer group conf: ", core.json.delay_encode(consumer_group_conf))
 
     local flag = route_conf.value.id .. "#" .. route_conf.modifiedIndex
@@ -883,10 +906,18 @@ function _M.conf_version(conf)
     return conf._version
 end
 
-
+local inspect = require("inspect")
 local function check_single_plugin_schema(name, plugin_conf, schema_type, skip_disabled_plugin)
+    local plugin = require("apisix.plugins.".. name)
+    local schema
+    if plugin.type == "auth" then
+        schema = plugin.consumer_schema
+    else
+        schema = plugin.schema
+    end
+    local redacted_conf = redact_encrypted(plugin_conf, schema)
     core.log.info("check plugin schema, name: ", name, ", configurations: ",
-        core.json.delay_encode(plugin_conf, true))
+        core.json.delay_encode(redacted_conf, true))
     if type(plugin_conf) ~= "table" then
         return false, "invalid plugin conf " ..
             core.json.encode(plugin_conf, true) ..

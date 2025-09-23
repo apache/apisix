@@ -18,6 +18,7 @@ local core = require("apisix.core")
 local utils = require("apisix.admin.utils")
 local apisix_ssl = require("apisix.ssl")
 local apisix_consumer = require("apisix.consumer")
+local redact_encrypted  = require("apisix.core.utils").redact_encrypted
 local tbl_deepcopy = require("apisix.core.table").deepcopy
 local setmetatable = setmetatable
 local tostring = tostring
@@ -117,8 +118,19 @@ function _M:check_conf(id, conf, need_id, typ, allow_time)
         end
     end
 
-    core.log.info("conf  : ", core.json.delay_encode(conf))
-
+    local redacted_conf = core.table.deepcopy(conf)
+    for name, conf in pairs(redacted_conf.plugins) do
+        local plugin = require("apisix.plugins."..name)
+        local schema
+        if plugin.type == "auth" then
+            schema = plugin.consumer_schema
+        else
+            schema = plugin.schema
+        end
+        local plugin_conf = redact_encrypted(conf, schema)
+        redacted_conf.plugins[name] = plugin_conf
+    end
+    core.log.info("conf :", core.json.delay_encode(redacted_conf))
     -- check the resource own rules
     if self.name ~= "secrets" then
         core.log.info("schema: ", core.json.delay_encode(self.schema))
