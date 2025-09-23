@@ -286,7 +286,7 @@ POST /operators
                     "terminating": false
                 },
                 "nodeName": "service-a-node2"
-            },
+            }
         ],
         "ports": [
             {
@@ -369,7 +369,7 @@ POST /operators
                     "terminating": false
                 },
                 "nodeName": "service-a-node4"
-            },
+            }
         ],
         "ports": [
             {
