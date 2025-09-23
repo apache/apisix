@@ -427,7 +427,7 @@ POST /operators
     {
         "op": "delete_endpointslices",
         "namespace": "ns-a",
-        "name": "service-a-epslice2",
+        "name": "service-a-epslice2"
     }
 ]
 --- more_headers
