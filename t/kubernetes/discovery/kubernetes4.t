@@ -529,7 +529,268 @@ Content-type: application/json
 ]
 
 
+=== TEST 6: endpointSlice scale for multi-k8s mode
+--- yaml_config eval: $::yaml_config
+--- request eval
+[
 
+"POST /operators
+[
+    {
+        \"op\": \"replace_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"apiVersion\": \"discovery.k8s.io/v1\",
+        \"kind\": \"EndpointSlice\",
+        \"metadata\": {
+            \"name\": \"service-a-epslice1\",
+            \"labels\": {
+                \"kubernetes.io/service-name\": \"service-a\"
+            }
+        },
+        \"addressType\": \"IPv4\",
+        \"endpoints\": [
+            {
+                \"addresses\": [
+                    \"10.0.0.1\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node1\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.2\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node2\"
+            }
+        ],
+        \"ports\": [
+            {
+                \"name\": \"p1\",
+                \"port\": 5001
+            }
+        ]
+    }
+]",
+
+"GET /queries
+[
+  \"first/ns-a/service-a:p1\"
+]",
+
+"POST /operators
+[
+    {
+        \"op\": \"replace_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"apiVersion\": \"discovery.k8s.io/v1\",
+        \"kind\": \"EndpointSlice\",
+        \"metadata\": {
+            \"name\": \"service-a-epslice1\",
+            \"labels\": {
+                \"kubernetes.io/service-name\": \"service-a\"
+            }
+        },
+        \"addressType\": \"IPv4\",
+        \"endpoints\": [
+            {
+                \"addresses\": [
+                    \"10.0.0.1\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node1\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.2\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node2\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.3\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node3\"
+            }
+        ],
+        \"ports\": [
+            {
+                \"name\": \"p1\",
+                \"port\": 5001
+            }
+        ]
+    }
+]",
+
+"GET /queries
+[
+  \"first/ns-a/service-a:p1\"
+]",
+
+]
+--- more_headers
+Content-type: application/json
+--- response_body eval
+[
+    "DONE\n",
+    "{ 2 }\n",
+    "DONE\n",
+    "{ 3 }\n",
+]
+
+
+=== TEST 7: endpointSlice scale for single-k8s mode
+--- yaml_config eval: $::single_yaml_config
+--- request eval
+[
+
+"POST /operators
+[
+    {
+        \"op\": \"replace_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"apiVersion\": \"discovery.k8s.io/v1\",
+        \"kind\": \"EndpointSlice\",
+        \"metadata\": {
+            \"name\": \"service-a-epslice1\",
+            \"labels\": {
+                \"kubernetes.io/service-name\": \"service-a\"
+            }
+        },
+        \"addressType\": \"IPv4\",
+        \"endpoints\": [
+            {
+                \"addresses\": [
+                    \"10.0.0.1\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node1\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.2\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node2\"
+            }
+        ],
+        \"ports\": [
+            {
+                \"name\": \"p1\",
+                \"port\": 5001
+            }
+        ]
+    }
+]",
+
+"GET /queries
+[
+  \"first/ns-a/service-a:p1\"
+]",
+
+"POST /operators
+[
+    {
+        \"op\": \"replace_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"apiVersion\": \"discovery.k8s.io/v1\",
+        \"kind\": \"EndpointSlice\",
+        \"metadata\": {
+            \"name\": \"service-a-epslice1\",
+            \"labels\": {
+                \"kubernetes.io/service-name\": \"service-a\"
+            }
+        },
+        \"addressType\": \"IPv4\",
+        \"endpoints\": [
+            {
+                \"addresses\": [
+                    \"10.0.0.1\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node1\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.2\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node2\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.3\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node3\"
+            }
+        ],
+        \"ports\": [
+            {
+                \"name\": \"p1\",
+                \"port\": 5001
+            }
+        ]
+    }
+]",
+
+"GET /queries
+[
+  \"first/ns-a/service-a:p1\"
+]",
+
+]
+--- more_headers
+Content-type: application/json
+--- response_body eval
+[
+    "DONE\n",
+    "{ 2 }\n",
+    "DONE\n",
+    "{ 3 }\n",
+]
 
 
 
