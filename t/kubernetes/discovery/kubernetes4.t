@@ -258,10 +258,10 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "my-service-ab1",
+        "name": "service-a-epslice1",
         "metadata": {
             "labels": {
-                "kubernetes.io/service-name": "my-service"
+                "kubernetes.io/service-name": "service-a"
             }
         },
         "endpoints": [
@@ -274,7 +274,7 @@ POST /operators
                     "serving": true,
                     "terminating": false
                 },
-                "nodeName": "my-service-node1"
+                "nodeName": "service-a-node1"
             },
             {
                 "addresses": [
@@ -285,7 +285,7 @@ POST /operators
                     "serving": true,
                     "terminating": false
                 },
-                "nodeName": "my-service-node2"
+                "nodeName": "service-a-node2"
             },
         ],
         "ports": [
@@ -308,7 +308,7 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/my-service:p1"
+  "first/ns-a/service-a:p1"
 ]
 --- more_headers
 Content-type: application/json
@@ -323,7 +323,7 @@ qr{ 2 }
 --- request
 GET /queries
 [
-  "ns-a/my-service:p1"
+  "ns-a/service-a:p1"
 ]
 --- more_headers
 Content-type: application/json
@@ -341,10 +341,10 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "my-service-ab2",
+        "name": "service-a-epslice2",
         "metadata": {
             "labels": {
-                "kubernetes.io/service-name": "my-service"
+                "kubernetes.io/service-name": "service-a"
             }
         },
         "endpoints": [
@@ -357,7 +357,7 @@ POST /operators
                     "serving": true,
                     "terminating": false
                 },
-                "nodeName": "my-service-node3"
+                "nodeName": "service-a-node3"
             },
             {
                 "addresses": [
@@ -368,7 +368,7 @@ POST /operators
                     "serving": true,
                     "terminating": false
                 },
-                "nodeName": "my-service-node4"
+                "nodeName": "service-a-node4"
             },
         ],
         "ports": [
@@ -393,7 +393,7 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/my-service:p1"
+  "first/ns-a/service-a:p1"
 ]
 --- more_headers
 Content-type: application/json
@@ -409,7 +409,7 @@ qr{ 4 }
 --- request
 GET /queries
 [
-  "ns-a/my-service:p1"
+  "ns-a/service-a:p1"
 ]
 --- more_headers
 Content-type: application/json
@@ -427,7 +427,7 @@ POST /operators
     {
         "op": "delete_endpointslices",
         "namespace": "ns-a",
-        "name": "my-service-ab2",
+        "name": "service-a-epslice2",
     }
 ]
 --- more_headers
@@ -443,7 +443,7 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/my-service:p1"
+  "first/ns-a/service-a:p1"
 ]
 --- more_headers
 Content-type: application/json
@@ -459,7 +459,7 @@ qr{ 2 }
 --- request
 GET /queries
 [
-  "ns-a/my-service:p1"
+  "ns-a/service-a:p1"
 ]
 --- more_headers
 Content-type: application/json
