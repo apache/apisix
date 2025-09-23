@@ -1,4 +1,3 @@
---
 -- Licensed to the Apache Software Foundation (ASF) under one or more
 -- contributor license agreements.  See the NOTICE file distributed with
 -- this work for additional information regarding copyright ownership.
@@ -198,6 +197,40 @@ local function set_upstream(upstream_info, ctx)
 end
 
 
+local function set_stream_upstream(upstream_info, ctx)
+    local nodes = upstream_info.nodes
+    local new_nodes = {}
+
+    if core.table.isarray(nodes) then
+        for _, node in ipairs(nodes) do
+            parse_domain_for_node(node)
+            table_insert(new_nodes, node)
+        end
+    else
+        for addr, weight in pairs(nodes) do
+            local node = {}
+            local port, host
+            host, port = core.utils.parse_addr(addr)
+            node.host = host
+            parse_domain_for_node(node)
+            node.port = port
+            node.weight = weight
+            table_insert(new_nodes, node)
+        end
+    end
+
+    local up_conf = {
+        name = upstream_info.name,
+        type = upstream_info.type,
+        nodes = new_nodes,
+        timeout = upstream_info.timeout
+    }
+
+    ctx.matched_upstream = up_conf
+    core.log.info("stream upstream set: ", core.json.encode(up_conf))
+end
+
+
 local function new_rr_obj(weighted_upstreams)
     local server_list = {}
     for i, upstream_obj in ipairs(weighted_upstreams) do
@@ -218,7 +251,6 @@ local function new_rr_obj(weighted_upstreams)
             -- that the upstream weight value on the default route has been reached.
             -- Mark empty upstream services in the plugin.
             server_list["plugin#upstream#is#empty"] = upstream_obj.weight
-
         end
     end
 
@@ -226,7 +258,7 @@ local function new_rr_obj(weighted_upstreams)
 end
 
 
-function _M.access(conf, ctx)
+local function handle_traffic_split(conf, ctx, is_stream)
     if not conf or not conf.rules then
         return
     end
@@ -242,8 +274,12 @@ function _M.access(conf, ctx)
                 if ups_id then
                     local ups = upstream.get_by_id(ups_id)
                     if not ups then
-                        return 500, "failed to fetch upstream info by "
-                                    .. "upstream id: " .. ups_id
+                        if is_stream then
+                            return 500
+                        else
+                            return 500, "failed to fetch upstream info by " ..
+                                        "upstream id: " .. ups_id
+                        end
                     end
                 end
             end
@@ -259,7 +295,11 @@ function _M.access(conf, ctx)
             local expr, err = expr.new(single_match.vars)
             if err then
                 core.log.error("vars expression does not match: ", err)
-                return 500, err
+                if is_stream then
+                    return 500
+                else
+                    return 500, err
+                end
             end
 
             match_passed = expr:eval(ctx.var)
@@ -283,13 +323,21 @@ function _M.access(conf, ctx)
     local rr_up, err = lrucache(weighted_upstreams, nil, new_rr_obj, weighted_upstreams)
     if not rr_up then
         core.log.error("lrucache roundrobin failed: ", err)
-        return 500
+        if is_stream then
+            return 500
+        else
+            return 500
+        end
     end
 
     local upstream = rr_up:find()
     if upstream and type(upstream) == "table" then
         core.log.info("upstream: ", core.json.encode(upstream))
-        return set_upstream(upstream, ctx)
+        if is_stream then
+            return set_stream_upstream(upstream, ctx)
+        else
+            return set_upstream(upstream, ctx)
+        end
     elseif upstream and upstream ~= "plugin#upstream#is#empty" then
         ctx.upstream_id = upstream
         core.log.info("upstream_id: ", upstream)
@@ -299,6 +347,16 @@ function _M.access(conf, ctx)
     ctx.upstream_id = nil
     core.log.info("route_up: ", upstream)
     return
+end
+
+
+function _M.access(conf, ctx)
+    return handle_traffic_split(conf, ctx, false)
+end
+
+
+function _M.preread(conf, ctx)
+    return handle_traffic_split(conf, ctx, true)
 end
 
 
