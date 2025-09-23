@@ -165,7 +165,7 @@ _EOC_
 
                     if op.op == "replace_endpointslices" or op.op == "create_endpointslices" then
                         if op.op == "create_endpointslices" then
-                            method = "POST"
+                            method = "PUT"
                         else
                             method = "PATCH"
                         end
