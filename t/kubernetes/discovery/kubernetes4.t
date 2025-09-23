@@ -211,10 +211,6 @@ _EOC_
 
                     ngx.sleep(1)
 
-                    local k8s = require("apisix.discovery.kubernetes")
-                    local data = k8s.dump_data()
-                    ngx.say(core.json.encode(data,true))
-
                     if res.status ~= 200 and res.status ~= 201 and res.status ~= 409 then
                         return res.status
                     end
@@ -255,6 +251,23 @@ _EOC_
 run_tests();
 
 __DATA__
+
+
+
+--- request eval
+[
+    "GET /hello",
+    "PUT /v1/agent/service/register\n" . "{\"ID\":\"service_a1\",\"Name\":\"service_a\",\"Tags\":[\"primary\",\"v1\"],\"Address\":\"127.0.0.1\",\"Port\":30511,\"Meta\":{\"service_a_version\":\"4.1\"},\"EnableTagOverride\":false,\"Weights\":{\"Passing\":10,\"Warning\":1}}",
+    "GET /sleep?sec=5",
+    "GET /hello",
+]
+--- response_body_like eval
+[
+    qr/missing consul services\n/,
+    qr//,
+    qr/ok\n/,
+    qr/server 1\n/
+]
 
 === TEST 1: endpointSlice1 update
 --- yaml_config eval: $::yaml_config
@@ -350,143 +363,170 @@ qr{ 3 }
 
 
 
-=== TEST 4: endpointSlice2 create
+=== TEST 4: endpointSlice2 create and delete for multi-k8s mode
 --- yaml_config eval: $::yaml_config
---- request
-POST /operators
+--- request eval
+[
+
+"POST /operators
 [
     {
-        "op": "create_endpointslices",
-        "namespace": "ns-a",
-        "apiVersion": "discovery.k8s.io/v1",
-        "kind": "EndpointSlice",
-        "metadata": {
-            "name": "service-a-epslice2",
-            "labels": {
-                "kubernetes.io/service-name": "service-a"
+        \"op\": \"create_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"apiVersion\": \"discovery.k8s.io/v1\",
+        \"kind\": \"EndpointSlice\",
+        \"metadata\": {
+            \"name\": \"service-a-epslice2\",
+            \"labels\": {
+                \"kubernetes.io/service-name\": \"service-a\"
             }
         },
-        "addressType": "IPv4",
-        "endpoints": [
+        \"addressType\": \"IPv4\",
+        \"endpoints\": [
             {
-                "addresses": [
-                    "10.0.0.4"
+                \"addresses\": [
+                    \"10.0.0.4\"
                 ],
-                "conditions": {
-                    "ready": true,
-                    "serving": true,
-                    "terminating": false
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
                 },
-                "nodeName": "service-a-node4"
+                \"nodeName\": \"service-a-node4\"
             },
             {
-                "addresses": [
-                    "10.0.0.5"
+                \"addresses\": [
+                    \"10.0.0.5\"
                 ],
-                "conditions": {
-                    "ready": true,
-                    "serving": true,
-                    "terminating": false
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
                 },
-                "nodeName": "service-a-node5"
+                \"nodeName\": \"service-a-node5\"
             }
         ],
-        "ports": [
+        \"ports\": [
             {
-                "name": "p1",
-                "port": 5001
+                \"name\": \"p1\",
+                \"port\": 5001
             }
         ]
     }
-]
---- more_headers
-Content-type: application/json
---- response_body_like
-.*"name":"default/kubernetes".*
+]",
 
-
-
-
-
-=== TEST 5: test endpointSlice added for multi-k8s watching endpointSlices
---- yaml_config eval: $::yaml_config
---- request
-GET /queries
+"GET /queries
 [
-  "first/ns-a/service-a:p1"
-]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 5 }
+  \"first/ns-a/service-a:p1\"
+]",
 
-
-
-
-
-=== TEST 6: test endpointSlice added for single-k8s watching endpointSlices
---- yaml_config eval: $::single_yaml_config
---- request
-GET /queries
-[
-  "ns-a/service-a:p1"
-]
---- more_headers
-Content-type: application/json
---- response_body eval
-qr{ 5 }
-
-
-
-
-=== TEST 7: test endpointSlice deleted
---- yaml_config eval: $::yaml_config
---- request
-POST /operators
+"POST /operators
 [
     {
-        "op": "delete_endpointslices",
-        "namespace": "ns-a",
-        "name": "service-a-epslice2"
+        \"op\": \"delete_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"name\": \"service-a-epslice2\"
     }
-]
---- more_headers
-Content-type: application/json
---- response_body_like
-.*"name":"default/kubernetes".*
+]",
 
-
-
-
-=== TEST 8: test endpointSlice deleted for multi-k8s watching endpointSlices
---- yaml_config eval: $::yaml_config
---- request
-GET /queries
+"GET /queries
 [
-  "first/ns-a/service-a:p1"
+  \"first/ns-a/service-a:p1\"
+]",
+
 ]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 3 }
+[
+    "DONE\n",
+    "{ 5 }\n",
+    "DONE\n",
+    "{ 3 }\n",
+]
 
 
-
-
-
-=== TEST 9: test endpointSlice deleted for single-k8s watching endpointSlices
+=== TEST 5: endpointSlice2 create and delete for single-k8s mode
 --- yaml_config eval: $::single_yaml_config
---- request
-GET /queries
+--- request eval
 [
-  "ns-a/service-a:p1"
+
+"POST /operators
+[
+    {
+        \"op\": \"create_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"apiVersion\": \"discovery.k8s.io/v1\",
+        \"kind\": \"EndpointSlice\",
+        \"metadata\": {
+            \"name\": \"service-a-epslice2\",
+            \"labels\": {
+                \"kubernetes.io/service-name\": \"service-a\"
+            }
+        },
+        \"addressType\": \"IPv4\",
+        \"endpoints\": [
+            {
+                \"addresses\": [
+                    \"10.0.0.4\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node4\"
+            },
+            {
+                \"addresses\": [
+                    \"10.0.0.5\"
+                ],
+                \"conditions\": {
+                    \"ready\": true,
+                    \"serving\": true,
+                    \"terminating\": false
+                },
+                \"nodeName\": \"service-a-node5\"
+            }
+        ],
+        \"ports\": [
+            {
+                \"name\": \"p1\",
+                \"port\": 5001
+            }
+        ]
+    }
+]",
+
+"GET /queries
+[
+  \"ns-a/service-a:p1\"
+]",
+
+"POST /operators
+[
+    {
+        \"op\": \"delete_endpointslices\",
+        \"namespace\": \"ns-a\",
+        \"name\": \"service-a-epslice2\"
+    }
+]",
+
+"GET /queries
+[
+  \"ns-a/service-a:p1\"
+]",
+
 ]
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 3 }
-
-
+[
+    "DONE\n",
+    "{ 5 }\n",
+    "DONE\n",
+    "{ 3 }\n",
+]
 
 
 
