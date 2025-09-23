@@ -469,6 +469,7 @@ Content-type: application/json
 [
     {
         \"op\": \"replace_endpointslices\",
+        \"name\": \"service-a-epslice1\",
         \"namespace\": \"ns-a\",
         \"apiVersion\": \"discovery.k8s.io/v1\",
         \"kind\": \"EndpointSlice\",
@@ -521,6 +522,7 @@ Content-type: application/json
 [
     {
         \"op\": \"replace_endpointslices\",
+        \"name\": \"service-a-epslice1\",
         \"namespace\": \"ns-a\",
         \"apiVersion\": \"discovery.k8s.io/v1\",
         \"kind\": \"EndpointSlice\",
@@ -602,6 +604,7 @@ Content-type: application/json
 [
     {
         \"op\": \"replace_endpointslices\",
+        \"name\": \"service-a-epslice1\",
         \"namespace\": \"ns-a\",
         \"apiVersion\": \"discovery.k8s.io/v1\",
         \"kind\": \"EndpointSlice\",
@@ -654,6 +657,7 @@ Content-type: application/json
 [
     {
         \"op\": \"replace_endpointslices\",
+        \"name\": \"service-a-epslice1\",
         \"namespace\": \"ns-a\",
         \"apiVersion\": \"discovery.k8s.io/v1\",
         \"kind\": \"EndpointSlice\",
