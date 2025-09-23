@@ -258,6 +258,7 @@ __DATA__
 POST /operators
 [
     {
+        "op": "replace_endpointslices",
         "namespace": "ns-a",
         "name": "service-a-epslice1",
         "metadata": {
