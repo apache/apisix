@@ -175,6 +175,7 @@ _EOC_
                         headers["Content-Type"] = "application/json-patch+json"
 
                     elseif op.op == "create_endpointslices" then
+                        method = "POST"
                         path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices"
                         op.op = nil
                         op.namespace = nil
