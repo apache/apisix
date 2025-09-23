@@ -163,12 +163,8 @@ _EOC_
                         ["Host"] = "127.0.0.1:6445"
                     }
 
-                    if op.op == "replace_endpointslices" or op.op == "create_endpointslices" then
-                        if op.op == "create_endpointslices" then
-                            method = "PUT"
-                        else
-                            method = "PATCH"
-                        end
+                    if op.op == "replace_endpointslices" then
+                        method = "PATCH"
                         path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
                         if #op.endpoints == 0 then
                             body = '[{"path":"/endpoints","op":"replace","value":[]}]'
@@ -177,9 +173,14 @@ _EOC_
                             body = core.json.encode(t, true)
                         end
                         headers["Content-Type"] = "application/json-patch+json"
-                    end
 
-                    if op.op == "delete_endpointslices" then
+                    elseif op.op == "create_endpointslices" then
+                        path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices"
+                        op.op = nil
+                        op.namespace = nil
+                        body = core.json.encode(op, true)
+
+                    elseif op.op == "delete_endpointslices" then
                         method = "DELETE"
                         path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
                     end
@@ -356,12 +357,15 @@ POST /operators
     {
         "op": "create_endpointslices",
         "namespace": "ns-a",
-        "name": "service-a-epslice2",
+        "apiVersion": "discovery.k8s.io/v1",
+        "kind": "EndpointSlice",
         "metadata": {
+            "name": "service-a-epslice2",
             "labels": {
                 "kubernetes.io/service-name": "service-a"
             }
         },
+        "addressType": "IPv4",
         "endpoints": [
             {
                 "addresses": [
