@@ -163,8 +163,12 @@ _EOC_
                         ["Host"] = "127.0.0.1:6445"
                     }
 
-                    if op.op == "replace_endpointslices" then
-                        method = "PATCH"
+                    if op.op == "replace_endpointslices" or op.op == "create_endpointslices" then
+                        if op.op == "create_endpointslices" then
+                            method = "POST"
+                        else
+                            method = "PATCH"
+                        end
                         path = "/apis/discovery.k8s.io/v1/namespaces/" .. op.namespace .. "/endpointslices/" .. op.name
                         if #op.endpoints == 0 then
                             body = '[{"path":"/endpoints","op":"replace","value":[]}]'
@@ -350,7 +354,7 @@ qr{ 3 }
 POST /operators
 [
     {
-        "op": "replace_endpointslices",
+        "op": "create_endpointslices",
         "namespace": "ns-a",
         "name": "service-a-epslice2",
         "metadata": {
