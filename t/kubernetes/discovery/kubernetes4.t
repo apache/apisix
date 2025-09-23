@@ -63,35 +63,6 @@ discovery:
     watch_endpoint_slices: true
 _EOC_
 
-    our $scale_ns_c = <<_EOC_;
-[
-  {
-    "op": "replace_endpointslices",
-    "name": "ep",
-    "namespace": "ns-c",
-    "endpoints": [
-      {
-        "addresses": [
-            "10.0.0.1"
-        ],
-        "conditions": {
-           "ready": true,
-           "serving": true,
-           "terminating": false
-        },
-        "nodeName": "kind-control-plane"
-      }
-    ]
-    "ports": [
-      {
-        "name": "p1",
-        "port": 5001
-      }
-    ]
-  }
-]
-_EOC_
-
 }
 
 use t::APISIX 'no_plan';
@@ -216,29 +187,6 @@ _EOC_
                     end
                 end
                 ngx.say("DONE")
-            }
-        }
-
-        location /dump {
-            content_by_lua_block {
-                local json_decode = require("toolkit.json").decode
-                local core = require("apisix.core")
-                local http = require "resty.http"
-                local httpc = http.new()
-
-                ngx.sleep(1)
-
-                local dump_uri = "http://127.0.0.1:" .. ngx.var.server_port .. "/v1/discovery/kubernetes/dump"
-                local res, err = httpc:request_uri(dump_uri, { method = "GET"})
-                if err then
-                    ngx.log(ngx.ERR, err)
-                    ngx.status = res.status
-                    return
-                end
-
-                local body = json_decode(res.body)
-                local endpoints = body.endpoints
-                ngx.say(core.json.encode(endpoints,true))
             }
         }
 
