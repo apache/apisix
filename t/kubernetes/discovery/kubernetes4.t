@@ -250,7 +250,7 @@ run_tests();
 
 __DATA__
 
-=== TEST 1: create namespace and endpoints
+=== TEST 1: endpointSlice1 update
 --- yaml_config eval: $::yaml_config
 --- request
 POST /operators
@@ -286,6 +286,17 @@ POST /operators
                     "terminating": false
                 },
                 "nodeName": "service-a-node2"
+            },
+            {
+                "addresses": [
+                    "10.0.0.3"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node3"
             }
         ],
         "ports": [
@@ -313,7 +324,7 @@ GET /queries
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 }
+qr{ 3 }
 
 
 
@@ -328,12 +339,12 @@ GET /queries
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 }
+qr{ 3 }
 
 
 
 
-=== TEST 4: test endpointSlice added
+=== TEST 4: endpointSlice2 create
 --- yaml_config eval: $::yaml_config
 --- request
 POST /operators
@@ -350,17 +361,6 @@ POST /operators
         "endpoints": [
             {
                 "addresses": [
-                    "10.0.0.3"
-                ],
-                "conditions": {
-                    "ready": true,
-                    "serving": true,
-                    "terminating": false
-                },
-                "nodeName": "service-a-node3"
-            },
-            {
-                "addresses": [
                     "10.0.0.4"
                 ],
                 "conditions": {
@@ -369,6 +369,17 @@ POST /operators
                     "terminating": false
                 },
                 "nodeName": "service-a-node4"
+            },
+            {
+                "addresses": [
+                    "10.0.0.5"
+                ],
+                "conditions": {
+                    "ready": true,
+                    "serving": true,
+                    "terminating": false
+                },
+                "nodeName": "service-a-node5"
             }
         ],
         "ports": [
@@ -398,7 +409,7 @@ GET /queries
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 4 }
+qr{ 5 }
 
 
 
@@ -414,7 +425,7 @@ GET /queries
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 4 }
+qr{ 5 }
 
 
 
@@ -448,7 +459,7 @@ GET /queries
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 }
+qr{ 3 }
 
 
 
@@ -464,7 +475,7 @@ GET /queries
 --- more_headers
 Content-type: application/json
 --- response_body eval
-qr{ 2 }
+qr{ 3 }
 
 
 
