@@ -162,8 +162,8 @@ end
 
 
 function _M.rewrite(conf, ctx)
-
-    core.log.info("plugin access phase, conf: ", core.json.delay_encode(redact_encrypted(conf, consumer_schema)))
+    local redacted_conf = redact_encrypted(conf, consumer_schema)
+    core.log.info("plugin access phase, conf: ", core.json.delay_encode(redacted_conf))
 
     local cur_consumer, consumer_conf, err = find_consumer(ctx)
     if not cur_consumer then
