@@ -260,7 +260,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-a",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -301,7 +306,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-b",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -342,7 +352,12 @@ POST /operators
     {
         "op": "replace_endpointslices",
         "namespace": "ns-c",
-        "name": "epslice",
+        "name": "service-a-epslice1",
+        "metadata": {
+            "labels": {
+                "kubernetes.io/service-name": "service-a"
+            }
+        },
         "endpoints": [
             {
                 "addresses": [
@@ -389,8 +404,8 @@ Content-type: application/json
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -428,8 +443,8 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
@@ -468,8 +483,8 @@ discovery:
 --- request
 GET /queries
 [
-  "first/ns-a/epslice:p1","first/ns-a/epslice:p1","first/ns-b/epslice:p2","first/ns-b/epslice:p2","first/ns-c/epslice:p3","first/ns-c/epslice:p3",
-  "second/ns-a/epslice:p1","second/ns-a/epslice:p1","second/ns-b/epslice:p2","second/ns-b/epslice:p2","second/ns-c/epslice:p3","second/ns-c/epslice:p3"
+  "first/ns-a/service-a:p1","first/ns-a/service-a:p1","first/ns-b/service-a:p2","first/ns-b/service-a:p2","first/ns-c/service-a:p3","first/ns-c/service-a:p3",
+  "second/ns-a/service-a:p1","second/ns-a/service-a:p1","second/ns-b/service-a:p2","second/ns-b/service-a:p2","second/ns-c/service-a:p3","second/ns-c/service-a:p3"
 ]
 --- more_headers
 Content-type: application/json
