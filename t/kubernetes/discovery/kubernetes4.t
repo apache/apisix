@@ -359,7 +359,7 @@ __DATA__
 
 === TEST 1: endpointSlice1 update
 --- yaml_config eval: $::yaml_config
---- request
+--- request eval
 POST /operators
 $::scale_up_ns_a_epslice1
 --- more_headers
